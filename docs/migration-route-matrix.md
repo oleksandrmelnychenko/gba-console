@@ -24,9 +24,9 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 ## Current Status Snapshot
 
-- `ui`: 58
+- `ui`: 64
 - `route`: 0
-- `shell`: 6
+- `shell`: 0
 - `todo`: 73
 - `deferred`: 4
 - Poland-specific skipped rows: 3
@@ -120,10 +120,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 46 | P6 customs-extra | recommendations | `/recommendations` | `SupplyUkraineSalesBasketRecommendationsView` | ui | wired to basket recommendations tab for compatibility |
 | 47 | P5 sales-reports | sales | `/sales` | `SupplyUkraineSalesBasketView` | ui | wired to basket sales tab; preserves one-client selection flow and TaxFree/SAD create flow |
 | 48 | P9 triage | root | `/` | `SupplyUkraineBasketView` | deferred | console root redirects to `/dashboard`; basket flow tracked by `/basket-supply-ukraine-order` |
-| 49 | P1 clients | clients | `/clients/new/:step` | `NewClientView` | shell | wizard shell wired; remaining gaps tracked in `docs/clients-functional-inventory.md` |
-| 50 | P1 clients | clients | `/clients/new` | `NewClientView` | shell | redirects to role step; remaining gaps tracked in `docs/clients-functional-inventory.md` |
-| 51 | P1 clients | clients | `/clients/edit/:netid/:step` | `EditClientView` | shell | edit shell wired; remaining gaps tracked in `docs/clients-functional-inventory.md` |
-| 52 | P1 clients | clients | `/clients/edit/:netid` | `EditClientView` | shell | redirects to first edit step; remaining gaps tracked in `docs/clients-functional-inventory.md` |
+| 49 | P1 clients | clients | `/clients/new/:step` | `NewClientView` | ui | full wizard: role/general/contact/bank/perfect-client/pricing with lookups, validation, subclient flow |
+| 50 | P1 clients | clients | `/clients/new` | `NewClientView` | ui | redirects to role step; full wizard migrated |
+| 51 | P1 clients | clients | `/clients/edit/:netid/:step` | `EditClientView` | ui | all tabs migrated: general/contact/bank, pricing, structure, perfect-client, sales, recommendations, e-commerce; editable type/role panel |
+| 52 | P1 clients | clients | `/clients/edit/:netid` | `EditClientView` | ui | redirects to first edit step; full edit card migrated |
 | 53 | P1 clients | clients | `/clients/resources/:step` | `ClientResourcesView` | ui | resource navigation, loaders, CRUD/resource actions, reserve-day editing, carrier multipart upload, and permission gates wired; remaining gaps tracked in `docs/clients-functional-inventory.md` |
 | 54 | P1 clients | clients | `/clients/resources` | `ClientResourcesView` | ui | redirects to default resource step |
 | 55 | P1 clients | clients | `/clients/accounting-cash-flow/:id` | `AccountingCashFlowClientView` | ui | client cash-flow slice wired with date range, agreement scope, details drawer, and export |
@@ -183,8 +183,8 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 116 | P6 customs-extra | sad | `/sad/edit/:id/specifications` | `SpecificationsSadView` | ui | SAD specifications wired with product spec edit, import, refresh, and downloadable document links |
 | 117 | P6 customs-extra | sad | `/sad/all` | `AllSadView` | ui | SAD list wired with period filters, pagination/load-more, action modal, edit/spec navigation, and delete guard |
 | 118 | P3 admin-directory | service | `/service/organisations` | `OrganisationServicesView` | ui | organization services mutual-settlements search wired with organization autocomplete, service filters, document filters, totals |
-| 119 | P3 admin-directory | suppliers | `/suppliers/edit/:netid/:step` | `EditClientView` | shell | shared edit shell wired; remaining gaps tracked in `docs/clients-functional-inventory.md` |
-| 120 | P3 admin-directory | suppliers | `/suppliers/edit/:netid` | `EditClientView` | shell | redirects to first edit step; remaining gaps tracked in `docs/clients-functional-inventory.md` |
+| 119 | P3 admin-directory | suppliers | `/suppliers/edit/:netid/:step` | `EditClientView` | ui | shared edit card (provider tabs: general/contact/bank/pricing); supplier passport |
+| 120 | P3 admin-directory | suppliers | `/suppliers/edit/:netid` | `EditClientView` | ui | redirects to first edit step; shared edit card migrated |
 | 121 | P3 admin-directory | suppliers | `/suppliers/accounting-cash-flow/:id` | `AccountingCashFlowSupplierClientView` | ui | supplier cash-flow slice wired with AccountingType.All, agreement scope, details drawer, and export |
 | 122 | P4 supply-warehouse | supplies | `/supplies/returns` | `SupplyReturnsView` | todo | old line 287 |
 | 123 | P3 admin-directory | suppliers | `/suppliers` | `SuppliersView` | ui | list parity slice includes dynamic filters, sort descriptors, export, active switch, and shared table controls |
