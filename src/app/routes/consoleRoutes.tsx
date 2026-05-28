@@ -1,0 +1,165 @@
+import type { ReactNode } from 'react'
+import { Navigate } from 'react-router-dom'
+import { ModulePage } from '../../pages/module/ModulePage'
+import {
+  AccountingBanksPage,
+  AllSadsPage,
+  BasketSupplyUkraineOrderPage,
+  ClientAccountingCashFlowPage,
+  ClientEditPage,
+  ClientNewPage,
+  ClientResourcesPage,
+  ClientsPage,
+  DashboardPage,
+  EditSadPage,
+  EditSaleSadPage,
+  EditTaxFreePackListPage,
+  EditTirSadPage,
+  IncompleteSalesOnlineShopPage,
+  NewEcommerceClientsPage,
+  OnlineShopCitiesPage,
+  OnlineShopClientsPage,
+  OnlineShopSeoPage,
+  OrganizationClientEditPage,
+  OrganizationClientNewPage,
+  OrganizationClientsPage,
+  OrganisationServicesPage,
+  PaymentCashflowArticleFormPage,
+  PaymentCashflowArticlesPage,
+  ProductAvailabilitiesPage,
+  ProductCapitalizationsPage,
+  ProductDetailPage,
+  ProductGroupDetailPage,
+  ProductGroupsPage,
+  ProductHistoryPage,
+  ProductIncomeDocumentsPage,
+  ProductIncomeUkrainePage,
+  ProductPlacementsPage,
+  ProductRemainsPage,
+  ProductStoragesPage,
+  ProductTransfersPage,
+  ProductsPage,
+  NewResalePage,
+  NewUkraineSaleReturnPage,
+  ReportsSalePage,
+  ReportsStocksPage,
+  ResalePage,
+  ResalesPage,
+  SadSpecificationsPage,
+  SalesReturnClientPage,
+  RetailClientSalesPage,
+  RetailIncompleteSalePage,
+  SalesOnlineShopPage,
+  SupplierAccountingCashFlowPage,
+  TaxFreeDocumentsPage,
+  TaxFreePackListsPage,
+  SuppliersPage,
+  TransportersPage,
+  UserEditPage,
+  UserNewPage,
+  UserRolesPage,
+  UsersPage,
+} from './lazyConsolePages'
+import { lazyRoute } from './lazyRoute'
+
+export type ConsoleRoute = {
+  path: string
+  element: ReactNode
+}
+
+const migratedConsoleRoutes: ConsoleRoute[] = [
+  { path: '/', element: <Navigate to="/dashboard" replace /> },
+  { path: '/dashboard', element: lazyRoute(<DashboardPage />) },
+  { path: '/products', element: lazyRoute(<ProductsPage />) },
+  { path: '/products/consignments/availabilities', element: lazyRoute(<ProductAvailabilitiesPage />) },
+  { path: '/products/income/documents', element: lazyRoute(<ProductIncomeDocumentsPage />) },
+  { path: '/products/income/ukraine', element: lazyRoute(<ProductIncomeUkrainePage />) },
+  { path: '/products/placements', element: lazyRoute(<ProductPlacementsPage />) },
+  { path: '/products/storages', element: lazyRoute(<ProductStoragesPage />) },
+  { path: '/products/storages/incomes', element: lazyRoute(<ProductRemainsPage />) },
+  { path: '/products/transfers', element: lazyRoute(<ProductTransfersPage />) },
+  { path: '/products/capitalization', element: lazyRoute(<ProductCapitalizationsPage />) },
+  { path: '/products/history', element: lazyRoute(<ProductHistoryPage />) },
+  { path: '/products/:netId', element: lazyRoute(<ProductDetailPage />) },
+  { path: '/product-groups', element: lazyRoute(<ProductGroupsPage />) },
+  { path: '/product-groups/:id', element: lazyRoute(<ProductGroupDetailPage />) },
+  { path: '/transporters', element: lazyRoute(<TransportersPage />) },
+]
+
+const clientMigrationRoutes: ConsoleRoute[] = [
+  { path: '/clients', element: lazyRoute(<ClientsPage />) },
+  { path: '/clients/new/:step', element: lazyRoute(<ClientNewPage />) },
+  { path: '/clients/new', element: lazyRoute(<ClientNewPage />) },
+  { path: '/clients/edit/:netid/:step', element: lazyRoute(<ClientEditPage />) },
+  { path: '/clients/edit/:netid', element: lazyRoute(<ClientEditPage />) },
+  { path: '/clients/resources/:step', element: lazyRoute(<ClientResourcesPage />) },
+  { path: '/clients/resources', element: lazyRoute(<ClientResourcesPage />) },
+  { path: '/clients/accounting-cash-flow/:id', element: lazyRoute(<ClientAccountingCashFlowPage />) },
+  { path: '/new-clients-from-ecommerce', element: lazyRoute(<NewEcommerceClientsPage />) },
+  { path: '/clients-online-shop/client/:netUid', element: lazyRoute(<RetailClientSalesPage />) },
+  { path: '/clients-online-shop/incomplete-sale/:netUid', element: lazyRoute(<RetailIncompleteSalePage />) },
+  { path: '/clients-online-shop', element: lazyRoute(<OnlineShopClientsPage />) },
+  { path: '/sales-online-shop', element: lazyRoute(<SalesOnlineShopPage />) },
+  { path: '/incomplete-sales-online-shop', element: lazyRoute(<IncompleteSalesOnlineShopPage />) },
+  { path: '/online-shop-cities', element: lazyRoute(<OnlineShopCitiesPage />) },
+  { path: '/online-shop-seo', element: lazyRoute(<OnlineShopSeoPage />) },
+  { path: '/suppliers', element: lazyRoute(<SuppliersPage />) },
+  { path: '/suppliers/edit/:netid/:step', element: lazyRoute(<ClientEditPage />) },
+  { path: '/suppliers/edit/:netid', element: lazyRoute(<ClientEditPage />) },
+  { path: '/suppliers/accounting-cash-flow/:id', element: lazyRoute(<SupplierAccountingCashFlowPage />) },
+  { path: '/organization-clients', element: lazyRoute(<OrganizationClientsPage />) },
+  { path: '/organization-clients/new', element: lazyRoute(<OrganizationClientNewPage />) },
+  { path: '/organization-clients/edit/:netId', element: lazyRoute(<OrganizationClientEditPage />) },
+]
+
+const userMigrationRoutes: ConsoleRoute[] = [
+  { path: '/users', element: lazyRoute(<UsersPage />) },
+  { path: '/users/new', element: lazyRoute(<UserNewPage />) },
+  { path: '/users/edit/:netid', element: lazyRoute(<UserEditPage />) },
+  { path: '/users/roles', element: lazyRoute(<UserRolesPage />) },
+]
+
+const accountingMigrationRoutes: ConsoleRoute[] = [
+  { path: '/accounting/payment-cashflow-articles', element: lazyRoute(<PaymentCashflowArticlesPage />) },
+  { path: '/accounting/payment-cashflow-articles/new', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
+  { path: '/accounting/payment-cashflow-articles/edit/:id', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
+  { path: '/accounting/banks', element: lazyRoute(<AccountingBanksPage />) },
+]
+
+const customsMigrationRoutes: ConsoleRoute[] = [
+  { path: '/sad/all', element: lazyRoute(<AllSadsPage />) },
+  { path: '/sad/edit/:netid', element: lazyRoute(<EditSadPage />) },
+  { path: '/sad/edit/:netid/sale', element: lazyRoute(<EditSaleSadPage />) },
+  { path: '/sad/edit/:netid/tir', element: lazyRoute(<EditTirSadPage />) },
+  { path: '/sad/edit/:id/specifications', element: lazyRoute(<SadSpecificationsPage />) },
+  { path: '/tax-free/pack-list/all', element: lazyRoute(<TaxFreePackListsPage />) },
+  { path: '/tax-free/pack-list/edit/:id', element: lazyRoute(<EditTaxFreePackListPage />) },
+  { path: '/tax-free/all', element: lazyRoute(<TaxFreeDocumentsPage />) },
+]
+
+const plannedConsoleRoutes: ConsoleRoute[] = [
+  { path: '/basket-supply-ukraine-order', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
+  { path: '/basket-supply-ukraine-order/*', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
+  { path: '/recommendations', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
+  { path: '/resales', element: lazyRoute(<ResalesPage />) },
+  { path: '/resales/new', element: lazyRoute(<NewResalePage />) },
+  { path: '/resales/:id', element: lazyRoute(<ResalePage />) },
+  { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
+  { path: '/reports/sale', element: lazyRoute(<ReportsSalePage />) },
+  { path: '/sales/return/client', element: lazyRoute(<SalesReturnClientPage />) },
+  { path: '/sales/ukraine/all/returns/new', element: lazyRoute(<NewUkraineSaleReturnPage />) },
+  { path: '/sales', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
+  { path: '/service/organisations', element: lazyRoute(<OrganisationServicesPage />) },
+  { path: '/supply', element: <ModulePage module="Постачання" /> },
+  { path: '/routes', element: <ModulePage module="Маршрути" /> },
+  { path: '/settings', element: <ModulePage module="Налаштування" /> },
+]
+
+export const consoleRoutes: ConsoleRoute[] = [
+  ...migratedConsoleRoutes,
+  ...clientMigrationRoutes,
+  ...userMigrationRoutes,
+  ...accountingMigrationRoutes,
+  ...customsMigrationRoutes,
+  ...plannedConsoleRoutes,
+]

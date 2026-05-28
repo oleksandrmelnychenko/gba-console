@@ -1,0 +1,124 @@
+import type { Product, ProductImage, ProductOriginalNumber, ProductSearchMode, ProductSortMode } from './types'
+import { translate } from '../../shared/i18n/translate'
+
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+
+const amountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 3,
+})
+
+const priceFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
+export const PRODUCT_SEARCH_MODE_OPTIONS: Array<{ label: string; value: ProductSearchMode }> = [
+  { value: '5', label: 'Усі поля' },
+  { value: '0', label: 'Код виробника' },
+  { value: '1', label: 'Оригінальний/крос номер' },
+  { value: '2', label: 'Розмір' },
+  { value: '3', label: 'Назва' },
+  { value: '4', label: 'Опис' },
+]
+
+export const PRODUCT_SORT_MODE_OPTIONS: Array<{ label: string; value: ProductSortMode }> = [
+  { value: '2', label: 'Назва' },
+  { value: '1', label: 'Код виробника' },
+  { value: '0', label: 'Top' },
+]
+
+export function getEmptyGuid(): string {
+  return EMPTY_GUID
+}
+
+export function getProductTitle(product?: Product | null): string {
+  return product?.NameUA?.trim() || product?.Name?.trim() || translate('Без назви')
+}
+
+export function getProductCode(product?: Product | null): string {
+  return product?.VendorCode?.trim() || product?.NetUid?.trim() || translate('Без коду')
+}
+
+export function getProductMainOriginalNumber(product?: Product | null): string {
+  const mainOriginalNumber = product?.MainOriginalNumber?.trim()
+
+  if (mainOriginalNumber) {
+    return mainOriginalNumber
+  }
+
+  const originalNumber = product?.ProductOriginalNumbers?.find((item) => item.IsMainOriginalNumber)?.OriginalNumber
+    || product?.ProductOriginalNumbers?.[0]?.OriginalNumber
+
+  return originalNumber?.MainNumber?.trim() || originalNumber?.Number?.trim() || ''
+}
+
+export function getProductGroupNames(product?: Product | null): string {
+  const directNames = product?.ProductGroupNames?.trim()
+
+  if (directNames) {
+    return directNames
+  }
+
+  const groupNames = product?.ProductProductGroups?.reduce<string[]>((names, productGroup) => {
+    const name = productGroup.ProductGroup?.Name?.trim() || productGroup.ProductGroup?.FullName?.trim()
+
+    if (name) {
+      names.push(name)
+    }
+
+    return names
+  }, [])
+
+  return groupNames?.join(', ') || ''
+}
+
+export function getProductMainImage(product?: Product | null): ProductImage | null {
+  return (
+    product?.ProductImages?.find((image) => image.IsMainImage && Boolean(image.ImageUrl))
+    || product?.ProductImages?.find((image) => Boolean(image.ImageUrl))
+    || (product?.Image ? { ImageUrl: product.Image } : null)
+  )
+}
+
+export function getProductOriginalNumbers(product?: Product | null): ProductOriginalNumber[] {
+  return product?.ProductOriginalNumbers?.filter((item) => Boolean(item.OriginalNumber)) || []
+}
+
+export function getProductAvailableQty(product?: Product | null): number {
+  const values = [
+    product?.AvailableQtyUk,
+    product?.AvailableQtyUkVAT,
+    product?.AvailableQtyUkReSale,
+    product?.AvailableQtyRoad,
+  ]
+
+  return values.reduce<number>(
+    (total, value) => total + (typeof value === 'number' && Number.isFinite(value) ? value : 0),
+    0,
+  )
+}
+
+export function displayValue(value?: boolean | number | string | null): string {
+  if (typeof value === 'boolean') {
+    return value ? 'Так' : 'Ні'
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : '-'
+  }
+
+  const normalized = value?.trim()
+  return normalized || '-'
+}
+
+export function formatAmount(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value) ? amountFormatter.format(value) : '-'
+}
+
+export function formatPrice(value?: number | null): string {
+  return typeof value === 'number' && Number.isFinite(value) ? priceFormatter.format(value) : '-'
+}
+
+export function getBooleanBadgeColor(value?: boolean): string {
+  return value ? 'green' : 'gray'
+}

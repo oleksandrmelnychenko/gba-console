@@ -1,0 +1,44 @@
+.tax-free-pack-list-edit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px minmax(0, 1.25fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.tax-free-pack-list-source-card,
+.tax-free-pack-list-tax-frees-card {
+  min-width: 0;
+}
+
+.tax-free-pack-list-move-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tax-free-pack-list-card-list {
+  max-height: calc(100vh - 380px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.tax-free-card {
+  background: var(--mantine-color-body);
+}
+
+.tax-free-totals {
+  padding-top: 6px;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+@media (max-width: 1100px) {
+  .tax-free-pack-list-edit-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tax-free-pack-list-move-buttons {
+    flex-direction: row;
+  }
+}

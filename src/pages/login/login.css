@@ -1,0 +1,84 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    radial-gradient(circle at top left, rgba(91, 33, 182, 0.14), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f6f8f7 100%);
+}
+
+.login-card {
+  width: min(100%, 410px);
+}
+
+.login-logo-mark {
+  width: 68px;
+  height: 68px;
+  flex: 0 0 68px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: #5b21b6;
+  box-shadow: 0 14px 34px rgba(91, 33, 182, 0.24);
+}
+
+.login-logo-mark img {
+  width: 51px;
+  height: 51px;
+  object-fit: contain;
+  display: block;
+}
+
+.login-subtitle {
+  line-height: 1.25;
+}
+
+.login-card input::placeholder {
+  color: var(--mantine-color-gray-5);
+  opacity: 1;
+}
+
+.login-alert {
+  padding: 6px 9px;
+  animation: login-alert-in 180ms ease-out both;
+  transform-origin: top center;
+}
+
+.login-alert .mantine-Alert-wrapper {
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.login-alert .mantine-Alert-icon {
+  margin-inline-end: 0;
+  margin-top: 1px;
+}
+
+.login-alert .mantine-Alert-title {
+  margin-bottom: 0;
+  line-height: 1.15;
+}
+
+.login-alert .mantine-Alert-message {
+  margin-top: -2px;
+  line-height: 1.18;
+}
+
+@keyframes login-alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-alert {
+    animation: none;
+  }
+}

@@ -1,0 +1,102 @@
+import type { ReactNode } from 'react'
+import { ActionIcon, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
+import { IconCheck, IconColumns3, IconRestore } from '@tabler/icons-react'
+import type { Column, Table as TableInstance } from '@tanstack/react-table'
+import type { DataTableDensity, DataTableLabels } from './types'
+
+type DataTableToolbarProps<TData> = {
+  columnTitles: Map<string, string>
+  density: DataTableDensity
+  labels: Required<DataTableLabels>
+  table: TableInstance<TData>
+  toolbarLeft?: ReactNode
+  toolbarRight?: ReactNode
+  onDensityChange: (density: DataTableDensity) => void
+  onResetLayout: () => void
+}
+
+export function DataTableToolbar<TData>({
+  columnTitles,
+  density,
+  labels,
+  table,
+  toolbarLeft,
+  toolbarRight,
+  onDensityChange,
+  onResetLayout,
+}: DataTableToolbarProps<TData>) {
+  const hideableColumns = table
+    .getAllLeafColumns()
+    .reduce<Column<TData, unknown>[]>((result, column) => {
+      if (column.getCanHide()) {
+        result.push(column)
+      }
+
+      return result
+    }, [])
+
+  return (
+    <Group className="data-table-toolbar" gap={8} wrap="nowrap">
+      <Group className="data-table-toolbar-left" gap={8} wrap="nowrap">
+        <Menu width={220} position="bottom-start" withArrow withinPortal>
+          <Menu.Target>
+            <Tooltip label={labels.columns} withArrow>
+              <ActionIcon aria-label={labels.columns} size="sm" variant="subtle" color="gray">
+                <IconColumns3 size={17} stroke={1.8} />
+              </ActionIcon>
+            </Tooltip>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{labels.columns}</Menu.Label>
+            {hideableColumns.map((column) => (
+              <Menu.Item
+                key={column.id}
+                closeMenuOnClick={false}
+                leftSection={
+                  <Checkbox
+                    checked={column.getIsVisible()}
+                    onChange={() => undefined}
+                    readOnly
+                    size="xs"
+                  />
+                }
+                onClick={() => column.toggleVisibility(!column.getIsVisible())}
+              >
+                {columnTitles.get(column.id) ?? column.id}
+              </Menu.Item>
+            ))}
+            <Menu.Divider />
+            <Menu.Label>{labels.density}</Menu.Label>
+            <Menu.Item
+              leftSection={<DensityCheck checked={density === 'compact'} />}
+              onClick={() => onDensityChange('compact')}
+            >
+              {labels.compactDensity}
+            </Menu.Item>
+            <Menu.Item
+              leftSection={<DensityCheck checked={density === 'normal'} />}
+              onClick={() => onDensityChange('normal')}
+            >
+              {labels.normalDensity}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Item
+              leftSection={<IconRestore size={16} stroke={1.8} />}
+              onClick={onResetLayout}
+            >
+              {labels.resetLayout}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+        {toolbarLeft}
+      </Group>
+      <Group className="data-table-toolbar-right" gap={6} wrap="nowrap">
+        {toolbarRight}
+      </Group>
+    </Group>
+  )
+}
+
+function DensityCheck({ checked }: { checked: boolean }) {
+  return <IconCheck size={15} stroke={1.8} style={{ opacity: checked ? 1 : 0 }} />
+}

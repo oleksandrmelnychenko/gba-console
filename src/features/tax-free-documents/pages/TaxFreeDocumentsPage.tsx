@@ -1,0 +1,1463 @@
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Drawer,
+  Group,
+  Modal,
+  Select,
+  SimpleGrid,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Tooltip,
+} from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import {
+  IconAlertCircle,
+  IconCash,
+  IconChevronLeft,
+  IconChevronRight,
+  IconEye,
+  IconPrinter,
+  IconRefresh,
+  IconRestore,
+  IconSearch,
+  IconTimeline,
+  IconTruckDelivery,
+} from '@tabler/icons-react'
+import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { formatLocalDate } from '../../../shared/date/dateTime'
+import { useValueState } from '../../../shared/hooks/useValueState'
+import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import {
+  getTaxFreeCarrier,
+  getTaxFreeDocuments,
+  printTaxFreeDocument,
+  searchTaxFreeCarriers,
+  updateTaxFreeDocument,
+} from '../api/taxFreeDocumentsApi'
+import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem } from '../types'
+import { TaxFreeStatus } from '../types'
+import {
+  getPersonName,
+  getTaxFreeClient,
+  getTaxFreeItemProduct,
+  getTaxFreeResponsible,
+  getTaxFreeStatusLabel,
+  getTaxFreeStatusOptions,
+} from '../utils'
+
+const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters'
+const PAGE_SIZE = 21
+const pageSizeOptions = ['21', '42', '63', '105']
+
+const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['packListNumber', 'number'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+const ITEMS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['index', 'vendorCode', 'productName'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+const amountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 3,
+})
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
+type TaxFreeDocumentRow = {
+  carrier?: string
+  client?: string
+  document: TaxFreeDocument
+  packListNumber?: string
+  responsible?: string
+  status?: string
+}
+
+type DocumentsListState = {
+  documents: TaxFreeDocument[]
+  isLoading: boolean
+  total?: number
+}
+
+type StoredFilters = {
+  carrierNetId: string
+  from: string
+  status: string
+  to: string
+  value: string
+}
+
+type TaxFreeStatusDateField = 'ClosedDate' | 'DateOfIssue' | 'DateOfPrint' | 'DateOfTabulation' | 'FormedDate' | 'ReturnedDate'
+
+function useTaxFreeDocumentsPageModel() {
+  const { t } = useI18n()
+  const restoredFilters = useMemo(() => readStoredFilters(), [])
+  const statusOptions = useMemo(() => getTaxFreeStatusOptions(), [])
+  const [documentsState, setDocumentsState] = useValueState<DocumentsListState>({
+    documents: [],
+    isLoading: false,
+    total: undefined,
+  })
+  const [dateFrom, setDateFrom] = useValueState(restoredFilters.from)
+  const [dateTo, setDateTo] = useValueState(restoredFilters.to)
+  const [statusValue, setStatusValue] = useValueState(restoredFilters.status)
+  const [searchDraft, setSearchDraft] = useValueState(restoredFilters.value)
+  const [searchValue, setSearchValue] = useValueState(restoredFilters.value)
+  const [carrierSearch, setCarrierSearch] = useValueState('')
+  const [carrierOptions, setCarrierOptions] = useValueState<Statham[]>([])
+  const [selectedCarrierNetId, setSelectedCarrierNetId] = useValueState(restoredFilters.carrierNetId)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [error, setError] = useValueState<string | null>(null)
+  const [selectedDocument, setSelectedDocument] = useValueState<TaxFreeDocument | null>(null)
+  const [previewDocument, setPreviewDocument] = useValueState<TaxFreeDocument | null>(null)
+  const [printingId, setPrintingId] = useValueState<string | number | null>(null)
+  const [isSaving, setSaving] = useValueState(false)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { documents, isLoading, total } = documentsState
+  const offset = (page - 1) * pageSize
+  const filterError = getFilterError(dateFrom, dateTo)
+  const selectedStatus = statusOptions.find((option) => option.value === statusValue)?.status ?? ''
+  const canMoveBackward = page > 1
+  const canMoveForward = typeof total === 'number' ? page * pageSize < total : documents.length === pageSize
+  const rows = useMemo(() => documents.map(mapTaxFreeDocumentRow), [documents])
+  const openDocument = useCallback(
+    (document: TaxFreeDocument) => {
+      setSelectedDocument(document)
+    },
+    [setSelectedDocument],
+  )
+  const itemColumns = useTaxFreeItemColumns()
+  const columns = useTaxFreeDocumentColumns({
+    onOpenCarrier: openDocument,
+    onOpenPreview: setPreviewDocument,
+    onOpenStatus: openDocument,
+    onOpenView: openDocument,
+  })
+  const carrierSelectOptions = useMemo(() => buildCarrierOptions(carrierOptions, selectedCarrierNetId), [
+    carrierOptions,
+    selectedCarrierNetId,
+  ])
+  const toolbarLeft = useMemo(
+    () => (
+      <Text size="xs" c="dimmed">
+        {t('Сторінка')} {page}
+        {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
+        {searchValue ? `, ${t('номер')}: ${searchValue}` : ''}
+      </Text>
+    ),
+    [page, searchValue, t, total],
+  )
+
+  useEffect(() => {
+    writeStoredFilters({
+      carrierNetId: selectedCarrierNetId,
+      from: dateFrom,
+      status: statusValue,
+      to: dateTo,
+      value: searchValue,
+    })
+  }, [dateFrom, dateTo, searchValue, selectedCarrierNetId, statusValue])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCarriers() {
+      try {
+        const nextCarriers = await searchTaxFreeCarriers(carrierSearch)
+
+        if (!cancelled) {
+          setCarrierOptions((currentCarriers) => mergeCarriers(currentCarriers, nextCarriers))
+        }
+      } catch {
+        if (!cancelled) {
+          setCarrierOptions([])
+        }
+      }
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadCarriers()
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [carrierSearch, setCarrierOptions])
+
+  useEffect(() => {
+    if (filterError) {
+      setDocumentsState({
+        documents: [],
+        isLoading: false,
+        total: undefined,
+      })
+      return
+    }
+
+    let cancelled = false
+
+    async function loadDocuments() {
+      setDocumentsState((currentState) => ({
+        ...currentState,
+        isLoading: true,
+      }))
+      setError(null)
+
+      try {
+        const response = await getTaxFreeDocuments({
+          from: dateFrom,
+          limit: pageSize,
+          offset,
+          status: selectedStatus,
+          stathamNetId: selectedCarrierNetId,
+          to: dateTo,
+          value: searchValue,
+        })
+
+        if (!cancelled) {
+          setDocumentsState({
+            documents: response.Items,
+            isLoading: false,
+            total: response.Total,
+          })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setDocumentsState({
+            documents: [],
+            isLoading: false,
+            total: undefined,
+          })
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити Tax Free'))
+        }
+      }
+    }
+
+    void loadDocuments()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    dateFrom,
+    dateTo,
+    filterError,
+    offset,
+    pageSize,
+    reloadKey,
+    searchValue,
+    selectedCarrierNetId,
+    selectedStatus,
+    setDocumentsState,
+    setError,
+    t,
+  ])
+
+  function updateSearch(nextSearchValue: string) {
+    setPage(1)
+    setSearchDraft(nextSearchValue)
+    setSearchValue(nextSearchValue.trim())
+  }
+
+  function resetFilters() {
+    const defaults = getDefaultFilters()
+
+    setDateFrom(defaults.from)
+    setDateTo(defaults.to)
+    setStatusValue(defaults.status)
+    setSearchDraft('')
+    setSearchValue('')
+    setSelectedCarrierNetId('')
+    setPage(1)
+    window.localStorage.removeItem(FILTER_STORAGE_KEY)
+  }
+
+  async function saveDocument(document: TaxFreeDocument) {
+    setSaving(true)
+    setError(null)
+
+    try {
+      const updatedDocument = await updateTaxFreeDocument(document)
+
+      setDocumentsState((currentState) => ({
+        ...currentState,
+        documents: currentState.documents.map((currentDocument) =>
+          getDocumentKey(currentDocument) === getDocumentKey(updatedDocument) ? updatedDocument : currentDocument,
+        ),
+      }))
+      setSelectedDocument(updatedDocument)
+      notifications.show({ color: 'green', message: t('Tax Free оновлено') })
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити Tax Free'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function printDocument(document: TaxFreeDocument) {
+    const documentId = document.NetUid || document.Id
+
+    if (!documentId) {
+      return
+    }
+
+    setPrintingId(documentId)
+    setError(null)
+
+    try {
+      const response = await printTaxFreeDocument(document)
+
+      notifications.show({ color: 'green', message: response.Message || t('Tax Free відправлено на друк') })
+      setPreviewDocument(null)
+      reload()
+    } catch (printError) {
+      setError(printError instanceof Error ? printError.message : t('Не вдалося надрукувати Tax Free'))
+    } finally {
+      setPrintingId(null)
+    }
+  }
+
+  return {
+    canMoveBackward,
+    canMoveForward,
+    carrierSearch,
+    carrierSelectOptions,
+    columns,
+    dateFrom,
+    dateTo,
+    error,
+    filterError,
+    isLoading,
+    isSaving,
+    itemColumns,
+    page,
+    pageSize,
+    previewDocument,
+    printingId,
+    rows,
+    searchDraft,
+    selectedCarrierNetId,
+    selectedDocument,
+    statusOptions,
+    statusValue,
+    toolbarLeft,
+    closeDetails: () => setSelectedDocument(null),
+    printDocument,
+    reload,
+    resetFilters,
+    saveDocument,
+    openDocument,
+    setCarrierSearch,
+    setDateFrom,
+    setDateTo,
+    setPage,
+    setPageSize,
+    setPreviewDocument,
+    setSelectedCarrierNetId,
+    setStatusValue,
+    updateSearch,
+  }
+}
+
+export function TaxFreeDocumentsPage() {
+  const model = useTaxFreeDocumentsPageModel()
+
+  return <TaxFreeDocumentsPageView model={model} />
+}
+
+function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFreeDocumentsPageModel> }) {
+  const { t } = useI18n()
+  const {
+    canMoveBackward,
+    canMoveForward,
+    carrierSearch,
+    carrierSelectOptions,
+    columns,
+    dateFrom,
+    dateTo,
+    error,
+    filterError,
+    isLoading,
+    isSaving,
+    itemColumns,
+    page,
+    pageSize,
+    previewDocument,
+    printingId,
+    rows,
+    searchDraft,
+    selectedCarrierNetId,
+    selectedDocument,
+    statusOptions,
+    statusValue,
+    toolbarLeft,
+    closeDetails,
+    printDocument,
+    reload,
+    resetFilters,
+    saveDocument,
+    openDocument,
+    setCarrierSearch,
+    setDateFrom,
+    setDateTo,
+    setPage,
+    setPageSize,
+    setPreviewDocument,
+    setSelectedCarrierNetId,
+    setStatusValue,
+    updateSearch,
+  } = model
+
+  return (
+    <Stack gap="lg">
+      <Group justify="flex-end" align="end">
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Card withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Group align="end" gap="sm" wrap="wrap">
+            <TextInput
+              label={t('Від')}
+              type="date"
+              value={dateFrom}
+              w={150}
+              onChange={(event) => {
+                setPage(1)
+                setDateFrom(event.currentTarget.value)
+              }}
+            />
+            <TextInput
+              label={t('До')}
+              type="date"
+              value={dateTo}
+              w={150}
+              onChange={(event) => {
+                setPage(1)
+                setDateTo(event.currentTarget.value)
+              }}
+            />
+            <Select
+              clearable={false}
+              data={statusOptions}
+              label={t('Статус')}
+              value={statusValue}
+              w={180}
+              onChange={(value) => {
+                setPage(1)
+                setStatusValue(value || 'all')
+              }}
+            />
+            <Select
+              clearable
+              data={carrierSelectOptions}
+              label={t('Перевізник')}
+              placeholder={t('Пошук перевізника')}
+              searchable
+              searchValue={carrierSearch}
+              value={selectedCarrierNetId}
+              style={{ flex: '1 1 220px' }}
+              onChange={(value) => {
+                setPage(1)
+                setSelectedCarrierNetId(value || '')
+              }}
+              onSearchChange={setCarrierSearch}
+            />
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              label={t('Номер Tax Free')}
+              placeholder={t('Введіть номер')}
+              value={searchDraft}
+              style={{ flex: '1 1 220px' }}
+              onChange={(event) => updateSearch(event.currentTarget.value)}
+            />
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+
+          {(error || filterError) && (
+            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError || error}
+            </Alert>
+          )}
+
+          <Group justify="space-between" gap="sm">
+            <Text size="sm" c="dimmed">
+              {t('Показано')} {rows.length}
+            </Text>
+            <Group gap="xs">
+              <Select
+                aria-label={t('Розмір сторінки')}
+                data={pageSizeOptions}
+                value={String(pageSize)}
+                w={84}
+                onChange={(value) => {
+                  setPage(1)
+                  setPageSize(Number(value || PAGE_SIZE))
+                }}
+              />
+              <ActionIcon
+                aria-label={t('Попередня сторінка')}
+                color="gray"
+                disabled={!canMoveBackward || isLoading}
+                size={36}
+                variant="light"
+                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              >
+                <IconChevronLeft size={18} />
+              </ActionIcon>
+              <Text size="sm" w={34} ta="center">
+                {page}
+              </Text>
+              <ActionIcon
+                aria-label={t('Наступна сторінка')}
+                color="gray"
+                disabled={!canMoveForward || isLoading}
+                size={36}
+                variant="light"
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+              >
+                <IconChevronRight size={18} />
+              </ActionIcon>
+            </Group>
+          </Group>
+
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Tax Free не знайдено')}
+            getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
+            isLoading={isLoading}
+            layoutVersion="tax-free-documents-table-1"
+            loadingText={t('Завантаження Tax Free')}
+            maxHeight="calc(100vh - 330px)"
+            minWidth={1540}
+            tableId="tax-free-documents"
+            toolbarLeft={toolbarLeft}
+            onRowClick={(row) => openDocument(row.document)}
+          />
+        </Stack>
+      </Card>
+
+      <TaxFreeDocumentDrawer
+        carrierOptions={carrierSelectOptions}
+        document={selectedDocument}
+        isSaving={isSaving}
+        itemColumns={itemColumns}
+        onCarrierSearch={setCarrierSearch}
+        onClose={closeDetails}
+        onPreview={setPreviewDocument}
+        onSave={saveDocument}
+      />
+
+      <TaxFreePrintPreviewModal
+        document={previewDocument}
+        isPrinting={Boolean(printingId)}
+        onClose={() => setPreviewDocument(null)}
+        onPrint={printDocument}
+      />
+    </Stack>
+  )
+}
+
+function useTaxFreeDocumentColumns({
+  onOpenCarrier,
+  onOpenPreview,
+  onOpenStatus,
+  onOpenView,
+}: {
+  onOpenCarrier: (document: TaxFreeDocument) => void
+  onOpenPreview: (document: TaxFreeDocument) => void
+  onOpenStatus: (document: TaxFreeDocument) => void
+  onOpenView: (document: TaxFreeDocument) => void
+}) {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<TaxFreeDocumentRow>[]>(
+    () => [
+      {
+        accessor: (row) => row.packListNumber,
+        header: t('Номер пакувального'),
+        id: 'packListNumber',
+        width: 150,
+      },
+      {
+        accessor: (row) => row.document.Number,
+        header: t('Номер Tax Free'),
+        id: 'number',
+        width: 150,
+      },
+      {
+        accessor: (row) => row.document.DateOfPrint,
+        cell: (row) => formatDateTime(row.document.DateOfPrint),
+        header: t('Дата Tax Free'),
+        id: 'dateOfPrint',
+        width: 150,
+      },
+      {
+        accessor: (row) => row.document.TotalWithVatPl,
+        align: 'right',
+        cell: (row) => formatMoney(row.document.TotalWithVatPl),
+        header: t('Сума з ПДВ PLN'),
+        id: 'amountPln',
+        width: 130,
+      },
+      {
+        accessor: (row) => row.document.VatAmountPl,
+        align: 'right',
+        cell: (row) => formatMoney(row.document.VatAmountPl),
+        header: t('ПДВ PLN'),
+        id: 'vatPln',
+        width: 120,
+      },
+      {
+        accessor: (row) => row.document.TotalWithVat,
+        align: 'right',
+        cell: (row) => formatMoney(row.document.TotalWithVat),
+        header: t('Сума з ПДВ EUR'),
+        id: 'amountEur',
+        width: 130,
+      },
+      {
+        accessor: (row) => row.document.TotalNetWeight,
+        align: 'right',
+        cell: (row) => formatAmount(row.document.TotalNetWeight),
+        header: t('Вага'),
+        id: 'weight',
+        width: 95,
+      },
+      {
+        accessor: (row) => row.client,
+        header: t('Клієнт'),
+        id: 'client',
+        width: 160,
+      },
+      {
+        accessor: (row) => row.carrier,
+        header: t('Перевізник'),
+        id: 'carrier',
+        width: 170,
+      },
+      {
+        cell: (row) => (
+          <TaxFreeRowAction
+            disabled={!row.document.Statham}
+            icon={<IconTruckDelivery size={17} />}
+            label={t('Переглянути перевізника')}
+            onClick={() => onOpenCarrier(row.document)}
+          />
+        ),
+        enableSorting: false,
+        header: '',
+        id: 'carrierAction',
+        width: 54,
+      },
+      {
+        accessor: (row) => row.responsible,
+        header: t('Відповідальний'),
+        id: 'responsible',
+        width: 150,
+      },
+      {
+        accessor: (row) => row.status,
+        cell: (row) => (
+          <Badge color={getStatusColor(row.document.TaxFreeStatus)} radius="sm" variant="light">
+            {row.status || t('Невідомо')}
+          </Badge>
+        ),
+        header: t('Статус'),
+        id: 'status',
+        width: 150,
+      },
+      {
+        cell: (row) => (
+          <TaxFreeRowAction
+            disabled={(row.document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) < TaxFreeStatus.Printed}
+            icon={<IconTimeline size={17} />}
+            label={t('Панель статусів')}
+            onClick={() => onOpenStatus(row.document)}
+          />
+        ),
+        enableSorting: false,
+        header: '',
+        id: 'statusAction',
+        width: 54,
+      },
+      {
+        cell: () => (
+          <TaxFreeRowAction
+            disabled
+            icon={<IconCash size={17} />}
+            label={t('Бухгалтерські операції недоступні у цій міграції')}
+            onClick={() => undefined}
+          />
+        ),
+        enableSorting: false,
+        header: '',
+        id: 'accountingAction',
+        width: 54,
+      },
+      {
+        accessor: (row) => row.document.ClosedDate,
+        cell: (row) => formatDateTime(row.document.ClosedDate),
+        header: t('Дата закриття TF'),
+        id: 'closedDate',
+        width: 150,
+      },
+      {
+        cell: (row) => (
+          <TaxFreeRowAction
+            disabled={row.document.TaxFreeStatus !== TaxFreeStatus.Formed}
+            icon={<IconPrinter size={17} />}
+            label={t('Попередній перегляд друку')}
+            onClick={() => onOpenPreview(row.document)}
+          />
+        ),
+        enableSorting: false,
+        header: '',
+        id: 'printAction',
+        width: 54,
+      },
+      {
+        cell: (row) => (
+          <TaxFreeRowAction icon={<IconEye size={17} />} label={t('Деталі')} onClick={() => onOpenView(row.document)} />
+        ),
+        enableSorting: false,
+        header: '',
+        id: 'viewAction',
+        width: 54,
+      },
+    ],
+    [onOpenCarrier, onOpenPreview, onOpenStatus, onOpenView, t],
+  )
+}
+
+function useTaxFreeItemColumns() {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<TaxFreeItem>[]>(
+    () => [
+      {
+        cell: () => '',
+        header: '',
+        id: 'index',
+        width: 48,
+      },
+      {
+        accessor: (row) => getTaxFreeItemProduct(row)?.VendorCode,
+        header: t('Артикул'),
+        id: 'vendorCode',
+        width: 140,
+      },
+      {
+        accessor: (row) => getTaxFreeItemProduct(row)?.Name,
+        header: t('Товар'),
+        id: 'productName',
+        minWidth: 260,
+      },
+      {
+        accessor: (row) => row.Qty,
+        align: 'right',
+        cell: (row) => formatAmount(row.Qty),
+        header: t('Кількість'),
+        id: 'qty',
+        width: 120,
+      },
+      {
+        accessor: (row) => row.TotalNetWeight,
+        align: 'right',
+        cell: (row) => formatAmount(row.TotalNetWeight),
+        header: t('Вага'),
+        id: 'weight',
+        width: 100,
+      },
+      {
+        accessor: (row) => row.UnitPriceWithVat,
+        align: 'right',
+        cell: (row) => formatMoney(row.UnitPriceWithVat),
+        header: t('Ціна з ПДВ'),
+        id: 'unitPriceWithVat',
+        width: 130,
+      },
+      {
+        accessor: (row) => row.TotalWithVat,
+        align: 'right',
+        cell: (row) => formatMoney(row.TotalWithVat),
+        header: t('Разом EUR'),
+        id: 'totalWithVat',
+        width: 130,
+      },
+      {
+        accessor: (row) => row.VatAmountPl,
+        align: 'right',
+        cell: (row) => formatMoney(row.VatAmountPl),
+        header: t('ПДВ PLN'),
+        id: 'vatAmountPl',
+        width: 130,
+      },
+      {
+        accessor: (row) => row.TotalWithVatPl,
+        align: 'right',
+        cell: (row) => formatMoney(row.TotalWithVatPl),
+        header: t('Разом PLN'),
+        id: 'totalWithVatPl',
+        width: 130,
+      },
+    ],
+    [t],
+  )
+}
+
+function TaxFreeDocumentDrawer({
+  carrierOptions,
+  document,
+  isSaving,
+  itemColumns,
+  onCarrierSearch,
+  onClose,
+  onPreview,
+  onSave,
+}: {
+  carrierOptions: { label: string; value: string }[]
+  document: TaxFreeDocument | null
+  isSaving: boolean
+  itemColumns: DataTableColumn<TaxFreeItem>[]
+  onCarrierSearch: (value: string) => void
+  onClose: () => void
+  onPreview: (document: TaxFreeDocument) => void
+  onSave: (document: TaxFreeDocument) => void
+}) {
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useValueState<'details' | 'status' | 'items'>('details')
+  const [customCode, setCustomCode] = useValueState('')
+  const [amountPayedStatham, setAmountPayedStatham] = useValueState('')
+  const [selectedCarrier, setSelectedCarrier] = useValueState<Statham | null>(null)
+  const [selectedPassportId, setSelectedPassportId] = useValueState('')
+  const [carrierError, setCarrierError] = useValueState<string | null>(null)
+  const [isLoadingCarrier, setLoadingCarrier] = useValueState(false)
+  const carrierNetId = selectedCarrier?.NetUid || ''
+  const drawerCarrierOptions = useMemo(() => mergeCarrierSelectOption(carrierOptions, selectedCarrier), [
+    carrierOptions,
+    selectedCarrier,
+  ])
+  const passportOptions = useMemo(() => buildPassportOptions(selectedCarrier?.StathamPassports), [selectedCarrier])
+
+  useEffect(() => {
+    setCustomCode(document?.CustomCode || '')
+    setAmountPayedStatham(typeof document?.AmountPayedStatham === 'number' ? String(document.AmountPayedStatham) : '')
+    setSelectedCarrier(document?.Statham || null)
+    setSelectedPassportId(String(document?.StathamPassportId || document?.StathamPassport?.Id || ''))
+    setCarrierError(null)
+  }, [document, setAmountPayedStatham, setCarrierError, setCustomCode, setSelectedCarrier, setSelectedPassportId])
+
+  useEffect(() => {
+    const activeDocument = document
+    const netId = activeDocument?.Statham?.NetUid
+
+    if (!activeDocument || !netId) {
+      return
+    }
+
+    let cancelled = false
+    const carrierDocument = activeDocument
+    const carrierNetId = netId
+
+    async function loadCarrier() {
+      setLoadingCarrier(true)
+      setCarrierError(null)
+
+      try {
+        const carrier = await getTaxFreeCarrier(carrierNetId)
+
+        if (!cancelled && carrier) {
+          setSelectedCarrier(carrier)
+          setSelectedPassportId(String(carrierDocument.StathamPassportId || carrierDocument.StathamPassport?.Id || carrier.StathamPassports?.[0]?.Id || ''))
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setCarrierError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити паспортні дані перевізника'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingCarrier(false)
+        }
+      }
+    }
+
+    void loadCarrier()
+
+    return () => {
+      cancelled = true
+    }
+  }, [document, setCarrierError, setLoadingCarrier, setSelectedCarrier, setSelectedPassportId, t])
+
+  async function handleCarrierChange(netId: string | null) {
+    if (!netId) {
+      setSelectedCarrier(null)
+      setSelectedPassportId('')
+      return
+    }
+
+    setLoadingCarrier(true)
+    setCarrierError(null)
+
+    try {
+      const carrier = await getTaxFreeCarrier(netId)
+
+      setSelectedCarrier(carrier)
+      setSelectedPassportId(String(carrier?.StathamPassports?.[0]?.Id || ''))
+    } catch (loadError) {
+      setCarrierError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити перевізника'))
+    } finally {
+      setLoadingCarrier(false)
+    }
+  }
+
+  function handleSave() {
+    if (!document) {
+      return
+    }
+
+    const selectedPassport = selectedCarrier?.StathamPassports?.find((passport) => String(passport.Id) === selectedPassportId) || null
+    const parsedAmount = Number(amountPayedStatham)
+
+    onSave({
+      ...document,
+      AmountPayedStatham: Number.isFinite(parsedAmount) ? parsedAmount : document.AmountPayedStatham,
+      CustomCode: customCode.trim(),
+      Statham: selectedCarrier,
+      StathamPassport: selectedPassport,
+      StathamPassportId: selectedPassport?.Id || undefined,
+    })
+  }
+
+  return (
+    <Drawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={getDrawerTitle(document, t)} onClose={onClose}>
+      {document && (
+        <div>
+          <div className="pill-tabs" style={{ width: 'fit-content' }}>
+            {([
+              { value: 'details', label: t('Деталі') },
+              { value: 'status', label: t('Статуси') },
+              { value: 'items', label: t('Товари') },
+            ] as const).map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+                aria-pressed={activeTab === tab.value}
+                onClick={() => setActiveTab(tab.value)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'details' && (
+          <Box pt="md">
+            <Stack gap="md">
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                <ReadOnlyField label={t('Статус')} value={getTaxFreeStatusLabel(document.TaxFreeStatus)} />
+                <ReadOnlyField label={t('Дата підбиття')} value={formatDateTime(document.DateOfTabulation)} />
+                <ReadOnlyField label={t('Пакувальний лист')} value={document.TaxFreePackList?.Number} />
+                <ReadOnlyField label={t('Відповідальний')} value={getTaxFreeResponsible(document)} />
+                <TextInput label={t('Код')} value={customCode} onChange={(event) => setCustomCode(event.currentTarget.value)} />
+                <TextInput
+                  label={t('Сума відправлення')}
+                  type="number"
+                  value={amountPayedStatham}
+                  onChange={(event) => setAmountPayedStatham(event.currentTarget.value)}
+                />
+                <Select
+                  clearable
+                  data={drawerCarrierOptions}
+                  label={t('Перевізник')}
+                  loading={isLoadingCarrier}
+                  searchable
+                  value={carrierNetId}
+                  onChange={handleCarrierChange}
+                  onSearchChange={onCarrierSearch}
+                />
+                <Select
+                  clearable
+                  data={passportOptions}
+                  disabled={!passportOptions.length}
+                  label={t('Паспорт перевізника')}
+                  value={selectedPassportId}
+                  onChange={(value) => setSelectedPassportId(value || '')}
+                />
+              </SimpleGrid>
+
+              {carrierError && (
+                <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+                  {carrierError}
+                </Alert>
+              )}
+
+              <Divider />
+
+              <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+                <ReadOnlyField label={t('Клієнт')} value={getTaxFreeClient(document)} />
+                <ReadOnlyField label={t('Сума EUR')} value={formatMoney(document.TotalWithVat)} />
+                <ReadOnlyField label={t('Сума PLN')} value={formatMoney(document.TotalWithVatPl)} />
+                <ReadOnlyField label={t('ПДВ PLN')} value={formatMoney(document.VatAmountPl)} />
+                <ReadOnlyField label={t('Вага')} value={formatAmount(document.TotalNetWeight)} />
+                <ReadOnlyField label={t('Ставка ПДВ')} value={document.VatPercent ? `${document.VatPercent}%` : ''} />
+              </SimpleGrid>
+
+              <Group justify="flex-end">
+                <Button color="gray" variant="light" onClick={onClose}>
+                  {t('Скасувати')}
+                </Button>
+                <Button
+                  color="gray"
+                  disabled={document.TaxFreeStatus !== TaxFreeStatus.Formed}
+                  leftSection={<IconPrinter size={17} />}
+                  variant="light"
+                  onClick={() => onPreview(document)}
+                >
+                  {t('Друк')}
+                </Button>
+                <Button loading={isSaving} onClick={handleSave}>
+                  {t('Зберегти')}
+                </Button>
+              </Group>
+            </Stack>
+          </Box>
+          )}
+
+          {activeTab === 'status' && (
+          <Box pt="md">
+            <TaxFreeStatusPanel document={document} isSaving={isSaving} onSave={onSave} />
+          </Box>
+          )}
+
+          {activeTab === 'items' && (
+          <Box pt="md">
+            <DataTable
+              columns={itemColumns}
+              data={document.TaxFreeItems || []}
+              defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Товарів не знайдено')}
+              getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+              layoutVersion="tax-free-items-table-1"
+              maxHeight="calc(100vh - 260px)"
+              minWidth={1120}
+              tableId="tax-free-document-items"
+            />
+          </Box>
+          )}
+        </div>
+      )}
+    </Drawer>
+  )
+}
+
+function TaxFreeStatusPanel({
+  document,
+  isSaving,
+  onSave,
+}: {
+  document: TaxFreeDocument
+  isSaving: boolean
+  onSave: (document: TaxFreeDocument) => void
+}) {
+  const { t } = useI18n()
+  const [dateValue, setDateValue] = useValueState(toDateTimeInputValue(new Date()))
+  const nextStatus = getNextStatus(document.TaxFreeStatus)
+  const nextStatusField = getStatusDateField(nextStatus)
+
+  function handleSave() {
+    onSave({
+      ...document,
+      TaxFreeStatus: nextStatus,
+      [nextStatusField]: new Date(dateValue).toISOString(),
+    })
+  }
+
+  return (
+    <Stack gap="md">
+      <Card withBorder radius="sm" padding="md">
+        <Stack gap="sm">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <ReadOnlyField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
+            <TextInput
+              label={t('Дата')}
+              type="datetime-local"
+              value={dateValue}
+              onChange={(event) => setDateValue(event.currentTarget.value)}
+            />
+          </SimpleGrid>
+          <Group justify="flex-end">
+            <Button loading={isSaving} onClick={handleSave}>
+              {t('Зберегти статус')}
+            </Button>
+          </Group>
+        </Stack>
+      </Card>
+
+      <Stack gap="xs">
+        {getStatusTimeline(document).map((item) => (
+          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'blue.0' : 'gray.0'} style={{ borderRadius: 6 }}>
+            <Text fw={item.active ? 700 : 500}>{getTaxFreeStatusLabel(item.status)}</Text>
+            <Text size="sm" c="dimmed">
+              {formatDateTime(item.date) || '---'}
+            </Text>
+          </Group>
+        ))}
+      </Stack>
+    </Stack>
+  )
+}
+
+function TaxFreePrintPreviewModal({
+  document,
+  isPrinting,
+  onClose,
+  onPrint,
+}: {
+  document: TaxFreeDocument | null
+  isPrinting: boolean
+  onClose: () => void
+  onPrint: (document: TaxFreeDocument) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Modal centered opened={Boolean(document)} size="lg" title={`${t('Попередній перегляд')} ${document?.Number || ''}`} onClose={onClose}>
+      {document && (
+        <Stack gap="md">
+          <Group justify="space-between">
+            <Text fw={600}>{t('Ставка ПДВ')} 23%</Text>
+            <Badge color={getStatusColor(document.TaxFreeStatus)} variant="light">
+              {getTaxFreeStatusLabel(document.TaxFreeStatus)}
+            </Badge>
+          </Group>
+
+          <Table.ScrollContainer minWidth={620} mah={420}>
+            <Table striped highlightOnHover withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('Назва')}</Table.Th>
+                  <Table.Th ta="right">{t('Кількість')}</Table.Th>
+                  <Table.Th ta="right">{t('Ціна')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {(document.TaxFreeItems || []).map((item, index) => (
+                  <Table.Tr key={item.NetUid || item.Id || index}>
+                    <Table.Td>{getTaxFreeItemProduct(item)?.NamePL || getTaxFreeItemProduct(item)?.Name || ''}</Table.Td>
+                    <Table.Td ta="right">{formatAmount(item.Qty)}</Table.Td>
+                    <Table.Td ta="right">{formatMoney(item.UnitPriceWithVat)}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button leftSection={<IconPrinter size={17} />} loading={isPrinting} onClick={() => onPrint(document)}>
+              {t('Друк')}
+            </Button>
+          </Group>
+        </Stack>
+      )}
+    </Modal>
+  )
+}
+
+function TaxFreeRowAction({
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled?: boolean
+  icon: ReactNode
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <Tooltip label={label}>
+      <ActionIcon
+        aria-label={label}
+        color="gray"
+        disabled={disabled}
+        size={30}
+        variant="subtle"
+        onClick={(event) => {
+          event.stopPropagation()
+          onClick()
+        }}
+      >
+        {icon}
+      </ActionIcon>
+    </Tooltip>
+  )
+}
+
+function ReadOnlyField({ label, value }: { label: string; value?: ReactNode }) {
+  return (
+    <Stack gap={3}>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
+      <Text size="sm">{value || '---'}</Text>
+    </Stack>
+  )
+}
+
+function mapTaxFreeDocumentRow(document: TaxFreeDocument): TaxFreeDocumentRow {
+  return {
+    carrier: getPersonName(document.Statham),
+    client: getTaxFreeClient(document),
+    document,
+    packListNumber: document.TaxFreePackList?.Number,
+    responsible: getTaxFreeResponsible(document),
+    status: getTaxFreeStatusLabel(document.TaxFreeStatus),
+  }
+}
+
+function getDefaultFilters(): StoredFilters {
+  const to = new Date()
+  const from = new Date()
+  from.setDate(from.getDate() - 7)
+
+  return {
+    carrierNetId: '',
+    from: formatLocalDate(from),
+    status: 'all',
+    to: formatLocalDate(to),
+    value: '',
+  }
+}
+
+function readStoredFilters(): StoredFilters {
+  const defaults = getDefaultFilters()
+
+  try {
+    const parsedFilters = JSON.parse(window.localStorage.getItem(FILTER_STORAGE_KEY) || 'null') as Partial<StoredFilters> | null
+
+    return {
+      carrierNetId: parsedFilters?.carrierNetId || defaults.carrierNetId,
+      from: parsedFilters?.from || defaults.from,
+      status: parsedFilters?.status || defaults.status,
+      to: parsedFilters?.to || defaults.to,
+      value: parsedFilters?.value || defaults.value,
+    }
+  } catch {
+    return defaults
+  }
+}
+
+function writeStoredFilters(filters: StoredFilters) {
+  window.localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters))
+}
+
+function getFilterError(from: string, to: string) {
+  if (!from || !to) {
+    return 'Оберіть початкову та кінцеву дату'
+  }
+
+  if (from > to) {
+    return 'Початкова дата має бути не пізніше кінцевої'
+  }
+
+  return null
+}
+
+function buildCarrierOptions(carriers: Statham[], selectedCarrierNetId: string) {
+  const options = carriers
+    .filter((carrier) => carrier.NetUid)
+    .map((carrier) => ({
+      label: getPersonName(carrier) || carrier.NetUid || '',
+      value: carrier.NetUid || '',
+    }))
+
+  if (selectedCarrierNetId && !options.some((option) => option.value === selectedCarrierNetId)) {
+    options.push({
+      label: selectedCarrierNetId,
+      value: selectedCarrierNetId,
+    })
+  }
+
+  return options
+}
+
+function mergeCarrierSelectOption(options: { label: string; value: string }[], carrier?: Statham | null) {
+  if (!carrier?.NetUid || options.some((option) => option.value === carrier.NetUid)) {
+    return options
+  }
+
+  return [
+    ...options,
+    {
+      label: getPersonName(carrier) || carrier.NetUid,
+      value: carrier.NetUid,
+    },
+  ]
+}
+
+function buildPassportOptions(passports?: StathamPassport[]) {
+  return (passports || [])
+    .filter((passport) => passport.Id)
+    .map((passport) => ({
+      label: [passport.PassportSeria, passport.PassportNumber].filter(Boolean).join(' ') || String(passport.Id),
+      value: String(passport.Id),
+    }))
+}
+
+function mergeCarriers(currentCarriers: Statham[], nextCarriers: Statham[]) {
+  const carriersById = new Map<string, Statham>()
+
+  currentCarriers.forEach((carrier) => {
+    if (carrier.NetUid) {
+      carriersById.set(carrier.NetUid, carrier)
+    }
+  })
+  nextCarriers.forEach((carrier) => {
+    if (carrier.NetUid) {
+      carriersById.set(carrier.NetUid, carrier)
+    }
+  })
+
+  return [...carriersById.values()]
+}
+
+function getStatusColor(status?: TaxFreeStatus) {
+  switch (status) {
+    case TaxFreeStatus.Closed:
+      return 'green'
+    case TaxFreeStatus.Returned:
+      return 'orange'
+    case TaxFreeStatus.Tabulated:
+      return 'blue'
+    case TaxFreeStatus.Printed:
+      return 'cyan'
+    case TaxFreeStatus.Formed:
+      return 'violet'
+    case TaxFreeStatus.NotFormed:
+      return 'gray'
+    default:
+      return 'gray'
+  }
+}
+
+function getNextStatus(status?: TaxFreeStatus): TaxFreeStatus {
+  const currentStatus = typeof status === 'number' ? status : TaxFreeStatus.NotFormed
+  const nextStatus = currentStatus + 1
+
+  return isTaxFreeStatus(nextStatus) ? nextStatus : TaxFreeStatus.Closed
+}
+
+function isTaxFreeStatus(status: number): status is TaxFreeStatus {
+  return Object.values(TaxFreeStatus).includes(status as TaxFreeStatus)
+}
+
+function getStatusDateField(status: TaxFreeStatus): TaxFreeStatusDateField {
+  switch (status) {
+    case TaxFreeStatus.Formed:
+      return 'DateOfIssue'
+    case TaxFreeStatus.Printed:
+      return 'DateOfPrint'
+    case TaxFreeStatus.Tabulated:
+      return 'DateOfTabulation'
+    case TaxFreeStatus.Returned:
+      return 'ReturnedDate'
+    case TaxFreeStatus.Closed:
+      return 'ClosedDate'
+    case TaxFreeStatus.NotFormed:
+    default:
+      return 'FormedDate'
+  }
+}
+
+function getStatusTimeline(document: TaxFreeDocument) {
+  const statuses = [
+    TaxFreeStatus.Formed,
+    TaxFreeStatus.Printed,
+    TaxFreeStatus.Tabulated,
+    TaxFreeStatus.Returned,
+    TaxFreeStatus.Closed,
+  ]
+
+  return statuses.map((status) => ({
+    active: document.TaxFreeStatus === status,
+    date: document[getStatusDateField(status)],
+    status,
+  }))
+}
+
+function getDocumentKey(document: TaxFreeDocument) {
+  return document.NetUid || document.Id || document.Number
+}
+
+function getDrawerTitle(document: TaxFreeDocument | null, t: (key: string) => string) {
+  if (!document) {
+    return t('Tax Free')
+  }
+
+  return `${t('Tax Free')}: ${document.Number || ''}`
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date)
+}
+
+function formatAmount(value?: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? amountFormatter.format(value) : ''
+}
+
+function formatMoney(value?: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : ''
+}
+
+function toDateTimeInputValue(date: Date) {
+  const offset = date.getTimezoneOffset()
+  const localDate = new Date(date.getTime() - offset * 60 * 1000)
+
+  return localDate.toISOString().slice(0, 16)
+}
