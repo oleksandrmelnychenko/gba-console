@@ -22,6 +22,8 @@ import type {
   Manager,
   PackingMarking,
   PackingMarkingPayment,
+  Region,
+  RegionCode,
 } from '../types'
 
 export {
@@ -51,6 +53,62 @@ export async function getPackingMarkings(): Promise<PackingMarking[]> {
 
 export async function getPackingMarkingPayments(): Promise<PackingMarkingPayment[]> {
   return getLookupList<PackingMarkingPayment>('/packings/markings/payments/all')
+}
+
+export async function getAllRegions(): Promise<Region[]> {
+  return getLookupList<Region>('/regions/all')
+}
+
+export async function getAvailableRegionCode(region: Region): Promise<RegionCode | null> {
+  const result = await apiRequest<unknown>('/regions/codes/get/available', {
+    method: 'POST',
+    body: region,
+  })
+
+  if (result && typeof result === 'object') {
+    return result as RegionCode
+  }
+
+  return null
+}
+
+export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | null> {
+  const result = await apiRequest<unknown>('/incoterms/new', {
+    method: 'POST',
+    body: incoterm,
+  })
+
+  if (result && typeof result === 'object') {
+    return result as Incoterm
+  }
+
+  return null
+}
+
+export async function createCountry(country: Country): Promise<Country | null> {
+  const result = await apiRequest<unknown>('/countries/new', {
+    method: 'POST',
+    body: country,
+  })
+
+  if (result && typeof result === 'object') {
+    return result as Country
+  }
+
+  return null
+}
+
+export async function createRegion(region: Region): Promise<Region | null> {
+  const result = await apiRequest<unknown>('/regions/new', {
+    method: 'POST',
+    body: region,
+  })
+
+  if (result && typeof result === 'object') {
+    return result as Region
+  }
+
+  return null
 }
 
 export async function getSaleManagers(): Promise<Manager[]> {
