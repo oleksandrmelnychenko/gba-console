@@ -334,7 +334,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <Select
               searchable
               allowDeselect={false}

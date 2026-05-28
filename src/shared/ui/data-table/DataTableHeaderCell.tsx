@@ -71,6 +71,7 @@ export function DataTableHeaderCell<TData>({
   return (
     <Table.Th
       ref={setNodeRef}
+      ta="left"
       className={`data-table-th ${isDragging ? 'is-dragging' : ''}`}
       style={{
         ...pinnedStyle,

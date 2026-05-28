@@ -165,7 +165,7 @@ export function OnlineShopClientsPage() {
       >
         <Card withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
                 label={t('Пошук')}

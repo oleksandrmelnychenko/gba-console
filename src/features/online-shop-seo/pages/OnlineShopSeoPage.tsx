@@ -1698,7 +1698,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               value={contactFormValues.Name}
               onChange={(event) => setContactField('Name', event.currentTarget.value)}
             />
-            <Group align="end" gap="sm" wrap="nowrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <Avatar color="blue" name={contactFormValues.Name || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
                 {getContactInitials({ Name: contactFormValues.Name })}
               </Avatar>

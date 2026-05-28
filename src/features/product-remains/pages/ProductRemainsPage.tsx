@@ -637,7 +637,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <Select
               searchable
               allowDeselect={false}
@@ -765,7 +765,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             {activeTab === 'products' && (
               <Box pt="md">
               <Stack gap="md">
-                <Group align="end" gap="sm" wrap="wrap">
+                <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
                   <TextInput
                     leftSection={<IconSearch size={16} />}
                     label={t('Пошук товару')}
@@ -1398,7 +1398,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
         <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
         <DetailItem label="Склад" value={displayValue(row.StorageName)} />
       </SimpleGrid>
-      <Group align="end" gap="sm" wrap="wrap">
+      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput
           label={t('З')}
           type="date"

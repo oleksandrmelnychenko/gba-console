@@ -370,7 +370,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <form onSubmit={submitFilters}>
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 label={t('З')}
                 type="date"

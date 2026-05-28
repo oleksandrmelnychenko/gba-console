@@ -272,7 +272,7 @@ export function OrganisationServicesPage() {
       <Card withBorder radius="md" padding="md">
         <form onSubmit={submitSearch}>
           <Stack gap="md">
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <OrganisationSearchControl
                 isLoading={isSearchingOrganizations}
                 organizations={organizationSuggestions}
@@ -318,7 +318,7 @@ export function OrganisationServicesPage() {
               </Tooltip>
             </Group>
 
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <MultiSelect
                 data={availableServiceOptions}
                 disabled={!selectedOrganization}

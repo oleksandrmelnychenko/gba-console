@@ -569,7 +569,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <TextInput
             label={t('З')}
             max={filterDraft.to || undefined}

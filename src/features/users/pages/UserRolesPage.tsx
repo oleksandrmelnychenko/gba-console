@@ -189,7 +189,7 @@ export function UserRolesPage() {
       <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
                 label={t('Пошук')}

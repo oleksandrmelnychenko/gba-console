@@ -118,7 +118,7 @@ export function ReportsSalePage() {
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <Button component="label" leftSection={<IconUpload size={16} />} loading={isLoading}>
               {t('Завантажити файл')}
               <input
@@ -142,7 +142,7 @@ export function ReportsSalePage() {
             </Tooltip>
           </Group>
 
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               leftSection={<IconSearch size={16} />}
               label={t('Пошук')}

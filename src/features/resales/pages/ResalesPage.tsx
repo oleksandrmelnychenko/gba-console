@@ -361,7 +361,7 @@ export function ResalesPage() {
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               label={t('Від')}
               type="date"
@@ -879,7 +879,7 @@ export function NewResalePage() {
                 onChange={(value) => setForm((currentForm) => ({ ...currentForm, specificationCodes: value }))}
               />
             </SimpleGrid>
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
                 label={t('Пошук товару')}
@@ -905,7 +905,7 @@ export function NewResalePage() {
                 {t('Скинути')}
               </Button>
             </Group>
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <Select
                 searchable
                 data={generateStorageOptions}

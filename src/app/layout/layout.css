@@ -6,10 +6,41 @@
   background: #ffffff;
   min-height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 8px);
   margin: 8px 0 0 8px;
+  padding: 18px 20px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
   overflow-x: hidden;
   box-shadow: 0 1px 3px rgba(57, 73, 76, 0.06);
+}
+
+.console-frame .mantine-Card-root {
+  border: 0;
+  box-shadow: none;
+}
+
+.console-frame .data-table-scroll {
+  border: 0;
+}
+
+.console-frame .mantine-Table-table {
+  border: 0 !important;
+}
+
+.console-frame .mantine-Table-th {
+  text-align: left !important;
+}
+
+.clients-filter-row {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 1px;
+  scrollbar-width: thin;
+}
+
+.clients-filter-row .mantine-ActionIcon-root,
+.clients-filter-row .mantine-Button-root {
+  flex: 0 0 auto;
 }
 
 .console-sidebar .mantine-ScrollArea-viewport {

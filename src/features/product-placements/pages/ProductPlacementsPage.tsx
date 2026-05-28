@@ -557,7 +557,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <MultiSelect
               searchable
               data={storageOptions}

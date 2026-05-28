@@ -13,6 +13,7 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 
 ### Product detail
 
+- `/products` now uses an inline legacy-style "Весь асортимент" carousel flow: vertical product drum, search/selection modes, selected mini-card, same-screen full product card, and visible action buttons. The table view and route jump on carousel selection were removed from this screen.
 - Invalid `?panel=` values are now sanitized instead of leaving the page in an impossible panel state.
 - Reservation API errors are visible in stock summary instead of silently looking like "no reserves".
 - Product save/image upload success without response body now reloads the product card, so the UI does not stay stale.
@@ -63,7 +64,9 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 These are not fixed in this pass because the user paused new migration and requested verification of already moved behavior first.
 
 - Product storage placement edit/bulk preview from the legacy `TotalQtyGroupView` is not migrated yet.
-- Product detail legacy tabs such as original numbers, analogues, accessories, income, and outcome are not migrated yet.
+- Product detail legacy tabs are now visible inline on `/products`, but original-number edit state, analogue/accessory CRUD, and exact income/outcome export/load behavior still need legacy-level parity.
+- Product image thumbnail/zoom flow is still not a full match for the old image viewer.
+- Product action permission gates are still not a full match for the old `PermissionCheck` behavior.
 - `/products/income/ukraine` is still placeholder-level and does not load the full old flow.
 - Product storages bulk action preview is deferred.
 - Product capitalizations create/import flows are deferred.
@@ -78,6 +81,9 @@ These are not fixed in this pass because the user paused new migration and reque
 
 ## Validation Performed
 
-- Targeted ESLint on all changed React/TypeScript files: passed.
-- `npx react-doctor@latest --verbose --diff`: passed with no error-level findings. Full scan still reports pre-existing warnings outside this focused state pass.
-- Build/TypeScript compile/dev server: intentionally not run, per user instruction.
+- Targeted ESLint on changed product React/TypeScript files: passed.
+- `npx tsc -b --pretty false`: passed.
+- `npm run build`: passed.
+- `npm run lint`: passed.
+- `npm test`: passed, 6 files / 34 tests.
+- `npx react-doctor@latest --verbose --diff`: passed with no error-level findings. Score API was unreachable; remaining warnings are architecture/style warnings, including pre-existing files and two low-risk warnings in `ProductsPage` (`no-giant-component`, `no-many-boolean-props`).

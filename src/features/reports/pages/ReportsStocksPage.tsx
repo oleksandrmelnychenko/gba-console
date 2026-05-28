@@ -218,7 +218,7 @@ export function ReportsStocksPage() {
       <Card withBorder radius="md" padding="md">
         <form onSubmit={submitReport}>
           <Stack gap="md">
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput label={t('З')} type="date" value={from} onChange={(event) => setFrom(event.currentTarget.value)} />
               <TextInput label={t('По')} type="date" value={to} onChange={(event) => setTo(event.currentTarget.value)} />
               <Tooltip label={t('Сформувати')}>
@@ -372,7 +372,7 @@ export function ReportsStocksPage() {
 
             <Divider />
 
-            <Group align="end" gap="sm" wrap="wrap">
+            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 label={t('Шаблон')}
                 placeholder={t('Назва шаблону')}

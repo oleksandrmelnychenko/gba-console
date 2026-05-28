@@ -87,7 +87,7 @@ import {
   getProductTitle,
 } from '../utils'
 
-type ProductDetailPanel = 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
+export type ProductDetailPanel = 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
 type ProductWriteOffRuleScope = 'group' | 'product'
 
 type ProductEditForm = {
@@ -473,7 +473,7 @@ function ProductActionToolbar({ openPanel }: { openPanel: (panel: ProductDetailP
   )
 }
 
-function ProductStockSummary({
+export function ProductStockSummary({
   product,
   reservation,
   reservationError,
@@ -564,7 +564,7 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
   )
 }
 
-function ProductActionDrawer({
+export function ProductActionDrawer({
   activePanel,
   onClose,
   onProductSaved,
@@ -1002,7 +1002,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
 
   return (
     <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap">
+      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => { setPage(1); setDateFrom(event.currentTarget.value) }} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => { setPage(1); setDateTo(event.currentTarget.value) }} />
         <Select label={t('Розмір сторінки')} data={pageSizeOptions} value={String(pageSize)} w={140} onChange={(value) => { setPage(1); setPageSize(Number(value || 20)) }} />
@@ -1113,7 +1113,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
 
   return (
     <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap">
+      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
@@ -1387,7 +1387,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
 
   return (
     <Stack gap="md">
-      <Group align="end" gap="sm" wrap="wrap">
+      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
         <SegmentedControl
           data={writeOffScopeOptions.map((option) => ({ ...option, label: t(option.label) }))}
           value={scope}

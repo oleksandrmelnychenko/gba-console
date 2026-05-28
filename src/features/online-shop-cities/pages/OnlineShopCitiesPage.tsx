@@ -302,7 +302,7 @@ function OnlineShopCitiesTableCard({
           </Tooltip>
         </Group>
 
-        <Group align="end" gap="sm" wrap="nowrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}

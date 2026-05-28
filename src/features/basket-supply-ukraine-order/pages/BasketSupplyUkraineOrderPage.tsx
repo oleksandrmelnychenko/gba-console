@@ -1122,7 +1122,7 @@ function SalesWorkflowTab() {
 
       <Card withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               label={t('З')}
               type="date"

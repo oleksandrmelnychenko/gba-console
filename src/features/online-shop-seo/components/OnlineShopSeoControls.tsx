@@ -42,7 +42,7 @@ export function SearchToolbar({ action, placeholder, value, onChange, onReset }:
   const { t } = useI18n()
 
   return (
-    <Group align="end" gap="sm" wrap="nowrap">
+    <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
       <TextInput
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
