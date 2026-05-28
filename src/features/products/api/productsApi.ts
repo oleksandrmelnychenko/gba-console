@@ -2,39 +2,69 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   Product,
   ProductConsignmentRemaining,
+  ProductFileUploadConfiguration,
   ProductGroup,
+  ProductIncomeMovement,
+  ProductIncomeOutcomeMovementParams,
   ProductMovement,
+  ProductMovementExportDocument,
   ProductMovementsParams,
+  ProductOutcomeMovement,
+  ProductOriginalNumber,
+  ProductPlacement,
+  ProductRelatedUploadType,
   ProductReservation,
   ProductSearchParams,
   ProductStorageLocationHistory,
   ProductStorageLocationHistoryParams,
+  ProductUploadDocumentPayload,
   ProductWriteOffRule,
   ProductWriteOffRulePayload,
+  Pricing,
 } from '../types'
 import { getEmptyGuid } from '../utils'
 
 export async function getProducts(params: ProductSearchParams): Promise<Product[]> {
   const value = params.value?.trim() || ''
-  const result = value
-    ? await apiRequest<unknown>('/products/search/advanced', {
-        query: {
-          limit: params.limit,
-          mode: params.searchMode,
-          netId: getEmptyGuid(),
-          offset: params.offset,
-          sortMode: params.sortMode,
-          value,
-        },
-      })
-    : await apiRequest<unknown>('/products/all/limited', {
-        query: {
-          limit: params.limit,
-          offset: params.offset,
-        },
-      })
+  const result = await apiRequest<unknown>('/products/search/advanced', {
+    query: {
+      limit: params.limit,
+      mode: params.searchMode,
+      netId: getEmptyGuid(),
+      offset: params.offset,
+      sortMode: params.sortMode,
+      value,
+    },
+  })
 
   return normalizeProducts(result).map(ensureProduct)
+}
+
+export async function getProductUploadPricings(): Promise<Pricing[]> {
+  const result = await apiRequest<unknown>('/pricings/all', {
+    errorMessages: {
+      default: 'Не вдалося завантажити типи цін',
+      network: 'Сервер типів цін недоступний',
+    },
+  })
+
+  return (normalizeArray(result) as Pricing[]).filter((pricing) => !pricing.BasePricingId)
+}
+
+export async function uploadProductsFromFile(configuration: ProductFileUploadConfiguration, files: File[]): Promise<void> {
+  const formData = new FormData()
+
+  files.forEach((file) => formData.append('file', file))
+  formData.append('configuration', JSON.stringify(configuration))
+
+  await apiRequest<unknown>('/products/upload/file', {
+    method: 'POST',
+    body: formData,
+    errorMessages: {
+      default: 'Не вдалося завантажити файл товарів',
+      network: 'Сервер завантаження товарів недоступний',
+    },
+  })
 }
 
 export async function getProductByNetId(netId: string): Promise<Product | null> {
@@ -147,6 +177,78 @@ export async function getProductMovements(params: ProductMovementsParams): Promi
   return normalizeArray(result) as ProductMovement[]
 }
 
+export async function getProductIncomeMovements(
+  params: ProductIncomeOutcomeMovementParams,
+): Promise<ProductIncomeMovement[]> {
+  const result = await apiRequest<unknown>('/consignments/info/income/filtered', {
+    query: {
+      from: params.from,
+      productNetId: params.productNetId,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити прихід товару',
+      network: 'Сервер приходу недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductIncomeMovement[]
+}
+
+export async function getProductOutcomeMovements(
+  params: ProductIncomeOutcomeMovementParams,
+): Promise<ProductOutcomeMovement[]> {
+  const result = await apiRequest<unknown>('/consignments/info/outcome/filtered', {
+    query: {
+      from: params.from,
+      productNetId: params.productNetId,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити вихід товару',
+      network: 'Сервер виходу недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductOutcomeMovement[]
+}
+
+export async function exportProductIncomeMovementsDocument(
+  params: ProductIncomeOutcomeMovementParams,
+): Promise<ProductMovementExportDocument> {
+  const result = await apiRequest<unknown>('/consignments/info/income/document/export', {
+    query: {
+      from: params.from,
+      productNetId: params.productNetId,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося сформувати документ приходу',
+      network: 'Сервер експорту приходу недоступний',
+    },
+  })
+
+  return normalizeExportDocument(result)
+}
+
+export async function exportProductOutcomeMovementsDocument(
+  params: ProductIncomeOutcomeMovementParams,
+): Promise<ProductMovementExportDocument> {
+  const result = await apiRequest<unknown>('/consignments/info/outcome/document/export', {
+    query: {
+      from: params.from,
+      productNetId: params.productNetId,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося сформувати документ виходу',
+      network: 'Сервер експорту виходу недоступний',
+    },
+  })
+
+  return normalizeExportDocument(result)
+}
+
 export async function getProductWriteOffRulesByProductNetId(netId: string): Promise<ProductWriteOffRule[]> {
   const result = await apiRequest<unknown>('/products/writeoff/rules/all/product', {
     query: {
@@ -219,6 +321,149 @@ export async function deleteProductWriteOffRule(netUid: string): Promise<void> {
   })
 }
 
+export async function updateProductPlacements(placements: ProductPlacement[]): Promise<void> {
+  await apiRequest<unknown>('/products/placements/storage/update', {
+    method: 'POST',
+    body: placements,
+    errorMessages: {
+      default: 'Не вдалося зберегти місця зберігання',
+      network: 'Сервер місць зберігання недоступний',
+    },
+  })
+}
+
+export async function createProductOriginalNumber(
+  productNetId: string,
+  code: string,
+  isMain: boolean,
+): Promise<ProductOriginalNumber[]> {
+  const result = await apiRequest<unknown>('/originalnumbers/new', {
+    method: 'POST',
+    query: {
+      isMain,
+      productNetId,
+    },
+    body: {
+      MainNumber: code,
+      Number: code,
+    },
+    errorMessages: {
+      default: 'Не вдалося додати оригінальний номер',
+      network: 'Сервер оригінальних номерів недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductOriginalNumber[]
+}
+
+export async function updateProductOriginalNumber(
+  productNetId: string,
+  originalNumber: ProductOriginalNumber['OriginalNumber'],
+  isMain: boolean,
+): Promise<ProductOriginalNumber[]> {
+  const result = await apiRequest<unknown>('/originalnumbers/update', {
+    method: 'POST',
+    query: {
+      isMain,
+      productNetId,
+    },
+    body: originalNumber,
+    errorMessages: {
+      default: 'Не вдалося оновити оригінальний номер',
+      network: 'Сервер оригінальних номерів недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductOriginalNumber[]
+}
+
+export async function deleteProductOriginalNumber(
+  productNetId: string,
+  originalNumberNetId: string,
+): Promise<ProductOriginalNumber[]> {
+  const result = await apiRequest<unknown>('/originalnumbers/delete', {
+    method: 'DELETE',
+    query: {
+      netId: originalNumberNetId,
+      productNetId,
+    },
+    errorMessages: {
+      default: 'Не вдалося видалити оригінальний номер',
+      network: 'Сервер оригінальних номерів недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductOriginalNumber[]
+}
+
+export async function removeProductAnalogue({
+  analogueNetId,
+  baseProductNetId,
+  removeIndirectAnalogues,
+}: {
+  analogueNetId: string
+  baseProductNetId: string
+  removeIndirectAnalogues: boolean
+}): Promise<void> {
+  await apiRequest<unknown>('/products/remove/analogues', {
+    method: 'POST',
+    query: {
+      analogueNetId,
+      baseProductNetId,
+      removeIndirectAnalogues,
+    },
+    body: '',
+    errorMessages: {
+      default: 'Не вдалося видалити аналог',
+      network: 'Сервер аналогів недоступний',
+    },
+  })
+}
+
+export async function removeProductComponent({
+  baseProductNetId,
+  componentNetId,
+  isProductSet,
+}: {
+  baseProductNetId: string
+  componentNetId: string
+  isProductSet: boolean
+}): Promise<void> {
+  await apiRequest<unknown>('/products/remove/component', {
+    method: 'POST',
+    query: {
+      baseProductNetId,
+      componentNetId,
+      isProductSet,
+    },
+    body: '',
+    errorMessages: {
+      default: 'Не вдалося видалити комплектуючу',
+      network: 'Сервер комплектуючих недоступний',
+    },
+  })
+}
+
+export async function uploadProductRelatedDocument(
+  type: ProductRelatedUploadType,
+  payload: ProductUploadDocumentPayload,
+  file: File,
+): Promise<void> {
+  const formData = new FormData()
+
+  formData.append('productUploadDocument', JSON.stringify(payload))
+  formData.append('file', file)
+
+  await apiRequest<unknown>(getProductRelatedUploadEndpoint(type), {
+    method: 'POST',
+    body: formData,
+    errorMessages: {
+      default: 'Не вдалося завантажити файл товару',
+      network: 'Сервер завантаження товару недоступний',
+    },
+  })
+}
+
 function normalizeProduct(result: unknown): Product | null {
   if (result && typeof result === 'object') {
     return ensureProduct(result as Product)
@@ -275,6 +520,17 @@ function normalizeArray(result: unknown): unknown[] {
   return []
 }
 
+function getProductRelatedUploadEndpoint(type: ProductRelatedUploadType): string {
+  switch (type) {
+    case 'analogues':
+      return '/products/upload/analogues/file'
+    case 'components':
+      return '/products/upload/components/file'
+    case 'originalNumbers':
+      return '/products/upload/oems/file'
+  }
+}
+
 function normalizeReservation(result: unknown): ProductReservation {
   if (result && typeof result === 'object') {
     return result as ProductReservation
@@ -283,9 +539,23 @@ function normalizeReservation(result: unknown): ProductReservation {
   return {}
 }
 
+function normalizeExportDocument(result: unknown): ProductMovementExportDocument {
+  if (!result || typeof result !== 'object') {
+    return {}
+  }
+
+  const payload = result as Record<string, unknown>
+
+  return {
+    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
+    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+  }
+}
+
 function ensureProduct(product: Product): Product {
   return {
     ...product,
+    AnalogueProducts: Array.isArray(product.AnalogueProducts) ? product.AnalogueProducts : [],
     BaseAnalogueProducts: Array.isArray(product.BaseAnalogueProducts) ? product.BaseAnalogueProducts : [],
     BaseSetProducts: Array.isArray(product.BaseSetProducts) ? product.BaseSetProducts : [],
     CalculatedPrices: Array.isArray(product.CalculatedPrices) ? product.CalculatedPrices : [],

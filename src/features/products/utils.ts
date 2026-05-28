@@ -2,6 +2,7 @@ import type { Product, ProductImage, ProductOriginalNumber, ProductSearchMode, P
 import { translate } from '../../shared/i18n/translate'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+const PRODUCT_SHOP_IMAGE_BASE_URL = 'https://concord-shop.com/userdata/shop/product/'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
@@ -23,8 +24,8 @@ export const PRODUCT_SEARCH_MODE_OPTIONS: Array<{ label: string; value: ProductS
 
 export const PRODUCT_SORT_MODE_OPTIONS: Array<{ label: string; value: ProductSortMode }> = [
   { value: '2', label: 'Назва' },
-  { value: '1', label: 'Код виробника' },
   { value: '0', label: 'Top' },
+  { value: '1', label: 'Код виробника' },
 ]
 
 export function getEmptyGuid(): string {
@@ -73,24 +74,52 @@ export function getProductGroupNames(product?: Product | null): string {
 }
 
 export function getProductMainImage(product?: Product | null): ProductImage | null {
+  const shopImageUrl = getProductShopImageUrl(product)
+
   return (
     product?.ProductImages?.find((image) => image.IsMainImage && Boolean(image.ImageUrl))
     || product?.ProductImages?.find((image) => Boolean(image.ImageUrl))
     || (product?.Image ? { ImageUrl: product.Image } : null)
+    || (shopImageUrl ? { ImageUrl: shopImageUrl } : null)
   )
+}
+
+export function getProductShopImageUrl(product?: Product | null): string {
+  const vendorCode = product?.VendorCode?.trim()
+
+  return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''
 }
 
 export function getProductOriginalNumbers(product?: Product | null): ProductOriginalNumber[] {
   return product?.ProductOriginalNumbers?.filter((item) => Boolean(item.OriginalNumber)) || []
 }
 
+function normalizeProductShopImageCode(value: string): string {
+  return value.replace(/[.*/]/g, (match) => {
+    switch (match) {
+      case '.':
+        return '~'
+      case '/':
+        return '%23'
+      case '*':
+        return '_'
+      default:
+        return match
+    }
+  })
+}
+
 export function getProductAvailableQty(product?: Product | null): number {
-  const values = [
-    product?.AvailableQtyUk,
-    product?.AvailableQtyUkVAT,
-    product?.AvailableQtyUkReSale,
-    product?.AvailableQtyRoad,
-  ]
+  const values = product?.ProductAvailabilities?.map((availability) => availability.Amount) || []
+
+  if (values.length === 0) {
+    values.push(
+      product?.AvailableQtyUk,
+      product?.AvailableQtyUkVAT,
+      product?.AvailableQtyUkReSale,
+      product?.AvailableQtyRoad,
+    )
+  }
 
   return values.reduce<number>(
     (total, value) => total + (typeof value === 'number' && Number.isFinite(value) ? value : 0),

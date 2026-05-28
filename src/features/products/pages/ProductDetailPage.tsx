@@ -11,6 +11,7 @@ import {
   Image,
   Loader,
   NumberInput,
+  Popover,
   ScrollArea,
   Select,
   SegmentedControl,
@@ -25,6 +26,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from '../../../shared/ui/AppModal'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -47,6 +49,7 @@ import {
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   addOrUpdateProductWriteOffRule,
   deleteProductWriteOffRule,
@@ -60,14 +63,17 @@ import {
   getProductWriteOffRulesByProductNetId,
   updateProduct,
   updateProductWithImages,
+  updateProductPlacements,
 } from '../api/productsApi'
 import type {
   CalculatedProductPrice,
   Product,
+  ProductAvailability,
   ProductConsignmentRemaining,
   ProductGroup,
   ProductImage,
   ProductMovement,
+  ProductPlacement,
   ProductReservation,
   ProductSpecification,
   ProductStorageLocationHistory,
@@ -88,6 +94,13 @@ import {
 } from '../utils'
 
 export type ProductDetailPanel = 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
+
+export const PRODUCT_BALANCES_PERMISSION = 'Product_Entire_Assortment_BalancesOnParties_Btn_PKEY'
+export const PRODUCT_EDIT_PERMISSION = 'Product_Entire_Assortment_EditBtn_PKEY'
+const PRODUCT_IMAGE_ADD_PERMISSION = 'Product_Entire_Assortment_Picture_AddBtn_PKEY'
+const PRODUCT_IMAGE_DELETE_PERMISSION = 'Product_Entire_Assortment_Picture_DelBtn_PKEY'
+export const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
+export const PRODUCT_WRITE_OFF_PERMISSION = 'Product_Entire_Assortment_Product_WriteOff_Rule_Btn_PKEY'
 type ProductWriteOffRuleScope = 'group' | 'product'
 
 type ProductEditForm = {
@@ -104,6 +117,22 @@ type ProductEditForm = {
   Top: string
   Volume: string
   Weight: number | null
+}
+
+type SelectedProductImagePreview = {
+  file: File
+  url: string
+}
+
+type ProductPlacementGroup = {
+  count: number
+  key: string
+  label: string
+  qty: number
+}
+
+type ProductPlacementDraft = ProductPlacement & {
+  DraftKey: string
 }
 
 const panelValues = new Set<ProductDetailPanel>([
@@ -157,6 +186,7 @@ export function ProductDetailPage() {
   const [reservationError, setReservationError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const activePanel = useMemo(() => getPanelFromQuery(searchParams), [searchParams])
 
@@ -309,7 +339,19 @@ export function ProductDetailPage() {
             <Card withBorder radius="md" padding="md">
               <Stack gap="sm">
                 {mainImage?.ImageUrl ? (
-                  <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} radius="sm" fit="contain" h={220} />
+                  <button
+                    type="button"
+                    style={{
+                      background: 'transparent',
+                      border: 0,
+                      cursor: 'zoom-in',
+                      padding: 0,
+                      width: '100%',
+                    }}
+                    onClick={() => setPreviewImageUrl(mainImage.ImageUrl || null)}
+                  >
+                    <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} radius="sm" fit="contain" h={220} />
+                  </button>
                 ) : (
                   <Box
                     h={220}
@@ -351,7 +393,12 @@ export function ProductDetailPage() {
             </Card>
 
             <Card withBorder radius="md" padding="md">
-                <ProductStockSummary product={product} reservation={reservation} reservationError={reservationError} />
+                <ProductStockSummary
+                  product={product}
+                  reservation={reservation}
+                  reservationError={reservationError}
+                  onProductSaved={handleProductSaved}
+                />
             </Card>
           </SimpleGrid>
 
@@ -423,6 +470,11 @@ export function ProductDetailPage() {
             onProductSaved={handleProductSaved}
             onReload={() => reload()}
           />
+          <ProductImageViewerModal
+            imageUrl={previewImageUrl}
+            title={getProductTitle(product)}
+            onClose={() => setPreviewImageUrl(null)}
+          />
         </>
       )}
     </Stack>
@@ -449,35 +501,78 @@ function ProductActionToolbar({ openPanel }: { openPanel: (panel: ProductDetailP
           <IconPhoto size={18} />
         </ActionIcon>
       </Tooltip>
-      <Tooltip label={t('Залишки по партіям')}>
-        <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" onClick={() => openPanel('remains')}>
-          <IconPackage size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Редагувати')}>
-        <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" onClick={() => openPanel('edit')}>
-          <IconEdit size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Рух товару')}>
-        <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" onClick={() => openPanel('movement')}>
-          <IconArrowsExchange size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Правила списання')}>
-        <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" onClick={() => openPanel('writeoff')}>
-          <IconClipboardList size={18} />
-        </ActionIcon>
-      </Tooltip>
+      <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
+        <Tooltip label={t('Залишки по партіям')}>
+          <ActionIcon aria-label={t('Залишки по партіям')} color="gray" size={38} variant="light" onClick={() => openPanel('remains')}>
+            <IconPackage size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+        <Tooltip label={t('Редагувати')}>
+          <ActionIcon aria-label={t('Редагувати')} color="gray" size={38} variant="light" onClick={() => openPanel('edit')}>
+            <IconEdit size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
+        <Tooltip label={t('Рух товару')}>
+          <ActionIcon aria-label={t('Рух товару')} color="gray" size={38} variant="light" onClick={() => openPanel('movement')}>
+            <IconArrowsExchange size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
+        <Tooltip label={t('Правила списання')}>
+          <ActionIcon aria-label={t('Правила списання')} color="gray" size={38} variant="light" onClick={() => openPanel('writeoff')}>
+            <IconClipboardList size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
     </Group>
   )
 }
 
+export function ProductImageViewerModal({
+  imageUrl,
+  onClose,
+  title,
+}: {
+  imageUrl: string | null
+  onClose: () => void
+  title: string
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={Boolean(imageUrl)} size="min(1100px, 96vw)" title={displayValue(title)} onClose={onClose}>
+      {imageUrl ? (
+        <Box
+          style={{
+            alignItems: 'center',
+            display: 'flex',
+            justifyContent: 'center',
+            minHeight: 360,
+          }}
+        >
+          <Image src={imageUrl} alt={displayValue(title)} fit="contain" mah="calc(100vh - 220px)" w="100%" />
+        </Box>
+      ) : (
+        <Text c="dimmed" size="sm">
+          {t('Зображення недоступне')}
+        </Text>
+      )}
+    </AppModal>
+  )
+}
+
 export function ProductStockSummary({
+  onProductSaved,
   product,
   reservation,
   reservationError,
 }: {
+  onProductSaved?: (product: Product | null) => void
   product: Product
   reservation: ProductReservation
   reservationError: string | null
@@ -513,32 +608,295 @@ export function ProductStockSummary({
           <Divider my={4} />
           <Stack gap={6}>
             {availabilityItems.map((availability, index) => (
-              <Group
+              <ProductAvailabilityPlacementRow
+                availability={availability}
                 key={`${availability.StorageId || availability.Storage?.Name || index}`}
-                justify="space-between"
-                gap="sm"
-                wrap="nowrap"
-                style={{
-                  border: '1px solid var(--mantine-color-gray-2)',
-                  borderRadius: 6,
-                  padding: '6px 8px',
-                }}
-              >
-                <Box style={{ minWidth: 0 }}>
-                  <Text size="sm" fw={600} lineClamp={1}>
-                    {displayValue(availability.Storage?.Name)}
-                  </Text>
-                  <Text size="xs" c="dimmed" lineClamp={1}>
-                    {displayValue(availability.Storage?.Organization?.Name)}
-                  </Text>
-                </Box>
-                <Text size="sm" fw={700}>
-                  {formatAmount(availability.Amount)}
-                </Text>
-              </Group>
+                onProductSaved={onProductSaved}
+              />
             ))}
           </Stack>
         </>
+      )}
+    </Stack>
+  )
+}
+
+function ProductAvailabilityPlacementRow({
+  availability,
+  onProductSaved,
+}: {
+  availability: ProductAvailability
+  onProductSaved?: (product: Product | null) => void
+}) {
+  const [opened, setOpened] = useState(false)
+  const placements = availability.Storage?.ProductPlacements || []
+  const hasPlacements = placements.length > 0
+  const content = (
+    <Group
+      justify="space-between"
+      gap="sm"
+      wrap="nowrap"
+      style={{
+        border: '1px solid var(--mantine-color-gray-2)',
+        borderRadius: 6,
+        cursor: hasPlacements ? 'pointer' : 'default',
+        padding: '6px 8px',
+      }}
+    >
+      <Box style={{ minWidth: 0 }}>
+        <Text size="sm" fw={600} lineClamp={1}>
+          {displayValue(availability.Storage?.Name)}
+        </Text>
+        <Text size="xs" c="dimmed" lineClamp={1}>
+          {displayValue(availability.Storage?.Organization?.Name)}
+        </Text>
+      </Box>
+      <Text size="sm" fw={700}>
+        {formatAmount(availability.Amount)}
+      </Text>
+    </Group>
+  )
+
+  if (!hasPlacements) {
+    return content
+  }
+
+  return (
+    <Popover opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
+      <Popover.Target>
+        <Box role="button" tabIndex={0} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            setOpened((currentOpened) => !currentOpened)
+          }
+        }}>
+          {content}
+        </Box>
+      </Popover.Target>
+      <Popover.Dropdown>
+        <ProductPlacementEditor
+          availability={availability}
+          key={getProductPlacementsKey(placements)}
+          onClose={() => setOpened(false)}
+          onProductSaved={onProductSaved}
+          placements={placements}
+        />
+      </Popover.Dropdown>
+    </Popover>
+  )
+}
+
+function ProductPlacementEditor({
+  availability,
+  onClose,
+  onProductSaved,
+  placements,
+}: {
+  availability: ProductAvailability
+  onClose: () => void
+  onProductSaved?: (product: Product | null) => void
+  placements: ProductPlacement[]
+}) {
+  const { t } = useI18n()
+  const [drafts, setDrafts] = useState<ProductPlacementDraft[]>(() => cloneProductPlacements(placements))
+  const [error, setError] = useState<string | null>(null)
+  const [isEditing, setEditing] = useState(false)
+  const [isSaving, setSaving] = useState(false)
+  const originalTotal = useMemo(() => sumProductPlacementQty(placements), [placements])
+  const draftTotal = useMemo(() => sumProductPlacementQty(drafts), [drafts])
+  const groupedPlacements = useMemo(() => groupProductPlacements(drafts), [drafts])
+
+  function startEditing() {
+    setDrafts(cloneProductPlacements(placements))
+    setError(null)
+    setEditing(true)
+  }
+
+  function cancelEditing() {
+    setDrafts(cloneProductPlacements(placements))
+    setError(null)
+    setEditing(false)
+  }
+
+  function addPlacement() {
+    setDrafts((currentDrafts) => [
+      ...currentDrafts,
+      {
+        CellNumber: '',
+        DraftKey: createProductPlacementDraftKey(),
+        ProductId: availability.ProductId,
+        Qty: 0,
+        RowNumber: '',
+        StorageId: availability.StorageId || availability.Storage?.Id,
+        StorageNumber: '',
+      },
+    ])
+  }
+
+  function updatePlacementDraft(index: number, field: keyof ProductPlacement, value: string | number) {
+    setDrafts((currentDrafts) =>
+      currentDrafts.map((draft, draftIndex) => (
+        draftIndex === index
+          ? {
+              ...draft,
+              [field]: value,
+            }
+          : draft
+      )),
+    )
+  }
+
+  function removeLocalPlacement(index: number) {
+    setDrafts((currentDrafts) => currentDrafts.filter((draft, draftIndex) => draftIndex !== index || isPersistedPlacement(draft)))
+  }
+
+  async function savePlacements() {
+    if (Math.abs(draftTotal - originalTotal) > 0.00001) {
+      setError(t('Сума кількості по місцях має збігатися із залишком складу'))
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await updateProductPlacements(drafts.map(stripProductPlacementDraft))
+      notifications.show({ color: 'green', message: t('Місця зберігання збережено') })
+      setEditing(false)
+      onClose()
+      onProductSaved?.(null)
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти місця зберігання'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Stack gap="sm">
+      <Group justify="space-between" gap="sm" wrap="nowrap">
+        <Box style={{ minWidth: 0 }}>
+          <Text fw={700} size="sm" lineClamp={1}>{displayValue(availability.Storage?.Name)}</Text>
+          <Text c="dimmed" size="xs" lineClamp={1}>{displayValue(availability.Storage?.Organization?.Name)}</Text>
+        </Box>
+        <Group gap="xs" wrap="nowrap">
+          <Badge color={Math.abs(draftTotal - originalTotal) > 0.00001 ? 'red' : 'green'} variant="light">
+            {formatAmount(draftTotal)} / {formatAmount(originalTotal)}
+          </Badge>
+          {!isEditing ? (
+            <Button size="xs" variant="light" leftSection={<IconEdit size={14} />} onClick={startEditing}>
+              {t('Редагувати')}
+            </Button>
+          ) : null}
+        </Group>
+      </Group>
+
+      {error ? (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      ) : null}
+
+      {isEditing ? (
+        <Stack gap="xs">
+          <ScrollArea mah={320}>
+            <Table withTableBorder miw={680}>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('Стелаж')}</Table.Th>
+                  <Table.Th>{t('Ряд')}</Table.Th>
+                  <Table.Th>{t('Комірка')}</Table.Th>
+                  <Table.Th ta="right">{t('Кількість')}</Table.Th>
+                  <Table.Th w={44} />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {drafts.map((placement, index) => (
+                  <Table.Tr key={placement.DraftKey}>
+                    <Table.Td>
+                      <TextInput
+                        size="xs"
+                        value={placement.StorageNumber || ''}
+                        onChange={(event) => updatePlacementDraft(index, 'StorageNumber', event.currentTarget.value)}
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <TextInput
+                        size="xs"
+                        value={placement.RowNumber || ''}
+                        onChange={(event) => updatePlacementDraft(index, 'RowNumber', event.currentTarget.value)}
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <TextInput
+                        size="xs"
+                        value={placement.CellNumber || ''}
+                        onChange={(event) => updatePlacementDraft(index, 'CellNumber', event.currentTarget.value)}
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <NumberInput
+                        hideControls
+                        min={0}
+                        size="xs"
+                        value={placement.Qty || 0}
+                        onChange={(value) => updatePlacementDraft(index, 'Qty', readPlacementNumber(value))}
+                      />
+                    </Table.Td>
+                    <Table.Td>
+                      <Tooltip label={t('Видалити новий рядок')}>
+                        <ActionIcon
+                          aria-label={t('Видалити новий рядок')}
+                          color="red"
+                          disabled={isPersistedPlacement(placement)}
+                          size="sm"
+                          variant="light"
+                          onClick={() => removeLocalPlacement(index)}
+                        >
+                          <IconTrash size={14} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+          <Group justify="space-between" gap="sm">
+            <Button size="xs" variant="light" leftSection={<IconPlus size={14} />} onClick={addPlacement}>
+              {t('Додати місце')}
+            </Button>
+            <Group gap="xs">
+              <Button size="xs" color="gray" variant="light" disabled={isSaving} onClick={cancelEditing}>
+                {t('Скасувати')}
+              </Button>
+              <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
+                {t('Зберегти')}
+              </Button>
+            </Group>
+          </Group>
+        </Stack>
+      ) : (
+        <ScrollArea mah={300}>
+          <Table striped withTableBorder miw={540}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('Місце')}</Table.Th>
+                <Table.Th ta="right">{t('Кількість')}</Table.Th>
+                <Table.Th ta="right">{t('Партій')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {groupedPlacements.map((placementGroup) => (
+                <Table.Tr key={placementGroup.key}>
+                  <Table.Td>{placementGroup.label}</Table.Td>
+                  <Table.Td ta="right">{formatAmount(placementGroup.qty)}</Table.Td>
+                  <Table.Td ta="right">{placementGroup.count}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea>
       )}
     </Stack>
   )
@@ -587,14 +945,40 @@ export function ProductActionDrawer({
       title={activePanel ? getPanelTitle(activePanel, t) : ''}
       onClose={onClose}
     >
-      {activePanel === 'edit' && <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />}
+      {activePanel === 'edit' && (
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
+        </PermissionGate>
+      )}
       {activePanel === 'images' && <ProductImagesPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />}
-      {activePanel === 'movement' && <ProductMovementPanel product={product} />}
-      {activePanel === 'remains' && <ProductConsignmentRemainingsPanel product={product} />}
+      {activePanel === 'movement' && (
+        <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductMovementPanel product={product} />
+        </PermissionGate>
+      )}
+      {activePanel === 'remains' && (
+        <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductConsignmentRemainingsPanel product={product} />
+        </PermissionGate>
+      )}
       {activePanel === 'specification' && <ProductSpecificationPanel product={product} />}
       {activePanel === 'storage-history' && <ProductStorageHistoryPanel product={product} />}
-      {activePanel === 'writeoff' && <ProductWriteOffRulesPanel product={product} onChanged={onReload} />}
+      {activePanel === 'writeoff' && (
+        <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
+          <ProductWriteOffRulesPanel product={product} onChanged={onReload} />
+        </PermissionGate>
+      )}
     </AppDrawer>
+  )
+}
+
+function ProductPermissionDeniedAlert() {
+  const { t } = useI18n()
+
+  return (
+    <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+      {t('Недостатньо прав для цієї дії')}
+    </Alert>
   )
 }
 
@@ -682,10 +1066,25 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   const { t } = useI18n()
   const [images, setImages] = useState<ProductImage[]>(() => [...(product.ProductImages || [])])
   const [files, setFiles] = useState<File[]>([])
+  const [filePreviews, setFilePreviews] = useState<SelectedProductImagePreview[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setSaving] = useState(false)
-  const visibleImages = images.filter((image) => !image.Deleted)
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
+  const originalImages = product.ProductImages || []
   const hasChanges = files.length > 0 || images.some((image, index) => image !== (product.ProductImages || [])[index])
+  const displayedImages = images.reduce<Array<{ image: ProductImage; index: number }>>((currentImages, image, index) => {
+    if (!image.Deleted || (image.Deleted && !originalImages[index]?.Deleted)) {
+      currentImages.push({ image, index })
+    }
+
+    return currentImages
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      revokeFilePreviewUrls(filePreviews.map((preview) => preview.url))
+    }
+  }, [filePreviews])
 
   function makeMain(image: ProductImage) {
     const imageKey = getProductImageKey(image)
@@ -713,6 +1112,22 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
     )
   }
 
+  function updateSelectedFiles(nextFiles: File[]) {
+    const nextPreviews = nextFiles.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }))
+
+    setFiles(nextFiles)
+    setFilePreviews(nextPreviews)
+  }
+
+  function resetImageChanges() {
+    setImages([...originalImages])
+    updateSelectedFiles([])
+    setError(null)
+  }
+
   async function saveImages() {
     setSaving(true)
     setError(null)
@@ -730,7 +1145,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
       if (nextProduct) {
         setImages([...(nextProduct.ProductImages || [])])
       }
-      setFiles([])
+      updateSelectedFiles([])
       notifications.show({ color: 'green', message: t('Зображення збережено') })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зображення'))
@@ -747,55 +1162,104 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
         </Alert>
       )}
       <Group align="end" justify="space-between" gap="md">
-        <FileInput
-          multiple
-          clearable
-          accept="image/*"
-          label={t('Додати зображення')}
-          placeholder={t('Оберіть файли')}
-          value={files}
-          style={{ flex: '1 1 280px' }}
-          onChange={(nextFiles) => setFiles(nextFiles || [])}
-        />
-        <Button leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
-          {t('Зберегти')}
-        </Button>
+        <PermissionGate permissionKey={PRODUCT_IMAGE_ADD_PERMISSION}>
+          <FileInput
+            multiple
+            clearable
+            accept="image/*"
+            label={t('Додати зображення')}
+            placeholder={t('Оберіть файли')}
+            value={files}
+            style={{ flex: '1 1 280px' }}
+            onChange={(nextFiles) => updateSelectedFiles(nextFiles || [])}
+          />
+        </PermissionGate>
+        <Group gap="xs" wrap="nowrap">
+          <Button variant="light" color="gray" leftSection={<IconRefresh size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
+            {t('Скасувати')}
+          </Button>
+          <Button leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+            {t('Зберегти')}
+          </Button>
+        </Group>
       </Group>
-      {visibleImages.length === 0 && files.length === 0 ? (
+      {displayedImages.length === 0 && filePreviews.length === 0 ? (
         <Text c="dimmed" size="sm">
           {t('Зображень не знайдено')}
         </Text>
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
-          {visibleImages.map((image, index) => (
+          {displayedImages.map(({ image, index }) => (
             <Box
               key={`${image.NetUid || image.FileName || index}`}
+              style={{
+                border: '1px solid var(--mantine-color-gray-2)',
+                borderRadius: 6,
+                opacity: image.Deleted ? 0.55 : 1,
+                padding: 10,
+              }}
+            >
+              <Stack gap="sm">
+                <button
+                  type="button"
+                  style={{ background: 'transparent', border: 0, cursor: 'zoom-in', padding: 0 }}
+                  onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
+                >
+                  <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                </button>
+                <Group justify="space-between" gap="xs" wrap="nowrap">
+                  <Badge color={image.Deleted ? 'red' : image.IsMainImage ? 'green' : 'gray'} variant="light">
+                    {image.Deleted ? t('Буде видалено') : image.IsMainImage ? t('Головне') : t('Зображення')}
+                  </Badge>
+                  <PermissionGate permissionKey={PRODUCT_IMAGE_DELETE_PERMISSION}>
+                    <Group gap={4} wrap="nowrap">
+                      <Tooltip label={t('Зробити головним')}>
+                        <ActionIcon color="gray" variant="light" disabled={image.Deleted || image.IsMainImage} onClick={() => makeMain(image)}>
+                          <IconCheck size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label={t('Видалити')}>
+                        <ActionIcon color="red" variant="light" disabled={image.Deleted} onClick={() => removeImage(image)}>
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  </PermissionGate>
+                </Group>
+              </Stack>
+            </Box>
+          ))}
+          {filePreviews.map((preview) => (
+            <Box
+              key={preview.url}
               style={{ border: '1px solid var(--mantine-color-gray-2)', borderRadius: 6, padding: 10 }}
             >
               <Stack gap="sm">
-                <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                <button
+                  type="button"
+                  style={{ background: 'transparent', border: 0, cursor: 'zoom-in', padding: 0 }}
+                  onClick={() => setPreviewImageUrl(preview.url)}
+                >
+                  <Image src={preview.url} alt={preview.file.name || getProductTitle(product)} h={190} fit="contain" radius="sm" />
+                </button>
                 <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Badge color={image.IsMainImage ? 'green' : 'gray'} variant="light">
-                    {image.IsMainImage ? t('Головне') : t('Зображення')}
+                  <Badge color="blue" variant="light">
+                    {t('Нове')}
                   </Badge>
-                  <Group gap={4} wrap="nowrap">
-                    <Tooltip label={t('Зробити головним')}>
-                      <ActionIcon color="gray" variant="light" disabled={image.IsMainImage} onClick={() => makeMain(image)}>
-                        <IconCheck size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon color="red" variant="light" onClick={() => removeImage(image)}>
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
+                  <Text size="sm" c="dimmed" truncate="end">
+                    {preview.file.name}
+                  </Text>
                 </Group>
               </Stack>
             </Box>
           ))}
         </SimpleGrid>
       )}
+      <ProductImageViewerModal
+        imageUrl={previewImageUrl}
+        title={getProductTitle(product)}
+        onClose={() => setPreviewImageUrl(null)}
+      />
     </Stack>
   )
 }
@@ -1534,6 +1998,85 @@ function getProductImageKey(image: ProductImage): string {
   }
 
   return ''
+}
+
+function revokeFilePreviewUrls(urls: string[]) {
+  urls.forEach((url) => URL.revokeObjectURL(url))
+}
+
+function cloneProductPlacements(placements: ProductPlacement[]): ProductPlacementDraft[] {
+  return placements.map((placement) => ({
+    ...placement,
+    DraftKey: createProductPlacementDraftKey(placement),
+  }))
+}
+
+function createProductPlacementDraftKey(placement?: ProductPlacement): string {
+  if (placement?.NetUid) {
+    return placement.NetUid
+  }
+
+  if (placement?.Id) {
+    return String(placement.Id)
+  }
+
+  return `new-${Math.random().toString(36).slice(2)}`
+}
+
+function stripProductPlacementDraft(placement: ProductPlacementDraft): ProductPlacement {
+  const { DraftKey: _draftKey, ...payload } = placement
+  void _draftKey
+
+  return payload
+}
+
+function getProductPlacementsKey(placements: ProductPlacement[]): string {
+  return placements.map((placement, index) => `${placement.NetUid || placement.Id || index}:${placement.Qty || 0}`).join('|')
+}
+
+function sumProductPlacementQty(placements: ProductPlacement[]): number {
+  return placements.reduce((total, placement) => total + readPlacementNumber(placement.Qty || 0), 0)
+}
+
+function groupProductPlacements(placements: ProductPlacement[]): ProductPlacementGroup[] {
+  const groups = new Map<string, ProductPlacementGroup>()
+
+  placements.forEach((placement) => {
+    const storageNumber = placement.StorageNumber?.trim() || '-'
+    const rowNumber = placement.RowNumber?.trim() || '-'
+    const cellNumber = placement.CellNumber?.trim() || '-'
+    const key = `${storageNumber}|${rowNumber}|${cellNumber}`
+    const currentGroup = groups.get(key)
+
+    if (currentGroup) {
+      currentGroup.count += 1
+      currentGroup.qty += readPlacementNumber(placement.Qty || 0)
+      return
+    }
+
+    groups.set(key, {
+      count: 1,
+      key,
+      label: `${storageNumber} / ${rowNumber} / ${cellNumber}`,
+      qty: readPlacementNumber(placement.Qty || 0),
+    })
+  })
+
+  return Array.from(groups.values())
+}
+
+function isPersistedPlacement(placement: ProductPlacement): boolean {
+  return Boolean(placement.Id || placement.NetUid)
+}
+
+function readPlacementNumber(value: number | string): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  const parsedValue = Number(value)
+
+  return Number.isFinite(parsedValue) ? parsedValue : 0
 }
 
 function getPanelFromQuery(searchParams: URLSearchParams): ProductDetailPanel | null {

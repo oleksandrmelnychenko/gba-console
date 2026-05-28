@@ -53,7 +53,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
       const netUid = productLink.Product?.NetUid
 
       if (netUid) {
-        navigate(`/products/${netUid}`, {
+        navigate(`/products?netId=${encodeURIComponent(netUid)}`, {
           state: {
             nodeTitle: productLink.Product?.VendorCode || productLink.Product?.NameUA || productLink.Product?.Name,
           },

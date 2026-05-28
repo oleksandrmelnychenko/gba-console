@@ -48,6 +48,10 @@
   min-width: 0;
 }
 
+.product-assortment-mode-controls {
+  min-width: 0;
+}
+
 .product-assortment-selected-code {
   width: 100%;
   min-height: 52px;
@@ -304,6 +308,44 @@
   margin-top: 16px;
 }
 
+.product-original-number-card {
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.product-original-number-card:hover,
+.product-original-number-card.is-selected {
+  border-color: #1d6f8f;
+  background: #e8f7fb;
+}
+
+.product-related-open-button {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.product-related-open-button:disabled {
+  cursor: default;
+}
+
+.product-inline-table-row-edited {
+  background: #fff4e6;
+}
+
+.product-inline-table-cell-edited {
+  color: #c2410c;
+  font-weight: 700;
+}
+
 @media (max-width: 1280px) {
   .product-inline-main {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
@@ -354,5 +396,95 @@
 
   .product-carousel-row {
     grid-template-columns: minmax(78px, 38%) minmax(0, 1fr);
+  }
+}
+
+/* ── Wheel-picker drum effect ───────────────────────────── */
+.product-carousel-row {
+  transform-origin: center;
+  transition:
+    opacity 220ms var(--tx-ease-spring),
+    transform 220ms var(--tx-ease-spring),
+    background-color 140ms ease,
+    border-color 140ms ease;
+  will-change: opacity, transform;
+}
+
+.product-assortment-rail-top {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 78%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 78%);
+}
+
+.product-assortment-rail-bottom {
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 78%);
+  mask-image: linear-gradient(to top, transparent 0%, #000 78%);
+}
+
+/* top rail: last row is nearest the centre focus line */
+.product-assortment-rail-top .product-carousel-row {
+  opacity: 0.32;
+  transform: scale(0.9);
+}
+.product-assortment-rail-top .product-carousel-row:nth-last-child(1) {
+  opacity: 1;
+  transform: scale(1);
+}
+.product-assortment-rail-top .product-carousel-row:nth-last-child(2) {
+  opacity: 0.82;
+  transform: scale(0.975);
+}
+.product-assortment-rail-top .product-carousel-row:nth-last-child(3) {
+  opacity: 0.6;
+  transform: scale(0.945);
+}
+.product-assortment-rail-top .product-carousel-row:nth-last-child(4) {
+  opacity: 0.45;
+  transform: scale(0.92);
+}
+
+/* bottom rail: first row is nearest the centre focus line */
+.product-assortment-rail-bottom .product-carousel-row {
+  opacity: 0.32;
+  transform: scale(0.9);
+}
+.product-assortment-rail-bottom .product-carousel-row:nth-child(1) {
+  opacity: 1;
+  transform: scale(1);
+}
+.product-assortment-rail-bottom .product-carousel-row:nth-child(2) {
+  opacity: 0.82;
+  transform: scale(0.975);
+}
+.product-assortment-rail-bottom .product-carousel-row:nth-child(3) {
+  opacity: 0.6;
+  transform: scale(0.945);
+}
+.product-assortment-rail-bottom .product-carousel-row:nth-child(4) {
+  opacity: 0.45;
+  transform: scale(0.92);
+}
+
+/* hovering any row pulls it into full focus */
+.product-assortment-rail .product-carousel-row:hover {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* centre focus line — the search band */
+.product-assortment-drum {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(91, 33, 182, 0.05), rgba(91, 33, 182, 0.02)),
+    #ffffff;
+  border-top: 2px solid rgba(91, 33, 182, 0.5);
+  border-bottom: 2px solid rgba(91, 33, 182, 0.5);
+  box-shadow:
+    0 -6px 14px -10px rgba(91, 33, 182, 0.4),
+    0 6px 14px -10px rgba(91, 33, 182, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-carousel-row {
+    transition: none;
   }
 }

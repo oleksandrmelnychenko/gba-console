@@ -1,4 +1,5 @@
-import { createTheme, Drawer, Modal, type MantineColorsTuple } from '@mantine/core'
+import { createTheme, Drawer, Loader, Modal, type MantineColorsTuple } from '@mantine/core'
+import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [
   '#F5F3FF',
@@ -26,6 +27,12 @@ export const theme = createTheme({
   primaryShade: 8,
   defaultRadius: 'md',
   components: {
+    Loader: Loader.extend({
+      defaultProps: {
+        loaders: { ...Loader.defaultLoaders, ios: IosLoader },
+        type: 'ios',
+      },
+    }),
     Modal: Modal.extend({
       defaultProps: {
         overlayProps: {

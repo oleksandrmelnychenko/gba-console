@@ -11,6 +11,7 @@ export type MeasureUnit = EntityFields & {
 }
 
 export type Pricing = EntityFields & {
+  BasePricingId?: number
   Name?: string
 }
 
@@ -54,16 +55,26 @@ export type ProductPlacement = EntityFields & {
     } | null
   } | null
   ConsignmentItemId?: number
+  ConsignmentId?: number
+  PackingListPackageOrderItemId?: number
+  Product?: Pick<Product, 'Id' | 'Name' | 'NameUA' | 'NetUid' | 'VendorCode'> | null
   ProductId?: number
   Qty?: number
   RowNumber?: string
+  Storage?: {
+    Id?: number
+    Name?: string
+  } | null
   StorageId?: number
   StorageNumber?: string
+  SupplyOrderUkraineItemId?: number
 }
 
 export type ProductAvailability = EntityFields & {
   Amount?: number
+  ProductId?: number
   Storage?: {
+    Id?: number
     Name?: string
     Organization?: {
       Name?: string
@@ -102,6 +113,7 @@ export type CalculatedProductPrice = {
 }
 
 export type Product = EntityFields & {
+  AnalogueProducts?: unknown[]
   AvailableDefectiveQtyUk?: number
   AvailableQtyRoad?: number
   AvailableQtyUk?: number
@@ -224,12 +236,129 @@ export type ProductMovement = EntityFields & {
   UserName?: string
 }
 
+export type ProductIncomeMovement = EntityFields & {
+  AccountingEurUnitPrice?: number
+  AccountingGrossPrice?: number
+  Currency?: string
+  ExchangeRate?: number
+  FromInvoiceDate?: Date | string
+  FromInvoiceNumber?: string | number
+  GrossPrice?: number
+  IncomeInvoiceDate?: Date | string
+  IncomeInvoiceNumber?: string | number
+  IncomeQty?: number
+  IncomeToStorageDate?: Date | string
+  IncomeToStorageNumber?: string | number
+  ManagementEurUnitPrice?: number
+  NetPrice?: number
+  OrganizationName?: string
+  PriceDifference?: number
+  RemainingQty?: number
+  ReturnPrice?: number
+  StorageName?: string
+  SupplierName?: string
+  TotalNetPrice?: number
+  UnitPriceLocal?: number
+  Weight?: number
+}
+
+export type ProductOutcomeMovement = EntityFields & {
+  ClientName?: string
+  DocumentNumber?: string | number
+  DocumentTypeName?: string
+  FromDate?: Date | string
+  HasUpdateDataCarrier?: boolean
+  OrganizationName?: string
+  Price?: number
+  Qty?: number
+  ResponsibleName?: string
+  StorageName?: string
+}
+
 export type ProductMovementsParams = {
   from: string
   movementType: number
   productNetId: string
   to: string
   types: number[]
+}
+
+export type ProductIncomeOutcomeMovementParams = {
+  from: string
+  productNetId: string
+  to: string
+}
+
+export type ProductMovementExportDocument = {
+  DocumentURL?: string
+  PdfDocumentURL?: string
+}
+
+export type ProductRelatedUploadType = 'analogues' | 'components' | 'originalNumbers'
+
+export type ProductFileUploadMode = 0 | 1 | 2
+
+export type ProductFileUploadPriceConfiguration = {
+  ColumnNumber: number
+  PricingId: number
+}
+
+export type ProductFileUploadConfiguration = {
+  DescriptionPL: number
+  DescriptionRU: number
+  DescriptionUA: number
+  EndRow: number
+  IsForSale: number
+  IsForWeb: number
+  MainOriginalNumber: number
+  MeasureUnit: number
+  Mode: ProductFileUploadMode
+  NamePL: number
+  NameRU: number
+  NameUA: number
+  NewVendorCode: number
+  OrderStandard: number
+  PackingStandard: number
+  PriceConfigurations: ProductFileUploadPriceConfiguration[]
+  ProductGroup: number
+  Size: number
+  StartRow: number
+  Top: number
+  UCGFEA: number
+  VendorCode: number
+  Volume: number
+  Weight: number
+  WithDescriptionPL: boolean
+  WithDescriptionRU: boolean
+  WithDescriptionUA: boolean
+  WithIsForSale: boolean
+  WithIsForWeb: boolean
+  WithMainOriginalNumber: boolean
+  WithMeasureUnit: boolean
+  WithNamePL: boolean
+  WithNameRU: boolean
+  WithNameUA: boolean
+  WithNewVendorCode: boolean
+  WithOrderStandard: boolean
+  WithPackingStandard: boolean
+  WithPrices: boolean
+  WithProductGroup: boolean
+  WithSize: boolean
+  WithTop: boolean
+  WithUCGFEA: boolean
+  WithVolume: boolean
+  WithWeight: boolean
+}
+
+export type ProductUploadDocumentPayload = {
+  analogueVendorCode?: string
+  componentVendorCode?: string
+  from: number
+  isCleanBeforeLoading?: boolean
+  originalNumber?: string
+  qty?: number
+  to: number
+  vendorCode: string
 }
 
 export type ProductWriteOffRule = EntityFields & {

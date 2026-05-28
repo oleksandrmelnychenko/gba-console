@@ -1,15 +1,21 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
+  FileInput,
   Group,
   Image,
   Loader,
+  Menu,
+  NumberInput,
   ScrollArea,
+  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -18,31 +24,69 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowsExchange,
   IconChevronLeft,
   IconChevronRight,
   IconClipboardList,
+  IconDeviceFloppy,
+  IconDownload,
   IconEdit,
+  IconFileTypePdf,
+  IconFileTypeXls,
   IconFileDescription,
   IconHistory,
   IconPackage,
   IconPhoto,
+  IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
+  IconStar,
+  IconTrash,
+  IconUpload,
 } from '@tabler/icons-react'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
+  createProductOriginalNumber,
+  deleteProductOriginalNumber,
+  exportProductIncomeMovementsDocument,
+  exportProductOutcomeMovementsDocument,
   getProductByNetId,
-  getProductMovements,
+  getProductIncomeMovements,
+  getProductOutcomeMovements,
   getProductReservationByNetId,
+  getProductUploadPricings,
   getProducts,
+  removeProductAnalogue,
+  removeProductComponent,
+  updateProductOriginalNumber,
+  uploadProductsFromFile,
+  uploadProductRelatedDocument,
 } from '../api/productsApi'
-import type { Product, ProductMovement, ProductReservation } from '../types'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
+import type {
+  Product,
+  ProductFileUploadConfiguration,
+  ProductFileUploadMode,
+  ProductIncomeMovement,
+  ProductMovementExportDocument,
+  ProductOriginalNumber,
+  ProductOutcomeMovement,
+  ProductRelatedUploadType,
+  ProductReservation,
+  ProductSearchMode,
+  ProductSortMode,
+  ProductUploadDocumentPayload,
+  Pricing,
+} from '../types'
 import {
   displayValue,
   formatAmount,
@@ -54,26 +98,83 @@ import {
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
   getProductTitle,
+  PRODUCT_SEARCH_MODE_OPTIONS,
+  PRODUCT_SORT_MODE_OPTIONS,
 } from '../utils'
-import { ProductActionDrawer, ProductStockSummary, type ProductDetailPanel } from './ProductDetailPage'
+import {
+  PRODUCT_BALANCES_PERMISSION,
+  PRODUCT_EDIT_PERMISSION,
+  PRODUCT_MOVEMENT_PERMISSION,
+  PRODUCT_WRITE_OFF_PERMISSION,
+  ProductActionDrawer,
+  ProductImageViewerModal,
+  ProductStockSummary,
+  type ProductDetailPanel,
+} from './ProductDetailPage'
 import './products.css'
 
 const PAGE_SIZE = 20
 const VIRTUAL_PAGE_SIZE = 10
 const SEARCH_DEBOUNCE_MS = 250
-const SEARCH_MODE = '5'
-const SORT_MODE = '2'
-const movementItemTypes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
+const DEFAULT_SORT_MODE: ProductSortMode = '2'
+const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = 'Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY'
 const inlineMovementLabels = {
   income: {
     empty: 'Приходів не знайдено',
+    exportTitle: 'Документ приходу',
     loading: 'Завантаження приходів',
   },
   outcome: {
     empty: 'Виходів не знайдено',
+    exportTitle: 'Документ виходу',
     loading: 'Завантаження виходів',
   },
 } as const
+const productUploadDocumentLabels = {
+  analogues: {
+    articleLabel: 'Артикул аналога',
+    button: 'Завантажити аналоги',
+    title: 'Завантаження аналогів',
+  },
+  components: {
+    articleLabel: 'Артикул комплектуючої',
+    button: 'Завантажити комплектуючі',
+    title: 'Завантаження комплектуючих',
+  },
+  originalNumbers: {
+    articleLabel: 'Оригінальний номер',
+    button: 'Завантажити номери',
+    title: 'Завантаження оригінальних номерів',
+  },
+} as const
+const productFileUploadModeOptions: Array<{ label: string; value: string }> = [
+  { label: 'Додати', value: '0' },
+  { label: 'Оновити', value: '1' },
+  { label: 'Видалити', value: '2' },
+]
+const productFileUploadFieldLabels: Array<{ field: keyof ProductFileUploadColumnForm; label: string; required?: boolean }> = [
+  { field: 'startRow', label: 'З', required: true },
+  { field: 'endRow', label: 'По', required: true },
+  { field: 'vendorCode', label: 'Код виробника', required: true },
+  { field: 'newVendorCode', label: 'Новий код виробника' },
+  { field: 'nameRU', label: 'Назва RU' },
+  { field: 'nameUA', label: 'Назва UA' },
+  { field: 'descriptionRU', label: 'Опис RU' },
+  { field: 'descriptionUA', label: 'Опис UA' },
+  { field: 'productGroup', label: 'Група товару' },
+  { field: 'measureUnit', label: 'Одиниця' },
+  { field: 'weight', label: 'Вага' },
+  { field: 'mainOriginalNumber', label: 'Оригінальний номер' },
+  { field: 'top', label: 'Top' },
+  { field: 'orderStandard', label: 'Норма пакування' },
+  { field: 'packingStandard', label: 'Пакування' },
+  { field: 'size', label: 'Розмір' },
+  { field: 'volume', label: 'Обʼєм' },
+  { field: 'ucgfea', label: 'УКТЗЕД' },
+  { field: 'isForWeb', label: 'Сайт' },
+  { field: 'isForSale', label: 'Продаж' },
+]
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -85,10 +186,14 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 type CarouselMode = 'search' | 'selection'
 type InlineMovementDirection = 'income' | 'outcome'
+type InlineMovementRow = ProductIncomeMovement | ProductOutcomeMovement
 type InlineMovementState = {
+  document: ProductMovementExportDocument | null
   error: string | null
+  exportError: string | null
+  isExporting: boolean
   isLoading: boolean
-  rows: ProductMovement[]
+  rows: InlineMovementRow[]
 }
 type InlineDetailState = {
   error: string | null
@@ -98,18 +203,62 @@ type InlineDetailState = {
   reservationError: string | null
 }
 type InlineMovementAction =
+  | { type: 'export-clear' }
+  | { type: 'export-error'; error: string }
+  | { type: 'export-loading' }
+  | { type: 'export-success'; document: ProductMovementExportDocument }
   | { type: 'error'; error: string }
   | { type: 'loading' }
-  | { type: 'success'; rows: ProductMovement[] }
+  | { type: 'success'; rows: InlineMovementRow[] }
 type InlineDetailAction =
   | { type: 'clear' }
   | { type: 'error'; error: string; product: Product | null }
   | { type: 'loading' }
   | { type: 'saved'; product: Product }
   | { type: 'success'; product: Product | null; reservation: ProductReservation; reservationError: string | null }
+type RelatedProductRow = {
+  isProductSet: boolean
+  product: Partial<Product>
+  quantity?: number | string
+  source: unknown
+}
+type ProductFileUploadColumnForm = {
+  descriptionRU: number
+  descriptionUA: number
+  endRow: number
+  isForSale: number
+  isForWeb: number
+  mainOriginalNumber: number
+  measureUnit: number
+  nameRU: number
+  nameUA: number
+  newVendorCode: number
+  orderStandard: number
+  packingStandard: number
+  productGroup: number
+  size: number
+  startRow: number
+  top: number
+  ucgfea: number
+  vendorCode: number
+  volume: number
+  weight: number
+}
+type ProductFileUploadPriceRow = {
+  columnNumber: number
+  key: string
+  pricingId: string
+}
+type ProductFileUploadForm = ProductFileUploadColumnForm & {
+  files: File[]
+  mode: ProductFileUploadMode
+  prices: ProductFileUploadPriceRow[]
+}
 
 export function ProductsPage() {
   const { t } = useI18n()
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams()
+  const routeProductNetId = urlSearchParams.get('netId')?.trim() || ''
   const [topProducts, setTopProducts] = useValueState<Product[]>([])
   const [bottomProducts, setBottomProducts] = useValueState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useValueState<Product | null>(null)
@@ -121,6 +270,8 @@ export function ProductsPage() {
   const [carouselMode, setCarouselMode] = useValueState<CarouselMode>('search')
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
+  const [searchMode, setSearchMode] = useValueState<ProductSearchMode>(DEFAULT_SEARCH_MODE)
+  const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
   const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
   const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
     error: null,
@@ -133,10 +284,27 @@ export function ProductsPage() {
   const [detailReloadKey, reloadProductDetail] = useReducer((key: number) => key + 1, 0)
   const searchRequestRef = useRef(0)
   const detailRequestRef = useRef(0)
+  const routeProductRequestRef = useRef(0)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
   const productForView = detailState.product || selectedProduct
   const canMoveBack = topProducts.length > 0
   const canMoveForward = bottomProducts.length > 0
+
+  const clearRouteProductParam = useCallback(() => {
+    routeProductRequestRef.current += 1
+
+    if (!routeProductNetId) {
+      return
+    }
+
+    setUrlSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      nextParams.delete('netId')
+
+      return nextParams
+    }, { replace: true })
+  }, [routeProductNetId, setUrlSearchParams])
 
   const applySearchResults = useCallback(
     (nextProducts: Product[]) => {
@@ -188,11 +356,15 @@ export function ProductsPage() {
       append,
       limit,
       offset,
+      searchMode: nextSearchMode,
+      sortMode: nextSortMode,
       value,
     }: {
       append: boolean
       limit: number
       offset: number
+      searchMode: ProductSearchMode
+      sortMode: ProductSortMode
       value: string
     }) => {
       const requestId = ++searchRequestRef.current
@@ -201,26 +373,27 @@ export function ProductsPage() {
       setError(null)
 
       try {
-        const nextProducts = await getProducts({
-          limit,
-          offset,
-          searchMode: SEARCH_MODE,
-          sortMode: SORT_MODE,
-          value,
-        })
-
         if (requestId !== searchRequestRef.current) {
           return
         }
 
-        if (append) {
-          setBottomProducts((currentProducts) => [...currentProducts, ...nextProducts])
-          setLoadedProductsCount((currentCount) => currentCount + nextProducts.length)
-          setVirtualLoad(false)
-          return
-        }
+        const nextProducts = await getProducts({
+          limit,
+          offset,
+          searchMode: nextSearchMode,
+          sortMode: nextSortMode,
+          value,
+        })
 
-        applySearchResults(nextProducts)
+        if (requestId === searchRequestRef.current) {
+          if (append) {
+            setBottomProducts((currentProducts) => [...currentProducts, ...nextProducts])
+            setLoadedProductsCount((currentCount) => currentCount + nextProducts.length)
+            setVirtualLoad(false)
+          } else {
+            applySearchResults(nextProducts)
+          }
+        }
       } catch (loadError) {
         if (requestId === searchRequestRef.current) {
           setTopProducts([])
@@ -262,6 +435,8 @@ export function ProductsPage() {
         append: false,
         limit: PAGE_SIZE,
         offset: 0,
+        searchMode,
+        sortMode,
         value: searchValue,
       })
     }, SEARCH_DEBOUNCE_MS)
@@ -269,7 +444,93 @@ export function ProductsPage() {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue])
+  }, [hasRequestedProducts, loadProducts, reloadKey, searchMode, searchValue, sortMode])
+
+  useEffect(() => {
+    if (!routeProductNetId) {
+      return
+    }
+
+    const requestId = ++routeProductRequestRef.current
+
+    searchRequestRef.current += 1
+    detailRequestRef.current += 1
+
+    async function loadRouteProduct() {
+      if (requestId !== routeProductRequestRef.current) {
+        return
+      }
+
+      try {
+        const nextProduct = await getProductByNetId(routeProductNetId)
+
+        if (requestId === routeProductRequestRef.current) {
+          setVirtualLoad(false)
+
+          if (!nextProduct) {
+            setTopProducts([])
+            setBottomProducts([])
+            setSelectedProduct(null)
+            dispatchDetail({ type: 'clear' })
+            setActivePanel(null)
+            setCarouselMode('search')
+            setLoadedProductsCount(0)
+            setHasRequestedProducts(false)
+            setSearchDraft('')
+            setSearchValue('')
+            setError(t('Товар не знайдено'))
+          } else {
+            setTopProducts([])
+            setBottomProducts(getNextSearchedProducts(nextProduct))
+            setLoadedProductsCount(1)
+            setSelectedProduct(nextProduct)
+            dispatchDetail({ type: 'clear' })
+            setActivePanel(null)
+            setCarouselMode('selection')
+            setHasRequestedProducts(false)
+            setSearchDraft('')
+            setSearchValue('')
+            setError(null)
+          }
+        }
+      } catch (loadError) {
+        if (requestId === routeProductRequestRef.current) {
+          setTopProducts([])
+          setBottomProducts([])
+          setSelectedProduct(null)
+          dispatchDetail({ type: 'clear' })
+          setActivePanel(null)
+          setCarouselMode('search')
+          setLoadedProductsCount(0)
+          setHasRequestedProducts(false)
+          setSearchDraft('')
+          setSearchValue('')
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
+        }
+      } finally {
+        if (requestId === routeProductRequestRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadRouteProduct()
+  }, [
+    routeProductNetId,
+    setActivePanel,
+    setBottomProducts,
+    setCarouselMode,
+    setError,
+    setHasRequestedProducts,
+    setLoadedProductsCount,
+    setLoading,
+    setSearchDraft,
+    setSearchValue,
+    setSelectedProduct,
+    setTopProducts,
+    setVirtualLoad,
+    t,
+  ])
 
   useEffect(() => {
     if (!selectedProductNetUid) {
@@ -320,6 +581,7 @@ export function ProductsPage() {
   ])
 
   function updateSearchDraft(nextValue: string) {
+    clearRouteProductParam()
     setSearchDraft(nextValue)
     setSearchValue(nextValue.trim())
     setHasRequestedProducts(true)
@@ -330,12 +592,50 @@ export function ProductsPage() {
   }
 
   function commitSearch() {
+    clearRouteProductParam()
     setSearchValue(searchDraft.trim())
     setHasRequestedProducts(true)
     reload()
   }
 
+  function changeSearchMode(nextValue: string | null) {
+    clearRouteProductParam()
+    setSearchMode((nextValue || DEFAULT_SEARCH_MODE) as ProductSearchMode)
+    setSearchValue(searchDraft.trim())
+    setHasRequestedProducts(true)
+    searchRequestRef.current += 1
+    setTopProducts([])
+    setBottomProducts([])
+    setLoadedProductsCount(0)
+    setVirtualLoad(false)
+    setLoading(false)
+    setCarouselMode('search')
+    setSelectedProduct(null)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    reload()
+  }
+
+  function changeSortMode(nextValue: string | null) {
+    clearRouteProductParam()
+    setSortMode((nextValue || DEFAULT_SORT_MODE) as ProductSortMode)
+    setSearchValue(searchDraft.trim())
+    setHasRequestedProducts(true)
+    searchRequestRef.current += 1
+    setTopProducts([])
+    setBottomProducts([])
+    setLoadedProductsCount(0)
+    setVirtualLoad(false)
+    setLoading(false)
+    setCarouselMode('search')
+    setSelectedProduct(null)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    reload()
+  }
+
   function resetSearch() {
+    clearRouteProductParam()
     searchRequestRef.current += 1
     setTopProducts([])
     setBottomProducts([])
@@ -362,11 +662,14 @@ export function ProductsPage() {
       append: true,
       limit: VIRTUAL_PAGE_SIZE,
       offset: loadedProductsCount,
+      searchMode,
+      sortMode,
       value: searchValue,
     })
   }
 
   function selectProduct(product: Product) {
+    clearRouteProductParam()
     const productId = getProductIdentity(product)
 
     setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
@@ -378,7 +681,29 @@ export function ProductsPage() {
     setSearchDraft('')
   }
 
+  function selectRelatedProduct(product: Partial<Product>) {
+    clearRouteProductParam()
+    const netUid = product.NetUid?.trim()
+
+    if (!netUid) {
+      notifications.show({ color: 'yellow', message: t('Не вдалося відкрити повʼязаний товар') })
+      return
+    }
+
+    const nextProduct = { ...product, NetUid: netUid } as Product
+
+    setTopProducts([])
+    setBottomProducts(getNextSearchedProducts(nextProduct))
+    setLoadedProductsCount(1)
+    setSelectedProduct(nextProduct)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    setCarouselMode('selection')
+    setSearchDraft('')
+  }
+
   function selectPreviousProduct() {
+    clearRouteProductParam()
     const nextProduct = topProducts[topProducts.length - 1]
 
     if (!nextProduct) {
@@ -398,6 +723,7 @@ export function ProductsPage() {
   }
 
   function selectNextProduct() {
+    clearRouteProductParam()
     const nextProduct = bottomProducts[0]
 
     if (!nextProduct) {
@@ -421,6 +747,7 @@ export function ProductsPage() {
   }
 
   function returnToSearchMode() {
+    clearRouteProductParam()
     setCarouselMode('search')
     setSearchDraft('')
     setSelectedProduct(null)
@@ -460,6 +787,15 @@ export function ProductsPage() {
     reloadProductDetail()
   }
 
+  function handleAssortmentUploadSuccess() {
+    setHasRequestedProducts(true)
+    reload()
+
+    if (selectedProductNetUid) {
+      reloadProductDetail()
+    }
+  }
+
   return (
     <Stack gap="md">
       {error && (
@@ -476,8 +812,10 @@ export function ProductsPage() {
           isLoading={isLoading}
           isSelectionMode={carouselMode === 'selection'}
           isVirtualLoad={isVirtualLoad}
+          searchMode={searchMode}
           searchDraft={searchDraft}
           selectedProduct={selectedProduct}
+          sortMode={sortMode}
           topProducts={topProducts}
           onKeyDown={handleCarouselKeyDown}
           onNext={selectNextProduct}
@@ -485,7 +823,10 @@ export function ProductsPage() {
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
+          onSearchModeChange={changeSearchMode}
           onSelectProduct={selectProduct}
+          onSortModeChange={changeSortMode}
+          onUploadSuccess={handleAssortmentUploadSuccess}
         />
 
         <ProductInlineView
@@ -495,7 +836,9 @@ export function ProductsPage() {
           reservation={detailState.reservation}
           reservationError={detailState.reservationError}
           onOpenPanel={setActivePanel}
+          onProductChanged={handleProductSaved}
           onReload={reloadProductDetail}
+          onSelectRelatedProduct={selectRelatedProduct}
         />
       </Box>
 
@@ -525,9 +868,14 @@ function ProductAssortmentCarousel({
   onRefresh,
   onReset,
   onSearchDraftChange,
+  onSearchModeChange,
   onSelectProduct,
+  onSortModeChange,
+  onUploadSuccess,
+  searchMode,
   searchDraft,
   selectedProduct,
+  sortMode,
   topProducts,
 }: {
   bottomProducts: Product[]
@@ -542,12 +890,25 @@ function ProductAssortmentCarousel({
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
+  onSearchModeChange: (value: string | null) => void
   onSelectProduct: (product: Product) => void
+  onSortModeChange: (value: string | null) => void
+  onUploadSuccess: () => void
+  searchMode: ProductSearchMode
   searchDraft: string
   selectedProduct: Product | null
+  sortMode: ProductSortMode
   topProducts: Product[]
 }) {
   const { t } = useI18n()
+  const searchModeOptions = PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({
+    label: t(option.label),
+    value: option.value,
+  }))
+  const sortModeOptions = PRODUCT_SORT_MODE_OPTIONS.map((option) => ({
+    label: t(option.label),
+    value: option.value,
+  }))
 
   return (
     <Box className="product-assortment-carousel" role="region" tabIndex={0} onKeyDown={onKeyDown}>
@@ -556,6 +917,7 @@ function ProductAssortmentCarousel({
           {t('Весь асортимент')}
         </Text>
         <Group gap={6}>
+          <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
           <Tooltip label={t('Скинути')}>
             <ActionIcon
               aria-label={t('Скинути')}
@@ -629,6 +991,26 @@ function ProductAssortmentCarousel({
           className="product-assortment-search-input"
           onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
         />
+        <Group gap={8} grow className="product-assortment-mode-controls">
+          <Select
+            allowDeselect={false}
+            aria-label={t('Режим пошуку')}
+            data={searchModeOptions}
+            disabled={isLoading}
+            size="xs"
+            value={searchMode}
+            onChange={onSearchModeChange}
+          />
+          <Select
+            allowDeselect={false}
+            aria-label={t('Сортування')}
+            data={sortModeOptions}
+            disabled={isLoading}
+            size="xs"
+            value={sortMode}
+            onChange={onSortModeChange}
+          />
+        </Group>
         {isSelectionMode && selectedProduct ? (
           <>
             <button
@@ -704,7 +1086,9 @@ function ProductInlineView({
   detailError,
   isLoading,
   onOpenPanel,
+  onProductChanged,
   onReload,
+  onSelectRelatedProduct,
   product,
   reservation,
   reservationError,
@@ -712,12 +1096,15 @@ function ProductInlineView({
   detailError: string | null
   isLoading: boolean
   onOpenPanel: (panel: ProductDetailPanel) => void
+  onProductChanged: (product: Product | null) => void
   onReload: () => void
+  onSelectRelatedProduct: (product: Partial<Product>) => void
   product: Product | null
   reservation: ProductReservation
   reservationError: string | null
 }) {
   const { t } = useI18n()
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null)
 
   if (!product) {
     return (
@@ -756,7 +1143,18 @@ function ProductInlineView({
 
       <Box className="product-inline-main">
         <Box className="product-inline-info">
-          <Box className="product-inline-image" onClick={() => onOpenPanel('images')}>
+          <Box
+            className="product-inline-image"
+            role={mainImage?.ImageUrl ? 'button' : undefined}
+            tabIndex={mainImage?.ImageUrl ? 0 : undefined}
+            onClick={() => mainImage?.ImageUrl ? setPreviewImageUrl(mainImage.ImageUrl || null) : onOpenPanel('images')}
+            onKeyDown={(event) => {
+              if (mainImage?.ImageUrl && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                setPreviewImageUrl(mainImage.ImageUrl || null)
+              }
+            }}
+          >
             {mainImage?.ImageUrl ? (
               <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
             ) : (
@@ -770,7 +1168,7 @@ function ProductInlineView({
                   type="button"
                   className="product-inline-thumb"
                   key={`${image.NetUid || image.ImageUrl || index}`}
-                  onClick={() => onOpenPanel('images')}
+                  onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
                 >
                   <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
                 </button>
@@ -795,7 +1193,12 @@ function ProductInlineView({
         </Box>
 
         <Box className="product-inline-stock">
-          <ProductStockSummary product={product} reservation={reservation} reservationError={reservationError} />
+          <ProductStockSummary
+            product={product}
+            reservation={reservation}
+            reservationError={reservationError}
+            onProductSaved={onProductChanged}
+          />
         </Box>
 
         <Box className="product-inline-prices">
@@ -836,7 +1239,12 @@ function ProductInlineView({
         </Box>
       </Box>
 
-      <ProductInlineTabs product={product} />
+      <ProductInlineTabs product={product} onProductChanged={onProductChanged} onSelectRelatedProduct={onSelectRelatedProduct} />
+      <ProductImageViewerModal
+        imageUrl={previewImageUrl}
+        title={getProductTitle(product)}
+        onClose={() => setPreviewImageUrl(null)}
+      />
     </Box>
   )
 }
@@ -861,18 +1269,26 @@ function ProductInlineActions({
       <Button size="xs" variant="light" disabled={disabled} leftSection={<IconPhoto size={15} />} onClick={() => onOpenPanel('images')}>
         {t('Зображення')}
       </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconPackage size={15} />} onClick={() => onOpenPanel('remains')}>
-        {t('Залишки по партіям')}
-      </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconEdit size={15} />} onClick={() => onOpenPanel('edit')}>
-        {t('Редагувати')}
-      </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconArrowsExchange size={15} />} onClick={() => onOpenPanel('movement')}>
-        {t('Рух товару')}
-      </Button>
-      <Button size="xs" variant="light" disabled={disabled} leftSection={<IconClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
-        {t('Правила списання')}
-      </Button>
+      <PermissionGate permissionKey={PRODUCT_BALANCES_PERMISSION}>
+        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconPackage size={15} />} onClick={() => onOpenPanel('remains')}>
+          {t('Залишки по партіям')}
+        </Button>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconEdit size={15} />} onClick={() => onOpenPanel('edit')}>
+          {t('Редагувати')}
+        </Button>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_MOVEMENT_PERMISSION}>
+        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconArrowsExchange size={15} />} onClick={() => onOpenPanel('movement')}>
+          {t('Рух товару')}
+        </Button>
+      </PermissionGate>
+      <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION}>
+        <Button size="xs" variant="light" disabled={disabled} leftSection={<IconClipboardList size={15} />} onClick={() => onOpenPanel('writeoff')}>
+          {t('Правила списання')}
+        </Button>
+      </PermissionGate>
     </Group>
   )
 }
@@ -896,9 +1312,16 @@ function InfoBlock({
   )
 }
 
-function ProductInlineTabs({ product }: { product: Product }) {
+function ProductInlineTabs({
+  onProductChanged,
+  onSelectRelatedProduct,
+  product,
+}: {
+  onProductChanged: (product: Product | null) => void
+  onSelectRelatedProduct: (product: Partial<Product>) => void
+  product: Product
+}) {
   const { t } = useI18n()
-  const originalNumbers = getProductOriginalNumbers(product)
 
   return (
     <Tabs defaultValue="numbers" className="product-inline-tabs">
@@ -911,30 +1334,27 @@ function ProductInlineTabs({ product }: { product: Product }) {
       </Tabs.List>
 
       <Tabs.Panel value="numbers" pt="sm">
-        {originalNumbers.length > 0 ? (
-          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-            {originalNumbers.map((item, index) => (
-              <Card withBorder radius="sm" padding="xs" key={`${item.NetUid || item.OriginalNumber?.NetUid || index}`}>
-                <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Text fw={650} size="sm" lineClamp={1}>
-                    {displayValue(item.OriginalNumber?.MainNumber || item.OriginalNumber?.Number)}
-                  </Text>
-                  {item.IsMainOriginalNumber ? <Badge size="xs" color="green" variant="light">{t('Основний')}</Badge> : null}
-                </Group>
-              </Card>
-            ))}
-          </SimpleGrid>
-        ) : (
-          <Text c="dimmed" size="sm">{t('Номерів не знайдено')}</Text>
-        )}
+        <ProductOriginalNumbersTab product={product} onProductChanged={onProductChanged} />
       </Tabs.Panel>
 
       <Tabs.Panel value="analogues" pt="sm">
-        <RelatedProductsList items={product.BaseAnalogueProducts || []} emptyLabel={t('Аналогів не знайдено')} />
+        <ProductRelatedProductsTab
+          emptyLabel={t('Аналогів не знайдено')}
+          product={product}
+          type="analogues"
+          onProductChanged={onProductChanged}
+          onSelectProduct={onSelectRelatedProduct}
+        />
       </Tabs.Panel>
 
       <Tabs.Panel value="components" pt="sm">
-        <RelatedProductsList items={product.ComponentProducts || product.BaseSetProducts || []} emptyLabel={t('Комплектуючих не знайдено')} />
+        <ProductRelatedProductsTab
+          emptyLabel={t('Комплектуючих не знайдено')}
+          product={product}
+          type="components"
+          onProductChanged={onProductChanged}
+          onSelectProduct={onSelectRelatedProduct}
+        />
       </Tabs.Panel>
 
       <Tabs.Panel value="income" pt="sm">
@@ -946,6 +1366,1086 @@ function ProductInlineTabs({ product }: { product: Product }) {
       </Tabs.Panel>
     </Tabs>
   )
+}
+
+function ProductOriginalNumbersTab({
+  onProductChanged,
+  product,
+}: {
+  onProductChanged: (product: Product | null) => void
+  product: Product
+}) {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const productNetUid = product.NetUid?.trim() || ''
+  const originalNumbers = getProductOriginalNumbers(product)
+  const codeInputRef = useRef<HTMLInputElement>(null)
+  const [selectedNetUid, setSelectedNetUid] = useState<string | null>(null)
+  const selectedItem = originalNumbers.find((item) => getProductOriginalNumberIdentity(item) === selectedNetUid) || null
+  const [codeDraft, setCodeDraft] = useState('')
+  const [isMainDraft, setMainDraft] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setSaving] = useState(false)
+  const normalizedCode = codeDraft.trim()
+  const selectedCode = selectedItem ? getOriginalNumberText(selectedItem) : ''
+  const isDuplicate = Boolean(normalizedCode)
+    && originalNumbers.some((item) => (
+      getOriginalNumberText(item).toLowerCase() === normalizedCode.toLowerCase()
+      && getProductOriginalNumberIdentity(item) !== selectedNetUid
+    ))
+  const canSave = Boolean(productNetUid && normalizedCode && !isDuplicate && !isSaving)
+  const canEditOriginalNumbers = hasPermission(PRODUCT_EDIT_PERMISSION)
+
+  function selectOriginalNumber(item: ProductOriginalNumber) {
+    setSelectedNetUid(getProductOriginalNumberIdentity(item))
+    setCodeDraft(getOriginalNumberText(item))
+    setMainDraft(Boolean(item.IsMainOriginalNumber))
+    setError(null)
+  }
+
+  function resetForm() {
+    setSelectedNetUid(null)
+    setCodeDraft('')
+    setMainDraft(false)
+    setError(null)
+  }
+
+  function focusCodeInput() {
+    window.setTimeout(() => codeInputRef.current?.focus(), 0)
+  }
+
+  function startNewOriginalNumber() {
+    if (!canEditOriginalNumbers || isSaving) {
+      return
+    }
+
+    resetForm()
+    focusCodeInput()
+  }
+
+  function editSelectedOriginalNumber() {
+    if (!canEditOriginalNumbers || !selectedItem || isSaving) {
+      return
+    }
+
+    selectOriginalNumber(selectedItem)
+    focusCodeInput()
+  }
+
+  function handleOriginalNumbersKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (!canEditOriginalNumbers || isEditableKeyboardTarget(event.target)) {
+      return
+    }
+
+    if (event.key === 'Insert') {
+      event.preventDefault()
+      startNewOriginalNumber()
+    }
+
+    if (event.key === 'F2') {
+      event.preventDefault()
+      editSelectedOriginalNumber()
+    }
+
+    if (event.key === 'Delete' && selectedItem) {
+      event.preventDefault()
+      void removeOriginalNumber(selectedItem)
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      resetForm()
+    }
+  }
+
+  async function saveOriginalNumber() {
+    if (!canSave) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const nextNumbers = selectedItem
+        ? await updateProductOriginalNumber(productNetUid, {
+            ...(selectedItem.OriginalNumber || {}),
+            MainNumber: normalizedCode,
+            Number: normalizedCode,
+          }, isMainDraft)
+        : await createProductOriginalNumber(productNetUid, normalizedCode, isMainDraft)
+
+      applyOriginalNumbersResponse(product, nextNumbers, onProductChanged)
+      notifications.show({
+        color: 'green',
+        message: selectedItem ? t('Оригінальний номер оновлено') : t('Оригінальний номер додано'),
+      })
+      resetForm()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти оригінальний номер'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function makeMainOriginalNumber(item: ProductOriginalNumber) {
+    const originalNumber = item.OriginalNumber
+
+    if (!productNetUid || !originalNumber?.NetUid || isSaving) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const nextNumbers = await updateProductOriginalNumber(productNetUid, originalNumber, true)
+
+      applyOriginalNumbersResponse(product, nextNumbers, onProductChanged)
+      notifications.show({ color: 'green', message: t('Основний оригінальний номер оновлено') })
+      resetForm()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити основний номер'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function removeOriginalNumber(item: ProductOriginalNumber) {
+    const originalNumberNetUid = item.OriginalNumber?.NetUid?.trim()
+
+    if (!productNetUid || !originalNumberNetUid || item.IsMainOriginalNumber || isSaving) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const nextNumbers = await deleteProductOriginalNumber(productNetUid, originalNumberNetUid)
+
+      applyOriginalNumbersResponse(product, nextNumbers, onProductChanged)
+      notifications.show({ color: 'green', message: t('Оригінальний номер видалено') })
+      resetForm()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося видалити оригінальний номер'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Stack gap="sm" tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+
+      <Group justify="flex-end">
+        <ProductUploadDocumentButton
+          product={product}
+          type="originalNumbers"
+          onProductChanged={onProductChanged}
+        />
+      </Group>
+
+      <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+        <Group align="end" gap="sm" wrap="wrap">
+          <TextInput
+            ref={codeInputRef}
+            label={t('Оригінальний номер')}
+            value={codeDraft}
+            error={isDuplicate ? t('Такий оригінальний номер вже існує') : undefined}
+            style={{ flex: '1 1 260px' }}
+            onChange={(event) => setCodeDraft(event.currentTarget.value)}
+          />
+          <Checkbox
+            checked={isMainDraft}
+            label={t('Основний')}
+            pb={8}
+            onChange={(event) => setMainDraft(event.currentTarget.checked)}
+          />
+          <Button
+            disabled={!canSave}
+            leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
+            loading={isSaving}
+            onClick={saveOriginalNumber}
+          >
+            {selectedItem ? t('Зберегти') : t('Додати')}
+          </Button>
+          {selectedItem ? (
+            <Button color="gray" disabled={isSaving} variant="light" onClick={resetForm}>
+              {t('Скинути')}
+            </Button>
+          ) : null}
+        </Group>
+      </PermissionGate>
+
+      {selectedCode ? (
+        <Text c="dimmed" size="xs">
+          {t('Вибрано')}: {selectedCode}
+        </Text>
+      ) : null}
+
+      {originalNumbers.length > 0 ? (
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
+          {originalNumbers.map((item) => {
+            const itemKey = getProductOriginalNumberIdentity(item)
+            const isSelected = itemKey === selectedNetUid
+
+            return (
+              <Card
+                withBorder
+                radius="sm"
+                padding="xs"
+                className={`product-original-number-card ${isSelected ? 'is-selected' : ''}`}
+                key={itemKey}
+                onClick={() => selectOriginalNumber(item)}
+              >
+                <Group justify="space-between" gap="xs" wrap="nowrap">
+                  <Text fw={650} size="sm" lineClamp={1}>
+                    {displayValue(getOriginalNumberText(item))}
+                  </Text>
+                  {item.IsMainOriginalNumber ? <Badge size="xs" color="green" variant="light">{t('Основний')}</Badge> : null}
+                </Group>
+                <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+                  <Group gap={6} mt="xs">
+                    <Tooltip label={t('Зробити основним')}>
+                      <ActionIcon
+                        aria-label={t('Зробити основним')}
+                        color="yellow"
+                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                        size="sm"
+                        variant="light"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void makeMainOriginalNumber(item)
+                        }}
+                      >
+                        <IconStar size={15} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                        size="sm"
+                        variant="light"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          void removeOriginalNumber(item)
+                        }}
+                      >
+                        <IconTrash size={15} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                </PermissionGate>
+              </Card>
+            )
+          })}
+        </SimpleGrid>
+      ) : (
+        <Text c="dimmed" size="sm">{t('Номерів не знайдено')}</Text>
+      )}
+    </Stack>
+  )
+}
+
+function ProductRelatedProductsTab({
+  emptyLabel,
+  onProductChanged,
+  onSelectProduct,
+  product,
+  type,
+}: {
+  emptyLabel: string
+  onProductChanged: (product: Product | null) => void
+  onSelectProduct: (product: Partial<Product>) => void
+  product: Product
+  type: 'analogues' | 'components'
+}) {
+  const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const productNetUid = product.NetUid?.trim() || ''
+  const [removeIndirectAnalogues, setRemoveIndirectAnalogues] = useState(false)
+  const [removingNetUid, setRemovingNetUid] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const rows = type === 'analogues' ? getAnalogueRows(product) : getComponentRows(product)
+  const canEditRelatedProducts = hasPermission(PRODUCT_EDIT_PERMISSION)
+
+  async function removeRelatedProduct(row: RelatedProductRow) {
+    const relatedNetUid = row.product.NetUid?.trim()
+
+    if (!canEditRelatedProducts || !productNetUid || !relatedNetUid || removingNetUid) {
+      return
+    }
+
+    const confirmed = window.confirm(t('Видалити повʼязаний товар?'))
+
+    if (!confirmed) {
+      return
+    }
+
+    setRemovingNetUid(relatedNetUid)
+    setError(null)
+
+    try {
+      if (type === 'analogues') {
+        await removeProductAnalogue({
+          analogueNetId: relatedNetUid,
+          baseProductNetId: productNetUid,
+          removeIndirectAnalogues,
+        })
+      } else {
+        await removeProductComponent({
+          baseProductNetId: productNetUid,
+          componentNetId: relatedNetUid,
+          isProductSet: row.isProductSet,
+        })
+      }
+
+      notifications.show({ color: 'green', message: t('Повʼязаний товар видалено') })
+      onProductChanged(null)
+    } catch (removeError) {
+      setError(removeError instanceof Error ? removeError.message : t('Не вдалося видалити повʼязаний товар'))
+    } finally {
+      setRemovingNetUid(null)
+    }
+  }
+
+  return (
+    <Stack gap="sm">
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+
+      {type === 'analogues' ? (
+        <Group justify="space-between" gap="sm" wrap="wrap">
+          <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+            <Checkbox
+              checked={removeIndirectAnalogues}
+              label={t('Видалити непрямі аналоги')}
+              onChange={(event) => setRemoveIndirectAnalogues(event.currentTarget.checked)}
+            />
+          </PermissionGate>
+          <ProductUploadDocumentButton
+            product={product}
+            type="analogues"
+            onProductChanged={onProductChanged}
+          />
+        </Group>
+      ) : (
+        <Group justify="flex-end">
+          <ProductUploadDocumentButton
+            product={product}
+            type="components"
+            onProductChanged={onProductChanged}
+          />
+        </Group>
+      )}
+
+      {rows.length === 0 ? (
+        <Text c="dimmed" size="sm">{emptyLabel}</Text>
+      ) : (
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
+          {rows.map((row) => {
+            const rowKey = getRelatedProductKey(row.source)
+            const isRemoving = removingNetUid === row.product.NetUid
+
+            return (
+              <Card withBorder radius="sm" padding="xs" key={rowKey}>
+                <Group justify="space-between" gap="xs" wrap="nowrap">
+                  <button
+                    type="button"
+                    className="product-related-open-button"
+                    disabled={!row.product.NetUid}
+                    onClick={() => onSelectProduct(row.product)}
+                  >
+                    <Text fw={650} size="sm" lineClamp={1}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
+                    <Text c="dimmed" size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
+                  </button>
+                  <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        loading={isRemoving}
+                        size="sm"
+                        variant="light"
+                        onClick={() => void removeRelatedProduct(row)}
+                      >
+                        <IconTrash size={15} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </PermissionGate>
+                </Group>
+                <SimpleGrid cols={2} spacing={6} mt="xs">
+                  <InfoBlock label="Оригінальний номер" value={row.product.MainOriginalNumber} />
+                  <InfoBlock label="Пакування" value={row.product.PackingStandard} />
+                  <InfoBlock label="Склад Укр." value={formatAmount(getRelatedProductAvailableQty(row.product, type))} />
+                  {type === 'components' ? (
+                    <>
+                      <InfoBlock label="Кількість" value={displayValue(row.quantity)} />
+                      <InfoBlock label="Одиниця" value={row.product.MeasureUnit?.Name} />
+                    </>
+                  ) : null}
+                </SimpleGrid>
+              </Card>
+            )
+          })}
+        </SimpleGrid>
+      )}
+    </Stack>
+  )
+}
+
+type ProductUploadDocumentForm = {
+  article: string
+  file: File | null
+  from: number
+  isCleanBeforeLoading: boolean
+  quantity: number
+  to: number
+  vendorCode: string
+}
+
+function ProductUploadDocumentToolbar({
+  onUploadSuccess,
+  product,
+}: {
+  onUploadSuccess: () => void
+  product: Product | null
+}) {
+  const { t } = useI18n()
+  const [uploadType, setUploadType] = useState<ProductRelatedUploadType | null>(null)
+  const [productUploadOpened, setProductUploadOpened] = useState(false)
+
+  return (
+    <>
+      <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
+        <Menu position="bottom-start" shadow="md" width={260} withinPortal>
+          <Menu.Target>
+            <Button size="xs" variant="light" leftSection={<IconUpload size={16} />}>
+              {t('Завантажити')}
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{t('Асортимент')}</Menu.Label>
+            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setProductUploadOpened(true)}>
+              {t('Товари')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Повʼязані товари')}</Menu.Label>
+            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('analogues')}>
+              {t('Аналоги')}
+            </Menu.Item>
+            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('components')}>
+              {t('Комплектуючі')}
+            </Menu.Item>
+            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('originalNumbers')}>
+              {t('Оригінальні номери')}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </PermissionGate>
+
+      {productUploadOpened ? (
+        <ProductFileUploadModal
+          opened
+          onClose={() => setProductUploadOpened(false)}
+          onUploadSuccess={onUploadSuccess}
+        />
+      ) : null}
+
+      {uploadType ? (
+        <ProductUploadDocumentModal
+          key={`${uploadType}-${product?.VendorCode || ''}`}
+          opened
+          product={product}
+          type={uploadType}
+          onClose={() => setUploadType(null)}
+          onUploadSuccess={onUploadSuccess}
+        />
+      ) : null}
+    </>
+  )
+}
+
+function ProductFileUploadModal({
+  onClose,
+  onUploadSuccess,
+  opened,
+}: {
+  onClose: () => void
+  onUploadSuccess: () => void
+  opened: boolean
+}) {
+  const { t } = useI18n()
+  const [form, setForm] = useState<ProductFileUploadForm>(() => createProductFileUploadForm())
+  const [pricingState, setPricingState] = useState<{ data: Pricing[]; error: string | null; isLoading: boolean }>({
+    data: [],
+    error: null,
+    isLoading: true,
+  })
+  const [error, setError] = useState<string | null>(null)
+  const [isUploading, setUploading] = useState(false)
+  const canSubmit = Boolean(form.files.length > 0 && form.startRow > 0 && form.endRow > 0 && form.vendorCode > 0 && !isUploading)
+  const pricingOptions = pricingState.data.reduce<Array<{ label: string; value: string }>>((options, pricing) => {
+    const value = String(pricing.Id || '')
+
+    if (value) {
+      options.push({
+        label: displayValue(pricing.Name),
+        value,
+      })
+    }
+
+    return options
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPricings() {
+      try {
+        const nextPricings = await getProductUploadPricings()
+
+        if (!cancelled) {
+          setPricingState({ data: nextPricings, error: null, isLoading: false })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setPricingState({
+            data: [],
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити типи цін'),
+            isLoading: false,
+          })
+        }
+      }
+    }
+
+    void loadPricings()
+
+    return () => {
+      cancelled = true
+    }
+  }, [t])
+
+  function closeModal() {
+    if (isUploading) {
+      return
+    }
+
+    onClose()
+  }
+
+  function setField<K extends keyof ProductFileUploadForm>(field: K, value: ProductFileUploadForm[K]) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }))
+  }
+
+  function setColumnField(field: keyof ProductFileUploadColumnForm, value: number | string) {
+    setField(field, readProductUploadNumber(value) as ProductFileUploadForm[typeof field])
+  }
+
+  function addPriceRow() {
+    setForm((currentForm) => ({
+      ...currentForm,
+      prices: [
+        ...currentForm.prices,
+        {
+          columnNumber: 0,
+          key: `price-${Date.now()}-${currentForm.prices.length}`,
+          pricingId: pricingOptions[0]?.value || '',
+        },
+      ],
+    }))
+  }
+
+  function updatePriceRow(key: string, patch: Partial<ProductFileUploadPriceRow>) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      prices: currentForm.prices.map((priceRow) => (
+        priceRow.key === key ? { ...priceRow, ...patch } : priceRow
+      )),
+    }))
+  }
+
+  function removePriceRow(key: string) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      prices: currentForm.prices.filter((priceRow) => priceRow.key !== key),
+    }))
+  }
+
+  async function submitUpload() {
+    if (!canSubmit) {
+      setError(t('Виберіть файл і заповніть обовʼязкові колонки'))
+      return
+    }
+
+    if (form.prices.some((priceRow) => !priceRow.pricingId || priceRow.columnNumber <= 0)) {
+      setError(t('Заповніть тип ціни і колонку для кожної ціни'))
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+
+    try {
+      await uploadProductsFromFile(buildProductFileUploadConfiguration(form), form.files)
+      notifications.show({ color: 'green', message: t('Файл товарів завантажено') })
+      onClose()
+      onUploadSuccess()
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити файл товарів'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження товарів')} onClose={closeModal}>
+      <Stack gap="sm">
+        {(error || pricingState.error) ? (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error || pricingState.error}
+          </Alert>
+        ) : null}
+
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <Select
+            allowDeselect={false}
+            data={productFileUploadModeOptions.map((option) => ({ ...option, label: t(option.label) }))}
+            label={t('Операція')}
+            value={String(form.mode)}
+            onChange={(value) => setField('mode', readProductUploadNumber(value || 0) as ProductFileUploadMode)}
+          />
+          <FileInput
+            clearable
+            multiple
+            label={t('Файл')}
+            placeholder={t('Оберіть файл')}
+            value={form.files}
+            onChange={(nextFiles) => setField('files', Array.isArray(nextFiles) ? nextFiles : [])}
+          />
+        </SimpleGrid>
+
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="sm">
+          {productFileUploadFieldLabels.map((item) => (
+            <NumberInput
+              key={item.field}
+              label={t(item.label)}
+              min={0}
+              required={item.required}
+              value={form[item.field]}
+              onChange={(value) => setColumnField(item.field, value)}
+            />
+          ))}
+        </SimpleGrid>
+
+        <Divider />
+
+        <Group justify="space-between">
+          <Text fw={700}>{t('Ціни')}</Text>
+          <Button
+            disabled={pricingState.isLoading || pricingOptions.length === 0}
+            leftSection={<IconPlus size={16} />}
+            size="xs"
+            variant="light"
+            onClick={addPriceRow}
+          >
+            {t('Додати ціну')}
+          </Button>
+        </Group>
+
+        {pricingState.isLoading ? (
+          <Group justify="center" py="sm">
+            <Loader size="sm" />
+          </Group>
+        ) : form.prices.length > 0 ? (
+          <Stack gap="xs">
+            {form.prices.map((priceRow) => (
+              <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
+                <Select
+                  allowDeselect={false}
+                  data={pricingOptions}
+                  label={t('Тип ціни')}
+                  style={{ flex: '1 1 240px' }}
+                  value={priceRow.pricingId}
+                  onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
+                />
+                <NumberInput
+                  label={t('Колонка')}
+                  min={0}
+                  style={{ flex: '0 0 130px' }}
+                  value={priceRow.columnNumber}
+                  onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
+                />
+                <Tooltip label={t('Видалити')}>
+                  <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            ))}
+          </Stack>
+        ) : (
+          <Text c="dimmed" size="sm">{t('Ціни не додані')}</Text>
+        )}
+
+        <Group justify="flex-end">
+          <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
+            {t('Скасувати')}
+          </Button>
+          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+            {t('Завантажити')}
+          </Button>
+        </Group>
+      </Stack>
+    </AppModal>
+  )
+}
+
+function ProductUploadDocumentButton({
+  onProductChanged,
+  product,
+  type,
+}: {
+  onProductChanged: (product: Product | null) => void
+  product: Product
+  type: ProductRelatedUploadType
+}) {
+  const { t } = useI18n()
+  const [opened, setOpened] = useState(false)
+  const labels = productUploadDocumentLabels[type]
+
+  function openModal() {
+    setOpened(true)
+  }
+
+  function closeModal() {
+    setOpened(false)
+  }
+
+  return (
+    <>
+      <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
+        <Button size="xs" variant="light" leftSection={<IconUpload size={16} />} onClick={openModal}>
+          {t(labels.button)}
+        </Button>
+      </PermissionGate>
+
+      {opened ? (
+        <ProductUploadDocumentModal
+          key={`${type}-${product.VendorCode || ''}`}
+          opened
+          product={product}
+          type={type}
+          onClose={closeModal}
+          onUploadSuccess={() => onProductChanged(null)}
+        />
+      ) : null}
+    </>
+  )
+}
+
+function ProductUploadDocumentModal({
+  onClose,
+  onUploadSuccess,
+  opened,
+  product,
+  type,
+}: {
+  onClose: () => void
+  onUploadSuccess: () => void
+  opened: boolean
+  product?: Product | null
+  type: ProductRelatedUploadType
+}) {
+  const { t } = useI18n()
+  const [form, setForm] = useState<ProductUploadDocumentForm>(() => createProductUploadDocumentForm(product))
+  const [error, setError] = useState<string | null>(null)
+  const [isUploading, setUploading] = useState(false)
+  const labels = productUploadDocumentLabels[type]
+  const canSubmit = Boolean(form.file && form.vendorCode.trim() && !isUploading)
+
+  function closeModal() {
+    if (isUploading) {
+      return
+    }
+
+    onClose()
+    setError(null)
+  }
+
+  function setField<K extends keyof ProductUploadDocumentForm>(field: K, value: ProductUploadDocumentForm[K]) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }))
+  }
+
+  async function submitUpload() {
+    if (!form.file || !form.vendorCode.trim()) {
+      setError(t('Заповніть артикул товару і виберіть файл'))
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+
+    try {
+      await uploadProductRelatedDocument(type, buildProductUploadDocumentPayload(type, form), form.file)
+      notifications.show({ color: 'green', message: t('Файл завантажено') })
+      onClose()
+      onUploadSuccess()
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити файл'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function handleUploadKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      closeModal()
+      return
+    }
+
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && canSubmit) {
+      event.preventDefault()
+      void submitUpload()
+    }
+  }
+
+  return (
+    <AppModal centered opened={opened} title={t(labels.title)} onClose={closeModal}>
+      <Stack gap="sm" onKeyDown={handleUploadKeyDown}>
+        {error ? (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        ) : null}
+
+        <FileInput
+          clearable
+          label={t('Файл')}
+          placeholder={t('Оберіть файл')}
+          value={form.file}
+          onChange={(nextFile) => setField('file', nextFile)}
+        />
+
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput
+            label={t('Артикул товару')}
+            value={form.vendorCode}
+            onChange={(event) => setField('vendorCode', event.currentTarget.value)}
+          />
+          <TextInput
+            label={t(labels.articleLabel)}
+            value={form.article}
+            onChange={(event) => setField('article', event.currentTarget.value)}
+          />
+          <NumberInput
+            label={t('З')}
+            value={form.from}
+            onChange={(value) => setField('from', readProductUploadNumber(value))}
+          />
+          <NumberInput
+            label={t('По')}
+            value={form.to}
+            onChange={(value) => setField('to', readProductUploadNumber(value))}
+          />
+          {type === 'components' ? (
+            <NumberInput
+              label={t('Кількість')}
+              min={0}
+              value={form.quantity}
+              onChange={(value) => setField('quantity', readProductUploadNumber(value))}
+            />
+          ) : null}
+        </SimpleGrid>
+
+        {type === 'originalNumbers' ? (
+          <Checkbox
+            checked={form.isCleanBeforeLoading}
+            label={t('Очистити перед завантаженням')}
+            onChange={(event) => setField('isCleanBeforeLoading', event.currentTarget.checked)}
+          />
+        ) : null}
+
+        <Group justify="flex-end">
+          <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
+            {t('Скасувати')}
+          </Button>
+          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+            {t('Завантажити')}
+          </Button>
+        </Group>
+      </Stack>
+    </AppModal>
+  )
+}
+
+function createProductUploadDocumentForm(product?: Product | null): ProductUploadDocumentForm {
+  return {
+    article: '',
+    file: null,
+    from: 0,
+    isCleanBeforeLoading: false,
+    quantity: 0,
+    to: 0,
+    vendorCode: product?.VendorCode || '',
+  }
+}
+
+function createProductFileUploadForm(): ProductFileUploadForm {
+  return {
+    descriptionRU: 0,
+    descriptionUA: 0,
+    endRow: 0,
+    files: [],
+    isForSale: 0,
+    isForWeb: 0,
+    mainOriginalNumber: 0,
+    measureUnit: 0,
+    mode: 0,
+    nameRU: 0,
+    nameUA: 0,
+    newVendorCode: 0,
+    orderStandard: 0,
+    packingStandard: 0,
+    prices: [],
+    productGroup: 0,
+    size: 0,
+    startRow: 0,
+    top: 0,
+    ucgfea: 0,
+    vendorCode: 0,
+    volume: 0,
+    weight: 0,
+  }
+}
+
+function buildProductFileUploadConfiguration(form: ProductFileUploadForm): ProductFileUploadConfiguration {
+  const priceConfigurations = form.prices.reduce<ProductFileUploadConfiguration['PriceConfigurations']>((items, priceRow) => {
+    if (priceRow.pricingId && priceRow.columnNumber > 0) {
+      items.push({
+        ColumnNumber: priceRow.columnNumber,
+        PricingId: Number(priceRow.pricingId),
+      })
+    }
+
+    return items
+  }, [])
+
+  return {
+    DescriptionPL: 0,
+    DescriptionRU: form.descriptionRU,
+    DescriptionUA: form.descriptionUA,
+    EndRow: form.endRow,
+    IsForSale: form.isForSale,
+    IsForWeb: form.isForWeb,
+    MainOriginalNumber: form.mainOriginalNumber,
+    MeasureUnit: form.measureUnit,
+    Mode: form.mode,
+    NamePL: 0,
+    NameRU: form.nameRU,
+    NameUA: form.nameUA,
+    NewVendorCode: form.newVendorCode,
+    OrderStandard: form.orderStandard,
+    PackingStandard: form.packingStandard,
+    PriceConfigurations: priceConfigurations,
+    ProductGroup: form.productGroup,
+    Size: form.size,
+    StartRow: form.startRow,
+    Top: form.top,
+    UCGFEA: form.ucgfea,
+    VendorCode: form.vendorCode,
+    Volume: form.volume,
+    Weight: form.weight,
+    WithDescriptionPL: false,
+    WithDescriptionRU: form.descriptionRU !== 0,
+    WithDescriptionUA: form.descriptionUA !== 0,
+    WithIsForSale: form.isForSale !== 0,
+    WithIsForWeb: form.isForWeb !== 0,
+    WithMainOriginalNumber: form.mainOriginalNumber !== 0,
+    WithMeasureUnit: form.measureUnit !== 0,
+    WithNamePL: false,
+    WithNameRU: form.nameRU !== 0,
+    WithNameUA: form.nameUA !== 0,
+    WithNewVendorCode: form.newVendorCode !== 0,
+    WithOrderStandard: form.orderStandard !== 0,
+    WithPackingStandard: form.packingStandard !== 0,
+    WithPrices: priceConfigurations.length > 0,
+    WithProductGroup: form.productGroup !== 0,
+    WithSize: form.size !== 0,
+    WithTop: form.top !== 0,
+    WithUCGFEA: form.ucgfea !== 0,
+    WithVolume: form.volume !== 0,
+    WithWeight: form.weight !== 0,
+  }
+}
+
+function buildProductUploadDocumentPayload(
+  type: ProductRelatedUploadType,
+  form: ProductUploadDocumentForm,
+): ProductUploadDocumentPayload {
+  const basePayload: ProductUploadDocumentPayload = {
+    from: form.from,
+    to: form.to,
+    vendorCode: form.vendorCode.trim(),
+  }
+  const article = form.article.trim()
+
+  switch (type) {
+    case 'analogues':
+      return {
+        ...basePayload,
+        analogueVendorCode: article,
+      }
+    case 'components':
+      return {
+        ...basePayload,
+        componentVendorCode: article,
+        qty: form.quantity,
+      }
+    case 'originalNumbers':
+      return {
+        ...basePayload,
+        isCleanBeforeLoading: form.isCleanBeforeLoading,
+        originalNumber: article,
+      }
+  }
+}
+
+function readProductUploadNumber(value: number | string): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  const parsedValue = Number(value)
+
+  return Number.isFinite(parsedValue) ? parsedValue : 0
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = target.tagName.toLowerCase()
+
+  return target.isContentEditable || tagName === 'button' || tagName === 'input' || tagName === 'select' || tagName === 'textarea'
 }
 
 function ProductInlineMovementsTab({
@@ -961,7 +2461,10 @@ function ProductInlineMovementsTab({
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
+    document: null,
     error: null,
+    exportError: null,
+    isExporting: false,
     isLoading: Boolean(productNetUid),
     rows: [],
   })
@@ -979,17 +2482,18 @@ function ProductInlineMovementsTab({
       dispatch({ type: 'loading' })
 
       try {
-        const nextRows = await getProductMovements({
+        const params = {
           from: dateFrom,
-          movementType: 0,
           productNetId: netUid,
           to: dateTo,
-          types: movementItemTypes,
-        })
+        }
+        const nextRows = direction === 'income'
+          ? await getProductIncomeMovements(params)
+          : await getProductOutcomeMovements(params)
 
         if (!cancelled) {
           dispatch({
-            rows: nextRows.filter((row) => (direction === 'income' ? toNumber(row.IncomeQty) > 0 : toNumber(row.OutcomeQty) > 0)),
+            rows: nextRows,
             type: 'success',
           })
         }
@@ -1010,6 +2514,32 @@ function ProductInlineMovementsTab({
     }
   }, [dateFrom, dateTo, direction, productNetUid, reloadKey, t])
 
+  async function exportRows() {
+    if (!productNetUid || state.isExporting) {
+      return
+    }
+
+    dispatch({ type: 'export-loading' })
+
+    try {
+      const params = {
+        from: dateFrom,
+        productNetId: productNetUid,
+        to: dateTo,
+      }
+      const document = direction === 'income'
+        ? await exportProductIncomeMovementsDocument(params)
+        : await exportProductOutcomeMovementsDocument(params)
+
+      dispatch({ document, type: 'export-success' })
+    } catch (exportError) {
+      dispatch({
+        error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'),
+        type: 'export-error',
+      })
+    }
+  }
+
   return (
     <Stack gap="sm">
       <Group align="end" gap="sm" wrap="wrap">
@@ -1017,6 +2547,15 @@ function ProductInlineMovementsTab({
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} variant="light" onClick={() => reload()}>
           {t('Оновити')}
+        </Button>
+        <Button
+          disabled={!productNetUid}
+          leftSection={<IconDownload size={16} />}
+          loading={state.isExporting}
+          variant="light"
+          onClick={() => void exportRows()}
+        >
+          {t('Завантажити')}
         </Button>
       </Group>
 
@@ -1028,6 +2567,10 @@ function ProductInlineMovementsTab({
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {state.error}
         </Alert>
+      ) : state.exportError ? (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {state.exportError}
+        </Alert>
       ) : state.isLoading ? (
         <Group justify="center" py="md">
           <Loader size="sm" />
@@ -1035,62 +2578,206 @@ function ProductInlineMovementsTab({
         </Group>
       ) : state.rows.length === 0 ? (
         <Text c="dimmed" size="sm">{t(labels.empty)}</Text>
+      ) : direction === 'income' ? (
+        <ProductIncomeMovementsTable rows={state.rows as ProductIncomeMovement[]} />
       ) : (
-        <ScrollArea>
-          <Table striped highlightOnHover withTableBorder miw={920}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Дата')}</Table.Th>
-                <Table.Th>{t('Документ')}</Table.Th>
-                <Table.Th>{t('Номер')}</Table.Th>
-                <Table.Th>{t('Склад')}</Table.Th>
-                <Table.Th>{t('Клієнт')}</Table.Th>
-                <Table.Th ta="right">{direction === 'income' ? t('Прихід') : t('Вихід')}</Table.Th>
-                <Table.Th ta="right">{t('Кількість')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {state.rows.map((row) => (
-                <Table.Tr key={getMovementRowKey(row)}>
-                  <Table.Td>{formatInlineDateTime(row.DocumentFromDate || row.FromDate || row.Created)}</Table.Td>
-                  <Table.Td>{displayValue(row.DocumentType || row.MovementType)}</Table.Td>
-                  <Table.Td>{displayValue(row.DocumentNumber)}</Table.Td>
-                  <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-                  <Table.Td>{displayValue(row.ClientName)}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(direction === 'income' ? row.IncomeQty : row.OutcomeQty)}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea>
+        <ProductOutcomeMovementsTable rows={state.rows as ProductOutcomeMovement[]} />
       )}
+
+      <ProductMovementDownloadModal
+        document={state.document}
+        title={labels.exportTitle}
+        onClose={() => dispatch({ type: 'export-clear' })}
+      />
     </Stack>
   )
 }
 
-function RelatedProductsList({ emptyLabel, items }: { emptyLabel: string; items: unknown[] }) {
-  if (items.length === 0) {
-    return <Text c="dimmed" size="sm">{emptyLabel}</Text>
-  }
+function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }) {
+  const { t } = useI18n()
 
   return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-      {items.map((item) => (
-        <Card withBorder radius="sm" padding="xs" key={getRelatedProductKey(item)}>
-          <Text fw={650} size="sm" lineClamp={1}>{getRelatedProductCode(item)}</Text>
-          <Text c="dimmed" size="xs" lineClamp={2}>{getRelatedProductName(item)}</Text>
-        </Card>
-      ))}
-    </SimpleGrid>
+    <ScrollArea>
+      <Table striped highlightOnHover withTableBorder miw={1960}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>{t('Склад')}</Table.Th>
+            <Table.Th>{t('Постачальник')}</Table.Th>
+            <Table.Th>{t('Організація')}</Table.Th>
+            <Table.Th>{t('Дата приходу')}</Table.Th>
+            <Table.Th>{t('Номер приходу')}</Table.Th>
+            <Table.Th>{t('Інвойс')}</Table.Th>
+            <Table.Th>{t('Дата інвойсу')}</Table.Th>
+            <Table.Th>{t('Валюта')}</Table.Th>
+            <Table.Th ta="right">{t('Курс')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна UAH')}</Table.Th>
+            <Table.Th ta="right">{t('Net')}</Table.Th>
+            <Table.Th ta="right">{t('Total Net')}</Table.Th>
+            <Table.Th ta="right">{t('Gross')}</Table.Th>
+            <Table.Th ta="right">{t('Бух. Gross')}</Table.Th>
+            <Table.Th ta="right">{t('Упр. EUR')}</Table.Th>
+            <Table.Th ta="right">{t('Бух. EUR')}</Table.Th>
+            <Table.Th ta="right">{t('Вага')}</Table.Th>
+            <Table.Th ta="right">{t('Прихід')}</Table.Th>
+            <Table.Th ta="right">{t('Залишок')}</Table.Th>
+            <Table.Th>{t('З інвойсу')}</Table.Th>
+            <Table.Th>{t('Дата з інвойсу')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна повернення')}</Table.Th>
+            <Table.Th ta="right">{t('Різниця')}</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row, index) => (
+            <Table.Tr key={getIncomeMovementRowKey(row, index)}>
+              <Table.Td>{displayValue(row.StorageName)}</Table.Td>
+              <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
+              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
+              <Table.Td>{displayValue(row.IncomeToStorageNumber)}</Table.Td>
+              <Table.Td>{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
+              <Table.Td>{displayValue(row.Currency)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
+              <Table.Td>{displayValue(row.FromInvoiceNumber)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </ScrollArea>
+  )
+}
+
+function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[] }) {
+  const { t } = useI18n()
+
+  return (
+    <ScrollArea>
+      <Table striped highlightOnHover withTableBorder miw={1280}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>{t('Дата')}</Table.Th>
+            <Table.Th>{t('Тип документа')}</Table.Th>
+            <Table.Th>{t('Склад')}</Table.Th>
+            <Table.Th>{t('Організація')}</Table.Th>
+            <Table.Th>{t('Номер')}</Table.Th>
+            <Table.Th>{t('Клієнт')}</Table.Th>
+            <Table.Th>{t('Відповідальний')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна')}</Table.Th>
+            <Table.Th ta="right">{t('Кількість')}</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row, index) => {
+            const editedClassName = row.HasUpdateDataCarrier ? 'product-inline-table-cell-edited' : undefined
+
+            return (
+              <Table.Tr className={row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined} key={getOutcomeMovementRowKey(row, index)}>
+                <Table.Td className={editedClassName}>{formatInlineDateTime(row.FromDate)}</Table.Td>
+                <Table.Td className={editedClassName}>{displayValue(row.DocumentTypeName)}</Table.Td>
+                <Table.Td>{displayValue(row.StorageName)}</Table.Td>
+                <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+                <Table.Td className={editedClassName}>{displayValue(row.DocumentNumber)}</Table.Td>
+                <Table.Td>{displayValue(row.ClientName)}</Table.Td>
+                <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
+                <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
+                <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
+              </Table.Tr>
+            )
+          })}
+        </Table.Tbody>
+      </Table>
+    </ScrollArea>
+  )
+}
+
+function ProductMovementDownloadModal({
+  document,
+  onClose,
+  title,
+}: {
+  document: ProductMovementExportDocument | null
+  onClose: () => void
+  title: string
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={Boolean(document)} title={t(title)} onClose={onClose}>
+      <Stack gap="sm">
+        {document?.DocumentURL || document?.PdfDocumentURL ? (
+          <>
+            {document.DocumentURL ? (
+              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-excel">
+                  <IconFileTypeXls size={22} stroke={1.8} />
+                </span>
+                <span>{t('Excel документ')}</span>
+              </Anchor>
+            ) : null}
+            {document.PdfDocumentURL ? (
+              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-pdf">
+                  <IconFileTypePdf size={22} stroke={1.8} />
+                </span>
+                <span>{t('PDF документ')}</span>
+              </Anchor>
+            ) : null}
+          </>
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('Документ недоступний для завантаження')}
+          </Text>
+        )}
+      </Stack>
+    </AppModal>
   )
 }
 
 function inlineMovementReducer(state: InlineMovementState, action: InlineMovementAction): InlineMovementState {
   switch (action.type) {
+    case 'export-clear':
+      return {
+        ...state,
+        document: null,
+      }
+    case 'export-error':
+      return {
+        ...state,
+        exportError: action.error,
+        isExporting: false,
+      }
+    case 'export-loading':
+      return {
+        ...state,
+        exportError: null,
+        isExporting: true,
+      }
+    case 'export-success':
+      return {
+        ...state,
+        document: action.document,
+        exportError: null,
+        isExporting: false,
+      }
     case 'error':
       return {
+        document: state.document,
         error: action.error,
+        exportError: state.exportError,
+        isExporting: state.isExporting,
         isLoading: false,
         rows: [],
       }
@@ -1098,11 +2785,15 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
       return {
         ...state,
         error: null,
+        exportError: null,
         isLoading: true,
       }
     case 'success':
       return {
+        document: state.document,
         error: null,
+        exportError: null,
+        isExporting: false,
         isLoading: false,
         rows: action.rows,
       }
@@ -1152,6 +2843,38 @@ function inlineDetailReducer(state: InlineDetailState, action: InlineDetailActio
   }
 }
 
+function applyOriginalNumbersResponse(
+  product: Product,
+  nextNumbers: ProductOriginalNumber[],
+  onProductChanged: (product: Product | null) => void,
+) {
+  if (nextNumbers.length === 0) {
+    onProductChanged(null)
+    return
+  }
+
+  onProductChanged({
+    ...product,
+    MainOriginalNumber: getMainOriginalNumberFromList(nextNumbers) || product.MainOriginalNumber,
+    ProductOriginalNumbers: nextNumbers,
+  })
+}
+
+function getMainOriginalNumberFromList(items: ProductOriginalNumber[]): string {
+  const mainOriginalNumber = items.find((item) => item.IsMainOriginalNumber)?.OriginalNumber
+    || items[0]?.OriginalNumber
+
+  return mainOriginalNumber?.MainNumber?.trim() || mainOriginalNumber?.Number?.trim() || ''
+}
+
+function getProductOriginalNumberIdentity(item: ProductOriginalNumber): string {
+  return String(item.NetUid || item.OriginalNumber?.NetUid || item.OriginalNumber?.MainNumber || item.OriginalNumber?.Number || 'original-number')
+}
+
+function getOriginalNumberText(item: ProductOriginalNumber): string {
+  return item.OriginalNumber?.MainNumber?.trim() || item.OriginalNumber?.Number?.trim() || ''
+}
+
 function getProductRowKey(product: Product): string {
   return getProductIdentity(product)
 }
@@ -1193,7 +2916,10 @@ function copyToClipboard(value: string) {
 }
 
 function getTodayDate(): string {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+
+  return localDate.toISOString().slice(0, 10)
 }
 
 function toNumber(value?: number | null): number {
@@ -1210,26 +2936,22 @@ function formatInlineDateTime(value?: Date | string | null): string {
   return Number.isNaN(date.getTime()) ? '-' : dateTimeFormatter.format(date)
 }
 
-function getMovementRowKey(row: ProductMovement): string {
-  return String(row.NetUid || row.Id || `${row.DocumentNumber || 'movement'}-${row.DocumentFromDate || row.FromDate || row.Created || ''}`)
+function getIncomeMovementRowKey(row: ProductIncomeMovement, index: number): string {
+  return String(
+    row.NetUid
+      || row.Id
+      || `${row.IncomeToStorageNumber || row.IncomeInvoiceNumber || 'income'}-${row.IncomeToStorageDate || row.IncomeInvoiceDate || index}`,
+  )
+}
+
+function getOutcomeMovementRowKey(row: ProductOutcomeMovement, index: number): string {
+  return String(row.NetUid || row.Id || `${row.DocumentNumber || 'outcome'}-${row.FromDate || index}`)
 }
 
 function getRelatedProductKey(item: unknown): string {
   const product = readRelatedProduct(item)
 
   return String(product?.NetUid || product?.Id || product?.VendorCode || product?.Name || 'related-product')
-}
-
-function getRelatedProductCode(item: unknown): string {
-  const product = readRelatedProduct(item)
-
-  return displayValue(product?.VendorCode || product?.MainOriginalNumber || product?.NetUid)
-}
-
-function getRelatedProductName(item: unknown): string {
-  const product = readRelatedProduct(item)
-
-  return displayValue(product?.NameUA || product?.Name || product?.Description)
 }
 
 function readRelatedProduct(item: unknown): Partial<Product> | null {
@@ -1245,4 +2967,95 @@ function readRelatedProduct(item: unknown): Partial<Product> | null {
   }
 
   return record as Partial<Product>
+}
+
+function getAnalogueRows(product: Product): RelatedProductRow[] {
+  const rows = [...(product.AnalogueProducts || []), ...(product.BaseAnalogueProducts || [])]
+
+  return rows.reduce<RelatedProductRow[]>((result, item) => {
+    const relatedProduct = readRelatedProductByKeys(item, ['AnalogueProduct', 'Product', 'RelatedProduct'])
+
+    if (relatedProduct) {
+      result.push({
+        isProductSet: false,
+        product: relatedProduct,
+        source: item,
+      })
+    }
+
+    return result
+  }, [])
+}
+
+function getComponentRows(product: Product): RelatedProductRow[] {
+  const components = (product.ComponentProducts || []).reduce<RelatedProductRow[]>((result, item) => {
+    const relatedProduct = readRelatedProductByKeys(item, ['ComponentProduct', 'Product', 'RelatedProduct'])
+
+    if (relatedProduct) {
+      result.push({
+        isProductSet: false,
+        product: relatedProduct,
+        quantity: readRelatedQuantity(item),
+        source: item,
+      })
+    }
+
+    return result
+  }, [])
+  const sets = (product.BaseSetProducts || []).reduce<RelatedProductRow[]>((result, item) => {
+    const relatedProduct = readRelatedProductByKeys(item, ['BaseProduct', 'Product', 'RelatedProduct'])
+
+    if (relatedProduct) {
+      result.push({
+        isProductSet: true,
+        product: relatedProduct,
+        quantity: readRelatedQuantity(item),
+        source: item,
+      })
+    }
+
+    return result
+  }, [])
+
+  return [...components, ...sets]
+}
+
+function readRelatedProductByKeys(item: unknown, keys: string[]): Partial<Product> | null {
+  if (!item || typeof item !== 'object') {
+    return null
+  }
+
+  const record = item as Record<string, unknown>
+
+  for (const key of keys) {
+    const value = record[key]
+
+    if (value && typeof value === 'object') {
+      return value as Partial<Product>
+    }
+  }
+
+  return record as Partial<Product>
+}
+
+function readRelatedQuantity(item: unknown): number | string | undefined {
+  if (!item || typeof item !== 'object') {
+    return undefined
+  }
+
+  const record = item as Record<string, unknown>
+  const value = record.SetComponentsQty || record.Quantity || record.Qty
+
+  return typeof value === 'number' || typeof value === 'string' ? value : undefined
+}
+
+function getRelatedProductAvailableQty(product: Partial<Product>, type: 'analogues' | 'components'): number {
+  const values = type === 'analogues'
+    ? [product.AvailableQtyUk, product.AvailableQtyUkVAT, product.AvailableDefectiveQtyUk]
+    : [product.AvailableQtyUk, product.AvailableQtyUkVAT]
+
+  return values.reduce<number>(
+    (total, value) => total + toNumber(value),
+    0,
+  )
 }

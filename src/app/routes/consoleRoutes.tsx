@@ -28,7 +28,6 @@ import {
   PaymentCashflowArticlesPage,
   ProductAvailabilitiesPage,
   ProductCapitalizationsPage,
-  ProductDetailPage,
   ProductGroupDetailPage,
   ProductGroupsPage,
   ProductHistoryPage,
@@ -61,6 +60,7 @@ import {
   UsersPage,
 } from './lazyConsolePages'
 import { lazyRoute } from './lazyRoute'
+import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
 
 export type ConsoleRoute = {
   path: string
@@ -80,7 +80,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/products/transfers', element: lazyRoute(<ProductTransfersPage />) },
   { path: '/products/capitalization', element: lazyRoute(<ProductCapitalizationsPage />) },
   { path: '/products/history', element: lazyRoute(<ProductHistoryPage />) },
-  { path: '/products/:netId', element: lazyRoute(<ProductDetailPage />) },
+  { path: '/products/:netId', element: <ProductCarouselDeepLinkRedirect /> },
   { path: '/product-groups', element: lazyRoute(<ProductGroupsPage />) },
   { path: '/product-groups/:id', element: lazyRoute(<ProductGroupDetailPage />) },
   { path: '/transporters', element: lazyRoute(<TransportersPage />) },

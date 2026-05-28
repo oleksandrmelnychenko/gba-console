@@ -1,8 +1,12 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  ProductStorageAvailableConsignment,
   ProductStorageAvailability,
   ProductStoragePlacement,
   ProductStorageStorage,
+  ProductStorageSupplyReturnPayload,
+  ProductStorageTransferPayload,
+  ProductStorageWriteOffPayload,
   ProductStoragesExportDocument,
   ProductStoragesSearchParams,
 } from '../types'
@@ -38,6 +42,43 @@ export async function exportProductStorageAvailability(
   })
 
   return normalizeExportDocument(result)
+}
+
+export async function createProductStorageTransfer(payload: ProductStorageTransferPayload): Promise<void> {
+  await apiRequest<unknown>('/products/transfers/new', {
+    method: 'POST',
+    query: {
+      storageNumber: payload.storageNumber || '',
+      rowNumber: payload.rowNumber || '',
+      cellNumber: payload.cellNumber || '',
+    },
+    body: payload.productTransfer,
+  })
+}
+
+export async function createProductStorageWriteOff(payload: ProductStorageWriteOffPayload): Promise<void> {
+  await apiRequest<unknown>('/orders/depreciated/new', {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+export async function getProductStorageAvailableConsignments(params: {
+  productNetId: string
+  storageNetId: string
+}): Promise<ProductStorageAvailableConsignment[]> {
+  const result = await apiRequest<unknown>('/consignments/remaining/get/available', {
+    query: params,
+  })
+
+  return readArrayPayload(result, ['Items', 'Consignments', 'Data']) as ProductStorageAvailableConsignment[]
+}
+
+export async function createProductStorageSupplyReturn(payload: ProductStorageSupplyReturnPayload): Promise<void> {
+  await apiRequest<unknown>('/supplies/returns/new', {
+    method: 'POST',
+    body: payload,
+  })
 }
 
 function normalizeStorages(result: unknown): ProductStorageStorage[] {
