@@ -9,9 +9,7 @@ import {
   Loader,
   SimpleGrid,
   Stack,
-  Switch,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
@@ -25,10 +23,22 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
 import { createClient } from '../api/clientFormApi'
+import {
+  checkRegionCodeAvailability,
+  createCountry,
+  createIncoterm,
+  createRegion,
+  getAvailableRegionCode,
+} from '../api/clientLookupsApi'
+import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { getClientTypePermission, getClientTypeRolePermission } from '../permissions'
+import { BankDetailsFields } from '../components/form/BankDetailsFields'
+import { ContactInfoFields } from '../components/form/ContactInfoFields'
+import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
-import type { Client, ClientType, ClientTypeRole } from '../types'
+import { validateClientForm } from '../components/form/validateClientForm'
+import type { Client, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -55,12 +65,35 @@ type SetClientDraftField = <K extends keyof ClientDraft>(key: K, value: ClientDr
 type NewStepContentProps = {
   clientTypes: ClientType[]
   draft: ClientDraft
+  role: ClientFormRole
   hasPermission: (permissionKey: string) => boolean
+  lookups: ReturnType<typeof useClientFormLookups>['lookups']
+  isLoadingRegionCode: boolean
+  regionCodeError?: string
   setDraftField: SetClientDraftField
   setRole: (clientType: ClientType, role: ClientTypeRole) => void
+  setBankField: (key: 'BranchCode' | 'Swift' | 'BankAndBranch' | 'BankAddress', value: string) => void
+  setAccountNumber: (value: string) => void
+  setAccountNumberCurrency: (currency: Currency | null) => void
+  setIbanNumber: (value: string) => void
+  setIbanNumberCurrency: (currency: Currency | null) => void
+  onRegionChange: (region: Region | null) => void
+  onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
+  onCreateIncoterm: (name: string) => void
+  onCreateCountry: (name: string, code: string) => void
+  onCreateRegion: (name: string) => void
   onDraftChange: (client: Client) => void
   onPricingValidityChange: (isValid: boolean) => void
   step: NewClientStep
+}
+
+function getDraftRole(draft: ClientDraft): ClientFormRole {
+  const type = draft.ClientInRole.ClientType?.Type
+  return {
+    isProvider: type === CLIENT_TYPE_PROVIDER,
+    isBuyer: type !== CLIENT_TYPE_PROVIDER,
+    isSubClient: Boolean(draft.IsSubClient || draft.IsTradePoint),
+  }
 }
 
 export function ClientNewPage() {
@@ -71,16 +104,23 @@ export function ClientNewPage() {
   const { hasPermission } = useAuth()
   const routeState = location.state as ClientNewRouteState | null
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
-  const [draft, setDraft] = useValueState<ClientDraft>(() => createEmptyDraft())
+  const [draft, setDraft] = useValueState<ClientDraft>(() => createEmptyDraft(Boolean(routeState?.parentClientId)))
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
   const [isPricingValid, setPricingValid] = useValueState(false)
+  const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
+  const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
   const firstUnavailableStep = currentStep !== 'role' && !draft.ClientInRole.ClientTypeRole
   const returnPath = getNewClientReturnPath(routeState)
+  const role = useMemo(() => getDraftRole(draft), [draft])
+  const { lookups, error: lookupsError, reloadCountries, reloadIncoterms, reloadRegions } = useClientFormLookups({
+    needsProviderLookups: role.isProvider,
+    needsBuyerLookups: role.isBuyer,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -131,12 +171,12 @@ export function ClientNewPage() {
     }))
   }
 
-  function setRole(clientType: ClientType, role: ClientTypeRole) {
+  function setRole(clientType: ClientType, nextRole: ClientTypeRole) {
     setDraft((currentDraft) => ({
       ...currentDraft,
       ClientInRole: {
         ClientType: clientType,
-        ClientTypeRole: role,
+        ClientTypeRole: nextRole,
       },
     }))
   }
@@ -147,6 +187,179 @@ export function ClientNewPage() {
       ...updatedClient,
       ClientInRole: currentDraft.ClientInRole,
     }))
+  }
+
+  function setBankField(key: 'BranchCode' | 'Swift' | 'BankAndBranch' | 'BankAddress', value: string) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientBankDetails: {
+        ...currentDraft.ClientBankDetails,
+        [key]: value,
+      },
+    }))
+  }
+
+  function setAccountNumber(value: string) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientBankDetails: {
+        ...currentDraft.ClientBankDetails,
+        AccountNumber: {
+          ...currentDraft.ClientBankDetails?.AccountNumber,
+          AccountNumber: value,
+        },
+      },
+    }))
+  }
+
+  function setAccountNumberCurrency(currency: Currency | null) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientBankDetails: {
+        ...currentDraft.ClientBankDetails,
+        AccountNumber: {
+          ...currentDraft.ClientBankDetails?.AccountNumber,
+          Currency: currency || undefined,
+        },
+      },
+    }))
+  }
+
+  function setIbanNumber(value: string) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientBankDetails: {
+        ...currentDraft.ClientBankDetails,
+        ClientBankDetailIbanNo: {
+          ...currentDraft.ClientBankDetails?.ClientBankDetailIbanNo,
+          IBANNO: value,
+        },
+      },
+    }))
+  }
+
+  function setIbanNumberCurrency(currency: Currency | null) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientBankDetails: {
+        ...currentDraft.ClientBankDetails,
+        ClientBankDetailIbanNo: {
+          ...currentDraft.ClientBankDetails?.ClientBankDetailIbanNo,
+          Currency: currency || undefined,
+        },
+      },
+    }))
+  }
+
+  async function handleRegionChange(region: Region | null) {
+    setRegionCodeError(undefined)
+
+    if (!region) {
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        Region: undefined,
+        RegionCode: undefined,
+      }))
+      return
+    }
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      Region: region,
+    }))
+
+    setLoadingRegionCode(true)
+    setError(null)
+
+    try {
+      const regionCode = await getAvailableRegionCode(region)
+
+      if (regionCode) {
+        setDraft((currentDraft) => ({
+          ...currentDraft,
+          RegionCode: regionCode,
+        }))
+      }
+    } catch (regionCodeError) {
+      setError(regionCodeError instanceof Error ? regionCodeError.message : t('Не вдалося отримати код регіону'))
+    } finally {
+      setLoadingRegionCode(false)
+    }
+  }
+
+  function handleRegionCodeFieldChange(key: 'Value' | 'City' | 'District', value: string) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      RegionCode: {
+        ...currentDraft.RegionCode,
+        [key]: value,
+      },
+    }))
+
+    if (key === 'Value') {
+      void verifyRegionCode(value)
+    }
+  }
+
+  async function verifyRegionCode(value: string) {
+    const regionNetUid = draft.Region?.NetUid
+
+    if (!regionNetUid || !value) {
+      setRegionCodeError(undefined)
+      return
+    }
+
+    try {
+      const isAvailable = await checkRegionCodeAvailability(regionNetUid, value)
+      setRegionCodeError(isAvailable ? undefined : t('Код по регіону вже використовується'))
+    } catch {
+      setRegionCodeError(undefined)
+    }
+  }
+
+  async function handleCreateIncoterm(name: string) {
+    setError(null)
+
+    try {
+      const created = await createIncoterm({ IncotermName: name })
+      await reloadIncoterms()
+
+      if (created) {
+        setDraftField('Incoterm', created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
+    }
+  }
+
+  async function handleCreateCountry(name: string, code: string) {
+    setError(null)
+
+    try {
+      const created = await createCountry({ Name: name, Code: code })
+      await reloadCountries()
+
+      if (created) {
+        setDraftField('Country', created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
+    }
+  }
+
+  async function handleCreateRegion(name: string) {
+    setError(null)
+
+    try {
+      const created = await createRegion({ Name: name })
+      await reloadRegions()
+
+      if (created) {
+        await handleRegionChange(created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
+    }
   }
 
   function goToStep(nextStep: NewClientStep) {
@@ -178,6 +391,7 @@ export function ClientNewPage() {
       return
     }
 
+    setDraft(createEmptyDraft())
     navigate(returnPath, { replace: true })
   }
 
@@ -186,6 +400,13 @@ export function ClientNewPage() {
 
     if (!draft.ClientInRole.ClientTypeRole) {
       setError(t('Оберіть роль'))
+      return
+    }
+
+    const validationErrors = validateClientForm(draft, role, t('Забагато символів'))
+
+    if (Object.keys(validationErrors).length > 0) {
+      setError(t('Перевірте правильність заповнення форми'))
       return
     }
 
@@ -203,6 +424,7 @@ export function ClientNewPage() {
         color: 'green',
         message: t('Клієнта створено'),
       })
+      setDraft(createEmptyDraft())
       navigate(getClientType(draft) === CLIENT_TYPE_PROVIDER ? '/suppliers' : '/clients', {
         replace: true,
         state: createdClient
@@ -229,9 +451,9 @@ export function ClientNewPage() {
       onClose={closeWizard}
     >
       <Stack gap="md">
-        {error && (
+        {(error || lookupsError) && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {error}
+            {error || lookupsError}
           </Alert>
         )}
 
@@ -270,10 +492,24 @@ export function ClientNewPage() {
                   <NewStepContent
                     clientTypes={clientTypes}
                     draft={draft}
+                    role={role}
                     hasPermission={hasPermission}
+                    lookups={lookups}
+                    isLoadingRegionCode={isLoadingRegionCode}
+                    regionCodeError={regionCodeError}
                     setDraftField={setDraftField}
                     setRole={setRole}
+                    setBankField={setBankField}
+                    setAccountNumber={setAccountNumber}
+                    setAccountNumberCurrency={setAccountNumberCurrency}
+                    setIbanNumber={setIbanNumber}
+                    setIbanNumberCurrency={setIbanNumberCurrency}
                     step={currentStep}
+                    onRegionChange={handleRegionChange}
+                    onRegionCodeFieldChange={handleRegionCodeFieldChange}
+                    onCreateIncoterm={handleCreateIncoterm}
+                    onCreateCountry={handleCreateCountry}
+                    onCreateRegion={handleCreateRegion}
                     onDraftChange={setDraftClient}
                     onPricingValidityChange={setPricingValid}
                   />
@@ -322,10 +558,24 @@ export function ClientNewPage() {
 function NewStepContent({
   clientTypes,
   draft,
+  role,
   hasPermission,
+  lookups,
+  isLoadingRegionCode,
+  regionCodeError,
   setDraftField,
   setRole,
+  setBankField,
+  setAccountNumber,
+  setAccountNumberCurrency,
+  setIbanNumber,
+  setIbanNumberCurrency,
   step,
+  onRegionChange,
+  onRegionCodeFieldChange,
+  onCreateIncoterm,
+  onCreateCountry,
+  onCreateRegion,
   onDraftChange,
   onPricingValidityChange,
 }: NewStepContentProps) {
@@ -339,27 +589,27 @@ function NewStepContent({
         </Title>
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
           {clientTypes.flatMap((clientType) =>
-            (clientType.ClientTypeRoles || []).flatMap((role) => {
-              if (!canSelectRole(clientType, role, hasPermission)) {
+            (clientType.ClientTypeRoles || []).flatMap((clientRole) => {
+              if (!canSelectRole(clientType, clientRole, hasPermission)) {
                 return []
               }
 
-              const isSelected = isSameRole(draft.ClientInRole.ClientTypeRole, role)
+              const isSelected = isSameRole(draft.ClientInRole.ClientTypeRole, clientRole)
 
               return [
                 <Button
-                  key={`${clientType.Id || clientType.NetUid || clientType.Name}-${role.Id || role.NetUid || role.Name}`}
+                  key={`${clientType.Id || clientType.NetUid || clientType.Name}-${clientRole.Id || clientRole.NetUid || clientRole.Name}`}
                   type="button"
                   fullWidth
                   h="auto"
                   justify="space-between"
                   color={isSelected ? 'violet' : 'gray'}
                   variant={isSelected ? 'light' : 'default'}
-                  onClick={() => setRole(clientType, role)}
+                  onClick={() => setRole(clientType, clientRole)}
                 >
                   <Group justify="space-between" w="100%" py={4}>
                     <Box ta="left">
-                      <Text fw={600}>{role.Name || t('Без назви')}</Text>
+                      <Text fw={600}>{clientRole.Name || t('Без назви')}</Text>
                       <Text size="xs" c="dimmed">
                         {clientType.Name || '-'}
                       </Text>
@@ -381,16 +631,7 @@ function NewStepContent({
         <Title order={3} size="h4">
           {t('Контакти')}
         </Title>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <TextInput label={t('Телефон')} value={draft.ClientNumber || ''} onChange={(event) => setDraftField('ClientNumber', event.currentTarget.value)} />
-          <TextInput label={t('Мобільний')} value={draft.MobileNumber || ''} onChange={(event) => setDraftField('MobileNumber', event.currentTarget.value)} />
-          <TextInput label="SMS" value={draft.SMSNumber || ''} onChange={(event) => setDraftField('SMSNumber', event.currentTarget.value)} />
-          <TextInput label="Email" value={draft.EmailAddress || ''} onChange={(event) => setDraftField('EmailAddress', event.currentTarget.value)} />
-          <TextInput label={t('Фактична адреса')} value={draft.ActualAddress || ''} onChange={(event) => setDraftField('ActualAddress', event.currentTarget.value)} />
-          <TextInput label={t('Юридична адреса')} value={draft.LegalAddress || ''} onChange={(event) => setDraftField('LegalAddress', event.currentTarget.value)} />
-          <TextInput label={t('Адреса доставки')} value={draft.DeliveryAddress || ''} onChange={(event) => setDraftField('DeliveryAddress', event.currentTarget.value)} />
-          <TextInput label={t('Менеджер')} value={draft.Manager || ''} onChange={(event) => setDraftField('Manager', event.currentTarget.value)} />
-        </SimpleGrid>
+        <ContactInfoFields client={draft} role={role} onChange={setDraftField} />
       </Stack>
     )
   }
@@ -401,12 +642,15 @@ function NewStepContent({
         <Title order={3} size="h4">
           {t('Банківські дані')}
         </Title>
-        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-          <TextInput label={t('Код філії')} value={draft.ClientBankDetails?.BranchCode || ''} onChange={(event) => setDraftField('ClientBankDetails', { ...draft.ClientBankDetails, BranchCode: event.currentTarget.value })} />
-          <TextInput label="SWIFT" value={draft.ClientBankDetails?.Swift || ''} onChange={(event) => setDraftField('ClientBankDetails', { ...draft.ClientBankDetails, Swift: event.currentTarget.value })} />
-          <TextInput label={t('Банк і філія')} value={draft.ClientBankDetails?.BankAndBranch || ''} onChange={(event) => setDraftField('ClientBankDetails', { ...draft.ClientBankDetails, BankAndBranch: event.currentTarget.value })} />
-          <TextInput label={t('Адреса банку')} value={draft.ClientBankDetails?.BankAddress || ''} onChange={(event) => setDraftField('ClientBankDetails', { ...draft.ClientBankDetails, BankAddress: event.currentTarget.value })} />
-        </SimpleGrid>
+        <BankDetailsFields
+          client={draft}
+          currencies={lookups.currencies}
+          onAccountNumberChange={setAccountNumber}
+          onAccountNumberCurrencyChange={setAccountNumberCurrency}
+          onBankFieldChange={setBankField}
+          onIbanNumberChange={setIbanNumber}
+          onIbanNumberCurrencyChange={setIbanNumberCurrency}
+        />
       </Stack>
     )
   }
@@ -437,28 +681,36 @@ function NewStepContent({
       <Title order={3} size="h4">
         {t('Загальна інформація')}
       </Title>
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-        <TextInput label={t('Повна назва')} value={draft.FullName || ''} onChange={(event) => setDraftField('FullName', event.currentTarget.value)} />
-        <TextInput label={t('Назва')} value={draft.Name || ''} onChange={(event) => setDraftField('Name', event.currentTarget.value)} />
-        <TextInput label={t('Прізвище')} value={draft.LastName || ''} onChange={(event) => setDraftField('LastName', event.currentTarget.value)} />
-        <TextInput label={t("Ім'я")} value={draft.FirstName || ''} onChange={(event) => setDraftField('FirstName', event.currentTarget.value)} />
-        <TextInput label={t('По батькові')} value={draft.MiddleName || ''} onChange={(event) => setDraftField('MiddleName', event.currentTarget.value)} />
-        <TextInput label={t('ЄДРПОУ')} value={draft.USREOU || ''} onChange={(event) => setDraftField('USREOU', event.currentTarget.value)} />
-        <TextInput label={t('ІПН')} value={draft.TIN || ''} onChange={(event) => setDraftField('TIN', event.currentTarget.value)} />
-        <TextInput label="SROI" value={draft.SROI || ''} onChange={(event) => setDraftField('SROI', event.currentTarget.value)} />
-        <TextInput label={t('Постачальник')} value={draft.SupplierName || ''} onChange={(event) => setDraftField('SupplierName', event.currentTarget.value)} />
-        <TextInput label={t('Код постачальника')} value={draft.SupplierCode || ''} onChange={(event) => setDraftField('SupplierCode', event.currentTarget.value)} />
-        <TextInput label={t('Бренд')} value={draft.Brand || ''} onChange={(event) => setDraftField('Brand', event.currentTarget.value)} />
-        <Switch checked={Boolean(draft.IsIndividual)} label={t('Фізична особа')} onChange={(event) => setDraftField('IsIndividual', event.currentTarget.checked)} />
-        <Switch checked={Boolean(draft.IsNotResident)} label={t('Нерезидент')} onChange={(event) => setDraftField('IsNotResident', event.currentTarget.checked)} />
-      </SimpleGrid>
+      <GeneralInfoFields
+        client={draft}
+        countries={lookups.countries}
+        incoterms={lookups.incoterms}
+        isLoadingRegionCode={isLoadingRegionCode}
+        packingMarkingPayments={lookups.packingMarkingPayments}
+        packingMarkings={lookups.packingMarkings}
+        regionCodeError={regionCodeError}
+        regions={lookups.regions}
+        role={role}
+        onAddDocuments={noop}
+        onChange={setDraftField}
+        onCreateCountry={onCreateCountry}
+        onCreateIncoterm={onCreateIncoterm}
+        onCreateRegion={onCreateRegion}
+        onRegionChange={onRegionChange}
+        onRegionCodeFieldChange={onRegionCodeFieldChange}
+        onRemoveDocument={noop}
+        onSaveDocuments={noop}
+      />
     </Stack>
   )
 }
 
-function createEmptyDraft(): ClientDraft {
+function noop() {}
+
+function createEmptyDraft(isSubClient = false): ClientDraft {
   return {
     IsActive: true,
+    IsSubClient: isSubClient,
     ClientAgreements: [],
     ClientManagers: [],
     ClientInRole: {},

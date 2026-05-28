@@ -46,6 +46,7 @@ export type GeneralInfoFieldsProps = {
   errors?: ClientFieldErrors
   isLoadingRegionCode?: boolean
   isUploadingDocuments?: boolean
+  regionCodeError?: string
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
   onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
@@ -297,6 +298,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <TextInput
               disabled={!hasRegion}
+              error={props.regionCodeError}
               label={t('Код по регіону')}
               rightSection={props.isLoadingRegionCode ? <Text size="xs">…</Text> : undefined}
               value={resolveRegionCodeValue(client.RegionCode, 'Value')}

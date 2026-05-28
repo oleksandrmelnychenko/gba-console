@@ -74,6 +74,17 @@ export async function getAvailableRegionCode(region: Region): Promise<RegionCode
   return null
 }
 
+export async function checkRegionCodeAvailability(regionNetUid: string, code: string): Promise<boolean> {
+  const result = await apiRequest<unknown>('/regions/codes/availability/check', {
+    query: {
+      code,
+      netId: regionNetUid,
+    },
+  })
+
+  return result === true
+}
+
 export async function createIncoterm(incoterm: Incoterm): Promise<Incoterm | null> {
   const result = await apiRequest<unknown>('/incoterms/new', {
     method: 'POST',
