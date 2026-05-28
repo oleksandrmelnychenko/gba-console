@@ -32,6 +32,7 @@ import {
 import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
+import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
@@ -985,6 +986,10 @@ function EditStepContent({
 
   if (step === 'perfect-client') {
     return <PerfectClientPanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'e-commerce') {
+    return <EcommercePanel client={client} onChange={onClientChange} />
   }
 
   if (step === 'sales') {
