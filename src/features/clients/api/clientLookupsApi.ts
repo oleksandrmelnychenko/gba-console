@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  createClientResourcePerfectClient,
   getClientResourceBasePricings,
   getClientResourceCurrencies,
   getClientResourceOrganizations,
@@ -27,6 +28,7 @@ import type {
 } from '../types'
 
 export {
+  createClientResourcePerfectClient,
   getClientResourceBasePricings,
   getClientResourceCurrencies,
   getClientResourceOrganizations,

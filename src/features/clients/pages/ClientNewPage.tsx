@@ -26,6 +26,7 @@ import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
 import { createClient } from '../api/clientFormApi'
 import { getClientTypePermission, getClientTypeRolePermission } from '../permissions'
+import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
 import type { Client, ClientType, ClientTypeRole } from '../types'
 
@@ -428,16 +429,7 @@ function NewStepContent({
   }
 
   if (step === 'perfect-client') {
-    return (
-      <Stack gap="md">
-        <Title order={3} size="h4">
-          {getNewStepLabel(step)}
-        </Title>
-        <Text size="sm" c="dimmed">
-          {getClientDisplayName(draft)}
-        </Text>
-      </Stack>
-    )
+    return <PerfectClientPanel client={draft} onChange={onDraftChange} />
   }
 
   return (
