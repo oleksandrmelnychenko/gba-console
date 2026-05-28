@@ -35,6 +35,8 @@ import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
+import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
+import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
@@ -86,6 +88,7 @@ type EditStepContentProps = {
   onCreateRegion: (name: string) => void
   onClientChange: (client: Client) => void
   step: string
+  productNetId?: string
 }
 
 function getClientRole(client: Client | null): ClientFormRole {
@@ -99,7 +102,7 @@ function getClientRole(client: Client | null): ClientFormRole {
 
 export function ClientEditPage() {
   const { t } = useI18n()
-  const { netid, step } = useParams()
+  const { netid, step, productNetId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
@@ -584,6 +587,7 @@ export function ClientEditPage() {
         isLoadingRegionCode={isLoadingRegionCode}
         isUploadingDocuments={isUploadingDocuments}
         lookups={lookups}
+        productNetId={productNetId}
         role={role}
         selectedStep={step}
         setAccountNumber={setAccountNumber}
@@ -706,6 +710,7 @@ function ClientEditBody({
   isLoadingRegionCode,
   isUploadingDocuments,
   lookups,
+  productNetId,
   role,
   selectedStep,
   setAccountNumber,
@@ -737,6 +742,7 @@ function ClientEditBody({
   isLoadingRegionCode: boolean
   isUploadingDocuments: boolean
   lookups: ReturnType<typeof useClientFormLookups>['lookups']
+  productNetId?: string
   role: ClientFormRole
   selectedStep?: string
   setAccountNumber: (value: string) => void
@@ -829,6 +835,7 @@ function ClientEditBody({
                 isLoadingRegionCode={isLoadingRegionCode}
                 isUploadingDocuments={isUploadingDocuments}
                 lookups={lookups}
+                productNetId={productNetId}
                 role={role}
                 setAccountNumber={setAccountNumber}
                 setAccountNumberCurrency={setAccountNumberCurrency}
@@ -924,6 +931,7 @@ function EditStepContent({
   isLoadingRegionCode,
   isUploadingDocuments,
   lookups,
+  productNetId,
   role,
   setAccountNumber,
   setAccountNumberCurrency,
@@ -977,6 +985,14 @@ function EditStepContent({
 
   if (step === 'perfect-client') {
     return <PerfectClientPanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'sales') {
+    return <SalesPanel netId={client.NetUid ?? ''} />
+  }
+
+  if (step === 'most-purchased-products') {
+    return <RecommendationsPanel client={client} productNetId={productNetId} />
   }
 
   if (step !== 'general-information') {
