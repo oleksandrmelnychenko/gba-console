@@ -13,7 +13,6 @@ import { IconAlertCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/i
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductGroupProducts } from '../api/productGroupsApi'
@@ -35,7 +34,6 @@ type ProductGroupProductsPanelProps = {
 
 export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupProductsPanelProps) {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const [productLinks, setProductLinks] = useValueState<ProductProductGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
@@ -48,20 +46,6 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const loadSequenceRef = useRef(0)
   const canLoadMore = productLinks.length < totalFilteredQty
-  const openProduct = useCallback(
-    (productLink: ProductProductGroup) => {
-      const netUid = productLink.Product?.NetUid
-
-      if (netUid) {
-        navigate(`/products?netId=${encodeURIComponent(netUid)}`, {
-          state: {
-            nodeTitle: productLink.Product?.VendorCode || productLink.Product?.NameUA || productLink.Product?.Name,
-          },
-        })
-      }
-    },
-    [navigate],
-  )
   const columns = useMemo<DataTableColumn<ProductProductGroup>[]>(
     () => [
       {
@@ -254,7 +238,6 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         minWidth={1220}
         tableId={`product-group-products-${productGroupNetId}`}
         toolbarLeft={toolbarLeft}
-        onRowClick={openProduct}
       />
 
       <Group justify="space-between">

@@ -18,7 +18,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Tabs,
   Table,
   Text,
   TextInput,
@@ -42,7 +41,6 @@ import {
   IconPhoto,
   IconPlus,
   IconRefresh,
-  IconRestore,
   IconSearch,
   IconStar,
   IconTrash,
@@ -98,8 +96,6 @@ import {
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
   getProductTitle,
-  PRODUCT_SEARCH_MODE_OPTIONS,
-  PRODUCT_SORT_MODE_OPTIONS,
 } from '../utils'
 import {
   PRODUCT_BALANCES_PERMISSION,
@@ -270,8 +266,6 @@ export function ProductsPage() {
   const [carouselMode, setCarouselMode] = useValueState<CarouselMode>('search')
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
-  const [searchMode, setSearchMode] = useValueState<ProductSearchMode>(DEFAULT_SEARCH_MODE)
-  const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
   const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
   const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
     error: null,
@@ -329,7 +323,6 @@ export function ProductsPage() {
         setBottomProducts(getNextSearchedProducts(nextProduct))
         setSelectedProduct(nextProduct)
         setCarouselMode('selection')
-        setSearchDraft('')
         return
       }
 
@@ -345,7 +338,6 @@ export function ProductsPage() {
       setBottomProducts,
       setCarouselMode,
       setLoadedProductsCount,
-      setSearchDraft,
       setSelectedProduct,
       setTopProducts,
     ],
@@ -435,8 +427,8 @@ export function ProductsPage() {
         append: false,
         limit: PAGE_SIZE,
         offset: 0,
-        searchMode,
-        sortMode,
+        searchMode: DEFAULT_SEARCH_MODE,
+        sortMode: DEFAULT_SORT_MODE,
         value: searchValue,
       })
     }, SEARCH_DEBOUNCE_MS)
@@ -444,7 +436,7 @@ export function ProductsPage() {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [hasRequestedProducts, loadProducts, reloadKey, searchMode, searchValue, sortMode])
+  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue])
 
   useEffect(() => {
     if (!routeProductNetId) {
@@ -598,42 +590,6 @@ export function ProductsPage() {
     reload()
   }
 
-  function changeSearchMode(nextValue: string | null) {
-    clearRouteProductParam()
-    setSearchMode((nextValue || DEFAULT_SEARCH_MODE) as ProductSearchMode)
-    setSearchValue(searchDraft.trim())
-    setHasRequestedProducts(true)
-    searchRequestRef.current += 1
-    setTopProducts([])
-    setBottomProducts([])
-    setLoadedProductsCount(0)
-    setVirtualLoad(false)
-    setLoading(false)
-    setCarouselMode('search')
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    reload()
-  }
-
-  function changeSortMode(nextValue: string | null) {
-    clearRouteProductParam()
-    setSortMode((nextValue || DEFAULT_SORT_MODE) as ProductSortMode)
-    setSearchValue(searchDraft.trim())
-    setHasRequestedProducts(true)
-    searchRequestRef.current += 1
-    setTopProducts([])
-    setBottomProducts([])
-    setLoadedProductsCount(0)
-    setVirtualLoad(false)
-    setLoading(false)
-    setCarouselMode('search')
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    reload()
-  }
-
   function resetSearch() {
     clearRouteProductParam()
     searchRequestRef.current += 1
@@ -662,8 +618,8 @@ export function ProductsPage() {
       append: true,
       limit: VIRTUAL_PAGE_SIZE,
       offset: loadedProductsCount,
-      searchMode,
-      sortMode,
+      searchMode: DEFAULT_SEARCH_MODE,
+      sortMode: DEFAULT_SORT_MODE,
       value: searchValue,
     })
   }
@@ -812,10 +768,8 @@ export function ProductsPage() {
           isLoading={isLoading}
           isSelectionMode={carouselMode === 'selection'}
           isVirtualLoad={isVirtualLoad}
-          searchMode={searchMode}
           searchDraft={searchDraft}
           selectedProduct={selectedProduct}
-          sortMode={sortMode}
           topProducts={topProducts}
           onKeyDown={handleCarouselKeyDown}
           onNext={selectNextProduct}
@@ -823,9 +777,7 @@ export function ProductsPage() {
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
-          onSearchModeChange={changeSearchMode}
           onSelectProduct={selectProduct}
-          onSortModeChange={changeSortMode}
           onUploadSuccess={handleAssortmentUploadSuccess}
         />
 
@@ -857,25 +809,17 @@ export function ProductsPage() {
 
 function ProductAssortmentCarousel({
   bottomProducts,
-  canMoveBack,
-  canMoveForward,
   isLoading,
   isSelectionMode,
   isVirtualLoad,
   onKeyDown,
   onNext,
   onPrevious,
-  onRefresh,
-  onReset,
   onSearchDraftChange,
-  onSearchModeChange,
   onSelectProduct,
-  onSortModeChange,
   onUploadSuccess,
-  searchMode,
   searchDraft,
   selectedProduct,
-  sortMode,
   topProducts,
 }: {
   bottomProducts: Product[]
@@ -890,25 +834,13 @@ function ProductAssortmentCarousel({
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
-  onSearchModeChange: (value: string | null) => void
   onSelectProduct: (product: Product) => void
-  onSortModeChange: (value: string | null) => void
   onUploadSuccess: () => void
-  searchMode: ProductSearchMode
   searchDraft: string
   selectedProduct: Product | null
-  sortMode: ProductSortMode
   topProducts: Product[]
 }) {
   const { t } = useI18n()
-  const searchModeOptions = PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({
-    label: t(option.label),
-    value: option.value,
-  }))
-  const sortModeOptions = PRODUCT_SORT_MODE_OPTIONS.map((option) => ({
-    label: t(option.label),
-    value: option.value,
-  }))
 
   return (
     <Box className="product-assortment-carousel" role="region" tabIndex={0} onKeyDown={onKeyDown}>
@@ -918,33 +850,11 @@ function ProductAssortmentCarousel({
         </Text>
         <Group gap={6}>
           <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon
-              aria-label={t('Скинути')}
-              color="gray"
-              disabled={isLoading}
-              variant="light"
-              onClick={onReset}
-            >
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              variant="light"
-              onClick={onRefresh}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
           <Tooltip label={t('Попередній товар')}>
             <ActionIcon
               aria-label={t('Попередній товар')}
               color="gray"
-              disabled={!canMoveBack || isLoading}
+              disabled={isLoading}
               variant="light"
               onClick={onPrevious}
             >
@@ -955,7 +865,7 @@ function ProductAssortmentCarousel({
             <ActionIcon
               aria-label={t('Наступний товар')}
               color="gray"
-              disabled={!canMoveForward || isLoading}
+              disabled={isLoading}
               variant="light"
               onClick={onNext}
             >
@@ -982,47 +892,29 @@ function ProductAssortmentCarousel({
       </Box>
 
       <Box className="product-assortment-drum">
-        <TextInput
-          autoFocus
-          aria-label={t('Пошук товару')}
-          leftSection={<IconSearch size={17} />}
-          placeholder={t('Код, назва, опис, розмір або оригінальний номер')}
-          value={searchDraft}
-          className="product-assortment-search-input"
-          onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-        />
-        <Group gap={8} grow className="product-assortment-mode-controls">
-          <Select
-            allowDeselect={false}
-            aria-label={t('Режим пошуку')}
-            data={searchModeOptions}
-            disabled={isLoading}
-            size="xs"
-            value={searchMode}
-            onChange={onSearchModeChange}
-          />
-          <Select
-            allowDeselect={false}
-            aria-label={t('Сортування')}
-            data={sortModeOptions}
-            disabled={isLoading}
-            size="xs"
-            value={sortMode}
-            onChange={onSortModeChange}
-          />
-        </Group>
         {isSelectionMode && selectedProduct ? (
-          <>
-            <button
-              type="button"
-              className="product-assortment-selected-code"
-              onClick={() => copyToClipboard(getProductCode(selectedProduct))}
-            >
-              {getProductCode(selectedProduct)}
-            </button>
-            <ProductMiniDetails product={selectedProduct} />
-          </>
-        ) : null}
+          <button
+            type="button"
+            className="product-assortment-selected"
+            autoFocus
+            title={t('Скопіювати код')}
+            onClick={() => copyToClipboard(getProductCode(selectedProduct))}
+          >
+            <span className="product-assortment-selected-code">{getProductCode(selectedProduct)}</span>
+            <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
+          </button>
+        ) : (
+          <TextInput
+            autoFocus
+            aria-label={t('Введіть товар')}
+            leftSection={<IconSearch size={17} />}
+            placeholder={t('Введіть артикул або назву товару')}
+            size="md"
+            value={searchDraft}
+            className="product-assortment-search-input"
+            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+          />
+        )}
       </Box>
 
       <Box className="product-assortment-rail product-assortment-rail-bottom">
@@ -1059,26 +951,6 @@ function ProductCarouselRow({
       <span className="product-carousel-row-code">{getProductCode(product)}</span>
       <span className="product-carousel-row-name">{getProductTitle(product)}</span>
     </button>
-  )
-}
-
-function ProductMiniDetails({ product }: { product: Product }) {
-  return (
-    <Box className="product-mini-details">
-      <button
-        type="button"
-        className={`product-mini-code ${getProductRowToneClass(product)}`}
-        onClick={() => copyToClipboard(getProductCode(product))}
-      >
-        {getProductCode(product)}
-      </button>
-      <Text component="span" className={`product-mini-name ${getProductRowToneClass(product)}`}>
-        {getProductTitle(product)}
-      </Text>
-      <Text component="span" className={`product-mini-top ${product.Top?.toLowerCase().startsWith('x') ? 'is-critical' : ''}`}>
-        {displayValue(product.Top)}
-      </Text>
-    </Box>
   )
 }
 
@@ -1175,30 +1047,21 @@ function ProductInlineView({
               ))}
             </Group>
           ) : null}
-
-          <Box className="product-inline-description">
-            <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
-            <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
-            <InfoBlock label="Top" value={product.Top} />
-            <InfoBlock label="Вага" value={formatAmount(product.Weight)} />
-            <InfoBlock label="Розмір" value={product.Size} />
-            <InfoBlock label="Об'єм" value={product.Volume} />
-            <InfoBlock label="Норма пакування" value={product.OrderStandard} />
-            <InfoBlock label="Пакування" value={product.PackingStandard} />
-            <InfoBlock label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
-            <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
-            <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
-            <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
-          </Box>
         </Box>
 
-        <Box className="product-inline-stock">
-          <ProductStockSummary
-            product={product}
-            reservation={reservation}
-            reservationError={reservationError}
-            onProductSaved={onProductChanged}
-          />
+        <Box className="product-inline-description">
+          <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
+          <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
+          <InfoBlock label="Top" value={product.Top} />
+          <InfoBlock label="Вага" value={formatAmount(product.Weight)} />
+          <InfoBlock label="Розмір" value={product.Size} />
+          <InfoBlock label="Об'єм" value={product.Volume} />
+          <InfoBlock label="Норма пакування" value={product.OrderStandard} />
+          <InfoBlock label="Пакування" value={product.PackingStandard} />
+          <InfoBlock label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
+          <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
+          <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
+          <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
         </Box>
 
         <Box className="product-inline-prices">
@@ -1237,6 +1100,15 @@ function ProductInlineView({
             <Badge color={getBooleanBadgeColor(product.IsForWeb)} variant="light">{t('Сайт')}</Badge>
           </Group>
         </Box>
+      </Box>
+
+      <Box className="product-inline-stock-bar">
+        <ProductStockSummary
+          product={product}
+          reservation={reservation}
+          reservationError={reservationError}
+          onProductSaved={onProductChanged}
+        />
       </Box>
 
       <ProductInlineTabs product={product} onProductChanged={onProductChanged} onSelectRelatedProduct={onSelectRelatedProduct} />
@@ -1322,49 +1194,68 @@ function ProductInlineTabs({
   product: Product
 }) {
   const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<'numbers' | 'analogues' | 'components' | 'income' | 'outcome'>('numbers')
 
   return (
-    <Tabs defaultValue="numbers" className="product-inline-tabs">
-      <Tabs.List>
-        <Tabs.Tab value="numbers">{t('Оригінальні номери')}</Tabs.Tab>
-        <Tabs.Tab value="analogues">{t('Аналоги')}</Tabs.Tab>
-        <Tabs.Tab value="components">{t('Комплектуючі')}</Tabs.Tab>
-        <Tabs.Tab value="income">{t('Прихід')}</Tabs.Tab>
-        <Tabs.Tab value="outcome">{t('Вихід')}</Tabs.Tab>
-      </Tabs.List>
+    <div className="product-inline-tabs">
+      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        {([
+          { value: 'numbers', label: t('Оригінальні номери') },
+          { value: 'analogues', label: t('Аналоги') },
+          { value: 'components', label: t('Комплектуючі') },
+          { value: 'income', label: t('Прихід') },
+          { value: 'outcome', label: t('Вихід') },
+        ] as const).map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+            aria-pressed={activeTab === tab.value}
+            onClick={() => setActiveTab(tab.value)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      <Tabs.Panel value="numbers" pt="sm">
-        <ProductOriginalNumbersTab product={product} onProductChanged={onProductChanged} />
-      </Tabs.Panel>
-
-      <Tabs.Panel value="analogues" pt="sm">
-        <ProductRelatedProductsTab
-          emptyLabel={t('Аналогів не знайдено')}
-          product={product}
-          type="analogues"
-          onProductChanged={onProductChanged}
-          onSelectProduct={onSelectRelatedProduct}
-        />
-      </Tabs.Panel>
-
-      <Tabs.Panel value="components" pt="sm">
-        <ProductRelatedProductsTab
-          emptyLabel={t('Комплектуючих не знайдено')}
-          product={product}
-          type="components"
-          onProductChanged={onProductChanged}
-          onSelectProduct={onSelectRelatedProduct}
-        />
-      </Tabs.Panel>
-
-      <Tabs.Panel value="income" pt="sm">
-        <ProductInlineMovementsTab direction="income" product={product} />
-      </Tabs.Panel>
-
-      <Tabs.Panel value="outcome" pt="sm">
-        <ProductInlineMovementsTab direction="outcome" product={product} />
-      </Tabs.Panel>
-    </Tabs>
+      {activeTab === 'numbers' && (
+        <Box pt="sm">
+          <ProductOriginalNumbersTab product={product} onProductChanged={onProductChanged} />
+        </Box>
+      )}
+      {activeTab === 'analogues' && (
+        <Box pt="sm">
+          <ProductRelatedProductsTab
+            emptyLabel={t('Аналогів не знайдено')}
+            product={product}
+            type="analogues"
+            onProductChanged={onProductChanged}
+            onSelectProduct={onSelectRelatedProduct}
+          />
+        </Box>
+      )}
+      {activeTab === 'components' && (
+        <Box pt="sm">
+          <ProductRelatedProductsTab
+            emptyLabel={t('Комплектуючих не знайдено')}
+            product={product}
+            type="components"
+            onProductChanged={onProductChanged}
+            onSelectProduct={onSelectRelatedProduct}
+          />
+        </Box>
+      )}
+      {activeTab === 'income' && (
+        <Box pt="sm">
+          <ProductInlineMovementsTab direction="income" product={product} />
+        </Box>
+      )}
+      {activeTab === 'outcome' && (
+        <Box pt="sm">
+          <ProductInlineMovementsTab direction="outcome" product={product} />
+        </Box>
+      )}
+    </div>
   )
 }
 

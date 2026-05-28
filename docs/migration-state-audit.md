@@ -15,7 +15,7 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 
 - `/products` now uses an inline legacy-style "Весь асортимент" carousel flow: vertical product drum, search/selection modes, selected mini-card, same-screen full product card, and visible action buttons. The table view and route jump on carousel selection were removed from this screen.
 - Product deep links now resolve into the same `/products` carousel/card flow: `/products/:netId` redirects to `/products?netId=...`, and the query loads the selected product into the drum instead of a separate detail screen.
-- `/products` carousel search now exposes the legacy search-mode and sort-mode controls, and uses the advanced search endpoint even for an empty search value so mode/sort changes reload the same way as the old screen.
+- `/products` carousel uses a single visible drum input for assortment lookup; legacy advanced search still runs internally with the default all-fields/name ordering without exposing separate filter/sort controls on the assortment screen.
 - `/products` inline tabs now carry legacy product-card actions for original numbers, analogues, components, income, and outcome without navigating away from the selected carousel product.
 - Original numbers can now be added, edited, marked as main, deleted when not main, and bulk-loaded from the legacy upload document flow.
 - Analogues and components now support legacy remove actions, file upload document flows, and same-screen related-product selection through the assortment carousel, with upload access behind `Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY`.
@@ -102,4 +102,4 @@ These are not fixed in this pass because the user paused new migration and reque
 - `npm run build`: passed.
 - `npm run lint`: passed.
 - `npm test`: passed, 6 files / 34 tests.
-- `npx react-doctor@latest --verbose --diff`: passed with no error-level findings. Score API was unreachable; remaining 9 warnings are architecture/style warnings (`prefer-useReducer`, `no-giant-component`, `no-many-boolean-props`).
+- `npx react-doctor@latest --verbose --diff`: passed with no error-level findings. Score API was unreachable; remaining 3 warnings are architecture/style warnings (`prefer-useReducer`, `no-giant-component`, `no-many-boolean-props`).
