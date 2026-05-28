@@ -9,6 +9,7 @@ import {
   Code,
   Divider,
   Group,
+  Loader,
   ScrollArea,
   SimpleGrid,
   Stack,
@@ -25,6 +26,7 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconHelpCircle,
   IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
@@ -38,14 +40,20 @@ import {
   exportAccountingCashFlowDocument,
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
+  getAccountingCashFlowSaleByNetUid,
 } from '../api/accountingCashFlowApi'
 import type {
   AccountingCashFlow,
+  AccountingCashFlowAgreement,
+  AccountingCashFlowAgreementDebtSummary,
   AccountingCashFlowClientAgreement,
+  AccountingCashFlowClientInDebt,
   AccountingCashFlowCounterparty,
   AccountingCashFlowDocument,
   AccountingCashFlowHeadItem,
   AccountingCashFlowMode,
+  AccountingCashFlowSaleReturn,
+  AccountingCashFlowSaleReturnItem,
 } from '../types'
 
 type FilterDraft = {
@@ -138,7 +146,7 @@ const DETAIL_FIELD_BY_TYPE: Partial<Record<number, keyof AccountingCashFlowHeadI
   32: 'PortWorkService',
   33: 'BillOfLadingService',
   34: 'BillOfLadingService',
-  36: 'UpdatedReSaleModel',
+  37: 'UpdatedReSaleModel',
 }
 
 const DETAIL_SOURCE_FIELDS: (keyof AccountingCashFlowHeadItem)[] = [
@@ -201,7 +209,41 @@ const TYPE_LABELS: Record<number, string> = {
   33: 'Коносамент',
   34: 'Бухгалтерський коносамент',
   35: 'Акт надання послуг',
-  36: 'Перепродаж',
+  36: 'Бухгалтерський акт надання послуг',
+  37: 'Перепродаж',
+}
+
+const JOIN_SERVICE_TYPE = {
+  ConsumablesOrder: 10,
+  IncomePaymentOrder: 12,
+  OutcomePaymentOrder: 11,
+  ReSale: 37,
+  Sale: 13,
+  SaleReturn: 15,
+} as const
+
+const SALE_RETURN_ITEM_STATUS_LABELS: Record<number, string> = {
+  0: 'Товар прибув пізніше заявленого терміну',
+  1: 'Доставка не в повному обсязі',
+  2: 'Помилка підбору',
+  3: 'Неправильний крос-код',
+  4: 'Відмова від товару кінцевим покупцем',
+  5: 'Невідповідність очікуваній якості',
+  6: 'Брак',
+  7: 'Клієнт не забрав товар',
+  8: 'Відкликання виробником',
+}
+
+const SALE_RETURN_ITEM_STATUS_NAME_BY_KEY: Record<string, number> = {
+  ClientNotTookProduct: 7,
+  Defect: 6,
+  IncorrectAssortment: 2,
+  IncorrectCrossCode: 3,
+  IncorrectQuality: 5,
+  NotFullDelivery: 1,
+  ProductAbandon: 4,
+  ProductArrivedNotAtTime: 0,
+  SupplierWithdrawal: 8,
 }
 
 const DETAIL_FIELD_SPECS = [
@@ -262,6 +304,9 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const [cashFlow, setCashFlow] = useState<AccountingCashFlow | null>(null)
   const [selectedAgreementNetUid, setSelectedAgreementNetUid] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<AccountingCashFlowHeadItem | null>(null)
+  const [drillDownData, setDrillDownData] = useState<Record<string, unknown> | null>(null)
+  const [isDrillDownLoading, setDrillDownLoading] = useState(false)
+  const [drillDownError, setDrillDownError] = useState<string | null>(null)
   const [document, setDocument] = useState<AccountingCashFlowDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useState(false)
   const [counterpartyError, setCounterpartyError] = useState<string | null>(null)
@@ -365,6 +410,48 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     }
   }, [activeFilters.from, activeFilters.to, effectiveNetId, mode, reloadKey, t])
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDrillDown() {
+      setDrillDownData(null)
+      setDrillDownError(null)
+
+      const netUid = getDrillDownNetUid(selectedItem)
+      const type = selectedItem?.Type
+
+      if (!netUid || (type !== JOIN_SERVICE_TYPE.Sale && type !== JOIN_SERVICE_TYPE.ReSale)) {
+        setDrillDownLoading(false)
+        return
+      }
+
+      setDrillDownLoading(true)
+
+      try {
+        const loadedDrillDown = await getAccountingCashFlowSaleByNetUid(netUid)
+
+        if (!cancelled) {
+          setDrillDownData(loadedDrillDown)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setDrillDownData(null)
+          setDrillDownError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі'))
+        }
+      } finally {
+        if (!cancelled) {
+          setDrillDownLoading(false)
+        }
+      }
+    }
+
+    void loadDrillDown()
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedItem, t])
+
   function submitFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -418,10 +505,13 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     detailRowsColumns,
     document,
     downloadModalOpened,
+    drillDownData,
+    drillDownError,
     filterDraft,
     filterError,
     isCashFlowLoading,
     isCounterpartyLoading,
+    isDrillDownLoading,
     isExporting,
     items,
     lastItem,
@@ -453,10 +543,13 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     detailRowsColumns,
     document,
     downloadModalOpened,
+    drillDownData,
+    drillDownError,
     filterDraft,
     filterError,
     isCashFlowLoading,
     isCounterpartyLoading,
+    isDrillDownLoading,
     isExporting,
     items,
     lastItem,
@@ -586,7 +679,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       <AccountingCashFlowDetailDrawer
         detailRowsColumns={detailRowsColumns}
+        drillDownData={drillDownData}
+        drillDownError={drillDownError}
+        isDrillDownLoading={isDrillDownLoading}
         item={selectedItem}
+        mode={mode}
         onClose={() => setSelectedItem(null)}
       />
 
@@ -674,20 +771,12 @@ function AgreementScopePicker({
             {t('Загальні взаєморозрахунки')}
           </Button>
           {agreements.map((agreement, index) => (
-            <Tooltip key={agreement.NetUid || index} label={getAgreementTooltip(agreement)} disabled={!getAgreementTooltip(agreement)}>
-              <Button
-                color="blue"
-                rightSection={getAgreementCurrency(agreement) ? <Badge size="xs">{getAgreementCurrency(agreement)}</Badge> : undefined}
-                size="xs"
-                style={{ flex: '0 0 auto' }}
-                variant={agreement.NetUid === selectedAgreementNetUid ? 'filled' : 'light'}
-                onClick={() => onSelectAgreement(agreement.NetUid || null)}
-              >
-                <Text span truncate maw={260}>
-                  {getAgreementLabel(agreement)}
-                </Text>
-              </Button>
-            </Tooltip>
+            <AgreementDebtTile
+              key={agreement.NetUid || index}
+              agreement={agreement}
+              isSelected={agreement.NetUid === selectedAgreementNetUid}
+              onSelect={() => onSelectAgreement(agreement.NetUid || null)}
+            />
           ))}
         </Group>
       </ScrollArea>
@@ -700,21 +789,129 @@ function AgreementScopePicker({
   )
 }
 
+function AgreementDebtTile({
+  agreement,
+  isSelected,
+  onSelect,
+}: {
+  agreement: AccountingCashFlowClientAgreement
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const { t } = useI18n()
+  const debt = useMemo(() => getAgreementDebtSummary(agreement), [agreement])
+  const currency = getAgreementCurrency(agreement)
+  const tooltip = getAgreementTooltip(agreement)
+
+  return (
+    <Tooltip label={tooltip} disabled={!tooltip}>
+      <Card
+        withBorder
+        padding="xs"
+        radius="md"
+        style={{
+          cursor: 'pointer',
+          flex: '0 0 auto',
+          minWidth: 220,
+          borderColor: debt.isOverdue
+            ? 'var(--mantine-color-red-5)'
+            : isSelected
+              ? 'var(--mantine-color-blue-5)'
+              : undefined,
+          backgroundColor: debt.isOverdue
+            ? 'var(--mantine-color-red-0)'
+            : isSelected
+              ? 'var(--mantine-color-blue-0)'
+              : undefined,
+        }}
+        onClick={onSelect}
+      >
+        <Stack gap={4}>
+          <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
+            <Stack gap={0}>
+              <Text c="dimmed" size="xs">
+                {stringValue(agreement.Agreement?.Organization?.Name)}
+              </Text>
+              <Text fw={600} size="sm" lineClamp={1} maw={200}>
+                {stringValue(agreement.Agreement?.Name) || stringValue(agreement.NetUid) || '-'}
+              </Text>
+            </Stack>
+            {currency && (
+              <Badge size="xs" variant="light">
+                {currency}
+              </Badge>
+            )}
+          </Group>
+
+          {stringValue(agreement.OriginalClientName) && (
+            <Group gap={4} align="center" wrap="nowrap">
+              <IconHelpCircle size={12} />
+              <Text c="dimmed" size="xs" lineClamp={1} maw={200}>
+                {stringValue(agreement.OriginalClientName)}
+              </Text>
+            </Group>
+          )}
+
+          <Group gap="md" wrap="nowrap">
+            {debt.isControlAmountDebt && (
+              <Group gap={4} align="baseline" wrap="nowrap">
+                <Text c={debt.totalOverdueDebt > 0 ? 'red' : undefined} fw={600} size="sm">
+                  {formatMoney(debt.totalOverdueDebt)}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  / {formatMoney(debt.accountBalance)}
+                </Text>
+              </Group>
+            )}
+            {debt.isControlNumberDaysDebt && (
+              <Group gap={4} align="baseline" wrap="nowrap">
+                <Text c={debt.overdueDays > 0 ? 'red' : undefined} fw={600} size="sm">
+                  {debt.overdueDays}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  / {debt.allowedDays} {t('днів')}
+                </Text>
+              </Group>
+            )}
+          </Group>
+
+          {debt.isOverdue && (
+            <Badge color="red" size="xs" variant="filled">
+              {t('Прострочено')}
+            </Badge>
+          )}
+        </Stack>
+      </Card>
+    </Tooltip>
+  )
+}
+
 function AccountingCashFlowDetailDrawer({
   detailRowsColumns,
+  drillDownData,
+  drillDownError,
+  isDrillDownLoading,
   item,
+  mode,
   onClose,
 }: {
   detailRowsColumns: DataTableColumn<CashFlowDetailRow>[]
+  drillDownData: Record<string, unknown> | null
+  drillDownError: string | null
+  isDrillDownLoading: boolean
   item: AccountingCashFlowHeadItem | null
+  mode: AccountingCashFlowMode
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const detailData = useMemo(() => (item ? getHeadItemDetailData(item) : null), [item])
+  const embeddedData = useMemo(() => (item ? getHeadItemDetailData(item) : null), [item])
+  const detailData = drillDownData || embeddedData
   const detailFields = useMemo(() => (item ? buildDetailFields(item, detailData) : []), [detailData, item])
   const detailRows = useMemo(() => getServiceDetailRows(detailData), [detailData])
   const documents = useMemo(() => collectDocumentLinks(detailData), [detailData])
   const rawPayload = useMemo(() => stringifyPayload(detailData || item), [detailData, item])
+  const isSaleReturn = mode === 'client' && !item?.IsCreditValue && item?.Type === JOIN_SERVICE_TYPE.SaleReturn
+  const saleReturn = useMemo(() => (isSaleReturn ? (embeddedData as AccountingCashFlowSaleReturn | null) : null), [embeddedData, isSaleReturn])
 
   return (
     <AppDrawer
@@ -727,6 +924,23 @@ function AccountingCashFlowDetailDrawer({
     >
       {item && (
         <Stack gap="md">
+          {isDrillDownLoading && (
+            <Group gap="xs">
+              <Loader size="sm" />
+              <Text c="dimmed" size="sm">
+                {t('Завантаження деталей')}
+              </Text>
+            </Group>
+          )}
+
+          {drillDownError && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {drillDownError}
+            </Alert>
+          )}
+
+          {saleReturn && <SaleReturnOverviewPanel saleReturn={saleReturn} />}
+
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {detailFields.map((field) => (
               <DetailValue key={field.label} label={field.label} value={field.value} />
@@ -795,6 +1009,106 @@ function DetailValue({ label, value }: { label: string; value: ReactNode }) {
         {value || '-'}
       </Text>
     </Box>
+  )
+}
+
+function SaleReturnOverviewPanel({ saleReturn }: { saleReturn: AccountingCashFlowSaleReturn }) {
+  const { t } = useI18n()
+  const items = Array.isArray(saleReturn.SaleReturnItems) ? saleReturn.SaleReturnItems : []
+  const header = [
+    stringValue(saleReturn.Client?.RegionCode?.Value),
+    stringValue(saleReturn.Client?.FullName),
+    stringValue(saleReturn.ClientAgreement?.Agreement?.Name),
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Text fw={700}>{header || t('Повернення продажу')}</Text>
+        {items.length === 0 ? (
+          <Text c="dimmed" size="sm">
+            {t('Позицій не знайдено')}
+          </Text>
+        ) : (
+          <Stack gap="xs">
+            {items.map((saleReturnItem, index) => (
+              <SaleReturnOverviewItem key={index} saleReturnItem={saleReturnItem} />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Card>
+  )
+}
+
+function SaleReturnOverviewItem({ saleReturnItem }: { saleReturnItem: AccountingCashFlowSaleReturnItem }) {
+  const { t } = useI18n()
+  const sale = saleReturnItem.OrderItem?.Order?.Sale
+  const isVatSale = Boolean(sale?.IsVatSale)
+  const currency = getSaleReturnItemCurrency(saleReturnItem)
+  const worthPrice = Math.round((numberValue(saleReturnItem.AmountLocal) || 0) * 100) / 100
+
+  return (
+    <Card withBorder radius="sm" padding="sm">
+      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+        <Stack gap={2}>
+          <Group gap={6} align="baseline" wrap="nowrap">
+            <Text c="dimmed" size="xs">
+              {stringValue(saleReturnItem.OrderItem?.Product?.VendorCode)}
+            </Text>
+            <Text fw={600} size="sm">
+              {stringValue(saleReturnItem.OrderItem?.Product?.Name)}
+            </Text>
+          </Group>
+          <Text c="dimmed" size="xs">
+            {stringValue(sale?.SaleNumber?.Value)} {`(${t('Накладна')})`}
+          </Text>
+        </Stack>
+
+        <Group gap="lg" align="flex-start" wrap="nowrap">
+          <Stack gap={0} align="flex-end">
+            <Text fw={600} size="sm">
+              {formatMoney(worthPrice)} {currency}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('Вартість')}
+            </Text>
+          </Stack>
+
+          {isVatSale && (
+            <Stack gap={0} align="flex-end">
+              <Text fw={600} size="sm">
+                {formatMoney(numberValue(saleReturnItem.VatAmountLocal))}
+              </Text>
+              <Text c="dimmed" size="xs">
+                {t('ПДВ')}
+              </Text>
+            </Stack>
+          )}
+
+          <Stack gap={0} align="flex-end">
+            <Text fw={600} size="sm">
+              {formatAmount(numberValue(saleReturnItem.Qty))}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('штук')}
+            </Text>
+          </Stack>
+
+          <Stack gap={0} align="flex-end">
+            <Text c="dimmed" size="xs">
+              {t('Склад')}
+            </Text>
+            <Text c="orange" fw={600} size="sm">
+              {stringValue(saleReturnItem.Storage?.Name)}
+            </Text>
+            <Text size="xs">{getSaleReturnItemStatusLabel(saleReturnItem.SaleReturnItemStatus, t)}</Text>
+          </Stack>
+        </Group>
+      </Group>
+    </Card>
   )
 }
 
@@ -1158,15 +1472,108 @@ function addDirectDocument(documents: DocumentLink[], documentRecord: Record<str
   })
 }
 
-function getAgreementLabel(agreement: AccountingCashFlowClientAgreement): string {
-  return [
-    stringValue(agreement.Agreement?.Organization?.Name),
-    stringValue(agreement.Agreement?.Name),
-  ].filter(Boolean).join(' / ') || agreement.NetUid || '-'
-}
-
 function getAgreementCurrency(agreement: AccountingCashFlowClientAgreement): string {
   return stringValue(agreement.Agreement?.Currency?.Code)
+}
+
+function getAgreementDebtSummary(clientAgreement: AccountingCashFlowClientAgreement): AccountingCashFlowAgreementDebtSummary {
+  const agreement: AccountingCashFlowAgreement = clientAgreement.Agreement || {}
+  const accountBalance = numberValue(clientAgreement.AccountBalance) || 0
+  const debtLimit = numberValue(agreement.AmountDebt) || 0
+  const allowedDays = numberValue(agreement.NumberDaysDebt) || 0
+  const isControlAmountDebt = agreement.IsControlAmountDebt !== false
+  const isControlNumberDaysDebt = agreement.IsControlNumberDaysDebt !== false
+  const totalOverdueDebt = getTotalOverdueDebt(agreement.ClientInDebts, allowedDays)
+  const maxDaysOwed = getMaxDaysOwed(agreement.ClientInDebts)
+  const overdueDays = maxDaysOwed > allowedDays ? maxDaysOwed - allowedDays : 0
+  const isOverdue = totalOverdueDebt > 0 || Math.abs(accountBalance) > debtLimit || maxDaysOwed > allowedDays
+
+  return {
+    accountBalance,
+    allowedDays,
+    debtLimit,
+    isControlAmountDebt,
+    isControlNumberDaysDebt,
+    isOverdue,
+    overdueDays,
+    totalOverdueDebt,
+  }
+}
+
+function getTotalOverdueDebt(clientInDebts: AccountingCashFlowClientInDebt[] | undefined, allowedDays: number): number {
+  if (!Array.isArray(clientInDebts)) {
+    return 0
+  }
+
+  const total = clientInDebts.reduce((sum, clientInDebt) => {
+    const days = numberValue(clientInDebt?.Debt?.Days) || 0
+
+    if (days - allowedDays <= 0) {
+      return sum
+    }
+
+    return sum + (numberValue(clientInDebt?.Debt?.Total) || 0)
+  }, 0)
+
+  return Math.round(total * 100) / 100
+}
+
+function getMaxDaysOwed(clientInDebts: AccountingCashFlowClientInDebt[] | undefined): number {
+  if (!Array.isArray(clientInDebts) || clientInDebts.length === 0) {
+    return 0
+  }
+
+  return clientInDebts.reduce((max, clientInDebt) => {
+    const days = numberValue(clientInDebt?.Debt?.Days) || 0
+
+    return days > max ? days : max
+  }, 0)
+}
+
+function getDrillDownNetUid(item: AccountingCashFlowHeadItem | null): string | null {
+  if (!item || typeof item.Type !== 'number') {
+    return null
+  }
+
+  if (item.Type === JOIN_SERVICE_TYPE.Sale || item.Type === JOIN_SERVICE_TYPE.ReSale) {
+    return stringValue(toRecord(getHeadItemDetailData(item))?.NetUid) || null
+  }
+
+  return null
+}
+
+function getSaleReturnItemCurrency(saleReturnItem: AccountingCashFlowSaleReturnItem): string {
+  const orderRecord = toRecord(saleReturnItem.OrderItem?.Order)
+  const saleRecord = toRecord(orderRecord?.Sale)
+  const agreementRecord = toRecord(saleRecord?.ClientAgreement)
+  const agreement = toRecord(agreementRecord?.Agreement)
+  const currency = toRecord(agreement?.Currency)
+
+  return stringValue(currency?.Code)
+}
+
+function getSaleReturnItemStatusLabel(status: number | string | undefined, t: (key: string) => string): string {
+  if (typeof status === 'number') {
+    const labelKey = SALE_RETURN_ITEM_STATUS_LABELS[status]
+
+    return labelKey ? t(labelKey) : ''
+  }
+
+  if (typeof status === 'string') {
+    const numericStatus = Number(status)
+
+    if (Number.isFinite(numericStatus) && SALE_RETURN_ITEM_STATUS_LABELS[numericStatus]) {
+      return t(SALE_RETURN_ITEM_STATUS_LABELS[numericStatus])
+    }
+
+    const mappedStatus = SALE_RETURN_ITEM_STATUS_NAME_BY_KEY[status]
+
+    if (typeof mappedStatus === 'number') {
+      return t(SALE_RETURN_ITEM_STATUS_LABELS[mappedStatus])
+    }
+  }
+
+  return ''
 }
 
 function getAgreementTooltip(agreement: AccountingCashFlowClientAgreement): string {

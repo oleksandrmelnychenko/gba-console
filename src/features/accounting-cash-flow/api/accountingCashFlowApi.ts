@@ -47,6 +47,26 @@ export async function exportAccountingCashFlowDocument(
   return normalizeDocument(result)
 }
 
+export async function getAccountingCashFlowSaleByNetUid(netUid: string): Promise<Record<string, unknown> | null> {
+  const result = await apiRequest<unknown>('/sales/get', {
+    query: {
+      netId: netUid,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as Record<string, unknown>) : null
+}
+
+export async function getAccountingCashFlowPaymentTaskByNetUid(netUid: string): Promise<Record<string, unknown> | null> {
+  const result = await apiRequest<unknown>('/payments/tasks/get', {
+    query: {
+      netId: netUid,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as Record<string, unknown>) : null
+}
+
 function normalizeCounterparty(result: unknown): AccountingCashFlowCounterparty | null {
   if (!result || typeof result !== 'object') {
     return null
