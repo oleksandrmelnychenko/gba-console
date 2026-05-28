@@ -5,9 +5,7 @@ import {
   Button,
   Card,
   Checkbox,
-  Drawer,
   Group,
-  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -17,6 +15,8 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -725,7 +725,7 @@ export function EditTaxFreePackListPage() {
         }}
       />
 
-      <Drawer
+      <AppDrawer
         opened={Boolean(documentTaxFree)}
         position="right"
         size="min(620px, 100vw)"
@@ -742,9 +742,9 @@ export function EditTaxFreePackListPage() {
             }}
           />
         )}
-      </Drawer>
+      </AppDrawer>
 
-      <Modal centered opened={Boolean(deleteTaxFree)} title={t('Підтвердити видалення')} onClose={() => setDeleteTaxFree(null)}>
+      <AppModal centered opened={Boolean(deleteTaxFree)} title={t('Підтвердити видалення')} onClose={() => setDeleteTaxFree(null)}>
         <Stack>
           <Text size="sm">{t('Видалити')} TF {deleteTaxFree?.Number || ''}?</Text>
           <Group justify="flex-end">
@@ -765,7 +765,7 @@ export function EditTaxFreePackListPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

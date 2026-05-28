@@ -7,13 +7,13 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   Select,
   Stack,
   Text,
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -303,7 +303,7 @@ export function TransportersPage() {
         </Stack>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={Boolean(archiveTarget)}
         title={t('Архівувати перевізника')}
@@ -324,7 +324,7 @@ export function TransportersPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

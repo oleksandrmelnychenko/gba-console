@@ -1,4 +1,5 @@
-import { Alert, Badge, Button, Group, Modal, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Button, Group, Stack, Text } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle, IconCheck, IconUpload } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -82,7 +83,7 @@ export function PreviewCartItemsModal({
   }
 
   return (
-    <Modal centered opened={opened} size="80rem" title={t('Попередній перегляд замовлення')} onClose={onClose}>
+    <AppModal centered opened={opened} size="80rem" title={t('Попередній перегляд замовлення')} onClose={onClose}>
       <Stack gap="md">
         <Alert
           color={hasErrors ? 'red' : 'green'}
@@ -121,7 +122,7 @@ export function PreviewCartItemsModal({
           </Group>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

@@ -5,13 +5,13 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconDownload,
@@ -410,7 +410,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         </Stack>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Експорт складу')}
@@ -442,7 +442,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

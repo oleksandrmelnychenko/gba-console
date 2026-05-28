@@ -2,13 +2,13 @@ import {
   ActionIcon,
   Button,
   Group,
-  Modal,
   Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconCheck, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -186,7 +186,7 @@ export function OrganizationClientAgreementsPanel({
         tableId="organization-client-agreements"
       />
 
-      <Modal centered opened={modalOpened} title={t('Новий договір')} onClose={() => setModalOpened(false)}>
+      <AppModal centered opened={modalOpened} title={t('Новий договір')} onClose={() => setModalOpened(false)}>
         <Stack gap="md">
           <Select
             data={currencyOptions}
@@ -222,7 +222,7 @@ export function OrganizationClientAgreementsPanel({
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

@@ -6,10 +6,8 @@ import {
   Box,
   Button,
   Card,
-  Drawer,
   FileInput,
   Group,
-  Modal,
   SimpleGrid,
   Stack,
   Text,
@@ -17,6 +15,8 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -1622,7 +1622,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         </Stack>
       </Card>
 
-      <Modal centered opened={isPageEditorOpen} size="xl" title={t('Редагування SEO сторінки')} onClose={closePageEditor}>
+      <AppModal centered opened={isPageEditorOpen} size="xl" title={t('Редагування SEO сторінки')} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
           <Stack gap="md">
             {formError && (
@@ -1678,9 +1678,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             </Group>
           </Stack>
         </form>
-      </Modal>
+      </AppModal>
 
-      <Modal
+      <AppModal
         centered
         opened={isContactEditorOpen}
         title={editingContact ? t('Редагування контакту') : t('Новий контакт')}
@@ -1751,9 +1751,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             </Group>
           </Stack>
         </form>
-      </Modal>
+      </AppModal>
 
-      <Modal
+      <AppModal
         centered
         opened={Boolean(removeContactTarget)}
         title={t('Видалити контакт')}
@@ -1772,9 +1772,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Modal centered opened={Boolean(priorityStorageTarget)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
+      <AppModal centered opened={Boolean(priorityStorageTarget)} title={t('Пріоритет складу')} onClose={closePriorityEditor}>
         <form onSubmit={handleSaveStoragePriority}>
           <Stack gap="md">
             {formError && (
@@ -1804,9 +1804,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             </Group>
           </Stack>
         </form>
-      </Modal>
+      </AppModal>
 
-      <Modal
+      <AppModal
         centered
         opened={Boolean(removeStorageTarget)}
         title={t('Видалити склад зі списку')}
@@ -1825,9 +1825,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Drawer
+      <AppDrawer
         opened={isStorageDrawerOpen}
         padding="md"
         position="right"
@@ -1859,7 +1859,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             onRowClick={(storage) => void handleAddStorage(storage)}
           />
         </Stack>
-      </Drawer>
+      </AppDrawer>
     </Stack>
   )
 }

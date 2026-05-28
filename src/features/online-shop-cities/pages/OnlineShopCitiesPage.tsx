@@ -7,13 +7,13 @@ import {
   Card,
   Checkbox,
   Group,
-  Modal,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -387,7 +387,7 @@ function CityEditorModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
+    <AppModal centered opened={isOpen} title={city?.Id ? t('Редагування міста') : t('Нове місто')} onClose={onClose}>
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
@@ -445,7 +445,7 @@ function CityEditorModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -460,7 +460,7 @@ function CityArchiveModal({ city, isSaving, onArchive, onClose }: CityArchiveMod
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={Boolean(city)} title={t('Архівувати місто')} onClose={onClose}>
+    <AppModal centered opened={Boolean(city)} title={t('Архівувати місто')} onClose={onClose}>
       <Stack gap="md">
         <Text>{city ? t('Місто "{name}" буде прибране з активного списку.', { name: getCityName(city) }) : ''}</Text>
         <Group justify="flex-end">
@@ -472,7 +472,7 @@ function CityArchiveModal({ city, isSaving, onArchive, onClose }: CityArchiveMod
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

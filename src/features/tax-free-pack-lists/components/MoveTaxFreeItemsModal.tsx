@@ -1,4 +1,5 @@
-import { Alert, Button, Checkbox, Group, Modal, NumberInput, Select, Stack, Text } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, NumberInput, Select, Stack, Text } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -90,7 +91,7 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Перенесення у Tax Free')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Перенесення у Tax Free')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -140,6 +141,6 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
           <Button disabled={draftItems.length === 0} onClick={submitMove}>{t('Додати')}</Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

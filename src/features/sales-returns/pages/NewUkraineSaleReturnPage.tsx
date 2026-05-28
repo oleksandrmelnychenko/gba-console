@@ -6,9 +6,7 @@ import {
   Box,
   Button,
   Checkbox,
-  Drawer,
   Group,
-  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -17,6 +15,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -611,13 +611,13 @@ export function NewUkraineSaleReturnPage() {
         />
       </Stack>
 
-      <Drawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
+      <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
         {selectedReturn ? (
           <ReturnDetails saleReturn={selectedReturn} columns={detailColumns} />
         ) : null}
-      </Drawer>
+      </AppDrawer>
 
-      <Drawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={t('Нове повернення')}>
+      <AppDrawer opened={createOpened} onClose={() => setCreateOpened(false)} position="right" size="100%" title={t('Нове повернення')}>
         <Stack gap="md">
           {createError ? (
             <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
@@ -676,9 +676,9 @@ export function NewUkraineSaleReturnPage() {
             tableId="sales-return-new-sale-items"
           />
         </Stack>
-      </Drawer>
+      </AppDrawer>
 
-      <Modal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={t('Позиція повернення')}>
+      <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={t('Позиція повернення')}>
         {editor ? (
           <Stack gap="md">
             <div>
@@ -740,16 +740,16 @@ export function NewUkraineSaleReturnPage() {
             </Group>
           </Stack>
         ) : null}
-      </Modal>
+      </AppModal>
 
-      <Modal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={t('Документи')}>
+      <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={t('Документи')}>
         <Stack gap="sm">
           <DownloadLink icon={<IconFileTypeXls size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
           <DownloadLink icon={<IconFileTypePdf size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Modal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
+      <AppModal opened={Boolean(cancelCandidate)} onClose={() => setCancelCandidate(null)} title={t('Скасувати повернення')}>
         <Stack gap="md">
           <Text>{t('Скасувати повернення')} {cancelCandidate?.Number}?</Text>
           <Group justify="flex-end">
@@ -761,7 +761,7 @@ export function NewUkraineSaleReturnPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Box>
   )
 }

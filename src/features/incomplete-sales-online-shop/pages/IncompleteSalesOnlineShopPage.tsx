@@ -6,15 +6,15 @@ import {
   Button,
   Card,
   Checkbox,
-  Drawer,
   Group,
   Loader,
-  Modal,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -504,7 +504,7 @@ function IncompleteSaleDetailDrawer({
   const { t } = useI18n()
 
   return (
-    <Drawer opened={Boolean(sale)} position="right" size="min(760px, 100vw)" title={t('Деталі продажу')} onClose={onClose}>
+    <AppDrawer opened={Boolean(sale)} position="right" size="min(760px, 100vw)" title={t('Деталі продажу')} onClose={onClose}>
       {sale && (
         <IncompleteSaleDetail
           error={detailError}
@@ -513,7 +513,7 @@ function IncompleteSaleDetailDrawer({
           onOpenClientSales={onOpenClientSales}
         />
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -531,7 +531,7 @@ function IncompleteSaleStatusModal({
   const { t } = useI18n()
 
   return (
-    <Modal
+    <AppModal
       centered
       closeOnClickOutside={!isConfirming}
       closeOnEscape={!isConfirming}
@@ -558,7 +558,7 @@ function IncompleteSaleStatusModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

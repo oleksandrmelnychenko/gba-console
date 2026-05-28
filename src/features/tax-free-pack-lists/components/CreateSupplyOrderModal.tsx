@@ -1,4 +1,5 @@
-import { Alert, Button, Group, Modal, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
@@ -113,7 +114,7 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Створити замовлення з пакувального листа')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Створити замовлення з пакувального листа')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -172,6 +173,6 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
           <Button loading={isSaving} onClick={createOrder}>{t('Створити')}</Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

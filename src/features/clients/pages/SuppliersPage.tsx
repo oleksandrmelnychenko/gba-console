@@ -9,7 +9,6 @@ import {
   Divider,
   Group,
   Loader,
-  Modal,
   MultiSelect,
   Select,
   Stack,
@@ -17,6 +16,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
@@ -606,7 +606,7 @@ function SupplierActionsModal({
   const isActive = supplier?.IsActive !== false
 
   return (
-    <Modal centered opened={Boolean(supplier)} title={supplier ? getSupplierDisplayName(supplier) : t('Постачальник')} onClose={onClose}>
+    <AppModal centered opened={Boolean(supplier)} title={supplier ? getSupplierDisplayName(supplier) : t('Постачальник')} onClose={onClose}>
       {supplier && (
         <Stack gap="md">
           <Group gap="xs">
@@ -654,7 +654,7 @@ function SupplierActionsModal({
           </Button>
         </Stack>
       )}
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -866,7 +866,7 @@ function SupplierDocumentModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={t('Експорт постачальників')} onClose={onClose}>
+    <AppModal centered opened={opened} title={t('Експорт постачальників')} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
@@ -893,7 +893,7 @@ function SupplierDocumentModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

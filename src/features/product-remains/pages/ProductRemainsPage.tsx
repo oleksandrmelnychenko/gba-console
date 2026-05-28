@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   Group,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -16,8 +14,11 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
+  IconArrowsExchange,
   IconChevronDown,
   IconDownload,
   IconFileTypePdf,
@@ -26,7 +27,7 @@ import {
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -36,6 +37,7 @@ import {
   exportGroupedProductRemains,
   exportProductRemains,
   getGroupedProductRemains,
+  getProductRemainMovements,
   getProductRemainStorages,
   getProductRemainSuppliers,
   getProductRemains,
@@ -44,6 +46,7 @@ import type {
   CollectionWithTotals,
   GroupedConsignment,
   GroupedConsignmentItem,
+  ProductRemainMovement,
   ProductRemainStorage,
   ProductRemainSupplier,
   ProductRemainsExportDocument,
@@ -75,6 +78,14 @@ const BATCHES_TABLE_DEFAULT_LAYOUT = {
 const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
+    right: ['actions'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+const PRODUCT_REMAIN_MOVEMENTS_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['incomeDocumentNumber', 'documentType'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -120,6 +131,7 @@ function useProductRemainsPageModel() {
   const [productError, setProductError] = useValueState<string | null>(null)
   const [isLoadingProducts, setLoadingProducts] = useValueState(false)
   const [selectedProductRow, setSelectedProductRow] = useValueState<RemainingConsignment | null>(null)
+  const [selectedMovementRow, setSelectedMovementRow] = useValueState<RemainingConsignment | null>(null)
 
   const [downloadDocument, setDownloadDocument] = useValueState<ProductRemainsExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
@@ -134,7 +146,7 @@ function useProductRemainsPageModel() {
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
-  const productColumns = useProductRemainProductColumns()
+  const productColumns = useProductRemainProductColumns(setSelectedMovementRow)
   const batchToolbarLeft = useMemo(() => <TableStatus loaded={batchRows.length} totals={batchTotals} />, [batchRows.length, batchTotals])
   const productToolbarLeft = useMemo(
     () => <TableStatus loaded={productRows.length} searchValue={productSearchValue} totals={productTotals} />,
@@ -213,6 +225,7 @@ function useProductRemainsPageModel() {
     setProductOffset(0)
     setProductHasMore(true)
     setSelectedProductRow(null)
+    setSelectedMovementRow(null)
   }
 
   function resetAllData() {
@@ -290,10 +303,10 @@ function useProductRemainsPageModel() {
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
     productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, resourceError,
-    selectedBatch, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedProductRow, setSelectedStorageValue,
+    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedProductRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
 }
@@ -583,10 +596,10 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
     productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, resourceError,
-    selectedBatch, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedProductRow, setSelectedStorageValue,
+    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedProductRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
 
@@ -711,6 +724,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   aria-pressed={activeTab === tab.value}
                   onClick={() => {
                     setSelectedBatch(null)
+                    setSelectedMovementRow(null)
                     setSelectedProductRow(null)
                     setActiveTab(tab.value)
                   }}
@@ -790,7 +804,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         </Stack>
       </Card>
 
-      <Drawer
+      <AppDrawer
         opened={Boolean(selectedBatch)}
         position="right"
         size="80vw"
@@ -800,9 +814,9 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         {selectedBatch && (
           <BatchDetails batch={selectedBatch} columns={batchDetailColumns} />
         )}
-      </Drawer>
+      </AppDrawer>
 
-      <Drawer
+      <AppDrawer
         opened={Boolean(selectedProductRow)}
         position="right"
         size="min(720px, 100vw)"
@@ -810,9 +824,24 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         onClose={() => setSelectedProductRow(null)}
       >
         {selectedProductRow && <ProductDetails row={selectedProductRow} />}
-      </Drawer>
+      </AppDrawer>
 
-      <Modal centered opened={downloadModalOpened} title={t('Експорт залишків')} onClose={() => setDownloadModalOpened(false)}>
+      <AppDrawer
+        opened={Boolean(selectedMovementRow)}
+        position="right"
+        size="90vw"
+        title={selectedMovementRow ? `${t('Рух товару')}: ${getVendorCode(selectedMovementRow.Product)}` : t('Рух товару')}
+        onClose={() => setSelectedMovementRow(null)}
+      >
+        {selectedMovementRow && (
+          <ProductRemainMovementsPanel
+            key={getProductRowId(selectedMovementRow, 0)}
+            row={selectedMovementRow}
+          />
+        )}
+      </AppDrawer>
+
+      <AppModal centered opened={downloadModalOpened} title={t('Експорт залишків')} onClose={() => setDownloadModalOpened(false)}>
         <Stack gap="sm">
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
@@ -839,7 +868,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -958,7 +987,9 @@ function useProductRemainBatchColumns() {
   )
 }
 
-function useProductRemainProductColumns() {
+function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignment) => void) {
+  const { t } = useI18n()
+
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
     () => [
     {
@@ -1067,8 +1098,32 @@ function useProductRemainProductColumns() {
       accessor: (row) => row.StorageName,
       cell: (row) => displayValue(row.StorageName),
     },
+    {
+      id: 'actions',
+      header: '',
+      width: 72,
+      minWidth: 64,
+      enableSorting: false,
+      cell: (row) => (
+        <Tooltip label={row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')}>
+          <ActionIcon
+            aria-label={t('Рух товару')}
+            color="gray"
+            disabled={!row.ConsignmentItemNetId}
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenMovement(row)
+            }}
+          >
+            <IconArrowsExchange size={16} />
+          </ActionIcon>
+        </Tooltip>
+      ),
+    },
     ],
-    [],
+    [onOpenMovement, t],
   )
 }
 
@@ -1280,6 +1335,252 @@ function ProductDetails({ row }: { row: RemainingConsignment }) {
   )
 }
 
+function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
+  const { t } = useI18n()
+  const consignmentItemNetId = row.ConsignmentItemNetId?.trim()
+  const [dateFrom, setDateFrom] = useState(getDefaultDateTo)
+  const [dateTo, setDateTo] = useState(getDefaultDateTo)
+  const [rows, setRows] = useState<ProductRemainMovement[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setLoading] = useState(Boolean(consignmentItemNetId))
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const columns = useProductRemainMovementColumns()
+  const filterError = getFilterError(dateFrom, dateTo)
+  const missingNetIdError = consignmentItemNetId ? null : t('У рядку немає ConsignmentItemNetId для завантаження руху')
+  const activeError = missingNetIdError || filterError || error
+
+  useEffect(() => {
+    if (!consignmentItemNetId || filterError) {
+      return
+    }
+
+    let cancelled = false
+    const netId = consignmentItemNetId
+
+    async function loadMovements() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const nextRows = await getProductRemainMovements({
+          consignmentItemNetId: netId,
+          from: dateFrom,
+          to: dateTo,
+        })
+
+        if (!cancelled) {
+          setRows(nextRows)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setRows([])
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух товару'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadMovements()
+
+    return () => {
+      cancelled = true
+    }
+  }, [consignmentItemNetId, dateFrom, dateTo, filterError, reloadKey, t])
+
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+        <DetailItem label="Код товару" value={getVendorCode(row.Product)} />
+        <DetailItem label="Товар" value={getProductName(row.Product)} />
+        <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
+        <DetailItem label="Склад" value={displayValue(row.StorageName)} />
+      </SimpleGrid>
+      <Group align="end" gap="sm" wrap="wrap">
+        <TextInput
+          label={t('З')}
+          type="date"
+          value={dateFrom}
+          w={150}
+          onChange={(event) => setDateFrom(event.currentTarget.value)}
+        />
+        <TextInput
+          label={t('По')}
+          type="date"
+          value={dateTo}
+          w={150}
+          onChange={(event) => setDateTo(event.currentTarget.value)}
+        />
+        <Button
+          color="gray"
+          disabled={Boolean(missingNetIdError || filterError)}
+          leftSection={<IconRefresh size={18} />}
+          loading={isLoading}
+          variant="light"
+          onClick={() => reload()}
+        >
+          {t('Оновити')}
+        </Button>
+      </Group>
+      {activeError && (
+        <Alert color={missingNetIdError || filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          {activeError}
+        </Alert>
+      )}
+      {!activeError && (
+        <DataTable
+          columns={columns}
+          data={rows}
+          defaultLayout={PRODUCT_REMAIN_MOVEMENTS_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Руху товару не знайдено')}
+          getRowId={getMovementRowId}
+          isLoading={isLoading}
+          layoutVersion="product-remain-movements-table-1"
+          loadingText={t('Завантаження руху товару')}
+          maxHeight="calc(100vh - 360px)"
+          minWidth={1620}
+          tableId="product-remain-movements"
+        />
+      )}
+    </Stack>
+  )
+}
+
+function useProductRemainMovementColumns() {
+  return useMemo<DataTableColumn<ProductRemainMovement>[]>(
+    () => [
+      {
+        id: 'incomeDocumentNumber',
+        header: 'Вхідний інвойс',
+        width: 140,
+        minWidth: 120,
+        accessor: (row) => row.IncomeDocumentNumber,
+        cell: (row) => displayValue(row.IncomeDocumentNumber),
+      },
+      {
+        id: 'incomeDocumentDate',
+        header: 'Дата інвойсу',
+        width: 126,
+        minWidth: 112,
+        accessor: (row) => row.IncomeDocumentFromDate,
+        cell: (row) => formatDate(row.IncomeDocumentFromDate),
+      },
+      {
+        id: 'documentType',
+        header: 'Тип документа',
+        width: 220,
+        minWidth: 170,
+        accessor: (row) => row.DocumentType,
+        cell: (row) => displayValue(row.DocumentType),
+      },
+      {
+        id: 'documentNumber',
+        header: 'Номер',
+        width: 140,
+        minWidth: 112,
+        accessor: (row) => row.DocumentNumber,
+        cell: (row) => displayValue(row.DocumentNumber),
+      },
+      {
+        id: 'documentDate',
+        header: 'Дата',
+        width: 126,
+        minWidth: 112,
+        accessor: (row) => row.DocumentFromDate,
+        cell: (row) => formatDate(row.DocumentFromDate),
+      },
+      {
+        id: 'clientName',
+        header: 'Клієнт',
+        width: 220,
+        minWidth: 170,
+        accessor: (row) => row.ClientName,
+        cell: (row) => displayValue(row.ClientName),
+      },
+      {
+        id: 'storageName',
+        header: 'Склад',
+        width: 180,
+        minWidth: 140,
+        accessor: (row) => row.StorageName,
+        cell: (row) => displayValue(row.StorageName),
+      },
+      {
+        id: 'organizationName',
+        header: 'Організація',
+        width: 220,
+        minWidth: 170,
+        accessor: (row) => row.OrganizationName,
+        cell: (row) => displayValue(row.OrganizationName),
+      },
+      {
+        id: 'responsible',
+        header: 'Відповідальний',
+        width: 160,
+        minWidth: 130,
+        accessor: (row) => row.Responsible,
+        cell: (row) => displayValue(row.Responsible),
+      },
+      {
+        id: 'price',
+        header: 'Ціна',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.Price,
+        cell: (row) => formatMoney(row.Price),
+      },
+      {
+        id: 'accountingPrice',
+        header: 'Облік',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.AccountingPrice,
+        cell: (row) => formatMoney(row.AccountingPrice),
+      },
+      {
+        id: 'discount',
+        header: 'Знижка',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.Discount,
+        cell: (row) => formatMoney(row.Discount),
+      },
+      {
+        id: 'incomeQty',
+        header: 'Прихід',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.IncomeQty,
+        cell: (row) => formatAmount(row.IncomeQty),
+      },
+      {
+        id: 'outcomeQty',
+        header: 'Розхід',
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.OutcomeQty,
+        cell: (row) => formatAmount(row.OutcomeQty),
+      },
+      {
+        id: 'comment',
+        header: 'Коментар',
+        width: 220,
+        minWidth: 160,
+        accessor: (row) => row.Comment,
+        cell: (row) => displayValue(row.Comment),
+      },
+    ],
+    [],
+  )
+}
+
 function DetailItem({ label, value }: { label: string; value: string }) {
   const { t } = useI18n()
 
@@ -1347,6 +1648,14 @@ function getBatchRowId(batch: GroupedConsignment, index: number): string {
 
 function getProductRowId(row: RemainingConsignment, index: number): string {
   return String(row.ConsignmentItemNetId || row.NetUid || row.Id || `${getVendorCode(row.Product)}-${row.RowNumber || index}`)
+}
+
+function getMovementRowId(row: ProductRemainMovement, index: number): string {
+  return String(
+    row.NetUid
+      || row.Id
+      || `${row.DocumentType || 'document'}-${row.DocumentNumber || 'number'}-${row.DocumentFromDate || 'date'}-${index}`,
+  )
 }
 
 function getDefaultDateFrom(): string {

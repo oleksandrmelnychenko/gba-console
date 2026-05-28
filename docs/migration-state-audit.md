@@ -22,6 +22,7 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 - Remains, storage history, movement, and write-off panels now block invalid/missing `NetUid` and invalid date ranges before API calls.
 - Storage location signed quantities no longer render broken `+-`/`--` signs.
 - Write-off add/delete actions now respect loading and missing-id states, and upsert avoids duplicate rows when the backend returns an existing rule.
+- Write-off rules now support product-group scope with group selection and product/group reloads.
 
 ### Product inventory and movement screens
 
@@ -38,6 +39,7 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 - Product storages load-more is guarded against stale append after storage/search/page-size changes.
 - Product placement import and returned-products modal errors now stay inside their modal context.
 - Product placement/history "no storages" state takes priority over "select storage" validation.
+- Product remains by product rows now expose row-level movement history with date filters, loading/error/empty states, and `/consignments/info/movement/specific`.
 
 ### Clients, suppliers, organizations, users
 
@@ -60,11 +62,9 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 
 These are not fixed in this pass because the user paused new migration and requested verification of already moved behavior first.
 
-- Product write-off legacy had product/product-group mode and language variants. New panel currently covers product-level Ukrainian rules only.
 - Product storage placement edit/bulk preview from the legacy `TotalQtyGroupView` is not migrated yet.
 - Product detail legacy tabs such as original numbers, analogues, accessories, income, and outcome are not migrated yet.
 - `/products/income/ukraine` is still placeholder-level and does not load the full old flow.
-- Product remains movement history is not fully wired as a migrated workflow.
 - Product storages bulk action preview is deferred.
 - Product capitalizations create/import flows are deferred.
 - `/sales-online-shop` remains read-only list/detail.

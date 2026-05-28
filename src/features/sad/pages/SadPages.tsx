@@ -10,7 +10,6 @@ import {
   FileInput,
   Group,
   Loader,
-  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -19,6 +18,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -420,7 +420,7 @@ export function AllSadsPage() {
         }}
       />
 
-      <Modal centered opened={Boolean(deleteTarget)} title={t('Видалити SAD')} onClose={() => setDeleteTarget(null)}>
+      <AppModal centered opened={Boolean(deleteTarget)} title={t('Видалити SAD')} onClose={() => setDeleteTarget(null)}>
         <Stack>
           <Text>{t('Видалити обраний SAD?')}</Text>
           <Group justify="flex-end">
@@ -432,7 +432,7 @@ export function AllSadsPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -930,7 +930,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         onClose={() => setDownloadDocument(null)}
       />
 
-      <Modal centered opened={addItemPlaceholderOpen} title={t('Додавання товарів')} onClose={() => setAddItemPlaceholderOpen(false)}>
+      <AppModal centered opened={addItemPlaceholderOpen} title={t('Додавання товарів')} onClose={() => setAddItemPlaceholderOpen(false)}>
         <Stack>
           <Text size="sm">
             {t('Додавання товарів залежить від екрана кошика/замовлення постачання, який не входить у цей SAD slice. Поточний SAD не буде змінено.')}
@@ -939,9 +939,9 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             <Button onClick={() => setAddItemPlaceholderOpen(false)}>{t('Зрозуміло')}</Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Modal centered opened={Boolean(deleteItemTarget)} title={t('Видалити позицію')} onClose={() => setDeleteItemTarget(null)}>
+      <AppModal centered opened={Boolean(deleteItemTarget)} title={t('Видалити позицію')} onClose={() => setDeleteItemTarget(null)}>
         <Stack>
           <Text>{t('Позицію буде прибрано з SAD після наступного збереження.')}</Text>
           <Group justify="flex-end">
@@ -953,7 +953,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -1511,7 +1511,7 @@ function MoveItemsModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Перемістити в палету')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Перемістити в палету')} onClose={onClose}>
       <Stack>
         <Alert color="blue" variant="light">
           {t('До палети буде додано')} {selectedItems.length} {t('позицій. Кількість береться з поля "Не в палеті".')}
@@ -1548,7 +1548,7 @@ function MoveItemsModal({
           <Button onClick={move}>{t('Перемістити')}</Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1853,7 +1853,7 @@ function SadDocumentsModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Документи SAD')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Документи SAD')} onClose={onClose}>
       <Stack>
         <FileInput
           clearable
@@ -1890,7 +1890,7 @@ function SadDocumentsModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1907,7 +1907,7 @@ function DownloadDocumentsModal({
   const links = useMemo(() => document ? createDownloadDocumentLinks(document, t) : [], [document, t])
 
   return (
-    <Modal centered opened={opened} title={t('Документи для друку')} onClose={onClose}>
+    <AppModal centered opened={opened} title={t('Документи для друку')} onClose={onClose}>
       <Stack>
         {links.length === 0 && <Text c="dimmed">{t('Посилань немає')}</Text>}
         {links.map((link) => (
@@ -1923,7 +1923,7 @@ function DownloadDocumentsModal({
           </Button>
         ))}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1970,7 +1970,7 @@ function SpecificationEditorModal({
   }
 
   return (
-    <Modal centered opened={Boolean(editor)} size="lg" title={t('Специфікація товару')} onClose={onClose}>
+    <AppModal centered opened={Boolean(editor)} size="lg" title={t('Специфікація товару')} onClose={onClose}>
       <Stack>
         <Text fw={600}>{editor?.product.VendorCode} · {editor?.product.Name}</Text>
         <TextInput
@@ -2019,7 +2019,7 @@ function SpecificationEditorModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2073,7 +2073,7 @@ function SpecificationUploadModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Імпорт специфікацій')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Імпорт специфікацій')} onClose={onClose}>
       <Stack>
         <FileInput clearable label={t('Файл')} value={file} onChange={setFile} />
         <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
@@ -2101,7 +2101,7 @@ function SpecificationUploadModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2124,7 +2124,7 @@ function SadActionModal({
   const canCreateSupplyOrder = Boolean(sad.IsSend && !sad.IsFromSale && !sad.SupplyOrderUkraineId)
 
   return (
-    <Modal centered opened={Boolean(sad)} title={`${t('SAD')} ${sad.Number || ''}`} onClose={onClose}>
+    <AppModal centered opened={Boolean(sad)} title={`${t('SAD')} ${sad.Number || ''}`} onClose={onClose}>
       <Stack>
         <Button justify="space-between" rightSection={<IconEye size={16} />} variant="light" onClick={() => onNavigate(editPath)}>
           {t('Перегляд / редагування')}
@@ -2177,7 +2177,7 @@ function SadActionModal({
           </>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

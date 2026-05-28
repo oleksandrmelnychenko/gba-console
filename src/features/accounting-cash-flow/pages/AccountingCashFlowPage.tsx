@@ -8,9 +8,7 @@ import {
   Card,
   Code,
   Divider,
-  Drawer,
   Group,
-  Modal,
   ScrollArea,
   SimpleGrid,
   Stack,
@@ -18,6 +16,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -717,7 +717,7 @@ function AccountingCashFlowDetailDrawer({
   const rawPayload = useMemo(() => stringifyPayload(detailData || item), [detailData, item])
 
   return (
-    <Drawer
+    <AppDrawer
       opened={Boolean(item)}
       padding="lg"
       position="right"
@@ -781,7 +781,7 @@ function AccountingCashFlowDetailDrawer({
           )}
         </Stack>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -812,7 +812,7 @@ function DownloadDocumentModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
@@ -839,7 +839,7 @@ function DownloadDocumentModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

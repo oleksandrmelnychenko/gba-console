@@ -82,6 +82,31 @@ export type RemainingConsignment = EntityFields & {
   Weight?: number
 }
 
+export type ProductRemainMovement = EntityFields & {
+  AccountingPrice?: number
+  ClientName?: string
+  Comment?: string
+  Discount?: number
+  DocumentFromDate?: Date | string
+  DocumentNumber?: string
+  DocumentType?: string
+  IncomeDocumentFromDate?: Date | string
+  IncomeDocumentNumber?: string
+  IncomeQty?: number
+  IsEdited?: boolean
+  OrganizationName?: string
+  OutcomeQty?: number
+  Price?: number
+  Responsible?: string
+  StorageName?: string
+}
+
+export type ProductRemainMovementSearchParams = {
+  consignmentItemNetId: string
+  from: string
+  to: string
+}
+
 export type CollectionWithTotals<TItem> = {
   AccountingTotalAmount?: number
   AccountingTotalAmountFiltered?: number

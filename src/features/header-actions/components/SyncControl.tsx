@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Group,
-  Modal,
   ScrollArea,
   Select,
   Stack,
@@ -26,7 +25,7 @@ import {
   toDateTimeInputValue,
 } from '../utils'
 import { allDailySyncTypes, defaultSelectedSyncTypes } from '../syncOptions'
-import { SmoothResize } from '../../../shared/transitions/SmoothResize'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
 import { SyncTypeChecklist } from './SyncTypeChecklist'
 import { SyncHistoryPanel } from './SyncHistoryPanel'
@@ -319,7 +318,7 @@ export function SyncControl() {
         </ActionIcon>
       </Tooltip>
 
-      <Modal
+      <AppModal
         opened={state.opened}
         onClose={() => dispatch({ type: 'closed' })}
         title={t('Синхронізація')}
@@ -342,7 +341,6 @@ export function SyncControl() {
             ))}
           </Group>
 
-          <SmoothResize>
             <Stack gap="md" className="sync-resizable">
           <Box className="sync-panel">
             {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
@@ -487,9 +485,8 @@ export function SyncControl() {
             </ScrollArea>
           </Box>
             </Stack>
-          </SmoothResize>
         </Stack>
-      </Modal>
+      </AppModal>
     </>
   )
 }

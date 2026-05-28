@@ -6,12 +6,12 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
@@ -454,7 +454,7 @@ function ProductGroupCreateModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Нова група товарів')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Нова група товарів')} onClose={onClose}>
       <form id="product-group-create-form" onSubmit={onSubmit}>
         <Stack gap="md">
           {createError && (
@@ -483,6 +483,6 @@ function ProductGroupCreateModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }

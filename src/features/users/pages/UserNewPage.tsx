@@ -2,12 +2,12 @@ import {
   Alert,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
   Stack,
   Text,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconChevronLeft, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
@@ -137,7 +137,7 @@ export function UserNewPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       closeOnClickOutside={!isSaving}
       keepMounted={false}
@@ -199,6 +199,6 @@ export function UserNewPage() {
           </Card>
         </form>
       </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }

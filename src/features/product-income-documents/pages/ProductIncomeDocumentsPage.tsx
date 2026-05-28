@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   Group,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -17,6 +15,8 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconChevronLeft,
@@ -510,7 +510,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
         onLoadRemainings={loadRemainings}
       />
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Документ приходу')}
@@ -542,7 +542,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -573,7 +573,7 @@ function ProductIncomeDocumentDrawer({
   const sourceLink = document ? getSourceLink(document) : null
 
   return (
-    <Drawer
+    <AppDrawer
       offset={8}
       opened={Boolean(document)}
       padding="lg"
@@ -676,7 +676,7 @@ function ProductIncomeDocumentDrawer({
           </Stack>
         </Stack>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 

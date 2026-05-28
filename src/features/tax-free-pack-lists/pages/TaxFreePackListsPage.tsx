@@ -5,13 +5,13 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   Pagination,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconDownload,
@@ -262,7 +262,7 @@ export function TaxFreePackListsPage() {
         </Stack>
       </Card>
 
-      <Modal centered opened={Boolean(selectedPackList)} title={t('Оберіть дію')} onClose={() => setSelectedPackList(null)}>
+      <AppModal centered opened={Boolean(selectedPackList)} title={t('Оберіть дію')} onClose={() => setSelectedPackList(null)}>
         {selectedPackList && (
           <Stack gap="xs">
             <Button
@@ -294,9 +294,9 @@ export function TaxFreePackListsPage() {
             )}
           </Stack>
         )}
-      </Modal>
+      </AppModal>
 
-      <Modal centered opened={Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
+      <AppModal centered opened={Boolean(deleteCandidate)} title={t('Підтвердити видалення')} onClose={() => setDeleteCandidate(null)}>
         <Stack>
           <Text size="sm">{t('Видалити пакувальний лист')} {deleteCandidate?.Number || ''}?</Text>
           <Group justify="flex-end">
@@ -304,7 +304,7 @@ export function TaxFreePackListsPage() {
             <Button color="red" onClick={confirmDelete}>{t('Видалити')}</Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
       <CreateSupplyOrderModal
         opened={Boolean(orderPackList)}

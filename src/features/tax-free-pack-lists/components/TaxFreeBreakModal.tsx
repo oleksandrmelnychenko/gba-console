@@ -1,4 +1,5 @@
-import { Alert, Button, Group, Modal, NumberInput, SimpleGrid, Stack } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, SimpleGrid, Stack } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import type { Dispatch, SetStateAction } from 'react'
@@ -75,7 +76,7 @@ export function TaxFreeBreakModal({ opened, packList, onClose, onUpdated }: TaxF
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Розбиття Tax Free')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Розбиття Tax Free')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -121,7 +122,7 @@ export function TaxFreeBreakModal({ opened, packList, onClose, onUpdated }: TaxF
           <Button loading={isSaving} onClick={submitBreak}>{t('Розбити')}</Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

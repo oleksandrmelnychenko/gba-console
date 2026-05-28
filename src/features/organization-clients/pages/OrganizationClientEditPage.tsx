@@ -2,13 +2,13 @@ import {
   Alert,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
-  Modal,
   Stack,
   Text,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -235,7 +235,7 @@ export function OrganizationClientEditPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
@@ -326,7 +326,7 @@ export function OrganizationClientEditPage() {
         </Card>
       )}
 
-      <Modal centered opened={deleteModalOpened} title={t('Видалити організацію')} onClose={() => setDeleteModalOpened(false)}>
+      <AppModal centered opened={deleteModalOpened} title={t('Видалити організацію')} onClose={() => setDeleteModalOpened(false)}>
         <Stack gap="md">
           <Text size="sm">{t('Підтвердити видалення')}: {client ? getOrganizationClientName(client) : ''}</Text>
           <Group justify="flex-end">
@@ -338,8 +338,8 @@ export function OrganizationClientEditPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }

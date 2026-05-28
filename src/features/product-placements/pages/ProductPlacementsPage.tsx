@@ -6,7 +6,6 @@ import {
   Card,
   FileInput,
   Group,
-  Modal,
   MultiSelect,
   NumberInput,
   Select,
@@ -16,6 +15,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -690,7 +690,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
         onSubmit={handleSubmitReturned}
       />
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Документи розміщень')}
@@ -722,7 +722,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -772,7 +772,7 @@ function ProductPlacementImportModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Імпорт розміщень')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Імпорт розміщень')} onClose={onClose}>
       <form onSubmit={submitForm}>
         <Stack gap="md">
           {error && (
@@ -840,7 +840,7 @@ function ProductPlacementImportModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -880,7 +880,7 @@ function ReturnedProductsModal({
   )
 
   return (
-    <Modal centered opened={opened} size="min(1100px, 96vw)" title={t('Не пройшли імпорт')} onClose={onClose}>
+    <AppModal centered opened={opened} size="min(1100px, 96vw)" title={t('Не пройшли імпорт')} onClose={onClose}>
       <Stack gap="md">
         <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {t('Перевірте кількість або розміщення та відправте позиції повторно.')}
@@ -911,7 +911,7 @@ function ReturnedProductsModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   Group,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -17,6 +15,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -966,7 +966,7 @@ function TaxFreeDocumentDrawer({
   }
 
   return (
-    <Drawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={getDrawerTitle(document, t)} onClose={onClose}>
+    <AppDrawer opened={Boolean(document)} position="right" size="min(1100px, 100vw)" title={getDrawerTitle(document, t)} onClose={onClose}>
       {document && (
         <div>
           <div className="pill-tabs" style={{ width: 'fit-content' }}>
@@ -1083,7 +1083,7 @@ function TaxFreeDocumentDrawer({
           )}
         </div>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -1158,7 +1158,7 @@ function TaxFreePrintPreviewModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={Boolean(document)} size="lg" title={`${t('Попередній перегляд')} ${document?.Number || ''}`} onClose={onClose}>
+    <AppModal centered opened={Boolean(document)} size="lg" title={`${t('Попередній перегляд')} ${document?.Number || ''}`} onClose={onClose}>
       {document && (
         <Stack gap="md">
           <Group justify="space-between">
@@ -1199,7 +1199,7 @@ function TaxFreePrintPreviewModal({
           </Group>
         </Stack>
       )}
-    </Modal>
+    </AppModal>
   )
 }
 

@@ -9,7 +9,6 @@ import {
   FileInput,
   Group,
   Loader,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -18,6 +17,7 @@ import {
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -1036,7 +1036,7 @@ function RegionEditorModal({
   const [name, setName] = useValueState(region?.Name || '')
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1068,7 +1068,7 @@ function RegionEditorModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1099,7 +1099,7 @@ function RegionCodeEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1140,7 +1140,7 @@ function RegionCodeEditorModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1160,7 +1160,7 @@ function DeleteResourceModal({
   onConfirm: () => void
 }) {
   return (
-    <Modal centered opened={opened} title={translate("Видалити запис")} onClose={onClose}>
+    <AppModal centered opened={opened} title={translate("Видалити запис")} onClose={onClose}>
       <Stack gap="md">
         {error ? (
           <Alert color="red" icon={<IconAlertCircle size={18} stroke={1.8} />} variant="light">
@@ -1177,7 +1177,7 @@ function DeleteResourceModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1513,7 +1513,7 @@ function PerfectClientEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1578,7 +1578,7 @@ function PerfectClientEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1609,7 +1609,7 @@ function TaxInspectionEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1663,7 +1663,7 @@ function TaxInspectionEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1704,7 +1704,7 @@ function PricingEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1784,7 +1784,7 @@ function PricingEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1815,7 +1815,7 @@ function CurrencyEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1843,7 +1843,7 @@ function CurrencyEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1884,7 +1884,7 @@ function StorageEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={title} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -1953,7 +1953,7 @@ function StorageEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -1984,7 +1984,7 @@ function MeasureUnitEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2018,7 +2018,7 @@ function MeasureUnitEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2040,7 +2040,7 @@ function ReserveEditorModal({
   const [days, setDays] = useValueState(() => String(role?.OrderExpireDays ?? 0))
 
   return (
-    <Modal centered opened={opened} title={translate("Редагувати резерв")} onClose={onClose}>
+    <AppModal centered opened={opened} title={translate("Редагувати резерв")} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2068,7 +2068,7 @@ function ReserveEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2099,7 +2099,7 @@ function TransporterEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2146,7 +2146,7 @@ function TransporterEditorModal({
           <ModalActions isSaving={isSaving} onClose={onClose} />
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2463,7 +2463,7 @@ function OrganizationEditorModal({
   }
 
   return (
-    <Modal centered opened={opened} size="xl" title={title} onClose={onClose}>
+    <AppModal centered opened={opened} size="xl" title={title} onClose={onClose}>
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -2639,7 +2639,7 @@ function OrganizationEditorModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 

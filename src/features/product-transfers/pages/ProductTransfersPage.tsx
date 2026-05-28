@@ -6,10 +6,8 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   FileInput,
   Group,
-  Modal,
   NumberInput,
   ScrollArea,
   Select,
@@ -21,6 +19,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconEye, IconFileSpreadsheet, IconPlus, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
@@ -631,7 +631,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
   const { closeDetail, detailError, isDetailLoading, selectedTransfer } = model
 
   return (
-    <Drawer
+    <AppDrawer
       opened={Boolean(selectedTransfer)}
       position="right"
       size="min(920px, 100vw)"
@@ -639,7 +639,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       onClose={closeDetail}
     >
       {selectedTransfer && <TransferDetail error={detailError} isLoading={isDetailLoading} transfer={selectedTransfer} />}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -651,7 +651,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
   } = model
 
   return (
-    <Modal centered opened={isCreateModalOpen} size="xl" title={t('Нове переміщення з файлу')} onClose={closeCreateModal}>
+    <AppModal centered opened={isCreateModalOpen} size="xl" title={t('Нове переміщення з файлу')} onClose={closeCreateModal}>
       <form id="product-transfer-create-form" onSubmit={handleCreate}>
         <Stack gap="md">
           {createError && (
@@ -800,7 +800,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
             </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -809,7 +809,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
   const { exceptionMessages, setExceptionMessages } = model
 
   return (
-    <Modal
+    <AppModal
       centered
       opened={exceptionMessages.length > 0}
       size="lg"
@@ -835,7 +835,7 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

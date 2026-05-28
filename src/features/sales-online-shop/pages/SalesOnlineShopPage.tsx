@@ -5,7 +5,6 @@ import {
   Box,
   Card,
   Divider,
-  Drawer,
   Group,
   Pagination,
   Select,
@@ -14,6 +13,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { IconAlertCircle, IconEye, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -331,7 +331,7 @@ export function SalesOnlineShopPage() {
         </Stack>
       </Card>
 
-      <Drawer
+      <AppDrawer
         opened={Boolean(selectedSale)}
         position="right"
         size="min(820px, 100vw)"
@@ -339,7 +339,7 @@ export function SalesOnlineShopPage() {
         onClose={() => setSelectedSale(null)}
       >
         {selectedSale && <SaleDetail sale={selectedSale} />}
-      </Drawer>
+      </AppDrawer>
     </Stack>
   )
 }

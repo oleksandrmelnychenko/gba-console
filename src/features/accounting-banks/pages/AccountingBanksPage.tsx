@@ -5,13 +5,13 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   SimpleGrid,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -334,7 +334,7 @@ function BankEditorModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={isOpen} size="lg" title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
+    <AppModal centered opened={isOpen} size="lg" title={bank?.Id ? t('Редагування банку') : t('Новий банк')} onClose={onClose}>
       <form onSubmit={onSubmit}>
         <Stack gap="md">
           {error && (
@@ -421,7 +421,7 @@ function BankEditorModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -436,7 +436,7 @@ function BankDeleteModal({ bank, isSaving, onClose, onDelete }: BankDeleteModalP
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={Boolean(bank)} title={t('Видалити банк')} onClose={onClose}>
+    <AppModal centered opened={Boolean(bank)} title={t('Видалити банк')} onClose={onClose}>
       <Stack gap="md">
         <Text>{bank ? t('Банк "{name}" буде позначено як видалений.', { name: getBankName(bank) }) : ''}</Text>
         <Group justify="flex-end">
@@ -448,7 +448,7 @@ function BankDeleteModal({ bank, isSaving, onClose, onDelete }: BankDeleteModalP
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

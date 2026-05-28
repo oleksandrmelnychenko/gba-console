@@ -4,7 +4,6 @@ import {
   Anchor,
   Card,
   Group,
-  Modal,
   MultiSelect,
   Select,
   Stack,
@@ -12,6 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconChevronLeft,
@@ -452,7 +452,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
         </Stack>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Експорт історії товарів')}
@@ -484,7 +484,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

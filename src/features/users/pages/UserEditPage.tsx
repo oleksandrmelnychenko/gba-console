@@ -3,14 +3,14 @@ import {
   Box,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
-  Modal,
   PasswordInput,
   Stack,
   Text,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -226,7 +226,7 @@ export function UserEditPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       closeOnClickOutside={!isSaving && !isDeleting && !isResettingPassword}
       keepMounted={false}
@@ -276,7 +276,7 @@ export function UserEditPage() {
           onDelete={handleDelete}
         />
       </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -500,7 +500,7 @@ function DeleteUserModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={t('Видалити користувача')} onClose={onClose}>
+    <AppModal centered opened={opened} title={t('Видалити користувача')} onClose={onClose}>
       <Stack gap="md">
         <Text size="sm">{t('Підтвердити видалення')}: {user ? getUserFullName(user) : ''}</Text>
         <Group justify="flex-end">
@@ -512,6 +512,6 @@ function DeleteUserModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

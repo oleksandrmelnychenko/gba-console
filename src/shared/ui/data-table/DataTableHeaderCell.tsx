@@ -43,7 +43,6 @@ export function DataTableHeaderCell<TData>({
   const canSort = header.column.getCanSort()
   const sorted = header.column.getIsSorted()
   const pinned = header.column.getIsPinned()
-  const align = meta?.align ?? 'left'
 
   const {
     attributes,
@@ -73,7 +72,6 @@ export function DataTableHeaderCell<TData>({
     <Table.Th
       ref={setNodeRef}
       className={`data-table-th ${isDragging ? 'is-dragging' : ''}`}
-      data-align={align}
       style={{
         ...pinnedStyle,
         ...dragStyle,

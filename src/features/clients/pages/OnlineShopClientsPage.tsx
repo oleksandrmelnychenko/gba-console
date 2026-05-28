@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
   ScrollArea,
@@ -13,6 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef } from 'react'
@@ -255,7 +255,7 @@ export function OnlineShopClientsPage() {
         </Card>
       </Box>
 
-      <Drawer
+      <AppDrawer
         opened={isSalesOpen}
         position="right"
         size="calc(100% - 100px)"
@@ -263,7 +263,7 @@ export function OnlineShopClientsPage() {
         onClose={() => setSalesOpen(false)}
       >
         <OnlineShopSalesPanel netUid={selectedClientNetId} />
-      </Drawer>
+      </AppDrawer>
     </Stack>
   )
 }

@@ -3,11 +3,11 @@ import {
   Button,
   Card,
   Group,
-  Modal,
   Stack,
   Text,
   TextInput,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
@@ -220,7 +220,7 @@ export function PaymentCashflowArticleFormPage() {
         </form>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={deleteModalOpened}
         title={t('Видалити статтю руху коштів')}
@@ -239,7 +239,7 @@ export function PaymentCashflowArticleFormPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

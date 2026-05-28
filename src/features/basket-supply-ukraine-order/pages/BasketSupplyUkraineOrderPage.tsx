@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Checkbox,
-  Drawer,
   Group,
-  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -17,6 +15,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -758,7 +758,7 @@ function BasketCartWorkflow() {
         onLoadValidItems={addPreviewItemsToDestination}
       />
 
-      <Modal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
+      <AppModal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -782,9 +782,9 @@ function BasketCartWorkflow() {
             </Group>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Modal centered opened={Boolean(reserveItem)} title={t('Reserve')} onClose={() => setReserveItem(null)}>
+      <AppModal centered opened={Boolean(reserveItem)} title={t('Reserve')} onClose={() => setReserveItem(null)}>
         <Stack gap="md">
           <Text size="sm">
             {reserveItem?.Product?.VendorCode} {reserveItem?.Product?.Name}
@@ -805,7 +805,7 @@ function BasketCartWorkflow() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -1238,7 +1238,7 @@ function SalesWorkflowTab() {
         </Stack>
       </Card>
 
-      <Modal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
+      <AppModal centered opened={isCreateModalOpen} size="lg" title={t('Створити документ')} onClose={closeCreateModal}>
         <Stack gap="md">
           <DocumentTargetControls
             disabled={isCreatingDocument || isReferenceLoading}
@@ -1262,9 +1262,9 @@ function SalesWorkflowTab() {
             </Group>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
-      <Drawer
+      <AppDrawer
         opened={Boolean(selectedSale)}
         position="right"
         size="xl"
@@ -1272,7 +1272,7 @@ function SalesWorkflowTab() {
         onClose={() => setSelectedSale(null)}
       >
         <SaleItemsList items={selectedSale?.Order?.OrderItems || []} />
-      </Drawer>
+      </AppDrawer>
     </Stack>
   )
 }

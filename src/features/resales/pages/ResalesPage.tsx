@@ -6,9 +6,7 @@ import {
   Box,
   Button,
   Card,
-  Drawer,
   Group,
-  Modal,
   MultiSelect,
   NumberInput,
   Select,
@@ -19,6 +17,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -468,7 +468,7 @@ export function ResalesPage() {
         </Stack>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={Boolean(deleteCandidate)}
         title={t('Видалити перепродаж')}
@@ -485,7 +485,7 @@ export function ResalesPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
 
       <DownloadDocumentModal
         document={downloadDocument}
@@ -806,7 +806,7 @@ export function NewResalePage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       position="right"
       size="min(1440px, 100vw)"
@@ -990,7 +990,7 @@ export function NewResalePage() {
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -2087,7 +2087,7 @@ function ResaleProcessDrawer({
   }
 
   return (
-    <Drawer
+    <AppDrawer
       offset={8}
       opened={opened}
       padding="lg"
@@ -2164,7 +2164,7 @@ function ResaleProcessDrawer({
           </Button>
         </Group>
       </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -2245,7 +2245,7 @@ function DownloadDocumentModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
@@ -2272,7 +2272,7 @@ function DownloadDocumentModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -2499,7 +2499,7 @@ function ConsignmentNoteSettingsDrawer({
   }
 
   return (
-    <Drawer
+    <AppDrawer
       offset={8}
       opened={opened}
       padding="lg"
@@ -2654,7 +2654,7 @@ function ConsignmentNoteSettingsDrawer({
         title={t('ТТН')}
         onClose={() => setDownloadModalOpened(false)}
       />
-    </Drawer>
+    </AppDrawer>
   )
 }
 

@@ -8,11 +8,12 @@ import {
 type SmoothResizeProps = PropsWithChildren<{
   className?: string
   duration?: number
+  maxHeight?: number | string
 }>
 
 const RESIZE_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)'
 
-export function SmoothResize({ children, className, duration = 300 }: SmoothResizeProps) {
+export function SmoothResize({ children, className, duration = 300, maxHeight }: SmoothResizeProps) {
   const [innerNode, setInnerNode] = useState<HTMLDivElement | null>(null)
   const height = useElementHeight(innerNode)
   const setInnerRef = useCallback((node: HTMLDivElement | null) => {
@@ -24,7 +25,9 @@ export function SmoothResize({ children, className, duration = 300 }: SmoothResi
       className={className}
       style={{
         height: height === null ? undefined : height,
-        overflow: 'hidden',
+        maxHeight,
+        overflowX: 'hidden',
+        overflowY: maxHeight ? 'auto' : 'hidden',
         transition: height === null ? undefined : `height ${duration}ms ${RESIZE_EASING}`,
       }}
     >

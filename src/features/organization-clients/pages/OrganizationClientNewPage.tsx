@@ -1,12 +1,12 @@
 import {
   Alert,
   Button,
-  Drawer,
   Group,
   Loader,
   Stack,
   Text,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconChevronLeft, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
@@ -140,7 +140,7 @@ export function OrganizationClientNewPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       keepMounted={false}
       position="right"
@@ -199,6 +199,6 @@ export function OrganizationClientNewPage() {
           </Button>
         </Group>
       </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }

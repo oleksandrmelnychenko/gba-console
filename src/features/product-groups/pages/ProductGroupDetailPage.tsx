@@ -2,13 +2,13 @@ import {
   Alert,
   Button,
   Card,
-  Drawer,
   Group,
   Loader,
-  Modal,
   Stack,
   Text,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -210,7 +210,7 @@ export function ProductGroupDetailPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
@@ -314,7 +314,7 @@ export function ProductGroupDetailPage() {
         </Card>
       )}
 
-      <Modal
+      <AppModal
         centered
         opened={deleteModalOpened}
         title={t('Видалити групу товарів')}
@@ -331,8 +331,8 @@ export function ProductGroupDetailPage() {
             </Button>
           </Group>
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }

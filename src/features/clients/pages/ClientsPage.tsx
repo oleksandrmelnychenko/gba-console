@@ -9,7 +9,6 @@ import {
   Divider,
   Group,
   Loader,
-  Modal,
   MultiSelect,
   NumberInput,
   Select,
@@ -18,6 +17,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -672,7 +672,7 @@ function ClientActionsModal({
   const subClientCount = client ? getClientSubClients(client).length : 0
 
   return (
-    <Modal centered opened={Boolean(client)} title={client ? getClientDisplayName(client) : t('Клієнт')} onClose={onClose}>
+    <AppModal centered opened={Boolean(client)} title={client ? getClientDisplayName(client) : t('Клієнт')} onClose={onClose}>
       {client && (
         <Stack gap="md">
           <Group gap="xs">
@@ -746,7 +746,7 @@ function ClientActionsModal({
           </Stack>
         </Stack>
       )}
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -886,7 +886,7 @@ function ReserveDaysModal({
   const { t } = useI18n()
 
   return (
-    <Modal
+    <AppModal
       centered
       opened={Boolean(client)}
       title={client ? `${t('Резерв')}: ${getClientDisplayName(client)}` : t('Резерв')}
@@ -911,7 +911,7 @@ function ReserveDaysModal({
           </Group>
         </Stack>
       </form>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -929,7 +929,7 @@ function ClientDocumentModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={title} onClose={onClose}>
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
@@ -956,7 +956,7 @@ function ClientDocumentModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 
@@ -973,7 +973,7 @@ function ClientStructureModal({
   const subClients = client ? getClientSubClients(client) : []
 
   return (
-    <Modal
+    <AppModal
       centered
       opened={Boolean(client)}
       title={client ? `${t('Структура')}: ${getClientDisplayName(client)}` : t('Структура клієнта')}
@@ -1006,7 +1006,7 @@ function ClientStructureModal({
           </Text>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

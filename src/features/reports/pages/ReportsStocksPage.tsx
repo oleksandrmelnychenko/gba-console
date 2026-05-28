@@ -9,7 +9,6 @@ import {
   Checkbox,
   Divider,
   Group,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -18,6 +17,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconDownload,
@@ -427,7 +427,7 @@ export function ReportsStocksPage() {
         {result?.table.rows.length ? <ReportPreview result={result} /> : <Text c="dimmed">{t('Даних ще немає')}</Text>}
       </Card>
 
-      <Modal centered opened={downloadModalOpened} title={t('Експорт звіту')} onClose={() => setDownloadModalOpened(false)}>
+      <AppModal centered opened={downloadModalOpened} title={t('Експорт звіту')} onClose={() => setDownloadModalOpened(false)}>
         <Stack>
           {result?.document.DocumentURL ? (
             <Anchor href={result.document.DocumentURL} target="_blank" rel="noreferrer">
@@ -441,7 +441,7 @@ export function ReportsStocksPage() {
           ) : null}
           {!result?.document.DocumentURL && !result?.document.PdfDocumentURL ? <Text c="dimmed">{t('Файл не повернувся з API')}</Text> : null}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

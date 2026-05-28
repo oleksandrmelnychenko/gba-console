@@ -4,13 +4,13 @@ import {
   Anchor,
   Card,
   Group,
-  Modal,
   Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconChevronLeft,
@@ -443,7 +443,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
         </Stack>
       </Card>
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Експорт доступності партій')}
@@ -475,7 +475,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }

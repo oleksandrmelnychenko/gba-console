@@ -7,7 +7,6 @@ import {
   Grid,
   Group,
   Loader,
-  Modal,
   SimpleGrid,
   Stack,
   Switch,
@@ -15,6 +14,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
@@ -201,7 +201,7 @@ export function ClientNewPage() {
   }
 
   return (
-    <Modal
+    <AppModal
       centered
       closeOnClickOutside={!isSaving}
       opened
@@ -289,7 +289,7 @@ export function ClientNewPage() {
           </form>
         )}
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

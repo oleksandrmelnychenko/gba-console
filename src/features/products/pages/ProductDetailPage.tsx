@@ -6,7 +6,6 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   FileInput,
   Group,
   Image,
@@ -25,6 +24,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -88,6 +88,7 @@ import {
 } from '../utils'
 
 type ProductDetailPanel = 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
+type ProductWriteOffRuleScope = 'group' | 'product'
 
 type ProductEditForm = {
   Description: string
@@ -123,6 +124,10 @@ const writeOffRuleTypeOptions = [
   { label: 'Списати по календарю', value: '2' },
 ]
 const writeOffLocaleOptions = [{ label: 'Україна', value: 'uk' }]
+const writeOffScopeOptions: Array<{ label: string; value: ProductWriteOffRuleScope }> = [
+  { label: 'Товар', value: 'product' },
+  { label: 'Група товарів', value: 'group' },
+]
 const movementTypeOptions = [
   { label: 'Загальний рух', value: '0' },
   { label: 'Бухгалтерський рух', value: '1' },
@@ -575,7 +580,7 @@ function ProductActionDrawer({
   const { t } = useI18n()
 
   return (
-    <Drawer
+    <AppDrawer
       opened={Boolean(activePanel)}
       position="right"
       size="min(1180px, 100vw)"
@@ -589,7 +594,7 @@ function ProductActionDrawer({
       {activePanel === 'specification' && <ProductSpecificationPanel product={product} />}
       {activePanel === 'storage-history' && <ProductStorageHistoryPanel product={product} />}
       {activePanel === 'writeoff' && <ProductWriteOffRulesPanel product={product} onChanged={onReload} />}
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -1160,15 +1165,44 @@ function ProductMovementPanel({ product }: { product: Product }) {
 function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => void; product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
+  const fallbackProductGroups = useMemo(() => getProductGroupsFromProduct(product), [product])
   const [rows, setRows] = useState<ProductWriteOffRule[]>([])
+  const [scope, setScope] = useState<ProductWriteOffRuleScope>('product')
+  const [productGroups, setProductGroups] = useState<ProductGroup[]>(fallbackProductGroups)
+  const [selectedProductGroupNetUid, setSelectedProductGroupNetUid] = useState(() => fallbackProductGroups[0]?.NetUid || '')
   const [ruleType, setRuleType] = useState('0')
   const [locale, setLocale] = useState('uk')
   const [error, setError] = useState<string | null>(null)
+  const [groupError, setGroupError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(Boolean(productNetUid))
+  const [isLoadingGroups, setLoadingGroups] = useState(Boolean(productNetUid))
   const [isSaving, setSaving] = useState(false)
   const [removingNetUid, setRemovingNetUid] = useState<string | null>(null)
+  const selectedProductGroup = useMemo(
+    () => productGroups.find((group) => group.NetUid === selectedProductGroupNetUid) || null,
+    [productGroups, selectedProductGroupNetUid],
+  )
+  const productGroupOptions = useMemo(
+    () => productGroups.reduce<Array<{ label: string; value: string }>>((options, group) => {
+      const netUid = group.NetUid?.trim()
+
+      if (netUid) {
+        options.push({
+          label: getProductGroupLabel(group),
+          value: netUid,
+        })
+      }
+
+      return options
+    }, []),
+    [productGroups],
+  )
+  const selectedProductGroupNetId = selectedProductGroup?.NetUid?.trim() || ''
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження правил списання')
-  const activeError = missingNetUidError || error
+  const groupSelectionError = scope === 'group' && !selectedProductGroupNetId
+    ? t('Оберіть групу товарів для правил списання')
+    : null
+  const activeError = missingNetUidError || (scope === 'group' ? groupError || groupSelectionError : null) || error
 
   useEffect(() => {
     if (!productNetUid) {
@@ -1178,12 +1212,67 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     let cancelled = false
     const netUid = productNetUid
 
+    async function loadGroups() {
+      setLoadingGroups(true)
+      setGroupError(null)
+
+      try {
+        const nextGroups = mergeProductGroups(fallbackProductGroups, await getProductGroupsByProductNetId(netUid))
+
+        if (!cancelled) {
+          setProductGroups(nextGroups)
+          setSelectedProductGroupNetUid((currentNetUid) => (
+            currentNetUid && nextGroups.some((group) => group.NetUid === currentNetUid)
+              ? currentNetUid
+              : nextGroups[0]?.NetUid || ''
+          ))
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setProductGroups(fallbackProductGroups)
+          setSelectedProductGroupNetUid((currentNetUid) => (
+            currentNetUid && fallbackProductGroups.some((group) => group.NetUid === currentNetUid)
+              ? currentNetUid
+              : fallbackProductGroups[0]?.NetUid || ''
+          ))
+          setGroupError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити групи товару'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingGroups(false)
+        }
+      }
+    }
+
+    void loadGroups()
+
+    return () => {
+      cancelled = true
+    }
+  }, [fallbackProductGroups, productNetUid, t])
+
+  useEffect(() => {
+    if (!productNetUid) {
+      return
+    }
+
+    if (scope === 'group' && !selectedProductGroupNetId) {
+      return
+    }
+
+    let cancelled = false
+    const netUid = productNetUid
+    const groupNetUid = selectedProductGroupNetId
+    const nextScope = scope
+
     async function loadRules() {
       setLoading(true)
       setError(null)
 
       try {
-        const nextRows = await getProductWriteOffRulesByProductNetId(netUid)
+        const nextRows = nextScope === 'group'
+          ? await getProductWriteOffRulesByProductGroupNetId(groupNetUid)
+          : await getProductWriteOffRulesByProductNetId(netUid)
 
         if (!cancelled) {
           setRows(nextRows)
@@ -1205,20 +1294,36 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     return () => {
       cancelled = true
     }
-  }, [productNetUid, t])
+  }, [productNetUid, scope, selectedProductGroupNetId, t])
 
   const reloadRules = useCallback(async () => {
     if (!productNetUid) {
       return
     }
 
+    if (scope === 'group') {
+      if (!selectedProductGroupNetId) {
+        setRows([])
+        return
+      }
+
+      const nextRows = await getProductWriteOffRulesByProductGroupNetId(selectedProductGroupNetId)
+      setRows(nextRows)
+      return
+    }
+
     const nextRows = await getProductWriteOffRulesByProductNetId(productNetUid)
     setRows(nextRows)
-  }, [productNetUid])
+  }, [productNetUid, scope, selectedProductGroupNetId])
 
   async function addRule() {
     if (!productNetUid) {
       setError(t('У товару немає NetUid для збереження правила списання'))
+      return
+    }
+
+    if (scope === 'group' && (!selectedProductGroup || !selectedProductGroupNetId)) {
+      setError(t('Оберіть групу товарів для правила списання'))
       return
     }
 
@@ -1227,11 +1332,20 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
 
     try {
       const nextRule = await addOrUpdateProductWriteOffRule({
-        Product: {
-          Id: product.Id,
-          NetUid: productNetUid,
-          VendorCode: product.VendorCode,
-        },
+        Product: scope === 'product'
+          ? {
+              Id: product.Id,
+              NetUid: productNetUid,
+              VendorCode: product.VendorCode,
+            }
+          : null,
+        ProductGroup: scope === 'group' && selectedProductGroup
+          ? {
+              Id: selectedProductGroup.Id,
+              Name: selectedProductGroup.Name,
+              NetUid: selectedProductGroupNetId,
+            }
+          : null,
         RuleLocale: locale,
         RuleType: Number(ruleType),
       })
@@ -1274,9 +1388,25 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
   return (
     <Stack gap="md">
       <Group align="end" gap="sm" wrap="wrap">
+        <SegmentedControl
+          data={writeOffScopeOptions.map((option) => ({ ...option, label: t(option.label) }))}
+          value={scope}
+          onChange={(value) => setScope(value as ProductWriteOffRuleScope)}
+        />
+        {scope === 'group' ? (
+          <Select
+            data={productGroupOptions}
+            disabled={isLoadingGroups || productGroupOptions.length === 0}
+            label={t('Група товарів')}
+            placeholder={isLoadingGroups ? t('Завантаження') : t('Оберіть групу')}
+            value={selectedProductGroupNetUid || null}
+            w={260}
+            onChange={(value) => setSelectedProductGroupNetUid(value || '')}
+          />
+        ) : null}
         <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
         <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <Button disabled={!productNetUid || isLoading} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
+        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
           {t('Додати')}
         </Button>
       </Group>
@@ -1302,7 +1432,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
                 <Table.Td>{formatDate(row.Created)}</Table.Td>
                 <Table.Td>{formatRuleLocale(row.RuleLocale)}</Table.Td>
                 <Table.Td>{formatRuleType(row.RuleType)}</Table.Td>
-                <Table.Td>{displayValue(row.Product?.VendorCode || row.ProductGroup?.Name)}</Table.Td>
+                <Table.Td>{displayValue(row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup))}</Table.Td>
                 <Table.Td>
                   <Tooltip label={t('Видалити')}>
                     <ActionIcon
@@ -1494,6 +1624,55 @@ function formatStorageLocationQty(row: ProductStorageLocationHistory): string {
   }
 
   return formatAmount(row.Qty)
+}
+
+function getProductGroupsFromProduct(product: Product): ProductGroup[] {
+  return (product.ProductProductGroups || []).reduce<ProductGroup[]>((groups, relation) => {
+    if (relation.ProductGroup) {
+      groups.push(relation.ProductGroup)
+    }
+
+    return groups
+  }, [])
+}
+
+function mergeProductGroups(...collections: ProductGroup[][]): ProductGroup[] {
+  const groupsByKey = new Map<string, ProductGroup>()
+
+  collections.flat().forEach((group) => {
+    const key = getProductGroupKey(group)
+
+    if (!key) {
+      return
+    }
+
+    groupsByKey.set(key, {
+      ...groupsByKey.get(key),
+      ...group,
+    })
+  })
+
+  return [...groupsByKey.values()]
+}
+
+function getProductGroupKey(group: ProductGroup): string {
+  if (group.NetUid) {
+    return `net:${group.NetUid}`
+  }
+
+  if (typeof group.Id === 'number') {
+    return `id:${group.Id}`
+  }
+
+  return group.Name ? `name:${group.Name}` : ''
+}
+
+function getProductGroupLabel(group?: ProductGroup | null): string {
+  if (!group) {
+    return ''
+  }
+
+  return group.FullName || group.Name || group.NetUid || (typeof group.Id === 'number' ? String(group.Id) : '')
 }
 
 function formatRuleType(type: number | undefined): string {

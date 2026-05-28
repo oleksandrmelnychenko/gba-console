@@ -1,4 +1,5 @@
-import { Alert, Button, Group, Modal, Select, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Select, Stack, TextInput } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useState } from 'react'
@@ -118,7 +119,7 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
   }
 
   return (
-    <Modal centered opened={opened} size="lg" title={t('Перевізник')} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={t('Перевізник')} onClose={onClose}>
       <Stack>
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -166,6 +167,6 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
           <Button loading={isSaving} onClick={saveCarrier}>{t('Зберегти')}</Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }

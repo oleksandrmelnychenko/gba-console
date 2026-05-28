@@ -5,6 +5,8 @@ import type {
   GroupedConsignment,
   GroupedConsignmentItem,
   ProductRemainStorage,
+  ProductRemainMovement,
+  ProductRemainMovementSearchParams,
   ProductRemainSupplier,
   ProductRemainsByProductSearchParams,
   ProductRemainsExportDocument,
@@ -70,6 +72,24 @@ export async function getProductRemains(
   })
 
   return normalizeCollectionWithTotals(result, ensureRemainingConsignment)
+}
+
+export async function getProductRemainMovements(
+  params: ProductRemainMovementSearchParams,
+): Promise<ProductRemainMovement[]> {
+  const result = await apiRequest<unknown>('/consignments/info/movement/specific', {
+    query: {
+      consignmentItemNetId: params.consignmentItemNetId,
+      from: params.from,
+      to: params.to,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити рух товару за партією',
+      network: 'Сервер руху товару недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductRemainMovement[]
 }
 
 export async function exportGroupedProductRemains(
@@ -183,6 +203,20 @@ function normalizeExportDocument(result: unknown): ProductRemainsExportDocument 
     DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
     PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
   }
+}
+
+function normalizeArray(result: unknown): unknown[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  if (!result || typeof result !== 'object') {
+    return []
+  }
+
+  const payload = result as Record<string, unknown>
+
+  return readArray(payload, 'Items') || readArray(payload, 'Collection') || readArray(payload, 'Data') || []
 }
 
 function ensureGroupedConsignment(consignment: GroupedConsignment): GroupedConsignment {

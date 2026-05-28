@@ -3,11 +3,9 @@ import {
   Badge,
   Button,
   Card,
-  Drawer,
   Grid,
   Group,
   Loader,
-  Modal,
   SimpleGrid,
   Stack,
   Switch,
@@ -15,6 +13,8 @@ import {
   TextInput,
   Title,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconChevronLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
@@ -243,7 +243,7 @@ export function ClientEditPage() {
   }
 
   return (
-    <Drawer
+    <AppDrawer
       opened
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
@@ -292,7 +292,7 @@ export function ClientEditPage() {
         onConfirm={handleDelete}
       />
     </Stack>
-    </Drawer>
+    </AppDrawer>
   )
 }
 
@@ -479,7 +479,7 @@ function DeleteClientModal({
   const { t } = useI18n()
 
   return (
-    <Modal centered opened={opened} title={t('Видалити картку')} onClose={onClose}>
+    <AppModal centered opened={opened} title={t('Видалити картку')} onClose={onClose}>
       <Stack gap="md">
         <Text size="sm">{t('Підтвердити видалення')}: {client ? getClientDisplayName(client) : ''}</Text>
         <Group justify="flex-end">
@@ -491,7 +491,7 @@ function DeleteClientModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

@@ -6,9 +6,7 @@ import {
   Button,
   Card,
   Divider,
-  Drawer,
   Group,
-  Modal,
   Select,
   SimpleGrid,
   Stack,
@@ -16,6 +14,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconChevronLeft,
@@ -467,7 +467,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
         onExport={handleExport}
       />
 
-      <Modal
+      <AppModal
         centered
         opened={downloadModalOpened}
         title={t('Експорт оприбуткування')}
@@ -499,7 +499,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             </Text>
           )}
         </Stack>
-      </Modal>
+      </AppModal>
     </Stack>
   )
 }
@@ -529,7 +529,7 @@ function ProductCapitalizationDetailDrawer({
   const totals = useMemo(() => calculateItemTotals(items), [items])
 
   return (
-    <Drawer
+    <AppDrawer
       opened={Boolean(capitalization)}
       padding="lg"
       position="right"
@@ -600,7 +600,7 @@ function ProductCapitalizationDetailDrawer({
           />
         </Stack>
       )}
-    </Drawer>
+    </AppDrawer>
   )
 }
 

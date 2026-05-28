@@ -1,4 +1,5 @@
-import { Alert, Button, FileInput, Group, Modal, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
+import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
 import { useState } from 'react'
 import type {
@@ -59,7 +60,7 @@ export function BasketSupplyUploadModal({
   }
 
   return (
-    <Modal
+    <AppModal
       centered
       opened={opened}
       size="lg"
@@ -154,7 +155,7 @@ export function BasketSupplyUploadModal({
           </Button>
         </Group>
       </Stack>
-    </Modal>
+    </AppModal>
   )
 }
 

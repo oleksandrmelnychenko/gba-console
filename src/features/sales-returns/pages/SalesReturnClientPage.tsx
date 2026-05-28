@@ -4,10 +4,8 @@ import {
   Badge,
   Box,
   Button,
-  Drawer,
   Group,
   Loader,
-  Modal,
   NumberInput,
   Select,
   SimpleGrid,
@@ -16,6 +14,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -498,7 +498,7 @@ export function SalesReturnClientPage() {
         </Group>
       </Stack>
 
-      <Drawer
+      <AppDrawer
         opened={createOpened}
         position="right"
         size="min(1120px, 100vw)"
@@ -673,9 +673,9 @@ export function SalesReturnClientPage() {
           </Stack>
         </form>
       </Stack>
-      </Drawer>
+      </AppDrawer>
 
-      <Modal
+      <AppModal
         opened={batchModalOpened}
         onClose={() => setBatchModalOpened(false)}
         size="xl"
@@ -695,7 +695,7 @@ export function SalesReturnClientPage() {
           }}
           tableId="sales-return-client-batches"
         />
-      </Modal>
+      </AppModal>
     </Box>
   )
 }
