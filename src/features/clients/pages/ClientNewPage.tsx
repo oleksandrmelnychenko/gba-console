@@ -26,6 +26,7 @@ import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
 import { createClient } from '../api/clientFormApi'
 import { getClientTypePermission, getClientTypeRolePermission } from '../permissions'
+import { PricingPanel } from '../components/pricing/PricingPanel'
 import type { Client, ClientType, ClientTypeRole } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
@@ -56,6 +57,8 @@ type NewStepContentProps = {
   hasPermission: (permissionKey: string) => boolean
   setDraftField: SetClientDraftField
   setRole: (clientType: ClientType, role: ClientTypeRole) => void
+  onDraftChange: (client: Client) => void
+  onPricingValidityChange: (isValid: boolean) => void
   step: NewClientStep
 }
 
@@ -71,6 +74,7 @@ export function ClientNewPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
+  const [isPricingValid, setPricingValid] = useValueState(false)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
@@ -136,6 +140,14 @@ export function ClientNewPage() {
     }))
   }
 
+  function setDraftClient(updatedClient: Client) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ...updatedClient,
+      ClientInRole: currentDraft.ClientInRole,
+    }))
+  }
+
   function goToStep(nextStep: NewClientStep) {
     navigate(`/clients/new/${nextStep}`, {
       state: location.state,
@@ -173,6 +185,11 @@ export function ClientNewPage() {
 
     if (!draft.ClientInRole.ClientTypeRole) {
       setError(t('Оберіть роль'))
+      return
+    }
+
+    if ((draft.ClientAgreements || []).length === 0) {
+      setError(t('Додайте договір'))
       return
     }
 
@@ -256,6 +273,8 @@ export function ClientNewPage() {
                     setDraftField={setDraftField}
                     setRole={setRole}
                     step={currentStep}
+                    onDraftChange={setDraftClient}
+                    onPricingValidityChange={setPricingValid}
                   />
                 </Card>
               </Grid.Col>
@@ -272,7 +291,13 @@ export function ClientNewPage() {
                 {t('Назад')}
               </Button>
               {visibleSteps.indexOf(currentStep) === visibleSteps.length - 1 ? (
-                <Button type="submit" color="violet" leftSection={<IconCheck size={16} />} loading={isSaving}>
+                <Button
+                  type="submit"
+                  color="violet"
+                  disabled={!isPricingValid}
+                  leftSection={<IconCheck size={16} />}
+                  loading={isSaving}
+                >
                   {t('Створити')}
                 </Button>
               ) : (
@@ -293,7 +318,16 @@ export function ClientNewPage() {
   )
 }
 
-function NewStepContent({ clientTypes, draft, hasPermission, setDraftField, setRole, step }: NewStepContentProps) {
+function NewStepContent({
+  clientTypes,
+  draft,
+  hasPermission,
+  setDraftField,
+  setRole,
+  step,
+  onDraftChange,
+  onPricingValidityChange,
+}: NewStepContentProps) {
   const { t } = useI18n()
 
   if (step === 'role') {
@@ -376,7 +410,24 @@ function NewStepContent({ clientTypes, draft, hasPermission, setDraftField, setR
     )
   }
 
-  if (step === 'pricing' || step === 'perfect-client') {
+  if (step === 'pricing') {
+    return (
+      <Stack gap="md">
+        <Title order={3} size="h4">
+          {getNewStepLabel(step)}
+        </Title>
+        <PricingPanel
+          client={draft}
+          isProvider={getClientType(draft) === CLIENT_TYPE_PROVIDER}
+          mode="new"
+          onChange={onDraftChange}
+          onValidityChange={onPricingValidityChange}
+        />
+      </Stack>
+    )
+  }
+
+  if (step === 'perfect-client') {
     return (
       <Stack gap="md">
         <Title order={3} size="h4">

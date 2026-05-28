@@ -56,6 +56,12 @@ export type TermsOfDelivery = {
   Name?: string
 }
 
+export type ManagerRole = {
+  Id?: number
+  NetUid?: string
+  Name?: string
+}
+
 export type Manager = {
   Id?: number
   NetUid?: string
@@ -68,7 +74,9 @@ export type Manager = {
   Email?: string
   EmailAddress?: string
   PhoneNumber?: string
+  IsActive?: boolean
   IsSelected?: boolean
+  UserRole?: ManagerRole
 }
 
 export type ClientTypeRole = {
@@ -149,7 +157,14 @@ export type Organization = {
   Currency?: Currency
   Manager?: string
   VatRateId?: number
+  VatRate?: VatRate
   IsVatAgreements?: boolean
+}
+
+export type VatRate = {
+  Id?: number
+  NetUid?: string
+  Value?: number
 }
 
 export type ProductGroupDiscount = {
@@ -491,7 +506,7 @@ export type ClientUserProfile = {
   ClientId?: number
   UserProfileId?: number
   Client?: Client
-  UserProfile?: unknown
+  UserProfile?: Manager
 }
 
 export type ClientUpsertResult = Client | null

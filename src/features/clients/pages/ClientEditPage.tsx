@@ -33,6 +33,7 @@ import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
+import { PricingPanel } from '../components/pricing/PricingPanel'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
@@ -81,6 +82,7 @@ type EditStepContentProps = {
   onCreateIncoterm: (name: string) => void
   onCreateCountry: (name: string, code: string) => void
   onCreateRegion: (name: string) => void
+  onClientChange: (client: Client) => void
   step: string
 }
 
@@ -187,6 +189,10 @@ export function ClientEditPage() {
           }
         : currentClient,
     )
+  }
+
+  function handleClientChange(updatedClient: Client) {
+    setClient(updatedClient)
   }
 
   function setBankField(key: 'BranchCode' | 'Swift' | 'BankAndBranch' | 'BankAddress', value: string) {
@@ -586,6 +592,7 @@ export function ClientEditPage() {
         setIbanNumberCurrency={setIbanNumberCurrency}
         steps={steps}
         onAddDocuments={handleAddDocuments}
+        onClientChange={handleClientChange}
         onCreateCountry={handleCreateCountry}
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
@@ -707,6 +714,7 @@ function ClientEditBody({
   setIbanNumberCurrency,
   steps,
   onAddDocuments,
+  onClientChange,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -737,6 +745,7 @@ function ClientEditBody({
   setIbanNumberCurrency: (currency: Currency | null) => void
   steps: EditStep[]
   onAddDocuments: (files: File[]) => void
+  onClientChange: (client: Client) => void
   onCreateCountry: (name: string, code: string) => void
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
@@ -827,6 +836,7 @@ function ClientEditBody({
                 setIbanNumberCurrency={setIbanNumberCurrency}
                 step={selectedStep || firstStep?.value || ''}
                 onAddDocuments={onAddDocuments}
+                onClientChange={onClientChange}
                 onCreateCountry={onCreateCountry}
                 onCreateIncoterm={onCreateIncoterm}
                 onCreateRegion={onCreateRegion}
@@ -920,6 +930,7 @@ function EditStepContent({
   setIbanNumber,
   setIbanNumberCurrency,
   onAddDocuments,
+  onClientChange,
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
@@ -931,6 +942,17 @@ function EditStepContent({
 }: EditStepContentProps) {
   if (step === 'contact-information') {
     return <ContactInfoFields client={client} errors={errors} role={role} onChange={setField} />
+  }
+
+  if (step === 'pricing') {
+    return (
+      <PricingPanel
+        client={client}
+        isProvider={role.isProvider}
+        mode="edit"
+        onChange={onClientChange}
+      />
+    )
   }
 
   if (step === 'bank-details') {
