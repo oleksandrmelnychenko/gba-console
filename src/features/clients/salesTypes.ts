@@ -120,6 +120,7 @@ export type SaleOrderItem = {
   Discount?: number
   OneTimeDiscount?: number
   Comment?: string
+  TotalWeight?: number
   UserId?: number
   User?: SaleUser
   ShiftStatuses?: OrderItemBaseShiftStatus[]

@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Button,
   Card,
   FileButton,
@@ -14,6 +15,7 @@ import {
 import { IconAlertCircle, IconUpload, IconX } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import {
   getClientResourceCurrencies,
   getClientResourceOrganizations,
@@ -507,9 +509,21 @@ function ContractDocumentsSection({
                 justify="space-between"
                 wrap="nowrap"
               >
-                <Text size="sm" truncate>
-                  {document.FileName || document.GeneratedName}
-                </Text>
+                {document.Id && document.DocumentUrl ? (
+                  <Anchor
+                    href={upgradeHttpToHttps(document.DocumentUrl)}
+                    rel="noreferrer"
+                    size="sm"
+                    target="_blank"
+                    truncate
+                  >
+                    {document.FileName || document.GeneratedName}
+                  </Anchor>
+                ) : (
+                  <Text size="sm" truncate>
+                    {document.FileName || document.GeneratedName}
+                  </Text>
+                )}
                 <ActionIcon
                   aria-label={t('Видалити')}
                   color="red"

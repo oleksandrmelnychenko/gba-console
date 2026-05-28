@@ -1,3 +1,4 @@
+import type { SaleOrderItem } from './salesTypes'
 import type { Client } from './types'
 
 export type RetailClient = {
@@ -37,6 +38,7 @@ export type RetailProduct = {
   Id?: number
   Image?: string
   ImageUrl?: string
+  MainOriginalNumber?: string
   Name?: string
   NetUid?: string
   ProductImage?: string
@@ -107,7 +109,7 @@ export type IncompleteSale = {
   Id?: number
   MisplacedSaleStatus?: unknown
   NetUid?: string
-  OrderItems?: RetailCartItem[]
+  OrderItems?: SaleOrderItem[]
   RetailClient?: RetailClient
   Sale?: RetailSale
   User?: unknown

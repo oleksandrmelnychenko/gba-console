@@ -32,6 +32,7 @@ import {
 import { useClientFormLookups } from '../hooks/useClientFormLookups'
 import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
+import { EditClientTypePanel } from '../components/EditClientTypePanel'
 import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
@@ -47,7 +48,7 @@ import {
   EDIT_CLIENT_PRICING_PERMISSION,
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
-import type { Client, ClientContractDocument, Currency, Region } from '../types'
+import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -113,6 +114,7 @@ export function ClientEditPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [typePanelOpened, setTypePanelOpened] = useValueState(false)
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [isUploadingDocuments, setUploadingDocuments] = useValueState(false)
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
@@ -199,6 +201,21 @@ export function ClientEditPage() {
 
   function handleClientChange(updatedClient: Client) {
     setClient(updatedClient)
+  }
+
+  function setClientTypeRole(clientType: ClientType, clientTypeRole: ClientTypeRole) {
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientInRole: {
+              ...currentClient.ClientInRole,
+              ClientType: clientType,
+              ClientTypeRole: clientTypeRole,
+            },
+          }
+        : currentClient,
+    )
   }
 
   function setBankField(key: 'BranchCode' | 'Swift' | 'BankAndBranch' | 'BankAddress', value: string) {
@@ -564,11 +581,13 @@ export function ClientEditPage() {
     <Stack gap="lg">
       <ClientEditHeader
         canDelete={hasPermission(EDIT_CLIENT_DELETE_PERMISSION)}
+        canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
         client={client}
         isDeleting={isDeleting}
         isSaving={isSaving}
         onClose={closeSheet}
         onDelete={() => setDeleteModalOpened(true)}
+        onTypeClick={() => setTypePanelOpened(true)}
       />
 
       {(error || lookupsError) && (
@@ -618,6 +637,15 @@ export function ClientEditPage() {
         onClose={() => setDeleteModalOpened(false)}
         onConfirm={handleDelete}
       />
+
+      <EditClientTypePanel
+        currentRoleId={client?.ClientInRole?.ClientTypeRole?.Id}
+        currentRoleNetUid={client?.ClientInRole?.ClientTypeRole?.NetUid}
+        currentTypeNetUid={client?.ClientInRole?.ClientType?.NetUid}
+        opened={typePanelOpened}
+        onClose={() => setTypePanelOpened(false)}
+        onSelect={setClientTypeRole}
+      />
     </Stack>
     </AppDrawer>
   )
@@ -625,18 +653,22 @@ export function ClientEditPage() {
 
 function ClientEditHeader({
   canDelete,
+  canEditType,
   client,
   isDeleting,
   isSaving,
   onClose,
   onDelete,
+  onTypeClick,
 }: {
   canDelete: boolean
+  canEditType: boolean
   client: Client | null
   isDeleting: boolean
   isSaving: boolean
   onClose: () => void
   onDelete: () => void
+  onTypeClick: () => void
 }) {
   const { t } = useI18n()
   const regionCodeValue = client?.RegionCode?.Value
@@ -664,9 +696,14 @@ function ClientEditHeader({
               {client.IsActive === false ? t('Неактивний') : t('Активний')}
             </Badge>
           )}
-          {client?.ClientInRole?.ClientTypeRole?.Name && (
-            <Badge color="violet" variant="light">
-              {client.ClientInRole.ClientTypeRole.Name}
+          {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+            <Badge
+              color="violet"
+              variant="light"
+              style={canEditType ? { cursor: 'pointer' } : undefined}
+              onClick={canEditType ? onTypeClick : undefined}
+            >
+              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
             </Badge>
           )}
           {client?.IsTemporaryClient && (

@@ -29,6 +29,7 @@ import { PerfectClientType } from '../../types'
 import type { Client, ClientPerfectClientValue, PerfectClient } from '../../types'
 
 const PERFECT_CLIENT_CULTURE = 'uk'
+const PERFECT_CLIENT_TRANSLATION_CULTURE = 'pl'
 
 export type PerfectClientPanelProps = {
   client: Client
@@ -37,11 +38,14 @@ export type PerfectClientPanelProps = {
 
 type PerfectClientFormValues = {
   Name: string
+  TranslationName: string
   Lable: string
   Type: string
   Value: string
   ToggleValueLeft: string
+  ToggleValueLeftTranslation: string
   ToggleValueRight: string
+  ToggleValueRightTranslation: string
 }
 
 function getRoleId(client: Client): number | undefined {
@@ -91,16 +95,20 @@ function mergePerfectClients(definitions: PerfectClient[], existing: PerfectClie
 function createEmptyFormValues(): PerfectClientFormValues {
   return {
     Name: '',
+    TranslationName: '',
     Lable: '',
     Type: String(PerfectClientType.Toggle),
     Value: '',
     ToggleValueLeft: '',
+    ToggleValueLeftTranslation: '',
     ToggleValueRight: '',
+    ToggleValueRightTranslation: '',
   }
 }
 
 function buildNewPerfectClientPayload(values: PerfectClientFormValues, roleId: number): ClientResourcePerfectClient {
   const name = values.Name.trim()
+  const translationName = values.TranslationName.trim()
   const type = Number(values.Type || PerfectClientType.Toggle)
   const isToggle = type === PerfectClientType.Toggle
 
@@ -111,16 +119,25 @@ function buildNewPerfectClientPayload(values: PerfectClientFormValues, roleId: n
     Description: '',
     Type: type,
     Value: isToggle ? '' : values.Value.trim(),
-    PerfectClientTranslations: [{ CultureCode: PERFECT_CLIENT_CULTURE, Name: name }],
+    PerfectClientTranslations: [
+      { CultureCode: PERFECT_CLIENT_CULTURE, Name: name },
+      { CultureCode: PERFECT_CLIENT_TRANSLATION_CULTURE, Name: translationName },
+    ],
     Values: isToggle
       ? [
           {
             Value: values.ToggleValueLeft.trim(),
-            PerfectClientValueTranslations: [{ CultureCode: PERFECT_CLIENT_CULTURE, Value: values.ToggleValueLeft.trim() }],
+            PerfectClientValueTranslations: [
+              { CultureCode: PERFECT_CLIENT_CULTURE, Value: values.ToggleValueLeft.trim() },
+              { CultureCode: PERFECT_CLIENT_TRANSLATION_CULTURE, Value: values.ToggleValueLeftTranslation.trim() },
+            ],
           },
           {
             Value: values.ToggleValueRight.trim(),
-            PerfectClientValueTranslations: [{ CultureCode: PERFECT_CLIENT_CULTURE, Value: values.ToggleValueRight.trim() }],
+            PerfectClientValueTranslations: [
+              { CultureCode: PERFECT_CLIENT_CULTURE, Value: values.ToggleValueRight.trim() },
+              { CultureCode: PERFECT_CLIENT_TRANSLATION_CULTURE, Value: values.ToggleValueRightTranslation.trim() },
+            ],
           },
         ]
       : [],
@@ -221,14 +238,19 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
       return
     }
 
-    if (!values.Name.trim()) {
+    if (!values.Name.trim() || !values.TranslationName.trim()) {
       setAddError(t('Вкажіть назву параметра'))
       return
     }
 
     if (
       Number(values.Type) === PerfectClientType.Toggle
-      && (!values.ToggleValueLeft.trim() || !values.ToggleValueRight.trim())
+      && (
+        !values.ToggleValueLeft.trim()
+        || !values.ToggleValueLeftTranslation.trim()
+        || !values.ToggleValueRight.trim()
+        || !values.ToggleValueRightTranslation.trim()
+      )
     ) {
       setAddError(t('Вкажіть обидва значення перемикача'))
       return
@@ -470,6 +492,12 @@ function PerfectClientAddModal({
             value={values.Name}
             onChange={(event) => setField('Name', event.currentTarget.value)}
           />
+          <TextInput
+            label={t('Переклад')}
+            required
+            value={values.TranslationName}
+            onChange={(event) => setField('TranslationName', event.currentTarget.value)}
+          />
           <Select
             allowDeselect={false}
             data={[
@@ -488,16 +516,28 @@ function PerfectClientAddModal({
           {isToggle ? (
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
               <TextInput
-                label={t('Значення ліворуч')}
+                label={t('Значення 1 (ліво)')}
                 required
                 value={values.ToggleValueLeft}
                 onChange={(event) => setField('ToggleValueLeft', event.currentTarget.value)}
               />
               <TextInput
-                label={t('Значення праворуч')}
+                label={t('Значення 1 (ліво-переклад)')}
+                required
+                value={values.ToggleValueLeftTranslation}
+                onChange={(event) => setField('ToggleValueLeftTranslation', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('Значення 2 (право)')}
                 required
                 value={values.ToggleValueRight}
                 onChange={(event) => setField('ToggleValueRight', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('Значення 2 (право-переклад)')}
+                required
+                value={values.ToggleValueRightTranslation}
+                onChange={(event) => setField('ToggleValueRightTranslation', event.currentTarget.value)}
               />
             </SimpleGrid>
           ) : (

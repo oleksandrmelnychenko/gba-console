@@ -15,6 +15,7 @@ import {
   Stack,
   Text,
   TextInput,
+  ThemeIcon,
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
@@ -27,6 +28,7 @@ import {
   IconFileTypePdf,
   IconFileTypeXls,
   IconHelpCircle,
+  IconPencil,
   IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
@@ -34,6 +36,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRed
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -324,7 +327,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const locationNodeTitle = getLocationNodeTitle(location.state)
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
-  const columns = useAccountingCashFlowColumns(setSelectedItem)
+  const columns = useAccountingCashFlowColumns(setSelectedItem, t)
   const detailRowsColumns = useCashFlowDetailRowsColumns()
   const items = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = items.at(-1)
@@ -1159,6 +1162,7 @@ function DownloadDocumentModal({
 
 function useAccountingCashFlowColumns(
   onOpenDetail: (item: AccountingCashFlowHeadItem) => void,
+  t: TranslateFunction,
 ): DataTableColumn<AccountingCashFlowHeadItem>[] {
   return useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(
     () => [
@@ -1177,9 +1181,18 @@ function useAccountingCashFlowColumns(
         minWidth: 220,
         accessor: (item) => item.Name,
         cell: (item) => (
-          <Text fw={700} lineClamp={2}>
-            {displayValue(item.Name)}
-          </Text>
+          <Group gap={6} wrap="nowrap" align="center">
+            {(item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0 && (
+              <Tooltip label={t('Накладна була редагована')} position="right">
+                <ThemeIcon color="orange" size="xs" radius="xl" variant="filled">
+                  <IconPencil size={12} />
+                </ThemeIcon>
+              </Tooltip>
+            )}
+            <Text fw={700} lineClamp={2}>
+              {displayValue(item.Name)}
+            </Text>
+          </Group>
         ),
       },
       {
@@ -1269,7 +1282,7 @@ function useAccountingCashFlowColumns(
         ),
       },
     ],
-    [onOpenDetail],
+    [onOpenDetail, t],
   )
 }
 

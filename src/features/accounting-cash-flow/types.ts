@@ -147,7 +147,10 @@ export type AccountingCashFlowHeadItem = {
   PortCustomAgencyService?: unknown
   PortWorkService?: unknown
   ProductIncome?: unknown
-  Sale?: unknown
+  Sale?: {
+    HistoryInvoiceEdit?: unknown[]
+    [key: string]: unknown
+  }
   SaleReturn?: unknown
   SupplyOrderPaymentDeliveryProtocol?: unknown
   SupplyOrderUkraine?: unknown
