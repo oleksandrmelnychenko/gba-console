@@ -27,7 +27,7 @@ export async function createClientGroup(name: string, clientId: number): Promise
   const result = await apiRequest<unknown>('/clients/new/group', {
     method: 'POST',
     query: {
-      name: name || '',
+      name: '',
     },
     body: {
       Name: name,

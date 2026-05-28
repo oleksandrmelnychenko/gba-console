@@ -34,6 +34,7 @@ import { BankDetailsFields } from '../components/form/BankDetailsFields'
 import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PricingPanel } from '../components/pricing/PricingPanel'
+import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
@@ -967,6 +968,10 @@ function EditStepContent({
         onIbanNumberCurrencyChange={setIbanNumberCurrency}
       />
     )
+  }
+
+  if (step === 'client-types') {
+    return <ClientStructurePanel client={client} onChange={onClientChange} />
   }
 
   if (step !== 'general-information') {
