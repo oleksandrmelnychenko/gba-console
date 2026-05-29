@@ -14,7 +14,7 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export const PRODUCT_SEARCH_MODE_OPTIONS: Array<{ label: string; value: ProductSearchMode }> = [
-  { value: '5', label: 'Усі поля' },
+  { value: '5', label: 'Всі' },
   { value: '0', label: 'Код виробника' },
   { value: '1', label: 'Оригінальний/крос номер' },
   { value: '2', label: 'Розмір' },
