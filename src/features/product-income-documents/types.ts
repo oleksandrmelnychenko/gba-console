@@ -74,18 +74,25 @@ export type ProductIncomeItem = EntityFields & {
   } | null
   Qty?: number
   SaleReturnItem?: {
+    Amount?: number
+    AmountLocal?: number
     Comment?: string
     OrderItem?: {
       Order?: {
         Sale?: {
           ClientAgreement?: {
             Agreement?: {
+              Currency?: NamedEntity | null
+              Name?: string
               Organization?: NamedEntity | null
+              WithVATAccounting?: boolean
             } | null
           } | null
         } | null
       } | null
+      Product?: ProductIncomeProduct | null
     } | null
+    Qty?: number
     SaleReturn?: {
       Client?: NamedEntity | null
       FromDate?: string
@@ -93,6 +100,7 @@ export type ProductIncomeItem = EntityFields & {
       NetUid?: string
       Number?: string
     } | null
+    VatAmount?: number
   } | null
   SupplyOrderUkraineItem?: {
     SupplyOrderUkraine?: {
@@ -138,6 +146,18 @@ export type ProductIncomeDocumentsResponse = {
 export type ProductIncomeDocumentsExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+}
+
+export type ProductIncomeInfo = EntityFields & {
+  Comment?: string
+  Currency?: NamedEntity | null
+  FromDate?: string
+  Number?: string
+  ProductIncomeItems?: ProductIncomeItem[]
+  Storage?: ProductIncomeStorage | null
+  TotalNetPrice?: number
+  TotalQty?: number
+  User?: NamedEntity | null
 }
 
 export type RemainingConsignment = EntityFields & {

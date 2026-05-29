@@ -4,6 +4,7 @@ import type {
   ProductIncomeDocumentsExportDocument,
   ProductIncomeDocumentsResponse,
   ProductIncomeDocumentsSearchParams,
+  ProductIncomeInfo,
   ProductIncomeItem,
   RemainingConsignment,
 } from '../types'
@@ -36,6 +37,16 @@ export async function exportProductIncomeDocument(
   return normalizeExportDocument(result)
 }
 
+export async function getProductIncomeInfo(netId: string): Promise<ProductIncomeInfo | null> {
+  const result = await apiRequest<unknown>('/products/income/info/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeProductIncomeInfo(result)
+}
+
 export async function getProductIncomeRemainings(netId: string): Promise<RemainingConsignment[]> {
   const result = await apiRequest<unknown>('/consignments/remaining/all/income', {
     query: {
@@ -64,6 +75,19 @@ function normalizeProductIncomeDocument(document: ProductIncomeDocument): Produc
   return {
     ...document,
     ProductIncomeItems: normalizeProductIncomeItems(document.ProductIncomeItems),
+  }
+}
+
+function normalizeProductIncomeInfo(result: unknown): ProductIncomeInfo | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const info = result as ProductIncomeInfo
+
+  return {
+    ...info,
+    ProductIncomeItems: normalizeProductIncomeItems(info.ProductIncomeItems),
   }
 }
 
