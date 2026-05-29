@@ -1,4 +1,6 @@
 import { Select, SimpleGrid, Stack, Switch, TextInput, Textarea } from '@mantine/core'
+import type { ComboboxItem, OptionsFilter } from '@mantine/core'
+import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { ProductGroup } from '../types'
 import { getProductGroupName } from '../utils'
@@ -34,6 +36,32 @@ export function ProductGroupForm({
     return options
   }, [])
 
+  const rootGroupSearchText = useMemo(() => {
+    const text: Record<string, string> = {}
+
+    rootGroups.forEach((rootGroup) => {
+      if (rootGroup.NetUid) {
+        text[rootGroup.NetUid] = `${rootGroup.Name || ''} ${rootGroup.FullName || ''} ${rootGroup.Description || ''}`
+          .trim()
+          .toLowerCase()
+      }
+    })
+
+    return text
+  }, [rootGroups])
+
+  const filterRootGroups: OptionsFilter = ({ options, search }) => {
+    const query = search.trim().toLowerCase()
+
+    if (!query) {
+      return options
+    }
+
+    return (options as ComboboxItem[]).filter((option) =>
+      (rootGroupSearchText[option.value] ?? option.label.toLowerCase()).includes(query),
+    )
+  }
+
   return (
     <Stack gap="md">
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
@@ -58,6 +86,7 @@ export function ProductGroupForm({
         clearable
         data={rootGroupOptions}
         disabled={disabled || isLoadingRootGroups}
+        filter={filterRootGroups}
         label={t('Батьківська група')}
         nothingFoundMessage={t('Груп не знайдено')}
         placeholder={isLoadingRootGroups ? t('Завантаження') : undefined}

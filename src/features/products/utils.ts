@@ -90,6 +90,10 @@ export function getProductShopImageUrl(product?: Product | null): string {
   return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''
 }
 
+export function getProductShopGalleryImageUrl(vendorCode: string, suffix: number): string {
+  return `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.trim().toLowerCase())}_${suffix}_water.jpg`
+}
+
 export function getProductOriginalNumbers(product?: Product | null): ProductOriginalNumber[] {
   return product?.ProductOriginalNumbers?.filter((item) => Boolean(item.OriginalNumber)) || []
 }

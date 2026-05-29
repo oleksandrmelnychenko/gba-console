@@ -105,6 +105,7 @@ import {
   getProductTitle,
   getRelatedProductRowColor,
 } from '../utils'
+import { ShopImageGallery } from '../components/ShopImageGallery'
 import {
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
@@ -1055,6 +1056,7 @@ function ProductInlineView({
               ))}
             </Group>
           ) : null}
+          <ShopImageGallery vendorCode={product.VendorCode} onImageClick={setPreviewImageUrl} />
         </Box>
 
         <Box className="product-inline-description">
