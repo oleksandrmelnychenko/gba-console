@@ -1,10 +1,12 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
   FileInput,
   Group,
@@ -37,8 +39,11 @@ import {
   IconChevronRight,
   IconClipboardList,
   IconDeviceFloppy,
+  IconDownload,
   IconEdit,
   IconFileDescription,
+  IconFileTypePdf,
+  IconFileTypeXls,
   IconHistory,
   IconPackage,
   IconPhoto,
@@ -53,6 +58,8 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   addOrUpdateProductWriteOffRule,
   deleteProductWriteOffRule,
+  exportProductMovementsDocument,
+  getProductAuditEntities,
   getProductByNetId,
   getProductConsignmentRemainings,
   getProductGroupsByProductNetId,
@@ -66,13 +73,16 @@ import {
   updateProductPlacements,
 } from '../api/productsApi'
 import type {
+  AuditEntity,
   CalculatedProductPrice,
   Product,
+  ProductAuditField,
   ProductAvailability,
   ProductConsignmentRemaining,
   ProductGroup,
   ProductImage,
   ProductMovement,
+  ProductMovementExportDocument,
   ProductPlacement,
   ProductReservation,
   ProductSpecification,
@@ -93,7 +103,7 @@ import {
   getProductTitle,
 } from '../utils'
 
-export type ProductDetailPanel = 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
+export type ProductDetailPanel = 'audit' | 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
 
 export const PRODUCT_BALANCES_PERMISSION = 'Product_Entire_Assortment_BalancesOnParties_Btn_PKEY'
 export const PRODUCT_EDIT_PERMISSION = 'Product_Entire_Assortment_EditBtn_PKEY'
@@ -136,6 +146,7 @@ type ProductPlacementDraft = ProductPlacement & {
 }
 
 const panelValues = new Set<ProductDetailPanel>([
+  'audit',
   'edit',
   'images',
   'movement',
@@ -145,7 +156,34 @@ const panelValues = new Set<ProductDetailPanel>([
   'writeoff',
 ])
 
+const productAuditFieldOptions: Array<{ label: string; value: ProductAuditField }> = [
+  { label: 'Опис', value: 'Description' },
+  { label: 'Top', value: 'Top' },
+  { label: 'Розмір', value: 'Size' },
+  { label: "Об'єм", value: 'Volume' },
+  { label: 'Вага', value: 'Weight' },
+  { label: 'Пакування', value: 'PackingStandard' },
+  { label: 'Оригінальні номери', value: 'MainOriginalNumber' },
+  { label: 'Нотатки', value: 'Notes' },
+  { label: 'Синоніми', value: 'Synonyms' },
+]
+
 const movementItemTypes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+const movementItemTypeOptions: Array<{ label: string; value: number }> = [
+  { label: 'Реалізація', value: 0 },
+  { label: 'Повернення', value: 1 },
+  { label: 'Акт редагування накладної', value: 2 },
+  { label: 'Прихід товару', value: 3 },
+  { label: 'Замовлення постачання в Україну', value: 4 },
+  { label: 'Акт уцінки', value: 5 },
+  { label: 'Повернення постачальнику', value: 6 },
+  { label: 'Переміщення товару', value: 7 },
+  { label: 'ВМД', value: 8 },
+  { label: 'Tax Free', value: 9 },
+  { label: 'Рух кошика', value: 10 },
+  { label: 'Оприбуткування', value: 11 },
+  { label: 'Акт редагування накладної (склад)', value: 12 },
+]
 const pageSizeOptions = ['20', '40', '60', '100']
 const writeOffRuleTypeOptions = [
   { label: 'Списати по вазі', value: '0' },
@@ -489,6 +527,11 @@ function ProductActionToolbar({ openPanel }: { openPanel: (panel: ProductDetailP
       <Tooltip label={t('Історія місця зберігання')}>
         <ActionIcon aria-label={t('Історія місця зберігання')} color="gray" size={38} variant="light" onClick={() => openPanel('storage-history')}>
           <IconHistory size={18} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Історія змін полів')}>
+        <ActionIcon aria-label={t('Історія змін полів')} color="gray" size={38} variant="light" onClick={() => openPanel('audit')}>
+          <IconClipboardList size={18} />
         </ActionIcon>
       </Tooltip>
       <Tooltip label={t('Специфікація')}>
@@ -945,6 +988,7 @@ export function ProductActionDrawer({
       title={activePanel ? getPanelTitle(activePanel, t) : ''}
       onClose={onClose}
     >
+      {activePanel === 'audit' && <ProductAuditPanel key={getProductPanelKey(product)} product={product} />}
       {activePanel === 'edit' && (
         <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
           <ProductEditPanel key={getProductPanelKey(product)} product={product} onProductSaved={onProductSaved} />
@@ -1264,9 +1308,97 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
   )
 }
 
+function ProductAuditPanel({ product }: { product: Product }) {
+  const { t } = useI18n()
+  const productNetUid = product.NetUid?.trim()
+  const [field, setField] = useState<ProductAuditField>('Description')
+  const [entries, setEntries] = useState<AuditEntity[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setLoading] = useState(false)
+  const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії змін')
+  const activeError = missingNetUidError || error
+
+  useEffect(() => {
+    if (!productNetUid) {
+      return
+    }
+
+    let cancelled = false
+    const netUid = productNetUid
+    const auditField = field
+
+    async function loadEntries() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const nextEntries = await getProductAuditEntities(netUid, auditField)
+
+        if (!cancelled) {
+          setEntries(nextEntries)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setEntries([])
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити історію змін'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadEntries()
+
+    return () => {
+      cancelled = true
+    }
+  }, [field, productNetUid, t])
+
+  return (
+    <Stack gap="md">
+      <Select
+        data={productAuditFieldOptions.map((option) => ({ ...option, label: t(option.label) }))}
+        label={t('Поле')}
+        value={field}
+        w={260}
+        onChange={(value) => setField((value as ProductAuditField) || 'Description')}
+      />
+      {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      {isLoading ? (
+        <LoadingState label={t('Завантаження історії змін')} />
+      ) : entries.length === 0 && !activeError ? (
+        <Text c="dimmed" size="sm">{t('Історію змін не знайдено')}</Text>
+      ) : !activeError ? (
+        <Stack gap="xs">
+          {entries.map((entry, index) => (
+            <Box
+              key={`${entry.NetUid || entry.Id || index}`}
+              style={{
+                border: '1px solid var(--mantine-color-gray-2)',
+                borderRadius: 6,
+                padding: '8px 10px',
+              }}
+            >
+              <Text size="sm" style={{ overflowWrap: 'anywhere' }}>{displayValue(entry.NewValues?.[0]?.Value)}</Text>
+              <Group justify="space-between" gap="xs" wrap="nowrap" mt={4}>
+                <Text c="dimmed" size="xs">{displayValue(entry.UpdatedBy)}</Text>
+                <Text c="dimmed" size="xs">{formatDate(entry.Created)}</Text>
+              </Group>
+            </Box>
+          ))}
+        </Stack>
+      ) : null}
+    </Stack>
+  )
+}
+
 function ProductSpecificationPanel({ product }: { product: Product }) {
   const { t } = useI18n()
-  const specifications = product.ProductSpecifications || []
+  const specifications = useMemo(() => sortSpecificationsByCreatedDesc(product.ProductSpecifications || []), [product])
+  const currentSpecification = specifications[0] || null
+  const historySpecifications = specifications.slice(1)
 
   if (specifications.length === 0) {
     return (
@@ -1277,34 +1409,59 @@ function ProductSpecificationPanel({ product }: { product: Product }) {
   }
 
   return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Код специфікації')}</Table.Th>
-            <Table.Th>{t('Митна вартість')}</Table.Th>
-            <Table.Th>{t('Мито')}</Table.Th>
-            <Table.Th>{t('ПДВ')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {specifications.map((specification, index) => (
-            <SpecificationRow key={`${specification.NetUid || specification.Id || index}`} specification={specification} />
-          ))}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
-  )
-}
+    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+      <Card withBorder radius="md" padding="md">
+        <Stack gap="xs">
+          <Title order={5}>{t('Поточний')}</Title>
+          {currentSpecification ? (
+            <Stack gap={4}>
+              <Text fw={700} size="sm">{displayValue(currentSpecification.SpecificationCode)}</Text>
+              {currentSpecification.Name ? <Text c="dimmed" size="sm">{currentSpecification.Name}</Text> : null}
+              <SimpleGrid cols={3} spacing={6} mt={4}>
+                <InfoBlock label="Митна вартість" value={displayValue(currentSpecification.CustomsValue)} />
+                <InfoBlock label="Мито" value={displayValue(currentSpecification.Duty)} />
+                <InfoBlock label="ПДВ" value={displayValue(currentSpecification.VATValue)} />
+              </SimpleGrid>
+              <Text c="dimmed" size="xs" mt={4}>
+                {[formatSpecificationAuthor(currentSpecification), formatDate(currentSpecification.Created)].filter((part) => part && part !== '-').join(' · ')}
+              </Text>
+            </Stack>
+          ) : (
+            <Text c="dimmed" size="sm">{t('Немає поточного коду')}</Text>
+          )}
+        </Stack>
+      </Card>
 
-function SpecificationRow({ specification }: { specification: ProductSpecification }) {
-  return (
-    <Table.Tr>
-      <Table.Td>{displayValue(specification.SpecificationCode)}</Table.Td>
-      <Table.Td>{displayValue(specification.CustomsValue)}</Table.Td>
-      <Table.Td>{displayValue(specification.Duty)}</Table.Td>
-      <Table.Td>{displayValue(specification.VATValue)}</Table.Td>
-    </Table.Tr>
+      <Card withBorder radius="md" padding="md">
+        <Stack gap="xs">
+          <Title order={5}>{t('Історія')}</Title>
+          {historySpecifications.length === 0 ? (
+            <Text c="dimmed" size="sm">{t('Історію не знайдено')}</Text>
+          ) : (
+            <ScrollArea mah={420}>
+              <Stack gap="xs">
+                {historySpecifications.map((specification, index) => (
+                  <Box
+                    key={`${specification.NetUid || specification.Id || index}`}
+                    style={{
+                      border: '1px solid var(--mantine-color-gray-2)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                    }}
+                  >
+                    <Group justify="space-between" gap="xs" wrap="nowrap">
+                      <Text fw={600} size="sm">{displayValue(specification.SpecificationCode)}</Text>
+                      <Text c="dimmed" size="xs">{formatDate(specification.Created)}</Text>
+                    </Group>
+                    <Text c="dimmed" size="xs">{formatSpecificationAuthor(specification)}</Text>
+                  </Box>
+                ))}
+              </Stack>
+            </ScrollArea>
+          )}
+        </Stack>
+      </Card>
+    </SimpleGrid>
   )
 }
 
@@ -1371,7 +1528,7 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
 
   return (
     <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={980}>
+      <Table striped highlightOnHover withTableBorder miw={1480}>
         <Table.Thead>
           <Table.Tr>
             <Table.Th>{t('Склад')}</Table.Th>
@@ -1381,7 +1538,12 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
             <Table.Th>{t('Прихід')}</Table.Th>
             <Table.Th ta="right">{t('Залишок')}</Table.Th>
             <Table.Th ta="right">{t('Нетто')}</Table.Th>
+            <Table.Th ta="right">{t('Загальна нетто')}</Table.Th>
             <Table.Th ta="right">{t('Брутто')}</Table.Th>
+            <Table.Th ta="right">{t('Облікова брутто')}</Table.Th>
+            <Table.Th>{t('Валюта')}</Table.Th>
+            <Table.Th>{t('Організація')}</Table.Th>
+            <Table.Th ta="right">{t('Вага')}</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -1394,7 +1556,12 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
               <Table.Td>{displayValue(row.ProductIncomeNumber)}</Table.Td>
               <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
               <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
               <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
+              <Table.Td>{displayValue(row.CurrencyName)}</Table.Td>
+              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
             </Table.Tr>
           ))}
         </Table.Tbody>
@@ -1524,21 +1691,34 @@ function ProductMovementPanel({ product }: { product: Product }) {
   const [dateFrom, setDateFrom] = useState(getTodayDate)
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [movementType, setMovementType] = useState('0')
+  const [selectedTypes, setSelectedTypes] = useState<number[]>(movementItemTypes)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [rows, setRows] = useState<ProductMovement[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
+  const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
+  const [isExporting, setExporting] = useState(false)
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
-  const activeError = filterError || missingNetUidError || error
+  const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
+  const activeError = filterError || missingNetUidError || typesError || error
+
+  function toggleMovementItemType(value: number) {
+    setSelectedTypes((currentTypes) => (
+      currentTypes.includes(value)
+        ? currentTypes.filter((type) => type !== value)
+        : currentTypes.concat(value)
+    ))
+  }
 
   useEffect(() => {
-    if (filterError || !productNetUid) {
+    if (filterError || typesError || !productNetUid) {
       return
     }
 
     let cancelled = false
     const netUid = productNetUid
+    const types = selectedTypes
 
     async function loadRows() {
       setLoading(true)
@@ -1550,7 +1730,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
           movementType: Number(movementType),
           productNetId: netUid,
           to: dateTo,
-          types: movementItemTypes,
+          types,
         })
 
         if (!cancelled) {
@@ -1573,56 +1753,160 @@ function ProductMovementPanel({ product }: { product: Product }) {
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, t])
+  }, [dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
+
+  async function exportMovements() {
+    if (!productNetUid || filterError || typesError || isExporting) {
+      return
+    }
+
+    setExporting(true)
+    setError(null)
+
+    try {
+      const nextDocument = await exportProductMovementsDocument({
+        from: dateFrom,
+        movementType: Number(movementType),
+        productNetId: productNetUid,
+        to: dateTo,
+        types: selectedTypes,
+      })
+
+      setExportDocument(nextDocument)
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <Stack gap="md">
-      <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
         <TextInput label={t('З')} type="date" value={dateFrom} onChange={(event) => setDateFrom(event.currentTarget.value)} />
         <TextInput label={t('По')} type="date" value={dateTo} onChange={(event) => setDateTo(event.currentTarget.value)} />
         <Select label={t('Тип руху')} data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={movementType} w={220} onChange={(value) => setMovementType(value || '0')} />
-        <Button disabled={Boolean(filterError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="light" onClick={() => reload()}>
+        <Button disabled={Boolean(filterError) || Boolean(typesError)} leftSection={<IconRefresh size={18} />} loading={isLoading} variant="light" onClick={() => reload()}>
           {t('Оновити')}
         </Button>
+        <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="light" onClick={() => void exportMovements()}>
+          {t('Друк')}
+        </Button>
       </Group>
-      {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
+      <Group gap="md" wrap="wrap" align="center">
+        {movementItemTypeOptions.map((option) => (
+          <Checkbox
+            key={option.value}
+            checked={selectedTypes.includes(option.value)}
+            label={t(option.label)}
+            size="xs"
+            onChange={() => toggleMovementItemType(option.value)}
+          />
+        ))}
+        <Button size="xs" color="gray" variant="subtle" onClick={() => setSelectedTypes(movementItemTypes)}>
+          {t('Скинути')}
+        </Button>
+      </Group>
+      {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
       {isLoading ? (
         <LoadingState label={t('Завантаження руху товару')} />
       ) : rows.length === 0 && !activeError ? (
         <Text c="dimmed" size="sm">{t('Рух товару не знайдено')}</Text>
       ) : !activeError ? (
         <ScrollArea>
-          <Table striped highlightOnHover withTableBorder miw={1080}>
+          <Table striped highlightOnHover withTableBorder miw={1640}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>{t('Дата')}</Table.Th>
+                <Table.Th>{t('Номер прихідної накладної')}</Table.Th>
+                <Table.Th>{t('Дата прихідної накладної')}</Table.Th>
                 <Table.Th>{t('Документ')}</Table.Th>
                 <Table.Th>{t('Номер')}</Table.Th>
-                <Table.Th>{t('Склад')}</Table.Th>
+                <Table.Th>{t('Дата')}</Table.Th>
                 <Table.Th>{t('Клієнт')}</Table.Th>
+                <Table.Th>{t('Склад')}</Table.Th>
+                <Table.Th>{t('Організація')}</Table.Th>
+                <Table.Th>{t('Відповідальний')}</Table.Th>
+                <Table.Th ta="right">{t('Собівартість')}</Table.Th>
+                <Table.Th ta="right">{t('Облікова собівартість')}</Table.Th>
+                <Table.Th ta="right">{t('Знижка')}</Table.Th>
                 <Table.Th ta="right">{t('Прихід')}</Table.Th>
                 <Table.Th ta="right">{t('Розхід')}</Table.Th>
-                <Table.Th ta="right">{t('Кількість')}</Table.Th>
+                <Table.Th>{t('Коментар')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
               {rows.map((row, index) => (
                 <Table.Tr key={`${row.NetUid || row.Id || row.DocumentNumber || index}`}>
+                  <Table.Td>{displayValue(row.IncomeDocumentNumber)}</Table.Td>
+                  <Table.Td>{formatDateTime(row.IncomeDocumentFromDate)}</Table.Td>
+                  <Table.Td>{row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentType || row.MovementType)}</Text> : displayValue(row.DocumentType || row.MovementType)}</Table.Td>
+                  <Table.Td>{row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentNumber)}</Text> : displayValue(row.DocumentNumber)}</Table.Td>
                   <Table.Td>{formatDateTime(row.DocumentFromDate || row.FromDate || row.Created)}</Table.Td>
-                  <Table.Td>{displayValue(row.DocumentType || row.MovementType)}</Table.Td>
-                  <Table.Td>{displayValue(row.DocumentNumber)}</Table.Td>
-                  <Table.Td>{displayValue(row.StorageName)}</Table.Td>
                   <Table.Td>{displayValue(row.ClientName)}</Table.Td>
+                  <Table.Td>{displayValue(row.StorageName)}</Table.Td>
+                  <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+                  <Table.Td>{displayValue(row.Responsible || row.UserName)}</Table.Td>
+                  <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
+                  <Table.Td ta="right">{formatPrice(row.AccountingPrice)}</Table.Td>
+                  <Table.Td ta="right">{formatPrice(row.Discount)}</Table.Td>
                   <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
                   <Table.Td ta="right">{formatAmount(row.OutcomeQty)}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
+                  <Table.Td>{displayValue(row.Comment)}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
           </Table>
         </ScrollArea>
       ) : null}
+      <ProductDocumentDownloadModal
+        document={exportDocument}
+        title={t('Документ руху товару')}
+        onClose={() => setExportDocument(null)}
+      />
     </Stack>
+  )
+}
+
+function ProductDocumentDownloadModal({
+  document,
+  onClose,
+  title,
+}: {
+  document: ProductMovementExportDocument | null
+  onClose: () => void
+  title: string
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={Boolean(document)} title={title} onClose={onClose}>
+      <Stack gap="sm">
+        {document?.DocumentURL || document?.PdfDocumentURL ? (
+          <>
+            {document.DocumentURL ? (
+              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-excel">
+                  <IconFileTypeXls size={22} stroke={1.8} />
+                </span>
+                <span>{t('Excel документ')}</span>
+              </Anchor>
+            ) : null}
+            {document.PdfDocumentURL ? (
+              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <span className="document-link-badge document-link-badge-pdf">
+                  <IconFileTypePdf size={22} stroke={1.8} />
+                </span>
+                <span>{t('PDF документ')}</span>
+              </Anchor>
+            ) : null}
+          </>
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('Документ недоступний для завантаження')}
+          </Text>
+        )}
+      </Stack>
+    </AppModal>
   )
 }
 
@@ -1955,6 +2239,40 @@ function InfoRow({ label, multiline, value }: { label: string; multiline?: boole
   )
 }
 
+function InfoBlock({ label, value }: { label: string; value?: number | string | null }) {
+  const { t } = useI18n()
+
+  return (
+    <Box>
+      <Text c="dimmed" size="xs" lineClamp={1}>
+        {t(label)}
+      </Text>
+      <Text size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
+        {displayValue(value)}
+      </Text>
+    </Box>
+  )
+}
+
+function sortSpecificationsByCreatedDesc(specifications: ProductSpecification[]): ProductSpecification[] {
+  return [...specifications].sort((first, second) => {
+    const firstTime = first.Created ? new Date(first.Created).getTime() : 0
+    const secondTime = second.Created ? new Date(second.Created).getTime() : 0
+
+    return secondTime - firstTime
+  })
+}
+
+function formatSpecificationAuthor(specification: ProductSpecification): string {
+  const author = specification.AddedBy
+
+  if (!author) {
+    return ''
+  }
+
+  return [author.LastName, author.FirstName].filter(Boolean).join(' ')
+}
+
 function PriceRow({ price }: { price: CalculatedProductPrice }) {
   return (
     <Group justify="space-between" gap="md" wrap="nowrap">
@@ -2091,6 +2409,8 @@ function getProductPanelKey(product: Product): string {
 
 function getPanelTitle(panel: ProductDetailPanel, t: (key: string) => string): string {
   switch (panel) {
+    case 'audit':
+      return t('Історія змін полів')
     case 'edit':
       return t('Редагувати товар')
     case 'images':

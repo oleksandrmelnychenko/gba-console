@@ -151,3 +151,21 @@ export function formatPrice(value?: number | null): string {
 export function getBooleanBadgeColor(value?: boolean): string {
   return value ? 'green' : 'gray'
 }
+
+export function getRelatedProductRowColor(product?: Partial<Product> | null): string | undefined {
+  const top = product?.Top?.trim().toLowerCase()
+
+  if (top === 'x9' || top === 'х9') {
+    return 'red.7'
+  }
+
+  if (product?.IsForSale) {
+    return 'blue.7'
+  }
+
+  if (product?.IsForZeroSale) {
+    return 'green.7'
+  }
+
+  return undefined
+}
