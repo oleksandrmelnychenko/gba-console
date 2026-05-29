@@ -485,8 +485,10 @@ function toStorageOption(storage: Storage): { label: string; value: string } | n
     return null
   }
 
+  const name = storage.Name || translate('Без назви')
+
   return {
-    label: storage.Name || translate('Без назви'),
+    label: storage.Organization?.Name ? `${name} (${storage.Organization.Name})` : name,
     value: storage.NetUid,
   }
 }
