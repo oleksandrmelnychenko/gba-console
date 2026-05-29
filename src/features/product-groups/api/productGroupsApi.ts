@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  Product,
   ProductGroup,
   ProductGroupsWithTotal,
   ProductProductGroup,
@@ -94,6 +95,20 @@ export async function getProductSubGroups(params: {
     TotalFilteredQty: normalized.totalFilteredQty,
     TotalQty: normalized.totalQty,
   }
+}
+
+export async function getRedirectedProductByNetId(netId: string): Promise<Product | null> {
+  const result = await apiRequest<unknown>('/products/get', {
+    query: {
+      netId,
+    },
+  })
+
+  if (result && typeof result === 'object') {
+    return result as Product
+  }
+
+  return null
 }
 
 export async function getProductGroupProducts(params: {

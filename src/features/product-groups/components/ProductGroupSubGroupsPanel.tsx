@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPencil, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -21,7 +22,8 @@ import { getProductSubGroups } from '../api/productGroupsApi'
 import type { ProductGroup, ProductSubGroup } from '../types'
 import { displayValue, formatProductGroupDate, getProductGroupName } from '../utils'
 
-const PAGE_LIMIT_OPTIONS = ['15', '25', '50', '100']
+const PAGE_LIMIT_OPTIONS = ['15', '25', '50', '100', '150', '200']
+const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 
 const SUB_GROUPS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -40,7 +42,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
   const navigate = useNavigate()
   const [subGroups, setSubGroups] = useValueState<ProductSubGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
   const [limit, setLimit] = useValueState(50)
   const [totalFilteredQty, setTotalFilteredQty] = useValueState(0)
   const [totalQty, setTotalQty] = useValueState(0)
@@ -203,12 +205,10 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
 
   function updateSearch(nextSearchValue: string) {
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   function resetSearch() {
     setSearchDraft('')
-    setSearchValue('')
   }
 
   return (
