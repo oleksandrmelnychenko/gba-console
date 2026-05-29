@@ -99,6 +99,11 @@ export type ProductTransfersSearchParams = {
   to: string
 }
 
+export type ProductTransferExportDocument = {
+  DocumentURL?: string
+  PdfDocumentURL?: string
+}
+
 export type ProductTransferParseConfiguration = {
   EndRow: number
   QtyColumnNumber: number

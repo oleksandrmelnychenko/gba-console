@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ProductTransfer,
   ProductTransferCreateFromFilePayload,
+  ProductTransferExportDocument,
   ProductTransfersSearchParams,
   ProductTransferStorage,
 } from '../types'
@@ -33,6 +34,16 @@ export async function getProductTransferStorages(): Promise<ProductTransferStora
   const result = await apiRequest<unknown>('/storages/get/all')
 
   return normalizeStorages(result)
+}
+
+export async function exportProductTransferDocument(netId: string): Promise<ProductTransferExportDocument> {
+  const result = await apiRequest<unknown>('/products/transfers/document/export', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeExportDocument(result)
 }
 
 export async function addProductTransferFromFile(payload: ProductTransferCreateFromFilePayload): Promise<string[]> {
@@ -102,6 +113,19 @@ function normalizeStorages(result: unknown): ProductTransferStorage[] {
   }
 
   return []
+}
+
+function normalizeExportDocument(result: unknown): ProductTransferExportDocument {
+  if (!result || typeof result !== 'object') {
+    return {}
+  }
+
+  const payload = result as Record<string, unknown>
+
+  return {
+    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
+    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+  }
 }
 
 function normalizeMessages(result: unknown): string[] {

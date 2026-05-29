@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Box,
   Button,
@@ -22,7 +23,17 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconEye, IconFileSpreadsheet, IconPlus, IconRefresh, IconRestore } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconDownload,
+  IconEye,
+  IconFileSpreadsheet,
+  IconFileTypePdf,
+  IconFileTypeXls,
+  IconPlus,
+  IconRefresh,
+  IconRestore,
+} from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -34,12 +45,14 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { useAuth } from '../../auth/useAuth'
 import {
   addProductTransferFromFile,
+  exportProductTransferDocument,
   getProductTransferByNetId,
   getProductTransfers,
   getProductTransferStorages,
 } from '../api/productTransfersApi'
 import type {
   ProductTransfer,
+  ProductTransferExportDocument,
   ProductTransferItem,
   ProductTransferLocation,
   ProductTransferStorage,
@@ -68,7 +81,7 @@ const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 const PRODUCT_TRANSFERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['date', 'number'],
+    left: ['index', 'date', 'number'],
     right: ['actions'],
   },
   density: 'normal',
@@ -76,7 +89,7 @@ const PRODUCT_TRANSFERS_TABLE_DEFAULT_LAYOUT = {
 
 const PRODUCT_TRANSFER_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['product'],
+    left: ['index', 'product'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -112,6 +125,10 @@ function useProductTransfersPageModel() {
   const [isCreating, setCreating] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [storageError, setStorageError] = useValueState<string | null>(null)
+  const [downloadOpened, setDownloadOpened] = useValueState(false)
+  const [downloadDocument, setDownloadDocument] = useValueState<ProductTransferExportDocument | null>(null)
+  const [downloadError, setDownloadError] = useValueState<string | null>(null)
+  const [isDownloading, setDownloading] = useValueState(false)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
@@ -119,6 +136,7 @@ function useProductTransfersPageModel() {
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
+  const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -189,14 +207,55 @@ function useProductTransfersPageModel() {
     }
   }, [setDetailError, setDetailLoading, setSelectedTransfer, t])
 
+  const closeDownload = useCallback(() => {
+    downloadRequestRef.current += 1
+    setDownloadOpened(false)
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloading(false)
+  }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
+
   const closeDetail = useCallback(() => {
     detailRequestRef.current += 1
     setSelectedTransfer(null)
     setDetailError(null)
     setDetailLoading(false)
-  }, [setDetailError, setDetailLoading, setSelectedTransfer])
+    closeDownload()
+  }, [closeDownload, setDetailError, setDetailLoading, setSelectedTransfer])
 
-  const columns = useProductTransferColumns(openDetail)
+  const openDownload = useCallback(async (transfer: ProductTransfer) => {
+    if (!transfer.NetUid) {
+      return
+    }
+
+    const requestId = downloadRequestRef.current + 1
+    downloadRequestRef.current = requestId
+    setDownloadOpened(true)
+    setDownloadDocument(null)
+    setDownloadError(null)
+    setDownloading(true)
+
+    try {
+      const document = await exportProductTransferDocument(transfer.NetUid)
+
+      if (downloadRequestRef.current === requestId) {
+        setDownloadDocument(document)
+      }
+    } catch (exportError) {
+      if (downloadRequestRef.current === requestId) {
+        setDownloadError(
+          exportError instanceof Error ? exportError.message : t('Документ недоступний для завантаження'),
+        )
+      }
+    } finally {
+      if (downloadRequestRef.current === requestId) {
+        setDownloading(false)
+      }
+    }
+  }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t])
+
+  const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers), [transfers])
+  const columns = useProductTransferColumns(openDetail, transferIndexMap)
 
   const toolbarLeft = useMemo(
     () => (
@@ -379,11 +438,12 @@ function useProductTransfersPageModel() {
   }
 
   return {
-    columns, createError, createForm, detailError, effectiveToStorageNetUid, error, exceptionMessages,
-    filterDraft, filterError, hasMore, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isLoading,
-    isLoadingMore, isLoadingStorages, selectedTransfer, storageError, storageOptions, storages, toolbarLeft,
-    toolbarRight, toStorageOptions, transfers, closeCreateModal, handleCreate, loadMoreTransfers, openCreateModal,
-    openDetail, reload, resetFilters, setCreateForm, setExceptionMessages, applyFilters, setSelectedTransfer,
+    columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
+    effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, hasMore, isAdmin,
+    isCreateModalOpen, isCreating, isDetailLoading, isDownloading, isLoading, isLoadingMore, isLoadingStorages,
+    selectedTransfer, storageError, storageOptions, storages, toolbarLeft, toolbarRight, toStorageOptions,
+    transfers, closeCreateModal, closeDownload, handleCreate, loadMoreTransfers, openCreateModal, openDetail,
+    openDownload, reload, resetFilters, setCreateForm, setExceptionMessages, applyFilters, setSelectedTransfer,
     closeDetail,
   }
 }
@@ -604,10 +664,10 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           emptyText={t('Переміщень не знайдено')}
           getRowId={(transfer, index) => String(transfer.NetUid || transfer.Id || index)}
           isLoading={isLoading}
-          layoutVersion="product-transfers-table-1"
+          layoutVersion="product-transfers-table-2"
           loadingText={t('Завантаження переміщень')}
           maxHeight="calc(100vh - 340px)"
-          minWidth={1720}
+          minWidth={1780}
           tableId="product-transfers"
           toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}
@@ -628,7 +688,10 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
 
 function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
-  const { closeDetail, detailError, isDetailLoading, selectedTransfer } = model
+  const {
+    closeDetail, closeDownload, detailError, downloadDocument, downloadError, downloadOpened, isDetailLoading,
+    isDownloading, openDownload, selectedTransfer,
+  } = model
 
   return (
     <AppDrawer
@@ -638,7 +701,65 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
       title={t('Деталі переміщення')}
       onClose={closeDetail}
     >
-      {selectedTransfer && <TransferDetail error={detailError} isLoading={isDetailLoading} transfer={selectedTransfer} />}
+      {selectedTransfer && (
+        <>
+          <Group justify="flex-end" mb="md">
+            <Button
+              color="violet"
+              disabled={!selectedTransfer.NetUid}
+              leftSection={<IconDownload size={16} />}
+              loading={isDownloading}
+              variant="light"
+              onClick={() => openDownload(selectedTransfer)}
+            >
+              {t('Завантажити')}
+            </Button>
+          </Group>
+          <TransferDetail error={detailError} isLoading={isDetailLoading} transfer={selectedTransfer} />
+        </>
+      )}
+
+      <AppModal
+        centered
+        opened={downloadOpened}
+        title={t('Завантажити')}
+        onClose={closeDownload}
+      >
+        <Stack gap="sm">
+          {isDownloading ? (
+            <Text c="dimmed" size="sm">
+              {t('Завантаження')}
+            </Text>
+          ) : downloadError ? (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {downloadError}
+            </Alert>
+          ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
+            <>
+              {downloadDocument.DocumentURL && (
+                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                  <span className="document-link-badge document-link-badge-excel">
+                    <IconFileTypeXls size={22} stroke={1.8} />
+                  </span>
+                  <span>{t('Excel документ')}</span>
+                </Anchor>
+              )}
+              {downloadDocument.PdfDocumentURL && (
+                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                  <span className="document-link-badge document-link-badge-pdf">
+                    <IconFileTypePdf size={22} stroke={1.8} />
+                  </span>
+                  <span>{t('PDF документ')}</span>
+                </Anchor>
+              )}
+            </>
+          ) : (
+            <Text c="dimmed" size="sm">
+              {t('Документ недоступний для завантаження')}
+            </Text>
+          )}
+        </Stack>
+      </AppModal>
     </AppDrawer>
   )
 }
@@ -839,11 +960,28 @@ function ProductTransferImportResultModal({ model }: { model: ReturnType<typeof 
   )
 }
 
-function useProductTransferColumns(onOpenDetail: (transfer: ProductTransfer) => void) {
+function useProductTransferColumns(
+  onOpenDetail: (transfer: ProductTransfer) => void,
+  indexMap: Map<ProductTransfer, number>,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductTransfer>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableHiding: false,
+        accessor: (transfer) => indexMap.get(transfer) || 0,
+        cell: (transfer) => (
+          <Text c="dimmed" size="sm">
+            {indexMap.get(transfer) || ''}
+          </Text>
+        ),
+      },
       {
         id: 'date',
         header: 'Дата',
@@ -969,8 +1107,16 @@ function useProductTransferColumns(onOpenDetail: (transfer: ProductTransfer) => 
         ),
       },
     ],
-    [onOpenDetail, t],
+    [indexMap, onOpenDetail, t],
   )
+}
+
+function buildTransferIndexMap(transfers: ProductTransfer[]): Map<ProductTransfer, number> {
+  return transfers.reduce((indexMap, transfer, index) => {
+    indexMap.set(transfer, index + 1)
+
+    return indexMap
+  }, new Map<ProductTransfer, number>())
 }
 
 function TransferDetail({
@@ -983,9 +1129,32 @@ function TransferDetail({
   transfer: ProductTransfer
 }) {
   const { t } = useI18n()
-  const items = transfer.ProductTransferItems || []
+  const items = useMemo(() => transfer.ProductTransferItems || [], [transfer.ProductTransferItems])
+  const itemIndexMap = useMemo(
+    () =>
+      items.reduce((indexMap, item, index) => {
+        indexMap.set(item, index + 1)
+
+        return indexMap
+      }, new Map<ProductTransferItem, number>()),
+    [items],
+  )
   const itemColumns = useMemo<DataTableColumn<ProductTransferItem>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableHiding: false,
+        accessor: (item) => itemIndexMap.get(item) || 0,
+        cell: (item) => (
+          <Text c="dimmed" size="sm">
+            {itemIndexMap.get(item) || ''}
+          </Text>
+        ),
+      },
       {
         id: 'product',
         header: 'Товар',
@@ -1025,7 +1194,7 @@ function TransferDetail({
         minWidth: 160,
       },
     ],
-    [],
+    [itemIndexMap],
   )
 
   return (
@@ -1087,9 +1256,9 @@ function TransferDetail({
           defaultLayout={PRODUCT_TRANSFER_ITEMS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-          layoutVersion="product-transfer-items-table-1"
+          layoutVersion="product-transfer-items-table-2"
           maxHeight="48vh"
-          minWidth={840}
+          minWidth={900}
           tableId="product-transfer-items"
         />
       </Stack>

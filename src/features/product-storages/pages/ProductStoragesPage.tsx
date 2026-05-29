@@ -36,6 +36,7 @@ import {
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
+import { useDebouncedValue } from '@mantine/hooks'
 import { useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -65,13 +66,14 @@ import type {
 
 const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['select', 'vendorCode', 'productName'],
+    left: ['select', 'index', 'vendorCode', 'productName'],
     right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const pageSizeOptions = ['50', '100', '150']
+const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = 'Products_Storages_Action_WithAPosition_Btn_PKEY'
 const PRODUCT_STORAGES_PREVIEW_PERMISSION = 'Products_Storages_Preview_Btn_PKEY'
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -122,7 +124,10 @@ function useProductStoragesPageModel() {
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
   const [selectedAvailabilities, setSelectedAvailabilities] = useValueState<ProductStorageAvailability[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [debouncedSearchDraft] = useDebouncedValue(searchDraft, PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS)
+  const searchValue = debouncedSearchDraft.trim()
+  const [fromDate, setFromDate] = useValueState(() => formatLocalDate(new Date()))
+  const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [pageSize, setPageSize] = useValueState(50)
   const [hasMore, setHasMore] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -167,7 +172,9 @@ function useProductStoragesPageModel() {
   const isSomeVisibleSelected =
     visibleSelectableAvailabilities.some((availability) => selectedAvailabilityKeys.has(getAvailabilityKey(availability))) &&
     !isAllVisibleSelected
+  const availabilityIndexMap = useMemo(() => buildAvailabilityIndexMap(availabilities), [availabilities])
   const columns = useProductStoragesColumns({
+    availabilityIndexMap,
     canOpenAction,
     isAllVisibleSelected,
     isSomeVisibleSelected,
@@ -250,6 +257,17 @@ function useProductStoragesPageModel() {
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
   }, [listRequestKey])
+
+  useEffect(
+    () => () => {
+      setSelectedAvailabilities([])
+      setPreviewRows([])
+      setPreviewOpened(false)
+      setActionModal(null)
+      setStorages([])
+    },
+    [setActionModal, setPreviewOpened, setPreviewRows, setSelectedAvailabilities, setStorages],
+  )
 
   useEffect(() => {
     if (!selectedStorageNetId) {
@@ -387,15 +405,13 @@ function useProductStoragesPageModel() {
   }
 
   function updateSearch(nextValue: string) {
-    setAvailabilities([])
-    setHasMore(false)
     setSearchDraft(nextValue)
-    setSearchValue(nextValue.trim())
   }
 
   function resetFilters() {
     setSearchDraft('')
-    setSearchValue('')
+    setFromDate(formatLocalDate(new Date()))
+    setToDate(formatLocalDate(new Date()))
     selectStorageNetId(storageOptions[0]?.value || '')
   }
 
@@ -592,7 +608,10 @@ function useProductStoragesPageModel() {
             FromDate: actionForm.fromDate,
             FromStorage: fromStorage,
             IsManagement: actionForm.isManagement && isAdmin,
-            Organization: fromStorage.Organization || null,
+            Organization:
+              actionModal.scope === 'single'
+                ? selectedToStorage.Organization || null
+                : fromStorage.Organization || null,
             ProductTransferItems: buildTransferItems(actionModal, actionForm),
             ToStorage: selectedToStorage,
           },
@@ -706,6 +725,7 @@ function useProductStoragesPageModel() {
     downloadModalOpened,
     effectiveToStorageNetUid,
     error,
+    fromDate,
     hasMore,
     isActionSubmitting,
     isAdmin,
@@ -726,6 +746,7 @@ function useProductStoragesPageModel() {
     selectedStorageNetId,
     selectedReturnConsignment,
     storageOptions,
+    toDate,
     toolbarLeft,
     toStorageOptions,
     canOpenPreview,
@@ -742,8 +763,10 @@ function useProductStoragesPageModel() {
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
+    setFromDate,
     setPageSize,
     setPreviewOpened,
+    setToDate,
     submitAction,
     toggleAvailability,
     updatePreviewQty,
@@ -770,6 +793,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     downloadModalOpened,
     effectiveToStorageNetUid,
     error,
+    fromDate,
     hasMore,
     isActionSubmitting,
     isAdmin,
@@ -790,6 +814,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectedStorageNetId,
     selectedReturnConsignment,
     storageOptions,
+    toDate,
     toolbarLeft,
     toStorageOptions,
     canOpenPreview,
@@ -806,8 +831,10 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
+    setFromDate,
     setPageSize,
     setPreviewOpened,
+    setToDate,
     submitAction,
     toggleAvailability,
     updatePreviewQty,
@@ -869,6 +896,20 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               onChange={(value) => selectStorageNetId(value || '')}
             />
             <TextInput
+              label={t('Від якої дати')}
+              max={toDate || undefined}
+              type="date"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('До якої дати')}
+              min={fromDate || undefined}
+              type="date"
+              value={toDate}
+              onChange={(event) => setToDate(event.currentTarget.value)}
+            />
+            <TextInput
               leftSection={<IconSearch size={16} />}
               label={t('Пошук')}
               placeholder={t('Код або назва товару')}
@@ -923,10 +964,10 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               String(availability.NetUid || `${getProductCode(availability)}-${getStorageName(availability)}-${index}`)
             }
             isLoading={isLoading || isLoadingStorages}
-            layoutVersion="product-storages-table-1"
+            layoutVersion="product-storages-table-2"
             loadingText={t('Завантаження товарів складу')}
             maxHeight="calc(100vh - 320px)"
-            minWidth={1180}
+            minWidth={1240}
             rowClassName={(availability) =>
               selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
             }
@@ -1020,8 +1061,34 @@ function ProductStoragePreviewDrawer({
 }) {
   const { t } = useI18n()
   const hasInvalidRows = rows.some((row) => !isValidActionRow(row))
+  const rowIndexMap = useMemo(
+    () =>
+      rows.reduce((indexMap, row, index) => {
+        indexMap.set(row, index + 1)
+
+        return indexMap
+      }, new Map<ProductStorageActionRow, number>()),
+    [rows],
+  )
   const columns = useMemo<DataTableColumn<ProductStorageActionRow>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        accessor: (row) => rowIndexMap.get(row) || 0,
+        cell: (row) => (
+          <Text c="dimmed" size="sm">
+            {rowIndexMap.get(row) || ''}
+          </Text>
+        ),
+      },
       {
         id: 'vendorCode',
         header: 'Код товару',
@@ -1119,7 +1186,7 @@ function ProductStoragePreviewDrawer({
         ),
       },
     ],
-    [onRemoveRow, onUpdateQty, t],
+    [onRemoveRow, onUpdateQty, rowIndexMap, t],
   )
 
   return (
@@ -1135,16 +1202,16 @@ function ProductStoragePreviewDrawer({
           data={rows}
           defaultLayout={{
             columnPinning: {
-              left: ['vendorCode', 'productName'],
+              left: ['index', 'vendorCode', 'productName'],
               right: ['actions'],
             },
             density: 'normal',
           }}
           emptyText={t('Позиції не обрано')}
           getRowId={(row, index) => getAvailabilityKey(row.availability) || String(index)}
-          layoutVersion="product-storages-preview-1"
+          layoutVersion="product-storages-preview-2"
           maxHeight="calc(100vh - 240px)"
-          minWidth={1100}
+          minWidth={1160}
           tableId="product-storages-preview"
         />
         <Group justify="space-between">
@@ -1376,6 +1443,7 @@ function ProductStorageActionModal({
 }
 
 function useProductStoragesColumns({
+  availabilityIndexMap,
   canOpenAction,
   isAllVisibleSelected,
   isSomeVisibleSelected,
@@ -1384,6 +1452,7 @@ function useProductStoragesColumns({
   onToggleAvailability,
   onToggleVisible,
 }: {
+  availabilityIndexMap: Map<ProductStorageAvailability, number>
   canOpenAction: boolean
   isAllVisibleSelected: boolean
   isSomeVisibleSelected: boolean
@@ -1419,6 +1488,23 @@ function useProductStoragesColumns({
             onClick={(event) => event.stopPropagation()}
             onChange={(event) => onToggleAvailability(availability, event.currentTarget.checked)}
           />
+        ),
+      },
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        accessor: (availability) => availabilityIndexMap.get(availability) || 0,
+        cell: (availability) => (
+          <Text c="dimmed" size="sm">
+            {availabilityIndexMap.get(availability) || ''}
+          </Text>
         ),
       },
       {
@@ -1500,6 +1586,7 @@ function useProductStoragesColumns({
       },
     ],
     [
+      availabilityIndexMap,
       canOpenAction,
       isAllVisibleSelected,
       isSomeVisibleSelected,
@@ -1510,6 +1597,16 @@ function useProductStoragesColumns({
       t,
     ],
   )
+}
+
+function buildAvailabilityIndexMap(
+  availabilities: ProductStorageAvailability[],
+): Map<ProductStorageAvailability, number> {
+  return availabilities.reduce((indexMap, availability, index) => {
+    indexMap.set(availability, index + 1)
+
+    return indexMap
+  }, new Map<ProductStorageAvailability, number>())
 }
 
 function createActionForm(qty?: number): ProductStorageActionForm {
