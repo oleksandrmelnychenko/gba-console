@@ -30,6 +30,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   archiveTransporter,
+  getArchivedTransportersByType,
   getTransportersByType,
   getTransporterTypes,
 } from '../api/transportersApi'
@@ -177,7 +178,7 @@ export function TransportersPage() {
       setError(null)
 
       try {
-        const nextTransporters = await getTransportersByType(selectedTypeNetId)
+        const nextTransporters = await getTransportersByStatus(selectedTypeNetId, statusFilter)
 
         if (!cancelled) {
           setTransporters(nextTransporters)
@@ -199,7 +200,7 @@ export function TransportersPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, selectedTypeNetId, setError, setLoadingTransporters, setTransporters, t])
+  }, [reloadKey, selectedTypeNetId, setError, setLoadingTransporters, setTransporters, statusFilter, t])
 
   async function handleArchiveTransporter() {
     if (!archiveTarget?.NetUid || !canArchiveTransporter(archiveTarget)) {
@@ -465,6 +466,50 @@ function canArchiveTransporter(transporter: Transporter): boolean {
       transporter.Deleted !== true &&
       transporter.CssClass !== archiveDisabledCssClass,
   )
+}
+
+async function getTransportersByStatus(
+  transporterTypeNetId: string,
+  statusFilter: TransporterStatusFilter,
+): Promise<Transporter[]> {
+  if (statusFilter === 'archived') {
+    return markArchivedTransporters(await getArchivedTransportersByType(transporterTypeNetId))
+  }
+
+  if (statusFilter === 'all') {
+    const [activeTransporters, archivedTransporters] = await Promise.all([
+      getTransportersByType(transporterTypeNetId),
+      getArchivedTransportersByType(transporterTypeNetId),
+    ])
+
+    return mergeTransporters(activeTransporters, markArchivedTransporters(archivedTransporters))
+  }
+
+  return getTransportersByType(transporterTypeNetId)
+}
+
+function markArchivedTransporters(transporters: Transporter[]): Transporter[] {
+  return transporters.map((transporter) => ({
+    ...transporter,
+    Deleted: true,
+  }))
+}
+
+function mergeTransporters(activeTransporters: Transporter[], archivedTransporters: Transporter[]): Transporter[] {
+  const transporterByKey = new Map<string, Transporter>()
+
+  activeTransporters.forEach((transporter, index) => {
+    transporterByKey.set(getTransporterKey(transporter, index), transporter)
+  })
+  archivedTransporters.forEach((transporter, index) => {
+    transporterByKey.set(getTransporterKey(transporter, index + activeTransporters.length), transporter)
+  })
+
+  return Array.from(transporterByKey.values())
+}
+
+function getTransporterKey(transporter: Transporter, fallbackIndex: number): string {
+  return transporter.NetUid || String(transporter.Id || fallbackIndex)
 }
 
 function getArchiveTooltip(transporter: Transporter): string {

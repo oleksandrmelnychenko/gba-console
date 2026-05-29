@@ -24,10 +24,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 ## Current Status Snapshot
 
-- `ui`: 64
+- `ui`: 67
 - `route`: 0
 - `shell`: 0
-- `todo`: 73
+- `todo`: 70
 - `deferred`: 4
 - Poland-specific skipped rows: 3
 
@@ -72,7 +72,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 | # | Phase | Area | Source route | Source component | Status | Notes |
 | ---: | --- | --- | --- | --- | --- | --- |
-| 1 | P7 accounting | accounting | `/accounting/consumable-product` | `AllConsumableProductsView` | todo | old line 135 |
+| 1 | P7 accounting | accounting | `/accounting/consumable-product` | `AllConsumableProductsView` | ui | consumable product categories/products wired with search, create/edit/delete, service-details flag, measure-unit autocomplete, and permission gates |
 | 2 | P7 accounting | accounting | `/accounting/company-cars/edit/:id` | `NewCompanyCarView` | todo | old line 136 |
 | 3 | P7 accounting | accounting | `/accounting/company-cars/new` | `NewCompanyCarView` | todo | old line 137 |
 | 4 | P7 accounting | accounting | `/accounting/company-cars/:id/road-lists` | `AllRoadListsView` | todo | old line 138 |
@@ -145,8 +145,8 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 77 | P4 supply-warehouse | product-delivery-protocols | `/product-delivery-protocols/:id/specifications` | `ProductDeliveryProtocolSpecification` | todo | old line 233 |
 | 78 | P4 supply-warehouse | product-delivery-protocols | `/product-delivery-protocols/:id` | `ProductDeliveryProtocolLogisticPathPage` | todo | old line 234 |
 | 79 | P4 supply-warehouse | product-delivery-protocols | `/product-delivery-protocols` | `ProductDeliveryProtocolPage` | todo | old line 235 |
-| 80 | P4 supply-warehouse | act-providing-services | `/act-providing-services/:id` | `ActProvidintServicePage` | todo | old line 237 |
-| 81 | P4 supply-warehouse | act-providing-services | `/act-providing-services` | `ActProvidintServiceGridPage` | todo | old line 238 |
+| 80 | P4 supply-warehouse | act-providing-services | `/act-providing-services/:id` | `ActProvidintServicePage` | ui | detail view wired with load, date/comment edit, save, and explicit missing-act/error states |
+| 81 | P4 supply-warehouse | act-providing-services | `/act-providing-services` | `ActProvidintServiceGridPage` | ui | list wired with date filters, paging, source-state mapping, row option modal, and safe handling for not-yet-migrated linked logistics routes |
 | 82 | P4 supply-warehouse | orders | `/orders/ukraine/view/:netid` | `SupplyUkraineOverview` | todo | old line 240 |
 | 83 | P4 supply-warehouse | orders | `/orders/ukraine/placement/:netid` | `SupplyUkrainePlacement` | todo | old line 241 |
 | 84 | P4 supply-warehouse | orders | `/orders/ukraine/protocols/:netid` | `SupplyUkrainePaymentProtocolsView` | todo | old line 242 |

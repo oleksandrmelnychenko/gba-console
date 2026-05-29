@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ModulePage } from '../../pages/module/ModulePage'
 import {
+  ActProvidingServiceDetailPage,
+  ActProvidingServicesPage,
   AccountingBanksPage,
   AllSadsPage,
   BasketSupplyUkraineOrderPage,
@@ -10,6 +12,7 @@ import {
   ClientNewPage,
   ClientResourcesPage,
   ClientsPage,
+  ConsumableProductsPage,
   DashboardPage,
   EditSadPage,
   EditSaleSadPage,
@@ -25,9 +28,12 @@ import {
   OrganizationClientsPage,
   OrganisationServicesPage,
   PaymentCashflowArticleFormPage,
+  DepreciatedOrdersPage,
   PaymentCashflowArticlesPage,
   ProductAvailabilitiesPage,
   ProductCapitalizationsPage,
+  ProductSpecificationCodesPage,
+  SupplyReturnsPage,
   ProductGroupDetailPage,
   ProductGroupsPage,
   ProductHistoryPage,
@@ -79,6 +85,9 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/products/storages/incomes', element: lazyRoute(<ProductRemainsPage />) },
   { path: '/products/transfers', element: lazyRoute(<ProductTransfersPage />) },
   { path: '/products/capitalization', element: lazyRoute(<ProductCapitalizationsPage />) },
+  { path: '/accounting/specification-codes', element: lazyRoute(<ProductSpecificationCodesPage />) },
+  { path: '/supplies/returns', element: lazyRoute(<SupplyReturnsPage />) },
+  { path: '/orders/depreciated', element: lazyRoute(<DepreciatedOrdersPage />) },
   { path: '/products/history', element: lazyRoute(<ProductHistoryPage />) },
   { path: '/products/:netId', element: <ProductCarouselDeepLinkRedirect /> },
   { path: '/product-groups', element: lazyRoute(<ProductGroupsPage />) },
@@ -122,6 +131,7 @@ const userMigrationRoutes: ConsoleRoute[] = [
 ]
 
 const accountingMigrationRoutes: ConsoleRoute[] = [
+  { path: '/accounting/consumable-product', element: lazyRoute(<ConsumableProductsPage />) },
   { path: '/accounting/payment-cashflow-articles', element: lazyRoute(<PaymentCashflowArticlesPage />) },
   { path: '/accounting/payment-cashflow-articles/new', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
   { path: '/accounting/payment-cashflow-articles/edit/:id', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
@@ -140,6 +150,8 @@ const customsMigrationRoutes: ConsoleRoute[] = [
 ]
 
 const plannedConsoleRoutes: ConsoleRoute[] = [
+  { path: '/act-providing-services', element: lazyRoute(<ActProvidingServicesPage />) },
+  { path: '/act-providing-services/:id', element: lazyRoute(<ActProvidingServiceDetailPage />) },
   { path: '/basket-supply-ukraine-order', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/basket-supply-ukraine-order/*', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/recommendations', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },

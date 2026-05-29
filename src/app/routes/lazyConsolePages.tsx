@@ -1,5 +1,7 @@
 import { lazy } from 'react'
 
+export const ActProvidingServiceDetailPage = lazy(() => import('../../features/act-providing-services').then((module) => ({ default: module.ActProvidingServiceDetailPage })))
+export const ActProvidingServicesPage = lazy(() => import('../../features/act-providing-services').then((module) => ({ default: module.ActProvidingServicesPage })))
 export const BasketSupplyUkraineOrderPage = lazy(() => import('../../features/basket-supply-ukraine-order').then((module) => ({ default: module.BasketSupplyUkraineOrderPage })))
 export const AccountingBanksPage = lazy(() => import('../../features/accounting-banks').then((module) => ({ default: module.AccountingBanksPage })))
 export const ClientAccountingCashFlowPage = lazy(() => import('../../features/accounting-cash-flow').then((module) => ({ default: module.ClientAccountingCashFlowPage })))
@@ -7,6 +9,7 @@ export const ClientResourcesPage = lazy(() => import('../../features/client-reso
 export const ClientEditPage = lazy(() => import('../../features/clients/pages/ClientEditPage').then((module) => ({ default: module.ClientEditPage })))
 export const ClientNewPage = lazy(() => import('../../features/clients/pages/ClientNewPage').then((module) => ({ default: module.ClientNewPage })))
 export const ClientsPage = lazy(() => import('../../features/clients/pages/ClientsPage').then((module) => ({ default: module.ClientsPage })))
+export const ConsumableProductsPage = lazy(() => import('../../features/consumable-products').then((module) => ({ default: module.ConsumableProductsPage })))
 export const NewEcommerceClientsPage = lazy(() => import('../../features/clients/pages/NewEcommerceClientsPage').then((module) => ({ default: module.NewEcommerceClientsPage })))
 export const OnlineShopClientsPage = lazy(() => import('../../features/clients/pages/OnlineShopClientsPage').then((module) => ({ default: module.OnlineShopClientsPage })))
 export const RetailClientSalesPage = lazy(() => import('../../features/clients/pages/RetailClientSalesPage').then((module) => ({ default: module.RetailClientSalesPage })))
@@ -56,4 +59,7 @@ export const UserEditPage = lazy(() => import('../../features/users/pages/UserEd
 export const UserNewPage = lazy(() => import('../../features/users/pages/UserNewPage').then((module) => ({ default: module.UserNewPage })))
 export const UserRolesPage = lazy(() => import('../../features/users/pages/UserRolesPage').then((module) => ({ default: module.UserRolesPage })))
 export const UsersPage = lazy(() => import('../../features/users/pages/UsersPage').then((module) => ({ default: module.UsersPage })))
+export const ProductSpecificationCodesPage = lazy(() => import('../../features/product-specification-codes/pages/ProductSpecificationCodesPage').then((module) => ({ default: module.ProductSpecificationCodesPage })))
+export const SupplyReturnsPage = lazy(() => import('../../features/supply-returns').then((module) => ({ default: module.SupplyReturnsPage })))
+export const DepreciatedOrdersPage = lazy(() => import('../../features/depreciated-orders/pages/DepreciatedOrdersPage').then((module) => ({ default: module.DepreciatedOrdersPage })))
 export const DashboardPage = lazy(() => import('../../pages/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
