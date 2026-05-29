@@ -56,6 +56,9 @@ import {
   RetailIncompleteSalePage,
   SalesOnlineShopPage,
   SupplierAccountingCashFlowPage,
+  SupplierOrganizationCashFlowPage,
+  SupplierOrganizationEditPage,
+  SupplierOrganizationsPage,
   TaxFreeDocumentsPage,
   TaxFreePackListsPage,
   SuppliersPage,
@@ -132,6 +135,10 @@ const userMigrationRoutes: ConsoleRoute[] = [
 
 const accountingMigrationRoutes: ConsoleRoute[] = [
   { path: '/accounting/consumable-product', element: lazyRoute(<ConsumableProductsPage />) },
+  { path: '/accounting/supplier-organizations', element: lazyRoute(<SupplierOrganizationsPage />) },
+  { path: '/accounting/supplier-organizations/new', element: lazyRoute(<SupplierOrganizationEditPage />) },
+  { path: '/accounting/supplier-organizations/edit/:id', element: lazyRoute(<SupplierOrganizationEditPage />) },
+  { path: '/accounting/supplier-organizations/cash-flow/:id', element: lazyRoute(<SupplierOrganizationCashFlowPage />) },
   { path: '/accounting/payment-cashflow-articles', element: lazyRoute(<PaymentCashflowArticlesPage />) },
   { path: '/accounting/payment-cashflow-articles/new', element: lazyRoute(<PaymentCashflowArticleFormPage />) },
   { path: '/accounting/payment-cashflow-articles/edit/:id', element: lazyRoute(<PaymentCashflowArticleFormPage />) },

@@ -24,10 +24,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 ## Current Status Snapshot
 
-- `ui`: 67
+- `ui`: 71
 - `route`: 0
 - `shell`: 0
-- `todo`: 70
+- `todo`: 66
 - `deferred`: 4
 - Poland-specific skipped rows: 3
 
@@ -80,10 +80,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 6 | P7 accounting | accounting | `/accounting/currency-convertors/edit/:id` | `NewCurrencyConvertorsView` | todo | old line 140 |
 | 7 | P7 accounting | accounting | `/accounting/currency-convertors/new` | `NewCurrencyConvertorsView` | todo | old line 141 |
 | 8 | P7 accounting | accounting | `/accounting/currency-convertors` | `AllCurrencyConvertorsView` | todo | old line 142 |
-| 9 | P7 accounting | accounting | `/accounting/supplier-organizations/cash-flow/:id` | `CashFlowSupplyOrganizationsPage` | todo | old line 143 |
-| 10 | P7 accounting | accounting | `/accounting/supplier-organizations/edit/:id` | `NewSupplyOrganizationView` | todo | old line 144 |
-| 11 | P7 accounting | accounting | `/accounting/supplier-organizations/new` | `NewSupplyOrganizationView` | todo | old line 145 |
-| 12 | P7 accounting | accounting | `/accounting/supplier-organizations` | `AllSupplyOrganizationsView` | todo | old line 146 |
+| 9 | P7 accounting | accounting | `/accounting/supplier-organizations/cash-flow/:id` | `CashFlowSupplyOrganizationsPage` | ui | supplier organization cash-flow wired with date/type filters, agreement scope, export, and detail drawer |
+| 10 | P7 accounting | accounting | `/accounting/supplier-organizations/edit/:id` | `NewSupplyOrganizationView` | ui | supplier organization edit tabs wired for general info, non-PL bank details, contact person, agreements, agreement files, delete, and reload |
+| 11 | P7 accounting | accounting | `/accounting/supplier-organizations/new` | `NewSupplyOrganizationView` | ui | supplier organization create form wired with validation and redirect to edit after save |
+| 12 | P7 accounting | accounting | `/accounting/supplier-organizations` | `AllSupplyOrganizationsView` | ui | supplier organization list wired with persisted search, reset through empty input, print/export, row action modal, edit, and cash-flow navigation |
 | 13 | P7 accounting | accounting | `/accounting/payment-cashflow-articles/edit/:id` | `NewPaymentMovementView` | ui | payment movement edit form wired with load, validation, save, delete, and return navigation |
 | 14 | P7 accounting | accounting | `/accounting/payment-cashflow-articles/new` | `NewPaymentMovementView` | ui | payment movement create form wired with validation, save, and return navigation |
 | 15 | P7 accounting | accounting | `/accounting/payment-cashflow-articles` | `AllPaymentMovementView` | ui | payment movement list wired with search, refresh, table actions, and edit/create navigation |

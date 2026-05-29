@@ -604,7 +604,7 @@ function ProductEditorModal({
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [editor, measureUnitSearch, selectedMeasureUnit?.Name, setMeasureUnits])
+  }, [editor, measureUnitSearch, selectedMeasureUnit, setMeasureUnits])
 
   const measureUnitOptions = useMemo(
     () =>
