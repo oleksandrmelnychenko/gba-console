@@ -1,5 +1,5 @@
 export type EntityFields = {
-  Created?: string
+  Created?: string | Date
   Deleted?: boolean
   Id?: number
   NetUid?: string
@@ -68,4 +68,35 @@ export type ProductCapitalizationsResponse = {
 export type ProductCapitalizationsExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+}
+
+export type ProductCapitalizationSearchProduct = EntityFields & {
+  Name?: string
+  VendorCode?: string
+}
+
+export type ProductCapitalizationCreatePayload = {
+  Comment?: string
+  FromDate: string
+  Organization: ProductCapitalizationOrganization
+  ProductCapitalizationItems: ProductCapitalizationItem[]
+  Storage: ProductCapitalizationStorage
+}
+
+export type ProductCapitalizationParseConfiguration = {
+  EndRow: number
+  PriceColumnNumber: number
+  PricePerItem: boolean
+  QtyColumnNumber: number
+  StartRow: number
+  VendorCodeColumnNumber: number
+  WeightColumnNumber: number
+  WeightPerItem: boolean
+  WithPrice: boolean
+  WithWeight: boolean
+}
+
+export type ProductCapitalizationItemsFromFile = {
+  Items: ProductCapitalizationItem[]
+  MissingVendorCodes: string[]
 }
