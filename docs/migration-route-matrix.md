@@ -108,7 +108,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 34 | P7 accounting | accounting | `/accounting/payment-accounts/edit/:Id` | `NewAccountingPaymentRegisterView` | todo | old line 168 |
 | 35 | P7 accounting | accounting | `/accounting/payment-accounts/new` | `NewAccountingPaymentRegisterView` | todo | old line 169 |
 | 36 | P7 accounting | accounting | `/accounting/payment-accounts` | `AllAccountingPaymentView` | todo | old line 170 |
-| 37 | P7 accounting | accounting | `/accounting/specification-codes` | `ProductSpecificationCodesView` | todo | old line 171 |
+| 37 | P7 accounting | accounting | `/accounting/specification-codes` | `ProductSpecificationCodesView` | ui | customs/specification codes list with region+search filters, load-more, edit Change drawer (3-mode) |
 | 38 | P7 accounting | accounting | `/accounting/vat-reports` | `VatReportsView` | todo | old line 172 |
 | 39 | P7 accounting | accounting | `/accounting/advance-payments` | `AllAdvancePaymentsView` | todo | old line 173 |
 | 40 | P7 accounting | accounting | `/accounting/available-payments` | `PaymentsAvailableView` | todo | old line 174 |
@@ -150,7 +150,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 82 | P4 supply-warehouse | orders | `/orders/ukraine/view/:netid` | `SupplyUkraineOverview` | todo | old line 240 |
 | 83 | P4 supply-warehouse | orders | `/orders/ukraine/placement/:netid` | `SupplyUkrainePlacement` | todo | old line 241 |
 | 84 | P4 supply-warehouse | orders | `/orders/ukraine/protocols/:netid` | `SupplyUkrainePaymentProtocolsView` | todo | old line 242 |
-| 85 | P4 supply-warehouse | orders | `/orders/depreciated` | `DepreciatedOrdersView` | todo | old line 243 |
+| 85 | P4 supply-warehouse | orders | `/orders/depreciated` | `DepreciatedOrdersView` | ui | depreciated-orders (write-offs) list with filters, detail drawer (items+placements), exceptions modal, export |
 | 86 | P4 supply-warehouse | orders | `/orders/ukraine/:netid/product-income` | `SupplyOrderUkraineProductIncomeView` | todo | old line 244 |
 | 87 | P3 admin-directory | organization-clients | `/organization-clients/edit/:netId` | `EditOrganziationClientView` | ui | edit form, agreements, save, and delete wired |
 | 88 | P3 admin-directory | organization-clients | `/organization-clients/new` | `NewOrganizationClientView` | ui | create form and agreement add flow wired |
@@ -186,7 +186,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 119 | P3 admin-directory | suppliers | `/suppliers/edit/:netid/:step` | `EditClientView` | ui | shared edit card (provider tabs: general/contact/bank/pricing); supplier passport |
 | 120 | P3 admin-directory | suppliers | `/suppliers/edit/:netid` | `EditClientView` | ui | redirects to first edit step; shared edit card migrated |
 | 121 | P3 admin-directory | suppliers | `/suppliers/accounting-cash-flow/:id` | `AccountingCashFlowSupplierClientView` | ui | supplier cash-flow slice wired with AccountingType.All, agreement scope, details drawer, and export |
-| 122 | P4 supply-warehouse | supplies | `/supplies/returns` | `SupplyReturnsView` | todo | old line 287 |
+| 122 | P4 supply-warehouse | supplies | `/supplies/returns` | `SupplyReturnsView` | ui | read-only supply-returns list with date filters, detail drawer, document export |
 | 123 | P3 admin-directory | suppliers | `/suppliers` | `SuppliersView` | ui | list parity slice includes dynamic filters, sort descriptors, export, active switch, and shared table controls |
 | 124 | P6 customs-extra | tax-free | `/tax-free/pack-list/edit/:id` | `EditTaxFreePackListView` | ui | Tax Free pack-list editor wired with source/item movement, split, carrier, documents, print-document links, save, and send |
 | 125 | P6 customs-extra | tax-free | `/tax-free/pack-list/all` | `AllTaxFreePackListView` | ui | Tax Free pack-list list wired with period filters, paging, delete guard, export, edit action, and create-order modal |
