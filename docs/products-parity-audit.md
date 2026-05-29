@@ -1,5 +1,9 @@
 # Products (Already-Migrated) — Parity Audit
 
+> **STATUS: PARITY CLOSED (2026-05-29).** All gaps below were closed across product slices on branch `clients/full-migration`: capitalization create/import, income-documents drill-downs, product-groups polish, transfers+storages, placements/history/remains/income-ukraine/availabilities, the product detail card, and a final 2-gap pass (shop-CDN thumbnail gallery + group root-picker search). A final 11-screen completeness re-audit returned **0 residual gaps**. Each slice verified with tsc + eslint + build + tests.
+>
+> Accepted deferrals (not gaps): carousel search/sort dropdowns (deliberately removed), infinite-scroll→Load-more (console convention), Poland surfaces (SynonymsPL, write-off 'pl', income.poland), cross-module overviews/creates (orders/ukraine-act/supply modules), new-product-image upload UI (dead legacy action), recommendation forecast chart (no charting lib; legacy hardcodes a stale asOfDate — data helper added). The pre-closure gap inventory below is retained as the baseline.
+
 Audit date: 2026-05-29. Source of truth: legacy `gba_client`. Target: `gba_console`.
 12-screen fan-out (inventory → console-code audit → adversarial re-verification).
 
