@@ -4,7 +4,6 @@ import {
   Anchor,
   Badge,
   Button,
-  Divider,
   Group,
   Select,
   SimpleGrid,
@@ -25,6 +24,8 @@ import {
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api/accountingCashFlowApi'
+import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
+import { CashFlowSummary } from '../../accounting-cash-flow/components/CashFlowSummary'
 import type {
   AccountingCashFlow,
   AccountingCashFlowDocument,
@@ -84,31 +85,6 @@ const TYPE_LABELS: Record<number, string> = {
   36: 'Бухгалтерський акт надання послуг',
   37: 'Перепродаж',
 }
-
-const DETAIL_SOURCE_FIELDS: (keyof AccountingCashFlowHeadItem)[] = [
-  'OutcomePaymentOrder',
-  'IncomePaymentOrder',
-  'Sale',
-  'SaleReturn',
-  'ConsumablesOrder',
-  'SupplyOrderPaymentDeliveryProtocol',
-  'SupplyOrderUkrainePaymentDeliveryProtocol',
-  'SupplyPaymentTask',
-  'AccountingContainerPaymentTask',
-  'ContainerService',
-  'CustomService',
-  'PortWorkService',
-  'TransportationService',
-  'PortCustomAgencyService',
-  'CustomAgencyService',
-  'PlaneDeliveryService',
-  'VehicleDeliveryService',
-  'VehicleService',
-  'MergedService',
-  'BillOfLadingService',
-  'ProductIncome',
-  'UpdatedReSaleModel',
-]
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -232,6 +208,7 @@ export function SupplierOrganizationCashFlowPage() {
 
   const agreements = organization?.SupplyOrganizationAgreements || []
   const rows = cashFlow?.AccountingCashFlowHeadItems || []
+  const lastItem = rows.at(-1)
   const columns = useCashFlowColumns(setSelectedRow)
 
   return (
@@ -314,15 +291,11 @@ export function SupplierOrganizationCashFlowPage() {
         ))}
       </Group>
 
+      <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
+
       <Group gap="xs">
         <Badge color="blue" variant="light">
           {t('Рядків')}: {rows.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Баланс до')}: {formatMoney(cashFlow?.BeforeRangeBalance)}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Баланс після')}: {formatMoney(cashFlow?.AfterRangeInAmount)}
         </Badge>
       </Group>
 
@@ -331,7 +304,7 @@ export function SupplierOrganizationCashFlowPage() {
         data={rows}
         defaultLayout={CASH_FLOW_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Взаєморозрахунків не знайдено')}
-        getRowId={(row, index) => String(row.NetUid || row.Number || `${row.Type || 'row'}-${index}`)}
+        getRowId={(row, index) => `${row.Number || row.Name || 'row'}-${index}`}
         isLoading={isLoadingCashFlow}
         layoutVersion="supplier-organization-cash-flow-1"
         maxHeight="calc(100vh - 340px)"
@@ -452,35 +425,28 @@ function useCashFlowColumns(onOpen: (row: AccountingCashFlowHeadItem) => void): 
 
 function CashFlowDetailDrawer({ row, onClose }: { row: AccountingCashFlowHeadItem | null; onClose: () => void }) {
   const { t } = useI18n()
-  const source = row ? getDetailSource(row) : null
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="lg" title={t('Деталі взаєморозрахунку')} onClose={onClose}>
+    <AppDrawer
+      opened={Boolean(row)}
+      padding="lg"
+      position="right"
+      size="min(980px, 100vw)"
+      title={row?.Name || t('Деталі взаєморозрахунку')}
+      onClose={onClose}
+    >
       {row && (
         <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(row.FromDate)} />
             <DetailItem label={t('Тип')} value={getTypeLabel(row.Type)} />
             <DetailItem label={t('Назва')} value={displayValue(row.Name)} />
             <DetailItem label={t('Номер')} value={displayValue(row.Number)} />
             <DetailItem label={t('Організація')} value={displayValue(row.OrganizationName)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.CurrentValue)} />
-            <DetailItem label={t('Баланс')} value={formatMoney(row.CurrentBalance)} />
-            <DetailItem label={t('Баланс EUR')} value={formatMoney(row.CurrentBalanceEuro)} />
+            <DetailItem label={t('Сальдо')} value={formatMoney(row.CurrentBalance)} />
           </SimpleGrid>
-          {source && (
-            <>
-              <Divider label={t('Джерело')} />
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <DetailItem label={t('Сервісний номер')} value={displayValue(readString(source, 'ServiceNumber'))} />
-                <DetailItem label={t('Валюта')} value={displayValue(readNestedString(source, ['SupplyOrganizationAgreement', 'Currency', 'Code']))} />
-                <DetailItem label={t('Нетто')} value={formatMoney(readNumber(source, 'NetPrice'))} />
-                <DetailItem label={t('Брутто')} value={formatMoney(readNumber(source, 'GrossPrice'))} />
-                <DetailItem label={t('ПДВ')} value={formatMoney(readNumber(source, 'Vat'))} />
-                <DetailItem label={t('Коментар')} value={displayValue(readString(source, 'Comment'))} />
-              </SimpleGrid>
-            </>
-          )}
+          <CashFlowDetailContent item={row} />
         </Stack>
       )}
     </AppDrawer>
@@ -524,44 +490,6 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
       </Stack>
     </AppModal>
   )
-}
-
-function getDetailSource(row: AccountingCashFlowHeadItem): Record<string, unknown> | null {
-  for (const field of DETAIL_SOURCE_FIELDS) {
-    const value = row[field]
-
-    if (value && typeof value === 'object') {
-      return value as Record<string, unknown>
-    }
-  }
-
-  return null
-}
-
-function readString(record: Record<string, unknown>, key: string): string {
-  const value = record[key]
-
-  return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
-}
-
-function readNestedString(record: Record<string, unknown>, path: string[]): string {
-  let current: unknown = record
-
-  for (const key of path) {
-    if (!current || typeof current !== 'object') {
-      return ''
-    }
-
-    current = (current as Record<string, unknown>)[key]
-  }
-
-  return typeof current === 'string' || typeof current === 'number' ? String(current) : ''
-}
-
-function readNumber(record: Record<string, unknown>, key: string): number | undefined {
-  const value = record[key]
-
-  return typeof value === 'number' ? value : undefined
 }
 
 function getTypeLabel(type?: number): string {

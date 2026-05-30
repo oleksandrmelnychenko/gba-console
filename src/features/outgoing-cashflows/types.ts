@@ -1,0 +1,139 @@
+export type EntityFields = {
+  Created?: string
+  Deleted?: boolean
+  Id?: number
+  NetUid?: string
+  Updated?: string
+}
+
+export type NamedEntity = EntityFields & {
+  Code?: string
+  FirstName?: string
+  FullName?: string
+  LastName?: string
+  MiddleName?: string
+  Name?: string
+  OperationName?: string
+}
+
+export type Currency = NamedEntity
+
+export type Organization = NamedEntity
+
+export type PaymentMovement = EntityFields & {
+  OperationName?: string
+}
+
+export type PaymentRegister = EntityFields & {
+  Name?: string
+  Type?: number
+}
+
+export type PaymentCurrencyRegister = EntityFields & {
+  Currency?: Currency | null
+  PaymentRegister?: PaymentRegister | null
+}
+
+export type PaymentMovementOperation = EntityFields & {
+  PaymentMovement?: PaymentMovement | null
+}
+
+export type ClientAgreement = EntityFields & {
+  Client?: NamedEntity | null
+}
+
+export type ConsumableProduct = EntityFields & {
+  Name?: string
+  VendorCode?: string
+}
+
+export type ConsumablesOrderItem = EntityFields & {
+  ConsumableProduct?: ConsumableProduct | null
+  PricePerItem?: number
+  Qty?: number
+  TotalPrice?: number
+  TotalPriceWithVAT?: number
+}
+
+export type ConsumablesOrder = EntityFields & {
+  Comment?: string
+  ConsumableProductOrganization?: NamedEntity | null
+  ConsumablesOrderItems?: ConsumablesOrderItem[]
+  ConsumablesStorage?: NamedEntity | null
+  Number?: string
+  TotalAmount?: number
+}
+
+export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
+  ConsumablesOrder?: ConsumablesOrder | null
+}
+
+export type OutcomePaymentOrder = EntityFields & {
+  AdvanceNumber?: string
+  Amount?: number
+  Client?: NamedEntity | null
+  ClientAgreement?: ClientAgreement | null
+  ArrivalNumber?: string
+  Colleague?: NamedEntity | null
+  Comment?: string
+  ConsumableProductOrganization?: NamedEntity | null
+  CustomNumber?: string
+  DifferenceAmount?: number
+  FromDate?: string
+  IsAccounting?: boolean
+  IsCanceled?: boolean
+  IsManagementAccounting?: boolean
+  IsUnderReport?: boolean
+  IsUnderReportDone?: boolean
+  Number?: string
+  OperationTypeName?: string
+  Organization?: Organization | null
+  OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
+  PaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  PaymentMovementOperation?: PaymentMovementOperation | null
+  PaymentPurpose?: string
+  RootAssignedPaymentOrder?: unknown
+  TotalRowsQty?: number
+  User?: NamedEntity | null
+}
+
+export type OutgoingCashflowsResponse = {
+  Collection: OutcomePaymentOrder[]
+  NegativeDifferenceAmount?: number
+  PositiveDifferenceAmount?: number
+}
+
+export type OutgoingCashflowRow = {
+  amount?: number
+  comment?: string
+  currency?: string
+  differenceAmount?: number
+  fromDate?: string
+  id: string
+  isAccounting?: boolean
+  isCanceled?: boolean
+  isManagementAccounting?: boolean
+  isUnderReport?: boolean
+  number?: string
+  operationType?: string
+  order: OutcomePaymentOrder
+  organization?: string
+  payedTo?: string
+  paymentMovement?: string
+  paymentRegister?: string
+  responsible?: string
+  rootAssigned?: boolean
+  totalRowsQty?: number
+}
+
+export type OutgoingCashflowsSearchParams = {
+  currencyNetId?: string
+  from: string
+  limit: number
+  offset: number
+  organizationIds?: string[]
+  paymentMovementNetId?: string
+  registerNetId?: string
+  to: string
+  value?: string
+}

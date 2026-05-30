@@ -6,10 +6,8 @@ import {
   Box,
   Button,
   Card,
-  Code,
   Divider,
   Group,
-  Loader,
   ScrollArea,
   SimpleGrid,
   Stack,
@@ -43,8 +41,9 @@ import {
   exportAccountingCashFlowDocument,
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
-  getAccountingCashFlowSaleByNetUid,
 } from '../api/accountingCashFlowApi'
+import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
+import { CashFlowSummary } from '../components/CashFlowSummary'
 import type {
   AccountingCashFlow,
   AccountingCashFlowAgreement,
@@ -64,39 +63,15 @@ type FilterDraft = {
   to: string
 }
 
-type CashFlowDetailRow = {
-  Currency?: string
-  GrossPrice?: number
-  Name?: string
-  NetPrice?: number
-  Number?: string
-  ServiceNumber?: string
-  Symbol?: string
-  Vat?: number
-  VatPercent?: number
-}
-
 type DetailField = {
   label: string
   value: ReactNode
-}
-
-type DocumentLink = {
-  name: string
-  url: string
 }
 
 const ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'name'],
     right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const CASH_FLOW_DETAIL_ROWS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['name'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -114,68 +89,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
-
-const DETAIL_FIELD_BY_TYPE: Partial<Record<number, keyof AccountingCashFlowHeadItem>> = {
-  0: 'SupplyOrderPaymentDeliveryProtocol',
-  2: 'ContainerService',
-  3: 'CustomService',
-  4: 'PortWorkService',
-  5: 'TransportationService',
-  6: 'PortCustomAgencyService',
-  7: 'CustomAgencyService',
-  8: 'PlaneDeliveryService',
-  9: 'VehicleDeliveryService',
-  10: 'ConsumablesOrder',
-  11: 'OutcomePaymentOrder',
-  12: 'IncomePaymentOrder',
-  13: 'Sale',
-  14: 'SupplyPaymentTask',
-  15: 'SaleReturn',
-  16: 'SupplyOrderUkraine',
-  17: 'MergedService',
-  18: 'SupplyOrderUkrainePaymentDeliveryProtocol',
-  20: 'ProductIncome',
-  21: 'VehicleService',
-  22: 'AccountingContainerPaymentTask',
-  23: 'VehicleService',
-  24: 'CustomService',
-  25: 'TransportationService',
-  26: 'PortCustomAgencyService',
-  27: 'CustomAgencyService',
-  28: 'PlaneDeliveryService',
-  29: 'VehicleDeliveryService',
-  30: 'MergedService',
-  31: 'ContainerService',
-  32: 'PortWorkService',
-  33: 'BillOfLadingService',
-  34: 'BillOfLadingService',
-  37: 'UpdatedReSaleModel',
-}
-
-const DETAIL_SOURCE_FIELDS: (keyof AccountingCashFlowHeadItem)[] = [
-  'OutcomePaymentOrder',
-  'IncomePaymentOrder',
-  'Sale',
-  'SaleReturn',
-  'UpdatedReSaleModel',
-  'ConsumablesOrder',
-  'SupplyOrderPaymentDeliveryProtocol',
-  'SupplyOrderUkrainePaymentDeliveryProtocol',
-  'SupplyPaymentTask',
-  'AccountingContainerPaymentTask',
-  'ContainerService',
-  'CustomService',
-  'PortWorkService',
-  'TransportationService',
-  'PortCustomAgencyService',
-  'CustomAgencyService',
-  'PlaneDeliveryService',
-  'VehicleDeliveryService',
-  'VehicleService',
-  'MergedService',
-  'BillOfLadingService',
-  'ProductIncome',
-]
 
 const TYPE_LABELS: Record<number, string> = {
   0: 'Протокол оплати постачання',
@@ -249,24 +162,6 @@ const SALE_RETURN_ITEM_STATUS_NAME_BY_KEY: Record<string, number> = {
   SupplierWithdrawal: 8,
 }
 
-const DETAIL_FIELD_SPECS = [
-  { label: 'Сервісний номер', path: ['ServiceNumber'] },
-  { label: 'Номер', path: ['Number'] },
-  { label: 'Назва', path: ['Name'] },
-  { label: 'Дата', path: ['FromDate'], type: 'date' },
-  { label: 'Дата створення', path: ['Created'], type: 'date' },
-  { label: 'Дата документа', path: ['DateFrom'], type: 'date' },
-  { label: 'Валюта', path: ['SupplyOrganizationAgreement', 'Currency', 'Code'] },
-  { label: 'Нетто', path: ['NetPrice'], type: 'money' },
-  { label: 'ПДВ %', path: ['VatPercent'], type: 'amount' },
-  { label: 'ПДВ', path: ['Vat'], type: 'money' },
-  { label: 'Брутто', path: ['GrossPrice'], type: 'money' },
-  { label: 'Бух. нетто', path: ['AccountingNetPrice'], type: 'money' },
-  { label: 'Бух. ПДВ', path: ['AccountingVat'], type: 'money' },
-  { label: 'Бух. брутто', path: ['AccountingGrossPrice'], type: 'money' },
-  { label: 'Сума', path: ['TotalAmount'], type: 'money' },
-]
-
 export function ClientAccountingCashFlowPage() {
   return <AccountingCashFlowRoute mode="client" />
 }
@@ -307,9 +202,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const [cashFlow, setCashFlow] = useState<AccountingCashFlow | null>(null)
   const [selectedAgreementNetUid, setSelectedAgreementNetUid] = useState<string | null>(null)
   const [selectedItem, setSelectedItem] = useState<AccountingCashFlowHeadItem | null>(null)
-  const [drillDownData, setDrillDownData] = useState<Record<string, unknown> | null>(null)
-  const [isDrillDownLoading, setDrillDownLoading] = useState(false)
-  const [drillDownError, setDrillDownError] = useState<string | null>(null)
   const [document, setDocument] = useState<AccountingCashFlowDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useState(false)
   const [counterpartyError, setCounterpartyError] = useState<string | null>(null)
@@ -328,7 +220,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const locationNodeTitle = getLocationNodeTitle(location.state)
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
   const columns = useAccountingCashFlowColumns(setSelectedItem, t)
-  const detailRowsColumns = useCashFlowDetailRowsColumns()
   const items = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = items.at(-1)
   const toolbarLeft = useMemo(
@@ -413,48 +304,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     }
   }, [activeFilters.from, activeFilters.to, effectiveNetId, mode, reloadKey, t])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadDrillDown() {
-      setDrillDownData(null)
-      setDrillDownError(null)
-
-      const netUid = getDrillDownNetUid(selectedItem)
-      const type = selectedItem?.Type
-
-      if (!netUid || (type !== JOIN_SERVICE_TYPE.Sale && type !== JOIN_SERVICE_TYPE.ReSale)) {
-        setDrillDownLoading(false)
-        return
-      }
-
-      setDrillDownLoading(true)
-
-      try {
-        const loadedDrillDown = await getAccountingCashFlowSaleByNetUid(netUid)
-
-        if (!cancelled) {
-          setDrillDownData(loadedDrillDown)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setDrillDownData(null)
-          setDrillDownError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі'))
-        }
-      } finally {
-        if (!cancelled) {
-          setDrillDownLoading(false)
-        }
-      }
-    }
-
-    void loadDrillDown()
-
-    return () => {
-      cancelled = true
-    }
-  }, [selectedItem, t])
-
   function submitFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -505,16 +354,12 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     counterparty,
     counterpartyError,
     counterpartyName,
-    detailRowsColumns,
     document,
     downloadModalOpened,
-    drillDownData,
-    drillDownError,
     filterDraft,
     filterError,
     isCashFlowLoading,
     isCounterpartyLoading,
-    isDrillDownLoading,
     isExporting,
     items,
     lastItem,
@@ -543,16 +388,12 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     columns,
     counterpartyError,
     counterpartyName,
-    detailRowsColumns,
     document,
     downloadModalOpened,
-    drillDownData,
-    drillDownError,
     filterDraft,
     filterError,
     isCashFlowLoading,
     isCounterpartyLoading,
-    isDrillDownLoading,
     isExporting,
     items,
     lastItem,
@@ -614,7 +455,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </Alert>
       )}
 
-      <AccountingCashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
+      <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -668,7 +509,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           data={items}
           defaultLayout={ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Рухів коштів не знайдено')}
-          getRowId={(item, index) => String(item.Number || item.Name || item.FromDate || index)}
+          getRowId={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
           isLoading={isCashFlowLoading}
           layoutVersion="accounting-cash-flow-table-1"
           loadingText={t('Завантаження руху коштів')}
@@ -681,10 +522,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       </Card>
 
       <AccountingCashFlowDetailDrawer
-        detailRowsColumns={detailRowsColumns}
-        drillDownData={drillDownData}
-        drillDownError={drillDownError}
-        isDrillDownLoading={isDrillDownLoading}
         item={selectedItem}
         mode={mode}
         onClose={() => setSelectedItem(null)}
@@ -697,43 +534,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
-  )
-}
-
-function AccountingCashFlowSummary({
-  cashFlow,
-  lastItem,
-}: {
-  cashFlow: AccountingCashFlow | null
-  lastItem?: AccountingCashFlowHeadItem
-}) {
-  const { t } = useI18n()
-  const closingBalance = typeof lastItem?.CurrentBalance === 'number' ? lastItem.CurrentBalance : 0
-
-  return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 6 }} spacing="sm">
-      <SummaryValue label={t('Вхідний дебет')} value={cashFlow?.BeforeRangeInAmount} />
-      <SummaryValue label={t('Вхідний кредит')} value={cashFlow?.BeforeRangeOutAmount} />
-      <SummaryValue label={t('Вхідний баланс')} value={cashFlow?.BeforeRangeBalance} />
-      <SummaryValue label={t('Дебет за період')} value={cashFlow?.AfterRangeInAmount} />
-      <SummaryValue label={t('Кредит за період')} value={cashFlow?.AfterRangeOutAmount} />
-      <SummaryValue label={t('Баланс після періоду')} value={closingBalance} />
-    </SimpleGrid>
-  )
-}
-
-function SummaryValue({ label, value }: { label: string; value?: number }) {
-  const isNegative = typeof value === 'number' && value < 0
-
-  return (
-    <Card withBorder radius="md" padding="sm">
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text size="lg" fw={700} c={isNegative ? 'red' : undefined}>
-        {formatMoney(value)}
-      </Text>
-    </Card>
   )
 }
 
@@ -890,31 +690,21 @@ function AgreementDebtTile({
 }
 
 function AccountingCashFlowDetailDrawer({
-  detailRowsColumns,
-  drillDownData,
-  drillDownError,
-  isDrillDownLoading,
   item,
   mode,
   onClose,
 }: {
-  detailRowsColumns: DataTableColumn<CashFlowDetailRow>[]
-  drillDownData: Record<string, unknown> | null
-  drillDownError: string | null
-  isDrillDownLoading: boolean
   item: AccountingCashFlowHeadItem | null
   mode: AccountingCashFlowMode
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const embeddedData = useMemo(() => (item ? getHeadItemDetailData(item) : null), [item])
-  const detailData = drillDownData || embeddedData
-  const detailFields = useMemo(() => (item ? buildDetailFields(item, detailData) : []), [detailData, item])
-  const detailRows = useMemo(() => getServiceDetailRows(detailData), [detailData])
-  const documents = useMemo(() => collectDocumentLinks(detailData), [detailData])
-  const rawPayload = useMemo(() => stringifyPayload(detailData || item), [detailData, item])
   const isSaleReturn = mode === 'client' && !item?.IsCreditValue && item?.Type === JOIN_SERVICE_TYPE.SaleReturn
-  const saleReturn = useMemo(() => (isSaleReturn ? (embeddedData as AccountingCashFlowSaleReturn | null) : null), [embeddedData, isSaleReturn])
+  const saleReturn = useMemo(
+    () => (isSaleReturn ? (toRecord(item?.SaleReturn) as AccountingCashFlowSaleReturn | null) : null),
+    [isSaleReturn, item?.SaleReturn],
+  )
+  const detailFields = useMemo(() => (item ? buildHeadItemFields(item) : []), [item])
 
   return (
     <AppDrawer
@@ -927,21 +717,6 @@ function AccountingCashFlowDetailDrawer({
     >
       {item && (
         <Stack gap="md">
-          {isDrillDownLoading && (
-            <Group gap="xs">
-              <Loader size="sm" />
-              <Text c="dimmed" size="sm">
-                {t('Завантаження деталей')}
-              </Text>
-            </Group>
-          )}
-
-          {drillDownError && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {drillDownError}
-            </Alert>
-          )}
-
           {saleReturn && <SaleReturnOverviewPanel saleReturn={saleReturn} />}
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
@@ -950,56 +725,24 @@ function AccountingCashFlowDetailDrawer({
             ))}
           </SimpleGrid>
 
-          {documents.length > 0 && (
-            <>
-              <Divider />
-              <Group gap="xs">
-                {documents.map((document) => (
-                  <Anchor key={document.url} href={document.url} target="_blank" rel="noreferrer" className="document-link">
-                    <span className="document-link-badge document-link-badge-pdf">
-                      <IconFileTypePdf size={18} stroke={1.8} />
-                    </span>
-                    <span>{document.name}</span>
-                  </Anchor>
-                ))}
-              </Group>
-            </>
-          )}
-
-          {detailRows.length > 0 && (
-            <>
-              <Divider />
-              <DataTable
-                columns={detailRowsColumns}
-                data={detailRows}
-                defaultLayout={CASH_FLOW_DETAIL_ROWS_TABLE_DEFAULT_LAYOUT}
-                emptyText={t('Позицій не знайдено')}
-                getRowId={(row, index) => String(row.ServiceNumber || row.Number || row.Name || index)}
-                layoutVersion="accounting-cash-flow-detail-rows-1"
-                maxHeight={320}
-                minWidth={860}
-                tableId="accounting-cash-flow-detail-rows"
-              />
-            </>
-          )}
-
-          {rawPayload && (
-            <>
-              <Divider />
-              <Box>
-                <Text size="sm" fw={600} mb="xs">
-                  {t('Технічні дані')}
-                </Text>
-                <ScrollArea h={260} type="auto" offsetScrollbars>
-                  <Code block>{rawPayload}</Code>
-                </ScrollArea>
-              </Box>
-            </>
-          )}
+          <CashFlowDetailContent item={item} />
         </Stack>
       )}
     </AppDrawer>
   )
+}
+
+function buildHeadItemFields(item: AccountingCashFlowHeadItem): DetailField[] {
+  return [
+    { label: 'Дата', value: formatDateTime(item.FromDate) },
+    { label: 'Документ', value: displayValue(item.Name) },
+    { label: 'Номер', value: displayValue(item.Number) },
+    { label: 'Організація', value: displayValue(item.OrganizationName) },
+    { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
+    { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
+    { label: 'Сума', value: formatMoney(item.CurrentValue) },
+    { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
+  ]
 }
 
 function DetailValue({ label, value }: { label: string; value: ReactNode }) {
@@ -1286,205 +1029,6 @@ function useAccountingCashFlowColumns(
   )
 }
 
-function useCashFlowDetailRowsColumns(): DataTableColumn<CashFlowDetailRow>[] {
-  return useMemo<DataTableColumn<CashFlowDetailRow>[]>(
-    () => [
-      {
-        id: 'name',
-        header: 'Назва',
-        width: 260,
-        minWidth: 200,
-        accessor: (row) => row.Name,
-        cell: (row) => (
-          <Text fw={600} lineClamp={2}>
-            {displayValue(row.Name)}
-          </Text>
-        ),
-      },
-      {
-        id: 'serviceNumber',
-        header: 'Сервісний номер',
-        width: 150,
-        minWidth: 124,
-        accessor: (row) => row.ServiceNumber,
-        cell: (row) => displayValue(row.ServiceNumber),
-      },
-      {
-        id: 'number',
-        header: 'Номер',
-        width: 130,
-        minWidth: 110,
-        accessor: (row) => row.Number,
-        cell: (row) => displayValue(row.Number),
-      },
-      {
-        id: 'symbol',
-        header: 'Символ',
-        width: 110,
-        minWidth: 92,
-        accessor: (row) => row.Symbol,
-        cell: (row) => displayValue(row.Symbol),
-      },
-      {
-        id: 'currency',
-        header: 'Валюта',
-        width: 94,
-        minWidth: 84,
-        accessor: (row) => row.Currency,
-        cell: (row) => displayValue(row.Currency),
-      },
-      {
-        id: 'netPrice',
-        header: 'Нетто',
-        width: 116,
-        minWidth: 102,
-        align: 'right',
-        accessor: (row) => row.NetPrice,
-        cell: (row) => formatMoney(row.NetPrice),
-      },
-      {
-        id: 'vatPercent',
-        header: 'ПДВ %',
-        width: 92,
-        minWidth: 82,
-        align: 'right',
-        accessor: (row) => row.VatPercent,
-        cell: (row) => formatAmount(row.VatPercent),
-      },
-      {
-        id: 'vat',
-        header: 'ПДВ',
-        width: 104,
-        minWidth: 92,
-        align: 'right',
-        accessor: (row) => row.Vat,
-        cell: (row) => formatMoney(row.Vat),
-      },
-      {
-        id: 'grossPrice',
-        header: 'Брутто',
-        width: 116,
-        minWidth: 102,
-        align: 'right',
-        accessor: (row) => row.GrossPrice,
-        cell: (row) => formatMoney(row.GrossPrice),
-      },
-    ],
-    [],
-  )
-}
-
-function buildDetailFields(item: AccountingCashFlowHeadItem, detailData: unknown): DetailField[] {
-  const fields: DetailField[] = [
-    { label: 'Дата', value: formatDateTime(item.FromDate) },
-    { label: 'Документ', value: displayValue(item.Name) },
-    { label: 'Номер', value: displayValue(item.Number) },
-    { label: 'Організація', value: displayValue(item.OrganizationName) },
-    { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
-    { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
-    { label: 'Сума', value: formatMoney(item.CurrentValue) },
-    { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
-  ]
-  const dataRecord = toRecord(detailData)
-
-  if (!dataRecord) {
-    return fields
-  }
-
-  DETAIL_FIELD_SPECS.forEach((spec) => {
-    const value = readPath(dataRecord, spec.path)
-
-    if (isEmptyValue(value)) {
-      return
-    }
-
-    fields.push({
-      label: spec.label,
-      value: formatSpecValue(value, spec.type),
-    })
-  })
-
-  return fields
-}
-
-function getServiceDetailRows(detailData: unknown): CashFlowDetailRow[] {
-  const dataRecord = toRecord(detailData)
-  const detailItems = readArray(dataRecord, 'ServiceDetailItems')
-  const currency = stringValue(readPath(dataRecord, ['SupplyOrganizationAgreement', 'Currency', 'Code']))
-  const serviceNumber = stringValue(dataRecord?.ServiceNumber)
-  const number = stringValue(dataRecord?.Number)
-
-  return detailItems.map((item) => {
-    const itemRecord = toRecord(item)
-    const keyRecord = toRecord(itemRecord?.ServiceDetailItemKey)
-
-    return {
-      Currency: currency,
-      GrossPrice: numberValue(itemRecord?.GrossPrice),
-      Name: stringValue(keyRecord?.Name) || stringValue(itemRecord?.Name),
-      NetPrice: numberValue(itemRecord?.NetPrice),
-      Number: number,
-      ServiceNumber: serviceNumber,
-      Symbol: stringValue(keyRecord?.Symbol) || stringValue(itemRecord?.Symbol),
-      Vat: numberValue(itemRecord?.Vat),
-      VatPercent: numberValue(itemRecord?.VatPercent),
-    }
-  })
-}
-
-function getHeadItemDetailData(item: AccountingCashFlowHeadItem): unknown {
-  const field = typeof item.Type === 'number' ? DETAIL_FIELD_BY_TYPE[item.Type] : undefined
-
-  if (field && !isEmptyValue(item[field])) {
-    return item[field]
-  }
-
-  for (const sourceField of DETAIL_SOURCE_FIELDS) {
-    if (!isEmptyValue(item[sourceField])) {
-      return item[sourceField]
-    }
-  }
-
-  return null
-}
-
-function collectDocumentLinks(detailData: unknown): DocumentLink[] {
-  const dataRecord = toRecord(detailData)
-  const documents: DocumentLink[] = []
-
-  if (!dataRecord) {
-    return documents
-  }
-
-  addDirectDocument(documents, dataRecord)
-
-  ;['InvoiceDocuments', 'BillOfLadingDocuments', 'Documents', 'Files'].forEach((key) => {
-    readArray(dataRecord, key).forEach((document) => addDirectDocument(documents, toRecord(document)))
-  })
-
-  return documents.filter((document, index, allDocuments) => allDocuments.findIndex((item) => item.url === document.url) === index)
-}
-
-function addDirectDocument(documents: DocumentLink[], documentRecord: Record<string, unknown> | null) {
-  if (!documentRecord) {
-    return
-  }
-
-  const url = stringValue(documentRecord.DocumentUrl)
-    || stringValue(documentRecord.DocumentURL)
-    || stringValue(documentRecord.Url)
-    || stringValue(documentRecord.URL)
-
-  if (!url) {
-    return
-  }
-
-  documents.push({
-    name: stringValue(documentRecord.FileName) || stringValue(documentRecord.Name) || stringValue(documentRecord.Number) || 'Документ',
-    url,
-  })
-}
-
 function getAgreementCurrency(agreement: AccountingCashFlowClientAgreement): string {
   return stringValue(agreement.Agreement?.Currency?.Code)
 }
@@ -1541,18 +1085,6 @@ function getMaxDaysOwed(clientInDebts: AccountingCashFlowClientInDebt[] | undefi
 
     return days > max ? days : max
   }, 0)
-}
-
-function getDrillDownNetUid(item: AccountingCashFlowHeadItem | null): string | null {
-  if (!item || typeof item.Type !== 'number') {
-    return null
-  }
-
-  if (item.Type === JOIN_SERVICE_TYPE.Sale || item.Type === JOIN_SERVICE_TYPE.ReSale) {
-    return stringValue(toRecord(getHeadItemDetailData(item))?.NetUid) || null
-  }
-
-  return null
 }
 
 function getSaleReturnItemCurrency(saleReturnItem: AccountingCashFlowSaleReturnItem): string {
@@ -1631,36 +1163,6 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
-}
-
-function readArray(record: Record<string, unknown> | null, key: string): unknown[] {
-  const value = record?.[key]
-
-  return Array.isArray(value) ? value : []
-}
-
-function readPath(record: Record<string, unknown> | null, path: string[]): unknown {
-  return path.reduce<unknown>((current, key) => {
-    const currentRecord = toRecord(current)
-
-    return currentRecord?.[key]
-  }, record)
-}
-
-function formatSpecValue(value: unknown, type?: string): string {
-  if (type === 'date') {
-    return formatDateTime(value)
-  }
-
-  if (type === 'money') {
-    return formatMoney(numberValue(value))
-  }
-
-  if (type === 'amount') {
-    return formatAmount(numberValue(value))
-  }
-
-  return displayValue(value)
 }
 
 function formatDateTime(value: unknown): string {
@@ -1748,14 +1250,3 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? value as Record<string, unknown> : null
 }
 
-function stringifyPayload(payload: unknown): string {
-  if (!payload) {
-    return ''
-  }
-
-  try {
-    return JSON.stringify(payload, null, 2)
-  } catch {
-    return ''
-  }
-}

@@ -24,10 +24,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 ## Current Status Snapshot
 
-- `ui`: 71
+- `ui`: 103
 - `route`: 0
 - `shell`: 0
-- `todo`: 66
+- `todo`: 34
 - `deferred`: 4
 - Poland-specific skipped rows: 3
 
@@ -73,13 +73,13 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | # | Phase | Area | Source route | Source component | Status | Notes |
 | ---: | --- | --- | --- | --- | --- | --- |
 | 1 | P7 accounting | accounting | `/accounting/consumable-product` | `AllConsumableProductsView` | ui | consumable product categories/products wired with search, create/edit/delete, service-details flag, measure-unit autocomplete, and permission gates |
-| 2 | P7 accounting | accounting | `/accounting/company-cars/edit/:id` | `NewCompanyCarView` | todo | old line 136 |
-| 3 | P7 accounting | accounting | `/accounting/company-cars/new` | `NewCompanyCarView` | todo | old line 137 |
-| 4 | P7 accounting | accounting | `/accounting/company-cars/:id/road-lists` | `AllRoadListsView` | todo | old line 138 |
-| 5 | P7 accounting | accounting | `/accounting/company-cars` | `AllCompanyCarsView` | todo | old line 139 |
-| 6 | P7 accounting | accounting | `/accounting/currency-convertors/edit/:id` | `NewCurrencyConvertorsView` | todo | old line 140 |
-| 7 | P7 accounting | accounting | `/accounting/currency-convertors/new` | `NewCurrencyConvertorsView` | todo | old line 141 |
-| 8 | P7 accounting | accounting | `/accounting/currency-convertors` | `AllCurrencyConvertorsView` | todo | old line 142 |
+| 2 | P7 accounting | accounting | `/accounting/company-cars/edit/:id` | `NewCompanyCarView` | ui | company car edit wired with organization lookup, load by NetUid, corrected fuel/mileage validation, tank capacity guard, save, delete, and return navigation |
+| 3 | P7 accounting | accounting | `/accounting/company-cars/new` | `NewCompanyCarView` | ui | company car create wired with organization selection, car brand/license plate/tank/fuel/mileage/consumption fields, validation, save, and return navigation |
+| 4 | P7 accounting | accounting | `/accounting/company-cars/:id/road-lists` | `AllRoadListsView` | ui | company car road-list screen wired with car load, legacy date range filters, road-list table, create modal, server calculation, outcome order selection, drivers, delete modal, refresh, and return navigation |
+| 5 | P7 accounting | accounting | `/accounting/company-cars` | `AllCompanyCarsView` | ui | company cars list wired with search, refresh, create permission gate, edit navigation, road-list navigation, car/fuel/tank/consumption/mileage/organization columns, and stable row actions |
+| 6 | P7 accounting | accounting | `/accounting/currency-convertors/edit/:id` | `NewCurrencyConvertorsView` | ui | currency trader edit wired with load by NetUid, personal/contact fields, edit permission gate, save, and return navigation |
+| 7 | P7 accounting | accounting | `/accounting/currency-convertors/new` | `NewCurrencyConvertorsView` | ui | currency trader create wired with personal/contact fields, create permission gate, save, and return navigation |
+| 8 | P7 accounting | accounting | `/accounting/currency-convertors` | `AllCurrencyConvertorsView` | ui | currency trader list wired with add/edit permissions, trader table, exchange-rate drawer, date range filters, add/edit/delete rates, EUR/USD ordering, and full-date today detection; third old currency intentionally skipped |
 | 9 | P7 accounting | accounting | `/accounting/supplier-organizations/cash-flow/:id` | `CashFlowSupplyOrganizationsPage` | ui | supplier organization cash-flow wired with date/type filters, agreement scope, export, and detail drawer |
 | 10 | P7 accounting | accounting | `/accounting/supplier-organizations/edit/:id` | `NewSupplyOrganizationView` | ui | supplier organization edit tabs wired for general info, non-PL bank details, contact person, agreements, agreement files, delete, and reload |
 | 11 | P7 accounting | accounting | `/accounting/supplier-organizations/new` | `NewSupplyOrganizationView` | ui | supplier organization create form wired with validation and redirect to edit after save |
@@ -87,34 +87,34 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 13 | P7 accounting | accounting | `/accounting/payment-cashflow-articles/edit/:id` | `NewPaymentMovementView` | ui | payment movement edit form wired with load, validation, save, delete, and return navigation |
 | 14 | P7 accounting | accounting | `/accounting/payment-cashflow-articles/new` | `NewPaymentMovementView` | ui | payment movement create form wired with validation, save, and return navigation |
 | 15 | P7 accounting | accounting | `/accounting/payment-cashflow-articles` | `AllPaymentMovementView` | ui | payment movement list wired with search, refresh, table actions, and edit/create navigation |
-| 16 | P7 accounting | accounting | `/accounting/income-cashflows/new/:step` | `NewAccountingIncomeCashOrderView` | todo | old line 150 |
-| 17 | P7 accounting | accounting | `/accounting/income-cashflows/new` | `NewAccountingIncomeCashOrderView` | todo | old line 151 |
-| 18 | P7 accounting | accounting | `/accounting/income-cashflows` | `AccountingIncomeCashOrderView` | todo | old line 152 |
-| 19 | P7 accounting | accounting | `/accounting/payment-expense-articles/edit/:id` | `NewPaymentCostsMovementView` | todo | old line 153 |
-| 20 | P7 accounting | accounting | `/accounting/payment-expense-articles/new` | `NewPaymentCostsMovementView` | todo | old line 154 |
-| 21 | P7 accounting | accounting | `/accounting/payment-expense-articles` | `AllPaymentCostsView` | todo | old line 155 |
+| 16 | P7 accounting | accounting | `/accounting/income-cashflows/new/:step` | `NewAccountingIncomeCashOrderView` | ui | client, conversion, user, and shop steps wired; client supports buyer payment, supplier return, and other-with-counterparties for cash/bank with counterparty search, organization/register/currency/agreement state, debt rows, exchange calculation, VAT, auto allocation, and income create; user supports return-from-colleague with organization/register/currency, movement, VAT, accounting flags, and income create; shop supports retail client search or payment-list query params, retail agreements, organization/register/currency, sale debt selection, exchange calculation, auto allocation, and income create |
+| 17 | P7 accounting | accounting | `/accounting/income-cashflows/new` | `NewAccountingIncomeCashOrderView` | ui | redirects to the implemented conversion create flow with cash default, preserving a working default instead of the old empty select-option shell |
+| 18 | P7 accounting | accounting | `/accounting/income-cashflows` | `AccountingIncomeCashOrderView` | ui | income cashflow list wired with date/search/currency/register/organization filters, load-more paging, cancel action, accounting flags, payer return state, and detail drawer |
+| 19 | P7 accounting | accounting | `/accounting/payment-expense-articles/edit/:id` | `NewPaymentCostsMovementView` | ui | payment expense article edit form wired with load, validation, save, delete, and return navigation |
+| 20 | P7 accounting | accounting | `/accounting/payment-expense-articles/new` | `NewPaymentCostsMovementView` | ui | payment expense article create form wired with validation, save, and return navigation |
+| 21 | P7 accounting | accounting | `/accounting/payment-expense-articles` | `AllPaymentCostsView` | ui | payment expense article list wired with search, refresh, table actions, and edit/create navigation |
 | 22 | P7 accounting | accounting | `/accounting/outgoing-cashflow/new` | `OutComeHostView` | todo | old line 156 |
 | 23 | P7 accounting | accounting | `/accounting/outgoing-cashflow/:id/advanced-report/view` | `DetailsAdvanceReportView` | todo | old line 157 |
-| 24 | P7 accounting | accounting | `/accounting/outgoing-cashflow` | `AccountingOutComeCashOrderView` | todo | old line 158 |
-| 25 | P7 accounting | accounting | `/accounting/advanced-reports` | `AdvancedReportsView` | todo | old line 159 |
-| 26 | P7 accounting | accounting | `/accounting/consumable-services` | `AllServicesView` | todo | old line 160 |
-| 27 | P7 accounting | accounting | `/accounting/consumable-orders/pay/:id` | `NewAccountingOutComeProductsView` | todo | old line 161 |
-| 28 | P7 accounting | accounting | `/accounting/consumable-orders/edit/:id` | `NewConsumableOrderView` | todo | old line 162 |
-| 29 | P7 accounting | accounting | `/accounting/consumable-orders/new` | `NewConsumableOrderView` | todo | old line 163 |
-| 30 | P7 accounting | accounting | `/accounting/consumable-orders` | `AllConsumableOrdersView` | todo | old line 164 |
-| 31 | P7 accounting | accounting | `/accounting/storages/edit/:id` | `NewConsumablesStoragesView` | todo | old line 165 |
-| 32 | P7 accounting | accounting | `/accounting/storages/new` | `NewConsumablesStoragesView` | todo | old line 166 |
-| 33 | P7 accounting | accounting | `/accounting/storages` | `AllConsumablesStoragesView` | todo | old line 167 |
-| 34 | P7 accounting | accounting | `/accounting/payment-accounts/edit/:Id` | `NewAccountingPaymentRegisterView` | todo | old line 168 |
-| 35 | P7 accounting | accounting | `/accounting/payment-accounts/new` | `NewAccountingPaymentRegisterView` | todo | old line 169 |
-| 36 | P7 accounting | accounting | `/accounting/payment-accounts` | `AllAccountingPaymentView` | todo | old line 170 |
+| 24 | P7 accounting | accounting | `/accounting/outgoing-cashflow` | `AccountingOutComeCashOrderView` | ui | outgoing cashflow list wired with date/search filters, currency/register/payment-movement filters, organization multiselect, load-more paging, cancel action, accounting flags, and detail drawer |
+| 25 | P7 accounting | accounting | `/accounting/advanced-reports` | `AdvancedReportsView` | ui | advanced reports list wired with date/search filters, currency/register/payment-movement filters, debit/credit totals, row filtering by advance number, and detail drawer |
+| 26 | P7 accounting | accounting | `/accounting/consumable-services` | `AllServicesView` | ui | accountable expenses list wired with legacy period filters, search endpoint, item rows, payment status, and detail drawer |
+| 27 | P7 accounting | accounting | `/accounting/consumable-orders/pay/:id` | `NewAccountingOutComeProductsView` | ui | consumable order pay route loads target order, recalculates amount, selects organization/register/currency/payment movement, supports inline movement creation, and posts outcome payment |
+| 28 | P7 accounting | accounting | `/accounting/consumable-orders/edit/:id` | `NewConsumableOrderView` | ui | consumable order edit form loads supplier/agreement/storage/documents/items, blocks item editing when paid, supports document delete/restore, recalculation, payment-task state, and multipart update |
+| 29 | P7 accounting | accounting | `/accounting/consumable-orders/new` | `NewConsumableOrderView` | ui | consumable order create form wired with supplier/agreement, invoice date/time, storage, document upload, item editor, VAT totals, optional payment task, and multipart create |
+| 30 | P7 accounting | accounting | `/accounting/consumable-orders` | `AllConsumableOrdersView` | ui | consumable order list wired with legacy date/search filters, invoice/service organization columns, item details, payment structure, and read-only detail drawer |
+| 31 | P7 accounting | accounting | `/accounting/storages/edit/:id` | `NewConsumablesStoragesView` | ui | consumable storage edit form wired with load, readonly organization parity, responsible user, validation, save, and return navigation |
+| 32 | P7 accounting | accounting | `/accounting/storages/new` | `NewConsumablesStoragesView` | ui | consumable storage create form wired with organization/responsible user lookups, validation, save, and return navigation |
+| 33 | P7 accounting | accounting | `/accounting/storages` | `AllConsumablesStoragesView` | ui | consumable storage list wired with search, edit/create/delete, permission gates, responsible and organization fields, product remnants, totals, and read-only written-goods tab |
+| 34 | P7 accounting | accounting | `/accounting/payment-accounts/edit/:Id` | `NewAccountingPaymentRegisterView` | ui | payment account edit wired with load, type-specific fields, bank/org/currency lookups, validation, save, delete, and return navigation |
+| 35 | P7 accounting | accounting | `/accounting/payment-accounts/new` | `NewAccountingPaymentRegisterView` | ui | payment account create wired for cash/card/bank types, organization/bank/currency selection, opening amounts, and create-to-edit redirect |
+| 36 | P7 accounting | accounting | `/accounting/payment-accounts` | `AllAccountingPaymentView` | ui | payment account list wired with search, type and organization filters, add/edit permission gates, currency balances, and total EUR |
 | 37 | P7 accounting | accounting | `/accounting/specification-codes` | `ProductSpecificationCodesView` | ui | customs/specification codes list with region+search filters, load-more, edit Change drawer (3-mode) |
-| 38 | P7 accounting | accounting | `/accounting/vat-reports` | `VatReportsView` | todo | old line 172 |
-| 39 | P7 accounting | accounting | `/accounting/advance-payments` | `AllAdvancePaymentsView` | todo | old line 173 |
+| 38 | P7 accounting | accounting | `/accounting/vat-reports` | `VatReportsView` | ui | VAT report list wired with date filters, load-more paging, invoice/facture rows, VAT rate, and EU VAT amount; Poland amount column intentionally skipped |
+| 39 | P7 accounting | accounting | `/accounting/advance-payments` | `AllAdvancePaymentsView` | ui | advance payments list wired with legacy one-month date range, amount, VAT, organization, responsible, comment, loading, and empty state |
 | 40 | P7 accounting | accounting | `/accounting/available-payments` | `PaymentsAvailableView` | todo | old line 174 |
 | 41 | P7 accounting | accounting | `/accounting/banks` | `AllBanks` | ui | banks list wired with search, add/edit modal, validation, soft delete, and permission gates |
 | 42 | P7 accounting | accounting | `/accounting/sync/documents` | `BalancesView` | todo | old line 176 |
-| 43 | P7 accounting | accounting | `/accounting/payment-online-shop` | `AllPaymentOnlineShopRegisterView` | todo | old line 177 |
+| 43 | P7 accounting | accounting | `/accounting/payment-online-shop` | `AllPaymentOnlineShopRegisterView` | ui | payment shop register wired with sale/payment filters, payment image detail drawer, add/edit image payments, paid/status columns, and create-income-order action into the shop income flow |
 | 44 | P6 customs-extra | payments | `/payments/available` | `PaymentsAvailableView` | todo | old line 178 |
 | 45 | P4 supply-warehouse | basket-supply-ukraine-order | `/basket-supply-ukraine-order` | `SupplyUkraineBasketPivotView` | ui | basket pivot with cart, sales, recommendations tabs; cart and sales support selection, transfer, totals, and TaxFree/SAD create flows |
 | 46 | P6 customs-extra | recommendations | `/recommendations` | `SupplyUkraineSalesBasketRecommendationsView` | ui | wired to basket recommendations tab for compatibility |
