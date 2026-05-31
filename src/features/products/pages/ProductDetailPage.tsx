@@ -29,6 +29,8 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -1780,6 +1782,24 @@ function ProductMovementPanel({ product }: { product: Product }) {
     }
   }
 
+  const movementColumns = useMemo<DataTableColumn<ProductMovement>[]>(() => [
+    { id: 'incomeNumber', header: t('Номер прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentNumber, cell: (row) => displayValue(row.IncomeDocumentNumber) },
+    { id: 'incomeDate', header: t('Дата прихідної накладної'), minWidth: 160, accessor: (row) => row.IncomeDocumentFromDate, cell: (row) => formatDateTime(row.IncomeDocumentFromDate) },
+    { id: 'document', header: t('Документ'), minWidth: 150, accessor: (row) => row.DocumentType || row.MovementType, cell: (row) => (row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentType || row.MovementType)}</Text> : displayValue(row.DocumentType || row.MovementType)) },
+    { id: 'number', header: t('Номер'), minWidth: 130, accessor: (row) => row.DocumentNumber, cell: (row) => (row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentNumber)}</Text> : displayValue(row.DocumentNumber)) },
+    { id: 'date', header: t('Дата'), minWidth: 140, accessor: (row) => row.DocumentFromDate || row.FromDate || row.Created, cell: (row) => formatDateTime(row.DocumentFromDate || row.FromDate || row.Created) },
+    { id: 'client', header: t('Клієнт'), minWidth: 220, accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
+    { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
+    { id: 'organization', header: t('Організація'), minWidth: 160, accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+    { id: 'responsible', header: t('Відповідальний'), minWidth: 150, accessor: (row) => row.Responsible || row.UserName, cell: (row) => displayValue(row.Responsible || row.UserName) },
+    { id: 'price', header: t('Собівартість'), minWidth: 120, align: 'right', accessor: (row) => row.Price, cell: (row) => formatPrice(row.Price) },
+    { id: 'accountingPrice', header: t('Облікова собівартість'), minWidth: 160, align: 'right', accessor: (row) => row.AccountingPrice, cell: (row) => formatPrice(row.AccountingPrice) },
+    { id: 'discount', header: t('Знижка'), minWidth: 110, align: 'right', accessor: (row) => row.Discount, cell: (row) => formatPrice(row.Discount) },
+    { id: 'income', header: t('Прихід'), minWidth: 110, align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => formatAmount(row.IncomeQty) },
+    { id: 'outcome', header: t('Розхід'), minWidth: 110, align: 'right', accessor: (row) => row.OutcomeQty, cell: (row) => formatAmount(row.OutcomeQty) },
+    { id: 'comment', header: t('Коментар'), minWidth: 220, accessor: (row) => row.Comment, cell: (row) => displayValue(row.Comment) },
+  ], [t])
+
   return (
     <Stack gap="md">
       <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
@@ -1808,56 +1828,20 @@ function ProductMovementPanel({ product }: { product: Product }) {
         </Button>
       </Group>
       {activeError && <Alert color={filterError || missingNetUidError || typesError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
-      {isLoading ? (
-        <LoadingState label={t('Завантаження руху товару')} />
-      ) : rows.length === 0 && !activeError ? (
-        <Text c="dimmed" size="sm">{t('Рух товару не знайдено')}</Text>
-      ) : !activeError ? (
-        <ScrollArea>
-          <Table striped highlightOnHover withTableBorder miw={1640}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Номер прихідної накладної')}</Table.Th>
-                <Table.Th>{t('Дата прихідної накладної')}</Table.Th>
-                <Table.Th>{t('Документ')}</Table.Th>
-                <Table.Th>{t('Номер')}</Table.Th>
-                <Table.Th>{t('Дата')}</Table.Th>
-                <Table.Th>{t('Клієнт')}</Table.Th>
-                <Table.Th>{t('Склад')}</Table.Th>
-                <Table.Th>{t('Організація')}</Table.Th>
-                <Table.Th>{t('Відповідальний')}</Table.Th>
-                <Table.Th ta="right">{t('Собівартість')}</Table.Th>
-                <Table.Th ta="right">{t('Облікова собівартість')}</Table.Th>
-                <Table.Th ta="right">{t('Знижка')}</Table.Th>
-                <Table.Th ta="right">{t('Прихід')}</Table.Th>
-                <Table.Th ta="right">{t('Розхід')}</Table.Th>
-                <Table.Th>{t('Коментар')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {rows.map((row, index) => (
-                <Table.Tr key={`${row.NetUid || row.Id || row.DocumentNumber || index}`}>
-                  <Table.Td>{displayValue(row.IncomeDocumentNumber)}</Table.Td>
-                  <Table.Td>{formatDateTime(row.IncomeDocumentFromDate)}</Table.Td>
-                  <Table.Td>{row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentType || row.MovementType)}</Text> : displayValue(row.DocumentType || row.MovementType)}</Table.Td>
-                  <Table.Td>{row.IsEdited ? <Text component="span" c="orange.7" fw={600}>{displayValue(row.DocumentNumber)}</Text> : displayValue(row.DocumentNumber)}</Table.Td>
-                  <Table.Td>{formatDateTime(row.DocumentFromDate || row.FromDate || row.Created)}</Table.Td>
-                  <Table.Td>{displayValue(row.ClientName)}</Table.Td>
-                  <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-                  <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-                  <Table.Td>{displayValue(row.Responsible || row.UserName)}</Table.Td>
-                  <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
-                  <Table.Td ta="right">{formatPrice(row.AccountingPrice)}</Table.Td>
-                  <Table.Td ta="right">{formatPrice(row.Discount)}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
-                  <Table.Td ta="right">{formatAmount(row.OutcomeQty)}</Table.Td>
-                  <Table.Td>{displayValue(row.Comment)}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea>
-      ) : null}
+      {!activeError && (
+        <DataTable
+          columns={movementColumns}
+          data={rows}
+          emptyText={t('Рух товару не знайдено')}
+          getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
+          isLoading={isLoading}
+          layoutVersion="product-movement-1"
+          loadingText={t('Завантаження руху товару')}
+          maxHeight="calc(100vh - 320px)"
+          minWidth={1640}
+          tableId="product-movement"
+        />
+      )}
       <ProductDocumentDownloadModal
         document={exportDocument}
         title={t('Документ руху товару')}
