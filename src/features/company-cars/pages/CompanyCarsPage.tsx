@@ -126,34 +126,28 @@ export function CompanyCarsPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <Text fw={700} size="xl">
-              {t('Автомобілі компанії')}
-            </Text>
-
-            <Group gap="xs">
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate(`${COMPANY_CARS_PATH}/new`, {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Завести нову машину компанії')}
-                </Button>
-              </PermissionGate>
-            </Group>
+          <Group justify="flex-end" gap="xs" wrap="nowrap">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
+              <Button
+                color="violet"
+                leftSection={<IconPlus size={16} />}
+                onClick={() =>
+                  navigate(`${COMPANY_CARS_PATH}/new`, {
+                    state: {
+                      backgroundLocation: location,
+                      returnPath: `${location.pathname}${location.search}`,
+                    },
+                  })
+                }
+              >
+                {t('Завести нову машину компанії')}
+              </Button>
+            </PermissionGate>
           </Group>
 
           {error && (

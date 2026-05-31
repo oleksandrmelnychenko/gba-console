@@ -119,30 +119,25 @@ export function VatReportsPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('VAT')}
-              </Text>
-            </div>
-
-            <Group gap="xs">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          </Group>
-
-          <Group align="end" gap="sm">
-            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <TextInput
+              label={t('Від')}
+              type="date"
+              value={fromDate}
+              onChange={(event) => setFromDate(event.currentTarget.value)}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+            />
             <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} style={{ flex: '0 0 auto' }} variant="light" onClick={resetFilters}>
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={36} style={{ flex: '0 0 auto' }} variant="light" onClick={reload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
 
           {error && (

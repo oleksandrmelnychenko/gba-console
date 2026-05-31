@@ -151,34 +151,26 @@ export function PaymentExpenseArticlesPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Статті витрат')}
-              </Text>
-            </div>
-
-            <Group gap="xs">
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() =>
-                  navigate('/accounting/payment-expense-articles/new', {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Нова стаття')}
-              </Button>
-            </Group>
+          <Group align="end" gap="sm" justify="flex-end" wrap="nowrap" className="clients-filter-row">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Button
+              color="violet"
+              leftSection={<IconPlus size={16} />}
+              onClick={() =>
+                navigate('/accounting/payment-expense-articles/new', {
+                  state: {
+                    backgroundLocation: location,
+                    returnPath: `${location.pathname}${location.search}`,
+                  },
+                })
+              }
+            >
+              {t('Нова стаття')}
+            </Button>
           </Group>
 
           {error && (

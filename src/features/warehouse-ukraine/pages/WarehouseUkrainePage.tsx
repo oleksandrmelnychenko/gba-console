@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Tabs, Text } from '@mantine/core'
+import { Badge, Group, Stack, Tabs } from '@mantine/core'
 import {
   IconChecklist,
   IconEdit,
@@ -127,10 +127,6 @@ export function WarehouseUkrainePage() {
 
   return (
     <Stack gap="md">
-      <Text fw={700} size="xl">
-        {t('Склад Україна')}
-      </Text>
-
       <Tabs defaultValue={defaultTab} keepMounted={false}>
         <Tabs.List>
           {visibleTabs.map((tab) => (

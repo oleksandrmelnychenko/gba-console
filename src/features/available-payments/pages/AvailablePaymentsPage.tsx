@@ -411,24 +411,19 @@ function AvailablePaymentsHeader({ model }: { model: ReturnType<typeof useAvaila
   const { isLoading, reload } = model
 
   return (
-    <Group justify="space-between" align="center">
-      <Text fw={700} size="lg">
-        {t('Наявні платежі')}
-      </Text>
-      <Group gap="xs">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+    <Group justify="flex-end" align="end" gap="sm" wrap="nowrap">
+      <Tooltip label={t('Оновити')}>
+        <ActionIcon
+          aria-label={t('Оновити')}
+          color="gray"
+          loading={isLoading}
+          size={38}
+          variant="light"
+          onClick={() => reload()}
+        >
+          <IconRefresh size={18} />
+        </ActionIcon>
+      </Tooltip>
     </Group>
   )
 }

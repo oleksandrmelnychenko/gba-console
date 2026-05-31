@@ -224,7 +224,6 @@ export function TaxFreeCarriersPage() {
 
   return (
     <Stack gap="lg">
-      <CarriersHeader model={model} />
       <CarriersTableCard model={model} />
       <CarriersDeleteModal model={model} />
       <CarriersDownloadModal model={model} />
@@ -232,64 +231,22 @@ export function TaxFreeCarriersPage() {
   )
 }
 
-function CarriersHeader({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
-  const { t } = useI18n()
-  const { canManage, canPrint, exportDocument, isDownloading, isLoading, openCreate, reload } = model
-
-  return (
-    <Group justify="space-between" align="center">
-      <Text fw={700} size="lg">
-        {t('Перевізники')}
-      </Text>
-      <Group gap="xs">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        {canPrint && (
-          <Button
-            color="gray"
-            leftSection={<IconDownload size={16} />}
-            loading={isDownloading}
-            variant="light"
-            onClick={exportDocument}
-          >
-            {t('Завантажити')}
-          </Button>
-        )}
-        {canManage && (
-          <Button color="violet" leftSection={<IconPlus size={16} />} onClick={openCreate}>
-            {t('Додати')}
-          </Button>
-        )}
-      </Group>
-    </Group>
-  )
-}
-
 function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
   const { t } = useI18n()
   const {
-    applySearch, columns, carriers, error, isLoading, openEdit, resetSearch, searchDraft, setSearchDraft, toolbarLeft,
+    applySearch, canManage, canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading, openCreate,
+    openEdit, reload, resetSearch, searchDraft, setSearchDraft, toolbarLeft,
   } = model
 
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <TextInput
             label={t('Пошук')}
             leftSection={<IconSearch size={16} />}
             value={searchDraft}
-            w={280}
+            style={{ flex: '1 1 auto', minWidth: 180 }}
             onChange={(event) => setSearchDraft(event.currentTarget.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -303,6 +260,34 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           <Button color="gray" variant="subtle" onClick={resetSearch}>
             {t('Скинути')}
           </Button>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={38}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          {canPrint && (
+            <Button
+              color="gray"
+              leftSection={<IconDownload size={16} />}
+              loading={isDownloading}
+              variant="light"
+              onClick={exportDocument}
+            >
+              {t('Завантажити')}
+            </Button>
+          )}
+          {canManage && (
+            <Button color="violet" leftSection={<IconPlus size={16} />} onClick={openCreate}>
+              {t('Додати')}
+            </Button>
+          )}
         </Group>
 
         {error && (

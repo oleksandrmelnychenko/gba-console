@@ -245,10 +245,7 @@ function PaymentShopHeader({ model }: { model: ReturnType<typeof usePaymentOnlin
   const { isLoading, reload } = model
 
   return (
-    <Group justify="space-between" align="center">
-      <Text fw={700} size="lg">
-        {t('Оплата магазину')}
-      </Text>
+    <Group justify="flex-end" align="center">
       <Tooltip label={t('Оновити')}>
         <ActionIcon
           aria-label={t('Оновити')}

@@ -404,13 +404,10 @@ export function SupplyUkraineOrdersPage() {
 
   return (
     <Stack gap="lg">
-      <Group align="flex-start" justify="space-between">
-        <Stack gap={2}>
-          <Text fw={700} size="xl">{t('Замовлення постачання в Україну')}</Text>
-          <Text c="dimmed" size="sm">
-            {t('Показано')} {rows.length} {t('з')} {totalQty}
-          </Text>
-        </Stack>
+      <Group align="flex-end" gap="sm" wrap="nowrap" justify="space-between">
+        <Text c="dimmed" size="sm">
+          {t('Показано')} {rows.length} {t('з')} {totalQty}
+        </Text>
         <Group gap="xs" justify="flex-end">
           {canCreateToUkraine && (
             <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>

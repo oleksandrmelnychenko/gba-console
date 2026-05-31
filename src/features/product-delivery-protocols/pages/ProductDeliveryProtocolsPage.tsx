@@ -475,11 +475,7 @@ function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageM
   const { canCreate, canExport, exportDocument, isDownloading, isLoading, openCreateModal, reload } = model
 
   return (
-    <Group justify="space-between" align="center">
-      <Text fw={700} size="lg">
-        {t('Протоколи доставки товарів')}
-      </Text>
-      <Group gap="xs">
+    <Group justify="flex-end" align="center" gap="xs">
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -508,7 +504,6 @@ function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageM
             {t('Додати')}
           </Button>
         )}
-      </Group>
     </Group>
   )
 }

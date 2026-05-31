@@ -423,10 +423,7 @@ function SupplyReturnsHeader({ model }: { model: ReturnType<typeof useSupplyRetu
   const { isLoading, reload } = model
 
   return (
-    <Group justify="space-between" align="center">
-      <Text fw={600} size="lg">
-        {t('Повернення постачальнику')}
-      </Text>
+    <Group justify="flex-end" align="center">
       <Tooltip label={t('Оновити')}>
         <ActionIcon
           aria-label={t('Оновити')}
