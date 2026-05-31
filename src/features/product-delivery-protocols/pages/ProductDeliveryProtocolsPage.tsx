@@ -29,6 +29,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import {
   createProtocol,
   exportProtocolsDocument,
@@ -75,9 +76,17 @@ const EXPORT_COLUMNS: ProtocolExportColumn[] = [
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
+const PERMISSION_EXPORT = 'ProductDeliveryProtocols_Load_PKEY'
+const PERMISSION_CREATE = 'ProductDeliveryProtocols_AddNew_PKEY'
+const PERMISSION_SELECT_OPTIONS = 'ProductDeliveryProtocols_SelectAnOption_SelectOptionBtn_PKEY'
+const PERMISSION_OPEN_LOGISTIC_PATH = 'ProductDeliveryProtocols_SelectAnOption_LogisticWay_PKEY'
+const PERMISSION_OPEN_SPECIFICATIONS = 'ProductDeliveryProtocols_SelectAnOption_ProductSpecificationCodes_PKEY'
+const PERMISSION_OPEN_INCOME = 'ProductDeliveryProtocols_SelectAnOption_PlacementSupplyOrder_PKEY'
+
 function useProtocolsPageModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { hasPermission } = useAuth()
   const initialFilters = useMemo<FilterDraft>(
     () => ({
       from: getDateShiftedByDays(-30),
@@ -112,6 +121,12 @@ function useProtocolsPageModel() {
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organization}|${activeFilters.supplier}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const protocolIndexMap = useMemo(() => buildIndexMap(protocols), [protocols])
+  const canExport = hasPermission(PERMISSION_EXPORT)
+  const canCreate = hasPermission(PERMISSION_CREATE)
+  const canOpenOptions = hasPermission(PERMISSION_SELECT_OPTIONS)
+  const canOpenLogisticPath = hasPermission(PERMISSION_OPEN_LOGISTIC_PATH)
+  const canOpenSpecifications = hasPermission(PERMISSION_OPEN_SPECIFICATIONS)
+  const canOpenIncome = hasPermission(PERMISSION_OPEN_INCOME)
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
@@ -249,8 +264,12 @@ function useProtocolsPageModel() {
   }
 
   const openOptions = useCallback(
-    (protocol: DeliveryProductProtocol) => setOptionsProtocol(protocol),
-    [setOptionsProtocol],
+    (protocol: DeliveryProductProtocol) => {
+      if (canOpenOptions) {
+        setOptionsProtocol(protocol)
+      }
+    },
+    [canOpenOptions, setOptionsProtocol],
   )
   const closeOptions = useCallback(() => setOptionsProtocol(null), [setOptionsProtocol])
 
@@ -288,11 +307,12 @@ function useProtocolsPageModel() {
   )
 
   return {
-    activeFilters, closeCreateModal, closeDownload, closeOptions, columns, createError, downloadDocument,
-    downloadError, downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, hasMore,
-    isCreateModalOpen, isCreating, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, navigateToIncome,
-    navigateToLogisticPath, navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations,
-    organizationsError, pageSize, protocols, applyFilters, reload, resetFilters, setPageSize, toolbarLeft,
+    activeFilters, canCreate, canExport, canOpenIncome, canOpenLogisticPath, canOpenOptions, canOpenSpecifications,
+    closeCreateModal, closeDownload, closeOptions, columns, createError, downloadDocument, downloadError,
+    downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, hasMore, isCreateModalOpen,
+    isCreating, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, navigateToIncome, navigateToLogisticPath,
+    navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
+    pageSize, protocols, applyFilters, reload, resetFilters, setPageSize, toolbarLeft,
   }
 }
 
@@ -427,6 +447,9 @@ export function ProductDeliveryProtocolsPage() {
       <ProtocolsHeader model={model} />
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
+        canOpenIncome={model.canOpenIncome}
+        canOpenLogisticPath={model.canOpenLogisticPath}
+        canOpenSpecifications={model.canOpenSpecifications}
         protocol={model.optionsProtocol}
         onClose={model.closeOptions}
         onOpenIncome={model.navigateToIncome}
@@ -449,7 +472,7 @@ export function ProductDeliveryProtocolsPage() {
 
 function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
-  const { exportDocument, isDownloading, isLoading, openCreateModal, reload } = model
+  const { canCreate, canExport, exportDocument, isDownloading, isLoading, openCreateModal, reload } = model
 
   return (
     <Group justify="space-between" align="center">
@@ -469,18 +492,22 @@ function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageM
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-        <Button
-          color="gray"
-          leftSection={<IconDownload size={16} />}
-          loading={isDownloading}
-          variant="light"
-          onClick={exportDocument}
-        >
-          {t('Завантажити')}
-        </Button>
-        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={openCreateModal}>
-          {t('Додати')}
-        </Button>
+        {canExport && (
+          <Button
+            color="gray"
+            leftSection={<IconDownload size={16} />}
+            loading={isDownloading}
+            variant="light"
+            onClick={exportDocument}
+          >
+            {t('Завантажити')}
+          </Button>
+        )}
+        {canCreate && (
+          <Button color="violet" leftSection={<IconPlus size={16} />} onClick={openCreateModal}>
+            {t('Додати')}
+          </Button>
+        )}
       </Group>
     </Group>
   )
@@ -489,8 +516,8 @@ function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageM
 function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, loadMoreProtocols,
-    openOptions, organizations, pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
+    applyFilters, canOpenOptions, columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
+    loadMoreProtocols, openOptions, organizations, pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
   } = model
 
   const organizationOptions = useMemo(
@@ -577,7 +604,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           minWidth={1240}
           tableId="product-delivery-protocols"
           toolbarLeft={toolbarLeft}
-          onRowClick={openOptions}
+          onRowClick={canOpenOptions ? openOptions : undefined}
         />
 
         {hasMore && (

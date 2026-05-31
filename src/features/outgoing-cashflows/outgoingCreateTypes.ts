@@ -1,4 +1,10 @@
 import type {
+  ClientAgreement as IncomeClientAgreement,
+  Client as IncomeClient,
+  SupplyOrganization,
+  SupplyOrganizationAgreement,
+} from '../income-cashflows/types'
+import type {
   Currency,
   NamedEntity,
   Organization,
@@ -35,15 +41,27 @@ export type OutcomePaymentUser = NamedEntity
 
 export type OutcomePaymentOrderCreatePayload = Omit<
   OutcomePaymentOrder,
-  'Colleague' | 'PaymentCurrencyRegister' | 'PaymentRegister'
+  'Client' | 'ClientAgreement' | 'Colleague' | 'PaymentCurrencyRegister' | 'PaymentRegister'
 > & {
+  Client?: IncomeClient | null
+  ClientAgreement?: IncomeClientAgreement | null
   Colleague?: OutcomePaymentUser | null
+  ConsumableProductOrganization?: NamedEntity | SupplyOrganization | null
+  ExchangeRate?: number
   OperationType?: number
   PaymentCurrencyRegister?: CreatePaymentCurrencyRegister | null
   PaymentRegister?: CreatePaymentRegister | null
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
+  VAT?: number
+  VatPercent?: number
 }
 
 export const OUTCOME_OPERATION_TYPE = {
+  PaymentToSupplierByPaymentTask: 4,
+  PaymentToSupplier: 5,
+  BuyerReturn: 6,
+  OtherOutcomeWithCounterparts: 7,
+  OtherOutcome: 8,
   TransferToColleague: 10,
 } as const
 

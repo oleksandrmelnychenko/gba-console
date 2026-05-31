@@ -41,6 +41,50 @@ function sumQty(placements: DynamicProductPlacement[]): number {
   return placements.reduce((total, placement) => total + (placement.Qty || 0), 0)
 }
 
+function sumQtyExcept(placements: DynamicProductPlacement[], excluded: DynamicProductPlacement): number {
+  return placements.reduce((total, placement) => total + (placement === excluded ? 0 : placement.Qty || 0), 0)
+}
+
+function isPlaceholderPlacement(placement: DynamicProductPlacement): boolean {
+  return !placement.IsApplied
+    && (placement.StorageNumber || 'N') === 'N'
+    && (placement.RowNumber || 'N') === 'N'
+    && (placement.CellNumber || 'N') === 'N'
+}
+
+function completePlacementsToRowQty(
+  placements: DynamicProductPlacement[],
+  rowQty: number,
+): DynamicProductPlacement[] {
+  const placedQty = sumQty(placements)
+  const remainderQty = rowQty - placedQty
+
+  if (remainderQty <= 0) {
+    return placements
+  }
+
+  const placeholder = placements.find(isPlaceholderPlacement)
+
+  if (placeholder) {
+    return placements.map((placement) =>
+      placement === placeholder ? { ...placement, Qty: (placement.Qty || 0) + remainderQty } : placement,
+    )
+  }
+
+  return [
+    ...placements,
+    { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: remainderQty, IsApplied: false },
+  ]
+}
+
+function placementKey(placement: DynamicProductPlacement): string {
+  return String(
+    placement.NetUid
+      || placement.Id
+      || `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}`,
+  )
+}
+
 export function PlacementEditDrawer({
   opened,
   item,
@@ -73,18 +117,21 @@ export function PlacementEditDrawer({
   const availableAddresses = useMemo<PlacementProductPlacement[]>(() => {
     const productPlacements = product?.ProductPlacements || []
 
-    return productPlacements
-      .filter((placement) => !selectedStorage || placement.Storage?.NetUid === selectedStorage.NetUid)
-      .map((placement) => ({ ...placement, Address: buildAddress(placement) }))
+    return productPlacements.reduce<PlacementProductPlacement[]>((addresses, placement) => {
+      if (selectedStorage && placement.Storage?.NetUid !== selectedStorage.NetUid) {
+        return addresses
+      }
+
+      addresses.push({ ...placement, Address: buildAddress(placement) })
+      return addresses
+    }, [])
   }, [product, selectedStorage])
 
   const placedQty = sumQty(placements)
   const canAddPlacements = rowQty > placedQty
 
   function openDraft(placement: DynamicProductPlacement | null) {
-    const excludedQty = placement
-      ? sumQty(placements.filter((current) => current !== placement))
-      : placedQty
+    const excludedQty = placement ? sumQtyExcept(placements, placement) : placedQty
     const defaultQty = placement?.Qty || Math.max(rowQty - excludedQty, 0)
     const hasAddresses = availableAddresses.length > 0
 
@@ -109,9 +156,7 @@ export function PlacementEditDrawer({
       return
     }
 
-    const excludedQty = draft.editing
-      ? sumQty(placements.filter((current) => current !== draft.editing))
-      : placedQty
+    const excludedQty = draft.editing ? sumQtyExcept(placements, draft.editing) : placedQty
 
     if (!draft.qty || draft.qty <= 0 || draft.qty % 1 !== 0) {
       setError(t('Доступна Кількість 0'))
@@ -170,7 +215,12 @@ export function PlacementEditDrawer({
   }
 
   function handleApply() {
-    onApply(placements.map((placement) => ({ ...placement })))
+    if (placedQty > rowQty) {
+      setError(t('Невірна кількість'))
+      return
+    }
+
+    onApply(completePlacementsToRowQty(placements, rowQty).map((placement) => ({ ...placement })))
   }
 
   const headerText = product
@@ -182,7 +232,7 @@ export function PlacementEditDrawer({
       <Stack gap="md">
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
-          {`${t('Доступна К-сть')} ${rowQty - placedQty}`}
+          {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
         </Text>
 
         <Table withTableBorder withColumnBorders>
@@ -199,7 +249,7 @@ export function PlacementEditDrawer({
           <Table.Tbody>
             {placements.map((placement, index) => (
               <Table.Tr
-                key={index}
+                key={placementKey(placement)}
                 style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
                 onClick={() => !placement.IsApplied && openDraft(placement)}
               >

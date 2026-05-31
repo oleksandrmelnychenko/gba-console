@@ -44,11 +44,25 @@ export type WarehouseUkraineTransporter = EntityFields & {
 }
 
 export type WarehouseUkraineCustomersOwnTtn = {
+  Number?: string
   TtnPDFPath?: string | null
 }
 
 export type WarehouseUkraineHistoryInvoiceEdit = {
   ApproveUpdate?: boolean
+}
+
+export type WarehouseUkraineShipmentDetails = EntityFields & {
+  CashOnDeliveryAmount?: number
+  City?: string
+  Comment?: string
+  Department?: string
+  FullName?: string
+  IsCashOnDelivery?: boolean
+  MobilePhone?: string
+  Transporter?: WarehouseUkraineTransporter | null
+  TTN?: string
+  TtnPDFPath?: string | null
 }
 
 export type WarehouseUkraineOrderItem = EntityFields & {
@@ -67,14 +81,19 @@ export type Sale = EntityFields & {
   ChangedToInvoice?: Date | string
   TotalAmountLocal?: number
   Comment?: string
+  TTN?: string
   Transporter?: WarehouseUkraineTransporter | null
   UpdateUser?: WarehouseUkraineUser | null
   User?: WarehouseUkraineUser | null
   UpdateDataCarrier?: unknown[]
   CustomersOwnTtn?: WarehouseUkraineCustomersOwnTtn | null
   HistoryInvoiceEdit?: WarehouseUkraineHistoryInvoiceEdit[]
+  WarehousesShipment?: WarehouseUkraineShipmentDetails | null
+  IsVatSale?: boolean
+  IsInvoice?: boolean
   IsPrinted?: boolean
   IsPrintedActProtocolEdit?: boolean
+  ShippingAmount?: number
   TotalRowsQty?: number
 }
 

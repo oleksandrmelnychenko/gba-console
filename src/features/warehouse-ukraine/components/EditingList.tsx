@@ -1,9 +1,10 @@
-import { ActionIcon, Alert, Badge, Group, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { ActionIcon, Alert, Badge, Button, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { EditingItemsResponse, EditingActItem } from '../types'
@@ -18,6 +19,7 @@ type FilterDraft = {
 
 type EditingListProps = {
   tableId: string
+  kind: 'act' | 'carrier'
   layoutVersion: string
   loader: (params: {
     from: string
@@ -26,9 +28,11 @@ type EditingListProps = {
     offset: number
     isDevelopment: boolean
   }) => Promise<EditingItemsResponse>
+  processor: (netId: string) => Promise<void>
+  onProcessed?: () => void
 }
 
-export function EditingList({ layoutVersion, loader, tableId }: EditingListProps) {
+export function EditingList({ kind, layoutVersion, loader, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
@@ -39,6 +43,8 @@ export function EditingList({ layoutVersion, loader, tableId }: EditingListProps
   const [items, setItems] = useValueState<EditingActItem[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
+  const [isProcessing, setProcessing] = useValueState(false)
+  const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
@@ -87,7 +93,11 @@ export function EditingList({ layoutVersion, loader, tableId }: EditingListProps
     }
   }, [activeFilters, filterError, loader, reloadKey, setError, setItems, setLoading, t])
 
-  const columns = useEditingColumns(itemIndexMap)
+  const columns = useEditingColumns({
+    indexMap: itemIndexMap,
+    kind,
+    onProcess: openProcessConfirm,
+  })
 
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
@@ -97,6 +107,40 @@ export function EditingList({ layoutVersion, loader, tableId }: EditingListProps
   function resetFilters() {
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
+  }
+
+  function openProcessConfirm(item: EditingActItem) {
+    if (kind === 'carrier' && !item.Sale?.IsPrinted) {
+      setError(t('Накладну не роздруковано'))
+
+      return
+    }
+
+    setError(null)
+    setConfirmItem(item)
+  }
+
+  async function processConfirmedItem() {
+    if (!confirmItem?.NetUid) {
+      setError(t('Не вдалося визначити запис для обробки'))
+      setConfirmItem(null)
+
+      return
+    }
+
+    setProcessing(true)
+    setError(null)
+
+    try {
+      await processor(confirmItem.NetUid)
+      setConfirmItem(null)
+      reload()
+      onProcessed?.()
+    } catch (processError) {
+      setError(processError instanceof Error ? processError.message : t('Не вдалося виконати запит'))
+    } finally {
+      setProcessing(false)
+    }
   }
 
   return (
@@ -145,11 +189,39 @@ export function EditingList({ layoutVersion, loader, tableId }: EditingListProps
         minWidth={920}
         tableId={tableId}
       />
+
+      <AppModal
+        centered
+        opened={Boolean(confirmItem)}
+        title={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку акту')}
+        onClose={() => setConfirmItem(null)}
+      >
+        <Stack gap="md">
+          <Text size="sm">{t('Після підтвердження запис буде позначено як опрацьований.')}</Text>
+
+          {confirmItem && kind === 'carrier' && <CarrierChangeSummary item={confirmItem} />}
+
+          <Group justify="flex-end" gap="sm">
+            <Button color="gray" variant="light" onClick={() => setConfirmItem(null)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="green" loading={isProcessing} onClick={processConfirmedItem}>
+              {t('Підтвердити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
 
-function useEditingColumns(indexMap: Map<EditingActItem, number>) {
+type EditingColumnsModel = {
+  indexMap: Map<EditingActItem, number>
+  kind: 'act' | 'carrier'
+  onProcess: (item: EditingActItem) => void
+}
+
+function useEditingColumns({ indexMap, kind, onProcess }: EditingColumnsModel) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<EditingActItem>[]>(
@@ -215,21 +287,118 @@ function useEditingColumns(indexMap: Map<EditingActItem, number>) {
         header: t('Опрацьовано'),
         width: 150,
         minWidth: 120,
-        accessor: (item) => item.ApproveUpdate,
-        cell: (item) =>
-          item.ApproveUpdate ? (
-            <Badge color="blue" variant="light">
-              {t('Так')}
-            </Badge>
-          ) : (
+        accessor: (item) => item.IsDevelopment,
+        cell: (item) => {
+          if (item.IsDevelopment) {
+            return (
+              <Badge color="teal" variant="light">
+                {t('Так')}
+              </Badge>
+            )
+          }
+
+          if (item.ApproveUpdate) {
+            return (
+              <Badge color="yellow" variant="light">
+                {t('Очікує')}
+              </Badge>
+            )
+          }
+
+          return (
             <Badge color="gray" variant="light">
               {t('Ні')}
             </Badge>
+          )
+        },
+      },
+      {
+        id: 'process',
+        header: '',
+        width: 58,
+        minWidth: 52,
+        align: 'center',
+        enableSorting: false,
+        accessor: (item) => canProcessItem(item),
+        cell: (item) =>
+          canProcessItem(item) ? (
+            <Tooltip label={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку')}>
+              <ActionIcon color="green" size="sm" variant="subtle" onClick={() => onProcess(item)}>
+                <IconCheck size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : (
+            ''
           ),
       },
     ],
-    [indexMap, t],
+    [indexMap, kind, onProcess, t],
   )
+}
+
+function canProcessItem(item: EditingActItem): boolean {
+  return !item.IsDevelopment && Boolean(item.ApproveUpdate)
+}
+
+function CarrierChangeSummary({ item }: { item: EditingActItem }) {
+  const { t } = useI18n()
+  const previous = item.Sale?.WarehousesShipment
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+      <Stack gap={4}>
+        <Text fw={700} size="sm">
+          {t('Поточні дані')}
+        </Text>
+        <SummaryLine label={t('Перевізник')} value={previous?.Transporter?.Name} />
+        <SummaryLine label={t('Місто')} value={previous?.City} />
+        <SummaryLine label={t('Відділення')} value={previous?.Department} />
+        <SummaryLine label={t("Повне ім'я")} value={previous?.FullName} />
+        <SummaryLine label={t('Мобільний телефон')} value={previous?.MobilePhone} />
+        <SummaryLine label={t('Коментар')} value={previous?.Comment} />
+        <SummaryLine label={t('ТТН')} value={previous?.TTN} />
+      </Stack>
+      <Stack gap={4}>
+        <Text fw={700} size="sm">
+          {t('Нові дані')}
+        </Text>
+        <SummaryLine label={t('Перевізник')} value={readNestedString(item, ['Transporter', 'Name'])} />
+        <SummaryLine label={t('Місто')} value={readStringField(item, 'City')} />
+        <SummaryLine label={t('Відділення')} value={readStringField(item, 'Department')} />
+        <SummaryLine label={t("Повне ім'я")} value={readStringField(item, 'FullName')} />
+        <SummaryLine label={t('Мобільний телефон')} value={readStringField(item, 'MobilePhone')} />
+        <SummaryLine label={t('Коментар')} value={readStringField(item, 'Comment')} />
+        <SummaryLine label={t('ТТН')} value={readStringField(item, 'TTN') || readStringField(item, 'Number')} />
+      </Stack>
+    </SimpleGrid>
+  )
+}
+
+function SummaryLine({ label, value }: { label: string; value?: string }) {
+  return (
+    <Group gap={6} wrap="nowrap" align="flex-start">
+      <Text c="dimmed" size="xs" miw={110}>
+        {label}:
+      </Text>
+      <Text size="xs">{displayValue(value)}</Text>
+    </Group>
+  )
+}
+
+function readStringField(item: EditingActItem, field: string): string {
+  const value = (item as unknown as Record<string, unknown>)[field]
+
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
+}
+
+function readNestedString(item: EditingActItem, path: string[]): string {
+  let value: unknown = item
+
+  path.forEach((field) => {
+    value = value && typeof value === 'object' ? (value as Record<string, unknown>)[field] : undefined
+  })
+
+  return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
 }
 
 function buildBuyer(item: EditingActItem): string {

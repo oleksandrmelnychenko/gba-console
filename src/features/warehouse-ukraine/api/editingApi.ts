@@ -38,6 +38,22 @@ export async function getEditingCarrierList(params: EditingListSearchParams): Pr
   return normalizeEditingResponse(result)
 }
 
+export async function approveEditingAct(historyNetId: string): Promise<void> {
+  await apiRequest<unknown>('/protocol/act/invoice/set/edit/act/for/editing', {
+    query: {
+      historynetId: historyNetId,
+    },
+  })
+}
+
+export async function approveEditingCarrier(updateNetId: string): Promise<void> {
+  await apiRequest<unknown>('/protocol/act/invoice/set/warehouses/shipment/history', {
+    query: {
+      netId: updateNetId,
+    },
+  })
+}
+
 function buildQuery(params: EditingListSearchParams) {
   return {
     from: params.from,

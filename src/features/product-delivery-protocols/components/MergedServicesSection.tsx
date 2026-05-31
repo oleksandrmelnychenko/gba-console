@@ -3,6 +3,7 @@ import { IconPlus } from '@tabler/icons-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { useAuth } from '../../auth/useAuth'
 import type {
   CalculateMergedServiceInvoiceItem,
   MergedService,
@@ -19,6 +20,8 @@ import { CalculateMergedServicesPanel } from './CalculateMergedServicesPanel'
 import { MergedServiceEditCard, type MergedServiceEditFiles } from './MergedServiceEditCard'
 import { MergedServiceViewCard } from './MergedServiceViewCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
+
+const ADD_MERGED_SERVICE_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddBtn_PKEY'
 
 export type SaveMergedServicePayload = {
   files: {
@@ -119,6 +122,7 @@ export function MergedServicesSection({
   protocol: ProtocolDetail
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [isNewOpen, setNewOpen] = useValueState(false)
   const [editService, setEditService] = useValueState<MergedService | null>(null)
   const [calculateService, setCalculateService] = useValueState<MergedService | null>(null)
@@ -126,6 +130,7 @@ export function MergedServicesSection({
   const [removeTarget, setRemoveTarget] = useValueState<MergedService | null>(null)
 
   const services = protocol.MergedServices || []
+  const canAddService = canEdit && hasPermission(ADD_MERGED_SERVICE_PERMISSION)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
     await onSaveService({
@@ -145,8 +150,10 @@ export function MergedServicesSection({
     await onSaveService({
       files: {
         accountDocuments: files.accountDocuments,
+        accountingTaskDocuments: files.accountingTaskDocuments,
         actDocuments: files.actDocuments,
         documents: files.files,
+        taskDocuments: files.taskDocuments,
       },
       service,
     })
@@ -197,7 +204,7 @@ export function MergedServicesSection({
     <Stack gap="md">
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Об’єднані сервіси')}</Text>
-        {canEdit && (
+        {canAddService && (
           <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
             {t('Додати')}
           </Button>

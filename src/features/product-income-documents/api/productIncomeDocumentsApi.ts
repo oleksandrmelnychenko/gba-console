@@ -47,6 +47,26 @@ export async function getProductIncomeInfo(netId: string): Promise<ProductIncome
   return normalizeProductIncomeInfo(result)
 }
 
+export async function getSupplyOrderProductIncomeByNetId(netId: string): Promise<ProductIncomeInfo | null> {
+  const result = await apiRequest<unknown>('/products/incomes/supply/order/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeProductIncomeInfo(result)
+}
+
+export async function getSupplyOrderUkraineProductIncomeByNetId(netId: string): Promise<ProductIncomeInfo | null> {
+  const result = await apiRequest<unknown>('/products/incomes/supply/order/ukraine/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeProductIncomeInfo(result)
+}
+
 export async function getProductIncomeRemainings(netId: string): Promise<RemainingConsignment[]> {
   const result = await apiRequest<unknown>('/consignments/remaining/all/income', {
     query: {

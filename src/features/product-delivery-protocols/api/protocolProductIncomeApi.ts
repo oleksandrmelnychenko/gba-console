@@ -95,6 +95,21 @@ export async function createUkraineProductIncomeFromDynamic(
 export async function getNonDefectiveStorages(): Promise<IncomeStorage[]> {
   const result = await apiRequest<unknown>('/storages/all/nondefective')
 
+  return normalizeStorages(result)
+}
+
+export async function getOrganizationStorages(organizationNetId: string): Promise<IncomeStorage[]> {
+  const result = await apiRequest<unknown>('/storages/get/all/filtered', {
+    query: {
+      organizationNetId,
+      skipDefective: false,
+    },
+  })
+
+  return normalizeStorages(result)
+}
+
+function normalizeStorages(result: unknown): IncomeStorage[] {
   if (Array.isArray(result)) {
     return result as IncomeStorage[]
   }

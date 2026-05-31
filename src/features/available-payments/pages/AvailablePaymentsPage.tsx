@@ -28,6 +28,7 @@ import { AvailablePaymentsDetailDrawer } from '../components/AvailablePaymentsDe
 import {
   AccountingTypeValue,
   TaskStatusValue,
+  type AvailablePaymentTaskModel,
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
   type PriceTotal,
@@ -43,7 +44,7 @@ type FilterDraft = {
 const DEFAULT_PAGE_SIZE = 10
 const PAGE_SIZE_OPTIONS = ['10', '20', '40', '60']
 
-const CURRENCY_CODES = ['EUR', 'USD', 'PLN', 'UAH'] as const
+const CURRENCY_CODES = ['EUR', 'USD', 'UAH'] as const
 
 const AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -74,6 +75,7 @@ function useAvailablePaymentsPageModel() {
   const [organizations, setOrganizations] = useValueState<AvailablePaymentsOrganization[]>([])
   const [organizationsError, setOrganizationsError] = useValueState<string | null>(null)
   const [selectedGroup, setSelectedGroup] = useValueState<GroupedPaymentTask | null>(null)
+  const [markedModels, setMarkedModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
@@ -97,10 +99,12 @@ function useAvailablePaymentsPageModel() {
     setHasMore(false)
     setLoading(false)
     setSelectedGroup(null)
+    setMarkedModels([])
   }, [
     setGroups,
     setHasMore,
     setLoading,
+    setMarkedModels,
     setPriceTotals,
     setSelectedGroup,
     setTotalGrossPrice,
@@ -156,6 +160,7 @@ function useAvailablePaymentsPageModel() {
         )
         setPriceTotals(result.PriceTotals)
         setTotalGrossPrice(result.TotalGrossPrice)
+        setTotalNotDoneTasks(countNotDoneTasks([...groups, ...result.GroupedPaymentTasks]))
         setHasMore(result.GroupedPaymentTasks.length === pageSize)
       }
     } catch (loadError) {
@@ -171,6 +176,31 @@ function useAvailablePaymentsPageModel() {
 
   const openDetail = useCallback((group: GroupedPaymentTask) => setSelectedGroup(group), [setSelectedGroup])
   const closeDetail = useCallback(() => setSelectedGroup(null), [setSelectedGroup])
+  const clearMarked = useCallback(() => setMarkedModels([]), [setMarkedModels])
+  const toggleMarked = useCallback(
+    (model: AvailablePaymentTaskModel) => {
+      setMarkedModels((current) => {
+        if (current.some((item) => item.id === model.id)) {
+          return current.filter((item) => item.id !== model.id)
+        }
+
+        const currentOrganizationNetUid = current[0]?.organizationNetUid
+
+        if (currentOrganizationNetUid && currentOrganizationNetUid !== model.organizationNetUid) {
+          setError(t('Можна обрати платіжні задачі тільки одного контрагента'))
+          return current
+        }
+
+        return [...current, model]
+      })
+    },
+    [setError, setMarkedModels, t],
+  )
+  const handlePaymentChanged = useCallback(() => {
+    setSelectedGroup(null)
+    setMarkedModels([])
+    reload()
+  }, [reload, setMarkedModels, setSelectedGroup])
 
   const columns = useAvailablePaymentsColumns(groupIndexMap)
 
@@ -198,6 +228,8 @@ function useAvailablePaymentsPageModel() {
     isLoading,
     isLoadingMore,
     loadMoreGroups,
+    markedModels,
+    markedTaskIds: markedModels.map((model) => model.id),
     openDetail,
     organizations,
     organizationsError,
@@ -208,9 +240,12 @@ function useAvailablePaymentsPageModel() {
     totalNotDoneTasks,
     totalsByCurrency,
     applyFilters,
+    clearMarked,
+    handlePaymentChanged,
     reload,
     resetFilters,
     setPageSize,
+    toggleMarked,
   }
 }
 
@@ -356,7 +391,17 @@ export function AvailablePaymentsPage() {
     <Stack gap="lg">
       <AvailablePaymentsHeader model={model} />
       <AvailablePaymentsTableCard model={model} />
-      <AvailablePaymentsDetailDrawer group={model.selectedGroup} onClose={model.closeDetail} />
+      <AvailablePaymentsDetailDrawer
+        key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
+        group={model.selectedGroup}
+        markedModels={model.markedModels}
+        markedTaskIds={model.markedTaskIds}
+        typePaymentTask={model.activeFilters.type}
+        onChanged={model.handlePaymentChanged}
+        onClearMarked={model.clearMarked}
+        onClose={model.closeDetail}
+        onToggleMarked={model.toggleMarked}
+      />
     </Stack>
   )
 }
@@ -401,6 +446,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     isLoading,
     isLoadingMore,
     loadMoreGroups,
+    markedModels,
     openDetail,
     organizations,
     organizationsError,
@@ -412,17 +458,22 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     totalGrossPrice,
     totalNotDoneTasks,
     totalsByCurrency,
+    clearMarked,
   } = model
 
   const organizationOptions = useMemo(
     () => [
       { label: t('Всі'), value: '' },
-      ...organizations
-        .filter((organization) => (organization.Name || organization.FullName) && organization.NetUid)
-        .map((organization) => ({
-          label: organization.Name || organization.FullName || '',
-          value: organization.NetUid || '',
-        })),
+      ...organizations.flatMap((organization) =>
+        (organization.Name || organization.FullName) && organization.NetUid
+          ? [
+              {
+                label: organization.Name || organization.FullName || '',
+                value: organization.NetUid || '',
+              },
+            ]
+          : [],
+      ),
     ],
     [organizations, t],
   )
@@ -481,6 +532,19 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
         {(error || filterError || organizationsError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error || organizationsError}
+          </Alert>
+        )}
+
+        {markedModels.length > 0 && (
+          <Alert color="blue" icon={<IconListDetails size={18} />} variant="light">
+            <Group justify="space-between" gap="sm">
+              <Text size="sm">
+                {t('Вибрано платіжних задач')}: {markedModels.length}
+              </Text>
+              <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
+                {t('Очистити')}
+              </Button>
+            </Group>
           </Alert>
         )}
 
@@ -622,15 +686,6 @@ function useAvailablePaymentsColumns(indexMap: Map<GroupedPaymentTask, number>) 
         align: 'right',
         accessor: (group) => getCurrencyTotal(group, 'USD'),
         cell: (group) => formatAmount(getCurrencyTotal(group, 'USD')),
-      },
-      {
-        id: 'pln',
-        header: 'PLN',
-        width: 120,
-        minWidth: 100,
-        align: 'right',
-        accessor: (group) => getCurrencyTotal(group, 'PLN'),
-        cell: (group) => formatAmount(getCurrencyTotal(group, 'PLN')),
       },
       {
         id: 'uah',

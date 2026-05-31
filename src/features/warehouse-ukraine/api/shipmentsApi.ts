@@ -32,12 +32,42 @@ export type AutoShipmentListParams = {
   to: string
 }
 
+export type ShipmentListSearchParams = {
+  transporterNetId?: string
+  from: string
+  to: string
+  limit?: number
+}
+
 export async function getAutoShipmentList(params: AutoShipmentListParams): Promise<ShipmentList> {
   const result = await apiRequest<unknown>('/sales/shipments/update/filtered/auto', {
     query: {
       netId: params.transporterNetId,
       from: params.from,
       to: params.to,
+    },
+  })
+
+  return normalizeShipmentList(result)
+}
+
+export async function getAllShipmentLists(params: ShipmentListSearchParams): Promise<ShipmentList[]> {
+  const result = await apiRequest<unknown>('/sales/shipments/all/filtered', {
+    query: {
+      ...(params.transporterNetId ? { netId: params.transporterNetId } : {}),
+      from: params.from,
+      to: params.to,
+      limit: params.limit ?? 20,
+    },
+  })
+
+  return normalizeArray<ShipmentList>(result).map(normalizeShipmentList)
+}
+
+export async function getShipmentListById(shipmentListNetId: string): Promise<ShipmentList> {
+  const result = await apiRequest<unknown>('/sales/shipments/get', {
+    query: {
+      netId: shipmentListNetId,
     },
   })
 
@@ -52,11 +82,33 @@ export async function updateShipmentList(shipmentList: ShipmentList): Promise<vo
 }
 
 export async function getShipmentCreatePageDocument(
-  shipmentListNetId: string,
+  params: AutoShipmentListParams,
 ): Promise<WarehouseUkraineExportDocument> {
   const result = await apiRequest<unknown>('/sales/shipments/document/create/export', {
     query: {
+      netId: params.transporterNetId,
+      from: params.from,
+      to: params.to,
+    },
+  })
+
+  return normalizeExportDocument(result)
+}
+
+export async function getShipmentDocument(shipmentListNetId: string): Promise<WarehouseUkraineExportDocument> {
+  const result = await apiRequest<unknown>('/sales/shipments/document/export', {
+    query: {
       netId: shipmentListNetId,
+    },
+  })
+
+  return normalizeExportDocument(result)
+}
+
+export async function getShipmentListForSaleDocument(saleNetId: string): Promise<WarehouseUkraineExportDocument> {
+  const result = await apiRequest<unknown>('/sales/shipment/list/print/documents', {
+    query: {
+      netId: saleNetId,
     },
   })
 

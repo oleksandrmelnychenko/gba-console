@@ -96,7 +96,8 @@ function useAdvanceReportViewModel() {
   const consumableRows = useMemo(() => buildConsumableRows(order), [order])
   const fuelRows = useMemo(() => buildFuelRows(order), [order])
   const totals = useMemo(() => calculateTotals(order), [order])
-  const outComeTotal = order?.Amount || 0
+  const orderAmount = order?.Amount || 0
+  const reportTotal = totals.total
   const isDone = Boolean(order?.IsUnderReportDone)
   const currencyCode = order?.PaymentCurrencyRegister?.Currency?.Code || order?.PaymentCurrencyRegister?.Currency?.Name
   const headerTitle = useMemo(() => buildHeaderTitle(order, t), [order, t])
@@ -197,8 +198,9 @@ function useAdvanceReportViewModel() {
     isLoading,
     isSaving,
     order,
-    outComeTotal,
+    orderAmount,
     reportTitle,
+    reportTotal,
     totals,
     goBack,
     removeConsumableRow,
@@ -271,7 +273,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
             {order.Colleague?.LastName && <Text>{order.Colleague.LastName}</Text>}
             <Text c="dimmed">{t('на сумму')}</Text>
             <Text fw={600}>
-              {formatMoney(model.outComeTotal)} {model.currencyCode || ''}
+              {formatMoney(model.orderAmount)} {model.currencyCode || ''}
             </Text>
           </Group>
         </Stack>
@@ -326,14 +328,14 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
   }
 
   const amount = order.Amount || 0
-  const overSpent = amount < model.outComeTotal
-  const underSpent = amount > model.outComeTotal
+  const overSpent = amount < model.reportTotal
+  const underSpent = amount > model.reportTotal
 
   if (!overSpent && !underSpent) {
     return null
   }
 
-  const difference = overSpent ? model.outComeTotal - amount : amount - model.outComeTotal
+  const difference = overSpent ? model.reportTotal - amount : amount - model.reportTotal
   const orderTypeLabel = overSpent ? incomeOrderTypeLabel(order, t) : model.headerTitle
 
   return (

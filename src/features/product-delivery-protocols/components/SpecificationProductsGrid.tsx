@@ -1,4 +1,5 @@
-import { Badge, Text } from '@mantine/core'
+import { ActionIcon, Badge, Group, Text, Tooltip } from '@mantine/core'
+import { IconEdit } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -43,7 +44,9 @@ type ServiceColumn = {
 }
 
 type SpecificationProductsGridProps = {
+  canEditSpecification?: boolean
   currencyIsEur: boolean
+  onEditSpecification?: (item: PackingListPackageOrderItem) => void
   packingList: SpecificationPackingList
   withManagementServices: boolean
 }
@@ -59,7 +62,9 @@ const weightFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function SpecificationProductsGrid({
+  canEditSpecification = false,
   currencyIsEur,
+  onEditSpecification,
   packingList,
   withManagementServices,
 }: SpecificationProductsGridProps) {
@@ -119,7 +124,27 @@ export function SpecificationProductsGrid({
         width: 140,
         minWidth: 110,
         accessor: (row) => row.specificationCode,
-        cell: (row) => displayText(row.specificationCode),
+        cell: (row) => (
+          <Group gap={6} wrap="nowrap">
+            <Text size="sm">{displayText(row.specificationCode)}</Text>
+            {canEditSpecification && onEditSpecification && (
+              <Tooltip label={t('Редагувати')}>
+                <ActionIcon
+                  aria-label={t('Редагувати митний код')}
+                  color="gray"
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onEditSpecification(row.item)
+                  }}
+                >
+                  <IconEdit size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+        ),
       },
       {
         id: 'qty',
@@ -287,10 +312,12 @@ export function SpecificationProductsGrid({
     return [...baseColumns, ...serviceColumns, ...totalColumns]
   }, [
     currencyIsEur,
+    canEditSpecification,
     generalServiceColumns,
     hasDeliveryAmount,
     managementServiceColumns,
     netServiceColumns,
+    onEditSpecification,
     t,
     withManagementServices,
   ])

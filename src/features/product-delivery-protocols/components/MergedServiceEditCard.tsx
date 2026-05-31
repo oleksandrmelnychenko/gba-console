@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, FileInput, Group, Select, Stack, TextInput } from '@mantine/core'
+import { Alert, Anchor, Badge, Button, Checkbox, FileInput, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -9,14 +9,18 @@ import { getSupplyOrganizations, getSupplyServiceConsumableProducts } from '../a
 import type {
   ConsumableProduct,
   MergedService,
+  SupplyDocument,
   SupplyOrganization,
   SupplyOrganizationAgreement,
 } from '../detailTypes'
+import { formatDate, responsibleName } from './protocolDetailHelpers'
 
 export type MergedServiceEditFiles = {
   accountDocuments: File[]
+  accountingTaskDocuments: File[]
   actDocuments: File[]
   files: File[]
+  taskDocuments: File[]
 }
 
 type EditDraft = {
@@ -71,6 +75,10 @@ export function MergedServiceEditCard({
   const [accountDocuments, setAccountDocuments] = useValueState<File[]>([])
   const [actDocuments, setActDocuments] = useValueState<File[]>([])
   const [files, setFiles] = useValueState<File[]>([])
+  const [taskDocuments, setTaskDocuments] = useValueState<File[]>([])
+  const [accountingTaskDocuments, setAccountingTaskDocuments] = useValueState<File[]>([])
+  const [deletedTaskDocuments, setDeletedTaskDocuments] = useValueState<Record<string, boolean>>({})
+  const [deletedAccountingTaskDocuments, setDeletedAccountingTaskDocuments] = useValueState<Record<string, boolean>>({})
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
   const [products, setProducts] = useValueState<ConsumableProduct[]>([])
   const [loadError, setLoadError] = useValueState<string | null>(null)
@@ -85,6 +93,10 @@ export function MergedServiceEditCard({
       setAccountDocuments([])
       setActDocuments([])
       setFiles([])
+      setTaskDocuments([])
+      setAccountingTaskDocuments([])
+      setDeletedTaskDocuments({})
+      setDeletedAccountingTaskDocuments({})
       setValidationError(null)
     }
   }
@@ -209,7 +221,33 @@ export function MergedServiceEditCard({
       VatPercent: Number(draft.percent) || 0,
     }
 
-    await onSave(updatedService, { accountDocuments, actDocuments, files })
+    if (updatedService.SupplyPaymentTask) {
+      updatedService.SupplyPaymentTask = {
+        ...updatedService.SupplyPaymentTask,
+        SupplyPaymentTaskDocuments: markDeletedDocuments(
+          updatedService.SupplyPaymentTask.SupplyPaymentTaskDocuments || [],
+          deletedTaskDocuments,
+        ),
+      }
+    }
+
+    if (updatedService.AccountingPaymentTask) {
+      updatedService.AccountingPaymentTask = {
+        ...updatedService.AccountingPaymentTask,
+        SupplyPaymentTaskDocuments: markDeletedDocuments(
+          updatedService.AccountingPaymentTask.SupplyPaymentTaskDocuments || [],
+          deletedAccountingTaskDocuments,
+        ),
+      }
+    }
+
+    await onSave(updatedService, {
+      accountDocuments,
+      accountingTaskDocuments,
+      actDocuments,
+      files,
+      taskDocuments,
+    })
   }
 
   return (
@@ -332,6 +370,32 @@ export function MergedServiceEditCard({
         />
         <FileInput clearable label={t('Інші файли')} multiple value={files} onChange={setFiles} />
 
+        <TaskDocumentsEditor
+          deletedDocuments={deletedTaskDocuments}
+          documents={service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || []}
+          files={taskDocuments}
+          hasTask={Boolean(service.SupplyPaymentTask)}
+          label={t('Документи платіжної задачі')}
+          taskComment={service.SupplyPaymentTask?.Comment}
+          taskDate={service.SupplyPaymentTask?.PayToDate}
+          taskUser={responsibleName(service.SupplyPaymentTask?.User)}
+          onChangeFiles={setTaskDocuments}
+          onToggleDeleted={(document) => toggleDeletedDocument(document, setDeletedTaskDocuments)}
+        />
+
+        <TaskDocumentsEditor
+          deletedDocuments={deletedAccountingTaskDocuments}
+          documents={service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || []}
+          files={accountingTaskDocuments}
+          hasTask={Boolean(service.AccountingPaymentTask)}
+          label={`${t('Документи платіжної задачі')} (${t('Бух.')})`}
+          taskComment={service.AccountingPaymentTask?.Comment}
+          taskDate={service.AccountingPaymentTask?.PayToDate}
+          taskUser={responsibleName(service.AccountingPaymentTask?.User)}
+          onChangeFiles={setAccountingTaskDocuments}
+          onToggleDeleted={(document) => toggleDeletedDocument(document, setDeletedAccountingTaskDocuments)}
+        />
+
         <Group justify="flex-end" gap="sm">
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
@@ -343,4 +407,104 @@ export function MergedServiceEditCard({
       </Stack>
     </AppDrawer>
   )
+}
+
+function TaskDocumentsEditor({
+  deletedDocuments,
+  documents,
+  files,
+  hasTask,
+  label,
+  taskComment,
+  taskDate,
+  taskUser,
+  onChangeFiles,
+  onToggleDeleted,
+}: {
+  deletedDocuments: Record<string, boolean>
+  documents: SupplyDocument[]
+  files: File[]
+  hasTask: boolean
+  label: string
+  onChangeFiles: (files: File[]) => void
+  onToggleDeleted: (document: SupplyDocument) => void
+  taskComment?: string
+  taskDate?: Date | string
+  taskUser?: string
+}) {
+  const { t } = useI18n()
+
+  if (!hasTask) {
+    return null
+  }
+
+  return (
+    <Stack gap="xs">
+      <Text fw={700} size="sm">
+        {label}
+      </Text>
+      <Group gap="xs">
+        <Text c="dimmed" size="sm">
+          {t('Відповідальний')}: {taskUser || '-'}
+        </Text>
+        <Text c="dimmed" size="sm">
+          {t('Сплатити до')}: {formatDate(taskDate)}
+        </Text>
+      </Group>
+      {taskComment && (
+        <Text c="dimmed" size="sm">
+          {taskComment}
+        </Text>
+      )}
+      {documents.length > 0 && (
+        <Stack gap={4}>
+          {documents.map((document, index) => {
+            const key = getDocumentKey(document, index)
+            const deleted = Boolean(deletedDocuments[key])
+
+            return (
+              <Group key={key} gap="xs" justify="space-between">
+                {document.DocumentUrl ? (
+                  <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
+                    {document.FileName || document.DocumentUrl}
+                  </Anchor>
+                ) : (
+                  <Text size="sm">{document.FileName || '-'}</Text>
+                )}
+                <Button color={deleted ? 'gray' : 'red'} size="xs" variant="subtle" onClick={() => onToggleDeleted(document)}>
+                  {deleted ? t('Відновити') : t('Видалити')}
+                </Button>
+                {deleted && (
+                  <Badge color="red" variant="light">
+                    {t('Видалено')}
+                  </Badge>
+                )}
+              </Group>
+            )
+          })}
+        </Stack>
+      )}
+      <FileInput clearable label={t('Додати файли')} multiple value={files} onChange={onChangeFiles} />
+    </Stack>
+  )
+}
+
+function toggleDeletedDocument(
+  document: SupplyDocument,
+  setDeletedDocuments: (value: (current: Record<string, boolean>) => Record<string, boolean>) => void,
+) {
+  const key = getDocumentKey(document, 0)
+
+  setDeletedDocuments((current) => ({ ...current, [key]: !current[key] }))
+}
+
+function markDeletedDocuments(documents: SupplyDocument[], deletedDocuments: Record<string, boolean>): SupplyDocument[] {
+  return documents.map((document, index) => ({
+    ...document,
+    Deleted: Boolean(deletedDocuments[getDocumentKey(document, index)]),
+  }))
+}
+
+function getDocumentKey(document: SupplyDocument, index: number): string {
+  return String(document.NetUid || document.Id || document.FileName || index)
 }

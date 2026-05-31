@@ -12,7 +12,7 @@ import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
   createUkraineProductIncomeFromDynamic,
-  getNonDefectiveStorages,
+  getOrganizationStorages,
   getPackingListSpecificationProducts,
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
@@ -54,6 +54,60 @@ function columnKey(column: DynamicProductPlacementColumn): string {
 
 function sumPlacements(placements: DynamicProductPlacement[]): number {
   return placements.reduce((total, placement) => total + (placement.Qty || 0), 0)
+}
+
+function sumAppliedPlacements(placements: DynamicProductPlacement[]): number {
+  return placements.reduce((total, placement) => total + (placement.IsApplied ? placement.Qty || 0 : 0), 0)
+}
+
+function splitPlacements(placements: DynamicProductPlacement[]) {
+  return placements.reduce<{
+    appliedPlacements: DynamicProductPlacement[]
+    appliedQty: number
+    draftPlacement?: DynamicProductPlacement
+  }>(
+    (result, placement) => {
+      if (placement.IsApplied) {
+        result.appliedPlacements.push(placement)
+        result.appliedQty += placement.Qty || 0
+      } else if (!result.draftPlacement) {
+        result.draftPlacement = placement
+      }
+
+      return result
+    },
+    { appliedPlacements: [], appliedQty: 0 },
+  )
+}
+
+function normalizePlacementsForQty(
+  placements: DynamicProductPlacement[],
+  requestedQty: number,
+): DynamicProductPlacement[] {
+  const { appliedPlacements, appliedQty, draftPlacement } = splitPlacements(placements)
+  const qtyToSet = Math.max(requestedQty, appliedQty)
+  const remainderQty = qtyToSet - appliedQty
+
+  if (remainderQty <= 0) {
+    return appliedPlacements
+  }
+
+  return [
+    ...appliedPlacements,
+    {
+      ...(draftPlacement || { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N' }),
+      Qty: remainderQty,
+      IsApplied: false,
+    },
+  ]
+}
+
+function sumPendingRowQty(row?: DynamicProductPlacementRow): number {
+  if (!row) {
+    return 0
+  }
+
+  return Math.max((row.Qty || 0) - sumAppliedPlacements(row.DynamicProductPlacements), 0)
 }
 
 function findRowForItem(
@@ -142,10 +196,7 @@ function useProtocolIncomeModel() {
       setError(null)
 
       try {
-        const [loadedProtocol, loadedStorages] = await Promise.all([
-          getProtocolByNetId(id as string),
-          getNonDefectiveStorages(),
-        ])
+        const loadedProtocol = await getProtocolByNetId(id as string)
 
         if (cancelled) {
           return
@@ -157,12 +208,20 @@ function useProtocolIncomeModel() {
             ? (loadedProtocol?.SupplyInvoices as unknown as IncomeSupplyInvoice[])
             : [],
         }
+        const organizationNetId = normalizedProtocol.Organization?.NetUid
+        const loadedStorages = organizationNetId ? await getOrganizationStorages(organizationNetId) : []
 
-        setProtocol(normalizedProtocol)
-        setStorages(loadedStorages)
-        setSelectedStorageId((current) => current || loadedStorages[0]?.NetUid || null)
-        setSelectedInvoiceId((current) => current || normalizedProtocol.SupplyInvoices[0]?.NetUid || null)
-        setDirty(false)
+        if (!cancelled) {
+          setProtocol(normalizedProtocol)
+          setStorages(loadedStorages)
+          setSelectedStorageId((current) =>
+            loadedStorages.some((storage) => storage.NetUid === current)
+              ? current
+              : loadedStorages[0]?.NetUid || null,
+          )
+          setSelectedInvoiceId((current) => current || normalizedProtocol.SupplyInvoices[0]?.NetUid || null)
+          setDirty(false)
+        }
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
@@ -293,20 +352,21 @@ function useProtocolIncomeModel() {
       const qtyToSet = Math.trunc(value)
       const itemQty = item.Qty || 0
 
-      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries())
-        .filter(([key]) => key !== columnId)
-        .reduce((total, [, row]) => total + (row.Qty || 0), 0)
+      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries()).reduce(
+        (total, [key, row]) => total + (key === columnId ? 0 : row.Qty || 0),
+        0,
+      )
 
-      if (!qtyToSet || otherColumnsTotal + qtyToSet > itemQty) {
+      if (!Number.isFinite(qtyToSet) || qtyToSet < 0 || otherColumnsTotal + qtyToSet > itemQty) {
         notifications.show({ color: 'red', message: t('Невірна кількість') })
         return
       }
 
       const currentRow = gridRow.rowsByColumn.get(columnId)
       const placements = currentRow ? currentRow.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
-      const placedQty = sumPlacements(placements)
+      const appliedQty = sumAppliedPlacements(placements)
 
-      if (qtyToSet < placedQty) {
+      if (qtyToSet < appliedQty) {
         notifications.show({
           color: 'red',
           message: t('Неможливо записати меншу кількість ніж розміщено. Для зменшення, необхідно видалити розміщення'),
@@ -314,20 +374,7 @@ function useProtocolIncomeModel() {
         return
       }
 
-      let nextPlacements: DynamicProductPlacement[]
-
-      if (placements[0] && !placements[0].IsApplied) {
-        nextPlacements = placements.map((placement, index) =>
-          index === 0 ? { ...placement, Qty: qtyToSet } : placement,
-        )
-      } else {
-        nextPlacements = [
-          ...placements,
-          { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: qtyToSet, IsApplied: false },
-        ]
-      }
-
-      applyColumnRowQty(columnId, item, qtyToSet, nextPlacements)
+      applyColumnRowQty(columnId, item, qtyToSet, normalizePlacementsForQty(placements, qtyToSet))
     },
     [applyColumnRowQty, t],
   )
@@ -488,34 +535,35 @@ function useProtocolIncomeModel() {
           }
 
           const rows = current.PackingListPackageOrderItems.map((item) => {
-            const placedElsewhere = current.DynamicProductPlacementColumns
-              .filter((other) => columnKey(other) !== targetKey)
-              .reduce((total, other) => {
-                const otherRow = findRowForItem(other, item)
-                return total + (otherRow?.Qty || 0)
-              }, 0)
+            const placedElsewhere = current.DynamicProductPlacementColumns.reduce((total, other) => {
+              if (columnKey(other) === targetKey) {
+                return total
+              }
 
-            const qtyToSet = (item.Qty || 0) - (placedElsewhere + (item.PlacedQty || 0))
+                return total + sumPendingRowQty(findRowForItem(other, item))
+            }, 0)
+
+            const qtyToSet = Math.max((item.Qty || 0) - (placedElsewhere + (item.PlacedQty || 0)), 0)
             const existing = findRowForItem(iterColumn, item)
             const placements = existing ? existing.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
-
-            let nextPlacements: DynamicProductPlacement[]
-
-            if (placements[0] && !placements[0].IsApplied) {
-              nextPlacements = placements.map((placement, index) =>
-                index === 0 ? { ...placement, Qty: qtyToSet } : placement,
-              )
-            } else {
-              nextPlacements = [
-                ...placements,
-                { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: qtyToSet, IsApplied: false },
-              ]
-            }
+            const { appliedPlacements, appliedQty, draftPlacement } = splitPlacements(placements)
+            const nextPlacements =
+              qtyToSet > 0
+                ? [
+                    ...appliedPlacements,
+                    {
+                      ...(draftPlacement || { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N' }),
+                      Qty: qtyToSet,
+                      IsApplied: false,
+                    },
+                  ]
+                : appliedPlacements
+            const nextQty = appliedQty + qtyToSet
 
             return existing
-              ? { ...existing, Qty: qtyToSet, DynamicProductPlacements: nextPlacements }
+              ? { ...existing, Qty: nextQty, DynamicProductPlacements: nextPlacements }
               : {
-                  Qty: qtyToSet,
+                  Qty: nextQty,
                   PackingListPackageOrderItemId: item.Id,
                   DynamicProductPlacementColumnId: iterColumn.Id,
                   DynamicProductPlacements: nextPlacements,
@@ -857,6 +905,7 @@ export function ProductDeliveryProtocolIncomePage() {
                 allowDecimal={false}
                 disabled={isPlaced}
                 hideControls
+                min={0}
                 size="xs"
                 value={row.Qty || 0}
                 w={80}

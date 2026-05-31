@@ -34,6 +34,52 @@ function sumPlacements(placements: DynamicProductPlacement[]): number {
   return placements.reduce((total, placement) => total + (placement.Qty || 0), 0)
 }
 
+function sumAppliedPlacements(placements: DynamicProductPlacement[]): number {
+  return placements.reduce((total, placement) => total + (placement.IsApplied ? placement.Qty || 0 : 0), 0)
+}
+
+function splitPlacements(placements: DynamicProductPlacement[]) {
+  return placements.reduce<{
+    appliedPlacements: DynamicProductPlacement[]
+    appliedQty: number
+    draftPlacement?: DynamicProductPlacement
+  }>(
+    (result, placement) => {
+      if (placement.IsApplied) {
+        result.appliedPlacements.push(placement)
+        result.appliedQty += placement.Qty || 0
+      } else if (!result.draftPlacement) {
+        result.draftPlacement = placement
+      }
+
+      return result
+    },
+    { appliedPlacements: [], appliedQty: 0 },
+  )
+}
+
+function normalizePlacementsForQty(
+  placements: DynamicProductPlacement[],
+  requestedQty: number,
+): DynamicProductPlacement[] {
+  const { appliedPlacements, appliedQty, draftPlacement } = splitPlacements(placements)
+  const qtyToSet = Math.max(requestedQty, appliedQty)
+  const remainderQty = qtyToSet - appliedQty
+
+  if (remainderQty <= 0) {
+    return appliedPlacements
+  }
+
+  return [
+    ...appliedPlacements,
+    {
+      ...(draftPlacement || { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N' }),
+      Qty: remainderQty,
+      IsApplied: false,
+    },
+  ]
+}
+
 function findRowForItem(
   column: DynamicProductPlacementColumn,
   item: PlacementOrderItem,
@@ -42,7 +88,11 @@ function findRowForItem(
 }
 
 function buildGridRows(order: PlacementSupplyOrder): PlacementGridRow[] {
-  return order.SupplyOrderUkraineItems.filter((item) => !item.NotOrdered).map((item, index) => {
+  return order.SupplyOrderUkraineItems.reduce<PlacementGridRow[]>((rows, item) => {
+    if (item.NotOrdered) {
+      return rows
+    }
+
     const rowsByColumn = new Map<string, DynamicProductPlacementRow>()
 
     order.DynamicProductPlacementColumns.forEach((column) => {
@@ -59,8 +109,9 @@ function buildGridRows(order: PlacementSupplyOrder): PlacementGridRow[] {
       )
     })
 
-    return { index: index + 1, item, rowsByColumn }
-  })
+    rows.push({ index: rows.length + 1, item, rowsByColumn })
+    return rows
+  }, [])
 }
 
 function columnHasAppliedPlacements(column: DynamicProductPlacementColumn): boolean {
@@ -207,20 +258,21 @@ function useOrderPlacementsModel() {
       const qtyToSet = Math.trunc(value)
       const itemQty = item.Qty || 0
 
-      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries())
-        .filter(([key]) => key !== columnId)
-        .reduce((total, [, row]) => total + (row.Qty || 0), 0)
+      const otherColumnsTotal = Array.from(gridRow.rowsByColumn.entries()).reduce(
+        (total, [key, row]) => total + (key === columnId ? 0 : row.Qty || 0),
+        0,
+      )
 
-      if (!qtyToSet || otherColumnsTotal + qtyToSet > itemQty) {
+      if (!Number.isFinite(qtyToSet) || qtyToSet < 0 || otherColumnsTotal + qtyToSet > itemQty) {
         notifications.show({ color: 'red', message: t('Невірна кількість') })
         return
       }
 
       const currentRow = gridRow.rowsByColumn.get(columnId)
       const placements = currentRow ? currentRow.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
-      const placedQty = sumPlacements(placements)
+      const appliedQty = sumAppliedPlacements(placements)
 
-      if (qtyToSet < placedQty) {
+      if (qtyToSet < appliedQty) {
         notifications.show({
           color: 'red',
           message: t('Неможливо записати меншу кількість ніж розміщено. Для зменшення, необхідно видалити розміщення'),
@@ -228,20 +280,7 @@ function useOrderPlacementsModel() {
         return
       }
 
-      let nextPlacements: DynamicProductPlacement[]
-
-      if (placements[0] && !placements[0].IsApplied) {
-        nextPlacements = placements.map((placement, index) =>
-          index === 0 ? { ...placement, Qty: qtyToSet } : placement,
-        )
-      } else {
-        nextPlacements = [
-          ...placements,
-          { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: qtyToSet, IsApplied: false },
-        ]
-      }
-
-      applyColumnRowQty(columnId, item, qtyToSet, nextPlacements)
+      applyColumnRowQty(columnId, item, qtyToSet, normalizePlacementsForQty(placements, qtyToSet))
     },
     [applyColumnRowQty, t],
   )
@@ -327,40 +366,38 @@ function useOrderPlacementsModel() {
             return iterColumn
           }
 
-          const rows = current.SupplyOrderUkraineItems.filter((item) => !item.NotOrdered).map((item) => {
-            const placedElsewhere = current.DynamicProductPlacementColumns
-              .filter((other) => columnKey(other) !== targetKey)
-              .reduce((total, other) => {
-                const otherRow = findRowForItem(other, item)
-                return total + (otherRow?.Qty || 0)
-              }, 0)
-
-            const qtyToSet = (item.Qty || 0) - placedElsewhere
-            const existing = findRowForItem(iterColumn, item)
-            const placements = existing ? existing.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
-
-            let nextPlacements: DynamicProductPlacement[]
-
-            if (placements[0] && !placements[0].IsApplied) {
-              nextPlacements = placements.map((placement, index) =>
-                index === 0 ? { ...placement, Qty: qtyToSet } : placement,
-              )
-            } else {
-              nextPlacements = [
-                ...placements,
-                { StorageNumber: 'N', RowNumber: 'N', CellNumber: 'N', Qty: qtyToSet, IsApplied: false },
-              ]
+          const rows = current.SupplyOrderUkraineItems.reduce<DynamicProductPlacementRow[]>((nextRows, item) => {
+            if (item.NotOrdered) {
+              return nextRows
             }
 
-            return existing
-              ? { ...existing, Qty: qtyToSet, DynamicProductPlacements: nextPlacements }
-              : {
-                  Qty: qtyToSet,
-                  SupplyOrderUkraineItemId: item.Id,
-                  DynamicProductPlacementColumnId: iterColumn.Id,
-                  DynamicProductPlacements: nextPlacements,
-                }
-          })
+            const placedElsewhere = current.DynamicProductPlacementColumns.reduce((total, other) => {
+              if (columnKey(other) === targetKey) {
+                return total
+              }
+
+              const otherRow = findRowForItem(other, item)
+              return total + (otherRow?.Qty || 0)
+            }, 0)
+
+            const qtyToSet = Math.max((item.Qty || 0) - placedElsewhere, 0)
+            const existing = findRowForItem(iterColumn, item)
+            const placements = existing ? existing.DynamicProductPlacements.map((placement) => ({ ...placement })) : []
+            const nextPlacements = normalizePlacementsForQty(placements, qtyToSet)
+            const nextQty = sumPlacements(nextPlacements)
+
+            nextRows.push(
+              existing
+                ? { ...existing, Qty: nextQty, DynamicProductPlacements: nextPlacements }
+                : {
+                    Qty: nextQty,
+                    SupplyOrderUkraineItemId: item.Id,
+                    DynamicProductPlacementColumnId: iterColumn.Id,
+                    DynamicProductPlacements: nextPlacements,
+                  },
+            )
+            return nextRows
+          }, [])
 
           return { ...iterColumn, DynamicProductPlacementRows: rows }
         })
@@ -496,6 +533,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 <NumberInput
                   allowDecimal={false}
                   hideControls
+                  min={0}
                   size="xs"
                   value={row.Qty || 0}
                   w={80}

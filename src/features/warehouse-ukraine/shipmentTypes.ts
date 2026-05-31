@@ -57,6 +57,7 @@ export type ShipmentSale = Sale & {
 export type ShipmentListItem = EntityFields & {
   QtyPlaces?: number
   IsDirty?: boolean
+  IsChangeTransporter?: boolean
   Sale: ShipmentSale
 }
 

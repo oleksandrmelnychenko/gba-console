@@ -1,4 +1,4 @@
-import { Badge, Card, Group, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Card, Group, SimpleGrid, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconCash, IconChevronRight } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
@@ -26,21 +26,27 @@ export function OutgoingCreateModeSelector({ onSelect }: OutgoingCreateModeSelec
     },
     {
       description: t('Поповнити баланс постачальника послуг'),
-      enabled: false,
+      enabled: true,
       label: t('Поповнити баланс постачальника послуг'),
       mode: OUTGOING_CREATE_MODE.OrganizationPayment,
     },
     {
-      description: t('Платіжна задача'),
-      enabled: false,
-      label: t('Платіжна задача'),
-      mode: OUTGOING_CREATE_MODE.PaymentTasks,
-    },
-    {
       description: t('Повернення клієнту'),
-      enabled: false,
+      enabled: true,
       label: t('Повернення клієнту'),
       mode: OUTGOING_CREATE_MODE.ClientReturn,
+    },
+    {
+      description: t('Оплата постачальнику'),
+      enabled: true,
+      label: t('Оплата постачальнику'),
+      mode: OUTGOING_CREATE_MODE.PaymentGroup,
+    },
+    {
+      description: t('Платіжна задача'),
+      enabled: true,
+      label: t('Платіжна задача'),
+      mode: OUTGOING_CREATE_MODE.PaymentTasks,
     },
   ]
 
@@ -63,11 +69,6 @@ export function OutgoingCreateModeSelector({ onSelect }: OutgoingCreateModeSelec
                   <Stack gap={4}>
                     <Group gap="xs">
                       <Text fw={600}>{definition.label}</Text>
-                      {!definition.enabled && (
-                        <Badge color="gray" variant="light">
-                          {t('у розробці')}
-                        </Badge>
-                      )}
                     </Group>
                     <Text c="dimmed" size="sm">
                       {definition.description}

@@ -17,6 +17,7 @@ import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
   getWarehouseUkraineSales,
+  updateWarehouseUkraineSale,
 } from '../api/salesApi'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -37,6 +38,28 @@ type FilterDraft = {
   value: string
 }
 
+type SalesListState = {
+  error: string | null
+  isLoading: boolean
+  sales: Sale[]
+  totalQty: number
+}
+
+type SalesListAction =
+  | { type: 'empty' }
+  | { type: 'error'; error: string }
+  | { type: 'errorMessage'; error: string }
+  | { type: 'loaded'; sales: Sale[]; totalQty: number }
+  | { type: 'loading' }
+  | { type: 'replaceSale'; targetSale: Sale; nextSale: Sale }
+
+const INITIAL_SALES_STATE: SalesListState = {
+  error: null,
+  isLoading: true,
+  sales: [],
+  totalQty: 0,
+}
+
 function useSalesTabModel() {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
@@ -45,10 +68,7 @@ function useSalesTabModel() {
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
-  const [sales, setSales] = useValueState<Sale[]>([])
-  const [totalQty, setTotalQty] = useValueState(0)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [salesState, dispatchSalesState] = useReducer(salesListReducer, INITIAL_SALES_STATE)
   const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
   const [carrierSale, setCarrierSale] = useValueState<Sale | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -58,21 +78,25 @@ function useSalesTabModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const saleIndexMap = useMemo(() => buildIndexMap(sales), [sales])
+  const saleIndexMap = useMemo(() => buildIndexMap(salesState.sales), [salesState.sales])
+
+  const replaceSale = useCallback(
+    (targetSale: Sale, nextSale: Sale) => {
+      dispatchSalesState({ type: 'replaceSale', targetSale, nextSale })
+    },
+    [],
+  )
 
   useEffect(() => {
     if (filterError) {
-      setSales([])
-      setTotalQty(0)
-      setLoading(false)
+      dispatchSalesState({ type: 'empty' })
       return
     }
 
     let cancelled = false
 
     async function loadSales() {
-      setLoading(true)
-      setError(null)
+      dispatchSalesState({ type: 'loading' })
 
       try {
         const result = await getWarehouseUkraineSales({
@@ -84,18 +108,14 @@ function useSalesTabModel() {
         })
 
         if (!cancelled) {
-          setSales(result.items)
-          setTotalQty(result.totalQty)
+          dispatchSalesState({ type: 'loaded', sales: result.items, totalQty: result.totalQty })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setSales([])
-          setTotalQty(0)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити документи'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchSalesState({
+            type: 'error',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити документи'),
+          })
         }
       }
     }
@@ -105,7 +125,7 @@ function useSalesTabModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, setError, setLoading, setSales, setTotalQty, t])
+  }, [activeFilters, filterError, pageSize, reloadKey, t])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -145,22 +165,54 @@ function useSalesTabModel() {
     [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading, t],
   )
 
+  const markSaleBeforePrint = useCallback(
+    async (sale: Sale, patch: Pick<Sale, 'IsPrinted' | 'IsPrintedActProtocolEdit'>) => {
+      const optimisticSale = {
+        ...sale,
+        ...patch,
+        IsInvoice: true,
+      }
+
+      replaceSale(sale, optimisticSale)
+
+      try {
+        const savedSale = await updateWarehouseUkraineSale(optimisticSale)
+        replaceSale(sale, { ...optimisticSale, ...savedSale })
+      } catch (updateError) {
+        replaceSale(sale, sale)
+        dispatchSalesState({
+          type: 'errorMessage',
+          error: updateError instanceof Error ? updateError.message : t('Не вдалося оновити статус друку'),
+        })
+      }
+    },
+    [replaceSale, t],
+  )
+
   const printSale = useCallback(
     (sale: Sale) => {
       if (sale.NetUid) {
+        if (!sale.IsPrinted || hasApprovedInvoiceEdits(sale)) {
+          void markSaleBeforePrint(sale, { IsPrinted: true })
+        }
+
         void runDownload(() => getSalePrintDocument(sale.NetUid as string))
       }
     },
-    [runDownload],
+    [markSaleBeforePrint, runDownload],
   )
 
   const printActProtocolEdit = useCallback(
     (sale: Sale) => {
       if (sale.NetUid) {
+        if (!sale.IsPrintedActProtocolEdit) {
+          void markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true })
+        }
+
         void runDownload(() => getSaleActProtocolEditDocument(sale.NetUid as string, true))
       }
     },
-    [runDownload],
+    [markSaleBeforePrint, runDownload],
   )
 
   function applyFilters(nextFilters: FilterDraft) {
@@ -176,9 +228,31 @@ function useSalesTabModel() {
   const columns = useSalesColumns({ indexMap: saleIndexMap, onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
 
   return {
-    activeFilters, applyFilters, carrierSale, closeDownload, columns, downloadDocument, downloadError,
-    downloadOpened, error, filterDraft, filterError, isDownloading, isLoading, pageSize, reload, resetFilters,
-    sales, setCarrierSale, setPageSize, totalQty,
+    activeFilters, applyFilters, carrierSale, closeDownload, columns, downloadDocument, downloadError, downloadOpened,
+    error: salesState.error, filterDraft, filterError, isDownloading, isLoading: salesState.isLoading, pageSize,
+    reload, resetFilters, sales: salesState.sales, setCarrierSale, setPageSize, totalQty: salesState.totalQty,
+  }
+}
+
+function salesListReducer(state: SalesListState, action: SalesListAction): SalesListState {
+  switch (action.type) {
+    case 'empty':
+      return { error: null, isLoading: false, sales: [], totalQty: 0 }
+    case 'error':
+      return { ...state, error: action.error, isLoading: false, sales: [], totalQty: 0 }
+    case 'errorMessage':
+      return { ...state, error: action.error }
+    case 'loaded':
+      return { error: null, isLoading: false, sales: action.sales, totalQty: action.totalQty }
+    case 'loading':
+      return { ...state, error: null, isLoading: true }
+    case 'replaceSale':
+      return {
+        ...state,
+        sales: state.sales.map((sale) => (sameSale(sale, action.targetSale) ? action.nextSale : sale)),
+      }
+    default:
+      return state
   }
 }
 
@@ -457,9 +531,7 @@ function useSalesColumns({
 }
 
 function getPrintedStatusText(sale: Sale): string {
-  const approved = (sale.HistoryInvoiceEdit || []).filter((entry) => entry.ApproveUpdate)
-
-  if (approved.length > 0) {
+  if (hasApprovedInvoiceEdits(sale)) {
     return 'changed'
   }
 
@@ -468,6 +540,18 @@ function getPrintedStatusText(sale: Sale): string {
   }
 
   return ''
+}
+
+function hasApprovedInvoiceEdits(sale: Sale): boolean {
+  return (sale.HistoryInvoiceEdit || []).some((entry) => entry.ApproveUpdate)
+}
+
+function sameSale(left: Sale, right: Sale): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  return Boolean(left.Id && right.Id && left.Id === right.Id)
 }
 
 function buildClientName(sale: Sale): string {

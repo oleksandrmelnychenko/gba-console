@@ -23,15 +23,21 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
   addDeliveryDocumentsToInvoice,
+  addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
   getSpecificationDownloadUrls,
   mergeSupplyInvoices,
   uploadProductSpecificationForInvoice,
 } from '../api/protocolSpecificationApi'
 import { MergeInvoicesModal } from '../components/MergeInvoicesModal'
+import {
+  ProductSpecificationEditDrawer,
+  type ProductSpecificationSubmitPayload,
+} from '../components/ProductSpecificationEditDrawer'
 import { SpecificationDownloadModal } from '../components/SpecificationDownloadModal'
 import { SpecificationProductsGrid } from '../components/SpecificationProductsGrid'
 import { SpecificationTotals } from '../components/SpecificationTotals'
@@ -40,6 +46,7 @@ import { UploadProductSpecificationModal } from '../components/UploadProductSpec
 import { UploadProductSpecificationResultModal } from '../components/UploadProductSpecificationResultModal'
 import type {
   DeliveryDocumentDraft,
+  PackingListPackageOrderItem,
   ProductSpecificationParseConfiguration,
   SpecificationDownloadDocument,
   SpecificationPackingList,
@@ -47,6 +54,17 @@ import type {
   SpecificationSupplyInvoice,
   UploadProductSpecificationResult,
 } from '../specificationTypes'
+
+const invoiceDateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+const CURRENCY_EUR = 'eur'
+const CURRENCY_UAH = 'uah'
+const SERVICES_MANAGEMENT = 'management'
+const SERVICES_ACCOUNTING = 'accounting'
+const PERMISSION_UPLOAD_SPECIFICATIONS = 'ProductDeliveryProtocols_specifications_download_exel_upload_PKEY'
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
+  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
+const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
+const PERMISSION_EDIT_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
 
 function invoiceDate(value?: Date | string): string {
   if (!value) {
@@ -59,7 +77,7 @@ function invoiceDate(value?: Date | string): string {
     return String(value)
   }
 
-  return new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' }).format(date)
+  return invoiceDateFormatter.format(date)
 }
 
 function useSpecificationModel(netId: string | undefined) {
@@ -94,6 +112,8 @@ function useSpecificationModel(netId: string | undefined) {
   const [isDownloading, setDownloading] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SpecificationDownloadDocument | null>(null)
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
+  const [editingSpecificationItem, setEditingSpecificationItem] = useValueState<PackingListPackageOrderItem | null>(null)
+  const [isSavingSpecification, setSavingSpecification] = useValueState(false)
 
   const navigate = useNavigate()
 
@@ -430,27 +450,76 @@ function useSpecificationModel(netId: string | undefined) {
     }
   }
 
+  function openSpecificationEditor(item: PackingListPackageOrderItem) {
+    setEditingSpecificationItem(item)
+  }
+
+  async function saveSpecification(payload: ProductSpecificationSubmitPayload) {
+    if (!selectedInvoiceNetId) {
+      notifications.show({ color: 'red', message: t('Інвойс відсутній') })
+
+      return
+    }
+
+    setSavingSpecification(true)
+
+    try {
+      await addOrUpdateProductSpecification(selectedInvoiceNetId, payload)
+
+      if (selectedPackListNetId) {
+        const refreshed = await getPackingListSpecificationProducts(selectedPackListNetId)
+        setPackingList(refreshed)
+      }
+
+      await reloadProtocol()
+      setEditingSpecificationItem(null)
+      notifications.show({ color: 'green', message: t('Зміни збережено') })
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
+      })
+    } finally {
+      setSavingSpecification(false)
+    }
+  }
+
   return {
     addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, downloadDocument, downloadError,
-    error, existingDocuments, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading, isMergeOpen, isMerging,
-    isPackingListLoading, isSavingDocuments, isUploading, isUploadOpen, newDocuments, numberCustomDeclaration,
-    openDocuments, openDownload, openMerge, packingList, packingListError, protocol, removeExistingDocument,
+    editingSpecificationItem, error, existingDocuments, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
+    isMergeOpen, isMerging, isPackingListLoading, isSavingDocuments, isSavingSpecification, isUploading,
+    isUploadOpen, newDocuments, numberCustomDeclaration, openDocuments, openDownload, openMerge,
+    openSpecificationEditor, packingList, packingListError, protocol, removeExistingDocument,
     removeNewDocument, saveDocuments, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
     selectedMergeNetIds, selectedPackListNetId, setCurrencyIsEur, setDateCustomDeclaration, setDocumentsOpen,
-    setDownloadOpen, setMergeOpen, setNumberCustomDeclaration, setUploadOpen, setUploadResult,
-    setWithManagementServices, submitUpload, toggleMergeInvoice, uploadResult, withManagementServices,
+    setDownloadOpen, setEditingSpecificationItem, setMergeOpen, setNumberCustomDeclaration, setUploadOpen,
+    setUploadResult, setWithManagementServices, saveSpecification, submitUpload, toggleMergeInvoice, uploadResult,
+    withManagementServices,
   }
 }
 
 export function ProductDeliveryProtocolSpecificationPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { id } = useParams()
   const navigate = useNavigate()
   const model = useSpecificationModel(id)
   const invoices = model.protocol?.SupplyInvoices || []
   const canMerge = invoices.length > 1
-  const canDownload = Boolean(model.packingList && (model.packingList.Id || 0) > 0)
-  const canUpload = Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
+  const canDownload =
+    hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) && Boolean(model.packingList && (model.packingList.Id || 0) > 0)
+  const canUpload =
+    hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
+  const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION_CODE)
+  const currencyOptions = [
+    { label: t('EUR'), value: CURRENCY_EUR },
+    { label: t('UAH'), value: CURRENCY_UAH },
+  ]
+  const serviceModeOptions = [
+    { label: 'УО', value: SERVICES_MANAGEMENT },
+    { label: 'БО', value: SERVICES_ACCOUNTING },
+  ]
 
   return (
     <Stack gap="lg">
@@ -475,14 +544,14 @@ export function ProductDeliveryProtocolSpecificationPage() {
         </Group>
         <Group gap="sm" align="center">
           <SegmentedControl
-            data={[t('EUR'), t('UAH')]}
-            value={model.currencyIsEur ? t('EUR') : t('UAH')}
-            onChange={(value) => model.setCurrencyIsEur(value === t('EUR'))}
+            data={currencyOptions}
+            value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
+            onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
           />
           <SegmentedControl
-            data={['УО', 'БО']}
-            value={model.withManagementServices ? 'УО' : 'БО'}
-            onChange={(value) => model.setWithManagementServices(value === 'УО')}
+            data={serviceModeOptions}
+            value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
+            onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
           />
         </Group>
       </Group>
@@ -512,14 +581,16 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     {t('Завантаження митних кодів')}
                   </Button>
                 )}
-                <Button
-                  color="gray"
-                  leftSection={<IconFileImport size={16} />}
-                  variant="light"
-                  onClick={model.openDocuments}
-                >
-                  {t('Завантаження документів доставки')}
-                </Button>
+                {canUploadDocuments && (
+                  <Button
+                    color="gray"
+                    leftSection={<IconFileImport size={16} />}
+                    variant="light"
+                    onClick={model.openDocuments}
+                  >
+                    {t('Завантаження документів доставки')}
+                  </Button>
+                )}
                 {canMerge && (
                   <Button
                     color="gray"
@@ -596,9 +667,11 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 </Text>
               ) : model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
                 <SpecificationProductsGrid
+                  canEditSpecification={canEditSpecification}
                   currencyIsEur={model.currencyIsEur}
                   packingList={model.packingList}
                   withManagementServices={model.withManagementServices}
+                  onEditSpecification={model.openSpecificationEditor}
                 />
               ) : (
                 <Group gap="xs" c="dimmed">
@@ -660,6 +733,13 @@ export function ProductDeliveryProtocolSpecificationPage() {
         isLoading={model.isDownloading}
         opened={model.isDownloadOpen}
         onClose={() => model.setDownloadOpen(false)}
+      />
+
+      <ProductSpecificationEditDrawer
+        isSaving={model.isSavingSpecification}
+        item={model.editingSpecificationItem}
+        onClose={() => model.setEditingSpecificationItem(null)}
+        onSave={model.saveSpecification}
       />
     </Stack>
   )

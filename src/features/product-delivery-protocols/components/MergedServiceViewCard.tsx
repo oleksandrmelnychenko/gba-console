@@ -1,9 +1,15 @@
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconEdit, IconTrash } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import type { MergedService, SupplyDocument } from '../detailTypes'
+import { useAuth } from '../../auth/useAuth'
+import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../detailTypes'
 import { LabelValueRow } from './LabelValueRow'
 import { formatDate, formatMoney, responsibleName } from './protocolDetailHelpers'
+
+const DELETE_PERMISSION = 'ProductDeliveryProtocols_unified_services_DeleteBtn_PKEY'
+const CALCULATE_PERMISSION = 'ProductDeliveryProtocols_unified_services_CalculateBtn_PKEY'
+const ASSIGN_INVOICES_PERMISSION = 'ProductDeliveryProtocols_unified_services_AddInvoceBtn_PKEY'
+const EDIT_PERMISSION = 'ProductDeliveryProtocols_unified_services_EditBtn_PKEY'
 
 function DocumentLink({ document }: { document: SupplyDocument }) {
   if (!document.DocumentUrl) {
@@ -16,6 +22,55 @@ function DocumentLink({ document }: { document: SupplyDocument }) {
     <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
       {document.FileName || document.DocumentUrl}
     </Anchor>
+  )
+}
+
+function PaymentTaskBlock({
+  currencyCode,
+  task,
+  title,
+}: {
+  currencyCode: string
+  task?: SupplyPaymentTask | null
+  title: string
+}) {
+  const { t } = useI18n()
+
+  if (!task) {
+    return null
+  }
+
+  const documents = task.SupplyPaymentTaskDocuments || []
+
+  return (
+    <Card withBorder radius="sm" padding="sm">
+      <Stack gap={6}>
+        <Group justify="space-between" align="center">
+          <Text fw={700} size="sm">
+            {title}
+          </Text>
+          {task.Deleted && (
+            <Badge color="red" variant="light">
+              {t('Видалено')}
+            </Badge>
+          )}
+        </Group>
+        <LabelValueRow label={t('Сума')}>{formatMoney(task.GrossPrice, currencyCode)}</LabelValueRow>
+        <LabelValueRow label={t('Відповідальний')}>{responsibleName(task.User) || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Сплатити до')}>{formatDate(task.PayToDate)}</LabelValueRow>
+        <LabelValueRow label={t('Коментар')}>{task.Comment || '-'}</LabelValueRow>
+        {documents.length > 0 && (
+          <Stack gap={4}>
+            <Text c="dimmed" size="sm">
+              {t('Файли')}:
+            </Text>
+            {documents.map((document, index) => (
+              <DocumentLink key={document.NetUid || document.Id || index} document={document} />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Card>
   )
 }
 
@@ -35,32 +90,44 @@ export function MergedServiceViewCard({
   service: MergedService
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
   const invoiceCount = service.SupplyInvoiceMergedServices?.length || 0
+  const canCalculate = canEdit && hasPermission(CALCULATE_PERMISSION)
+  const canAssignInvoices = canEdit && hasPermission(ASSIGN_INVOICES_PERMISSION)
+  const canUpdate = canEdit && hasPermission(EDIT_PERMISSION)
+  const canRemove = canEdit && hasPermission(DELETE_PERMISSION)
+  const hasActions = canCalculate || canAssignInvoices || canUpdate || canRemove
 
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="xs">
-        {canEdit && (
+        {hasActions && (
           <Group justify="flex-end" gap="xs">
-            {invoiceCount > 0 && (
+            {invoiceCount > 0 && canCalculate && (
               <Button size="xs" variant="light" onClick={onCalculate}>
                 {t('Розрахувати')}
               </Button>
             )}
-            <Button size="xs" variant="light" onClick={onAssignInvoices}>
-              {t('Додати')} {t('Інвойси')}
-            </Button>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon color="gray" variant="subtle" onClick={onEdit}>
-                <IconEdit size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon color="red" variant="subtle" onClick={onRemove}>
-                <IconTrash size={18} />
-              </ActionIcon>
-            </Tooltip>
+            {canAssignInvoices && (
+              <Button size="xs" variant="light" onClick={onAssignInvoices}>
+                {t('Додати')} {t('Інвойси')}
+              </Button>
+            )}
+            {canUpdate && (
+              <Tooltip label={t('Редагувати')}>
+                <ActionIcon color="gray" variant="subtle" onClick={onEdit}>
+                  <IconEdit size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            {canRemove && (
+              <Tooltip label={t('Видалити')}>
+                <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+                  <IconTrash size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
           </Group>
         )}
 
@@ -148,6 +215,13 @@ export function MergedServiceViewCard({
             ))}
           </Stack>
         )}
+
+        <PaymentTaskBlock currencyCode={currencyCode} task={service.SupplyPaymentTask} title={t('Платіжна задача')} />
+        <PaymentTaskBlock
+          currencyCode={currencyCode}
+          task={service.AccountingPaymentTask}
+          title={`${t('Платіжна задача')} (${t('Бух.')})`}
+        />
 
         <LabelValueRow label={t('Відповідальний')}>{responsibleName(service.User) || '-'}</LabelValueRow>
       </Stack>

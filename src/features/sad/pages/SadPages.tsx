@@ -24,6 +24,7 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconArrowRight,
+  IconCash,
   IconDownload,
   IconEdit,
   IconEye,
@@ -37,6 +38,8 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentOutcomePaymentModal } from '../../document-outcome-payment'
+import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -147,6 +150,7 @@ export function AllSadsPage() {
   const [isLoadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedSad, setSelectedSad] = useState<Sad | null>(null)
+  const [outcomeSource, setOutcomeSource] = useState<DocumentOutcomePaymentSource | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Sad | null>(null)
   const [isDeleting, setDeleting] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -255,7 +259,7 @@ export function AllSadsPage() {
       },
       {
         id: 'amountLocal',
-        header: t('PLN'),
+        header: t('Місцева валюта'),
         accessor: (sad) => sad.TotalAmountLocal,
         cell: (sad) => formatNumber(sad.TotalAmountLocal),
         align: 'right',
@@ -291,6 +295,19 @@ export function AllSadsPage() {
                 <IconEye size={16} />
               </ActionIcon>
             </Tooltip>
+            <Tooltip label={t('Створити видатковий ордер')}>
+              <ActionIcon
+                aria-label={t('Створити видатковий ордер')}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setOutcomeSource(buildSadOutcomeSource(sad))
+                }}
+              >
+                <IconCash size={16} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={sad.IsSend ? t('Проведений SAD не можна видалити') : t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
@@ -309,7 +326,7 @@ export function AllSadsPage() {
           </Group>
         ),
         enableSorting: false,
-        width: 90,
+        width: 120,
       },
     ],
     [t],
@@ -418,6 +435,12 @@ export function AllSadsPage() {
           setSelectedSad(null)
           navigate(path)
         }}
+      />
+
+      <DocumentOutcomePaymentModal
+        opened={Boolean(outcomeSource)}
+        source={outcomeSource}
+        onClose={() => setOutcomeSource(null)}
       />
 
       <AppModal centered opened={Boolean(deleteTarget)} title={t('Видалити SAD')} onClose={() => setDeleteTarget(null)}>
@@ -1020,7 +1043,7 @@ function SadItemsPanel({
       },
       {
         id: 'amountLocal',
-        header: t('PLN'),
+        header: t('Місцева валюта'),
         accessor: (item) => item.TotalAmountLocal,
         cell: (item) => formatNumber(item.TotalAmountLocal),
         align: 'right',
@@ -2192,7 +2215,7 @@ function SadTotals({ sad }: { sad: Sad }) {
         <Metric label={t('Нетто')} value={formatQty(sad.TotalNetWeight)} />
         <Metric label={t('Брутто')} value={formatQty(sad.TotalGrossWeight)} />
         <Metric label={t('EUR')} value={formatNumber(sad.TotalAmount)} />
-        <Metric label={t('PLN')} value={formatNumber(sad.TotalAmountLocal)} />
+        <Metric label={t('Місцева валюта')} value={formatNumber(sad.TotalAmountLocal)} />
       </SimpleGrid>
     </Card>
   )
@@ -2439,6 +2462,19 @@ function getSadTypeLabel(value?: SadTypeValue) {
 
 function getSadClientName(sad: Sad) {
   return getClientName(sad.Client) || getClientName(sad.OrganizationClient)
+}
+
+function buildSadOutcomeSource(sad: Sad): DocumentOutcomePaymentSource {
+  const client = sad.Client || sad.OrganizationClient
+
+  return {
+    amount: sad.TotalVatAmountWithMargin || 0,
+    clientName: getSadClientName(sad),
+    clientNetId: client?.NetUid || '',
+    created: typeof sad.Created === 'string' ? sad.Created : undefined,
+    documentNetId: sad.NetUid || '',
+    type: 'sad',
+  }
 }
 
 function getClientName(client?: SadClient | SadOrganizationClient | null) {

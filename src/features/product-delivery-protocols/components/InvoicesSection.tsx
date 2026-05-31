@@ -4,11 +4,14 @@ import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { useAuth } from '../../auth/useAuth'
 import { getApprovedInvoices } from '../api/protocolDetailApi'
 import type { ProtocolDetail, SupplyInvoice } from '../detailTypes'
 import { InvoiceSelectList } from './InvoiceSelectList'
 import { LabelValueRow } from './LabelValueRow'
 import { formatDateTime, formatMoney } from './protocolDetailHelpers'
+
+const MANAGE_INVOICES_PERMISSION = 'ProductDeliveryProtocols_logistic_path_card_invoices_infoBtn_PKEY'
 
 function InvoiceViewCard({ invoice }: { invoice: SupplyInvoice }) {
   const { t } = useI18n()
@@ -148,8 +151,10 @@ export function InvoicesSection({
   protocol: ProtocolDetail
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [drawerOpened, setDrawerOpened] = useValueState(false)
   const invoices = protocol.SupplyInvoices || []
+  const canManageInvoices = canEdit && hasPermission(MANAGE_INVOICES_PERMISSION)
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
     await onAssignInvoices(selectedInvoices)
@@ -160,7 +165,7 @@ export function InvoicesSection({
     <Stack gap="md">
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Інвойси')}</Text>
-        {canEdit && (
+        {canManageInvoices && (
           <Button color="violet" variant="light" onClick={() => setDrawerOpened(true)}>
             {t('Управління інвойсами')}
           </Button>

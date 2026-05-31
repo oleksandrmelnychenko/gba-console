@@ -93,7 +93,6 @@ export type TaxFreePackList = EntityFields & {
 
 export type TaxFreeDocument = EntityFields & {
   AmountInEur?: number
-  AmountInPLN?: number
   AmountPayedStatham?: number
   CanceledDate?: string
   ClosedDate?: string
@@ -122,7 +121,6 @@ export type TaxFreeDocument = EntityFields & {
   TotalWithVat?: number
   TotalWithVatPl?: number
   UnitPriceWithVat?: number
-  VatAmountInPLN?: number
   VatAmountPl?: number
   VatPercent?: number
   Weigth?: number

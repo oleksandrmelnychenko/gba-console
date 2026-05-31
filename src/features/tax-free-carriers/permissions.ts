@@ -1,0 +1,2 @@
+export const TAX_FREE_CARRIER_MANAGE_PERMISSION = 'Header_NewRemoveStatham_carriersAllView_PKEY'
+export const TAX_FREE_CARRIER_PRINT_PERMISSION = 'Header_dataForPrintDocument_carriersAllView_PKEY'

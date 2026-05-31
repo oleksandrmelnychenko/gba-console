@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ProductSpecificationParseConfiguration,
+  ProductSpecificationEntity,
   SpecificationDownloadDocument,
   SpecificationPackingList,
   SpecificationProtocol,
@@ -90,6 +91,23 @@ export async function addDeliveryDocumentsToInvoice(
   })
 
   return normalizeProtocol(result)
+}
+
+export async function addOrUpdateProductSpecification(
+  supplyInvoiceNetId: string,
+  body: Partial<ProductSpecificationEntity>,
+): Promise<ProductSpecificationEntity | null> {
+  const result = await apiRequest<unknown>('/specifications/update', {
+    method: 'POST',
+    query: { supplyInvoiceNetId },
+    body,
+  })
+
+  if (result && typeof result === 'object') {
+    return result as ProductSpecificationEntity
+  }
+
+  return null
 }
 
 export async function mergeSupplyInvoices(

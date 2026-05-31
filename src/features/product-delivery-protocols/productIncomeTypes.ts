@@ -31,6 +31,7 @@ export type IncomeProductPlacement = EntityFields & {
 
 export type IncomeStorage = EntityFields & {
   Name?: string
+  Organization?: IncomeOrganization | null
 }
 
 export type IncomeSupplyInvoiceOrderItem = EntityFields & {

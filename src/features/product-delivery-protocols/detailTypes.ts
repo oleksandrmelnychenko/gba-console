@@ -35,6 +35,7 @@ export type ConsumableProduct = EntityFields & {
 
 export type SupplyDocument = EntityFields & {
   ContentType?: string
+  Deleted?: boolean
   DocumentUrl?: string
   FileName?: string
 }
@@ -43,6 +44,7 @@ export type SupplyPaymentTaskDocument = SupplyDocument
 
 export type SupplyPaymentTask = EntityFields & {
   Comment?: string
+  Deleted?: boolean
   GrossPrice?: number
   PayToDate?: Date | string
   SupplyPaymentTaskDocuments?: SupplyPaymentTaskDocument[]

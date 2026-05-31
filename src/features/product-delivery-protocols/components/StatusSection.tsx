@@ -1,6 +1,9 @@
 import { Button, Card } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useAuth } from '../../auth/useAuth'
 import type { ProtocolDetail } from '../detailTypes'
+
+const CHANGE_STATUS_PERMISSION = 'ProductDeliveryProtocols_unified_services_ChangeStatusBtn_PKEY'
 
 export function StatusSection({
   protocol,
@@ -14,8 +17,9 @@ export function StatusSection({
   protocol: ProtocolDetail
 }) {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
 
-  if (!canEdit) {
+  if (!canEdit || !hasPermission(CHANGE_STATUS_PERMISSION)) {
     return null
   }
 

@@ -1,10 +1,16 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  AvailablePaymentAccountingCashFlow,
+  AvailablePaymentCurrencyRegister,
+  AvailablePaymentMovement,
+  AvailablePaymentOutcomeRequest,
+  AvailablePaymentRegister,
   AvailablePaymentsOrganization,
   AvailablePaymentsSearchParams,
   GroupedPaymentTask,
   GroupedPaymentTaskWithTotals,
   PriceTotal,
+  SupplyPaymentTask,
 } from '../types'
 
 export async function getGroupedPaymentTasks(
@@ -28,6 +34,128 @@ export async function getAvailablePaymentsOrganizations(): Promise<AvailablePaym
   const result = await apiRequest<unknown>('/organizations/all')
 
   return normalizeOrganizations(result)
+}
+
+export async function searchAvailablePaymentRegisters(value = ''): Promise<AvailablePaymentRegister[]> {
+  const result = await apiRequest<unknown>('/payments/registers/search', {
+    query: {
+      value,
+    },
+  })
+
+  return normalizePaymentRegisters(result)
+}
+
+export async function getAvailablePaymentMovements(): Promise<AvailablePaymentMovement[]> {
+  const result = await apiRequest<unknown>('/payments/movements/all')
+
+  return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as AvailablePaymentMovement[]
+}
+
+export async function searchAvailablePaymentMovements(value: string): Promise<AvailablePaymentMovement[]> {
+  const result = await apiRequest<unknown>('/payments/movements/all/search', {
+    query: {
+      value,
+    },
+  })
+
+  return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as AvailablePaymentMovement[]
+}
+
+export async function getAvailablePaymentAccountingCashFlow(params: {
+  from: string
+  netId: string
+  to: string
+  typePaymentTask: number
+}): Promise<AvailablePaymentAccountingCashFlow | null> {
+  const result = await apiRequest<unknown>('/accounting/cashflow/get/filtered', {
+    query: {
+      from: params.from,
+      netId: params.netId,
+      to: params.to,
+      typePaymentTask: params.typePaymentTask,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as AvailablePaymentAccountingCashFlow) : null
+}
+
+export async function getAvailablePaymentTaskByNetId(netId: string): Promise<SupplyPaymentTask | null> {
+  const result = await apiRequest<unknown>('/payments/tasks/get', {
+    query: {
+      netId,
+    },
+  })
+
+  return result && typeof result === 'object' ? (result as SupplyPaymentTask) : null
+}
+
+export async function setAvailablePaymentTaskToActive(
+  task: SupplyPaymentTask,
+  documents: File[],
+): Promise<SupplyPaymentTask | null> {
+  const formData = new FormData()
+  formData.append('task', JSON.stringify(task))
+  documents.forEach((document) => formData.append('documents', document))
+
+  const result = await apiRequest<unknown>('/payments/tasks/available/set', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return result && typeof result === 'object' ? (result as SupplyPaymentTask) : null
+}
+
+export async function createAvailablePaymentOutcome({
+  amount,
+  comment,
+  customNumber,
+  documents,
+  fromDate,
+  isAccounting,
+  isManagementAccounting,
+  models,
+  organization,
+  paymentPurpose,
+  selectedCurrencyRegister,
+  selectedMovement,
+  selectedRegister,
+}: AvailablePaymentOutcomeRequest): Promise<unknown> {
+  const firstModel = models[0]
+
+  if (!firstModel) {
+    throw new Error('Available payment outcome payload is incomplete')
+  }
+
+  const formData = new FormData()
+  formData.append(
+    'order',
+    JSON.stringify({
+      Amount: amount,
+      Comment: comment,
+      CustomNumber: customNumber,
+      FromDate: fromDate,
+      IsAccounting: isAccounting,
+      IsManagementAccounting: isManagementAccounting,
+      IsUnderReport: false,
+      Organization: organization,
+      OutcomePaymentOrderSupplyPaymentTasks: models.map((model) => ({
+        SupplyPaymentTask: model.task,
+      })),
+      PaymentCurrencyRegister: selectedCurrencyRegister,
+      PaymentMovementOperation: {
+        PaymentMovement: selectedMovement,
+      },
+      PaymentPurpose: paymentPurpose,
+      PaymentRegister: selectedRegister,
+    }),
+  )
+  documents.forEach((document) => formData.append('documents', document))
+
+  return apiRequest<unknown>('/payments/orders/outcome/new/supplies', {
+    body: formData,
+    method: 'POST',
+  })
 }
 
 function normalizeGroupedPaymentTaskWithTotals(result: unknown): GroupedPaymentTaskWithTotals {
@@ -87,4 +215,49 @@ function normalizeOrganizations(result: unknown): AvailablePaymentsOrganization[
         : []
 
   return items as AvailablePaymentsOrganization[]
+}
+
+function normalizePaymentRegisters(result: unknown): AvailablePaymentRegister[] {
+  return readArrayPayload(result, ['Items', 'PaymentRegisters', 'Registers', 'Data'])
+    .map(normalizePaymentRegister)
+    .filter((register): register is AvailablePaymentRegister => Boolean(register))
+}
+
+function normalizePaymentRegister(result: unknown): AvailablePaymentRegister | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const register = result as AvailablePaymentRegister
+
+  return {
+    ...register,
+    PaymentCurrencyRegisters: Array.isArray(register.PaymentCurrencyRegisters)
+      ? register.PaymentCurrencyRegisters.map(normalizeCurrencyRegister)
+      : [],
+  }
+}
+
+function normalizeCurrencyRegister(result: unknown): AvailablePaymentCurrencyRegister {
+  return result && typeof result === 'object' ? (result as AvailablePaymentCurrencyRegister) : {}
+}
+
+function readArrayPayload(result: unknown, keys: string[]): unknown[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  if (!result || typeof result !== 'object') {
+    return []
+  }
+
+  const payload = result as Record<string, unknown>
+
+  for (const key of keys) {
+    if (Array.isArray(payload[key])) {
+      return payload[key] as unknown[]
+    }
+  }
+
+  return []
 }

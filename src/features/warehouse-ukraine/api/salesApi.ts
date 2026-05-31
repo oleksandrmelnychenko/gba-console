@@ -55,6 +55,15 @@ export async function getSaleActProtocolEditDocument(
   return normalizeExportDocument(result)
 }
 
+export async function updateWarehouseUkraineSale(sale: Sale): Promise<Sale> {
+  const result = await apiRequest<unknown>('/sales/update', {
+    method: 'POST',
+    body: sale,
+  })
+
+  return result && typeof result === 'object' ? (result as Sale) : sale
+}
+
 function normalizeSalesResponse(result: unknown): SalesResponse {
   const items = readArrayPayload(result, ['Items', 'Sales', 'Data']) as Sale[]
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}

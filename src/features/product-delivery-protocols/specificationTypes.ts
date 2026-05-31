@@ -4,10 +4,20 @@ export type ProductMeasureUnit = EntityFields & {
   Name?: string
 }
 
+export type ProductSpecificationUser = EntityFields & {
+  FirstName?: string
+  LastName?: string
+  MiddleName?: string
+  Name?: string
+}
+
 export type ProductSpecificationEntity = EntityFields & {
+  AddedBy?: ProductSpecificationUser | null
+  Created?: Date | string
   CustomsValue?: number
   Duty?: number
   DutyPercent?: number
+  ProductId?: number
   SpecificationCode?: string
   VATPercent?: number
   VATValue?: number
@@ -112,6 +122,7 @@ export type SpecificationPackingList = EntityFields & {
 
 export type SupplyInvoiceDeliveryDocument = EntityFields & {
   ContentType?: string
+  Deleted?: boolean
   DocumentUrl?: string
   FileName?: string
 }
