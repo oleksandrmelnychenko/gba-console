@@ -78,7 +78,8 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
             const isCredit = item.IsCreditValue === true
 
             return (
-              <div
+              <button
+                type="button"
                 key={getRowKey ? getRowKey(item, index) : index}
                 className={dataRowClassName(isCredit, isRowActive?.(item, index) === true)}
                 onClick={() => {
@@ -106,7 +107,7 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
                   <span className={valueClassName(item.CurrentBalance)}>{money(item.CurrentBalance)}</span>
                 </div>
-              </div>
+              </button>
             )
           })
         )}
