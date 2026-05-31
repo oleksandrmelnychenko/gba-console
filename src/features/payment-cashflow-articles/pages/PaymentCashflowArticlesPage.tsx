@@ -151,13 +151,7 @@ export function PaymentCashflowArticlesPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Статті руху коштів')}
-              </Text>
-            </div>
-
+          <Group justify="flex-end" wrap="wrap">
             <Group gap="xs">
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>

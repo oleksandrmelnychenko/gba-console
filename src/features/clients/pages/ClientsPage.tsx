@@ -43,6 +43,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
@@ -848,15 +849,14 @@ function ClientsFilterToolbar({
       </Tooltip>
       <Tooltip label={t('Експорт в Excel')}>
         <ActionIcon
-          variant="light"
-          color="green"
+          variant="default"
           size={36}
           aria-label={t('Експорт в Excel')}
           loading={isExporting}
           onClick={onExport}
           style={{ flex: '0 0 auto' }}
         >
-          <IconFileTypeXls size={20} stroke={1.8} />
+          <ExcelIcon size={22} />
         </ActionIcon>
       </Tooltip>
       {canCreateClient && (

@@ -108,7 +108,7 @@ import {
   type ProductDetailPanel,
 } from './ProductDetailPage'
 import './products.css'
-import excelIconUrl from '../../../assets/brand/excel-icon.png'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 
 const PAGE_SIZE = 20
 const VIRTUAL_PAGE_SIZE = 10
@@ -1764,18 +1764,6 @@ type ProductUploadDocumentForm = {
   quantity: number
   to: number
   vendorCode: string
-}
-
-function ExcelIcon({ size = 18 }: { size?: number }) {
-  return (
-    <img
-      src={excelIconUrl}
-      alt="Excel"
-      width={size}
-      height={size}
-      style={{ display: 'block', objectFit: 'contain' }}
-    />
-  )
 }
 
 function ProductUploadDocumentToolbar({

@@ -209,24 +209,6 @@ export function AccountingBanksPage() {
     <Stack gap="lg">
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="start" justify="space-between" gap="sm">
-            <Text fw={700} size="lg">
-              {t('Банки')}
-            </Text>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={36}
-                variant="light"
-                onClick={reload}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               leftSection={<IconSearch size={16} />}
@@ -247,6 +229,19 @@ export function AccountingBanksPage() {
                 onClick={resetSearch}
               >
                 <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={36}
+                style={{ flex: '0 0 auto' }}
+                variant="light"
+                onClick={reload}
+              >
+                <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
             <PermissionGate permissionKey={ACCOUNTING_BANK_CREATE_PERMISSION}>
