@@ -86,6 +86,16 @@ export async function uploadSupplyOrderDocument(formData: FormData): Promise<Dir
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function createSupplyCreditNote(supplyOrderNetId: string, formData: FormData): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/upload/creditnote', {
+    body: formData,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function getSupplyOrderItems(netId: string): Promise<SupplyOrderItem[]> {
   const result = await apiRequest<unknown>('/supplies/orders/items/all/order', {
     query: { netId },
@@ -394,6 +404,7 @@ function normalizeDirectSupplyOrder(result: unknown): DirectSupplyOrder | null {
 
   return {
     ...order,
+    CreditNoteDocuments: Array.isArray(order.CreditNoteDocuments) ? order.CreditNoteDocuments : [],
     SupplyInvoices: Array.isArray(order.SupplyInvoices) ? order.SupplyInvoices.map(ensureSupplyInvoice) : [],
     SupplyOrderDeliveryDocuments: Array.isArray(order.SupplyOrderDeliveryDocuments) ? order.SupplyOrderDeliveryDocuments : [],
     SupplyOrderItems: Array.isArray(order.SupplyOrderItems) ? order.SupplyOrderItems : [],

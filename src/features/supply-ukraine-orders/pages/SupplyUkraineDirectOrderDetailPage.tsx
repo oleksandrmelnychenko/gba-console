@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -27,24 +28,27 @@ import {
   IconPackageImport,
   IconPencil,
   IconRefresh,
-  IconRestore,
   IconRoute,
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDateTime } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import {
+  createSupplyCreditNote,
   getDirectSupplyOrderById,
   updateDirectSupplyOrder,
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
 import type {
+  CreditNoteDocument,
   DirectSupplyOrder,
   SupplyOrderDeliveryDocument,
   SupplyTransportationTypeValue,
@@ -55,6 +59,9 @@ const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
   { label: 'Море', value: '1' },
   { label: 'Авіа', value: '2' },
 ]
+const PERMISSION_APPROVE_ORDER = 'LOGISTIC_WAY_ordersUkraineAllEdit_ApprovedSupplyOrderStatus_PKEY'
+const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_PKEY'
+const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('uk-UA')
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -64,6 +71,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SupplyUkraineDirectOrderDetailPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
@@ -79,6 +87,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const [statusReceived, setStatusReceived] = useState(true)
   const hasInvoices = (order?.SupplyInvoices?.length || 0) > 0
   const isLocked = Boolean(order?.IsOrderShipped) || Boolean(order?.IsCompleted)
+  const canApproveOrder = hasPermission(PERMISSION_APPROVE_ORDER)
+  const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
 
   useEffect(() => {
     let cancelled = false
@@ -246,18 +256,17 @@ export function SupplyUkraineDirectOrderDetailPage() {
     savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Зміна статуса документа'))
   }
 
-  function setDocumentDeleted(document: SupplyOrderDeliveryDocument, deleted: boolean) {
+  function clearDocumentFile(document: SupplyOrderDeliveryDocument) {
     if (!order) {
       return
     }
 
     const documents = (order.SupplyOrderDeliveryDocuments || []).map((current) =>
-      isSameDocument(current, document) ? { ...current, Deleted: deleted } : current)
+      isSameDocument(current, document)
+        ? { ...current, ContentType: '', Deleted: false, DocumentUrl: '', FileName: '' }
+        : current)
 
-    savePatch(
-      { SupplyOrderDeliveryDocuments: documents },
-      deleted ? t('Документ видалено') : t('Документ відновлено'),
-    )
+    savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Файл видалено'))
   }
 
   function saveTransportationType() {
@@ -270,117 +279,101 @@ export function SupplyUkraineDirectOrderDetailPage() {
     savePatch({ IsApproved: true }, t('Замовлення погоджено'))
   }
 
-  const documentColumns = useMemo<DataTableColumn<SupplyOrderDeliveryDocument>[]>(
-    () => [
-      {
-        id: 'name',
-        header: t('Документ'),
-        minWidth: 220,
-        accessor: (document) => document.Name || document.FileName,
-        cell: (document) => document.DocumentUrl
-          ? <a className="document-link" href={document.DocumentUrl} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
-          : document.Name || document.FileName || '-',
-      },
-      {
-        id: 'fileName',
-        header: t('Файл'),
-        minWidth: 220,
-        accessor: (document) => document.FileName,
-        cell: (document) => document.FileName || '-',
-      },
-      {
-        id: 'processed',
-        header: t('Опрацьовано'),
-        width: 130,
-        accessor: (document) => document.IsProcessed,
-        cell: (document) => statusBadge(t('Так'), document.IsProcessed),
-      },
-      {
-        id: 'received',
-        header: t('Отримано'),
-        width: 130,
-        accessor: (document) => document.IsReceived,
-        cell: (document) => statusBadge(t('Так'), document.IsReceived),
-      },
-      {
-        id: 'processedDate',
-        header: t('Дата'),
-        width: 150,
-        accessor: (document) => document.ProcessedDate,
-        cell: (document) => formatDateTime(document.ProcessedDate),
-      },
-      {
-        id: 'comment',
-        header: t('Коментар'),
-        minWidth: 200,
-        accessor: (document) => document.Comment,
-        cell: (document) => document.Comment || '-',
-      },
-      {
-        id: 'actions',
-        header: t('Дії'),
-        width: 200,
-        accessor: (document) => document.NetUid,
-        cell: (document) => (
-          <Group gap={4} wrap="nowrap">
-            <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
-              {(fileProps) => (
-                <Tooltip label={t('Завантажити файл')}>
-                  <ActionIcon
-                    {...fileProps}
-                    aria-label={t('Завантажити файл')}
-                    color="blue"
-                    disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
-                    variant="light"
-                  >
-                    <IconUpload size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </FileButton>
-            <Tooltip label={t('Зміна статуса документа')}>
-              <ActionIcon
-                aria-label={t('Зміна статуса документа')}
-                color="teal"
-                disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
-                variant="light"
-                onClick={() => openStatusModal(document)}
-              >
-                <IconCheck size={16} />
-              </ActionIcon>
-            </Tooltip>
-            {document.Deleted ? (
-              <Tooltip label={t('Відновити')}>
+  const documentColumns: DataTableColumn<SupplyOrderDeliveryDocument>[] = [
+    {
+      id: 'name',
+      header: t('Документ'),
+      minWidth: 220,
+      accessor: (document) => document.Name || document.FileName,
+      cell: (document) => document.DocumentUrl
+        ? <a className="document-link" href={document.DocumentUrl} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
+        : document.Name || document.FileName || '-',
+    },
+    {
+      id: 'fileName',
+      header: t('Файл'),
+      minWidth: 220,
+      accessor: (document) => document.FileName,
+      cell: (document) => document.FileName || '-',
+    },
+    {
+      id: 'processed',
+      header: t('Опрацьовано'),
+      width: 130,
+      accessor: (document) => document.IsProcessed,
+      cell: (document) => statusBadge(t('Так'), document.IsProcessed),
+    },
+    {
+      id: 'received',
+      header: t('Отримано'),
+      width: 130,
+      accessor: (document) => document.IsReceived,
+      cell: (document) => statusBadge(t('Так'), document.IsReceived),
+    },
+    {
+      id: 'processedDate',
+      header: t('Дата'),
+      width: 150,
+      accessor: (document) => document.ProcessedDate,
+      cell: (document) => formatDateTime(document.ProcessedDate),
+    },
+    {
+      id: 'comment',
+      header: t('Коментар'),
+      minWidth: 200,
+      accessor: (document) => document.Comment,
+      cell: (document) => document.Comment || '-',
+    },
+    {
+      id: 'actions',
+      header: t('Дії'),
+      width: 200,
+      accessor: (document) => document.NetUid,
+      cell: (document) => (
+        <Group gap={4} wrap="nowrap">
+          <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
+            {(fileProps) => (
+              <Tooltip label={t('Завантажити файл')}>
                 <ActionIcon
-                  aria-label={t('Відновити')}
-                  color="gray"
-                  disabled={isSaving || isLocked}
+                  {...fileProps}
+                  aria-label={t('Завантажити файл')}
+                  color="blue"
+                  disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
                   variant="light"
-                  onClick={() => setDocumentDeleted(document, false)}
                 >
-                  <IconRestore size={16} />
-                </ActionIcon>
-              </Tooltip>
-            ) : (
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  disabled={isSaving || isLocked}
-                  variant="light"
-                  onClick={() => setDocumentDeleted(document, true)}
-                >
-                  <IconTrash size={16} />
+                  <IconUpload size={16} />
                 </ActionIcon>
               </Tooltip>
             )}
-          </Group>
-        ),
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, isSaving, isLocked, order],
-  )
+          </FileButton>
+          <Tooltip label={t('Зміна статуса документа')}>
+            <ActionIcon
+              aria-label={t('Зміна статуса документа')}
+              color="teal"
+              disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
+              variant="light"
+              onClick={() => openStatusModal(document)}
+            >
+              <IconCheck size={16} />
+            </ActionIcon>
+          </Tooltip>
+          {(document.FileName || document.DocumentUrl) && (
+            <Tooltip label={t('Очистити файл')}>
+              <ActionIcon
+                aria-label={t('Очистити файл')}
+                color="red"
+                disabled={isSaving || isLocked}
+                variant="light"
+                onClick={() => clearDocumentFile(document)}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      ),
+    },
+  ]
 
   return (
     <Stack gap="lg">
@@ -409,7 +402,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={reloadOrder}>
             {t('Оновити')}
           </Button>
-          {order && !order.IsApproved && (
+          {order && !order.IsApproved && canApproveOrder && (
             <Button leftSection={<IconCheck size={16} />} loading={isSaving} variant="light" onClick={approveOrder}>
               {t('Погодити')}
             </Button>
@@ -499,7 +492,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                       {t('Оновити')}
                     </Button>
                   </Group>
-                ) : (
+                ) : canEditAmount ? (
                   <Button
                     disabled={isLocked}
                     leftSection={<IconPencil size={16} />}
@@ -508,7 +501,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   >
                     {t('Редагувати')}
                   </Button>
-                )}
+                ) : null}
               </Group>
             </Stack>
           </Card>

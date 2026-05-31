@@ -165,6 +165,13 @@ export type SupplyOrderDeliveryDocument = EntityFields & {
   ProcessedDate?: Date | string
 }
 
+export type CreditNoteDocument = SupplyOrderUkraineDocument & {
+  Amount?: number
+  Comment?: string
+  FromDate?: Date | string
+  Number?: string
+}
+
 export type SupplyProForm = EntityFields & {
   DateFrom?: Date | string
   Number?: string
@@ -186,6 +193,7 @@ export type DirectSupplyOrder = EntityFields & {
   OrderShippedDate?: Date | string
   Organization?: Organization | null
   Responsible?: User | null
+  CreditNoteDocuments?: CreditNoteDocument[]
   SupplyOrderDeliveryDocuments?: SupplyOrderDeliveryDocument[]
   SupplyOrderItems?: SupplyOrderItem[]
   SupplyInvoices?: SupplyInvoice[]
