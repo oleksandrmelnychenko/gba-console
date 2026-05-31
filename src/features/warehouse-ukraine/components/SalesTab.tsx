@@ -1,6 +1,8 @@
 import { ActionIcon, Alert, Anchor, Badge, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconChevronLeft,
+  IconChevronRight,
   IconDownload,
   IconFileText,
   IconPrinter,
@@ -70,6 +72,7 @@ function useSalesTabModel() {
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [salesState, dispatchSalesState] = useReducer(salesListReducer, INITIAL_SALES_STATE)
   const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
+  const [page, setPage] = useValueState(1)
   const [carrierSale, setCarrierSale] = useValueState<Sale | null>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<WarehouseUkraineExportDocument | null>(null)
@@ -104,7 +107,7 @@ function useSalesTabModel() {
           to: toDateString(activeFilters.to),
           value: activeFilters.value,
           limit: pageSize,
-          offset: 0,
+          offset: (page - 1) * pageSize,
         })
 
         if (!cancelled) {
@@ -125,7 +128,7 @@ function useSalesTabModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, t])
+  }, [activeFilters, filterError, page, pageSize, reloadKey, t])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -216,21 +219,34 @@ function useSalesTabModel() {
   )
 
   function applyFilters(nextFilters: FilterDraft) {
+    setPage(1)
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
   }
 
+  function changePageSize(nextValue: string | null) {
+    setPage(1)
+    setPageSize(Number(nextValue || DEFAULT_LIMIT))
+  }
+
+  const canMoveBack = page > 1
+  const canMoveForward = salesState.totalQty > 0
+    ? page * pageSize < salesState.totalQty
+    : salesState.sales.length === pageSize
+
   const columns = useSalesColumns({ indexMap: saleIndexMap, onPrint: printSale, onPrintActProtocolEdit: printActProtocolEdit, onOpenCarrier: setCarrierSale })
 
   return {
-    activeFilters, applyFilters, carrierSale, closeDownload, columns, downloadDocument, downloadError, downloadOpened,
-    error: salesState.error, filterDraft, filterError, isDownloading, isLoading: salesState.isLoading, pageSize,
-    reload, resetFilters, sales: salesState.sales, setCarrierSale, setPageSize, totalQty: salesState.totalQty,
+    activeFilters, applyFilters, canMoveBack, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
+    downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError, isDownloading,
+    isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: salesState.sales, setCarrierSale,
+    setPage, totalQty: salesState.totalQty,
   }
 }
 
@@ -319,14 +335,40 @@ export function SalesTab() {
             <Text c="dimmed" size="xs">
               {t('Показано')} {model.sales.length} / {model.totalQty}
             </Text>
-            <Select
-              aria-label={t('Кількість рядків')}
-              data={PAGE_SIZE_OPTIONS}
-              size="xs"
-              value={String(model.pageSize)}
-              w={96}
-              onChange={(value) => model.setPageSize(Number(value || DEFAULT_LIMIT))}
-            />
+            <Group gap={4} wrap="nowrap">
+              <Select
+                aria-label={t('Кількість рядків')}
+                data={PAGE_SIZE_OPTIONS}
+                disabled={model.isLoading}
+                size="xs"
+                value={String(model.pageSize)}
+                w={96}
+                onChange={model.changePageSize}
+              />
+              <Text c="dark" fw={700} size="xs" style={{ whiteSpace: 'nowrap' }}>
+                {t('стор.')} {model.page}
+              </Text>
+              <ActionIcon
+                aria-label={t('Попередня сторінка')}
+                color="gray"
+                disabled={!model.canMoveBack || model.isLoading}
+                size="sm"
+                variant="subtle"
+                onClick={() => model.setPage((current) => Math.max(1, current - 1))}
+              >
+                <IconChevronLeft size={16} />
+              </ActionIcon>
+              <ActionIcon
+                aria-label={t('Наступна сторінка')}
+                color="gray"
+                disabled={!model.canMoveForward || model.isLoading}
+                size="sm"
+                variant="subtle"
+                onClick={() => model.setPage((current) => current + 1)}
+              >
+                <IconChevronRight size={16} />
+              </ActionIcon>
+            </Group>
           </Group>
 
           <DataTable

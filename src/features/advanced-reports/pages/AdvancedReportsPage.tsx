@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -38,7 +38,7 @@ import type {
 } from '../types'
 
 const DEFAULT_LIMIT = 100
-const DEFAULT_OFFSET = 0
+const PAGE_SIZE_OPTIONS = ['50', '100', '200', '500']
 const SEARCH_DEBOUNCE_MS = 350
 
 const TABLE_DEFAULT_LAYOUT = {
@@ -72,6 +72,8 @@ export function AdvancedReportsPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
   const [currencyNetId, setCurrencyNetId] = useValueState('')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
@@ -114,8 +116,8 @@ export function AdvancedReportsPage() {
       const nextReports = await getAdvancedReports({
         currencyNetId,
         from: fromDate,
-        limit: DEFAULT_LIMIT,
-        offset: DEFAULT_OFFSET,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
         paymentMovementNetId,
         registerNetId: paymentRegisterNetId,
         to: toDate,
@@ -143,6 +145,8 @@ export function AdvancedReportsPage() {
     currencyNetId,
     fromDate,
     normalizedSearchValue,
+    page,
+    pageSize,
     paymentMovementNetId,
     paymentRegisterNetId,
     setError,
@@ -165,27 +169,36 @@ export function AdvancedReportsPage() {
   const isTableBusy = isLoading || isSearchSettling
 
   const resetFilters = useCallback(() => {
+    setPage(1)
     setFromDate(shiftDate(-7))
     setToDate(formatLocalDate(new Date()))
     setSearchValue('')
     setCurrencyNetId('')
     setPaymentRegisterNetId('')
     setPaymentMovementNetId('')
-  }, [setCurrencyNetId, setFromDate, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
+  }, [setCurrencyNetId, setFromDate, setPage, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
+
+  const changePageSize = useCallback((value: string | null) => {
+    setPage(1)
+    setPageSize(Number(value || DEFAULT_LIMIT))
+  }, [setPage, setPageSize])
+
+  const canMoveBack = page > 1
+  const canMoveForward = reports.Collection.length === pageSize
 
   return (
     <Stack gap="md">
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => { setPage(1); setFromDate(event.currentTarget.value) }} />
+          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => { setPage(1); setToDate(event.currentTarget.value) }} />
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, організація, отримувач або коментар')}
             value={searchValue}
             w={340}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            onChange={(event) => { setPage(1); setSearchValue(event.currentTarget.value) }}
           />
         </Group>
 
@@ -222,7 +235,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={currencyNetId || null}
           w={210}
-          onChange={(value) => setCurrencyNetId(value || '')}
+          onChange={(value) => { setPage(1); setCurrencyNetId(value || '') }}
         />
         <Select
           clearable
@@ -232,7 +245,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={260}
-          onChange={(value) => setPaymentRegisterNetId(value || '')}
+          onChange={(value) => { setPage(1); setPaymentRegisterNetId(value || '') }}
         />
         <Select
           clearable
@@ -242,7 +255,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentMovementNetId || null}
           w={300}
-          onChange={(value) => setPaymentMovementNetId(value || '')}
+          onChange={(value) => { setPage(1); setPaymentMovementNetId(value || '') }}
         />
       </Group>
 
@@ -252,19 +265,55 @@ export function AdvancedReportsPage() {
         </Alert>
       )}
 
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Завантажено')}: {reports.Collection.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Рядків')}: {rows.length}
-        </Badge>
-        <Badge color="green" variant="light">
-          {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
-        </Badge>
-        <Badge color="red" variant="light">
-          {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
-        </Badge>
+      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
+        <Group gap="xs" wrap="wrap">
+          <Badge color="violet" variant="light">
+            {t('Завантажено')}: {reports.Collection.length}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Рядків')}: {rows.length}
+          </Badge>
+          <Badge color="green" variant="light">
+            {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
+          </Badge>
+          <Badge color="red" variant="light">
+            {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
+          </Badge>
+        </Group>
+        <Group gap={4} wrap="nowrap">
+          <Select
+            aria-label={t('Розмір сторінки')}
+            data={PAGE_SIZE_OPTIONS}
+            disabled={isTableBusy}
+            size="xs"
+            value={String(pageSize)}
+            w={80}
+            onChange={changePageSize}
+          />
+          <Text c="dark" fw={700} size="xs" style={{ whiteSpace: 'nowrap' }}>
+            {t('стор.')} {page}
+          </Text>
+          <ActionIcon
+            aria-label={t('Попередня сторінка')}
+            color="gray"
+            disabled={!canMoveBack || isTableBusy}
+            size="sm"
+            variant="subtle"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+          >
+            <IconChevronLeft size={16} />
+          </ActionIcon>
+          <ActionIcon
+            aria-label={t('Наступна сторінка')}
+            color="gray"
+            disabled={!canMoveForward || isTableBusy}
+            size="sm"
+            variant="subtle"
+            onClick={() => setPage((current) => current + 1)}
+          >
+            <IconChevronRight size={16} />
+          </ActionIcon>
+        </Group>
       </Group>
 
       <DataTable
