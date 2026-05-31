@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { IncomePackingList, IncomeStorage, IncomeSupplyInvoice } from '../productIncomeTypes'
+import type { IncomeAuditEntity, IncomePackingList, IncomeStorage, IncomeSupplyInvoice } from '../productIncomeTypes'
 
 function normalizeInvoice(result: unknown): IncomeSupplyInvoice {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
@@ -109,6 +109,20 @@ export async function getOrganizationStorages(organizationNetId: string): Promis
   return normalizeStorages(result)
 }
 
+export async function getSupplyOrderItemAudit(supplyOrderItemNetId: string): Promise<IncomeAuditEntity[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/items/history/get', {
+    query: {
+      netId: supplyOrderItemNetId,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити історію ваги',
+      network: 'Сервер історії ваги недоступний',
+    },
+  })
+
+  return normalizeArray(result) as IncomeAuditEntity[]
+}
+
 function normalizeStorages(result: unknown): IncomeStorage[] {
   if (Array.isArray(result)) {
     return result as IncomeStorage[]
@@ -123,6 +137,22 @@ function normalizeStorages(result: unknown): IncomeStorage[] {
 
     if (Array.isArray(payload.Storages)) {
       return payload.Storages as IncomeStorage[]
+    }
+  }
+
+  return []
+}
+
+function normalizeArray(result: unknown): unknown[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  if (result && typeof result === 'object') {
+    const payload = result as Record<string, unknown>
+
+    if (Array.isArray(payload.Items)) {
+      return payload.Items
     }
   }
 

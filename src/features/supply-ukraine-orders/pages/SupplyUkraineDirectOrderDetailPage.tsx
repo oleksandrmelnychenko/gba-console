@@ -4,12 +4,17 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
+  FileButton,
   Group,
   Loader,
+  NumberInput,
   SegmentedControl,
   SimpleGrid,
   Stack,
   Text,
+  Textarea,
+  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -20,17 +25,24 @@ import {
   IconFileInvoice,
   IconListDetails,
   IconPackageImport,
+  IconPencil,
   IconRefresh,
+  IconRestore,
   IconRoute,
+  IconTrash,
+  IconUpload,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   getDirectSupplyOrderById,
   updateDirectSupplyOrder,
+  uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
 import type {
   DirectSupplyOrder,
@@ -59,8 +71,14 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const [isSaving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [transportationType, setTransportationType] = useState('0')
+  const [isEditingAmount, setEditingAmount] = useState(false)
+  const [amountValue, setAmountValue] = useState<number | string>('')
+  const [dateValue, setDateValue] = useState('')
+  const [statusDocument, setStatusDocument] = useState<SupplyOrderDeliveryDocument | null>(null)
+  const [statusComment, setStatusComment] = useState('')
+  const [statusReceived, setStatusReceived] = useState(true)
   const hasInvoices = (order?.SupplyInvoices?.length || 0) > 0
-  const documentColumns = useDeliveryDocumentColumns()
+  const isLocked = Boolean(order?.IsOrderShipped) || Boolean(order?.IsCompleted)
 
   useEffect(() => {
     let cancelled = false
@@ -81,6 +99,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         if (!cancelled) {
           setOrder(nextOrder)
           setTransportationType(String(nextOrder?.TransportationType ?? 0))
+          syncAmountInputs(nextOrder)
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -113,11 +132,18 @@ export function SupplyUkraineDirectOrderDetailPage() {
       const nextOrder = await getDirectSupplyOrderById(id)
       setOrder(nextOrder)
       setTransportationType(String(nextOrder?.TransportationType ?? 0))
+      syncAmountInputs(nextOrder)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
     } finally {
       setLoading(false)
     }
+  }
+
+  function syncAmountInputs(nextOrder: DirectSupplyOrder | null) {
+    setAmountValue(typeof nextOrder?.NetPrice === 'number' ? nextOrder.NetPrice : '')
+    setDateValue(toDateTimeInput(nextOrder?.DateFrom))
+    setEditingAmount(false)
   }
 
   async function savePatch(patch: Partial<DirectSupplyOrder>, successMessage: string) {
@@ -134,12 +160,104 @@ export function SupplyUkraineDirectOrderDetailPage() {
       if (updated) {
         setTransportationType(String(updated.TransportationType ?? 0))
       }
+      syncAmountInputs(updated)
       notifications.show({ color: 'green', message: successMessage })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти замовлення'))
     } finally {
       setSaving(false)
     }
+  }
+
+  function saveAmount() {
+    const amount = Number(amountValue)
+
+    if (!amount || amount <= 0) {
+      setError(t('Введіть суму замовлення'))
+      return
+    }
+
+    const isoDate = dateValue ? new Date(dateValue).toISOString() : undefined
+
+    savePatch({ DateFrom: isoDate, NetPrice: amount }, t('Замовлення оновлено'))
+  }
+
+  function cancelAmountEdit() {
+    syncAmountInputs(order)
+  }
+
+  async function uploadDocumentFile(document: SupplyOrderDeliveryDocument, file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const formData = new FormData()
+
+      formData.append('document', file)
+      formData.append('entity', JSON.stringify({
+        ...document,
+        ContentType: file.type,
+        FileName: file.name,
+      }))
+
+      await uploadSupplyOrderDocument(formData)
+      await reloadOrder()
+      notifications.show({ color: 'green', message: t('Документ завантажено') })
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити документ'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function openStatusModal(document: SupplyOrderDeliveryDocument) {
+    setStatusDocument(document)
+    setStatusComment(document.Comment || '')
+    setStatusReceived(document.IsReceived ?? true)
+  }
+
+  function closeStatusModal() {
+    setStatusDocument(null)
+    setStatusComment('')
+    setStatusReceived(true)
+  }
+
+  function saveDocumentStatus() {
+    if (!order || !statusDocument) {
+      return
+    }
+
+    const documents = (order.SupplyOrderDeliveryDocuments || []).map((document) =>
+      isSameDocument(document, statusDocument)
+        ? {
+          ...document,
+          Comment: statusComment,
+          IsProcessed: true,
+          IsReceived: statusReceived,
+          ProcessedDate: new Date().toISOString(),
+        }
+        : document)
+
+    closeStatusModal()
+    savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Зміна статуса документа'))
+  }
+
+  function setDocumentDeleted(document: SupplyOrderDeliveryDocument, deleted: boolean) {
+    if (!order) {
+      return
+    }
+
+    const documents = (order.SupplyOrderDeliveryDocuments || []).map((current) =>
+      isSameDocument(current, document) ? { ...current, Deleted: deleted } : current)
+
+    savePatch(
+      { SupplyOrderDeliveryDocuments: documents },
+      deleted ? t('Документ видалено') : t('Документ відновлено'),
+    )
   }
 
   function saveTransportationType() {
@@ -151,6 +269,118 @@ export function SupplyUkraineDirectOrderDetailPage() {
   function approveOrder() {
     savePatch({ IsApproved: true }, t('Замовлення погоджено'))
   }
+
+  const documentColumns = useMemo<DataTableColumn<SupplyOrderDeliveryDocument>[]>(
+    () => [
+      {
+        id: 'name',
+        header: t('Документ'),
+        minWidth: 220,
+        accessor: (document) => document.Name || document.FileName,
+        cell: (document) => document.DocumentUrl
+          ? <a className="document-link" href={document.DocumentUrl} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
+          : document.Name || document.FileName || '-',
+      },
+      {
+        id: 'fileName',
+        header: t('Файл'),
+        minWidth: 220,
+        accessor: (document) => document.FileName,
+        cell: (document) => document.FileName || '-',
+      },
+      {
+        id: 'processed',
+        header: t('Опрацьовано'),
+        width: 130,
+        accessor: (document) => document.IsProcessed,
+        cell: (document) => statusBadge(t('Так'), document.IsProcessed),
+      },
+      {
+        id: 'received',
+        header: t('Отримано'),
+        width: 130,
+        accessor: (document) => document.IsReceived,
+        cell: (document) => statusBadge(t('Так'), document.IsReceived),
+      },
+      {
+        id: 'processedDate',
+        header: t('Дата'),
+        width: 150,
+        accessor: (document) => document.ProcessedDate,
+        cell: (document) => formatDateTime(document.ProcessedDate),
+      },
+      {
+        id: 'comment',
+        header: t('Коментар'),
+        minWidth: 200,
+        accessor: (document) => document.Comment,
+        cell: (document) => document.Comment || '-',
+      },
+      {
+        id: 'actions',
+        header: t('Дії'),
+        width: 200,
+        accessor: (document) => document.NetUid,
+        cell: (document) => (
+          <Group gap={4} wrap="nowrap">
+            <FileButton onChange={(file) => uploadDocumentFile(document, file)}>
+              {(fileProps) => (
+                <Tooltip label={t('Завантажити файл')}>
+                  <ActionIcon
+                    {...fileProps}
+                    aria-label={t('Завантажити файл')}
+                    color="blue"
+                    disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
+                    variant="light"
+                  >
+                    <IconUpload size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </FileButton>
+            <Tooltip label={t('Зміна статуса документа')}>
+              <ActionIcon
+                aria-label={t('Зміна статуса документа')}
+                color="teal"
+                disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
+                variant="light"
+                onClick={() => openStatusModal(document)}
+              >
+                <IconCheck size={16} />
+              </ActionIcon>
+            </Tooltip>
+            {document.Deleted ? (
+              <Tooltip label={t('Відновити')}>
+                <ActionIcon
+                  aria-label={t('Відновити')}
+                  color="gray"
+                  disabled={isSaving || isLocked}
+                  variant="light"
+                  onClick={() => setDocumentDeleted(document, false)}
+                >
+                  <IconRestore size={16} />
+                </ActionIcon>
+              </Tooltip>
+            ) : (
+              <Tooltip label={t('Видалити')}>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  disabled={isSaving || isLocked}
+                  variant="light"
+                  onClick={() => setDocumentDeleted(document, true)}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, isSaving, isLocked, order],
+  )
 
   return (
     <Stack gap="lg">
@@ -242,6 +472,44 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   {t('Зберегти')}
                 </Button>
               </Group>
+
+              <Group align="flex-end" gap="sm" wrap="wrap">
+                <NumberInput
+                  allowNegative={false}
+                  decimalScale={2}
+                  disabled={!isEditingAmount || isSaving}
+                  label={t('Сума замовлення')}
+                  min={0}
+                  value={amountValue}
+                  onChange={setAmountValue}
+                />
+                <TextInput
+                  disabled={!isEditingAmount || isSaving}
+                  label={t('Від якої дати')}
+                  type="datetime-local"
+                  value={dateValue}
+                  onChange={(event) => setDateValue(event.currentTarget.value)}
+                />
+                {isEditingAmount ? (
+                  <Group gap="xs">
+                    <Button color="gray" disabled={isSaving} variant="light" onClick={cancelAmountEdit}>
+                      {t('Скасувати')}
+                    </Button>
+                    <Button loading={isSaving} variant="light" onClick={saveAmount}>
+                      {t('Оновити')}
+                    </Button>
+                  </Group>
+                ) : (
+                  <Button
+                    disabled={isLocked}
+                    leftSection={<IconPencil size={16} />}
+                    variant="light"
+                    onClick={() => setEditingAmount(true)}
+                  >
+                    {t('Редагувати')}
+                  </Button>
+                )}
+              </Group>
             </Stack>
           </Card>
 
@@ -296,6 +564,38 @@ export function SupplyUkraineDirectOrderDetailPage() {
       ) : (
         <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
       )}
+
+      <AppModal
+        opened={Boolean(statusDocument)}
+        title={t('Зміна статуса документа')}
+        onClose={closeStatusModal}
+      >
+        <Stack gap="md">
+          <Text fw={600} size="sm">
+            {statusDocument?.Name || statusDocument?.FileName || t('Документ')}
+          </Text>
+          <Checkbox
+            checked={statusReceived}
+            label={t('Отримано')}
+            onChange={(event) => setStatusReceived(event.currentTarget.checked)}
+          />
+          <Textarea
+            autosize
+            label={t('Коментар')}
+            minRows={3}
+            value={statusComment}
+            onChange={(event) => setStatusComment(event.currentTarget.value)}
+          />
+          <Group justify="flex-end" gap="xs">
+            <Button color="gray" disabled={isSaving} variant="light" onClick={closeStatusModal}>
+              {t('Скасувати')}
+            </Button>
+            <Button loading={isSaving} variant="light" onClick={saveDocumentStatus}>
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -309,58 +609,26 @@ function InfoBlock({ label, value }: { label: string, value: string }) {
   )
 }
 
-function useDeliveryDocumentColumns(): DataTableColumn<SupplyOrderDeliveryDocument>[] {
-  const { t } = useI18n()
+function isSameDocument(a: SupplyOrderDeliveryDocument, b: SupplyOrderDeliveryDocument): boolean {
+  if (a.NetUid && b.NetUid) {
+    return a.NetUid === b.NetUid
+  }
 
-  return useMemo<DataTableColumn<SupplyOrderDeliveryDocument>[]>(
-    () => [
-      {
-        id: 'name',
-        header: t('Документ'),
-        minWidth: 220,
-        accessor: (document) => document.Name || document.FileName,
-        cell: (document) => document.DocumentUrl
-          ? <a className="document-link" href={document.DocumentUrl} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
-          : document.Name || document.FileName || '-',
-      },
-      {
-        id: 'fileName',
-        header: t('Файл'),
-        minWidth: 220,
-        accessor: (document) => document.FileName,
-        cell: (document) => document.FileName || '-',
-      },
-      {
-        id: 'processed',
-        header: t('Опрацьовано'),
-        width: 130,
-        accessor: (document) => document.IsProcessed,
-        cell: (document) => statusBadge(t('Так'), document.IsProcessed),
-      },
-      {
-        id: 'received',
-        header: t('Отримано'),
-        width: 130,
-        accessor: (document) => document.IsReceived,
-        cell: (document) => statusBadge(t('Так'), document.IsReceived),
-      },
-      {
-        id: 'processedDate',
-        header: t('Дата'),
-        width: 150,
-        accessor: (document) => document.ProcessedDate,
-        cell: (document) => formatDateTime(document.ProcessedDate),
-      },
-      {
-        id: 'comment',
-        header: t('Коментар'),
-        minWidth: 220,
-        accessor: (document) => document.Comment,
-        cell: (document) => document.Comment || '-',
-      },
-    ],
-    [t],
-  )
+  if (typeof a.Id === 'number' && typeof b.Id === 'number') {
+    return a.Id === b.Id
+  }
+
+  return a === b
+}
+
+function toDateTimeInput(value?: Date | string): string {
+  if (!value) {
+    return ''
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? '' : formatLocalDateTime(date).slice(0, 16)
 }
 
 function statusBadge(label: string, value?: boolean) {

@@ -34,8 +34,26 @@ export type IncomeStorage = EntityFields & {
   Organization?: IncomeOrganization | null
 }
 
+export type IncomeSupplyOrderItem = EntityFields & {
+  Number?: string
+}
+
 export type IncomeSupplyInvoiceOrderItem = EntityFields & {
   Product?: IncomeProduct | null
+  SupplyOrderItem?: IncomeSupplyOrderItem | null
+}
+
+export type IncomeAuditEntityProperty = {
+  Name?: string
+  Value?: string
+}
+
+export type IncomeAuditEntity = EntityFields & {
+  NewValues?: IncomeAuditEntityProperty[]
+  OldValues?: IncomeAuditEntityProperty[]
+  Type?: number | string
+  UpdatedBy?: string
+  UpdatedByNetUid?: string
 }
 
 export type DynamicProductPlacement = EntityFields & {

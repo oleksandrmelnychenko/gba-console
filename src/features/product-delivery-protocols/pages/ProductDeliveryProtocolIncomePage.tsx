@@ -1,19 +1,37 @@
-import { ActionIcon, Alert, Button, Card, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Box,
+  Button,
+  Card,
+  Checkbox,
+  Group,
+  Loader,
+  NumberInput,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Tooltip,
+} from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconHistory, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
   createUkraineProductIncomeFromDynamic,
   getOrganizationStorages,
   getPackingListSpecificationProducts,
+  getSupplyOrderItemAudit,
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
   markOrderItemReadyToPlace,
@@ -23,6 +41,7 @@ import {
 import { NewIncomeDynamicColumnModal } from '../components/NewIncomeDynamicColumnModal'
 import { ProtocolIncomePlacementDrawer } from '../components/ProtocolIncomePlacementDrawer'
 import type {
+  IncomeAuditEntity,
   DynamicProductPlacement,
   DynamicProductPlacementColumn,
   DynamicProductPlacementRow,
@@ -35,6 +54,10 @@ import type {
 } from '../productIncomeTypes'
 
 const DEFAULT_VAT_PERCENT = 23
+const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
+const PERMISSION_CAPITALIZE_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CapitalizeBtn_PKEY'
+const PERMISSION_CARRY_OUT_DYNAMIC_INCOME = 'PRODUCT_INCOME_ordersUkraineAllEdit_CarryOutBtn_PKEY'
+const PERMISSION_VIEW_WEIGHT_HISTORY = 'PRODUCT_INCOME_ordersUkraineAllEdit_historyOfChangesInWeight_PKEY'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
@@ -46,6 +69,14 @@ function formatDate(value?: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
 
   return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date)
+}
+
+function displayValue(value?: number | string | null): string {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    return '-'
+  }
+
+  return String(value)
 }
 
 function columnKey(column: DynamicProductPlacementColumn): string {
@@ -720,12 +751,153 @@ function toIso(value: string): string {
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
+type WeightAuditDrawerProps = {
+  item: PackingListPackageOrderItem | null
+  opened: boolean
+  onClose: () => void
+}
+
+type WeightAuditState = {
+  entries: IncomeAuditEntity[]
+  error: string | null
+  isLoading: boolean
+}
+
+function WeightAuditDrawer({ item, opened, onClose }: WeightAuditDrawerProps) {
+  const { t } = useI18n()
+  const [auditState, setAuditState] = useValueState<WeightAuditState>({
+    entries: [],
+    error: null,
+    isLoading: false,
+  })
+  const supplyOrderItemNetUid = item?.SupplyInvoiceOrderItem?.SupplyOrderItem?.NetUid?.trim()
+  const productCode = item?.SupplyInvoiceOrderItem?.Product?.VendorCode || ''
+
+  useEffect(() => {
+    if (!opened) {
+      setAuditState({ entries: [], error: null, isLoading: false })
+      return
+    }
+
+    if (!supplyOrderItemNetUid) {
+      setAuditState({ entries: [], error: t('Немає NetUid позиції замовлення для історії ваги'), isLoading: false })
+      return
+    }
+
+    let cancelled = false
+
+    async function loadAudit() {
+      setAuditState({ entries: [], error: null, isLoading: true })
+
+      try {
+        const nextEntries = await getSupplyOrderItemAudit(supplyOrderItemNetUid as string)
+
+        if (!cancelled) {
+          setAuditState({ entries: nextEntries, error: null, isLoading: false })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setAuditState({
+            entries: [],
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити історію ваги'),
+            isLoading: false,
+          })
+        }
+      }
+    }
+
+    void loadAudit()
+
+    return () => {
+      cancelled = true
+    }
+  }, [opened, setAuditState, supplyOrderItemNetUid, t])
+
+  return (
+    <AppDrawer
+      opened={opened}
+      size="md"
+      title={`${t('Історія ваги')}${productCode ? ` ${productCode}` : ''}`}
+      onClose={onClose}
+    >
+      <Stack gap="md">
+        {auditState.error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {auditState.error}
+          </Alert>
+        )}
+        {auditState.isLoading ? (
+          <Group gap="xs">
+            <Loader size="xs" />
+            <Text c="dimmed" size="sm">
+              {t('Завантаження історії ваги')}
+            </Text>
+          </Group>
+        ) : auditState.entries.length === 0 && !auditState.error ? (
+          <Text c="dimmed" size="sm">
+            {t('Історію змін не знайдено')}
+          </Text>
+        ) : !auditState.error ? (
+          <Stack gap="xs">
+            {auditState.entries.map((entry, index) => (
+              <Box
+                key={`${entry.NetUid || entry.Id || index}`}
+                style={{
+                  border: '1px solid var(--mantine-color-gray-2)',
+                  borderRadius: 6,
+                  padding: '8px 10px',
+                }}
+              >
+                <Group gap="xs" justify="space-between" wrap="nowrap">
+                  <Text fw={600} size="sm">
+                    {displayValue(entry.Type)}
+                  </Text>
+                  <Text c="dimmed" size="xs">
+                    {formatDate(entry.Created)}
+                  </Text>
+                </Group>
+                <Stack gap={2} mt={6}>
+                  <Text c="dimmed" size="xs">
+                    {t('Нові значення')}
+                  </Text>
+                  {(entry.NewValues || []).map((value, valueIndex) => (
+                    <Text key={`${value.Name || 'new'}-${valueIndex}`} size="sm" style={{ overflowWrap: 'anywhere' }}>
+                      {displayValue(value.Name)}: {displayValue(value.Value)}
+                    </Text>
+                  ))}
+                  <Text c="dimmed" mt={4} size="xs">
+                    {t('Старі значення')}
+                  </Text>
+                  {(entry.OldValues || []).map((value, valueIndex) => (
+                    <Text key={`${value.Name || 'old'}-${valueIndex}`} size="sm" style={{ overflowWrap: 'anywhere' }}>
+                      {displayValue(value.Name)}: {displayValue(value.Value)}
+                    </Text>
+                  ))}
+                </Stack>
+                <Text c="dimmed" mt={6} size="xs">
+                  {t('Користувач')}: {displayValue(entry.UpdatedBy)}
+                </Text>
+              </Box>
+            ))}
+          </Stack>
+        ) : null}
+      </Stack>
+    </AppDrawer>
+  )
+}
+
 export function ProductDeliveryProtocolIncomePage() {
   const model = useProtocolIncomeModel()
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const [auditItem, setAuditItem] = useValueState<PackingListPackageOrderItem | null>(null)
 
   const isPlaced = Boolean(model.packingList?.IsPlaced)
   const hasColumns = (model.packingList?.DynamicProductPlacementColumns.length || 0) > 0
+  const canAddDynamicColumn = hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
+  const canCapitalizeDynamicIncome = hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
+  const canCarryOutDynamicIncome = hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
+  const canViewWeightHistory = hasPermission(PERMISSION_VIEW_WEIGHT_HISTORY)
 
   const columns = useMemo<DataTableColumn<IncomeGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<IncomeGridRow>[] = [
@@ -766,25 +938,41 @@ export function ProductDeliveryProtocolIncomePage() {
       {
         id: 'netWeight',
         header: t('Вага Нетто'),
-        width: 120,
+        width: 150,
         align: 'right',
         enableSorting: false,
         cell: (gridRow) => (
-          <NumberInput
-            allowDecimal
-            decimalScale={3}
-            disabled={isPlaced}
-            hideControls
-            size="xs"
-            value={Number((gridRow.item.NetWeight || 0).toFixed(3))}
-            w={100}
-            onBlur={(event) => {
-              const nextValue = Number(event.currentTarget.value)
-              if (nextValue !== (gridRow.item.NetWeight || 0)) {
-                model.handleNetWeightChange(gridRow.item, nextValue)
-              }
-            }}
-          />
+          <Group gap={4} justify="flex-end" wrap="nowrap">
+            <NumberInput
+              allowDecimal
+              decimalScale={3}
+              disabled={isPlaced}
+              hideControls
+              size="xs"
+              value={Number((gridRow.item.NetWeight || 0).toFixed(3))}
+              w={92}
+              onBlur={(event) => {
+                const nextValue = Number(event.currentTarget.value)
+                if (nextValue !== (gridRow.item.NetWeight || 0)) {
+                  model.handleNetWeightChange(gridRow.item, nextValue)
+                }
+              }}
+            />
+            {canViewWeightHistory && (
+              <Tooltip label={t('Історія ваги')}>
+                <ActionIcon
+                  aria-label={t('Історія ваги')}
+                  color="gray"
+                  disabled={!gridRow.item.SupplyInvoiceOrderItem?.SupplyOrderItem?.NetUid}
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => setAuditItem(gridRow.item)}
+                >
+                  <IconHistory size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </Group>
         ),
       },
       {
@@ -932,7 +1120,7 @@ export function ProductDeliveryProtocolIncomePage() {
     })
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [isPlaced, model, t])
+  }, [canViewWeightHistory, isPlaced, model, setAuditItem, t])
 
   const protocolNumber = model.protocol?.DeliveryProductProtocolNumber?.Number || ''
 
@@ -1030,7 +1218,7 @@ export function ProductDeliveryProtocolIncomePage() {
           <Button disabled={model.isDirty} variant="light" onClick={() => void model.handleCalculateVat()}>
             {t('Розрахувати ПДВ')}
           </Button>
-          {!isPlaced && (
+          {!isPlaced && canAddDynamicColumn && (
             <Button disabled={model.isDirty} variant="light" onClick={() => model.setColumnModalOpen(true)}>
               {t('Додати')}
             </Button>
@@ -1040,12 +1228,12 @@ export function ProductDeliveryProtocolIncomePage() {
               {t('Всі товари готові до оприходування')}
             </Button>
           )}
-          {!isPlaced && hasColumns && (
+          {!isPlaced && hasColumns && canCapitalizeDynamicIncome && (
             <Button disabled={model.isDirty} variant="light" onClick={() => void model.handleProductIncome()}>
               {t('Оприходувати')}
             </Button>
           )}
-          {!isPlaced && hasColumns && (
+          {!isPlaced && hasColumns && canCarryOutDynamicIncome && (
             <Button disabled={model.isDirty} variant="light" onClick={() => model.setConfirmCarryOut(true)}>
               {t('Провести')}
             </Button>
@@ -1122,6 +1310,8 @@ export function ProductDeliveryProtocolIncomePage() {
         onApply={model.handleApplyPlacements}
         onClose={() => model.setDrawer(null)}
       />
+
+      <WeightAuditDrawer item={auditItem} opened={Boolean(auditItem)} onClose={() => setAuditItem(null)} />
 
       <AppModal
         opened={Boolean(model.columnToRemove)}

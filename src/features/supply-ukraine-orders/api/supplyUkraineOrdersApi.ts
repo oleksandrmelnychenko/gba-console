@@ -77,6 +77,15 @@ export async function updateDirectSupplyOrder(order: DirectSupplyOrder): Promise
   return normalizeDirectSupplyOrder(result)
 }
 
+export async function uploadSupplyOrderDocument(formData: FormData): Promise<DirectSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/documents/upload', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
 export async function getSupplyOrderItems(netId: string): Promise<SupplyOrderItem[]> {
   const result = await apiRequest<unknown>('/supplies/orders/items/all/order', {
     query: { netId },

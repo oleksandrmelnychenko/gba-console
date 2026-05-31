@@ -156,6 +156,7 @@ export type SupplyInvoice = EntityFields & {
 export type SupplyOrderDeliveryDocument = EntityFields & {
   Comment?: string
   ContentType?: string
+  Deleted?: boolean
   DocumentUrl?: string
   FileName?: string
   IsProcessed?: boolean
@@ -180,6 +181,7 @@ export type DirectSupplyOrder = EntityFields & {
   IsOrderArrived?: boolean
   IsOrderShipped?: boolean
   IsPlaced?: boolean
+  NetPrice?: number
   OrderArrivedDate?: Date | string
   OrderShippedDate?: Date | string
   Organization?: Organization | null
