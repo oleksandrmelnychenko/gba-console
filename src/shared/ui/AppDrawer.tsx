@@ -81,7 +81,18 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
  */
 export function AppDrawer({ position = 'right', size, children, ...props }: DrawerProps) {
   return (
-    <Drawer {...props} padding="lg" position={position} size={resolveSheetWidth(size)}>
+    <Drawer
+      {...props}
+      padding="lg"
+      position={position}
+      size={resolveSheetWidth(size)}
+      styles={{
+        // Mantine zeroes the body's top padding when a header is present; force
+        // uniform padding on all four sides so every sheet has consistent
+        // breathing room (top / bottom / left / right), regardless of content.
+        body: { padding: 'var(--mantine-spacing-lg)' },
+      }}
+    >
       {children}
     </Drawer>
   )
