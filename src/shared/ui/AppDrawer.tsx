@@ -87,6 +87,16 @@ export function AppDrawer({ position = 'right', size, children, ...props }: Draw
       position={position}
       size={resolveSheetWidth(size)}
       styles={{
+        // Floating-sheet chrome applied inline so it always wins over Mantine's
+        // own content styles regardless of CSS import order: a small gap on
+        // top/right/bottom and rounded corners.
+        content: {
+          margin: '8px 8px 8px 0',
+          height: 'calc(100% - 16px)',
+          maxWidth: 'calc(100vw - 8px)',
+          borderRadius: 14,
+          overflow: 'hidden',
+        },
         // Mantine zeroes the body's top padding when a header is present; force
         // uniform padding on all four sides so every sheet has consistent
         // breathing room (top / bottom / left / right), regardless of content.
