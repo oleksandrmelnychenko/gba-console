@@ -1,20 +1,19 @@
 import {
   Alert,
   Button,
-  Card,
   Group,
   Select,
   SimpleGrid,
   Stack,
-  Text,
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useAuth } from '../../auth/useAuth'
 import {
   createCompanyCar,
@@ -196,44 +195,18 @@ export function CompanyCarFormPage() {
   }
 
   return (
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <Text fw={700} size="xl">
-                {isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
-              </Text>
-
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-                  {t('Назад')}
-                </Button>
-                {isEditMode && (
-                  <Button
-                    color="red"
-                    disabled={isLoading || !companyCar.NetUid}
-                    leftSection={<IconTrash size={16} />}
-                    loading={isDeleting}
-                    type="button"
-                    variant="light"
-                    onClick={handleDelete}
-                  >
-                    {t('Видалити')}
-                  </Button>
-                )}
-                <Button
-                  color="violet"
-                  disabled={isLoading || !canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
-
+    <AppDrawer
+      opened
+      closeOnClickOutside={!isSaving && !isDeleting}
+      keepMounted={false}
+      padding="lg"
+      position="right"
+      size="min(720px, 100vw)"
+      title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
             {error && (
               <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
                 {error}
@@ -307,10 +280,34 @@ export function CompanyCarFormPage() {
                 onChange={(event) => setForm((current) => ({ ...current, mixedModeConsumption: event.currentTarget.value }))}
               />
             </SimpleGrid>
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+
+            <Group justify="flex-end" gap="xs">
+              {isEditMode && (
+                <Button
+                  color="red"
+                  disabled={isLoading || !companyCar.NetUid}
+                  leftSection={<IconTrash size={16} />}
+                  loading={isDeleting}
+                  type="button"
+                  variant="light"
+                  onClick={handleDelete}
+                >
+                  {t('Видалити')}
+                </Button>
+              )}
+              <Button
+                color="violet"
+                disabled={isLoading || !canSave}
+                leftSection={<IconDeviceFloppy size={16} />}
+                loading={isSaving}
+                type="submit"
+              >
+                {t('Зберегти')}
+              </Button>
+            </Group>
+        </Stack>
+      </form>
+    </AppDrawer>
   )
 }
 
