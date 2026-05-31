@@ -7,6 +7,7 @@ import {
   OrganizationClientEditPage,
   OrganizationClientNewPage,
   ProductGroupDetailPage,
+  SupplierOrganizationEditPage,
   UserEditPage,
   UserNewPage,
 } from './routes/lazyConsolePages'
@@ -52,6 +53,8 @@ export function App() {
             <Route path="/suppliers/edit/:netid" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/organization-clients/new" element={lazyRoute(<OrganizationClientNewPage />)} />
             <Route path="/organization-clients/edit/:netId" element={lazyRoute(<OrganizationClientEditPage />)} />
+            <Route path="/accounting/supplier-organizations/new" element={lazyRoute(<SupplierOrganizationEditPage />)} />
+            <Route path="/accounting/supplier-organizations/edit/:id" element={lazyRoute(<SupplierOrganizationEditPage />)} />
             <Route path="/product-groups/:id" element={lazyRoute(<ProductGroupDetailPage />)} />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />
             <Route path="/users/new" element={lazyRoute(<UserNewPage />)} />

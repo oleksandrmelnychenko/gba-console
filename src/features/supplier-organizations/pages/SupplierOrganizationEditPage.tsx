@@ -3,14 +3,15 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
   Divider,
   FileInput,
+  Grid,
   Group,
   Select,
   SimpleGrid,
   Stack,
-  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -18,7 +19,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconDeviceFloppy,
   IconFile,
   IconFileTypePdf,
@@ -30,7 +30,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { type Location, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -77,6 +77,8 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function SupplierOrganizationEditPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
+  const backgroundLocation = (location.state as { backgroundLocation?: Location } | null)?.backgroundLocation
   const { id } = useParams()
   const isNew = !id
   const [organization, setOrganization] = useValueState<SupplyOrganization>(() => createEmptySupplyOrganization())
@@ -193,7 +195,10 @@ export function SupplierOrganizationEditPage() {
         setOrganization(savedOrganization)
 
         if (isNew && savedOrganization.NetUid) {
-          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true })
+          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, {
+            replace: true,
+            state: backgroundLocation ? { backgroundLocation } : undefined,
+          })
         }
       }
     } catch (saveError) {
@@ -226,16 +231,33 @@ export function SupplierOrganizationEditPage() {
   }
 
   const tabsDisabled = !organization.Id
+  const sections = [
+    { value: 'general', label: t('Загальна інформація'), disabled: false },
+    { value: 'agreements', label: t('Договори'), disabled: tabsDisabled },
+    { value: 'bank', label: t('Банківські реквізити'), disabled: tabsDisabled },
+    { value: 'contact', label: t('Контактна особа'), disabled: tabsDisabled },
+  ]
+  const activeSection = sections.find((section) => section.value === activeTab && !section.disabled) || sections[0]
+
+  function closeSheet() {
+    if (isSaving || isDeleting) {
+      return
+    }
+
+    navigate(backgroundLocation ?? '/accounting/supplier-organizations')
+  }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="center" gap="sm">
-        <Group gap="xs">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={() => navigate('/accounting/supplier-organizations')}>
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
+    <AppDrawer
+      opened
+      closeOnClickOutside={!isSaving && !isDeleting}
+      keepMounted={false}
+      position="right"
+      size="min(980px, 100vw)"
+      onClose={closeSheet}
+    >
+      <Stack gap="lg">
+        <Group justify="space-between" align="center" gap="sm">
           <Stack gap={0}>
             <Text fw={700} size="lg">
               {organization.Id ? t('Редагувати постачальника послуг') : t('Новий постачальник послуг')}
@@ -244,79 +266,91 @@ export function SupplierOrganizationEditPage() {
               {displayValue(organization.Name)}
             </Text>
           </Stack>
-        </Group>
-        <Group gap="xs">
-          {!isNew && (
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
-                <IconRefresh size={18} />
+          <Group gap="xs">
+            {!isNew && (
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
+              {!isNew && (
+                <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
+                  {t('Видалити')}
+                </Button>
+              )}
+            </PermissionGate>
+            <Tooltip label={t('Закрити')}>
+              <ActionIcon aria-label={t('Закрити')} color="gray" size={38} variant="light" onClick={closeSheet}>
+                <IconX size={18} />
               </ActionIcon>
             </Tooltip>
-          )}
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
-            {!isNew && (
-              <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
-                {t('Видалити')}
-              </Button>
-            )}
-          </PermissionGate>
+          </Group>
         </Group>
-      </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
-        <Tabs.List>
-          <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
-          <Tabs.Tab value="agreements" disabled={tabsDisabled}>
-            {t('Договори')}
-          </Tabs.Tab>
-          <Tabs.Tab value="bank" disabled={tabsDisabled}>
-            {t('Банківські реквізити')}
-          </Tabs.Tab>
-          <Tabs.Tab value="contact" disabled={tabsDisabled}>
-            {t('Контактна особа')}
-          </Tabs.Tab>
-        </Tabs.List>
+        <Grid gap="md">
+          <Grid.Col span={{ base: 12, lg: 3 }}>
+            <Card withBorder radius="md" padding="md">
+              <Stack gap="xs">
+                {sections.map((section) => (
+                  <Button
+                    key={section.value}
+                    color={section.value === activeSection.value ? 'violet' : 'gray'}
+                    disabled={section.disabled}
+                    justify="flex-start"
+                    variant={section.value === activeSection.value ? 'light' : 'subtle'}
+                    onClick={() => setActiveTab(section.value)}
+                  >
+                    {section.label}
+                  </Button>
+                ))}
+              </Stack>
+            </Card>
+          </Grid.Col>
 
-        <Tabs.Panel value="general" pt="md">
-          <GeneralInfoForm isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
-        </Tabs.Panel>
+          <Grid.Col span={{ base: 12, lg: 9 }}>
+            <Card withBorder radius="md" padding="md">
+              {activeSection.value === 'general' && (
+                <GeneralInfoForm isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
+              )}
+              {activeSection.value === 'agreements' && (
+                <AgreementsPanel
+                  currencies={currencies}
+                  isLoading={isLoading}
+                  isSaving={isSaving}
+                  organization={organization}
+                  ownerOrganizations={ownerOrganizations}
+                  onError={setError}
+                  onReload={reloadOrganization}
+                  setSaving={setSaving}
+                />
+              )}
+              {activeSection.value === 'bank' && (
+                <BankDetailsForm isSaving={isSaving} organization={organization} onSubmit={saveBank} />
+              )}
+              {activeSection.value === 'contact' && (
+                <ContactPersonForm isSaving={isSaving} organization={organization} onSubmit={saveContact} />
+              )}
+            </Card>
+          </Grid.Col>
+        </Grid>
 
-        <Tabs.Panel value="agreements" pt="md">
-          <AgreementsPanel
-            currencies={currencies}
-            isLoading={isLoading}
-            isSaving={isSaving}
-            organization={organization}
-            ownerOrganizations={ownerOrganizations}
-            onError={setError}
-            onReload={reloadOrganization}
-            setSaving={setSaving}
-          />
-        </Tabs.Panel>
-
-        <Tabs.Panel value="bank" pt="md">
-          <BankDetailsForm isSaving={isSaving} organization={organization} onSubmit={saveBank} />
-        </Tabs.Panel>
-
-        <Tabs.Panel value="contact" pt="md">
-          <ContactPersonForm isSaving={isSaving} organization={organization} onSubmit={saveContact} />
-        </Tabs.Panel>
-      </Tabs>
-
-      <DeleteModal
-        isSubmitting={isDeleting}
-        opened={deleteOpened}
-        organization={organization}
-        onClose={() => setDeleteOpened(false)}
-        onConfirm={confirmDelete}
-      />
-    </Stack>
+        <DeleteModal
+          isSubmitting={isDeleting}
+          opened={deleteOpened}
+          organization={organization}
+          onClose={() => setDeleteOpened(false)}
+          onConfirm={confirmDelete}
+        />
+      </Stack>
+    </AppDrawer>
   )
 }
 

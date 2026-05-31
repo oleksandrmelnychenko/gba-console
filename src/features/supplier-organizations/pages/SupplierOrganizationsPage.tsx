@@ -22,7 +22,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -59,6 +59,12 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  function openOrganizationSheet(path: string) {
+    navigate(path, { state: { backgroundLocation: location } })
+  }
+
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
   const [searchValue, setSearchValue] = useValueState(() => readStoredSearch())
   const [error, setError] = useValueState<string | null>(null)
@@ -151,7 +157,7 @@ export function SupplierOrganizationsPage() {
   const columns = useSupplierOrganizationColumns({
     onOpenActions: setSelectedOrganization,
     onOpenCashFlow: (organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`),
-    onOpenEdit: (organization) => navigate(`/accounting/supplier-organizations/edit/${organization.NetUid}`),
+    onOpenEdit: (organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`),
   })
 
   return (
@@ -167,7 +173,7 @@ export function SupplierOrganizationsPage() {
         />
         <Group gap="xs">
           <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
-            <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/supplier-organizations/new')}>
+            <Button leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
               {t('Додати')}
             </Button>
           </PermissionGate>
@@ -219,7 +225,7 @@ export function SupplierOrganizationsPage() {
         }}
         onOpenEdit={(organization) => {
           setSelectedOrganization(null)
-          navigate(`/accounting/supplier-organizations/edit/${organization.NetUid}`)
+          openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`)
         }}
       />
 
