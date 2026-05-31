@@ -414,7 +414,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                 <ActionIcon
                   {...fileProps}
                   aria-label={t('Завантажити файл')}
-                  color="blue"
+                  color="violet"
                   disabled={
                     isSaving ||
                     areDeliveryDocumentActionsLocked ||
