@@ -7,6 +7,7 @@ import {
   SegmentedControl,
   Stack,
   Text,
+  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -25,6 +26,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
+import { getSupplyOrganizations } from '../api/protocolDetailApi'
 import {
   addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
@@ -44,6 +46,7 @@ import { SpecificationTotals } from '../components/SpecificationTotals'
 import { UploadDeliveryDocumentsModal } from '../components/UploadDeliveryDocumentsModal'
 import { UploadProductSpecificationModal } from '../components/UploadProductSpecificationModal'
 import { UploadProductSpecificationResultModal } from '../components/UploadProductSpecificationResultModal'
+import type { SupplyOrganization } from '../detailTypes'
 import type {
   DeliveryDocumentDraft,
   PackingListPackageOrderItem,
@@ -64,7 +67,8 @@ const PERMISSION_UPLOAD_SPECIFICATIONS = 'ProductDeliveryProtocols_specification
 const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
   'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
-const PERMISSION_EDIT_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
+const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
 
 function invoiceDate(value?: Date | string): string {
   if (!value) {
@@ -103,6 +107,9 @@ function useSpecificationModel(netId: string | undefined) {
   const [newDocuments, setNewDocuments] = useValueState<DeliveryDocumentDraft[]>([])
   const [numberCustomDeclaration, setNumberCustomDeclaration] = useValueState('')
   const [dateCustomDeclaration, setDateCustomDeclaration] = useValueState('')
+  const [documentOrganizations, setDocumentOrganizations] = useValueState<SupplyOrganization[]>([])
+  const [documentOrganizationNetId, setDocumentOrganizationNetId] = useValueState<string | null>(null)
+  const [documentAgreementNetId, setDocumentAgreementNetId] = useValueState<string | null>(null)
 
   const [isMergeOpen, setMergeOpen] = useValueState(false)
   const [isMerging, setMerging] = useValueState(false)
@@ -228,6 +235,30 @@ function useSpecificationModel(netId: string | undefined) {
 
   const selectedInvoice =
     protocol?.SupplyInvoices?.find((invoice) => invoice.NetUid === selectedInvoiceNetId) || null
+  const selectedDocumentOrganization =
+    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) || null
+  const selectedDocumentAgreement =
+    selectedDocumentOrganization?.SupplyOrganizationAgreements?.find(
+      (agreement) => agreement.NetUid === documentAgreementNetId,
+    ) || null
+
+  async function loadDocumentOrganizations() {
+    try {
+      const organizations = await getSupplyOrganizations()
+      setDocumentOrganizations(organizations)
+    } catch (lookupError) {
+      notifications.show({
+        color: 'red',
+        message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
+      })
+    }
+  }
+
+  function selectDocumentOrganization(netUid: string | null) {
+    const organization = documentOrganizations.find((item) => item.NetUid === netUid) || null
+    setDocumentOrganizationNetId(netUid)
+    setDocumentAgreementNetId(organization?.SupplyOrganizationAgreements?.[0]?.NetUid || null)
+  }
 
   function selectInvoice(invoice: SpecificationSupplyInvoice) {
     if (!invoice.PackingLists || invoice.PackingLists.length === 0) {
@@ -308,7 +339,13 @@ function useSpecificationModel(netId: string | undefined) {
       })),
     )
     setNewDocuments([])
+    setDocumentOrganizationNetId(selectedInvoice.SupplyOrganization?.NetUid || null)
+    setDocumentAgreementNetId(selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
     setDocumentsOpen(true)
+
+    if (documentOrganizations.length === 0) {
+      void loadDocumentOrganizations()
+    }
   }
 
   function addDocumentFiles(files: File[]) {
@@ -363,6 +400,8 @@ function useSpecificationModel(netId: string | undefined) {
 
           return draft ? { ...document, Deleted: draft.deleted } : document
         }),
+        SupplyOrganization: selectedDocumentOrganization,
+        SupplyOrganizationAgreement: selectedDocumentAgreement,
       }
 
       const files = newDocuments.map((document) => document.file).filter((file): file is File => Boolean(file))
@@ -485,14 +524,15 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   return {
-    addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, downloadDocument, downloadError,
-    editingSpecificationItem, error, existingDocuments, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
+    addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, documentAgreementNetId,
+    documentOrganizationNetId, documentOrganizations, downloadDocument, downloadError, editingSpecificationItem,
+    error, existingDocuments, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
     isMergeOpen, isMerging, isPackingListLoading, isSavingDocuments, isSavingSpecification, isUploading,
     isUploadOpen, newDocuments, numberCustomDeclaration, openDocuments, openDownload, openMerge,
     openSpecificationEditor, packingList, packingListError, protocol, removeExistingDocument,
-    removeNewDocument, saveDocuments, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
+    removeNewDocument, saveDocuments, selectDocumentOrganization, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
     selectedMergeNetIds, selectedPackListNetId, setCurrencyIsEur, setDateCustomDeclaration, setDocumentsOpen,
-    setDownloadOpen, setEditingSpecificationItem, setMergeOpen, setNumberCustomDeclaration, setUploadOpen,
+    setDocumentAgreementNetId, setDownloadOpen, setEditingSpecificationItem, setMergeOpen, setNumberCustomDeclaration, setUploadOpen,
     setUploadResult, setWithManagementServices, saveSpecification, submitUpload, toggleMergeInvoice, uploadResult,
     withManagementServices,
   }
@@ -504,6 +544,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const model = useSpecificationModel(id)
+  const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
   const canMerge = invoices.length > 1
   const canDownload =
@@ -511,7 +552,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const canUpload =
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
   const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
-  const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION_CODE)
+  const canEditSpecification = hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
+  const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
+  const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
   const currencyOptions = [
     { label: t('EUR'), value: CURRENCY_EUR },
     { label: t('UAH'), value: CURRENCY_UAH },
@@ -661,15 +704,25 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 </Alert>
               )}
 
+              {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
+                <TextInput
+                  label={t('Пошук')}
+                  placeholder={t('Код товару')}
+                  value={vendorCodeFilter}
+                  w={260}
+                  onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
+                />
+              )}
+
               {model.isPackingListLoading ? (
                 <Text c="dimmed" size="sm">
                   {t('Завантаження')}
                 </Text>
-              ) : model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
+              ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
                 <SpecificationProductsGrid
                   canEditSpecification={canEditSpecification}
                   currencyIsEur={model.currencyIsEur}
-                  packingList={model.packingList}
+                  packingList={filteredPackingList}
                   withManagementServices={model.withManagementServices}
                   onEditSpecification={model.openSpecificationEditor}
                 />
@@ -708,9 +761,14 @@ export function ProductDeliveryProtocolSpecificationPage() {
         newDocuments={model.newDocuments}
         numberCustomDeclaration={model.numberCustomDeclaration}
         opened={model.isDocumentsOpen}
+        selectedSupplyOrganizationAgreementNetId={model.documentAgreementNetId}
+        selectedSupplyOrganizationNetId={model.documentOrganizationNetId}
+        supplyOrganizations={model.documentOrganizations}
         onAddFiles={model.addDocumentFiles}
         onChangeDateCustomDeclaration={model.setDateCustomDeclaration}
         onChangeNumberCustomDeclaration={model.setNumberCustomDeclaration}
+        onChangeSupplyOrganization={model.selectDocumentOrganization}
+        onChangeSupplyOrganizationAgreement={model.setDocumentAgreementNetId}
         onClose={() => model.setDocumentsOpen(false)}
         onRemoveExistingDocument={model.removeExistingDocument}
         onRemoveNewDocument={model.removeNewDocument}
@@ -736,6 +794,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
       />
 
       <ProductSpecificationEditDrawer
+        canSave={canSaveSpecification}
         isSaving={model.isSavingSpecification}
         item={model.editingSpecificationItem}
         onClose={() => model.setEditingSpecificationItem(null)}
@@ -743,4 +802,22 @@ export function ProductDeliveryProtocolSpecificationPage() {
       />
     </Stack>
   )
+}
+
+function filterPackingListByVendorCode(
+  packingList: SpecificationPackingList | null,
+  vendorCodeFilter: string,
+): SpecificationPackingList | null {
+  const value = vendorCodeFilter.trim().toLowerCase()
+
+  if (!packingList || !value) {
+    return packingList
+  }
+
+  return {
+    ...packingList,
+    PackingListPackageOrderItems: (packingList.PackingListPackageOrderItems || []).filter((item) =>
+      (item.SupplyInvoiceOrderItem?.Product?.VendorCode || '').toLowerCase().includes(value),
+    ),
+  }
 }

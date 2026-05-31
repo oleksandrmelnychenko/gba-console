@@ -26,6 +26,7 @@ export type ProductSpecificationSubmitPayload = {
 }
 
 export type ProductSpecificationEditDrawerProps = {
+  canSave?: boolean
   isSaving: boolean
   item: PackingListPackageOrderItem | null
   onClose: () => void
@@ -35,6 +36,7 @@ export type ProductSpecificationEditDrawerProps = {
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 export function ProductSpecificationEditDrawer({
+  canSave = true,
   isSaving,
   item,
   onClose,
@@ -134,9 +136,11 @@ export function ProductSpecificationEditDrawer({
             <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" leftSection={<IconCheck size={16} />} loading={isSaving} onClick={submit}>
-              {t('Змінити')}
-            </Button>
+            {canSave && (
+              <Button color="violet" leftSection={<IconCheck size={16} />} loading={isSaving} onClick={submit}>
+                {t('Змінити')}
+              </Button>
+            )}
           </Group>
 
           <Stack gap="xs">

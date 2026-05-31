@@ -5,6 +5,7 @@ import {
   Divider,
   FileButton,
   Group,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -13,6 +14,7 @@ import {
 import { IconArrowBackUp, IconFileTypePdf, IconFileTypeXls, IconTrash, IconUpload } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import type { SupplyOrganization } from '../detailTypes'
 import type { DeliveryDocumentDraft } from '../specificationTypes'
 
 type UploadDeliveryDocumentsModalProps = {
@@ -22,7 +24,12 @@ type UploadDeliveryDocumentsModalProps = {
   newDocuments: DeliveryDocumentDraft[]
   numberCustomDeclaration: string
   opened: boolean
+  selectedSupplyOrganizationAgreementNetId?: string | null
+  selectedSupplyOrganizationNetId?: string | null
+  supplyOrganizations?: SupplyOrganization[]
   onAddFiles: (files: File[]) => void
+  onChangeSupplyOrganization?: (netUid: string | null) => void
+  onChangeSupplyOrganizationAgreement?: (netUid: string | null) => void
   onChangeDateCustomDeclaration: (value: string) => void
   onChangeNumberCustomDeclaration: (value: string) => void
   onClose: () => void
@@ -31,6 +38,8 @@ type UploadDeliveryDocumentsModalProps = {
   onSave: () => void
 }
 
+const EMPTY_SUPPLY_ORGANIZATIONS: SupplyOrganization[] = []
+
 export function UploadDeliveryDocumentsModal({
   dateCustomDeclaration,
   existingDocuments,
@@ -38,7 +47,12 @@ export function UploadDeliveryDocumentsModal({
   newDocuments,
   numberCustomDeclaration,
   opened,
+  selectedSupplyOrganizationAgreementNetId,
+  selectedSupplyOrganizationNetId,
+  supplyOrganizations = EMPTY_SUPPLY_ORGANIZATIONS,
   onAddFiles,
+  onChangeSupplyOrganization,
+  onChangeSupplyOrganizationAgreement,
   onChangeDateCustomDeclaration,
   onChangeNumberCustomDeclaration,
   onClose,
@@ -47,10 +61,63 @@ export function UploadDeliveryDocumentsModal({
   onSave,
 }: UploadDeliveryDocumentsModalProps) {
   const { t } = useI18n()
+  const selectedSupplyOrganization = supplyOrganizations.find(
+    (organization) => organization.NetUid === selectedSupplyOrganizationNetId,
+  )
+  const organizationOptions = supplyOrganizations.reduce<Array<{ label: string; value: string }>>(
+    (options, organization) => {
+      if (organization.NetUid && organization.Name) {
+        options.push({ label: organization.Name, value: organization.NetUid })
+      }
+
+      return options
+    },
+    [],
+  )
+  const agreementOptions = (selectedSupplyOrganization?.SupplyOrganizationAgreements || []).reduce<
+    Array<{ label: string; value: string }>
+  >((options, agreement) => {
+    if (agreement.NetUid) {
+      options.push({
+        label: `${agreement.Name || agreement.Number || ''}${agreement.Currency?.Code ? ` (${agreement.Currency.Code})` : ''}`,
+        value: agreement.NetUid,
+      })
+    }
+
+    return options
+  }, [])
+  const canSelectSupplier = Boolean(onChangeSupplyOrganization && onChangeSupplyOrganizationAgreement)
 
   return (
     <AppModal centered opened={opened} size="lg" title={t('Завантаження документів доставки')} onClose={onClose}>
       <Stack gap="md">
+        {canSelectSupplier && (
+          <Group grow align="flex-end">
+            <Select
+              clearable
+              data={organizationOptions}
+              disabled={isSaving}
+              label={t('Постачальник послуг')}
+              searchable
+              value={selectedSupplyOrganizationNetId || null}
+              onChange={(value) => {
+                onChangeSupplyOrganization?.(value)
+              }}
+            />
+            <Select
+              clearable
+              data={agreementOptions}
+              disabled={isSaving || !selectedSupplyOrganization}
+              label={t('Договір')}
+              searchable
+              value={selectedSupplyOrganizationAgreementNetId || null}
+              onChange={(value) => {
+                onChangeSupplyOrganizationAgreement?.(value)
+              }}
+            />
+          </Group>
+        )}
+
         <TextInput
           disabled={isSaving}
           label={t('Номер митної декларації')}

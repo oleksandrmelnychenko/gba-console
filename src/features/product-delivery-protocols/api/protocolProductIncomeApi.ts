@@ -1,5 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { IncomePackingList, IncomeStorage, IncomeSupplyInvoice } from '../productIncomeTypes'
+import type {
+  IncomeAuditEntity,
+  IncomePackingList,
+  IncomeProductIncome,
+  IncomeStorage,
+  IncomeSupplyInvoice,
+} from '../productIncomeTypes'
 
 function normalizeInvoice(result: unknown): IncomeSupplyInvoice {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
@@ -32,6 +38,22 @@ export async function getSupplyOrderInvoiceItems(invoiceNetId: string): Promise<
   })
 
   return normalizeInvoice(result)
+}
+
+export async function getProductIncomeByDeliveryProtocolNetId(protocolNetId: string): Promise<IncomeProductIncome | null> {
+  const result = await apiRequest<unknown>('/products/incomes/get/delivery/product/protocol', {
+    query: { netId: protocolNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as IncomeProductIncome) : null
+}
+
+export async function getProductIncomeBySupplyOrderNetId(supplyOrderNetId: string): Promise<IncomeProductIncome | null> {
+  const result = await apiRequest<unknown>('/products/incomes/get/supply/order', {
+    query: { netId: supplyOrderNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as IncomeProductIncome) : null
 }
 
 export async function getPackingListSpecificationProducts(packListNetId: string): Promise<IncomePackingList> {
@@ -80,12 +102,12 @@ export async function updateVatOfPackListInvoiceItems(invoice: IncomeSupplyInvoi
   return normalizeInvoice(result)
 }
 
-export async function createUkraineProductIncomeFromDynamic(
+export async function createProductIncomeFromPackingListDynamic(
   fromDate: string,
   storageNetId: string,
   packingList: IncomePackingList,
 ): Promise<unknown> {
-  return apiRequest<unknown>('/products/incomes/new/supply/ukraine/dynamic', {
+  return apiRequest<unknown>('/products/incomes/new/packinglist/dynamic', {
     method: 'POST',
     query: { fromDate, storageNetId },
     body: packingList,
@@ -109,6 +131,20 @@ export async function getOrganizationStorages(organizationNetId: string): Promis
   return normalizeStorages(result)
 }
 
+export async function getSupplyOrderItemAudit(supplyOrderItemNetId: string): Promise<IncomeAuditEntity[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/items/history/get', {
+    query: {
+      netId: supplyOrderItemNetId,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити історію ваги',
+      network: 'Сервер історії ваги недоступний',
+    },
+  })
+
+  return normalizeArray(result) as IncomeAuditEntity[]
+}
+
 function normalizeStorages(result: unknown): IncomeStorage[] {
   if (Array.isArray(result)) {
     return result as IncomeStorage[]
@@ -123,6 +159,22 @@ function normalizeStorages(result: unknown): IncomeStorage[] {
 
     if (Array.isArray(payload.Storages)) {
       return payload.Storages as IncomeStorage[]
+    }
+  }
+
+  return []
+}
+
+function normalizeArray(result: unknown): unknown[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  if (result && typeof result === 'object') {
+    const payload = result as Record<string, unknown>
+
+    if (Array.isArray(payload.Items)) {
+      return payload.Items
     }
   }
 

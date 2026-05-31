@@ -26,6 +26,7 @@ export type AvailablePaymentsCurrency = EntityFields & {
 
 export type AvailablePaymentDocument = EntityFields & {
   ContentType?: string
+  DocumentUrl?: string
   FileName?: string
   Name?: string
   Url?: string
@@ -130,6 +131,7 @@ export type AvailablePaymentOutcomeRequest = {
   comment: string
   customNumber: string
   documents: File[]
+  exchangeRate: number
   fromDate: string
   isAccounting: boolean
   isManagementAccounting: boolean
@@ -141,9 +143,40 @@ export type AvailablePaymentOutcomeRequest = {
   selectedRegister: AvailablePaymentRegister
 }
 
+export type AvailablePaymentColumnKey =
+  | 'category'
+  | 'containerNumber'
+  | 'currency'
+  | 'date'
+  | 'discount'
+  | 'grossPrice'
+  | 'name'
+  | 'netPrice'
+  | 'number'
+  | 'pricePerUnit'
+  | 'quantity'
+  | 'serviceNumber'
+  | 'symbol'
+  | 'total'
+  | 'totalWithoutVat'
+  | 'vatAmount'
+  | 'vatPercent'
+  | 'vendorCode'
+
+export type AvailablePaymentColumnFormat = 'date' | 'price' | 'text'
+
+export type AvailablePaymentColumn = {
+  align?: 'left' | 'right'
+  format: AvailablePaymentColumnFormat
+  header: string
+  key: AvailablePaymentColumnKey
+}
+
 export type AvailablePaymentTaskModel = {
+  columns: AvailablePaymentColumn[]
   currency?: AvailablePaymentsCurrency | null
   currencyCode: string
+  deliveryProductProtocolNetUid: string
   documents: AvailablePaymentDocument[]
   grossPrice: number
   id: string
@@ -151,23 +184,18 @@ export type AvailablePaymentTaskModel = {
   organizationName: string
   organizationNetUid: string
   paidOrder?: AvailablePaymentOrderSummary | null
+  payForClient?: NamedEntity | null
   rows: AvailablePaymentTaskRow[]
   serviceAgreementNetId: string
   serviceName: string
   serviceNumber: string
+  supplyOrderNetUid: string
+  supplyOrderUkraineNetUid: string
   task: SupplyPaymentTask
 }
 
 export type AvailablePaymentTaskRow = {
-  amount?: number
-  date?: Date | string
-  name: string
-  number?: string
-  price?: number
-  quantity?: string
-  total?: number
-  vat?: number
-  vatPercent?: number
+  [key in AvailablePaymentColumnKey]?: Date | number | string | undefined
 }
 
 export type AvailablePaymentAccountingCashFlow = {

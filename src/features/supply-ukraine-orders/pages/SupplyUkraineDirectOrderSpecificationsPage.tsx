@@ -8,6 +8,7 @@ import {
   SegmentedControl,
   Stack,
   Text,
+  TextInput,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -24,10 +25,15 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   addDeliveryDocumentsToInvoice,
+  addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
   getSpecificationDownloadUrls,
   uploadProductSpecificationForInvoice,
 } from '../../product-delivery-protocols/api/protocolSpecificationApi'
+import {
+  ProductSpecificationEditDrawer,
+  type ProductSpecificationSubmitPayload,
+} from '../../product-delivery-protocols/components/ProductSpecificationEditDrawer'
 import { SpecificationDownloadModal } from '../../product-delivery-protocols/components/SpecificationDownloadModal'
 import { SpecificationProductsGrid } from '../../product-delivery-protocols/components/SpecificationProductsGrid'
 import { SpecificationTotals } from '../../product-delivery-protocols/components/SpecificationTotals'
@@ -36,12 +42,14 @@ import { UploadProductSpecificationModal } from '../../product-delivery-protocol
 import { UploadProductSpecificationResultModal } from '../../product-delivery-protocols/components/UploadProductSpecificationResultModal'
 import type {
   DeliveryDocumentDraft,
+  PackingListPackageOrderItem,
   ProductSpecificationParseConfiguration,
   SpecificationDownloadDocument,
   SpecificationPackingList,
   SpecificationSupplyInvoice,
   UploadProductSpecificationResult,
 } from '../../product-delivery-protocols/specificationTypes'
+import { useAuth } from '../../auth/useAuth'
 import {
   getDirectSupplyOrderById,
   getSupplyInvoiceItems,
@@ -49,9 +57,15 @@ import {
 import type { DirectSupplyOrder, SupplyInvoice } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+const PERMISSION_DOWNLOAD_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadFilesFromTheApplication_PKEY'
+const PERMISSION_EDIT_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_History_PKEY'
+const PERMISSION_SAVE_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingShippingDocuments_PKEY'
+const PERMISSION_UPLOAD_SPECIFICATIONS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingSpecificationDocuments_PKEY'
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
@@ -82,7 +96,16 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const [isDownloading, setDownloading] = useState(false)
   const [downloadDocument, setDownloadDocument] = useState<SpecificationDownloadDocument | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [editingSpecificationItem, setEditingSpecificationItem] = useState<PackingListPackageOrderItem | null>(null)
+  const [isSavingSpecification, setSavingSpecification] = useState(false)
+  const [vendorCodeFilter, setVendorCodeFilter] = useState('')
   const invoices = order?.SupplyInvoices || []
+  const canDownload = hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) && Boolean(packingList && (packingList.Id || 0) > 0)
+  const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION)
+  const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION)
+  const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canUploadSpecifications = hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(selectedInvoice)
+  const filteredPackingList = filterPackingListByVendorCode(packingList, vendorCodeFilter)
 
   useEffect(() => {
     let cancelled = false
@@ -356,6 +379,33 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
     }
   }
 
+  async function saveSpecification(payload: ProductSpecificationSubmitPayload) {
+    if (!selectedInvoiceNetId) {
+      notifications.show({ color: 'red', message: t('Інвойс відсутній') })
+      return
+    }
+
+    setSavingSpecification(true)
+
+    try {
+      await addOrUpdateProductSpecification(selectedInvoiceNetId, payload)
+
+      if (selectedPackListNetId) {
+        setPackingList(await getPackingListSpecificationProducts(selectedPackListNetId))
+      }
+
+      setEditingSpecificationItem(null)
+      notifications.show({ color: 'green', message: t('Зміни збережено') })
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
+      })
+    } finally {
+      setSavingSpecification(false)
+    }
+  }
+
   return (
     <Stack gap="lg">
       <Group justify="space-between" align="center">
@@ -407,30 +457,34 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
             <Group justify="flex-end" gap="xs">
-              <Button
-                disabled={!selectedInvoice}
-                leftSection={<IconFileImport size={16} />}
-                variant="light"
-                onClick={() => setUploadOpen(true)}
-              >
-                {t('Завантаження митних кодів')}
-              </Button>
-              <Button
-                disabled={!selectedInvoice}
-                leftSection={<IconFileImport size={16} />}
-                variant="light"
-                onClick={openDocuments}
-              >
-                {t('Завантаження документів доставки')}
-              </Button>
-              <Button
-                disabled={!selectedPackListNetId}
-                leftSection={<IconDownload size={16} />}
-                variant="light"
-                onClick={openDownload}
-              >
-                {t('Завантажити')}
-              </Button>
+              {canUploadSpecifications && (
+                <Button
+                  leftSection={<IconFileImport size={16} />}
+                  variant="light"
+                  onClick={() => setUploadOpen(true)}
+                >
+                  {t('Завантаження митних кодів')}
+                </Button>
+              )}
+              {canUploadDocuments && (
+                <Button
+                  disabled={!selectedInvoice}
+                  leftSection={<IconFileImport size={16} />}
+                  variant="light"
+                  onClick={openDocuments}
+                >
+                  {t('Завантаження документів доставки')}
+                </Button>
+              )}
+              {canDownload && (
+                <Button
+                  leftSection={<IconDownload size={16} />}
+                  variant="light"
+                  onClick={openDownload}
+                >
+                  {t('Завантажити')}
+                </Button>
+              )}
             </Group>
 
             <Group gap="xs" wrap="wrap">
@@ -469,13 +523,25 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
               </Alert>
             )}
 
+            {packingList && (packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
+              <TextInput
+                label={t('Пошук')}
+                placeholder={t('Код товару')}
+                value={vendorCodeFilter}
+                w={260}
+                onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
+              />
+            )}
+
             {isPackingListLoading ? (
               <Group justify="center" py="lg"><Loader /></Group>
-            ) : packingList && (packingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
+            ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
               <SpecificationProductsGrid
+                canEditSpecification={canEditSpecification}
                 currencyIsEur={currencyIsEur}
-                packingList={packingList}
+                packingList={filteredPackingList}
                 withManagementServices={withManagementServices}
+                onEditSpecification={setEditingSpecificationItem}
               />
             ) : (
               <Group gap="xs" c="dimmed">
@@ -526,8 +592,33 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         opened={isDownloadOpen}
         onClose={() => setDownloadOpen(false)}
       />
+      <ProductSpecificationEditDrawer
+        canSave={canSaveSpecification}
+        isSaving={isSavingSpecification}
+        item={editingSpecificationItem}
+        onClose={() => setEditingSpecificationItem(null)}
+        onSave={saveSpecification}
+      />
     </Stack>
   )
+}
+
+function filterPackingListByVendorCode(
+  packingList: SpecificationPackingList | null,
+  vendorCodeFilter: string,
+): SpecificationPackingList | null {
+  const value = vendorCodeFilter.trim().toLowerCase()
+
+  if (!packingList || !value) {
+    return packingList
+  }
+
+  return {
+    ...packingList,
+    PackingListPackageOrderItems: (packingList.PackingListPackageOrderItems || []).filter((item) =>
+      (item.SupplyInvoiceOrderItem?.Product?.VendorCode || '').toLowerCase().includes(value),
+    ),
+  }
 }
 
 function getOrderNumber(order: DirectSupplyOrder | null): string {

@@ -34,8 +34,26 @@ export type IncomeStorage = EntityFields & {
   Organization?: IncomeOrganization | null
 }
 
+export type IncomeSupplyOrderItem = EntityFields & {
+  Number?: string
+}
+
 export type IncomeSupplyInvoiceOrderItem = EntityFields & {
   Product?: IncomeProduct | null
+  SupplyOrderItem?: IncomeSupplyOrderItem | null
+}
+
+export type IncomeAuditEntityProperty = {
+  Name?: string
+  Value?: string
+}
+
+export type IncomeAuditEntity = EntityFields & {
+  NewValues?: IncomeAuditEntityProperty[]
+  OldValues?: IncomeAuditEntityProperty[]
+  Type?: number | string
+  UpdatedBy?: string
+  UpdatedByNetUid?: string
 }
 
 export type DynamicProductPlacement = EntityFields & {
@@ -108,13 +126,51 @@ export type ProtocolNumber = EntityFields & {
 }
 
 export type IncomeOrganization = EntityFields & {
+  Code?: string
   Name?: string
 }
 
+export type IncomeCurrency = EntityFields & {
+  Code?: string
+  Name?: string
+}
+
+export type IncomeAgreement = EntityFields & {
+  Currency?: IncomeCurrency | null
+  Name?: string
+}
+
+export type IncomeClientAgreement = EntityFields & {
+  Agreement?: IncomeAgreement | null
+}
+
+export type IncomeClient = EntityFields & {
+  FullName?: string
+  Name?: string
+}
+
+export type IncomeUser = EntityFields & {
+  FirstName?: string
+  LastName?: string
+  MiddleName?: string
+  Name?: string
+}
+
+export type IncomeProductIncome = EntityFields & {
+  FromDate?: Date | string
+  Number?: string
+  Storage?: IncomeStorage | null
+  User?: IncomeUser | null
+}
+
 export type IncomeProtocol = EntityFields & {
+  Client?: IncomeClient | null
+  ClientAgreement?: IncomeClientAgreement | null
   DeliveryProductProtocolNumber?: ProtocolNumber | null
   FromDate?: Date | string
+  Number?: string
   Organization?: IncomeOrganization | null
+  SupplyOrderNumber?: ProtocolNumber | null
   SupplyInvoices: IncomeSupplyInvoice[]
 }
 

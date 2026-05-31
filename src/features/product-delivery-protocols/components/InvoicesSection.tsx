@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Group, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Button, Card, Group, Stack, Text } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -18,12 +18,17 @@ function InvoiceViewCard({ invoice }: { invoice: SupplyInvoice }) {
   const currencyCode = invoice.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code || ''
   const totalNetPrice =
     (invoice.TotalNetPrice || 0) + (invoice.DeliveryAmount || 0) - (invoice.DiscountAmount || 0)
+  const invoiceNumber = [
+    invoice.Number,
+    ...(invoice.MergedSupplyInvoices || []).map((mergedInvoice) => mergedInvoice.Number),
+  ].filter(Boolean).join(' / ')
+  const deliveryDocuments = invoice.SupplyInvoiceDeliveryDocuments || []
 
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="xs">
         <LabelValueRow label={t('Номер документу')}>{invoice.ServiceNumber || '-'}</LabelValueRow>
-        <LabelValueRow label={t('Номер інвойса')}>{invoice.Number || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Номер інвойса')}>{invoiceNumber || '-'}</LabelValueRow>
         <LabelValueRow label={t('Дата інвойса')}>{formatDateTime(invoice.DateFrom)}</LabelValueRow>
         <LabelValueRow label={t('Постачальник')}>{invoice.SupplyOrder?.Client?.FullName || '-'}</LabelValueRow>
         <LabelValueRow label={t('Заг. вартість нетто')}>{formatMoney(invoice.TotalNetPrice, currencyCode)}</LabelValueRow>
@@ -33,6 +38,27 @@ function InvoiceViewCard({ invoice }: { invoice: SupplyInvoice }) {
         <LabelValueRow label={t('Витрати')}>{formatMoney(invoice.TotalSpending, 'EUR')}</LabelValueRow>
         <LabelValueRow label={`${t('Витрати')} (${t('Бух.')})`}>
           {formatMoney(invoice.AccountingTotalSpending, 'EUR')}
+        </LabelValueRow>
+        <LabelValueRow label={t('Номер митної декларації')}>{invoice.NumberCustomDeclaration || '-'}</LabelValueRow>
+        <LabelValueRow label={t('Дата митної декларації')}>{formatDateTime(invoice.DateCustomDeclaration)}</LabelValueRow>
+        <LabelValueRow label={t('Документи доставки')}>
+          {deliveryDocuments.length > 0 ? (
+            <Stack gap={2}>
+              {deliveryDocuments.map((document) => (
+                <Anchor
+                  key={document.NetUid || document.Id || document.DocumentUrl || document.FileName}
+                  href={document.DocumentUrl || undefined}
+                  rel="noreferrer"
+                  target="_blank"
+                  td={document.Deleted ? 'line-through' : undefined}
+                >
+                  {document.FileName || document.DocumentUrl || '-'}
+                </Anchor>
+              ))}
+            </Stack>
+          ) : (
+            '-'
+          )}
         </LabelValueRow>
       </Stack>
     </Card>

@@ -78,13 +78,17 @@ export type SupplyOrder = EntityFields & {
 
 export type SupplyInvoice = EntityFields & {
   AccountingTotalSpending?: number
+  DateCustomDeclaration?: Date | string | null
   DateFrom?: Date | string
   DeliveryAmount?: number
   DiscountAmount?: number
   ExchangeRate?: number
   ExchangeRateEurToUah?: number
+  MergedSupplyInvoices?: SupplyInvoice[]
   Number?: string
+  NumberCustomDeclaration?: string
   ServiceNumber?: string
+  SupplyInvoiceDeliveryDocuments?: SupplyDocument[]
   SupplyOrder?: SupplyOrder | null
   TotalNetPrice?: number
   TotalSpending?: number

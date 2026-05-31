@@ -34,6 +34,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import {
   deletePackingList,
   deleteSupplyInvoice,
@@ -121,9 +122,14 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+const PERMISSION_ADD_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
+const PERMISSION_ADD_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewPackListBtn_PKEY'
+const PERMISSION_REMOVE_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemoveInvoiceBtn_PKEY'
+const PERMISSION_REMOVE_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemovePackListBtn_PKEY'
 
 export function SupplyUkraineDirectOrderInvoicesPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
@@ -145,6 +151,13 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
   const selectedPackList = useMemo(
     () => (selectedInvoice?.PackingLists || []).find((packList) => packList.NetUid === selectedPackListNetId) || null,
     [selectedInvoice, selectedPackListNetId],
+  )
+  const canAddInvoice = hasPermission(PERMISSION_ADD_INVOICE)
+  const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
+  const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
+  const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
+  const canShowPackListUpload = Boolean(
+    selectedInvoice && canAddPackList && (selectedInvoice.PackingLists?.length || 0) === 0,
   )
 
   const orderItemColumns = useOrderItemColumns()
@@ -407,17 +420,20 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
           <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={() => reloadOrder()}>
             {t('Оновити')}
           </Button>
-          <Button leftSection={<IconFileImport size={16} />} variant="light" onClick={() => setInvoiceUploadOpen(true)}>
-            {t('Додати інвойс')}
-          </Button>
-          <Button
-            disabled={!selectedInvoice}
-            leftSection={<IconPackage size={16} />}
-            variant="light"
-            onClick={() => setPackListUploadOpen(true)}
-          >
-            {t('Додати пак лист')}
-          </Button>
+          {canAddInvoice && (
+            <Button leftSection={<IconFileImport size={16} />} variant="light" onClick={() => setInvoiceUploadOpen(true)}>
+              {t('Додати інвойс')}
+            </Button>
+          )}
+          {canShowPackListUpload && (
+            <Button
+              leftSection={<IconPackage size={16} />}
+              variant="light"
+              onClick={() => setPackListUploadOpen(true)}
+            >
+              {t('Додати пак лист')}
+            </Button>
+          )}
         </Group>
       </Group>
 
@@ -473,17 +489,19 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                         >
                           {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
                         </Button>
-                        <Tooltip label={t('Видалити')}>
-                          <ActionIcon
-                            aria-label={t('Видалити')}
-                            color="red"
-                            size="xs"
-                            variant="subtle"
-                            onClick={() => setDeleteInvoiceCandidate(invoice)}
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        </Tooltip>
+                        {canRemoveInvoice && (
+                          <Tooltip label={t('Видалити')}>
+                            <ActionIcon
+                              aria-label={t('Видалити')}
+                              color="red"
+                              size="xs"
+                              variant="subtle"
+                              onClick={() => setDeleteInvoiceCandidate(invoice)}
+                            >
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
                       </Group>
                     ))}
                   </Group>
@@ -518,17 +536,19 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                         >
                           {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
                         </Button>
-                        <Tooltip label={t('Видалити')}>
-                          <ActionIcon
-                            aria-label={t('Видалити')}
-                            color="red"
-                            size="xs"
-                            variant="subtle"
-                            onClick={() => setDeletePackListCandidate(packList)}
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        </Tooltip>
+                        {canRemovePackList && (
+                          <Tooltip label={t('Видалити')}>
+                            <ActionIcon
+                              aria-label={t('Видалити')}
+                              color="red"
+                              size="xs"
+                              variant="subtle"
+                              onClick={() => setDeletePackListCandidate(packList)}
+                            >
+                              <IconTrash size={14} />
+                            </ActionIcon>
+                          </Tooltip>
+                        )}
                       </Group>
                     ))}
                   </Group>
