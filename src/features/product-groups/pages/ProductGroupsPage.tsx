@@ -13,6 +13,7 @@ import {
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -20,7 +21,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PermissionGate } from '../../auth/components/PermissionGate'
 import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
+import { PRODUCT_GROUPS_ADD_PERMISSION } from '../permissions'
 import { ProductGroupForm } from '../components/ProductGroupForm'
 import type { ProductGroup, ProductSubGroup } from '../types'
 import {
@@ -42,6 +45,8 @@ const PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
+
 type ProductGroupFieldChange = <TKey extends keyof ProductGroup>(key: TKey, value: ProductGroup[TKey]) => void
 
 export function ProductGroupsPage() {
@@ -53,7 +58,8 @@ export function ProductGroupsPage() {
   const [createDraft, setCreateDraft] = useValueState<ProductGroup>(() => createEmptyProductGroup())
   const [selectedRootNetUid, setSelectedRootNetUid] = useValueState<string | null>(null)
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
+  const [totalFilteredQty, setTotalFilteredQty] = useValueState(0)
   const [totalQty, setTotalQty] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
@@ -102,11 +108,13 @@ export function ProductGroupsPage() {
 
         if (!cancelled) {
           setProductGroups(response.ProductGroups)
+          setTotalFilteredQty(response.TotalFilteredQty)
           setTotalQty(response.TotalQty)
         }
       } catch (loadError) {
         if (!cancelled) {
           setProductGroups([])
+          setTotalFilteredQty(0)
           setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити групи товарів'))
         }
@@ -122,7 +130,7 @@ export function ProductGroupsPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, searchValue, setError, setLoading, setProductGroups, setTotalQty, t])
+  }, [reloadKey, searchValue, setError, setLoading, setProductGroups, setTotalFilteredQty, setTotalQty, t])
 
   useEffect(() => {
     if (!createModalOpened) {
@@ -162,12 +170,10 @@ export function ProductGroupsPage() {
 
   function updateSearch(nextSearchValue: string) {
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   function resetSearch() {
     setSearchDraft('')
-    setSearchValue('')
   }
 
   function closeCreateModal() {
@@ -265,15 +271,17 @@ export function ProductGroupsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-            <Button
-              color="violet"
-              leftSection={<IconPlus size={16} />}
-              onClick={() => setCreateModalOpened(true)}
-              style={{ flex: '0 0 auto' }}
-              type="button"
-            >
-              {t('Нова група')}
-            </Button>
+            <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
+              <Button
+                color="violet"
+                leftSection={<IconPlus size={16} />}
+                onClick={() => setCreateModalOpened(true)}
+                style={{ flex: '0 0 auto' }}
+                type="button"
+              >
+                {t('Нова група')}
+              </Button>
+            </PermissionGate>
           </Group>
 
           {error && (
@@ -289,14 +297,23 @@ export function ProductGroupsPage() {
             emptyText="Груп товарів не знайдено"
             getRowId={(productGroup, index) => String(productGroup.NetUid || productGroup.Id || index)}
             isLoading={isLoading}
-            layoutVersion="product-groups-table-1"
+            layoutVersion="product-groups-table-2"
             loadingText="Завантаження груп товарів"
             maxHeight="calc(100vh - 260px)"
-            minWidth={1380}
+            minWidth={1660}
             tableId="product-groups"
             toolbarLeft={toolbarLeft}
             onRowClick={openProductGroup}
           />
+
+          <Group justify="flex-end" gap="lg">
+            <Text size="xs" c="dimmed">
+              {t('Відфільтрована кількість')}: {totalFilteredQty}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {t('Загальна к-сть')}: {totalQty}
+            </Text>
+          </Group>
         </Stack>
       </Card>
 
@@ -359,6 +376,14 @@ function useProductGroupColumns(openProductGroup: (productGroup: ProductGroup) =
         minWidth: 170,
         accessor: getCurrentRootProductGroupName,
         cell: (productGroup) => getCurrentRootProductGroupName(productGroup),
+      },
+      {
+        id: 'description',
+        header: 'Опис',
+        width: 280,
+        minWidth: 180,
+        accessor: (productGroup) => productGroup.Description,
+        cell: (productGroup) => displayValue(productGroup.Description),
       },
       {
         id: 'isSubGroup',

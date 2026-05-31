@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Card,
-  Code,
   Divider,
   Group,
   ScrollArea,
@@ -14,6 +13,7 @@ import {
   Stack,
   Text,
   TextInput,
+  ThemeIcon,
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
@@ -25,6 +25,8 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconHelpCircle,
+  IconPencil,
   IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
@@ -32,6 +34,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRed
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -39,13 +42,20 @@ import {
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
 } from '../api/accountingCashFlowApi'
+import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
+import { CashFlowSummary } from '../components/CashFlowSummary'
 import type {
   AccountingCashFlow,
+  AccountingCashFlowAgreement,
+  AccountingCashFlowAgreementDebtSummary,
   AccountingCashFlowClientAgreement,
+  AccountingCashFlowClientInDebt,
   AccountingCashFlowCounterparty,
   AccountingCashFlowDocument,
   AccountingCashFlowHeadItem,
   AccountingCashFlowMode,
+  AccountingCashFlowSaleReturn,
+  AccountingCashFlowSaleReturnItem,
 } from '../types'
 
 type FilterDraft = {
@@ -53,39 +63,15 @@ type FilterDraft = {
   to: string
 }
 
-type CashFlowDetailRow = {
-  Currency?: string
-  GrossPrice?: number
-  Name?: string
-  NetPrice?: number
-  Number?: string
-  ServiceNumber?: string
-  Symbol?: string
-  Vat?: number
-  VatPercent?: number
-}
-
 type DetailField = {
   label: string
   value: ReactNode
-}
-
-type DocumentLink = {
-  name: string
-  url: string
 }
 
 const ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'name'],
     right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const CASH_FLOW_DETAIL_ROWS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['name'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -103,68 +89,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
 })
-
-const DETAIL_FIELD_BY_TYPE: Partial<Record<number, keyof AccountingCashFlowHeadItem>> = {
-  0: 'SupplyOrderPaymentDeliveryProtocol',
-  2: 'ContainerService',
-  3: 'CustomService',
-  4: 'PortWorkService',
-  5: 'TransportationService',
-  6: 'PortCustomAgencyService',
-  7: 'CustomAgencyService',
-  8: 'PlaneDeliveryService',
-  9: 'VehicleDeliveryService',
-  10: 'ConsumablesOrder',
-  11: 'OutcomePaymentOrder',
-  12: 'IncomePaymentOrder',
-  13: 'Sale',
-  14: 'SupplyPaymentTask',
-  15: 'SaleReturn',
-  16: 'SupplyOrderUkraine',
-  17: 'MergedService',
-  18: 'SupplyOrderUkrainePaymentDeliveryProtocol',
-  20: 'ProductIncome',
-  21: 'VehicleService',
-  22: 'AccountingContainerPaymentTask',
-  23: 'VehicleService',
-  24: 'CustomService',
-  25: 'TransportationService',
-  26: 'PortCustomAgencyService',
-  27: 'CustomAgencyService',
-  28: 'PlaneDeliveryService',
-  29: 'VehicleDeliveryService',
-  30: 'MergedService',
-  31: 'ContainerService',
-  32: 'PortWorkService',
-  33: 'BillOfLadingService',
-  34: 'BillOfLadingService',
-  36: 'UpdatedReSaleModel',
-}
-
-const DETAIL_SOURCE_FIELDS: (keyof AccountingCashFlowHeadItem)[] = [
-  'OutcomePaymentOrder',
-  'IncomePaymentOrder',
-  'Sale',
-  'SaleReturn',
-  'UpdatedReSaleModel',
-  'ConsumablesOrder',
-  'SupplyOrderPaymentDeliveryProtocol',
-  'SupplyOrderUkrainePaymentDeliveryProtocol',
-  'SupplyPaymentTask',
-  'AccountingContainerPaymentTask',
-  'ContainerService',
-  'CustomService',
-  'PortWorkService',
-  'TransportationService',
-  'PortCustomAgencyService',
-  'CustomAgencyService',
-  'PlaneDeliveryService',
-  'VehicleDeliveryService',
-  'VehicleService',
-  'MergedService',
-  'BillOfLadingService',
-  'ProductIncome',
-]
 
 const TYPE_LABELS: Record<number, string> = {
   0: 'Протокол оплати постачання',
@@ -201,26 +125,42 @@ const TYPE_LABELS: Record<number, string> = {
   33: 'Коносамент',
   34: 'Бухгалтерський коносамент',
   35: 'Акт надання послуг',
-  36: 'Перепродаж',
+  36: 'Бухгалтерський акт надання послуг',
+  37: 'Перепродаж',
 }
 
-const DETAIL_FIELD_SPECS = [
-  { label: 'Сервісний номер', path: ['ServiceNumber'] },
-  { label: 'Номер', path: ['Number'] },
-  { label: 'Назва', path: ['Name'] },
-  { label: 'Дата', path: ['FromDate'], type: 'date' },
-  { label: 'Дата створення', path: ['Created'], type: 'date' },
-  { label: 'Дата документа', path: ['DateFrom'], type: 'date' },
-  { label: 'Валюта', path: ['SupplyOrganizationAgreement', 'Currency', 'Code'] },
-  { label: 'Нетто', path: ['NetPrice'], type: 'money' },
-  { label: 'ПДВ %', path: ['VatPercent'], type: 'amount' },
-  { label: 'ПДВ', path: ['Vat'], type: 'money' },
-  { label: 'Брутто', path: ['GrossPrice'], type: 'money' },
-  { label: 'Бух. нетто', path: ['AccountingNetPrice'], type: 'money' },
-  { label: 'Бух. ПДВ', path: ['AccountingVat'], type: 'money' },
-  { label: 'Бух. брутто', path: ['AccountingGrossPrice'], type: 'money' },
-  { label: 'Сума', path: ['TotalAmount'], type: 'money' },
-]
+const JOIN_SERVICE_TYPE = {
+  ConsumablesOrder: 10,
+  IncomePaymentOrder: 12,
+  OutcomePaymentOrder: 11,
+  ReSale: 37,
+  Sale: 13,
+  SaleReturn: 15,
+} as const
+
+const SALE_RETURN_ITEM_STATUS_LABELS: Record<number, string> = {
+  0: 'Товар прибув пізніше заявленого терміну',
+  1: 'Доставка не в повному обсязі',
+  2: 'Помилка підбору',
+  3: 'Неправильний крос-код',
+  4: 'Відмова від товару кінцевим покупцем',
+  5: 'Невідповідність очікуваній якості',
+  6: 'Брак',
+  7: 'Клієнт не забрав товар',
+  8: 'Відкликання виробником',
+}
+
+const SALE_RETURN_ITEM_STATUS_NAME_BY_KEY: Record<string, number> = {
+  ClientNotTookProduct: 7,
+  Defect: 6,
+  IncorrectAssortment: 2,
+  IncorrectCrossCode: 3,
+  IncorrectQuality: 5,
+  NotFullDelivery: 1,
+  ProductAbandon: 4,
+  ProductArrivedNotAtTime: 0,
+  SupplierWithdrawal: 8,
+}
 
 export function ClientAccountingCashFlowPage() {
   return <AccountingCashFlowRoute mode="client" />
@@ -279,8 +219,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const locationNodeTitle = getLocationNodeTitle(location.state)
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
-  const columns = useAccountingCashFlowColumns(setSelectedItem)
-  const detailRowsColumns = useCashFlowDetailRowsColumns()
+  const columns = useAccountingCashFlowColumns(setSelectedItem, t)
   const items = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = items.at(-1)
   const toolbarLeft = useMemo(
@@ -415,7 +354,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     counterparty,
     counterpartyError,
     counterpartyName,
-    detailRowsColumns,
     document,
     downloadModalOpened,
     filterDraft,
@@ -450,7 +388,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     columns,
     counterpartyError,
     counterpartyName,
-    detailRowsColumns,
     document,
     downloadModalOpened,
     filterDraft,
@@ -518,7 +455,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </Alert>
       )}
 
-      <AccountingCashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
+      <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -572,7 +509,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           data={items}
           defaultLayout={ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Рухів коштів не знайдено')}
-          getRowId={(item, index) => String(item.Number || item.Name || item.FromDate || index)}
+          getRowId={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
           isLoading={isCashFlowLoading}
           layoutVersion="accounting-cash-flow-table-1"
           loadingText={t('Завантаження руху коштів')}
@@ -585,8 +522,8 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       </Card>
 
       <AccountingCashFlowDetailDrawer
-        detailRowsColumns={detailRowsColumns}
         item={selectedItem}
+        mode={mode}
         onClose={() => setSelectedItem(null)}
       />
 
@@ -597,43 +534,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
-  )
-}
-
-function AccountingCashFlowSummary({
-  cashFlow,
-  lastItem,
-}: {
-  cashFlow: AccountingCashFlow | null
-  lastItem?: AccountingCashFlowHeadItem
-}) {
-  const { t } = useI18n()
-  const closingBalance = typeof lastItem?.CurrentBalance === 'number' ? lastItem.CurrentBalance : 0
-
-  return (
-    <SimpleGrid cols={{ base: 1, sm: 2, lg: 6 }} spacing="sm">
-      <SummaryValue label={t('Вхідний дебет')} value={cashFlow?.BeforeRangeInAmount} />
-      <SummaryValue label={t('Вхідний кредит')} value={cashFlow?.BeforeRangeOutAmount} />
-      <SummaryValue label={t('Вхідний баланс')} value={cashFlow?.BeforeRangeBalance} />
-      <SummaryValue label={t('Дебет за період')} value={cashFlow?.AfterRangeInAmount} />
-      <SummaryValue label={t('Кредит за період')} value={cashFlow?.AfterRangeOutAmount} />
-      <SummaryValue label={t('Баланс після періоду')} value={closingBalance} />
-    </SimpleGrid>
-  )
-}
-
-function SummaryValue({ label, value }: { label: string; value?: number }) {
-  const isNegative = typeof value === 'number' && value < 0
-
-  return (
-    <Card withBorder radius="md" padding="sm">
-      <Text size="xs" c="dimmed">
-        {label}
-      </Text>
-      <Text size="lg" fw={700} c={isNegative ? 'red' : undefined}>
-        {formatMoney(value)}
-      </Text>
-    </Card>
   )
 }
 
@@ -674,20 +574,12 @@ function AgreementScopePicker({
             {t('Загальні взаєморозрахунки')}
           </Button>
           {agreements.map((agreement, index) => (
-            <Tooltip key={agreement.NetUid || index} label={getAgreementTooltip(agreement)} disabled={!getAgreementTooltip(agreement)}>
-              <Button
-                color="blue"
-                rightSection={getAgreementCurrency(agreement) ? <Badge size="xs">{getAgreementCurrency(agreement)}</Badge> : undefined}
-                size="xs"
-                style={{ flex: '0 0 auto' }}
-                variant={agreement.NetUid === selectedAgreementNetUid ? 'filled' : 'light'}
-                onClick={() => onSelectAgreement(agreement.NetUid || null)}
-              >
-                <Text span truncate maw={260}>
-                  {getAgreementLabel(agreement)}
-                </Text>
-              </Button>
-            </Tooltip>
+            <AgreementDebtTile
+              key={agreement.NetUid || index}
+              agreement={agreement}
+              isSelected={agreement.NetUid === selectedAgreementNetUid}
+              onSelect={() => onSelectAgreement(agreement.NetUid || null)}
+            />
           ))}
         </Group>
       </ScrollArea>
@@ -700,21 +592,119 @@ function AgreementScopePicker({
   )
 }
 
+function AgreementDebtTile({
+  agreement,
+  isSelected,
+  onSelect,
+}: {
+  agreement: AccountingCashFlowClientAgreement
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const { t } = useI18n()
+  const debt = useMemo(() => getAgreementDebtSummary(agreement), [agreement])
+  const currency = getAgreementCurrency(agreement)
+  const tooltip = getAgreementTooltip(agreement)
+
+  return (
+    <Tooltip label={tooltip} disabled={!tooltip}>
+      <Card
+        withBorder
+        padding="xs"
+        radius="md"
+        style={{
+          cursor: 'pointer',
+          flex: '0 0 auto',
+          minWidth: 220,
+          borderColor: debt.isOverdue
+            ? 'var(--mantine-color-red-5)'
+            : isSelected
+              ? 'var(--mantine-color-blue-5)'
+              : undefined,
+          backgroundColor: debt.isOverdue
+            ? 'var(--mantine-color-red-0)'
+            : isSelected
+              ? 'var(--mantine-color-blue-0)'
+              : undefined,
+        }}
+        onClick={onSelect}
+      >
+        <Stack gap={4}>
+          <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
+            <Stack gap={0}>
+              <Text c="dimmed" size="xs">
+                {stringValue(agreement.Agreement?.Organization?.Name)}
+              </Text>
+              <Text fw={600} size="sm" lineClamp={1} maw={200}>
+                {stringValue(agreement.Agreement?.Name) || stringValue(agreement.NetUid) || '-'}
+              </Text>
+            </Stack>
+            {currency && (
+              <Badge size="xs" variant="light">
+                {currency}
+              </Badge>
+            )}
+          </Group>
+
+          {stringValue(agreement.OriginalClientName) && (
+            <Group gap={4} align="center" wrap="nowrap">
+              <IconHelpCircle size={12} />
+              <Text c="dimmed" size="xs" lineClamp={1} maw={200}>
+                {stringValue(agreement.OriginalClientName)}
+              </Text>
+            </Group>
+          )}
+
+          <Group gap="md" wrap="nowrap">
+            {debt.isControlAmountDebt && (
+              <Group gap={4} align="baseline" wrap="nowrap">
+                <Text c={debt.totalOverdueDebt > 0 ? 'red' : undefined} fw={600} size="sm">
+                  {formatMoney(debt.totalOverdueDebt)}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  / {formatMoney(debt.accountBalance)}
+                </Text>
+              </Group>
+            )}
+            {debt.isControlNumberDaysDebt && (
+              <Group gap={4} align="baseline" wrap="nowrap">
+                <Text c={debt.overdueDays > 0 ? 'red' : undefined} fw={600} size="sm">
+                  {debt.overdueDays}
+                </Text>
+                <Text c="dimmed" size="xs">
+                  / {debt.allowedDays} {t('днів')}
+                </Text>
+              </Group>
+            )}
+          </Group>
+
+          {debt.isOverdue && (
+            <Badge color="red" size="xs" variant="filled">
+              {t('Прострочено')}
+            </Badge>
+          )}
+        </Stack>
+      </Card>
+    </Tooltip>
+  )
+}
+
 function AccountingCashFlowDetailDrawer({
-  detailRowsColumns,
   item,
+  mode,
   onClose,
 }: {
-  detailRowsColumns: DataTableColumn<CashFlowDetailRow>[]
   item: AccountingCashFlowHeadItem | null
+  mode: AccountingCashFlowMode
   onClose: () => void
 }) {
   const { t } = useI18n()
-  const detailData = useMemo(() => (item ? getHeadItemDetailData(item) : null), [item])
-  const detailFields = useMemo(() => (item ? buildDetailFields(item, detailData) : []), [detailData, item])
-  const detailRows = useMemo(() => getServiceDetailRows(detailData), [detailData])
-  const documents = useMemo(() => collectDocumentLinks(detailData), [detailData])
-  const rawPayload = useMemo(() => stringifyPayload(detailData || item), [detailData, item])
+  const isSaleReturn = mode === 'client' && !item?.IsCreditValue && item?.Type === JOIN_SERVICE_TYPE.SaleReturn
+  const saleReturn = useMemo(
+    () => (isSaleReturn ? (toRecord(item?.SaleReturn) as AccountingCashFlowSaleReturn | null) : null),
+    [isSaleReturn, item?.SaleReturn],
+  )
+  const detailFields = useMemo(() => (item ? buildHeadItemFields(item) : []), [item])
 
   return (
     <AppDrawer
@@ -727,62 +717,32 @@ function AccountingCashFlowDetailDrawer({
     >
       {item && (
         <Stack gap="md">
+          {saleReturn && <SaleReturnOverviewPanel saleReturn={saleReturn} />}
+
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
             {detailFields.map((field) => (
               <DetailValue key={field.label} label={field.label} value={field.value} />
             ))}
           </SimpleGrid>
 
-          {documents.length > 0 && (
-            <>
-              <Divider />
-              <Group gap="xs">
-                {documents.map((document) => (
-                  <Anchor key={document.url} href={document.url} target="_blank" rel="noreferrer" className="document-link">
-                    <span className="document-link-badge document-link-badge-pdf">
-                      <IconFileTypePdf size={18} stroke={1.8} />
-                    </span>
-                    <span>{document.name}</span>
-                  </Anchor>
-                ))}
-              </Group>
-            </>
-          )}
-
-          {detailRows.length > 0 && (
-            <>
-              <Divider />
-              <DataTable
-                columns={detailRowsColumns}
-                data={detailRows}
-                defaultLayout={CASH_FLOW_DETAIL_ROWS_TABLE_DEFAULT_LAYOUT}
-                emptyText={t('Позицій не знайдено')}
-                getRowId={(row, index) => String(row.ServiceNumber || row.Number || row.Name || index)}
-                layoutVersion="accounting-cash-flow-detail-rows-1"
-                maxHeight={320}
-                minWidth={860}
-                tableId="accounting-cash-flow-detail-rows"
-              />
-            </>
-          )}
-
-          {rawPayload && (
-            <>
-              <Divider />
-              <Box>
-                <Text size="sm" fw={600} mb="xs">
-                  {t('Технічні дані')}
-                </Text>
-                <ScrollArea h={260} type="auto" offsetScrollbars>
-                  <Code block>{rawPayload}</Code>
-                </ScrollArea>
-              </Box>
-            </>
-          )}
+          <CashFlowDetailContent item={item} />
         </Stack>
       )}
     </AppDrawer>
   )
+}
+
+function buildHeadItemFields(item: AccountingCashFlowHeadItem): DetailField[] {
+  return [
+    { label: 'Дата', value: formatDateTime(item.FromDate) },
+    { label: 'Документ', value: displayValue(item.Name) },
+    { label: 'Номер', value: displayValue(item.Number) },
+    { label: 'Організація', value: displayValue(item.OrganizationName) },
+    { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
+    { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
+    { label: 'Сума', value: formatMoney(item.CurrentValue) },
+    { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
+  ]
 }
 
 function DetailValue({ label, value }: { label: string; value: ReactNode }) {
@@ -795,6 +755,106 @@ function DetailValue({ label, value }: { label: string; value: ReactNode }) {
         {value || '-'}
       </Text>
     </Box>
+  )
+}
+
+function SaleReturnOverviewPanel({ saleReturn }: { saleReturn: AccountingCashFlowSaleReturn }) {
+  const { t } = useI18n()
+  const items = Array.isArray(saleReturn.SaleReturnItems) ? saleReturn.SaleReturnItems : []
+  const header = [
+    stringValue(saleReturn.Client?.RegionCode?.Value),
+    stringValue(saleReturn.Client?.FullName),
+    stringValue(saleReturn.ClientAgreement?.Agreement?.Name),
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Text fw={700}>{header || t('Повернення продажу')}</Text>
+        {items.length === 0 ? (
+          <Text c="dimmed" size="sm">
+            {t('Позицій не знайдено')}
+          </Text>
+        ) : (
+          <Stack gap="xs">
+            {items.map((saleReturnItem, index) => (
+              <SaleReturnOverviewItem key={index} saleReturnItem={saleReturnItem} />
+            ))}
+          </Stack>
+        )}
+      </Stack>
+    </Card>
+  )
+}
+
+function SaleReturnOverviewItem({ saleReturnItem }: { saleReturnItem: AccountingCashFlowSaleReturnItem }) {
+  const { t } = useI18n()
+  const sale = saleReturnItem.OrderItem?.Order?.Sale
+  const isVatSale = Boolean(sale?.IsVatSale)
+  const currency = getSaleReturnItemCurrency(saleReturnItem)
+  const worthPrice = Math.round((numberValue(saleReturnItem.AmountLocal) || 0) * 100) / 100
+
+  return (
+    <Card withBorder radius="sm" padding="sm">
+      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+        <Stack gap={2}>
+          <Group gap={6} align="baseline" wrap="nowrap">
+            <Text c="dimmed" size="xs">
+              {stringValue(saleReturnItem.OrderItem?.Product?.VendorCode)}
+            </Text>
+            <Text fw={600} size="sm">
+              {stringValue(saleReturnItem.OrderItem?.Product?.Name)}
+            </Text>
+          </Group>
+          <Text c="dimmed" size="xs">
+            {stringValue(sale?.SaleNumber?.Value)} {`(${t('Накладна')})`}
+          </Text>
+        </Stack>
+
+        <Group gap="lg" align="flex-start" wrap="nowrap">
+          <Stack gap={0} align="flex-end">
+            <Text fw={600} size="sm">
+              {formatMoney(worthPrice)} {currency}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('Вартість')}
+            </Text>
+          </Stack>
+
+          {isVatSale && (
+            <Stack gap={0} align="flex-end">
+              <Text fw={600} size="sm">
+                {formatMoney(numberValue(saleReturnItem.VatAmountLocal))}
+              </Text>
+              <Text c="dimmed" size="xs">
+                {t('ПДВ')}
+              </Text>
+            </Stack>
+          )}
+
+          <Stack gap={0} align="flex-end">
+            <Text fw={600} size="sm">
+              {formatAmount(numberValue(saleReturnItem.Qty))}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('штук')}
+            </Text>
+          </Stack>
+
+          <Stack gap={0} align="flex-end">
+            <Text c="dimmed" size="xs">
+              {t('Склад')}
+            </Text>
+            <Text c="orange" fw={600} size="sm">
+              {stringValue(saleReturnItem.Storage?.Name)}
+            </Text>
+            <Text size="xs">{getSaleReturnItemStatusLabel(saleReturnItem.SaleReturnItemStatus, t)}</Text>
+          </Stack>
+        </Group>
+      </Group>
+    </Card>
   )
 }
 
@@ -845,6 +905,7 @@ function DownloadDocumentModal({
 
 function useAccountingCashFlowColumns(
   onOpenDetail: (item: AccountingCashFlowHeadItem) => void,
+  t: TranslateFunction,
 ): DataTableColumn<AccountingCashFlowHeadItem>[] {
   return useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(
     () => [
@@ -863,9 +924,18 @@ function useAccountingCashFlowColumns(
         minWidth: 220,
         accessor: (item) => item.Name,
         cell: (item) => (
-          <Text fw={700} lineClamp={2}>
-            {displayValue(item.Name)}
-          </Text>
+          <Group gap={6} wrap="nowrap" align="center">
+            {(item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0 && (
+              <Tooltip label={t('Накладна була редагована')} position="right">
+                <ThemeIcon color="orange" size="xs" radius="xl" variant="filled">
+                  <IconPencil size={12} />
+                </ThemeIcon>
+              </Tooltip>
+            )}
+            <Text fw={700} lineClamp={2}>
+              {displayValue(item.Name)}
+            </Text>
+          </Group>
         ),
       },
       {
@@ -955,218 +1025,100 @@ function useAccountingCashFlowColumns(
         ),
       },
     ],
-    [onOpenDetail],
+    [onOpenDetail, t],
   )
-}
-
-function useCashFlowDetailRowsColumns(): DataTableColumn<CashFlowDetailRow>[] {
-  return useMemo<DataTableColumn<CashFlowDetailRow>[]>(
-    () => [
-      {
-        id: 'name',
-        header: 'Назва',
-        width: 260,
-        minWidth: 200,
-        accessor: (row) => row.Name,
-        cell: (row) => (
-          <Text fw={600} lineClamp={2}>
-            {displayValue(row.Name)}
-          </Text>
-        ),
-      },
-      {
-        id: 'serviceNumber',
-        header: 'Сервісний номер',
-        width: 150,
-        minWidth: 124,
-        accessor: (row) => row.ServiceNumber,
-        cell: (row) => displayValue(row.ServiceNumber),
-      },
-      {
-        id: 'number',
-        header: 'Номер',
-        width: 130,
-        minWidth: 110,
-        accessor: (row) => row.Number,
-        cell: (row) => displayValue(row.Number),
-      },
-      {
-        id: 'symbol',
-        header: 'Символ',
-        width: 110,
-        minWidth: 92,
-        accessor: (row) => row.Symbol,
-        cell: (row) => displayValue(row.Symbol),
-      },
-      {
-        id: 'currency',
-        header: 'Валюта',
-        width: 94,
-        minWidth: 84,
-        accessor: (row) => row.Currency,
-        cell: (row) => displayValue(row.Currency),
-      },
-      {
-        id: 'netPrice',
-        header: 'Нетто',
-        width: 116,
-        minWidth: 102,
-        align: 'right',
-        accessor: (row) => row.NetPrice,
-        cell: (row) => formatMoney(row.NetPrice),
-      },
-      {
-        id: 'vatPercent',
-        header: 'ПДВ %',
-        width: 92,
-        minWidth: 82,
-        align: 'right',
-        accessor: (row) => row.VatPercent,
-        cell: (row) => formatAmount(row.VatPercent),
-      },
-      {
-        id: 'vat',
-        header: 'ПДВ',
-        width: 104,
-        minWidth: 92,
-        align: 'right',
-        accessor: (row) => row.Vat,
-        cell: (row) => formatMoney(row.Vat),
-      },
-      {
-        id: 'grossPrice',
-        header: 'Брутто',
-        width: 116,
-        minWidth: 102,
-        align: 'right',
-        accessor: (row) => row.GrossPrice,
-        cell: (row) => formatMoney(row.GrossPrice),
-      },
-    ],
-    [],
-  )
-}
-
-function buildDetailFields(item: AccountingCashFlowHeadItem, detailData: unknown): DetailField[] {
-  const fields: DetailField[] = [
-    { label: 'Дата', value: formatDateTime(item.FromDate) },
-    { label: 'Документ', value: displayValue(item.Name) },
-    { label: 'Номер', value: displayValue(item.Number) },
-    { label: 'Організація', value: displayValue(item.OrganizationName) },
-    { label: 'Тип', value: getCashFlowTypeLabel(item.Type) },
-    { label: 'Операція', value: item.IsCreditValue ? 'Кредит' : 'Дебет' },
-    { label: 'Сума', value: formatMoney(item.CurrentValue) },
-    { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
-  ]
-  const dataRecord = toRecord(detailData)
-
-  if (!dataRecord) {
-    return fields
-  }
-
-  DETAIL_FIELD_SPECS.forEach((spec) => {
-    const value = readPath(dataRecord, spec.path)
-
-    if (isEmptyValue(value)) {
-      return
-    }
-
-    fields.push({
-      label: spec.label,
-      value: formatSpecValue(value, spec.type),
-    })
-  })
-
-  return fields
-}
-
-function getServiceDetailRows(detailData: unknown): CashFlowDetailRow[] {
-  const dataRecord = toRecord(detailData)
-  const detailItems = readArray(dataRecord, 'ServiceDetailItems')
-  const currency = stringValue(readPath(dataRecord, ['SupplyOrganizationAgreement', 'Currency', 'Code']))
-  const serviceNumber = stringValue(dataRecord?.ServiceNumber)
-  const number = stringValue(dataRecord?.Number)
-
-  return detailItems.map((item) => {
-    const itemRecord = toRecord(item)
-    const keyRecord = toRecord(itemRecord?.ServiceDetailItemKey)
-
-    return {
-      Currency: currency,
-      GrossPrice: numberValue(itemRecord?.GrossPrice),
-      Name: stringValue(keyRecord?.Name) || stringValue(itemRecord?.Name),
-      NetPrice: numberValue(itemRecord?.NetPrice),
-      Number: number,
-      ServiceNumber: serviceNumber,
-      Symbol: stringValue(keyRecord?.Symbol) || stringValue(itemRecord?.Symbol),
-      Vat: numberValue(itemRecord?.Vat),
-      VatPercent: numberValue(itemRecord?.VatPercent),
-    }
-  })
-}
-
-function getHeadItemDetailData(item: AccountingCashFlowHeadItem): unknown {
-  const field = typeof item.Type === 'number' ? DETAIL_FIELD_BY_TYPE[item.Type] : undefined
-
-  if (field && !isEmptyValue(item[field])) {
-    return item[field]
-  }
-
-  for (const sourceField of DETAIL_SOURCE_FIELDS) {
-    if (!isEmptyValue(item[sourceField])) {
-      return item[sourceField]
-    }
-  }
-
-  return null
-}
-
-function collectDocumentLinks(detailData: unknown): DocumentLink[] {
-  const dataRecord = toRecord(detailData)
-  const documents: DocumentLink[] = []
-
-  if (!dataRecord) {
-    return documents
-  }
-
-  addDirectDocument(documents, dataRecord)
-
-  ;['InvoiceDocuments', 'BillOfLadingDocuments', 'Documents', 'Files'].forEach((key) => {
-    readArray(dataRecord, key).forEach((document) => addDirectDocument(documents, toRecord(document)))
-  })
-
-  return documents.filter((document, index, allDocuments) => allDocuments.findIndex((item) => item.url === document.url) === index)
-}
-
-function addDirectDocument(documents: DocumentLink[], documentRecord: Record<string, unknown> | null) {
-  if (!documentRecord) {
-    return
-  }
-
-  const url = stringValue(documentRecord.DocumentUrl)
-    || stringValue(documentRecord.DocumentURL)
-    || stringValue(documentRecord.Url)
-    || stringValue(documentRecord.URL)
-
-  if (!url) {
-    return
-  }
-
-  documents.push({
-    name: stringValue(documentRecord.FileName) || stringValue(documentRecord.Name) || stringValue(documentRecord.Number) || 'Документ',
-    url,
-  })
-}
-
-function getAgreementLabel(agreement: AccountingCashFlowClientAgreement): string {
-  return [
-    stringValue(agreement.Agreement?.Organization?.Name),
-    stringValue(agreement.Agreement?.Name),
-  ].filter(Boolean).join(' / ') || agreement.NetUid || '-'
 }
 
 function getAgreementCurrency(agreement: AccountingCashFlowClientAgreement): string {
   return stringValue(agreement.Agreement?.Currency?.Code)
+}
+
+function getAgreementDebtSummary(clientAgreement: AccountingCashFlowClientAgreement): AccountingCashFlowAgreementDebtSummary {
+  const agreement: AccountingCashFlowAgreement = clientAgreement.Agreement || {}
+  const accountBalance = numberValue(clientAgreement.AccountBalance) || 0
+  const debtLimit = numberValue(agreement.AmountDebt) || 0
+  const allowedDays = numberValue(agreement.NumberDaysDebt) || 0
+  const isControlAmountDebt = agreement.IsControlAmountDebt !== false
+  const isControlNumberDaysDebt = agreement.IsControlNumberDaysDebt !== false
+  const totalOverdueDebt = getTotalOverdueDebt(agreement.ClientInDebts, allowedDays)
+  const maxDaysOwed = getMaxDaysOwed(agreement.ClientInDebts)
+  const overdueDays = maxDaysOwed > allowedDays ? maxDaysOwed - allowedDays : 0
+  const isOverdue = totalOverdueDebt > 0 || Math.abs(accountBalance) > debtLimit || maxDaysOwed > allowedDays
+
+  return {
+    accountBalance,
+    allowedDays,
+    debtLimit,
+    isControlAmountDebt,
+    isControlNumberDaysDebt,
+    isOverdue,
+    overdueDays,
+    totalOverdueDebt,
+  }
+}
+
+function getTotalOverdueDebt(clientInDebts: AccountingCashFlowClientInDebt[] | undefined, allowedDays: number): number {
+  if (!Array.isArray(clientInDebts)) {
+    return 0
+  }
+
+  const total = clientInDebts.reduce((sum, clientInDebt) => {
+    const days = numberValue(clientInDebt?.Debt?.Days) || 0
+
+    if (days - allowedDays <= 0) {
+      return sum
+    }
+
+    return sum + (numberValue(clientInDebt?.Debt?.Total) || 0)
+  }, 0)
+
+  return Math.round(total * 100) / 100
+}
+
+function getMaxDaysOwed(clientInDebts: AccountingCashFlowClientInDebt[] | undefined): number {
+  if (!Array.isArray(clientInDebts) || clientInDebts.length === 0) {
+    return 0
+  }
+
+  return clientInDebts.reduce((max, clientInDebt) => {
+    const days = numberValue(clientInDebt?.Debt?.Days) || 0
+
+    return days > max ? days : max
+  }, 0)
+}
+
+function getSaleReturnItemCurrency(saleReturnItem: AccountingCashFlowSaleReturnItem): string {
+  const orderRecord = toRecord(saleReturnItem.OrderItem?.Order)
+  const saleRecord = toRecord(orderRecord?.Sale)
+  const agreementRecord = toRecord(saleRecord?.ClientAgreement)
+  const agreement = toRecord(agreementRecord?.Agreement)
+  const currency = toRecord(agreement?.Currency)
+
+  return stringValue(currency?.Code)
+}
+
+function getSaleReturnItemStatusLabel(status: number | string | undefined, t: (key: string) => string): string {
+  if (typeof status === 'number') {
+    const labelKey = SALE_RETURN_ITEM_STATUS_LABELS[status]
+
+    return labelKey ? t(labelKey) : ''
+  }
+
+  if (typeof status === 'string') {
+    const numericStatus = Number(status)
+
+    if (Number.isFinite(numericStatus) && SALE_RETURN_ITEM_STATUS_LABELS[numericStatus]) {
+      return t(SALE_RETURN_ITEM_STATUS_LABELS[numericStatus])
+    }
+
+    const mappedStatus = SALE_RETURN_ITEM_STATUS_NAME_BY_KEY[status]
+
+    if (typeof mappedStatus === 'number') {
+      return t(SALE_RETURN_ITEM_STATUS_LABELS[mappedStatus])
+    }
+  }
+
+  return ''
 }
 
 function getAgreementTooltip(agreement: AccountingCashFlowClientAgreement): string {
@@ -1211,36 +1163,6 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
-}
-
-function readArray(record: Record<string, unknown> | null, key: string): unknown[] {
-  const value = record?.[key]
-
-  return Array.isArray(value) ? value : []
-}
-
-function readPath(record: Record<string, unknown> | null, path: string[]): unknown {
-  return path.reduce<unknown>((current, key) => {
-    const currentRecord = toRecord(current)
-
-    return currentRecord?.[key]
-  }, record)
-}
-
-function formatSpecValue(value: unknown, type?: string): string {
-  if (type === 'date') {
-    return formatDateTime(value)
-  }
-
-  if (type === 'money') {
-    return formatMoney(numberValue(value))
-  }
-
-  if (type === 'amount') {
-    return formatAmount(numberValue(value))
-  }
-
-  return displayValue(value)
 }
 
 function formatDateTime(value: unknown): string {
@@ -1328,14 +1250,3 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? value as Record<string, unknown> : null
 }
 
-function stringifyPayload(payload: unknown): string {
-  if (!payload) {
-    return ''
-  }
-
-  try {
-    return JSON.stringify(payload, null, 2)
-  } catch {
-    return ''
-  }
-}

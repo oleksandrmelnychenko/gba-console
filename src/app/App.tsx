@@ -44,8 +44,10 @@ export function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/clients/new/:step" element={lazyRoute(<ClientNewPage />)} />
             <Route path="/clients/new" element={lazyRoute(<ClientNewPage />)} />
+            <Route path="/clients/edit/:netid/:step/:productNetId" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/clients/edit/:netid/:step" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/clients/edit/:netid" element={lazyRoute(<ClientEditPage />)} />
+            <Route path="/suppliers/edit/:netid/:step/:productNetId" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/suppliers/edit/:netid/:step" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/suppliers/edit/:netid" element={lazyRoute(<ClientEditPage />)} />
             <Route path="/organization-clients/new" element={lazyRoute(<OrganizationClientNewPage />)} />

@@ -35,6 +35,8 @@ import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'rea
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DocumentOutcomePaymentModal } from '../../document-outcome-payment'
+import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -135,6 +137,7 @@ function useTaxFreeDocumentsPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<TaxFreeDocument | null>(null)
   const [previewDocument, setPreviewDocument] = useValueState<TaxFreeDocument | null>(null)
+  const [outcomeSource, setOutcomeSource] = useValueState<DocumentOutcomePaymentSource | null>(null)
   const [printingId, setPrintingId] = useValueState<string | number | null>(null)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -151,9 +154,16 @@ function useTaxFreeDocumentsPageModel() {
     },
     [setSelectedDocument],
   )
+  const openOutcome = useCallback(
+    (document: TaxFreeDocument) => {
+      setOutcomeSource(buildTaxFreeOutcomeSource(document))
+    },
+    [setOutcomeSource],
+  )
   const itemColumns = useTaxFreeItemColumns()
   const columns = useTaxFreeDocumentColumns({
     onOpenCarrier: openDocument,
+    onOpenOutcome: openOutcome,
     onOpenPreview: setPreviewDocument,
     onOpenStatus: openDocument,
     onOpenView: openDocument,
@@ -356,6 +366,7 @@ function useTaxFreeDocumentsPageModel() {
     isLoading,
     isSaving,
     itemColumns,
+    outcomeSource,
     page,
     pageSize,
     previewDocument,
@@ -368,6 +379,7 @@ function useTaxFreeDocumentsPageModel() {
     statusValue,
     toolbarLeft,
     closeDetails: () => setSelectedDocument(null),
+    closeOutcome: () => setOutcomeSource(null),
     printDocument,
     reload,
     resetFilters,
@@ -406,6 +418,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     isLoading,
     isSaving,
     itemColumns,
+    outcomeSource,
     page,
     pageSize,
     previewDocument,
@@ -418,6 +431,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     statusValue,
     toolbarLeft,
     closeDetails,
+    closeOutcome,
     printDocument,
     reload,
     resetFilters,
@@ -590,17 +604,21 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
         onClose={() => setPreviewDocument(null)}
         onPrint={printDocument}
       />
+
+      <DocumentOutcomePaymentModal opened={Boolean(outcomeSource)} source={outcomeSource} onClose={closeOutcome} />
     </Stack>
   )
 }
 
 function useTaxFreeDocumentColumns({
   onOpenCarrier,
+  onOpenOutcome,
   onOpenPreview,
   onOpenStatus,
   onOpenView,
 }: {
   onOpenCarrier: (document: TaxFreeDocument) => void
+  onOpenOutcome: (document: TaxFreeDocument) => void
   onOpenPreview: (document: TaxFreeDocument) => void
   onOpenStatus: (document: TaxFreeDocument) => void
   onOpenView: (document: TaxFreeDocument) => void
@@ -632,7 +650,7 @@ function useTaxFreeDocumentColumns({
         accessor: (row) => row.document.TotalWithVatPl,
         align: 'right',
         cell: (row) => formatMoney(row.document.TotalWithVatPl),
-        header: t('Сума з ПДВ PLN'),
+        header: t('Сума з ПДВ, місцева валюта'),
         id: 'amountPln',
         width: 130,
       },
@@ -640,7 +658,7 @@ function useTaxFreeDocumentColumns({
         accessor: (row) => row.document.VatAmountPl,
         align: 'right',
         cell: (row) => formatMoney(row.document.VatAmountPl),
-        header: t('ПДВ PLN'),
+        header: t('ПДВ, місцева валюта'),
         id: 'vatPln',
         width: 120,
       },
@@ -718,12 +736,11 @@ function useTaxFreeDocumentColumns({
         width: 54,
       },
       {
-        cell: () => (
+        cell: (row) => (
           <TaxFreeRowAction
-            disabled
             icon={<IconCash size={17} />}
-            label={t('Бухгалтерські операції недоступні у цій міграції')}
-            onClick={() => undefined}
+            label={t('Створити видатковий ордер')}
+            onClick={() => onOpenOutcome(row.document)}
           />
         ),
         enableSorting: false,
@@ -762,7 +779,7 @@ function useTaxFreeDocumentColumns({
         width: 54,
       },
     ],
-    [onOpenCarrier, onOpenPreview, onOpenStatus, onOpenView, t],
+    [onOpenCarrier, onOpenOutcome, onOpenPreview, onOpenStatus, onOpenView, t],
   )
 }
 
@@ -825,7 +842,7 @@ function useTaxFreeItemColumns() {
         accessor: (row) => row.VatAmountPl,
         align: 'right',
         cell: (row) => formatMoney(row.VatAmountPl),
-        header: t('ПДВ PLN'),
+        header: t('ПДВ, місцева валюта'),
         id: 'vatAmountPl',
         width: 130,
       },
@@ -833,7 +850,7 @@ function useTaxFreeItemColumns() {
         accessor: (row) => row.TotalWithVatPl,
         align: 'right',
         cell: (row) => formatMoney(row.TotalWithVatPl),
-        header: t('Разом PLN'),
+        header: t('Разом, місцева валюта'),
         id: 'totalWithVatPl',
         width: 130,
       },
@@ -1033,8 +1050,8 @@ function TaxFreeDocumentDrawer({
               <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
                 <ReadOnlyField label={t('Клієнт')} value={getTaxFreeClient(document)} />
                 <ReadOnlyField label={t('Сума EUR')} value={formatMoney(document.TotalWithVat)} />
-                <ReadOnlyField label={t('Сума PLN')} value={formatMoney(document.TotalWithVatPl)} />
-                <ReadOnlyField label={t('ПДВ PLN')} value={formatMoney(document.VatAmountPl)} />
+                <ReadOnlyField label={t('Сума, місцева валюта')} value={formatMoney(document.TotalWithVatPl)} />
+                <ReadOnlyField label={t('ПДВ, місцева валюта')} value={formatMoney(document.VatAmountPl)} />
                 <ReadOnlyField label={t('Вага')} value={formatAmount(document.TotalNetWeight)} />
                 <ReadOnlyField label={t('Ставка ПДВ')} value={document.VatPercent ? `${document.VatPercent}%` : ''} />
               </SimpleGrid>
@@ -1242,6 +1259,19 @@ function ReadOnlyField({ label, value }: { label: string; value?: ReactNode }) {
       <Text size="sm">{value || '---'}</Text>
     </Stack>
   )
+}
+
+function buildTaxFreeOutcomeSource(document: TaxFreeDocument): DocumentOutcomePaymentSource {
+  const client = document.TaxFreePackList?.Client
+
+  return {
+    amount: document.VatAmountPl || 0,
+    clientName: getTaxFreeClient(document),
+    clientNetId: client?.NetUid || '',
+    created: document.Created,
+    documentNetId: document.NetUid || '',
+    type: 'taxfree',
+  }
 }
 
 function mapTaxFreeDocumentRow(document: TaxFreeDocument): TaxFreeDocumentRow {

@@ -1,0 +1,1 @@
+export const COMPANY_CAR_CREATE_PERMISSION = 'STORAGES_Accounting_Company-cars_AddBtn_PKEY'

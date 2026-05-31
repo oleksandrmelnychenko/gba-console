@@ -41,6 +41,8 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 - Storage location signed quantities no longer render broken `+-`/`--` signs.
 - Write-off add/delete actions now respect loading and missing-id states, and upsert avoids duplicate rows when the backend returns an existing rule.
 - Write-off rules now support product-group scope with group selection and product/group reloads.
+- Product income document overview now has explicit detail loading/error state, and batch remainings open as a separate row option instead of rendering as a stale extra table in the overview.
+- Product income documents now re-check capitalization linkage after the detail endpoint returns, so capitalization rows that are absent from the list payload can still load their overview.
 
 ### Product inventory and movement screens
 
@@ -68,6 +70,7 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 - Organization services payment-task loading is guarded against stale async responses from older searches.
 - Changing/clearing an organization clears previous payment-task state.
 - Transporter list waits for transporter types before showing "not found/select type" empty states.
+- Transporter archive status now uses the legacy hidden-transporter endpoint for `Архів`/`Усі` filters instead of filtering only the active response.
 - User role detail panel no longer shows a role hidden by current filters.
 - Organization client new sheet cannot close during save, matching edit behavior.
 - `UserEditPage` missing `Box` import was fixed.
@@ -93,7 +96,6 @@ These are not fixed in this pass because the user paused new migration and reque
 - Client resource organization country is currently locked to Ukraine.
 - TaxFree accounting operations remain unavailable.
 - SAD accounting action awaits a dedicated panel.
-- Transporter archive action is unavailable.
 
 ## Validation Performed
 

@@ -1,0 +1,2 @@
+export const PAYMENT_ACCOUNT_CREATE_PERMISSION = 'Accounting_Payment_accounts_All_ADDBtn_PKEY'
+export const PAYMENT_ACCOUNT_EDIT_PERMISSION = 'Accounting_Payment_accounts_All_Edit_EditBtn_PKEY'

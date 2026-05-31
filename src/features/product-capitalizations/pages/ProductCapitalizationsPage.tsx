@@ -24,6 +24,7 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconPlus,
   IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
@@ -38,6 +39,7 @@ import {
   getProductCapitalization,
   getProductCapitalizations,
 } from '../api/productCapitalizationsApi'
+import { NewProductCapitalizationPanel } from '../components/NewProductCapitalizationPanel'
 import type {
   ProductCapitalization,
   ProductCapitalizationItem,
@@ -67,7 +69,7 @@ const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 const PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['fromDate', 'number'],
+    left: ['index', 'fromDate', 'number'],
     right: ['actions'],
   },
   density: 'normal',
@@ -75,7 +77,7 @@ const PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT = {
 
 const PRODUCT_CAPITALIZATION_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['vendorCode', 'productName'],
+    left: ['index', 'vendorCode', 'productName'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -143,6 +145,7 @@ function useProductCapitalizationsPageModel() {
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [exportingNetId, setExportingNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [createPanelOpened, setCreatePanelOpened] = useValueState(false)
   const detailRequestRef = useRef(0)
   const { capitalizations, hasNextPage, isLoading, total } = listState
   const offset = (page - 1) * pageSize
@@ -207,8 +210,12 @@ function useProductCapitalizationsPageModel() {
       setExportingNetId(null)
     }
   }, [selectedCapitalization?.NetUid, setDetailError, setDownloadDocument, setDownloadModalOpened, setError, setExportingNetId, t])
-  const columns = useProductCapitalizationColumns(openDetail, handleExport, exportingNetId)
-  const itemColumns = useProductCapitalizationItemColumns()
+  const columns = useProductCapitalizationColumns(capitalizations, openDetail, handleExport, exportingNetId)
+  const detailItems = useMemo(
+    () => selectedCapitalization?.ProductCapitalizationItems || [],
+    [selectedCapitalization?.ProductCapitalizationItems],
+  )
+  const itemColumns = useProductCapitalizationItemColumns(detailItems)
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
@@ -282,6 +289,7 @@ function useProductCapitalizationsPageModel() {
     canMoveForward,
     capitalizations,
     columns,
+    createPanelOpened,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -302,6 +310,7 @@ function useProductCapitalizationsPageModel() {
     openDetail,
     reload,
     resetFilters,
+    setCreatePanelOpened,
     setDownloadModalOpened,
     setFilterDraft,
     setPage,
@@ -323,6 +332,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     canMoveForward,
     capitalizations,
     columns,
+    createPanelOpened,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -343,6 +353,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     openDetail,
     reload,
     resetFilters,
+    setCreatePanelOpened,
     setDownloadModalOpened,
     setFilterDraft,
     setPage,
@@ -353,6 +364,9 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="end">
+        <Button color="blue" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
+          {t('Нове оприбуткування')}
+        </Button>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -456,6 +470,15 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
           />
         </Stack>
       </Card>
+
+      <NewProductCapitalizationPanel
+        opened={createPanelOpened}
+        onClose={() => setCreatePanelOpened(false)}
+        onCreated={() => {
+          setPage(1)
+          reload()
+        }}
+      />
 
       <ProductCapitalizationDetailDrawer
         capitalization={selectedCapitalization}
@@ -631,12 +654,22 @@ function TotalValue({ label, value }: { label: string; value: string }) {
 }
 
 function useProductCapitalizationColumns(
+  capitalizations: ProductCapitalization[],
   onOpenDetail: (capitalization: ProductCapitalization) => void,
   onExport: (capitalization: ProductCapitalization) => void,
   exportingNetId: string | null,
 ): DataTableColumn<ProductCapitalization>[] {
   return useMemo<DataTableColumn<ProductCapitalization>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        cell: (capitalization) => String(capitalizations.indexOf(capitalization) + 1),
+      },
       {
         id: 'fromDate',
         header: 'Дата',
@@ -745,13 +778,24 @@ function useProductCapitalizationColumns(
         ),
       },
     ],
-    [exportingNetId, onExport, onOpenDetail],
+    [capitalizations, exportingNetId, onExport, onOpenDetail],
   )
 }
 
-function useProductCapitalizationItemColumns(): DataTableColumn<ProductCapitalizationItem>[] {
+function useProductCapitalizationItemColumns(
+  items: ProductCapitalizationItem[],
+): DataTableColumn<ProductCapitalizationItem>[] {
   return useMemo<DataTableColumn<ProductCapitalizationItem>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        cell: (item) => String(items.indexOf(item) + 1),
+      },
       {
         id: 'vendorCode',
         header: 'Код товару',
@@ -818,7 +862,7 @@ function useProductCapitalizationItemColumns(): DataTableColumn<ProductCapitaliz
         cell: (item) => formatAmount(item.RemainingQty),
       },
     ],
-    [],
+    [items],
   )
 }
 

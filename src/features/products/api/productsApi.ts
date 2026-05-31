@@ -1,6 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  AuditEntity,
   Product,
+  ProductAuditField,
   ProductConsignmentRemaining,
   ProductFileUploadConfiguration,
   ProductGroup,
@@ -8,10 +10,13 @@ import type {
   ProductIncomeOutcomeMovementParams,
   ProductMovement,
   ProductMovementExportDocument,
+  ProductMovementExportParams,
   ProductMovementsParams,
   ProductOutcomeMovement,
   ProductOriginalNumber,
   ProductPlacement,
+  ProductPlacementStorage,
+  ProductPlacementUploadConfiguration,
   ProductRelatedUploadType,
   ProductReservation,
   ProductSearchParams,
@@ -21,6 +26,7 @@ import type {
   ProductWriteOffRule,
   ProductWriteOffRulePayload,
   Pricing,
+  Storage,
 } from '../types'
 import { getEmptyGuid } from '../utils'
 
@@ -77,6 +83,21 @@ export async function getProductByNetId(netId: string): Promise<Product | null> 
   return normalizeProduct(result)
 }
 
+export async function getProductAuditEntities(netId: string, fieldName: ProductAuditField): Promise<AuditEntity[]> {
+  const result = await apiRequest<unknown>('/auditing/get/limited', {
+    query: {
+      fieldName,
+      netId,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити історію змін',
+      network: 'Сервер історії змін недоступний',
+    },
+  })
+
+  return normalizeArray(result) as AuditEntity[]
+}
+
 export async function getProductReservationByNetId(netId: string): Promise<ProductReservation> {
   const result = await apiRequest<unknown>('/products/reservations/get/info', {
     query: {
@@ -123,6 +144,117 @@ export async function updateProductWithImages(product: Product, files: File[]): 
   })
 
   return normalizeProduct(result)
+}
+
+export async function createProductWithImages(product: Product, files: File[]): Promise<Product | null> {
+  const formData = new FormData()
+
+  files.forEach((file) => formData.append('images', file))
+  formData.append('entity', JSON.stringify(buildProductImageUpdatePayload(product)))
+
+  const result = await apiRequest<unknown>('/products/new/upload', {
+    method: 'POST',
+    body: formData,
+    errorMessages: {
+      default: 'Не вдалося створити товар із зображеннями',
+      network: 'Сервер зображень недоступний',
+    },
+  })
+
+  return normalizeProduct(result)
+}
+
+export async function exportProductMovementsDocument(
+  params: ProductMovementExportParams,
+): Promise<ProductMovementExportDocument> {
+  const result = await apiRequest<unknown>('/consignments/info/movement/document/export', {
+    query: {
+      from: params.from,
+      movementType: params.movementType,
+      productNetId: params.productNetId,
+      to: params.to,
+      types: params.types,
+    },
+    errorMessages: {
+      default: 'Не вдалося сформувати документ руху товару',
+      network: 'Сервер експорту руху товару недоступний',
+    },
+  })
+
+  return normalizeExportDocument(result)
+}
+
+export async function getProductRecommendationForecast(params: {
+  asOfDate: string
+  forecastWeeks: number
+  productNetId: string
+  useCache?: boolean
+}): Promise<unknown> {
+  return apiRequest<unknown>('/recommendations/forecast', {
+    query: {
+      asOfDate: params.asOfDate,
+      forecastWeeks: params.forecastWeeks,
+      productNetId: params.productNetId,
+      useCache: params.useCache ?? true,
+    },
+    errorMessages: {
+      default: 'Не вдалося завантажити прогноз',
+      network: 'Сервер прогнозів недоступний',
+    },
+  })
+}
+
+export async function getNonDefectiveStorages(): Promise<Storage[]> {
+  const result = await apiRequest<unknown>('/storages/all/nondefective', {
+    errorMessages: {
+      default: 'Не вдалося завантажити склади',
+      network: 'Сервер складів недоступний',
+    },
+  })
+
+  return normalizeArray(result) as Storage[]
+}
+
+export async function uploadProductPlacementStorageFile(
+  storageId: number,
+  configuration: ProductPlacementUploadConfiguration,
+  file: File,
+): Promise<ProductPlacementStorage[]> {
+  const formData = new FormData()
+
+  formData.append('file', file)
+  formData.append('storageId', JSON.stringify(storageId))
+  formData.append('parseConfiguration', JSON.stringify(configuration))
+
+  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/file', {
+    method: 'POST',
+    body: formData,
+    errorMessages: {
+      default: 'Не вдалося завантажити файл розміщення',
+      network: 'Сервер розміщення недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductPlacementStorage[]
+}
+
+export async function uploadProductPlacementStorageReturn(
+  storageId: number,
+  productPlacementStorages: ProductPlacementStorage[],
+): Promise<ProductPlacementStorage[]> {
+  const result = await apiRequest<unknown>('/products/placements/storage/upload/placement/return', {
+    method: 'POST',
+    body: {
+      productPlacementStorages,
+      storageId,
+    },
+    errorMessages: {
+      default: 'Не вдалося зберегти виправлені розміщення',
+      network: 'Сервер розміщення недоступний',
+    },
+  })
+
+  return normalizeArray(result) as ProductPlacementStorage[]
 }
 
 export async function getProductStorageLocationHistory(

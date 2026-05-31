@@ -90,6 +90,10 @@ export function getProductShopImageUrl(product?: Product | null): string {
   return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''
 }
 
+export function getProductShopGalleryImageUrl(vendorCode: string, suffix: number): string {
+  return `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.trim().toLowerCase())}_${suffix}_water.jpg`
+}
+
 export function getProductOriginalNumbers(product?: Product | null): ProductOriginalNumber[] {
   return product?.ProductOriginalNumbers?.filter((item) => Boolean(item.OriginalNumber)) || []
 }
@@ -150,4 +154,22 @@ export function formatPrice(value?: number | null): string {
 
 export function getBooleanBadgeColor(value?: boolean): string {
   return value ? 'green' : 'gray'
+}
+
+export function getRelatedProductRowColor(product?: Partial<Product> | null): string | undefined {
+  const top = product?.Top?.trim().toLowerCase()
+
+  if (top === 'x9' || top === 'х9') {
+    return 'red.7'
+  }
+
+  if (product?.IsForSale) {
+    return 'blue.7'
+  }
+
+  if (product?.IsForZeroSale) {
+    return 'green.7'
+  }
+
+  return undefined
 }

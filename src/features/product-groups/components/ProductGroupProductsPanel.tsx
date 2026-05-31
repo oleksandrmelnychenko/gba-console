@@ -9,17 +9,21 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { getProductGroupProducts } from '../api/productGroupsApi'
+import { getProductGroupProducts, getRedirectedProductByNetId } from '../api/productGroupsApi'
 import type { ProductProductGroup } from '../types'
 import { displayValue } from '../utils'
 
-const PAGE_LIMIT_OPTIONS = ['15', '25', '50', '100']
+const PAGE_LIMIT_OPTIONS = ['15', '25', '50', '100', '150', '200']
+const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 
 const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -34,18 +38,46 @@ type ProductGroupProductsPanelProps = {
 
 export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupProductsPanelProps) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [productLinks, setProductLinks] = useValueState<ProductProductGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
   const [limit, setLimit] = useValueState(50)
   const [totalFilteredQty, setTotalFilteredQty] = useValueState(0)
   const [totalQty, setTotalQty] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
+  const [isRedirecting, setRedirecting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const loadSequenceRef = useRef(0)
   const canLoadMore = productLinks.length < totalFilteredQty
+  const openProduct = useCallback(
+    async (productLink: ProductProductGroup) => {
+      const productNetId = productLink.Product?.NetUid?.trim()
+
+      if (!productNetId || isRedirecting) {
+        return
+      }
+
+      setRedirecting(true)
+
+      try {
+        const product = await getRedirectedProductByNetId(productNetId)
+        const targetNetId = product?.NetUid?.trim() || productNetId
+
+        navigate(`/products?netId=${encodeURIComponent(targetNetId)}`)
+      } catch (redirectError) {
+        notifications.show({
+          color: 'red',
+          message: redirectError instanceof Error ? redirectError.message : t('Не вдалося відкрити товар'),
+        })
+      } finally {
+        setRedirecting(false)
+      }
+    },
+    [isRedirecting, navigate, setRedirecting, t],
+  )
   const columns = useMemo<DataTableColumn<ProductProductGroup>[]>(
     () => [
       {
@@ -166,12 +198,10 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
 
   function updateSearch(nextSearchValue: string) {
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   function resetSearch() {
     setSearchDraft('')
-    setSearchValue('')
   }
 
   return (
@@ -238,6 +268,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         minWidth={1220}
         tableId={`product-group-products-${productGroupNetId}`}
         toolbarLeft={toolbarLeft}
+        onRowClick={(productLink) => void openProduct(productLink)}
       />
 
       <Group justify="space-between">

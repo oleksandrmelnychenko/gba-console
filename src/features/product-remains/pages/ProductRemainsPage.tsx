@@ -65,6 +65,7 @@ import {
 type ProductRemainsTab = 'batches' | 'products'
 
 const ALL_STORAGES_VALUE = '__all_storages__'
+const LOCAL_CURRENCY_CODE = 'UAH'
 const PAGE_SIZE = 25
 const pageSizeOptions = ['25', '50', '100']
 
@@ -130,7 +131,6 @@ function useProductRemainsPageModel() {
   const [productHasMore, setProductHasMore] = useValueState(true)
   const [productError, setProductError] = useValueState<string | null>(null)
   const [isLoadingProducts, setLoadingProducts] = useValueState(false)
-  const [selectedProductRow, setSelectedProductRow] = useValueState<RemainingConsignment | null>(null)
   const [selectedMovementRow, setSelectedMovementRow] = useValueState<RemainingConsignment | null>(null)
 
   const [downloadDocument, setDownloadDocument] = useValueState<ProductRemainsExportDocument | null>(null)
@@ -224,7 +224,6 @@ function useProductRemainsPageModel() {
     setProductTotals(null)
     setProductOffset(0)
     setProductHasMore(true)
-    setSelectedProductRow(null)
     setSelectedMovementRow(null)
   }
 
@@ -299,14 +298,14 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
-    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, resourceError,
-    selectedBatch, selectedMovementRow, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedProductRow, setSelectedStorageValue,
+    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
 }
@@ -592,14 +591,14 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft,
+    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
-    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, resourceError,
-    selectedBatch, selectedMovementRow, selectedProductRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
-    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedProductRow, setSelectedStorageValue,
+    setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
 
@@ -725,7 +724,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   onClick={() => {
                     setSelectedBatch(null)
                     setSelectedMovementRow(null)
-                    setSelectedProductRow(null)
                     setActiveTab(tab.value)
                   }}
                 >
@@ -758,6 +756,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   loaded={batchRows.length}
                   onLoadMore={() => setBatchOffset(batchRows.length)}
                 />
+                <RemainsTotalsFooter kind="batches" totals={batchTotals} />
               </Stack>
               </Box>
             )}
@@ -789,7 +788,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   minWidth={1600}
                   tableId="product-remains-products"
                   toolbarLeft={productToolbarLeft}
-                  onRowClick={setSelectedProductRow}
+                  onRowClick={setSelectedMovementRow}
                 />
                 <TableFooter
                   canLoadMore={productHasMore && !filterError && Boolean(storageNetId)}
@@ -797,6 +796,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   loaded={productRows.length}
                   onLoadMore={() => setProductOffset(productRows.length)}
                 />
+                <RemainsTotalsFooter kind="products" totals={productTotals} />
               </Stack>
               </Box>
             )}
@@ -814,16 +814,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         {selectedBatch && (
           <BatchDetails batch={selectedBatch} columns={batchDetailColumns} />
         )}
-      </AppDrawer>
-
-      <AppDrawer
-        opened={Boolean(selectedProductRow)}
-        position="right"
-        size="min(720px, 100vw)"
-        title={t('Деталі товару')}
-        onClose={() => setSelectedProductRow(null)}
-      >
-        {selectedProductRow && <ProductDetails row={selectedProductRow} />}
       </AppDrawer>
 
       <AppDrawer
@@ -1265,6 +1255,54 @@ function TableFooter({
   )
 }
 
+function TotalEntry({ label, value }: { label: string; value: string }) {
+  return (
+    <Box>
+      <Text c="dimmed" size="xs">
+        {label}
+      </Text>
+      <Text size="sm" fw={600}>
+        {value}
+      </Text>
+    </Box>
+  )
+}
+
+function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTotals<TItem> | null; kind: ProductRemainsTab }) {
+  const { t } = useI18n()
+
+  if (!totals) {
+    return null
+  }
+
+  const generalLabel = t('Загальна')
+  const periodLabel = t('За вибраний період')
+  const accountingShort = t('Бух.')
+
+  return (
+    <Box>
+      <Divider mb="sm" />
+      <Text fw={700} size="sm" mb="xs">
+        {t('Сума')}
+      </Text>
+      <SimpleGrid cols={{ base: 2, sm: 3, lg: 4 }} spacing="sm">
+        <TotalEntry label={t('Загальна к-сть')} value={formatAmount(totals.TotalQty)} />
+        <TotalEntry label={`${generalLabel} (EUR)`} value={formatMoney(totals.TotalAmount)} />
+        <TotalEntry label={`${generalLabel} (EUR, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmount)} />
+        <TotalEntry label={`${generalLabel} (${LOCAL_CURRENCY_CODE})`} value={formatMoney(totals.TotalAmountLocal)} />
+        <TotalEntry label={`${generalLabel} (${LOCAL_CURRENCY_CODE}, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountLocal)} />
+        <TotalEntry label={t('К-сть за вибраний період')} value={formatAmount(totals.TotalQtyFiltered)} />
+        <TotalEntry label={`${periodLabel} (EUR)`} value={formatMoney(totals.TotalAmountFiltered)} />
+        <TotalEntry label={`${periodLabel} (EUR, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountFiltered)} />
+        {kind === 'batches' && (
+          <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE})`} value={formatMoney(totals.TotalAmountLocalFiltered)} />
+        )}
+        <TotalEntry label={`${periodLabel} (${LOCAL_CURRENCY_CODE}, ${accountingShort})`} value={formatMoney(totals.AccountingTotalAmountLocalFiltered)} />
+      </SimpleGrid>
+    </Box>
+  )
+}
+
 function BatchDetails({
   batch,
   columns,
@@ -1305,32 +1343,6 @@ function BatchDetails({
           {t('У відповіді немає позицій партії')}
         </Text>
       )}
-    </Stack>
-  )
-}
-
-function ProductDetails({ row }: { row: RemainingConsignment }) {
-  return (
-    <Stack gap="md">
-      <Box>
-        <Text fw={700}>{getVendorCode(row.Product)}</Text>
-        <Text size="sm">{getProductName(row.Product)}</Text>
-      </Box>
-      <Divider />
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-        <DetailItem label="Дата" value={formatDate(row.FromDate)} />
-        <DetailItem label="Постачальник" value={displayValue(row.SupplierName)} />
-        <DetailItem label="Склад" value={displayValue(row.StorageName)} />
-        <DetailItem label="Номер приходу" value={displayValue(row.ProductIncomeNumber)} />
-        <DetailItem label="Інвойс" value={displayValue(row.InvoiceNumber)} />
-        <DetailItem label="Організація" value={displayValue(row.OrganizationName)} />
-        <DetailItem label="Кількість" value={formatAmount(row.RemainingQty)} />
-        <DetailItem label="Ціна net" value={formatMoney(row.NetPrice)} />
-        <DetailItem label="Ціна gross" value={formatMoney(row.GrossPrice)} />
-        <DetailItem label="Облік gross" value={formatMoney(row.AccountingGrossPrice)} />
-        <DetailItem label="Валюта" value={displayValue(row.CurrencyName)} />
-        <DetailItem label="Вага" value={formatAmount(row.Weight)} />
-      </SimpleGrid>
     </Stack>
   )
 }

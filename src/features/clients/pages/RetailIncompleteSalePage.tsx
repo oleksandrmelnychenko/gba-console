@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getIncompleteSaleByNetUid } from '../api/onlineShopClientsApi'
-import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
+import { IncompleteSaleItemsList } from '../components/IncompleteSaleItemsList'
 import type { IncompleteSale } from '../onlineShopTypes'
 
 export function RetailIncompleteSalePage() {
@@ -68,7 +68,7 @@ export function RetailIncompleteSalePage() {
               </Text>
             </Group>
           ) : (
-            <OnlineShopOrderItemsList
+            <IncompleteSaleItemsList
               emptyText={t('Товарів не знайдено')}
               items={(netUid ? incompleteSale?.OrderItems || [] : []).filter((item) => item.Product)}
             />

@@ -9,7 +9,6 @@ import {
   Divider,
   Group,
   Loader,
-  MultiSelect,
   NumberInput,
   Select,
   Stack,
@@ -37,7 +36,8 @@ import {
   IconToggleRight,
 } from '@tabler/icons-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
+import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
@@ -112,6 +112,7 @@ function useClientsPageModel() {
   const [urlSearchParams] = useSearchParams()
   const { hasPermission } = useAuth()
   const hasLoadedClientsRef = useRef(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [clients, setClients] = useValueState<Client[]>([])
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
@@ -164,7 +165,6 @@ function useClientsPageModel() {
     }),
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
   )
-  const roleOptions = useMemo(() => buildRoleOptions(clientTypes), [clientTypes])
   const openClientActions = useCallback((client: Client) => setSelectedClient(client), [setSelectedClient])
   const clientColumns = useClientColumns(openClientActions)
   const changePageSize = useCallback((value: string | null) => {
@@ -282,6 +282,10 @@ function useClientsPageModel() {
       cancelled = true
     }
   }, [setClientFilterItems, setClientTypes, setTotalCount])
+
+  useEffect(() => {
+    searchInputRef.current?.focus()
+  }, [])
 
   function resetSearch() {
     setPage(1)
@@ -452,6 +456,7 @@ function useClientsPageModel() {
     clientAction,
     clientColumns,
     clients,
+    clientTypes,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -460,9 +465,9 @@ function useClientsPageModel() {
     reserveClient,
     reserveDays,
     roleFilter,
-    roleOptions,
     searchField,
     searchFieldOptions,
+    searchInputRef,
     searchValue,
     selectedClient,
     sorting,
@@ -508,6 +513,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     clientAction,
     clientColumns,
     clients,
+    clientTypes,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -516,9 +522,9 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     reserveClient,
     reserveDays,
     roleFilter,
-    roleOptions,
     searchField,
     searchFieldOptions,
+    searchInputRef,
     searchValue,
     selectedClient,
     sorting,
@@ -554,12 +560,13 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
           <ClientsFilterToolbar
             activeFilter={activeFilter}
             canCreateClient={canCreateClient}
+            clientTypes={clientTypes}
             isExporting={clientAction === 'export'}
             isTableBusy={isTableBusy}
             roleFilter={roleFilter}
-            roleOptions={roleOptions}
             searchField={searchField}
             searchFieldOptions={searchFieldOptions}
+            searchInputRef={searchInputRef}
             searchValue={searchValue}
             onCreate={openCreateClient}
             onExport={handleExport}
@@ -754,12 +761,13 @@ function ClientActionsModal({
 function ClientsFilterToolbar({
   activeFilter,
   canCreateClient,
+  clientTypes,
   isExporting,
   isTableBusy,
   roleFilter,
-  roleOptions,
   searchField,
   searchFieldOptions,
+  searchInputRef,
   searchValue,
   onCreate,
   onExport,
@@ -772,12 +780,13 @@ function ClientsFilterToolbar({
 }: {
   activeFilter: ActiveFilter
   canCreateClient: boolean
+  clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
   roleFilter: string[]
-  roleOptions: Array<{ label: string; value: string }>
   searchField: string
   searchFieldOptions: Array<{ label: string; value: string }>
+  searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
   onCreate: () => void
   onExport: () => void
@@ -793,6 +802,7 @@ function ClientsFilterToolbar({
   return (
     <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
       <TextInput
+        ref={searchInputRef}
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
@@ -828,15 +838,9 @@ function ClientsFilterToolbar({
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
         }}
       />
-      <MultiSelect
-        clearable
-        data={roleOptions}
-        disabled={roleOptions.length === 0}
-        label={t('Ролі')}
-        maxDropdownHeight={280}
-        placeholder={t('Усі ролі')}
+      <ClientTypeRoleFilter
+        clientTypes={clientTypes}
         value={roleFilter}
-        style={{ flex: '0 0 220px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetRoleFilter(value)
@@ -1225,23 +1229,6 @@ function ClientTablePagination({
         <IconChevronRight size={16} />
       </ActionIcon>
     </Group>
-  )
-}
-
-function buildRoleOptions(clientTypes: ClientType[]) {
-  return clientTypes.flatMap((clientType) =>
-    (clientType.ClientTypeRoles || []).flatMap((role) => {
-      if (typeof role.Id !== 'number') {
-        return []
-      }
-
-      return [
-        {
-          value: String(role.Id),
-          label: [clientType.Name, role.Name].filter(Boolean).join(': ') || translate('Без назви'),
-        },
-      ]
-    }),
   )
 }
 

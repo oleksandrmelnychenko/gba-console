@@ -6,24 +6,41 @@ import {
   Grid,
   Group,
   Loader,
-  SimpleGrid,
   Stack,
   Switch,
   Text,
-  TextInput,
   Title,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconChevronLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { deleteClient, getClientById, updateClient } from '../api/clientFormApi'
+import { uploadClientContract } from '../api/clientCabinetApi'
+import {
+  createCountry,
+  createIncoterm,
+  createRegion,
+  getAvailableRegionCode,
+} from '../api/clientLookupsApi'
+import { useClientFormLookups } from '../hooks/useClientFormLookups'
+import { BankDetailsFields } from '../components/form/BankDetailsFields'
+import { ContactInfoFields } from '../components/form/ContactInfoFields'
+import { EditClientTypePanel } from '../components/EditClientTypePanel'
+import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
+import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
+import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
+import { PricingPanel } from '../components/pricing/PricingPanel'
+import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
+import { SalesPanel } from '../components/sales/SalesPanel'
+import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
+import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
 import {
   EDIT_CLIENT_ACTIVE_PERMISSION,
   EDIT_CLIENT_DELETE_PERMISSION,
@@ -31,10 +48,12 @@ import {
   EDIT_CLIENT_PRICING_PERMISSION,
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
-import type { Client } from '../types'
+import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
+const DEFAULT_UKRAINIAN_REGION_CODE = 'XM007'
+const DEFAULT_POLAND_REGION_CODE = 'PL007'
 
 type EditStep = {
   label: string
@@ -50,16 +69,42 @@ type ClientEditRouteState = {
 
 type EditStepContentProps = {
   client: Client
+  errors: ClientFormErrors
+  role: ClientFormRole
+  isLoadingRegionCode: boolean
+  isUploadingDocuments: boolean
+  lookups: ReturnType<typeof useClientFormLookups>['lookups']
   setAccountNumber: (value: string) => void
+  setAccountNumberCurrency: (currency: Currency | null) => void
   setBankField: SetClientBankField
   setField: SetClientField
   setIbanNumber: (value: string) => void
+  setIbanNumberCurrency: (currency: Currency | null) => void
+  onRegionChange: (region: Region | null) => void
+  onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
+  onAddDocuments: (files: File[]) => void
+  onRemoveDocument: (document: ClientContractDocument) => void
+  onSaveDocuments: () => void
+  onCreateIncoterm: (name: string) => void
+  onCreateCountry: (name: string, code: string) => void
+  onCreateRegion: (name: string) => void
+  onClientChange: (client: Client) => void
   step: string
+  productNetId?: string
+}
+
+function getClientRole(client: Client | null): ClientFormRole {
+  const type = client?.ClientInRole?.ClientType?.Type
+  return {
+    isProvider: type === CLIENT_TYPE_PROVIDER,
+    isBuyer: type !== CLIENT_TYPE_PROVIDER,
+    isSubClient: Boolean(client?.IsSubClient || client?.IsTradePoint),
+  }
 }
 
 export function ClientEditPage() {
   const { t } = useI18n()
-  const { netid, step } = useParams()
+  const { netid, step, productNetId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
@@ -69,9 +114,26 @@ export function ClientEditPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [typePanelOpened, setTypePanelOpened] = useValueState(false)
+  const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
+  const [isUploadingDocuments, setUploadingDocuments] = useValueState(false)
+  const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
+  const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
+  const originalRegionRef = useRef<{ regionNetUid?: string; regionCode?: Client['RegionCode'] }>({})
   const routeState = location.state as ClientEditRouteState | null
   const basePath = location.pathname.startsWith('/suppliers/edit') ? '/suppliers/edit' : '/clients/edit'
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
+  const role = useMemo(() => getClientRole(client), [client])
+  const {
+    lookups,
+    error: lookupsError,
+    reloadCountries,
+    reloadIncoterms,
+    reloadRegions,
+  } = useClientFormLookups({
+    needsProviderLookups: role.isProvider,
+    needsBuyerLookups: role.isBuyer,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -89,6 +151,10 @@ export function ClientEditPage() {
 
         if (!cancelled) {
           setClient(nextClient)
+          originalRegionRef.current = {
+            regionNetUid: nextClient?.Region?.NetUid,
+            regionCode: nextClient?.RegionCode,
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -128,6 +194,25 @@ export function ClientEditPage() {
             ...currentClient,
             [key]: value,
             ...(key === 'SupplierName' ? { Manufacturer: String(value || '') } : {}),
+          }
+        : currentClient,
+    )
+  }
+
+  function handleClientChange(updatedClient: Client) {
+    setClient(updatedClient)
+  }
+
+  function setClientTypeRole(clientType: ClientType, clientTypeRole: ClientTypeRole) {
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientInRole: {
+              ...currentClient.ClientInRole,
+              ClientType: clientType,
+              ClientTypeRole: clientTypeRole,
+            },
           }
         : currentClient,
     )
@@ -181,6 +266,240 @@ export function ClientEditPage() {
     )
   }
 
+  function setAccountNumberCurrency(currency: Currency | null) {
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientBankDetails: {
+              ...currentClient.ClientBankDetails,
+              AccountNumber: {
+                ...currentClient.ClientBankDetails?.AccountNumber,
+                Currency: currency || undefined,
+              },
+            },
+          }
+        : currentClient,
+    )
+  }
+
+  function setIbanNumberCurrency(currency: Currency | null) {
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientBankDetails: {
+              ...currentClient.ClientBankDetails,
+              ClientBankDetailIbanNo: {
+                ...currentClient.ClientBankDetails?.ClientBankDetailIbanNo,
+                Currency: currency || undefined,
+              },
+            },
+          }
+        : currentClient,
+    )
+  }
+
+  function setRegionCodeField(key: 'Value' | 'City' | 'District', value: string) {
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            RegionCode: {
+              ...currentClient.RegionCode,
+              [key]: value,
+            },
+          }
+        : currentClient,
+    )
+  }
+
+  async function handleRegionChange(region: Region | null) {
+    if (!region) {
+      setClient((currentClient) =>
+        currentClient
+          ? {
+              ...currentClient,
+              Region: undefined,
+              RegionCode: undefined,
+            }
+          : currentClient,
+      )
+      return
+    }
+
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            Region: region,
+          }
+        : currentClient,
+    )
+
+    const original = originalRegionRef.current
+    const originalCodeValue = original.regionCode?.Value
+    const isDefaultRegionCode =
+      originalCodeValue === DEFAULT_UKRAINIAN_REGION_CODE || originalCodeValue === DEFAULT_POLAND_REGION_CODE
+
+    if (
+      !isDefaultRegionCode
+      && original.regionNetUid
+      && region.NetUid === original.regionNetUid
+      && client?.RegionCodeId
+      && original.regionCode
+    ) {
+      setClient((currentClient) =>
+        currentClient
+          ? {
+              ...currentClient,
+              Region: region,
+              RegionCode: original.regionCode,
+            }
+          : currentClient,
+      )
+      return
+    }
+
+    setLoadingRegionCode(true)
+    setError(null)
+
+    try {
+      const regionCode = await getAvailableRegionCode(region)
+
+      if (regionCode) {
+        setClient((currentClient) =>
+          currentClient
+            ? {
+                ...currentClient,
+                RegionCode: regionCode,
+              }
+            : currentClient,
+        )
+      }
+    } catch (regionCodeError) {
+      setError(regionCodeError instanceof Error ? regionCodeError.message : t('Не вдалося отримати код регіону'))
+    } finally {
+      setLoadingRegionCode(false)
+    }
+  }
+
+  function handleAddDocuments(files: File[]) {
+    setPendingDocuments((current) => [...current, ...files])
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientContractDocuments: [
+              ...(currentClient.ClientContractDocuments || []),
+              ...files.map((file) => ({
+                FileName: file.name,
+                ContentType: file.type,
+              })),
+            ],
+          }
+        : currentClient,
+    )
+  }
+
+  function handleRemoveDocument(document: ClientContractDocument) {
+    if (document.Id && document.Id > 0) {
+      setClient((currentClient) =>
+        currentClient
+          ? {
+              ...currentClient,
+              ClientContractDocuments: (currentClient.ClientContractDocuments || []).map((item) =>
+                item === document ? { ...item, Deleted: true } : item,
+              ),
+            }
+          : currentClient,
+      )
+      return
+    }
+
+    setPendingDocuments((current) => current.filter((file) => file.name !== document.FileName))
+    setClient((currentClient) =>
+      currentClient
+        ? {
+            ...currentClient,
+            ClientContractDocuments: (currentClient.ClientContractDocuments || []).filter((item) => item !== document),
+          }
+        : currentClient,
+    )
+  }
+
+  async function handleSaveDocuments() {
+    if (!client || !(client.ClientContractDocuments || []).length) {
+      return
+    }
+
+    setUploadingDocuments(true)
+    setError(null)
+
+    try {
+      const updatedClient = await uploadClientContract(client, pendingDocuments)
+
+      if (updatedClient) {
+        setClient(updatedClient)
+      }
+
+      setPendingDocuments([])
+      notifications.show({
+        color: 'green',
+        message: t('Документи збережено'),
+      })
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося зберегти документи'))
+    } finally {
+      setUploadingDocuments(false)
+    }
+  }
+
+  async function handleCreateIncoterm(name: string) {
+    setError(null)
+
+    try {
+      const created = await createIncoterm({ IncotermName: name })
+      await reloadIncoterms()
+
+      if (created) {
+        setField('Incoterm', created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити Incoterms'))
+    }
+  }
+
+  async function handleCreateCountry(name: string, code: string) {
+    setError(null)
+
+    try {
+      const created = await createCountry({ Name: name, Code: code })
+      await reloadCountries()
+
+      if (created) {
+        setField('Country', created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити країну'))
+    }
+  }
+
+  async function handleCreateRegion(name: string) {
+    setError(null)
+
+    try {
+      const created = await createRegion({ Name: name })
+      await reloadRegions()
+
+      if (created) {
+        await handleRegionChange(created)
+      }
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : t('Не вдалося створити регіон'))
+    }
+  }
+
   function goToStep(nextStep: string) {
     navigate(`${basePath}/${netid}/${nextStep}`, {
       state: location.state,
@@ -191,6 +510,14 @@ export function ClientEditPage() {
     event.preventDefault()
 
     if (!client) {
+      return
+    }
+
+    const errors = validateClientForm(client, role, t('Забагато символів'))
+    setFormErrors(errors)
+
+    if (Object.keys(errors).length > 0) {
+      setError(t('Перевірте правильність заповнення форми'))
       return
     }
 
@@ -254,16 +581,18 @@ export function ClientEditPage() {
     <Stack gap="lg">
       <ClientEditHeader
         canDelete={hasPermission(EDIT_CLIENT_DELETE_PERMISSION)}
+        canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
         client={client}
         isDeleting={isDeleting}
         isSaving={isSaving}
         onClose={closeSheet}
         onDelete={() => setDeleteModalOpened(true)}
+        onTypeClick={() => setTypePanelOpened(true)}
       />
 
-      {error && (
+      {(error || lookupsError) && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
+          {error || lookupsError}
         </Alert>
       )}
 
@@ -272,15 +601,32 @@ export function ClientEditPage() {
         canEditActive={hasPermission(EDIT_CLIENT_ACTIVE_PERMISSION)}
         canViewType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
         client={client}
+        errors={formErrors}
         firstStep={firstStep}
         isLoading={isLoading}
+        isLoadingRegionCode={isLoadingRegionCode}
+        isUploadingDocuments={isUploadingDocuments}
+        lookups={lookups}
+        productNetId={productNetId}
+        role={role}
         selectedStep={step}
         setAccountNumber={setAccountNumber}
+        setAccountNumberCurrency={setAccountNumberCurrency}
         setBankField={setBankField}
         setField={setField}
         setIbanNumber={setIbanNumber}
+        setIbanNumberCurrency={setIbanNumberCurrency}
         steps={steps}
+        onAddDocuments={handleAddDocuments}
+        onClientChange={handleClientChange}
+        onCreateCountry={handleCreateCountry}
+        onCreateIncoterm={handleCreateIncoterm}
+        onCreateRegion={handleCreateRegion}
         onGoToStep={goToStep}
+        onRegionChange={handleRegionChange}
+        onRegionCodeFieldChange={setRegionCodeField}
+        onRemoveDocument={handleRemoveDocument}
+        onSaveDocuments={handleSaveDocuments}
         onSubmit={handleSubmit}
       />
 
@@ -291,6 +637,15 @@ export function ClientEditPage() {
         onClose={() => setDeleteModalOpened(false)}
         onConfirm={handleDelete}
       />
+
+      <EditClientTypePanel
+        currentRoleId={client?.ClientInRole?.ClientTypeRole?.Id}
+        currentRoleNetUid={client?.ClientInRole?.ClientTypeRole?.NetUid}
+        currentTypeNetUid={client?.ClientInRole?.ClientType?.NetUid}
+        opened={typePanelOpened}
+        onClose={() => setTypePanelOpened(false)}
+        onSelect={setClientTypeRole}
+      />
     </Stack>
     </AppDrawer>
   )
@@ -298,35 +653,66 @@ export function ClientEditPage() {
 
 function ClientEditHeader({
   canDelete,
+  canEditType,
   client,
   isDeleting,
   isSaving,
   onClose,
   onDelete,
+  onTypeClick,
 }: {
   canDelete: boolean
+  canEditType: boolean
   client: Client | null
   isDeleting: boolean
   isSaving: boolean
   onClose: () => void
   onDelete: () => void
+  onTypeClick: () => void
 }) {
   const { t } = useI18n()
+  const regionCodeValue = client?.RegionCode?.Value
 
   return (
     <Group justify="space-between" align="start">
-      <Group gap="xs">
-        {client && (
-          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
-            {client.IsActive === false ? t('Неактивний') : t('Активний')}
-          </Badge>
+      <Stack gap="xs">
+        {client && (regionCodeValue || client.FullName) && (
+          <Group gap="xs">
+            {regionCodeValue && (
+              <Text fw={600} size="sm">
+                {regionCodeValue}
+              </Text>
+            )}
+            {client.FullName && (
+              <Text fw={600} size="sm">
+                {client.FullName}
+              </Text>
+            )}
+          </Group>
         )}
-        {client?.ClientInRole?.ClientTypeRole?.Name && (
-          <Badge color="violet" variant="light">
-            {client.ClientInRole.ClientTypeRole.Name}
-          </Badge>
-        )}
-      </Group>
+        <Group gap="xs">
+          {client && (
+            <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
+              {client.IsActive === false ? t('Неактивний') : t('Активний')}
+            </Badge>
+          )}
+          {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+            <Badge
+              color="violet"
+              variant="light"
+              style={canEditType ? { cursor: 'pointer' } : undefined}
+              onClick={canEditType ? onTypeClick : undefined}
+            >
+              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
+            </Badge>
+          )}
+          {client?.IsTemporaryClient && (
+            <Badge color="blue" variant="light">
+              {t('З інтернет-магазину')}
+            </Badge>
+          )}
+        </Group>
+      </Stack>
       <Group gap="xs">
         <Button color="gray" leftSection={<IconChevronLeft size={16} />} variant="light" onClick={onClose}>
           {t('Скасувати')}
@@ -356,30 +742,64 @@ function ClientEditBody({
   canEditActive,
   canViewType,
   client,
+  errors,
   firstStep,
   isLoading,
+  isLoadingRegionCode,
+  isUploadingDocuments,
+  lookups,
+  productNetId,
+  role,
   selectedStep,
   setAccountNumber,
+  setAccountNumberCurrency,
   setBankField,
   setField,
   setIbanNumber,
+  setIbanNumberCurrency,
   steps,
+  onAddDocuments,
+  onClientChange,
+  onCreateCountry,
+  onCreateIncoterm,
+  onCreateRegion,
   onGoToStep,
+  onRegionChange,
+  onRegionCodeFieldChange,
+  onRemoveDocument,
+  onSaveDocuments,
   onSubmit,
 }: {
   activeStep?: EditStep
   canEditActive: boolean
   canViewType: boolean
   client: Client | null
+  errors: ClientFormErrors
   firstStep?: EditStep
   isLoading: boolean
+  isLoadingRegionCode: boolean
+  isUploadingDocuments: boolean
+  lookups: ReturnType<typeof useClientFormLookups>['lookups']
+  productNetId?: string
+  role: ClientFormRole
   selectedStep?: string
   setAccountNumber: (value: string) => void
+  setAccountNumberCurrency: (currency: Currency | null) => void
   setBankField: SetClientBankField
   setField: SetClientField
   setIbanNumber: (value: string) => void
+  setIbanNumberCurrency: (currency: Currency | null) => void
   steps: EditStep[]
+  onAddDocuments: (files: File[]) => void
+  onClientChange: (client: Client) => void
+  onCreateCountry: (name: string, code: string) => void
+  onCreateIncoterm: (name: string) => void
+  onCreateRegion: (name: string) => void
   onGoToStep: (nextStep: string) => void
+  onRegionChange: (region: Region | null) => void
+  onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
+  onRemoveDocument: (document: ClientContractDocument) => void
+  onSaveDocuments: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const { t } = useI18n()
@@ -449,11 +869,28 @@ function ClientEditBody({
 
               <EditStepContent
                 client={client}
+                errors={errors}
+                isLoadingRegionCode={isLoadingRegionCode}
+                isUploadingDocuments={isUploadingDocuments}
+                lookups={lookups}
+                productNetId={productNetId}
+                role={role}
                 setAccountNumber={setAccountNumber}
+                setAccountNumberCurrency={setAccountNumberCurrency}
                 setBankField={setBankField}
                 setField={setField}
                 setIbanNumber={setIbanNumber}
+                setIbanNumberCurrency={setIbanNumberCurrency}
                 step={selectedStep || firstStep?.value || ''}
+                onAddDocuments={onAddDocuments}
+                onClientChange={onClientChange}
+                onCreateCountry={onCreateCountry}
+                onCreateIncoterm={onCreateIncoterm}
+                onCreateRegion={onCreateRegion}
+                onRegionChange={onRegionChange}
+                onRegionCodeFieldChange={onRegionCodeFieldChange}
+                onRemoveDocument={onRemoveDocument}
+                onSaveDocuments={onSaveDocuments}
               />
             </Stack>
           </Card>
@@ -528,42 +965,76 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
 
 function EditStepContent({
   client,
+  errors,
+  isLoadingRegionCode,
+  isUploadingDocuments,
+  lookups,
+  productNetId,
+  role,
   setAccountNumber,
+  setAccountNumberCurrency,
   setBankField,
   setField,
   setIbanNumber,
+  setIbanNumberCurrency,
+  onAddDocuments,
+  onClientChange,
+  onCreateCountry,
+  onCreateIncoterm,
+  onCreateRegion,
+  onRegionChange,
+  onRegionCodeFieldChange,
+  onRemoveDocument,
+  onSaveDocuments,
   step,
 }: EditStepContentProps) {
-  const { t } = useI18n()
-
   if (step === 'contact-information') {
+    return <ContactInfoFields client={client} errors={errors} role={role} onChange={setField} />
+  }
+
+  if (step === 'pricing') {
     return (
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-        <TextInput label={t('Телефон')} value={client.ClientNumber || ''} onChange={(event) => setField('ClientNumber', event.currentTarget.value)} />
-        <TextInput label={t('Мобільний')} value={client.MobileNumber || ''} onChange={(event) => setField('MobileNumber', event.currentTarget.value)} />
-        <TextInput label="SMS" value={client.SMSNumber || ''} onChange={(event) => setField('SMSNumber', event.currentTarget.value)} />
-        <TextInput label="Email" value={client.EmailAddress || ''} onChange={(event) => setField('EmailAddress', event.currentTarget.value)} />
-        <TextInput label={t('Директор')} value={client.DirectorNumber || ''} onChange={(event) => setField('DirectorNumber', event.currentTarget.value)} />
-        <TextInput label={t('Бухгалтер')} value={client.AccountantNumber || ''} onChange={(event) => setField('AccountantNumber', event.currentTarget.value)} />
-        <TextInput label={t('Фактична адреса')} value={client.ActualAddress || ''} onChange={(event) => setField('ActualAddress', event.currentTarget.value)} />
-        <TextInput label={t('Юридична адреса')} value={client.LegalAddress || ''} onChange={(event) => setField('LegalAddress', event.currentTarget.value)} />
-        <TextInput label={t('Адреса доставки')} value={client.DeliveryAddress || ''} onChange={(event) => setField('DeliveryAddress', event.currentTarget.value)} />
-        <TextInput label={t('Менеджер')} value={client.Manager || ''} onChange={(event) => setField('Manager', event.currentTarget.value)} />
-      </SimpleGrid>
+      <PricingPanel
+        client={client}
+        isProvider={role.isProvider}
+        mode="edit"
+        onChange={onClientChange}
+      />
     )
   }
 
   if (step === 'bank-details') {
     return (
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-        <TextInput label={t('Код філії')} value={client.ClientBankDetails?.BranchCode || ''} onChange={(event) => setBankField('BranchCode', event.currentTarget.value)} />
-        <TextInput label="SWIFT" value={client.ClientBankDetails?.Swift || ''} onChange={(event) => setBankField('Swift', event.currentTarget.value)} />
-        <TextInput label={t('Банк і філія')} value={client.ClientBankDetails?.BankAndBranch || ''} onChange={(event) => setBankField('BankAndBranch', event.currentTarget.value)} />
-        <TextInput label={t('Адреса банку')} value={client.ClientBankDetails?.BankAddress || ''} onChange={(event) => setBankField('BankAddress', event.currentTarget.value)} />
-        <TextInput label={t('Рахунок')} value={client.ClientBankDetails?.AccountNumber?.AccountNumber || ''} onChange={(event) => setAccountNumber(event.currentTarget.value)} />
-        <TextInput label="IBAN" value={client.ClientBankDetails?.ClientBankDetailIbanNo?.IBANNO || ''} onChange={(event) => setIbanNumber(event.currentTarget.value)} />
-      </SimpleGrid>
+      <BankDetailsFields
+        client={client}
+        currencies={lookups.currencies}
+        onAccountNumberChange={setAccountNumber}
+        onAccountNumberCurrencyChange={setAccountNumberCurrency}
+        onBankFieldChange={setBankField}
+        onIbanNumberChange={setIbanNumber}
+        onIbanNumberCurrencyChange={setIbanNumberCurrency}
+      />
     )
+  }
+
+  if (step === 'client-types') {
+    return <ClientStructurePanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'perfect-client') {
+    return <PerfectClientPanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'e-commerce') {
+    return <EcommercePanel client={client} onChange={onClientChange} />
+  }
+
+  if (step === 'sales') {
+    return <SalesPanel netId={client.NetUid ?? ''} />
+  }
+
+  if (step === 'most-purchased-products') {
+    return <RecommendationsPanel client={client} productNetId={productNetId} />
   }
 
   if (step !== 'general-information') {
@@ -577,21 +1048,27 @@ function EditStepContent({
   }
 
   return (
-    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
-      <TextInput label={t('Повна назва')} value={client.FullName || ''} onChange={(event) => setField('FullName', event.currentTarget.value)} />
-      <TextInput label={t('Назва')} value={client.Name || ''} onChange={(event) => setField('Name', event.currentTarget.value)} />
-      <TextInput label={t('Прізвище')} value={client.LastName || ''} onChange={(event) => setField('LastName', event.currentTarget.value)} />
-      <TextInput label={t("Ім'я")} value={client.FirstName || ''} onChange={(event) => setField('FirstName', event.currentTarget.value)} />
-      <TextInput label={t('По батькові')} value={client.MiddleName || ''} onChange={(event) => setField('MiddleName', event.currentTarget.value)} />
-      <TextInput label={t('ЄДРПОУ')} value={client.USREOU || ''} onChange={(event) => setField('USREOU', event.currentTarget.value)} />
-      <TextInput label={t('ІПН')} value={client.TIN || ''} onChange={(event) => setField('TIN', event.currentTarget.value)} />
-      <TextInput label="SROI" value={client.SROI || ''} onChange={(event) => setField('SROI', event.currentTarget.value)} />
-      <TextInput label={t('Постачальник')} value={client.SupplierName || client.Manufacturer || ''} onChange={(event) => setField('SupplierName', event.currentTarget.value)} />
-      <TextInput label={t('Код постачальника')} value={client.SupplierCode || ''} onChange={(event) => setField('SupplierCode', event.currentTarget.value)} />
-      <TextInput label={t('Бренд')} value={client.Brand || ''} onChange={(event) => setField('Brand', event.currentTarget.value)} />
-      <Switch checked={Boolean(client.IsIndividual)} label={t('Фізична особа')} onChange={(event) => setField('IsIndividual', event.currentTarget.checked)} />
-      <Switch checked={Boolean(client.IsNotResident)} label={t('Нерезидент')} onChange={(event) => setField('IsNotResident', event.currentTarget.checked)} />
-    </SimpleGrid>
+    <GeneralInfoFields
+      client={client}
+      countries={lookups.countries}
+      errors={errors}
+      incoterms={lookups.incoterms}
+      isLoadingRegionCode={isLoadingRegionCode}
+      isUploadingDocuments={isUploadingDocuments}
+      packingMarkingPayments={lookups.packingMarkingPayments}
+      packingMarkings={lookups.packingMarkings}
+      regions={lookups.regions}
+      role={role}
+      onAddDocuments={onAddDocuments}
+      onChange={setField}
+      onCreateCountry={onCreateCountry}
+      onCreateIncoterm={onCreateIncoterm}
+      onCreateRegion={onCreateRegion}
+      onRegionChange={onRegionChange}
+      onRegionCodeFieldChange={onRegionCodeFieldChange}
+      onRemoveDocument={onRemoveDocument}
+      onSaveDocuments={onSaveDocuments}
+    />
   )
 }
 

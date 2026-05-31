@@ -23,11 +23,13 @@ import {
   IconChevronRight,
   IconDownload,
   IconExternalLink,
+  IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
   IconRefresh,
   IconRestore,
   IconSearch,
+  IconStack2,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -37,15 +39,19 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
+import type { ProductCapitalization } from '../../product-capitalizations/types'
 import {
   exportProductIncomeDocument,
   getProductIncomeDocuments,
+  getProductIncomeInfo,
   getProductIncomeRemainings,
 } from '../api/productIncomeDocumentsApi'
 import type {
   NamedEntity,
   ProductIncomeDocument,
   ProductIncomeDocumentsExportDocument,
+  ProductIncomeInfo,
   ProductIncomeItem,
   RemainingConsignment,
 } from '../types'
@@ -126,7 +132,14 @@ function useProductIncomeDocumentsPageModel() {
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
+  const [optionsDocument, setOptionsDocument] = useValueState<ProductIncomeDocument | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<ProductIncomeDocument | null>(null)
+  const [documentInfoError, setDocumentInfoError] = useValueState<string | null>(null)
+  const [detailMode, setDetailMode] = useValueState<'view' | 'remainings'>('view')
+  const [isLoadingDocumentInfo, setLoadingDocumentInfo] = useValueState(false)
+  const [capitalization, setCapitalization] = useValueState<ProductCapitalization | null>(null)
+  const [isLoadingCapitalization, setLoadingCapitalization] = useValueState(false)
+  const [capitalizationError, setCapitalizationError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductIncomeDocumentsExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [exportingNetId, setExportingNetId] = useValueState<string | null>(null)
@@ -135,6 +148,8 @@ function useProductIncomeDocumentsPageModel() {
   const [isLoadingRemainings, setLoadingRemainings] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const remainingsRequestRef = useRef(0)
+  const capitalizationRequestRef = useRef(0)
+  const infoRequestRef = useRef(0)
   const { documents, isLoading, total } = documentsState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
@@ -151,23 +166,203 @@ function useProductIncomeDocumentsPageModel() {
     [page, searchValue, t, total],
   )
 
-  const openDocument = useCallback(
+  const openOptions = useCallback(
+    (document: ProductIncomeDocument) => {
+      setOptionsDocument(document)
+    },
+    [setOptionsDocument],
+  )
+  const loadCapitalization = useCallback(
+    (capitalizationNetUid: string) => {
+      const requestId = capitalizationRequestRef.current + 1
+      capitalizationRequestRef.current = requestId
+      setCapitalization(null)
+      setCapitalizationError(null)
+      setLoadingCapitalization(true)
+
+      async function run() {
+        try {
+          const detail = await getProductCapitalization(capitalizationNetUid)
+
+          if (capitalizationRequestRef.current === requestId) {
+            setCapitalization(detail)
+          }
+        } catch (loadError) {
+          if (capitalizationRequestRef.current === requestId) {
+            setCapitalizationError(
+              loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі оприбуткування'),
+            )
+          }
+        } finally {
+          if (capitalizationRequestRef.current === requestId) {
+            setLoadingCapitalization(false)
+          }
+        }
+      }
+
+      void run()
+    },
+    [setCapitalization, setCapitalizationError, setLoadingCapitalization, t],
+  )
+  const loadDocumentInfo = useCallback(
+    (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean }) => {
+      const requestId = infoRequestRef.current + 1
+      infoRequestRef.current = requestId
+      setDocumentInfoError(null)
+
+      if (!document.NetUid) {
+        setLoadingDocumentInfo(false)
+        return
+      }
+
+      setLoadingDocumentInfo(true)
+
+      async function run(netUid: string) {
+        try {
+          const info = await getProductIncomeInfo(netUid)
+
+          if (infoRequestRef.current !== requestId) {
+            return
+          }
+
+          const detailedDocument = mergeProductIncomeInfo(document, info)
+
+          setSelectedDocument((current) =>
+            current && current.NetUid === netUid ? mergeProductIncomeInfo(current, info) : current,
+          )
+
+          if (options.loadCapitalizationDetail) {
+            const capitalizationNetUid = getCapitalizationNetUid(detailedDocument)
+
+            if (capitalizationNetUid) {
+              loadCapitalization(capitalizationNetUid)
+            }
+          }
+        } catch (loadError) {
+          if (infoRequestRef.current === requestId) {
+            setDocumentInfoError(
+              loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі документа приходу'),
+            )
+          }
+        } finally {
+          if (infoRequestRef.current === requestId) {
+            setLoadingDocumentInfo(false)
+          }
+        }
+      }
+
+      void run(document.NetUid)
+    },
+    [loadCapitalization, setDocumentInfoError, setLoadingDocumentInfo, setSelectedDocument, t],
+  )
+  const openOverview = useCallback(
     (document: ProductIncomeDocument) => {
       remainingsRequestRef.current += 1
+      capitalizationRequestRef.current += 1
+      setOptionsDocument(null)
+      setDetailMode('view')
       setSelectedDocument(document)
       setRemainings([])
       setRemainingsError(null)
+      setDocumentInfoError(null)
+      setCapitalization(null)
+      setCapitalizationError(null)
+
+      const capitalizationNetUid = getCapitalizationNetUid(document)
+
+      if (capitalizationNetUid) {
+        loadCapitalization(capitalizationNetUid)
+      }
+
+      loadDocumentInfo(document, { loadCapitalizationDetail: !capitalizationNetUid })
     },
-    [setRemainings, setRemainingsError, setSelectedDocument],
+    [
+      loadCapitalization,
+      loadDocumentInfo,
+      setCapitalization,
+      setCapitalizationError,
+      setDetailMode,
+      setDocumentInfoError,
+      setOptionsDocument,
+      setRemainings,
+      setRemainingsError,
+      setSelectedDocument,
+    ],
+  )
+  const fetchRemainings = useCallback(
+    (document: ProductIncomeDocument) => {
+      if (!document.NetUid) {
+        setRemainings([])
+        setRemainingsError(t('Документ приходу не має NetUid для завантаження залишків по партіях'))
+        return
+      }
+
+      const requestId = remainingsRequestRef.current + 1
+      remainingsRequestRef.current = requestId
+      setLoadingRemainings(true)
+      setRemainingsError(null)
+
+      async function run(netUid: string) {
+        try {
+          const nextRemainings = await getProductIncomeRemainings(netUid)
+
+          if (remainingsRequestRef.current === requestId) {
+            setRemainings(nextRemainings)
+          }
+        } catch (loadError) {
+          if (remainingsRequestRef.current === requestId) {
+            setRemainings([])
+            setRemainingsError(
+              loadError instanceof Error ? loadError.message : t('Не вдалося завантажити залишки по партіях'),
+            )
+          }
+        } finally {
+          if (remainingsRequestRef.current === requestId) {
+            setLoadingRemainings(false)
+          }
+        }
+      }
+
+      void run(document.NetUid)
+    },
+    [setLoadingRemainings, setRemainings, setRemainingsError, t],
+  )
+  const openRemainings = useCallback(
+    (document: ProductIncomeDocument) => {
+      capitalizationRequestRef.current += 1
+      setOptionsDocument(null)
+      setDetailMode('remainings')
+      setSelectedDocument(document)
+      setRemainings([])
+      setRemainingsError(null)
+      setDocumentInfoError(null)
+      setCapitalization(null)
+      setCapitalizationError(null)
+      loadDocumentInfo(document, { loadCapitalizationDetail: false })
+      fetchRemainings(document)
+    },
+    [
+      fetchRemainings,
+      loadDocumentInfo,
+      setCapitalization,
+      setCapitalizationError,
+      setDetailMode,
+      setDocumentInfoError,
+      setOptionsDocument,
+      setRemainings,
+      setRemainingsError,
+      setSelectedDocument,
+    ],
   )
   const rows = useMemo(() => documents.map(mapDocumentRow), [documents])
   const columns = useProductIncomeDocumentColumns({
     exportingNetId,
     onExport: handleExport,
-    onOpen: openDocument,
+    onOpen: openOptions,
   })
   const itemColumns = useProductIncomeItemColumns()
   const remainingColumns = useRemainingConsignmentColumns()
+  const capitalizationItemColumns = useCapitalizationOverviewColumns()
 
   useEffect(() => {
     writeStoredFilters({
@@ -251,34 +446,6 @@ function useProductIncomeDocumentsPageModel() {
     }
   }
 
-  async function loadRemainings(document: ProductIncomeDocument) {
-    if (!document.NetUid) {
-      return
-    }
-
-    const requestId = remainingsRequestRef.current + 1
-    remainingsRequestRef.current = requestId
-    setLoadingRemainings(true)
-    setRemainingsError(null)
-
-    try {
-      const nextRemainings = await getProductIncomeRemainings(document.NetUid)
-
-      if (remainingsRequestRef.current === requestId) {
-        setRemainings(nextRemainings)
-      }
-    } catch (loadError) {
-      if (remainingsRequestRef.current === requestId) {
-        setRemainings([])
-        setRemainingsError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити залишки по партіях'))
-      }
-    } finally {
-      if (remainingsRequestRef.current === requestId) {
-        setLoadingRemainings(false)
-      }
-    }
-  }
-
   function updateSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
@@ -298,25 +465,41 @@ function useProductIncomeDocumentsPageModel() {
 
   function closeDetails() {
     remainingsRequestRef.current += 1
+    capitalizationRequestRef.current += 1
+    infoRequestRef.current += 1
+    setDetailMode('view')
     setSelectedDocument(null)
+    setDocumentInfoError(null)
+    setLoadingDocumentInfo(false)
     setRemainings([])
     setRemainingsError(null)
     setLoadingRemainings(false)
+    setCapitalization(null)
+    setCapitalizationError(null)
+    setLoadingCapitalization(false)
   }
 
   return {
     canMoveBackward,
     canMoveForward,
+    capitalization,
+    capitalizationError,
+    capitalizationItemColumns,
     columns,
     dateFrom,
     dateTo,
+    detailMode,
+    documentInfoError,
     downloadDocument,
     downloadModalOpened,
     error,
     filterError,
     isLoading,
+    isLoadingCapitalization,
+    isLoadingDocumentInfo,
     isLoadingRemainings,
     itemColumns,
+    optionsDocument,
     page,
     pageSize,
     remainingColumns,
@@ -328,13 +511,15 @@ function useProductIncomeDocumentsPageModel() {
     toolbarLeft,
     closeDetails,
     handleExport,
-    loadRemainings,
-    openDocument,
+    openOptions,
+    openOverview,
+    openRemainings,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setDownloadModalOpened,
+    setOptionsDocument,
     setPage,
     setPageSize,
     updateSearch,
@@ -352,16 +537,24 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
   const {
     canMoveBackward,
     canMoveForward,
+    capitalization,
+    capitalizationError,
+    capitalizationItemColumns,
     columns,
     dateFrom,
     dateTo,
+    detailMode,
+    documentInfoError,
     downloadDocument,
     downloadModalOpened,
     error,
     filterError,
     isLoading,
+    isLoadingCapitalization,
+    isLoadingDocumentInfo,
     isLoadingRemainings,
     itemColumns,
+    optionsDocument,
     page,
     pageSize,
     remainingColumns,
@@ -373,13 +566,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     toolbarLeft,
     closeDetails,
     handleExport,
-    loadRemainings,
-    openDocument,
+    openOptions,
+    openOverview,
+    openRemainings,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setDownloadModalOpened,
+    setOptionsDocument,
     setPage,
     setPageSize,
     updateSearch,
@@ -493,13 +688,27 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             minWidth={1440}
             tableId="product-income-documents"
             toolbarLeft={toolbarLeft}
-            onRowClick={(row) => openDocument(row.document)}
+            onRowClick={(row) => openOptions(row.document)}
           />
         </Stack>
       </Card>
 
+      <ProductIncomeOptionsModal
+        document={optionsDocument}
+        onClose={() => setOptionsDocument(null)}
+        onOverview={openOverview}
+        onRemainings={openRemainings}
+      />
+
       <ProductIncomeDocumentDrawer
+        capitalization={capitalization}
+        capitalizationError={capitalizationError}
+        capitalizationItemColumns={capitalizationItemColumns}
+        detailMode={detailMode}
+        documentInfoError={documentInfoError}
         document={selectedDocument}
+        isLoadingCapitalization={isLoadingCapitalization}
+        isLoadingDocumentInfo={isLoadingDocumentInfo}
         isLoadingRemainings={isLoadingRemainings}
         itemColumns={itemColumns}
         remainingColumns={remainingColumns}
@@ -507,7 +716,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
         remainingsError={remainingsError}
         onClose={closeDetails}
         onExport={handleExport}
-        onLoadRemainings={loadRemainings}
+        onLoadRemainings={openRemainings}
       />
 
       <AppModal
@@ -547,8 +756,55 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
   )
 }
 
-function ProductIncomeDocumentDrawer({
+function ProductIncomeOptionsModal({
   document,
+  onClose,
+  onOverview,
+  onRemainings,
+}: {
+  document: ProductIncomeDocument | null
+  onClose: () => void
+  onOverview: (document: ProductIncomeDocument) => void
+  onRemainings: (document: ProductIncomeDocument) => void
+}) {
+  const { t } = useI18n()
+  const row = document ? mapDocumentRow(document) : null
+  const title = document ? `${displayValue(row?.type)} ${displayValue(document.Number)}`.trim() : t('Виберіть опцію')
+
+  return (
+    <AppModal centered opened={Boolean(document)} title={t('Виберіть опцію')} onClose={onClose}>
+      {document && (
+        <Stack gap="sm">
+          <Text c="dimmed" size="sm">
+            {title}
+          </Text>
+          <Button justify="flex-start" leftSection={<IconEye size={18} />} variant="light" onClick={() => onOverview(document)}>
+            {t('Огляд')}
+          </Button>
+          <Button
+            disabled={!document.NetUid}
+            justify="flex-start"
+            leftSection={<IconStack2 size={18} />}
+            variant="light"
+            onClick={() => onRemainings(document)}
+          >
+            {t('Залишки по партіям')}
+          </Button>
+        </Stack>
+      )}
+    </AppModal>
+  )
+}
+
+function ProductIncomeDocumentDrawer({
+  capitalization,
+  capitalizationError,
+  capitalizationItemColumns,
+  detailMode,
+  documentInfoError,
+  document,
+  isLoadingCapitalization,
+  isLoadingDocumentInfo,
   isLoadingRemainings,
   itemColumns,
   remainingColumns,
@@ -558,7 +814,14 @@ function ProductIncomeDocumentDrawer({
   onExport,
   onLoadRemainings,
 }: {
+  capitalization: ProductCapitalization | null
+  capitalizationError: string | null
+  capitalizationItemColumns: DataTableColumn<CapitalizationOverviewItem>[]
+  detailMode: 'view' | 'remainings'
+  documentInfoError: string | null
   document: ProductIncomeDocument | null
+  isLoadingCapitalization: boolean
+  isLoadingDocumentInfo: boolean
   isLoadingRemainings: boolean
   itemColumns: DataTableColumn<ProductIncomeItem>[]
   remainingColumns: DataTableColumn<RemainingConsignment>[]
@@ -571,6 +834,8 @@ function ProductIncomeDocumentDrawer({
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
   const sourceLink = document ? getSourceLink(document) : null
+  const overviewKind = document ? getOverviewKind(document) : 'document'
+  const deferredOverviewNote = document ? getDeferredOverviewNote(document, t) : null
 
   return (
     <AppDrawer
@@ -609,7 +874,7 @@ function ProductIncomeDocumentDrawer({
                 {t('Експорт')}
               </Button>
               <Button disabled={!document.NetUid} variant="filled" onClick={() => onLoadRemainings(document)}>
-                {t('Залишки по партіях')}
+                {t('Залишки по партіям')}
               </Button>
             </Group>
           </Group>
@@ -625,55 +890,88 @@ function ProductIncomeDocumentDrawer({
             <DetailValue label={t('Стан')} value={row.docState} />
             <DetailValue label={t('Номер інвойсу')} value={row.invNumber} />
             <DetailValue label={t('Дата інвойсу')} value={formatDateTime(row.invDate)} />
-            <DetailValue label={t('Дата специфікації')} value={formatDateTime(row.specificationDate)} />
+            <DetailValue label={t('Дата МД')} value={formatDateTime(row.specificationDate)} />
             <DetailValue label={t('Коментар')} value={row.comment || document.Comment} />
           </SimpleGrid>
 
+          {detailMode === 'view' && deferredOverviewNote && (
+            <Alert color="blue" icon={<IconAlertCircle size={18} />} variant="light">
+              {deferredOverviewNote}
+            </Alert>
+          )}
+
+          {detailMode === 'view' && overviewKind === 'capitalization' && (
+            <CapitalizationOverview
+              capitalization={capitalization}
+              error={capitalizationError}
+              isLoading={isLoadingCapitalization}
+              itemColumns={capitalizationItemColumns}
+            />
+          )}
+
+          {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
+
           <Divider />
 
-          <Stack gap="sm">
-            <Title order={4}>{t('Позиції документа')}</Title>
-            <DataTable
-              columns={itemColumns}
-              data={document.ProductIncomeItems || []}
-              defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
-              emptyText={t('Позицій не знайдено')}
-              getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-              layoutVersion="product-income-document-items-1"
-              maxHeight={320}
-              minWidth={720}
-              tableId="product-income-document-items"
-            />
-          </Stack>
+          {detailMode === 'view' && (
+            <Stack gap="sm">
+              <Title order={4}>{t('Позиції документа')}</Title>
+              {documentInfoError && (
+                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                  {documentInfoError}
+                </Alert>
+              )}
+              <DataTable
+                columns={itemColumns}
+                data={document.ProductIncomeItems || []}
+                defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
+                emptyText={t('Позицій не знайдено')}
+                getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+                isLoading={isLoadingDocumentInfo}
+                layoutVersion="product-income-document-items-1"
+                loadingText={t('Завантаження позицій документа')}
+                maxHeight={320}
+                minWidth={720}
+                tableId="product-income-document-items"
+              />
+            </Stack>
+          )}
 
-          <Stack gap="sm">
-            <Group justify="space-between">
-              <Title order={4}>{t('Залишки по партіях')}</Title>
-              <Text size="sm" c="dimmed">
-                {t('Показано')} {remainings.length}
-              </Text>
-            </Group>
-            {remainingsError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {remainingsError}
-              </Alert>
-            )}
-            <DataTable
-              columns={remainingColumns}
-              data={remainings}
-              defaultLayout={REMAININGS_TABLE_DEFAULT_LAYOUT}
-              emptyText={t('Натисніть “Залишки по партіях”, щоб завантажити дані')}
-              getRowId={(remaining, index) =>
-                String(remaining.NetUid || `${remaining.Product?.VendorCode || ''}-${remaining.StorageName || ''}-${index}`)
-              }
-              isLoading={isLoadingRemainings}
-              layoutVersion="product-income-document-remainings-1"
-              loadingText={t('Завантаження залишків')}
-              maxHeight={360}
-              minWidth={1180}
-              tableId="product-income-document-remainings"
-            />
-          </Stack>
+          {detailMode === 'remainings' && (
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Title order={4}>{t('Залишки по партіям')}</Title>
+                <Text size="sm" c="dimmed">
+                  {t('Показано')} {remainings.length}
+                </Text>
+              </Group>
+              {documentInfoError && (
+                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                  {documentInfoError}
+                </Alert>
+              )}
+              {remainingsError && (
+                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                  {remainingsError}
+                </Alert>
+              )}
+              <DataTable
+                columns={remainingColumns}
+                data={remainings}
+                defaultLayout={REMAININGS_TABLE_DEFAULT_LAYOUT}
+                emptyText={t('Залишків по партіях не знайдено')}
+                getRowId={(remaining, index) =>
+                  String(remaining.NetUid || `${remaining.Product?.VendorCode || ''}-${remaining.StorageName || ''}-${index}`)
+                }
+                isLoading={isLoadingRemainings}
+                layoutVersion="product-income-document-remainings-1"
+                loadingText={t('Завантаження залишків')}
+                maxHeight={360}
+                minWidth={1180}
+                tableId="product-income-document-remainings"
+              />
+            </Stack>
+          )}
         </Stack>
       )}
     </AppDrawer>
@@ -691,6 +989,253 @@ function DetailValue({ label, value }: { label: string; value?: string | number 
       </Text>
     </Card>
   )
+}
+
+type CapitalizationOverviewItem = NonNullable<ProductCapitalization['ProductCapitalizationItems']>[number]
+
+function CapitalizationOverview({
+  capitalization,
+  error,
+  isLoading,
+  itemColumns,
+}: {
+  capitalization: ProductCapitalization | null
+  error: string | null
+  isLoading: boolean
+  itemColumns: DataTableColumn<CapitalizationOverviewItem>[]
+}) {
+  const { t } = useI18n()
+  const items = capitalization?.ProductCapitalizationItems || []
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="start">
+          <Title order={4}>{t('Прихідна накладна (Оприходування)')}</Title>
+          <Text c="dimmed" size="sm">
+            {displayValue(capitalization?.Number)} · {formatMoney(capitalization?.TotalAmount)}
+          </Text>
+        </Group>
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+        <DataTable
+          columns={itemColumns}
+          data={items}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
+          isLoading={isLoading}
+          layoutVersion="product-income-capitalization-overview-1"
+          loadingText={t('Завантаження позицій оприбуткування')}
+          maxHeight={320}
+          minWidth={760}
+          tableId="product-income-capitalization-overview"
+        />
+      </Stack>
+    </Card>
+  )
+}
+
+function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverviewItem>[] {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<CapitalizationOverviewItem>[]>(
+    () => [
+      {
+        id: 'vendorCode',
+        header: t('Код'),
+        width: 140,
+        minWidth: 120,
+        accessor: (item) => item.Product?.VendorCode || item.ProductVendorCode,
+        cell: (item) => <Text fw={700}>{displayValue(item.Product?.VendorCode || item.ProductVendorCode)}</Text>,
+      },
+      {
+        id: 'productName',
+        header: t('Назва'),
+        width: 300,
+        minWidth: 220,
+        accessor: (item) => item.Product?.Name || item.ProductName,
+        cell: (item) => (
+          <Text size="sm" lineClamp={2}>
+            {displayValue(item.Product?.Name || item.ProductName)}
+          </Text>
+        ),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (item) => item.Qty,
+        cell: (item) => formatAmount(item.Qty),
+      },
+      {
+        id: 'unitPrice',
+        header: t('Ціна'),
+        width: 116,
+        minWidth: 104,
+        align: 'right',
+        accessor: (item) => item.UnitPrice,
+        cell: (item) => formatMoney(item.UnitPrice),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        width: 124,
+        minWidth: 108,
+        align: 'right',
+        accessor: (item) => item.TotalAmount,
+        cell: (item) => formatMoney(item.TotalAmount),
+      },
+    ],
+    [t],
+  )
+}
+
+function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
+  const { t } = useI18n()
+  const items = (document.ProductIncomeItems || []).filter((item) => item.SaleReturnItem)
+  const firstItem = items[0]?.SaleReturnItem
+  const agreement = firstItem?.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement
+  const currencyCode = agreement?.Currency?.Code || agreement?.Currency?.Name || ''
+  const isVat = Boolean(agreement?.WithVATAccounting)
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="start">
+          <Title order={4}>{t('Прихідна накладна (повернення)')}</Title>
+          <Text c="dimmed" size="sm">
+            {displayValue(firstItem?.SaleReturn?.Number)} · {displayValue(getEntityName(firstItem?.SaleReturn?.Client))}
+          </Text>
+        </Group>
+
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+          <DetailValue label={t('Угода')} value={agreement?.Name} />
+          <DetailValue label={t('Валюта')} value={currencyCode} />
+          <DetailValue label={t('Дата інвойсу')} value={formatDateTime(firstItem?.SaleReturn?.FromDate)} />
+          <DetailValue label={t('Коментар')} value={firstItem?.Comment || document.Comment} />
+        </SimpleGrid>
+
+        {items.length === 0 ? (
+          <Text c="dimmed" size="sm">
+            {t('Позицій не знайдено')}
+          </Text>
+        ) : (
+          <Stack gap="xs">
+            {items.map((item, index) => {
+              const saleReturnItem = item.SaleReturnItem
+
+              return (
+                <Card key={index} withBorder radius="sm" padding="sm">
+                  <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+                    <Stack gap={2}>
+                      <Group gap={6} align="baseline" wrap="nowrap">
+                        <Text c="dimmed" size="xs">
+                          {displayValue(saleReturnItem?.OrderItem?.Product?.VendorCode)}
+                        </Text>
+                        <Text fw={600} size="sm">
+                          {displayValue(saleReturnItem?.OrderItem?.Product?.Name)}
+                        </Text>
+                      </Group>
+                    </Stack>
+                    <Group gap="lg" align="flex-start" wrap="nowrap">
+                      <Stack gap={0} align="flex-end">
+                        <Text fw={600} size="sm">
+                          {formatMoney(saleReturnItem?.AmountLocal)} {currencyCode}
+                        </Text>
+                        <Text c="dimmed" size="xs">
+                          {t('Сума нетто (інвойса)')}
+                        </Text>
+                      </Stack>
+                      {isVat && (
+                        <Stack gap={0} align="flex-end">
+                          <Text fw={600} size="sm">
+                            {formatMoney(saleReturnItem?.VatAmount)}
+                          </Text>
+                          <Text c="dimmed" size="xs">
+                            {t('ПДВ')}
+                          </Text>
+                        </Stack>
+                      )}
+                      <Stack gap={0} align="flex-end">
+                        <Text fw={600} size="sm">
+                          {formatAmount(saleReturnItem?.Qty ?? item.Qty)}
+                        </Text>
+                        <Text c="dimmed" size="xs">
+                          {t('штук')}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Group>
+                </Card>
+              )
+            })}
+          </Stack>
+        )}
+      </Stack>
+    </Card>
+  )
+}
+
+function mergeProductIncomeInfo(
+  document: ProductIncomeDocument,
+  info: ProductIncomeInfo | null,
+): ProductIncomeDocument {
+  if (!info) {
+    return document
+  }
+
+  return {
+    ...document,
+    ...info,
+    ProductIncomeItems: info.ProductIncomeItems?.length ? info.ProductIncomeItems : document.ProductIncomeItems,
+  }
+}
+
+function getOverviewKind(
+  document: ProductIncomeDocument,
+): 'capitalization' | 'saleReturn' | 'document' {
+  const items = document.ProductIncomeItems || []
+
+  if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization)) {
+    return 'capitalization'
+  }
+
+  if (items.some((item) => item.SaleReturnItem?.SaleReturn)) {
+    return 'saleReturn'
+  }
+
+  return 'document'
+}
+
+function getCapitalizationNetUid(document: ProductIncomeDocument): string | null {
+  const items = document.ProductIncomeItems || []
+  const capitalization = items
+    .map((item) => item.ProductCapitalizationItem?.ProductCapitalization)
+    .find((value) => value?.NetUid)
+
+  return capitalization?.NetUid || null
+}
+
+function getDeferredOverviewNote(
+  document: ProductIncomeDocument,
+  t: (key: string) => string,
+): string | null {
+  const items = document.ProductIncomeItems || []
+
+  if (items.some((item) => item.SupplyOrderUkraineItem?.SupplyOrderUkraine)) {
+    return t('Огляд прихідного інвойса в Україну доступний у модулі замовлень')
+  }
+
+  if (items.some((item) => item.ActReconciliationItem?.ActReconciliation)) {
+    return t('Огляд акта звірки доступний у модулі актів')
+  }
+
+  return null
 }
 
 function useProductIncomeDocumentColumns({
@@ -782,6 +1327,14 @@ function useProductIncomeDocumentColumns({
         minWidth: 132,
         accessor: (row) => row.invDate,
         cell: (row) => formatDateTime(row.invDate),
+      },
+      {
+        id: 'specificationDate',
+        header: t('Дата МД'),
+        width: 150,
+        minWidth: 132,
+        accessor: (row) => row.specificationDate,
+        cell: (row) => formatDateTime(row.specificationDate),
       },
       {
         id: 'organization',
@@ -992,12 +1545,30 @@ function useRemainingConsignmentColumns(): DataTableColumn<RemainingConsignment>
       },
       {
         id: 'totalNetPrice',
-        header: t('Сума нетто'),
+        header: t('Сума нетто (інвойса)'),
         width: 124,
         minWidth: 112,
         align: 'right',
         accessor: (item) => item.TotalNetPrice,
         cell: (item) => formatMoney(item.TotalNetPrice),
+      },
+      {
+        id: 'grossUnitPrice',
+        header: t('Сума брутто УО'),
+        width: 130,
+        minWidth: 112,
+        align: 'right',
+        accessor: (item) => item.GrossPrice,
+        cell: (item) => formatMoney(item.GrossPrice),
+      },
+      {
+        id: 'accountingGrossPrice',
+        header: t('Сума брутто БО'),
+        width: 130,
+        minWidth: 112,
+        align: 'right',
+        accessor: (item) => item.AccountingGrossPrice,
+        cell: (item) => formatMoney(item.AccountingGrossPrice),
       },
       {
         id: 'currency',
@@ -1006,6 +1577,14 @@ function useRemainingConsignmentColumns(): DataTableColumn<RemainingConsignment>
         minWidth: 82,
         accessor: (item) => item.CurrencyName,
         cell: (item) => displayValue(item.CurrencyName),
+      },
+      {
+        id: 'incomeInvoiceNumber',
+        header: t('Номер прихідної накладної'),
+        width: 150,
+        minWidth: 130,
+        accessor: (item) => item.ProductIncomeNumber,
+        cell: (item) => displayValue(item.ProductIncomeNumber),
       },
       {
         id: 'organization',

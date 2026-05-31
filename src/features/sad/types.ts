@@ -64,7 +64,6 @@ export type SadOrganizationClient = SadClient & {
   City?: string
   Country?: string
   MarginAmount?: number
-  NIP?: string
   OrganizationClientAgreements?: SadOrganizationClientAgreement[]
 }
 

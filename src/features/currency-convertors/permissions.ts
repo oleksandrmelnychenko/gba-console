@@ -1,0 +1,2 @@
+export const CURRENCY_CONVERTOR_CREATE_PERMISSION = 'Accounting_Currency_Convertors_AddBtn_PKEY'
+export const CURRENCY_CONVERTOR_EDIT_PERMISSION = 'Accounting_Currency_Convertors_EditBtn_PKEY'

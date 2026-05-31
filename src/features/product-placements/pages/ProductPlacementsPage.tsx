@@ -19,6 +19,7 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconAlertTriangle,
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
@@ -30,6 +31,7 @@ import {
   IconSearch,
   IconUpload,
 } from '@tabler/icons-react'
+import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -53,11 +55,12 @@ import type {
 } from '../types'
 
 const PAGE_SIZE = 20
+const SEARCH_DEBOUNCE_MS = 200
 const pageSizeOptions = ['20', '40', '60', '100']
 
 const PLACEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['created', 'vendorCode', 'productName'],
+    left: ['index', 'created', 'vendorCode', 'productName'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -97,7 +100,8 @@ function useProductPlacementsPageModel() {
   const [selectedStorageIds, setSelectedStorageIds] = useValueState<string[]>([])
   const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [debouncedSearchDraft] = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
+  const searchValue = debouncedSearchDraft.trim()
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
   const [listState, setListState] = useValueState<PlacementsListState>({
@@ -125,7 +129,7 @@ function useProductPlacementsPageModel() {
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : placements.length === pageSize
-  const columns = useProductPlacementColumns()
+  const columns = useProductPlacementColumns(placements, offset)
   const returnedColumns = useReturnedProductPlacementColumns({
     onChangePlacement: updateReturnedPlacement,
     onChangeQty: updateReturnedQty,
@@ -380,13 +384,11 @@ function useProductPlacementsPageModel() {
   function updateSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   function resetFilters() {
     setDateTo(getDefaultDateTo())
     setSearchDraft('')
-    setSearchValue('')
     setSelectedStorageIds(getStorageIds(storages))
     setPage(1)
   }
@@ -516,6 +518,16 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     <Stack gap="lg">
       <Group justify="flex-end" align="end">
         <Group gap="xs">
+          {returnedRows.length > 0 && (
+            <Button
+              color="red"
+              leftSection={<IconAlertTriangle size={16} />}
+              variant="light"
+              onClick={() => setReturnModalOpened(true)}
+            >
+              {t('Не пройдені товари')}
+            </Button>
+          )}
           <Tooltip label={t('Імпорт')}>
             <ActionIcon
               aria-label={t('Імпорт')}
@@ -653,7 +665,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               String(placement.NetUid || placement.Id || `${placement.VendorCode || ''}-${placement.StorageId || ''}-${index}`)
             }
             isLoading={isLoading || isLoadingStorages}
-            layoutVersion="product-placements-table-1"
+            layoutVersion="product-placements-table-2"
             loadingText={t('Завантаження розміщень')}
             maxHeight="calc(100vh - 330px)"
             minWidth={980}
@@ -915,11 +927,23 @@ function ReturnedProductsModal({
   )
 }
 
-function useProductPlacementColumns(): DataTableColumn<ProductPlacementRow>[] {
+function useProductPlacementColumns(
+  placements: ProductPlacementRow[],
+  offset: number,
+): DataTableColumn<ProductPlacementRow>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductPlacementRow>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        cell: (placement) => String(offset + placements.indexOf(placement) + 1),
+      },
       {
         id: 'created',
         header: t('Створено'),
@@ -986,7 +1010,7 @@ function useProductPlacementColumns(): DataTableColumn<ProductPlacementRow>[] {
         cell: (row) => displayValue(getResponsibleName(row)),
       },
     ],
-    [t],
+    [offset, placements, t],
   )
 }
 

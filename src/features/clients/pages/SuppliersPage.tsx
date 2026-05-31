@@ -9,7 +9,6 @@ import {
   Divider,
   Group,
   Loader,
-  MultiSelect,
   Select,
   Stack,
   Text,
@@ -28,13 +27,16 @@ import {
   IconExternalLink,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconId,
   IconPlus,
   IconRestore,
   IconSearch,
   IconToggleLeft,
   IconToggleRight,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
+import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
+import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
@@ -102,6 +104,7 @@ function useSuppliersPageModel() {
   const location = useLocation()
   const navigate = useNavigate()
   const hasLoadedSuppliersRef = useRef(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [suppliers, setSuppliers] = useValueState<Client[]>([])
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [supplierFilterItems, setSupplierFilterItems] = useValueState<ClientFilterItem[]>([])
@@ -113,6 +116,7 @@ function useSuppliersPageModel() {
   const [downloadDocument, setDownloadDocument] = useValueState<ClientPrintDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [selectedSupplier, setSelectedSupplier] = useValueState<Client | null>(null)
+  const [passportSupplier, setPassportSupplier] = useValueState<Client | null>(null)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readSupplierTablePageSize)
   const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>('all')
@@ -149,7 +153,6 @@ function useSuppliersPageModel() {
     }),
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
   )
-  const roleOptions = useMemo(() => buildSupplierRoleOptions(clientTypes), [clientTypes])
   const openSupplierActions = useCallback((supplier: Client) => setSelectedSupplier(supplier), [setSelectedSupplier])
   const supplierColumns = useSupplierColumns(openSupplierActions)
   const changePageSize = useCallback((value: string | null) => {
@@ -199,6 +202,10 @@ function useSuppliersPageModel() {
     setTotalCount,
   })
 
+  useEffect(() => {
+    searchInputRef.current?.focus()
+  }, [])
+
   function resetSearch() {
     setPage(1)
     setActiveFilter('all')
@@ -231,6 +238,11 @@ function useSuppliersPageModel() {
         returnPath: `${location.pathname}${location.search}`,
       },
     })
+    setSelectedSupplier(null)
+  }
+
+  function openPassport(supplier: Client) {
+    setPassportSupplier(supplier)
     setSelectedSupplier(null)
   }
 
@@ -320,6 +332,7 @@ function useSuppliersPageModel() {
     activeFilter,
     canMoveBack,
     canMoveForward,
+    clientTypes,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -327,10 +340,11 @@ function useSuppliersPageModel() {
     isTableBusy,
     page,
     pageSize,
+    passportSupplier,
     roleFilter,
-    roleOptions,
     searchField,
     searchFieldOptions,
+    searchInputRef,
     searchValue,
     selectedSupplier,
     sorting,
@@ -344,11 +358,13 @@ function useSuppliersPageModel() {
     handleSwitchActive,
     openCashFlow,
     openNewSupplier,
+    openPassport,
     openSupplier,
     resetSearch,
     setActiveFilter,
     setDownloadModalOpened,
     setPage,
+    setPassportSupplier,
     setRoleFilter,
     setSearchField,
     setSelectedSupplier,
@@ -480,15 +496,17 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   const { t } = useI18n()
   const {
     activeFilter,
+    clientTypes,
     downloadDocument,
     downloadModalOpened,
     error,
     isLoading,
     isTableBusy,
+    passportSupplier,
     roleFilter,
-    roleOptions,
     searchField,
     searchFieldOptions,
+    searchInputRef,
     searchValue,
     selectedSupplier,
     sorting,
@@ -501,11 +519,13 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     handleSwitchActive,
     openCashFlow,
     openNewSupplier,
+    openPassport,
     openSupplier,
     resetSearch,
     setActiveFilter,
     setDownloadModalOpened,
     setPage,
+    setPassportSupplier,
     setRoleFilter,
     setSearchField,
     setSelectedSupplier,
@@ -519,12 +539,13 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         <Stack gap="md">
           <SuppliersFilterToolbar
             activeFilter={activeFilter}
+            clientTypes={clientTypes}
             isExporting={supplierAction === 'export'}
             isTableBusy={isTableBusy}
             roleFilter={roleFilter}
-            roleOptions={roleOptions}
             searchField={searchField}
             searchFieldOptions={searchFieldOptions}
+            searchInputRef={searchInputRef}
             searchValue={searchValue}
             onCreate={openNewSupplier}
             onExport={handleExport}
@@ -573,8 +594,11 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         onCashFlow={openCashFlow}
         onClose={() => setSelectedSupplier(null)}
         onEdit={openSupplier}
+        onPassport={openPassport}
         onSwitchActive={handleSwitchActive}
       />
+
+      <SupplierPassportModal supplier={passportSupplier} onClose={() => setPassportSupplier(null)} />
 
       <SupplierDocumentModal
         document={downloadDocument}
@@ -585,12 +609,29 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   )
 }
 
+function SupplierPassportModal({ supplier, onClose }: { supplier: Client | null; onClose: () => void }) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal
+      centered
+      size="lg"
+      opened={Boolean(supplier)}
+      title={supplier ? `${t('Паспорт постачальника')}: ${getSupplierDisplayName(supplier)}` : t('Паспорт постачальника')}
+      onClose={onClose}
+    >
+      {supplier && <SupplierPassport client={supplier} netUid={supplier.NetUid} />}
+    </AppModal>
+  )
+}
+
 type SupplierActionsModalProps = {
   supplier: Client | null
   isActiveLoading: boolean
   onCashFlow: (supplier: Client) => void
   onClose: () => void
   onEdit: (supplier: Client) => void
+  onPassport: (supplier: Client) => void
   onSwitchActive: (supplier: Client) => void
 }
 
@@ -600,6 +641,7 @@ function SupplierActionsModal({
   onCashFlow,
   onClose,
   onEdit,
+  onPassport,
   onSwitchActive,
 }: SupplierActionsModalProps) {
   const { t } = useI18n()
@@ -637,6 +679,15 @@ function SupplierActionsModal({
             >
               {t('Рух коштів')}
             </Button>
+            <Button
+              fullWidth
+              justify="flex-start"
+              leftSection={<IconId size={16} />}
+              variant="light"
+              onClick={() => onPassport(supplier)}
+            >
+              {t('Паспорт постачальника')}
+            </Button>
           </Stack>
 
           <Divider />
@@ -660,12 +711,13 @@ function SupplierActionsModal({
 
 function SuppliersFilterToolbar({
   activeFilter,
+  clientTypes,
   isExporting,
   isTableBusy,
   roleFilter,
-  roleOptions,
   searchField,
   searchFieldOptions,
+  searchInputRef,
   searchValue,
   onCreate,
   onExport,
@@ -677,12 +729,13 @@ function SuppliersFilterToolbar({
   onSetSearchValue,
 }: {
   activeFilter: ActiveFilter
+  clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
   roleFilter: string[]
-  roleOptions: Array<{ label: string; value: string }>
   searchField: string
   searchFieldOptions: Array<{ label: string; value: string }>
+  searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
   onCreate: () => void
   onExport: () => void
@@ -694,10 +747,15 @@ function SuppliersFilterToolbar({
   onSetSearchValue: (value: string) => void
 }) {
   const { t } = useI18n()
+  const supplierClientTypes = useMemo(
+    () => clientTypes.filter((clientType) => clientType.Type === SUPPLIER_CLIENT_TYPE),
+    [clientTypes],
+  )
 
   return (
     <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
       <TextInput
+        ref={searchInputRef}
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
@@ -733,15 +791,9 @@ function SuppliersFilterToolbar({
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
         }}
       />
-      <MultiSelect
-        clearable
-        data={roleOptions}
-        disabled={roleOptions.length === 0}
-        label={t('Ролі')}
-        maxDropdownHeight={280}
-        placeholder={t('Усі ролі')}
+      <ClientTypeRoleFilter
+        clientTypes={supplierClientTypes}
         value={roleFilter}
-        style={{ flex: '0 0 220px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetRoleFilter(value)
@@ -1009,29 +1061,6 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
     ],
     [onOpenActions, t],
   )
-}
-
-function buildSupplierRoleOptions(clientTypes: ClientType[]) {
-  const options: Array<{ label: string; value: string }> = []
-
-  clientTypes.forEach((clientType) => {
-    if (clientType.Type !== SUPPLIER_CLIENT_TYPE) {
-      return
-    }
-
-    const roles = clientType.ClientTypeRoles || []
-
-    roles.forEach((role) => {
-      if (typeof role.Id === 'number') {
-        options.push({
-          value: String(role.Id),
-          label: [clientType.Name, role.Name].filter(Boolean).join(': ') || translate('Без назви'),
-        })
-      }
-    })
-  })
-
-  return options
 }
 
 function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {

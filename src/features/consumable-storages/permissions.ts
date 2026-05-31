@@ -1,0 +1,3 @@
+export const CONSUMABLE_STORAGE_CREATE_PERMISSION = 'STORAGES_Accounting_Storages_AddBtn_PKEY'
+export const CONSUMABLE_STORAGE_DELETE_PERMISSION = 'STORAGES_Accounting_Storages_remove__control_PKEY'
+export const CONSUMABLE_STORAGE_EDIT_PERMISSION = 'STORAGES_Accounting_Storages_edit__control_PKEY'

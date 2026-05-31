@@ -96,11 +96,39 @@ export type ProductReservation = {
 }
 
 export type ProductSpecification = EntityFields & {
+  AddedBy?: {
+    FirstName?: string
+    LastName?: string
+  } | null
   CustomsValue?: number | string
   Duty?: number | string
+  Name?: string
   ProductId?: number
   SpecificationCode?: string
   VATValue?: number | string
+}
+
+export type ProductAuditField =
+  | 'Description'
+  | 'Top'
+  | 'Size'
+  | 'Volume'
+  | 'Weight'
+  | 'PackingStandard'
+  | 'MainOriginalNumber'
+  | 'Notes'
+  | 'Synonyms'
+
+export type AuditEntityProperty = {
+  Name?: string
+  Value?: string
+}
+
+export type AuditEntity = EntityFields & {
+  NewValues?: AuditEntityProperty[]
+  OldValues?: AuditEntityProperty[]
+  UpdatedBy?: string
+  UpdatedByNetUid?: string
 }
 
 export type CalculatedProductPrice = {
@@ -220,18 +248,26 @@ export type ProductConsignmentRemaining = EntityFields & {
 
 export type ProductMovement = EntityFields & {
   AccountingGrossPrice?: number
+  AccountingPrice?: number
   ClientName?: string
+  Comment?: string
+  Discount?: number
   DocumentFromDate?: string | Date
   DocumentNumber?: string
   DocumentType?: string
   FromDate?: string | Date
+  IncomeDocumentFromDate?: string | Date
+  IncomeDocumentNumber?: string
   IncomeQty?: number
   IsEdited?: boolean
   MovementType?: string
+  OrganizationName?: string
   OutcomeQty?: number
+  Price?: number
   ProductName?: string
   ProductVendorCode?: string
   Qty?: number
+  Responsible?: string
   StorageName?: string
   UserName?: string
 }
@@ -281,6 +317,38 @@ export type ProductMovementsParams = {
   productNetId: string
   to: string
   types: number[]
+}
+
+export type ProductMovementExportParams = {
+  from: string
+  movementType: number
+  productNetId: string
+  to: string
+  types: number[]
+}
+
+export type Storage = {
+  Id?: number
+  Name?: string
+  NetUid?: string
+}
+
+export type ProductPlacementUploadConfiguration = {
+  ColumnPlacement: number
+  ColumnQty: number
+  ColumnVendorCode: number
+  EndRow: number
+  StartRow: number
+}
+
+export type ProductPlacementStorage = EntityFields & {
+  ErrorMessage?: string
+  Placement?: string
+  Product?: Pick<Product, 'Name' | 'NameUA' | 'NetUid' | 'VendorCode'> | null
+  ProductId?: number
+  Qty?: number
+  StorageId?: number
+  VendorCode?: string
 }
 
 export type ProductIncomeOutcomeMovementParams = {

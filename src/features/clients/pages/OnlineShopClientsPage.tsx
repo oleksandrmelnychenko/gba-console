@@ -22,6 +22,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getRetailClientCart, getRetailClients, searchRetailClients } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
+import { OnlineShopSalesFilter } from '../components/OnlineShopSalesFilter'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
 import { getRetailItemTotal } from '../onlineShopDisplay'
 import type { RetailCartItem, RetailClient } from '../onlineShopTypes'
@@ -153,6 +154,14 @@ export function OnlineShopClientsPage() {
     }
   }
 
+  function selectFastClient(client: RetailClient) {
+    void selectClient(client)
+
+    if (getRetailClientNetId(client)) {
+      setSalesOpen(true)
+    }
+  }
+
   return (
     <Stack gap="lg">
       <Box
@@ -210,6 +219,8 @@ export function OnlineShopClientsPage() {
 
         <Card withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Stack gap="md">
+            <OnlineShopSalesFilter onSelectFastClient={selectFastClient} />
+
             {cartError && (
               <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
                 {cartError}

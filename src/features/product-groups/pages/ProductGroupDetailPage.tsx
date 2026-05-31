@@ -15,6 +15,7 @@ import {
   IconCheck,
   IconChevronLeft,
   IconDeviceFloppy,
+  IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
@@ -75,6 +76,21 @@ export function ProductGroupDetailPage() {
 
     return rootGroups
   }, [productGroup, rootGroups])
+  const isEdited = useMemo(() => {
+    if (!productGroup || !formProductGroup) {
+      return false
+    }
+
+    const baselineRootNetUid = getCurrentRootProductGroup(productGroup)?.NetUid || null
+
+    return (
+      (formProductGroup.Name || '') !== (productGroup.Name || '') ||
+      (formProductGroup.FullName || '') !== (productGroup.FullName || '') ||
+      (formProductGroup.Description || '') !== (productGroup.Description || '') ||
+      formProductGroup.IsActive !== productGroup.IsActive ||
+      (selectedRootNetUid || null) !== baselineRootNetUid
+    )
+  }, [formProductGroup, productGroup, selectedRootNetUid])
 
   useEffect(() => {
     if (!id) {
@@ -137,6 +153,12 @@ export function ProductGroupDetailPage() {
           }
         : currentProductGroup,
     )
+  }
+
+  function resetEdits() {
+    setFormProductGroup(productGroup)
+    setSelectedRootNetUid(getCurrentRootProductGroup(productGroup)?.NetUid || null)
+    setError(null)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -229,7 +251,7 @@ export function ProductGroupDetailPage() {
             variant="light"
             onClick={closeSheet}
           >
-            {t('Скасувати')}
+            {t('Закрити')}
           </Button>
           <Button
             color="red"
@@ -243,8 +265,18 @@ export function ProductGroupDetailPage() {
             {t('Видалити')}
           </Button>
           <Button
+            color="gray"
+            disabled={!isEdited || isSaving || isDeleting}
+            leftSection={<IconRestore size={16} />}
+            type="button"
+            variant="light"
+            onClick={resetEdits}
+          >
+            {t('Скасувати')}
+          </Button>
+          <Button
             color="violet"
-            disabled={!formProductGroup}
+            disabled={!formProductGroup || !isEdited}
             form="product-group-edit-form"
             leftSection={<IconDeviceFloppy size={16} />}
             loading={isSaving}

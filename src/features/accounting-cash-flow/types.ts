@@ -25,17 +25,85 @@ export type AccountingCashFlowClientAgreement = {
 }
 
 export type AccountingCashFlowAgreement = {
+  AmountDebt?: number
+  ClientInDebts?: AccountingCashFlowClientInDebt[]
   Currency?: {
     Code?: string
     Name?: string
   }
   Id?: number
   IsActive?: boolean
+  IsControlAmountDebt?: boolean
+  IsControlNumberDaysDebt?: boolean
+  IsSelected?: boolean
   Name?: string
   NetUid?: string
+  NumberDaysDebt?: number
   Organization?: {
     Name?: string
   }
+  [key: string]: unknown
+}
+
+export type AccountingCashFlowClientInDebt = {
+  Debt?: AccountingCashFlowDebt
+  [key: string]: unknown
+}
+
+export type AccountingCashFlowDebt = {
+  Days?: number
+  Total?: number
+  [key: string]: unknown
+}
+
+export type AccountingCashFlowAgreementDebtSummary = {
+  accountBalance: number
+  allowedDays: number
+  debtLimit: number
+  isControlAmountDebt: boolean
+  isControlNumberDaysDebt: boolean
+  isOverdue: boolean
+  overdueDays: number
+  totalOverdueDebt: number
+}
+
+export type AccountingCashFlowSaleReturn = {
+  Client?: {
+    FullName?: string
+    RegionCode?: { Value?: string }
+    [key: string]: unknown
+  }
+  ClientAgreement?: {
+    Agreement?: { Name?: string }
+    [key: string]: unknown
+  }
+  Number?: string
+  SaleReturnItems?: AccountingCashFlowSaleReturnItem[]
+  [key: string]: unknown
+}
+
+export type AccountingCashFlowSaleReturnItem = {
+  AmountLocal?: number
+  OrderItem?: {
+    Order?: {
+      Sale?: {
+        IsVatSale?: boolean
+        SaleNumber?: { Value?: string }
+        [key: string]: unknown
+      }
+      [key: string]: unknown
+    }
+    Product?: {
+      Name?: string
+      VendorCode?: string
+      [key: string]: unknown
+    }
+    [key: string]: unknown
+  }
+  Qty?: number
+  SaleReturnItemStatus?: number | string
+  Storage?: { Name?: string }
+  VatAmountLocal?: number
   [key: string]: unknown
 }
 
@@ -79,7 +147,10 @@ export type AccountingCashFlowHeadItem = {
   PortCustomAgencyService?: unknown
   PortWorkService?: unknown
   ProductIncome?: unknown
-  Sale?: unknown
+  Sale?: {
+    HistoryInvoiceEdit?: unknown[]
+    [key: string]: unknown
+  }
   SaleReturn?: unknown
   SupplyOrderPaymentDeliveryProtocol?: unknown
   SupplyOrderUkraine?: unknown

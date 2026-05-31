@@ -2,11 +2,15 @@ import {
   ActionIcon,
   Alert,
   Anchor,
+  Badge,
   Card,
   Group,
   MultiSelect,
+  Popover,
+  ScrollArea,
   Select,
   Stack,
+  Table,
   Text,
   TextInput,
   Tooltip,
@@ -23,7 +27,8 @@ import {
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useDebouncedValue } from '@mantine/hooks'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -40,11 +45,12 @@ import type {
 
 const PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['created', 'vendorCode', 'productName'],
+    left: ['index', 'created', 'vendorCode', 'productName'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+const SEARCH_DEBOUNCE_MS = 200
 const pageSizeOptions = ['20', '40', '60', '100']
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
@@ -64,7 +70,8 @@ function useProductHistoryPageModel() {
   const [selectedStorageIds, setSelectedStorageIds] = useValueState<string[]>([])
   const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
   const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
+  const [debouncedSearchDraft] = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
+  const searchValue = debouncedSearchDraft.trim()
   const [total, setTotal] = useValueState<number | undefined>(undefined)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(20)
@@ -81,7 +88,7 @@ function useProductHistoryPageModel() {
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const canMoveBack = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : historyItems.length === pageSize
-  const columns = useProductHistoryColumns(selectedStorageIdNumbers)
+  const columns = useProductHistoryColumns(selectedStorageIdNumbers, historyItems, offset)
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
@@ -206,14 +213,12 @@ function useProductHistoryPageModel() {
   function updateSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   function resetFilters() {
     setPage(1)
     setDateTo(getDefaultDateTo())
     setSearchDraft('')
-    setSearchValue('')
     setSelectedStorageIds(storageOptions.map((option) => option.value))
   }
 
@@ -442,7 +447,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               String(historyItem.NetUid || historyItem.Id || `${historyItem.Product?.VendorCode || 'product'}-${index}`)
             }
             isLoading={isLoading || isLoadingStorages}
-            layoutVersion="product-history-table-1"
+            layoutVersion="product-history-table-2"
             loadingText={t('Завантаження історії товарів')}
             maxHeight="calc(100vh - 330px)"
             minWidth={1420}
@@ -489,9 +494,152 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
   )
 }
 
-function useProductHistoryColumns(selectedStorageIds: number[]): DataTableColumn<ProductHistoryItem>[] {
+type PlacementGroup = {
+  cellNumber?: string
+  items: ProductHistoryPlacement[]
+  quantity: number
+  rowNumber?: string
+  storageNumber?: number | string
+}
+
+function StorageAvailabilityHistory({
+  availability,
+  t,
+}: {
+  availability: ProductAvailabilityDataHistory
+  t: (key: string) => string
+}) {
+  const [opened, setOpened] = useState(false)
+  const placementGroups = useMemo(
+    () => groupAvailabilityPlacements(availability.ProductPlacementDataHistory || []),
+    [availability.ProductPlacementDataHistory],
+  )
+
+  return (
+    <Popover withArrow shadow="md" opened={opened} position="bottom-end" width={520} onChange={setOpened}>
+      <Popover.Target>
+        <Badge
+          color="blue"
+          size="lg"
+          style={{ cursor: 'pointer' }}
+          variant="light"
+          onClick={() => setOpened((current) => !current)}
+        >
+          {`${availability.Storage?.Name || t('Склад')}: ${formatAmount(availability.Amount)}`}
+        </Badge>
+      </Popover.Target>
+      <Popover.Dropdown p="xs">
+        <ScrollArea.Autosize mah={320} type="auto">
+          <Table withColumnBorders withTableBorder striped horizontalSpacing="xs" verticalSpacing={4}>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>{t('Прихід')}</Table.Th>
+                <Table.Th>{t('Склад')}</Table.Th>
+                <Table.Th>{t('Ряд')}</Table.Th>
+                <Table.Th>{t('Полиця')}</Table.Th>
+                <Table.Th ta="right">{t('Кількість')}</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {placementGroups.map((group, groupIndex) => (
+                <PlacementGroupRows key={`${group.storageNumber}-${group.rowNumber}-${group.cellNumber}-${groupIndex}`} group={group} t={t} />
+              ))}
+            </Table.Tbody>
+          </Table>
+        </ScrollArea.Autosize>
+      </Popover.Dropdown>
+    </Popover>
+  )
+}
+
+function PlacementGroupRows({ group, t }: { group: PlacementGroup; t: (key: string) => string }) {
+  return (
+    <>
+      <Table.Tr>
+        <Table.Td colSpan={4}>
+          <Text fw={700} size="sm">
+            {`${displayValue(group.storageNumber)} / ${displayValue(group.rowNumber)} / ${displayValue(group.cellNumber)}`}
+          </Text>
+        </Table.Td>
+        <Table.Td ta="right">
+          <Text fw={700} size="sm">
+            {Number.isNaN(group.quantity) ? '' : formatAmount(group.quantity)}
+          </Text>
+        </Table.Td>
+      </Table.Tr>
+      {group.items.map((placement, itemIndex) => (
+        <Table.Tr key={placement.NetUid || `${placement.StorageNumber}-${placement.RowNumber}-${placement.CellNumber}-${itemIndex}`}>
+          <Table.Td>{getPlacementIncomeNumber(placement, t)}</Table.Td>
+          <Table.Td>{displayValue(placement.StorageNumber)}</Table.Td>
+          <Table.Td>{displayValue(placement.RowNumber)}</Table.Td>
+          <Table.Td>{displayValue(placement.CellNumber)}</Table.Td>
+          <Table.Td ta="right">{formatAmount(placement.Qty)}</Table.Td>
+        </Table.Tr>
+      ))}
+    </>
+  )
+}
+
+function groupAvailabilityPlacements(placements: ProductHistoryPlacement[]): PlacementGroup[] {
+  const groups: PlacementGroup[] = []
+
+  for (const placement of placements) {
+    const existingGroup = groups.find(
+      (group) =>
+        group.storageNumber === placement.StorageNumber
+        && group.rowNumber === placement.RowNumber
+        && group.cellNumber === placement.CellNumber,
+    )
+
+    if (existingGroup) {
+      existingGroup.items.push(placement)
+      existingGroup.quantity = existingGroup.items.reduce((sum, item) => sum + (toFiniteNumber(item.Qty) ?? 0), 0)
+    } else {
+      groups.push({
+        cellNumber: placement.CellNumber,
+        items: [placement],
+        quantity: toFiniteNumber(placement.Qty) ?? 0,
+        rowNumber: placement.RowNumber,
+        storageNumber: placement.StorageNumber,
+      })
+    }
+  }
+
+  return groups
+}
+
+function getPlacementIncomeNumber(placement: ProductHistoryPlacement, t: (key: string) => string): string {
+  const incomeNumber = placement.ConsignmentItem?.Consignment?.ProductIncome?.Number
+
+  if (incomeNumber) {
+    return incomeNumber
+  }
+
+  if (typeof placement.Id === 'number' && placement.Id > 0) {
+    return t('Відсутній № приходу')
+  }
+
+  return ''
+}
+
+function useProductHistoryColumns(
+  selectedStorageIds: number[],
+  historyItems: ProductHistoryItem[],
+  offset: number,
+): DataTableColumn<ProductHistoryItem>[] {
+  const { t } = useI18n()
+
   return useMemo<DataTableColumn<ProductHistoryItem>[]>(
     () => [
+      {
+        id: 'index',
+        header: '#',
+        width: 56,
+        minWidth: 48,
+        align: 'right',
+        enableSorting: false,
+        cell: (historyItem) => String(offset + historyItems.indexOf(historyItem) + 1),
+      },
       {
         id: 'created',
         header: 'Створено',
@@ -552,15 +700,29 @@ function useProductHistoryColumns(selectedStorageIds: number[]): DataTableColumn
         header: 'Розміщення',
         width: 420,
         minWidth: 300,
+        enableSorting: false,
         accessor: (historyItem) => formatAvailabilityHistory(historyItem.ProductAvailabilityDataHistory || [], selectedStorageIds),
-        cell: (historyItem) => (
-          <Text size="sm" lineClamp={4}>
-            {displayValue(formatAvailabilityHistory(historyItem.ProductAvailabilityDataHistory || [], selectedStorageIds))}
-          </Text>
-        ),
+        cell: (historyItem) => {
+          const selectedStorageIdSet = new Set(selectedStorageIds)
+          const availabilities = (historyItem.ProductAvailabilityDataHistory || []).filter((availability) =>
+            selectedStorageIdSet.has(Number(availability.StorageId)),
+          )
+
+          if (availabilities.length === 0) {
+            return <Text size="sm" c="dimmed">—</Text>
+          }
+
+          return (
+            <Group gap={6} wrap="wrap">
+              {availabilities.map((availability) => (
+                <StorageAvailabilityHistory key={availability.NetUid || availability.StorageId} availability={availability} t={t} />
+              ))}
+            </Group>
+          )
+        },
       },
     ],
-    [selectedStorageIds],
+    [historyItems, offset, selectedStorageIds, t],
   )
 }
 
