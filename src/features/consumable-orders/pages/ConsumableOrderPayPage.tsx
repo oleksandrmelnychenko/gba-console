@@ -423,7 +423,7 @@ export function ConsumableOrderPayPage() {
         <Stack gap="sm">
           <Group justify="space-between">
             <Text fw={700}>{t('Позиції накладної')}</Text>
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Разом')}: {formatMoney(order?.TotalAmount || calculateLocalTotal(items))}
             </Badge>
           </Group>

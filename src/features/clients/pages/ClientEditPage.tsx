@@ -707,7 +707,7 @@ function ClientEditHeader({
             </Badge>
           )}
           {client?.IsTemporaryClient && (
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('З інтернет-магазину')}
             </Badge>
           )}

@@ -536,7 +536,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
         )}
 
         {markedModels.length > 0 && (
-          <Alert color="blue" icon={<IconListDetails size={18} />} variant="light">
+          <Alert color="violet" icon={<IconListDetails size={18} />} variant="light">
             <Group justify="space-between" gap="sm">
               <Text size="sm">
                 {t('Вибрано платіжних задач')}: {markedModels.length}

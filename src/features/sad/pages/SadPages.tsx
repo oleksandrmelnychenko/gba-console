@@ -1536,7 +1536,7 @@ function MoveItemsModal({
   return (
     <AppModal centered opened={opened} size="lg" title={t('Перемістити в палету')} onClose={onClose}>
       <Stack>
-        <Alert color="blue" variant="light">
+        <Alert color="violet" variant="light">
           {t('До палети буде додано')} {selectedItems.length} {t('позицій. Кількість береться з поля "Не в палеті".')}
         </Alert>
         <Checkbox

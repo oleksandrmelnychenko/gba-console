@@ -253,7 +253,7 @@ export function PaymentAccountsPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Завантажено')}: {accounts.length}
             </Badge>
             <Badge color="gray" variant="light">

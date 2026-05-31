@@ -190,7 +190,7 @@ export function SpecificationProductsGrid({
         accessor: (row) => row.isImported,
         cell: (row) =>
           row.isImported ? (
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Так')}
             </Badge>
           ) : (

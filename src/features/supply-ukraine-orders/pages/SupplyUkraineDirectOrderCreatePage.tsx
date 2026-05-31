@@ -349,7 +349,7 @@ export function SupplyUkraineDirectOrderCreatePage() {
                   onChange={(value) => updateForm({ clientAgreementKey: value || '' })}
                 />
                 {selectedClientAgreement?.Agreement?.Currency && (
-                  <Badge color="blue" variant="light">
+                  <Badge color="violet" variant="light">
                     {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
                   </Badge>
                 )}

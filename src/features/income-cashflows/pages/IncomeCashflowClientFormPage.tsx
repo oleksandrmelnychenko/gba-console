@@ -889,7 +889,7 @@ export function IncomeCashflowClientFormPage() {
 
             {form.amount > 0 && agreementCurrency && selectedCurrency && (
               <Group gap="xs">
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Зарахування')}: {formatMoney(form.calculatedValue || form.amount)} {agreementCurrency.Code || agreementCurrency.Name}
                 </Badge>
                 <Badge color="gray" variant="light">
@@ -958,10 +958,10 @@ export function IncomeCashflowClientFormPage() {
                     {t('Борг UAH')}: {formatMoney(clientDebtTotal.TotalLocal)}
                   </Badge>
                 ) : null}
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Поточний договір')}: {formatMoney(selectedClientAgreement?.CurrentAmount)}
                 </Badge>
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Борги по договору')}: {formatMoney(totalDebt)}
                 </Badge>
               </Group>

@@ -437,7 +437,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
               {invoices.map((invoice) => (
                 <Button
                   key={invoice.NetUid || invoice.Id}
-                  color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
+                  color={invoice.NetUid === selectedInvoiceNetId ? 'violet' : 'gray'}
                   loading={isInvoiceLoading && invoice.NetUid === selectedInvoiceNetId}
                   variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
                   onClick={() => selectInvoice(invoice)}
@@ -452,7 +452,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
                 {(selectedInvoice.PackingLists || []).map((packList) => (
                   <Button
                     key={packList.NetUid || packList.Id}
-                    color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
+                    color={packList.NetUid === selectedPackListNetId ? 'violet' : 'gray'}
                     size="xs"
                     variant={packList.NetUid === selectedPackListNetId ? 'outline' : 'subtle'}
                     onClick={() => selectPackList(packList)}

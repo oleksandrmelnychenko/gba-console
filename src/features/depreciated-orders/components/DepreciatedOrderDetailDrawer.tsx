@@ -85,7 +85,7 @@ export function DepreciatedOrderDetailDrawer({
           <Group justify="space-between" gap="sm">
             <Group gap="xs">
               {order.IsManagement && (
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Управ.')}
                 </Badge>
               )}

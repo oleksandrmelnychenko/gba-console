@@ -144,7 +144,7 @@ export function ConsumableOrdersPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Завантажено')}: {orders.length}
         </Badge>
         <Badge color="gray" variant="light">
@@ -319,7 +319,7 @@ function useConsumableOrderColumns({
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                color="blue"
+                color="violet"
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {

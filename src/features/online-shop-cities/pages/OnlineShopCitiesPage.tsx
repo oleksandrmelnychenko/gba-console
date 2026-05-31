@@ -533,7 +533,7 @@ function useOnlineShopCityColumns(
         minWidth: 104,
         accessor: (city) => (city.Deleted ? t('Архів') : t('Активне')),
         cell: (city) => (
-          <Badge color={city.Deleted ? 'gray' : 'blue'} variant="light">
+          <Badge color={city.Deleted ? 'gray' : 'violet'} variant="light">
             {city.Deleted ? t('Архів') : t('Активне')}
           </Badge>
         ),

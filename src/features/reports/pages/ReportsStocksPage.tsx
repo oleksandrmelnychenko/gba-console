@@ -210,7 +210,7 @@ export function ReportsStocksPage() {
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="center">
-        <Badge color={isLoading ? 'blue' : 'gray'} variant="light">
+        <Badge color={isLoading ? 'violet' : 'gray'} variant="light">
           {isLoading ? t('Формується') : `${t('Показників')}: ${checkedMeasurements}`}
         </Badge>
       </Group>

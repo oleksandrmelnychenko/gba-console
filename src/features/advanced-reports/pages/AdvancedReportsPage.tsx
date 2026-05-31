@@ -253,7 +253,7 @@ export function AdvancedReportsPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Завантажено')}: {reports.Collection.length}
         </Badge>
         <Badge color="gray" variant="light">

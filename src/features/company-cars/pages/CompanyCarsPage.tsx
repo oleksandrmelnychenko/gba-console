@@ -161,7 +161,7 @@ export function CompanyCarsPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Автомобілів')}: {companyCars.length}
             </Badge>
           </Group>

@@ -1014,7 +1014,7 @@ function useProductTransferColumns(
         accessor: (transfer) => Boolean(transfer.IsManagement),
         cell: (transfer) =>
           transfer.IsManagement ? (
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Так')}
             </Badge>
           ) : (
@@ -1207,7 +1207,7 @@ function TransferDetail({
 
       <Group gap="xs">
         {transfer.IsManagement && (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {t('Управлінське')}
           </Badge>
         )}

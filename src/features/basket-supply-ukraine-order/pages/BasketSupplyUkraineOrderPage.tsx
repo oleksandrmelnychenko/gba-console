@@ -1727,7 +1727,7 @@ function useCartDestinationColumns({
         id: 'source',
         header: t('Джерело'),
         cell: (item) => (
-          <Badge color={item.IsFromFile ? 'blue' : 'gray'} variant="light">
+          <Badge color={item.IsFromFile ? 'violet' : 'gray'} variant="light">
             {item.IsFromFile ? t('Файл') : t('Кошик')}
           </Badge>
         ),

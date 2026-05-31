@@ -842,7 +842,7 @@ export function ConsumableOrderFormPage() {
             <Badge color="gray" variant="light">
               {t('ПДВ')}: {formatMoney(totals.vat)}
             </Badge>
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
             </Badge>
           </Group>

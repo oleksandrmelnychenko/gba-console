@@ -734,7 +734,7 @@ export function IncomeCashflowShopFormPage() {
 
             {form.amount > 0 && selectedAgreementCurrency && selectedCurrency && (
               <Group gap="xs">
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Зарахування')}: {formatMoney(form.calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
                 </Badge>
                 <Badge color="gray" variant="light">
@@ -780,7 +780,7 @@ export function IncomeCashflowShopFormPage() {
                 </Text>
               </div>
               <Group gap="xs">
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {t('Поточний договір')}: {formatMoney(selectedAgreement?.CurrentAmount)}
                 </Badge>
                 <Badge color="gray" variant="light">

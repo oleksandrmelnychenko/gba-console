@@ -297,7 +297,7 @@ export function ConsumableProductsPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Категорій')}: {categories.length}
         </Badge>
         <Badge color="gray" variant="light">

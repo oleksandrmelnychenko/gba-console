@@ -339,7 +339,7 @@ export function ResalesPage() {
       <Group justify="flex-end" align="end">
         <Group gap="xs">
           <Button
-            color="blue"
+            color="violet"
             onClick={() =>
               navigate('/resales/new', {
                 state: {
@@ -1647,7 +1647,7 @@ function useResaleAvailabilityColumns({
         cell: (row) => (
           <ActionIcon
             aria-label={t('Обрати')}
-            color={selectedKeys.includes(getAvailabilityKey(row)) ? 'blue' : 'gray'}
+            color={selectedKeys.includes(getAvailabilityKey(row)) ? 'violet' : 'gray'}
             size={28}
             variant={selectedKeys.includes(getAvailabilityKey(row)) ? 'filled' : 'light'}
             onClick={(event) => {

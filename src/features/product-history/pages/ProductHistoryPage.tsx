@@ -519,7 +519,7 @@ function StorageAvailabilityHistory({
     <Popover withArrow shadow="md" opened={opened} position="bottom-end" width={520} onChange={setOpened}>
       <Popover.Target>
         <Badge
-          color="blue"
+          color="violet"
           size="lg"
           style={{ cursor: 'pointer' }}
           variant="light"

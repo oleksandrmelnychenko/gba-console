@@ -851,7 +851,7 @@ function ProductIncomeDocumentDrawer({
       {document && row && (
         <Stack gap="lg">
           <Group justify="space-between" align="start" gap="sm">
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {displayValue(row.type)}
             </Badge>
             <Group gap="xs">
@@ -895,7 +895,7 @@ function ProductIncomeDocumentDrawer({
           </SimpleGrid>
 
           {detailMode === 'view' && deferredOverviewNote && (
-            <Alert color="blue" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color="violet" icon={<IconAlertCircle size={18} />} variant="light">
               {deferredOverviewNote}
             </Alert>
           )}

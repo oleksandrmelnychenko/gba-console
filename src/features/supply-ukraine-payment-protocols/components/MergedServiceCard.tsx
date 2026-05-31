@@ -117,7 +117,7 @@ export function MergedServiceCard({
         <LabelValueRow label={`${t('ПДВ')} (${t('Бух.')})`}>{formatMoney(service.AccountingVat, currencyCode)}</LabelValueRow>
 
         {service.IsIncludeAccountingValue && (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {t('Бух. вартість включена у цінну брутто')}
           </Badge>
         )}

@@ -546,7 +546,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 />
                 <ActionIcon
                   aria-label={t('Оприходування')}
-                  color="blue"
+                  color="violet"
                   size="sm"
                   variant="subtle"
                   onClick={() => model.handleOpenPlacements(gridRow, key, row)}

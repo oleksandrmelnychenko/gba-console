@@ -536,7 +536,7 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
           </Badge>
         )}
         {sale.IsVatSale && (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             ПДВ
           </Badge>
         )}

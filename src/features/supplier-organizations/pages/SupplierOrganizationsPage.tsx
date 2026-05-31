@@ -191,7 +191,7 @@ export function SupplierOrganizationsPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Постачальників')}: {organizations.length}
         </Badge>
       </Group>

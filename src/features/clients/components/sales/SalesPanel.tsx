@@ -420,7 +420,7 @@ function SaleAccordionItem({
                     {t('Облік ПДВ')}
                   </Badge>
                 )}
-                <Badge color="blue" variant="light">
+                <Badge color="violet" variant="light">
                   {getLifeCycleLabel(lifeCycle, t)}
                 </Badge>
                 {!isNew && (
@@ -898,7 +898,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
 
   return (
     <Stack gap="md">
-      <Alert color="blue" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="violet" icon={<IconAlertCircle size={18} />} variant="light">
         {t('Редагування продажу доступне у застосунку менеджера продажів')}
       </Alert>
 

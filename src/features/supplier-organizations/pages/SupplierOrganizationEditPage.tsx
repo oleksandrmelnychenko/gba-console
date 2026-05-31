@@ -574,7 +574,7 @@ function AgreementsPanel({
     <Stack gap="md">
       <Group justify="space-between">
         <Group gap="xs">
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {t('Договорів')}: {agreements.length}
           </Badge>
         </Group>

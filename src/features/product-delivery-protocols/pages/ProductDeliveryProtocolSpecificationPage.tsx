@@ -617,7 +617,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {invoices.map((invoice) => (
                   <Button
                     key={invoice.NetUid || invoice.Id}
-                    color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+                    color={invoice.NetUid === model.selectedInvoiceNetId ? 'violet' : 'gray'}
                     variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
                     onClick={() => model.selectInvoice(invoice)}
                   >
@@ -641,7 +641,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                   {(model.selectedInvoice.PackingLists || []).map((packList) => (
                     <Button
                       key={packList.NetUid || packList.Id}
-                      color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+                      color={packList.NetUid === model.selectedPackListNetId ? 'violet' : 'gray'}
                       size="xs"
                       variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
                       onClick={() => model.selectPackList(packList)}

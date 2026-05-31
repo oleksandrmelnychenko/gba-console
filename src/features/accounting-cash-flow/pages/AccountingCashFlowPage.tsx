@@ -475,7 +475,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                 w={150}
                 onChange={(event) => setFilterDraft((current) => ({ ...current, to: event.currentTarget.value }))}
               />
-              <Button color="blue" type="submit">
+              <Button color="violet" type="submit">
                 {t('Застосувати')}
               </Button>
               <Tooltip label={t('Скинути')}>
@@ -565,7 +565,7 @@ function AgreementScopePicker({
       <ScrollArea type="auto" offsetScrollbars>
         <Group gap="xs" wrap="nowrap" pb={4}>
           <Button
-            color="blue"
+            color="violet"
             size="xs"
             style={{ flex: '0 0 auto' }}
             variant={!selectedAgreementNetUid ? 'filled' : 'light'}
@@ -619,12 +619,12 @@ function AgreementDebtTile({
           borderColor: debt.isOverdue
             ? 'var(--mantine-color-red-5)'
             : isSelected
-              ? 'var(--mantine-color-blue-5)'
+              ? 'var(--mantine-color-violet-5)'
               : undefined,
           backgroundColor: debt.isOverdue
             ? 'var(--mantine-color-red-0)'
             : isSelected
-              ? 'var(--mantine-color-blue-0)'
+              ? 'var(--mantine-color-violet-0)'
               : undefined,
         }}
         onClick={onSelect}

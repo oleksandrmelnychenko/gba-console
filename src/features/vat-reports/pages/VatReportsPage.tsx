@@ -151,7 +151,7 @@ export function VatReportsPage() {
             </Alert>
           )}
 
-          <Badge color="blue" variant="light" w="fit-content">
+          <Badge color="violet" variant="light" w="fit-content">
             {t('Завантажено')}: {reports.length}
           </Badge>
 

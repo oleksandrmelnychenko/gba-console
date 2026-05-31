@@ -634,7 +634,7 @@ function useSupplyReturnColumns(
         accessor: (supplyReturn) => Boolean(supplyReturn.IsManagement),
         cell: (supplyReturn) =>
           supplyReturn.IsManagement ? (
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Так')}
             </Badge>
           ) : (
@@ -839,7 +839,7 @@ function SupplyReturnDetail({
 
       <Group gap="xs">
         {supplyReturn.IsManagement && (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {t('Управ.')}
           </Badge>
         )}

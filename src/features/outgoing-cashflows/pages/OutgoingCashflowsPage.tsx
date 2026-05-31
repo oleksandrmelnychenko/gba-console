@@ -337,7 +337,7 @@ export function OutgoingCashflowsPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Завантажено')}: {cashflows.Collection.length}
         </Badge>
         <Badge color="gray" variant="light">

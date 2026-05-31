@@ -364,7 +364,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="end">
-        <Button color="blue" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
+        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
           {t('Нове оприбуткування')}
         </Button>
         <Tooltip label={t('Оновити')}>
@@ -399,7 +399,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 w={150}
                 onChange={(event) => setFilterDraft((current) => ({ ...current, to: event.currentTarget.value }))}
               />
-              <Button color="blue" type="submit">
+              <Button color="violet" type="submit">
                 {t('Застосувати')}
               </Button>
               <Tooltip label={t('Скинути')}>

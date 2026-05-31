@@ -1149,7 +1149,7 @@ function TaxFreeStatusPanel({
 
       <Stack gap="xs">
         {getStatusTimeline(document).map((item) => (
-          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'blue.0' : 'gray.0'} style={{ borderRadius: 6 }}>
+          <Group key={item.status} justify="space-between" p="sm" bg={item.active ? 'violet.0' : 'gray.0'} style={{ borderRadius: 6 }}>
             <Text fw={item.active ? 700 : 500}>{getTaxFreeStatusLabel(item.status)}</Text>
             <Text size="sm" c="dimmed">
               {formatDateTime(item.date) || '---'}

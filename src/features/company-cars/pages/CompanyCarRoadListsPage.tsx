@@ -190,7 +190,7 @@ export function CompanyCarRoadListsPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Шляхових листів')}: {roadLists.length}
             </Badge>
           </Group>

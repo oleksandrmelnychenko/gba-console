@@ -430,7 +430,7 @@ function AvailablePaymentTaskList({
   return (
     <Stack gap="sm">
       {markedInDrawer.length > 0 && (
-        <Alert color="blue" icon={<IconInfoCircle size={18} />} variant="light">
+        <Alert color="violet" icon={<IconInfoCircle size={18} />} variant="light">
           <Group justify="space-between" gap="sm">
             <Text size="sm">
               {t('Вибрано платіжних задач')}: {markedInDrawer.length}

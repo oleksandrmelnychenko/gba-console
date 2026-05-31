@@ -144,7 +144,7 @@ export function AccountableExpensesPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Документів')}: {orders.length}
         </Badge>
         <Badge color="gray" variant="light">

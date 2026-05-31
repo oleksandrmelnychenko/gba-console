@@ -92,7 +92,7 @@ export function LocaleAccordion({ children, emptyText, entries }: LocaleAccordio
         <Accordion.Item key={entry.locale} value={entry.locale}>
           <Accordion.Control>
             <Group gap="xs">
-              <Badge color="blue" variant="light">
+              <Badge color="violet" variant="light">
                 {getLocaleLabel(entry.locale)}
               </Badge>
               <Text fw={600}>{entry.locale}</Text>

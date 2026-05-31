@@ -360,7 +360,7 @@ export function IncomeCashflowsPage() {
       )}
 
       <Group gap="xs">
-        <Badge color="blue" variant="light">
+        <Badge color="violet" variant="light">
           {t('Завантажено')}: {incomeOrders.length}
         </Badge>
         <Badge color="gray" variant="light">

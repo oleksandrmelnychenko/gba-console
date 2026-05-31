@@ -665,7 +665,7 @@ function useIncompleteSalesOnlineShopColumns({
                 {hasClientSales && (
                   <Tooltip label={t('Продажі клієнта')}>
                     <ActionIcon
-                      color="blue"
+                      color="violet"
                       variant="subtle"
                       aria-label={t('Продажі клієнта')}
                       onClick={() => onOpenClientSales(sale)}

@@ -618,7 +618,7 @@ function useDepreciatedOrderColumns(
         accessor: (order) => Boolean(order.IsManagement),
         cell: (order) =>
           order.IsManagement ? (
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Так')}
             </Badge>
           ) : (

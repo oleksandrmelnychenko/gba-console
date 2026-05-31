@@ -4013,7 +4013,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 accessor: (role) => role.OrderExpireDays,
                 width: 150,
                 cell: (role) => (
-                  <Badge color="blue" variant="light">
+                  <Badge color="violet" variant="light">
                     {displayValue(role.OrderExpireDays)}
                   </Badge>
                 ),

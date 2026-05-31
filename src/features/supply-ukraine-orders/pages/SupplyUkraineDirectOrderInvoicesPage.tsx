@@ -467,7 +467,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                     {invoices.map((invoice) => (
                       <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
                         <Button
-                          color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
+                          color={invoice.NetUid === selectedInvoiceNetId ? 'violet' : 'gray'}
                           variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
                           onClick={() => setSelectedInvoiceNetId(invoice.NetUid || null)}
                         >
@@ -512,7 +512,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                     {(selectedInvoice?.PackingLists || []).map((packList) => (
                       <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
                         <Button
-                          color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
+                          color={packList.NetUid === selectedPackListNetId ? 'violet' : 'gray'}
                           variant={packList.NetUid === selectedPackListNetId ? 'filled' : 'light'}
                           onClick={() => setSelectedPackListNetId(packList.NetUid || null)}
                         >

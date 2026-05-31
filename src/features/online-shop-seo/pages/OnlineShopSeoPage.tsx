@@ -261,7 +261,7 @@ function useOnlineShopSeoPageModel() {
         minWidth: 84,
         accessor: (row) => row.locale,
         cell: (row) => (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {getLocaleLabel(row.locale)}
           </Badge>
         ),
@@ -343,7 +343,7 @@ function useOnlineShopSeoPageModel() {
         accessor: (contact) => contact.Name,
         cell: (contact) => (
           <Group gap="sm" wrap="nowrap">
-            <Avatar color="blue" name={contact.Name || undefined} radius="xl" src={contact.ImgUrl || undefined}>
+            <Avatar color="violet" name={contact.Name || undefined} radius="xl" src={contact.ImgUrl || undefined}>
               {getContactInitials(contact)}
             </Avatar>
             <Box>
@@ -1699,7 +1699,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               onChange={(event) => setContactField('Name', event.currentTarget.value)}
             />
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <Avatar color="blue" name={contactFormValues.Name || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
+              <Avatar color="violet" name={contactFormValues.Name || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
                 {getContactInitials({ Name: contactFormValues.Name })}
               </Avatar>
               <FileInput

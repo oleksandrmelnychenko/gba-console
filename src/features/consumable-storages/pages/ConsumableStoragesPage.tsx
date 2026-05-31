@@ -213,7 +213,7 @@ export function ConsumableStoragesPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="blue" variant="light">
+            <Badge color="violet" variant="light">
               {t('Складів')}: {storages.length}
             </Badge>
             <Badge color="gray" variant="light">
