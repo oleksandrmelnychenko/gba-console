@@ -16,7 +16,6 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconDownload,
-  IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
   IconRefresh,
@@ -36,8 +35,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid'
+import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid'
 import {
   getSupplierOrganizationCashFlow,
   getSupplyOrganization,
@@ -49,14 +48,6 @@ const ACCOUNTING_TYPES = [
   { label: 'Управлінський', value: '0' },
   { label: 'Бухгалтерський', value: '1' },
 ]
-
-const CASH_FLOW_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['date', 'name'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
 
 const TYPE_LABELS: Record<number, string> = {
   0: 'Протокол оплати постачання',
@@ -209,7 +200,25 @@ export function SupplierOrganizationCashFlowPage() {
   const agreements = organization?.SupplyOrganizationAgreements || []
   const rows = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = rows.at(-1)
-  const columns = useCashFlowColumns(setSelectedRow)
+  const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
+    () => [
+      { id: 'name', isLabel: true, header: t('Назва'), cell: (row) => displayValue(row.Name) },
+      { id: 'date', header: t('Дата'), width: 150, cell: (row) => formatDateTime(row.FromDate) },
+      { id: 'number', header: t('Номер'), width: 150, cell: (row) => displayValue(row.Number) },
+    ],
+    [t],
+  )
+  const summary = useMemo(
+    () => ({
+      afterInAmount: cashFlow?.AfterRangeInAmount,
+      afterOutAmount: cashFlow?.AfterRangeOutAmount,
+      beforeBalance: cashFlow?.BeforeRangeBalance,
+      beforeInAmount: cashFlow?.BeforeRangeInAmount,
+      beforeOutAmount: cashFlow?.BeforeRangeOutAmount,
+      closingBalance: lastItem?.CurrentBalance,
+    }),
+    [cashFlow, lastItem],
+  )
 
   return (
     <Stack gap="md">
@@ -299,127 +308,22 @@ export function SupplierOrganizationCashFlowPage() {
         </Badge>
       </Group>
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={CASH_FLOW_TABLE_DEFAULT_LAYOUT}
+      <CashFlowGrid
+        items={rows}
+        leadColumns={leadColumns}
+        summary={summary}
         emptyText={t('Взаєморозрахунків не знайдено')}
-        getRowId={(row, index) => `${row.Number || row.Name || 'row'}-${index}`}
+        getRowKey={(row, index) => `${row.Number || row.Name || 'row'}-${index}`}
         isLoading={isLoadingCashFlow}
-        layoutVersion="supplier-organization-cash-flow-1"
+        isRowActive={(row) => row === selectedRow}
+        loadingText={t('Завантаження взаєморозрахунків')}
         maxHeight="calc(100vh - 340px)"
-        minWidth={1120}
-        tableId={`supplier-organization-cash-flow-${netId || 'empty'}`}
         onRowClick={setSelectedRow}
       />
 
       <CashFlowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
       <DocumentModal document={downloadDocument} onClose={() => setDownloadDocument(null)} />
     </Stack>
-  )
-}
-
-function useCashFlowColumns(onOpen: (row: AccountingCashFlowHeadItem) => void): DataTableColumn<AccountingCashFlowHeadItem>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(
-    () => [
-      {
-        id: 'date',
-        header: t('Дата'),
-        width: 145,
-        minWidth: 130,
-        accessor: (row) => row.FromDate,
-        cell: (row) => formatDateTime(row.FromDate),
-      },
-      {
-        id: 'name',
-        header: t('Назва'),
-        width: 260,
-        minWidth: 220,
-        accessor: (row) => row.Name,
-        cell: (row) => <Text fw={600}>{displayValue(row.Name)}</Text>,
-      },
-      {
-        id: 'type',
-        header: t('Тип'),
-        width: 180,
-        minWidth: 145,
-        accessor: (row) => getTypeLabel(row.Type),
-        cell: (row) => getTypeLabel(row.Type),
-      },
-      {
-        id: 'number',
-        header: t('Номер'),
-        width: 150,
-        minWidth: 120,
-        accessor: (row) => row.Number,
-        cell: (row) => displayValue(row.Number),
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        width: 180,
-        minWidth: 145,
-        accessor: (row) => row.OrganizationName,
-        cell: (row) => displayValue(row.OrganizationName),
-      },
-      {
-        id: 'debit',
-        header: t('Дебет'),
-        width: 125,
-        minWidth: 110,
-        align: 'right',
-        accessor: (row) => (!row.IsCreditValue ? row.CurrentValue : undefined),
-        cell: (row) => (!row.IsCreditValue ? formatMoney(row.CurrentValue) : '—'),
-      },
-      {
-        id: 'credit',
-        header: t('Кредит'),
-        width: 125,
-        minWidth: 110,
-        align: 'right',
-        accessor: (row) => (row.IsCreditValue ? row.CurrentValue : undefined),
-        cell: (row) => (row.IsCreditValue ? formatMoney(row.CurrentValue) : '—'),
-      },
-      {
-        id: 'balance',
-        header: t('Баланс'),
-        width: 125,
-        minWidth: 110,
-        align: 'right',
-        accessor: (row) => row.CurrentBalance,
-        cell: (row) => formatMoney(row.CurrentBalance),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <IconEye size={16} />
-            </ActionIcon>
-          </Tooltip>
-        ),
-      },
-    ],
-    [onOpen, t],
   )
 }
 

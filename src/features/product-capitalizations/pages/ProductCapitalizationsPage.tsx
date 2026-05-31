@@ -471,14 +471,16 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
         </Stack>
       </Card>
 
-      <NewProductCapitalizationPanel
-        opened={createPanelOpened}
-        onClose={() => setCreatePanelOpened(false)}
-        onCreated={() => {
-          setPage(1)
-          reload()
-        }}
-      />
+      {createPanelOpened && (
+        <NewProductCapitalizationPanel
+          opened={createPanelOpened}
+          onClose={() => setCreatePanelOpened(false)}
+          onCreated={() => {
+            setPage(1)
+            reload()
+          }}
+        />
+      )}
 
       <ProductCapitalizationDetailDrawer
         capitalization={selectedCapitalization}

@@ -1,0 +1,125 @@
+.cfg-grid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--mantine-color-gray-3);
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+  background: var(--mantine-color-body);
+  font-size: 13px;
+}
+
+.cfg-row {
+  display: flex;
+  align-items: stretch;
+  min-height: 40px;
+}
+
+.cfg-top,
+.cfg-bottom {
+  background: var(--mantine-color-gray-0);
+  font-weight: 600;
+}
+
+.cfg-top {
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+}
+
+.cfg-bottom {
+  border-top: 1px solid var(--mantine-color-gray-3);
+}
+
+.cfg-scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.cfg-data-row {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  cursor: pointer;
+  transition: background-color 80ms ease;
+}
+
+.cfg-data-row:last-child {
+  border-bottom: none;
+}
+
+.cfg-data-row:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.cfg-data-row.cfg-active {
+  background: var(--mantine-color-violet-0);
+}
+
+.cfg-data-row.cfg-debit {
+  box-shadow: inset 3px 0 0 var(--mantine-color-teal-4);
+}
+
+.cfg-data-row.cfg-credit {
+  box-shadow: inset 3px 0 0 var(--mantine-color-orange-4);
+}
+
+.cfg-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cfg-cell.cfg-align-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.cfg-cell.cfg-align-center {
+  align-items: center;
+  text-align: center;
+}
+
+.cfg-label {
+  flex: 1 1 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+
+.cfg-label-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cfg-cell-value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cfg-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--mantine-color-dimmed);
+  line-height: 1.1;
+}
+
+.cfg-sub-note {
+  font-size: 10px;
+  color: var(--mantine-color-gray-5);
+}
+
+.cfg-positive {
+  color: var(--mantine-color-teal-7);
+}
+
+.cfg-negative {
+  color: var(--mantine-color-red-7);
+}
+
+.cfg-state {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+}

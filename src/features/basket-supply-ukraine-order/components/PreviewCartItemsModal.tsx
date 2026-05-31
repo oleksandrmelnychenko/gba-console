@@ -43,33 +43,33 @@ export function PreviewCartItemsModal({
     () => [
       {
         id: 'vendorCode',
-        header: t('VendorCode'),
+        header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || item.SupplyOrderUkraineCartItem?.Product?.VendorCode || '',
         width: 150,
       },
       {
         id: 'availableQty',
-        header: t('AvailableQty'),
+        header: t('Доступна К-сть'),
         accessor: (item) => item.AvailableQty ?? '',
         width: 130,
         align: 'right',
       },
       {
         id: 'qty',
-        header: t('SpecificationQty'),
+        header: t('К-сть'),
         accessor: (item) => item.Qty ?? '',
         width: 130,
         align: 'right',
       },
       {
         id: 'product',
-        header: t('ProductName'),
+        header: t('Назва товару'),
         accessor: (item) => item.Product?.Name || item.SupplyOrderUkraineCartItem?.Product?.Name || '',
         minWidth: 260,
       },
       {
         id: 'status',
-        header: t('Description'),
+        header: t('Опис'),
         cell: (item) => getPreviewErrorMessage(item, t) || <Badge color="green">{t('Файл валідний')}</Badge>,
         minWidth: 220,
       },
@@ -117,7 +117,7 @@ export function PreviewCartItemsModal({
               leftSection={<IconUpload size={16} />}
               onClick={loadValidItems}
             >
-              {t('Load')}
+              {t('Завантажити')}
             </Button>
           </Group>
         </Group>
@@ -128,15 +128,15 @@ export function PreviewCartItemsModal({
 
 function getPreviewErrorMessage(item: PreviewCartItem, t: (key: string) => string) {
   if (item.ZeroAvailable) {
-    return <Badge color="red">{t('CountZero')}</Badge>
+    return <Badge color="red">{t('Немає товарів на складі')}</Badge>
   }
 
   if (item.LessAvailable) {
-    return <Badge color="orange">{t('NotEnoughInStock')}</Badge>
+    return <Badge color="orange">{t('Недостатня кількість на складі')}</Badge>
   }
 
   if (item.NoCartItem) {
-    return <Badge color="red">{t('NoCartItem')}</Badge>
+    return <Badge color="red">{t('Немає в корзині')}</Badge>
   }
 
   return null

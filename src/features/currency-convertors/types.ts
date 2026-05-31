@@ -1,4 +1,4 @@
-export const CURRENCY_ORDER = ['EUR', 'USD'] as const
+export const CURRENCY_ORDER = ['EUR', 'USD', 'PLN'] as const
 
 export type EntityFields = {
   Created?: string

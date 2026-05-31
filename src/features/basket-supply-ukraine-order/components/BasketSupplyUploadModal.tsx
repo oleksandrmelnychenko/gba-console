@@ -64,7 +64,7 @@ export function BasketSupplyUploadModal({
       centered
       opened={opened}
       size="lg"
-      title={isPreview ? t('UploadForExport') : t('LoadingOrder')}
+      title={isPreview ? t('Завантаження для експорту') : t('Завантаження замовлення')}
       onClose={closeModal}
     >
       <Stack gap="md">
@@ -78,7 +78,7 @@ export function BasketSupplyUploadModal({
           clearable
           accept=".xls,.xlsx,.csv"
           disabled={isSubmitting}
-          label={t('UploadFiles')}
+          label={t('Завантажити файли')}
           leftSection={<IconFileSpreadsheet size={16} />}
           placeholder={t('Оберіть файл')}
           value={form.file}
@@ -89,7 +89,7 @@ export function BasketSupplyUploadModal({
           <NumberInput
             allowDecimal={false}
             disabled={isSubmitting}
-            label={t('VendorCode')}
+            label={t('Код Виробника')}
             min={1}
             value={form.vendorCodeColumnNumber}
             onChange={(value) => setForm((current) => ({ ...current, vendorCodeColumnNumber: toPositiveNumber(value) }))}
@@ -97,7 +97,7 @@ export function BasketSupplyUploadModal({
           <NumberInput
             allowDecimal={false}
             disabled={isSubmitting}
-            label={t('SpecificationQty')}
+            label={t('К-сть')}
             min={1}
             value={form.qtyColumnNumber}
             onChange={(value) => setForm((current) => ({ ...current, qtyColumnNumber: toPositiveNumber(value) }))}
@@ -105,7 +105,7 @@ export function BasketSupplyUploadModal({
           <NumberInput
             allowDecimal={false}
             disabled={isSubmitting}
-            label={t('From')}
+            label={t('Від')}
             min={1}
             value={form.startRow}
             onChange={(value) => setForm((current) => ({ ...current, startRow: toPositiveNumber(value) }))}
@@ -113,7 +113,7 @@ export function BasketSupplyUploadModal({
           <NumberInput
             allowDecimal={false}
             disabled={isSubmitting}
-            label={t('To')}
+            label={t('До')}
             min={1}
             value={form.endRow}
             onChange={(value) => setForm((current) => ({ ...current, endRow: toPositiveNumber(value) }))}
@@ -123,7 +123,7 @@ export function BasketSupplyUploadModal({
               <NumberInput
                 allowDecimal={false}
                 disabled={isSubmitting}
-                label={t('FromDate')}
+                label={t('Від якої дати')}
                 min={1}
                 value={form.fromDateColumnNumber}
                 onChange={(value) => setForm((current) => ({ ...current, fromDateColumnNumber: toPositiveNumber(value) }))}
@@ -131,7 +131,7 @@ export function BasketSupplyUploadModal({
               <NumberInput
                 allowDecimal={false}
                 disabled={isSubmitting}
-                label={t('Priority')}
+                label={t('Приорітет')}
                 min={1}
                 value={form.priorityColumnNumber}
                 onChange={(value) => setForm((current) => ({ ...current, priorityColumnNumber: toPositiveNumber(value) }))}
@@ -151,7 +151,7 @@ export function BasketSupplyUploadModal({
             {t('Скасувати')}
           </Button>
           <Button leftSection={<IconUpload size={16} />} loading={isSubmitting} onClick={submitForm}>
-            {t('Load')}
+            {t('Завантажити')}
           </Button>
         </Group>
       </Stack>

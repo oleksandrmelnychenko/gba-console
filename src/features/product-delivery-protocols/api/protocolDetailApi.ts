@@ -95,6 +95,33 @@ export async function assignInvoicesToMergedService(
   return normalizeProtocol(result)
 }
 
+export async function getSupplyInvoiceWithSpendings(netId: string): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/all/spending/get', {
+    query: { netId },
+  })
+
+  return result && typeof result === 'object' ? (result as SupplyInvoice) : null
+}
+
+export async function addDocumentsToSupplyInvoice(
+  invoice: SupplyInvoice,
+  documents: File[],
+): Promise<ProtocolDetail | null> {
+  const formData = new FormData()
+  formData.append('invoice', JSON.stringify(invoice))
+
+  for (const document of documents) {
+    formData.append('documents', document)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/invoices/documents/add', {
+    method: 'POST',
+    body: formData,
+  })
+
+  return normalizeProtocol(result)
+}
+
 export type SaveMergedServiceFiles = {
   accountDocuments?: File[]
   accountingTaskDocuments?: File[]

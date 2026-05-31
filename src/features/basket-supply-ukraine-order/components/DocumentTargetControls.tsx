@@ -26,12 +26,12 @@ export function DocumentTargetControls({
   t,
 }: DocumentTargetControlsProps) {
   const documentTypeOptions: Array<{ label: string; value: BasketSupplyDocumentType }> = [
-    { label: t('TaxFree'), value: 'taxFree' },
-    { label: t('Sad'), value: 'sad' },
+    { label: t('Tax Free'), value: 'taxFree' },
+    { label: t('Експорт'), value: 'sad' },
   ]
   const sadTypeOptions: Array<{ label: string; value: string }> = [
-    { label: t('SadTypesSad'), value: String(SAD_TYPES.Sad) },
-    { label: t('SadTypesTIR'), value: String(SAD_TYPES.TIR) },
+    { label: t('Sad'), value: String(SAD_TYPES.Sad) },
+    { label: t('TIR'), value: String(SAD_TYPES.TIR) },
   ]
   const taxFreeOptions = notSentTaxFreePackLists.map((packList) => ({
     label: packList.Number || packList.NetUid || t('Без номера'),
@@ -63,7 +63,7 @@ export function DocumentTargetControls({
         <Switch
           checked={documentState.isSelectExistingDocument && canSelectExisting}
           disabled={disabled || !canSelectExisting}
-          label={t('SelectExisting')}
+          label={t('Вибрати існуючий')}
           onChange={(event) => patchDocumentState({ isSelectExistingDocument: event.currentTarget.checked })}
         />
       </Group>
@@ -73,7 +73,7 @@ export function DocumentTargetControls({
           clearable
           data={taxFreeOptions}
           disabled={disabled}
-          label={t('NotSentPackings')}
+          label={t('Упаковки (не проведені)')}
           placeholder={t('Оберіть документ')}
           value={documentState.existingTaxFreeNetUid || null}
           onChange={(value) => patchDocumentState({ existingTaxFreeNetUid: value || '' })}
@@ -87,7 +87,7 @@ export function DocumentTargetControls({
               clearable
               data={sadOptions}
               disabled={disabled}
-              label={t('NotSentSads')}
+              label={t('Експорти (не проведені)')}
               placeholder={t('Оберіть документ')}
               value={documentState.existingSadNetUid || null}
               onChange={(value) => patchDocumentState({ existingSadNetUid: value || '' })}
@@ -96,7 +96,7 @@ export function DocumentTargetControls({
             <Select
               data={sadTypeOptions}
               disabled={disabled}
-              label={t('Type')}
+              label={t('Тип')}
               value={String(documentState.sadType)}
               onChange={(value) => patchDocumentState({ sadType: Number(value || SAD_TYPES.Sad) as SadTypeValue })}
             />

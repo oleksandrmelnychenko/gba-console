@@ -150,18 +150,12 @@ export function BasketSupplyUkraineOrderPage() {
 
   return (
     <Stack className="basket-supply-page" gap="lg">
-      <Group align="center" justify="flex-end">
-        <Badge color="gray" variant="light">
-          {t('Feature slice')}
-        </Badge>
-      </Group>
-
       <div>
         <div className="pill-tabs" style={{ width: 'fit-content' }}>
           {[
-            { value: 'sales', label: t('Factura') },
-            { value: 'cart', label: t('MovingToUkraineFromFile') },
-            { value: 'recommendations', label: t('Recommendations') },
+            { value: 'sales', label: t('Фактура') },
+            { value: 'cart', label: t('Переміщення на Україну') },
+            { value: 'recommendations', label: t('Рекомендації') },
           ].map((tab) => (
             <button
               key={tab.value}
@@ -610,28 +604,28 @@ function BasketCartWorkflow() {
           <Group align="end" justify="space-between" wrap="wrap">
             <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
-                label={t('SearchByProduct')}
+                label={t('Пошук по товару')}
                 leftSection={<IconSearch size={16} />}
-                placeholder={t('VendorCode')}
+                placeholder={t('Код Виробника')}
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.currentTarget.value }))}
               />
               <Select
                 data={[
                   { label: t('Усі пріоритети'), value: 'all' },
-                  { label: t('Low'), value: '1' },
-                  { label: t('High'), value: '2' },
+                  { label: t('Низький'), value: '1' },
+                  { label: t('Високий'), value: '2' },
                   { label: t('TIR'), value: '3' },
                 ]}
-                label={t('Priority')}
+                label={t('Приорітет')}
                 value={filters.priority}
                 onChange={(value) => setFilters((current) => ({ ...current, priority: (value || 'all') as CartFilterState['priority'] }))}
               />
               <Select
                 data={[
                   { label: t('Усі позиції'), value: 'all' },
-                  { label: t('ReservedQty'), value: 'reserved' },
-                  { label: t('AvailableQty'), value: 'available' },
+                  { label: t('Зарезервована К-сть'), value: 'reserved' },
+                  { label: t('Доступна К-сть'), value: 'available' },
                 ]}
                 label={t('Фільтр залишку')}
                 value={filters.availability}
@@ -648,10 +642,10 @@ function BasketCartWorkflow() {
                 </ActionIcon>
               </Tooltip>
               <Button leftSection={<IconFileImport size={16} />} variant="light" onClick={() => openUploadModal('load')}>
-                {t('LoadToCart')}
+                {t('Завантажити в корзину')}
               </Button>
               <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => openUploadModal('preview')}>
-                {t('SelectForExport')}
+                {t('Вибрати для експорту')}
               </Button>
             </Group>
           </Group>
@@ -730,7 +724,7 @@ function BasketCartWorkflow() {
             }
             toolbarRight={
               <Button disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-                {isCreatingDocument ? t('Creating') : t('Create')}
+                {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             }
           />
@@ -777,21 +771,21 @@ function BasketCartWorkflow() {
                 {t('Скасувати')}
               </Button>
               <Button loading={isCreatingDocument} onClick={createDocument}>
-                {isCreatingDocument ? t('Creating') : t('Create')}
+                {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
           </Group>
         </Stack>
       </AppModal>
 
-      <AppModal centered opened={Boolean(reserveItem)} title={t('Reserve')} onClose={() => setReserveItem(null)}>
+      <AppModal centered opened={Boolean(reserveItem)} title={t('Резерв')} onClose={() => setReserveItem(null)}>
         <Stack gap="md">
           <Text size="sm">
             {reserveItem?.Product?.VendorCode} {reserveItem?.Product?.Name}
           </Text>
           <NumberInput
             allowDecimal={false}
-            label={t('ReservedQty')}
+            label={t('Зарезервована К-сть')}
             min={0}
             value={reserveQty}
             onChange={(value) => setReserveQty(toPositiveNumberOrZero(value))}
@@ -1228,7 +1222,7 @@ function SalesWorkflowTab() {
             }
             toolbarRight={
               <Button disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-                {isCreatingDocument ? t('Creating') : t('Create')}
+                {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             }
             onRowClick={setSelectedSale}
@@ -1257,7 +1251,7 @@ function SalesWorkflowTab() {
                 {t('Скасувати')}
               </Button>
               <Button loading={isCreatingDocument} onClick={createSalesDocument}>
-                {isCreatingDocument ? t('Creating') : t('Create')}
+                {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
           </Group>
@@ -1268,7 +1262,7 @@ function SalesWorkflowTab() {
         opened={Boolean(selectedSale)}
         position="right"
         size="xl"
-        title={`${t('Factura')} ${selectedSale?.SaleNumber?.Value || ''}`}
+        title={`${t('Фактура')} ${selectedSale?.SaleNumber?.Value || ''}`}
         onClose={() => setSelectedSale(null)}
       >
         <SaleItemsList items={selectedSale?.Order?.OrderItems || []} />
@@ -1287,13 +1281,13 @@ function RecommendationsTab() {
     () => [
       {
         id: 'vendorCode',
-        header: t('VendorCode'),
+        header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
         width: 160,
       },
       {
         id: 'recommendedQty',
-        header: t('RecommendedQty'),
+        header: t('Рекомендована К-сть'),
         accessor: (item) => toNumber(item.UploadedQty),
         cell: (item) => formatQty(item.UploadedQty),
         width: 150,
@@ -1301,7 +1295,7 @@ function RecommendationsTab() {
       },
       {
         id: 'availableQty',
-        header: t('AvailableQty'),
+        header: t('Доступна К-сть'),
         accessor: (item) => toNumber(item.AvailableQty),
         cell: (item) => formatQty(item.AvailableQty),
         width: 140,
@@ -1309,13 +1303,13 @@ function RecommendationsTab() {
       },
       {
         id: 'fromDate',
-        header: t('FromDate'),
+        header: t('Від якої дати'),
         accessor: (item) => formatDate(item.FromDate),
         width: 130,
       },
       {
         id: 'product',
-        header: t('ProductName'),
+        header: t('Назва товару'),
         accessor: (item) => item.Product?.Name || '',
         minWidth: 320,
       },
@@ -1399,8 +1393,8 @@ function TotalsBar({ isLoading, totals }: { isLoading: boolean; totals: CartItem
     <SimpleGrid className="basket-supply-totals" cols={{ base: 2, md: 4 }} spacing="sm">
       <TotalItem isLoading={isLoading} label={t('Заг. к-сть')} value={formatQty(totals.TotalQty)} />
       <TotalItem isLoading={isLoading} label={t('Заг. вага')} value={formatQty(totals.TotalWeight)} />
-      <TotalItem isLoading={isLoading} label={`${t('GrossPrice')} (EUR)`} value={formatAmount(totals.TotalEuroAmount)} />
-      <TotalItem isLoading={isLoading} label={`${t('GrossPrice')} (PLN)`} value={formatAmount(totals.TotalPlnAmount)} />
+      <TotalItem isLoading={isLoading} label={`${t('Вартість Брутто')} (EUR)`} value={formatAmount(totals.TotalEuroAmount)} />
+      <TotalItem isLoading={isLoading} label={`${t('Вартість Брутто')} (PLN)`} value={formatAmount(totals.TotalPlnAmount)} />
     </SimpleGrid>
   )
 }
@@ -1437,7 +1431,7 @@ function SaleItemsList({ items }: { items: BasketOrderItem[] }) {
                 {item.Product?.VendorCode} {item.Product?.Name}
               </Text>
               <Text c="dimmed" size="xs">
-                {t('From')} {formatDateTime(item.Created)} {item.User?.LastName || ''}
+                {t('Від')} {formatDateTime(item.Created)} {item.User?.LastName || ''}
               </Text>
             </Box>
             <Stack align="flex-end" gap={2}>
@@ -1445,7 +1439,7 @@ function SaleItemsList({ items }: { items: BasketOrderItem[] }) {
                 {formatAmount(item.TotalAmount)} EUR
               </Text>
               <Text c="dimmed" size="xs">
-                {formatQty(item.Qty)} {t('Count')} · {formatQty(item.TotalWeight)} {t('Weight')}
+                {formatQty(item.Qty)} {t('штук')} · {formatQty(item.TotalWeight)} {t('Вага')}
               </Text>
             </Stack>
           </Group>
@@ -1487,19 +1481,19 @@ function useBasketSalesColumns({
       },
       {
         id: 'date',
-        header: t('FromDate'),
+        header: t('Від якої дати'),
         accessor: (sale) => formatDateTime(sale.ChangedToInvoice || sale.FromDate),
         width: 150,
       },
       {
         id: 'number',
-        header: t('Number'),
+        header: t('Номер'),
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid || '',
         width: 140,
       },
       {
         id: 'client',
-        header: t('Client'),
+        header: t('Клієнт'),
         accessor: (sale) => sale.ClientAgreement?.Client?.FullName || '',
         minWidth: 240,
       },
@@ -1512,7 +1506,7 @@ function useBasketSalesColumns({
       },
       {
         id: 'eur',
-        header: `${t('GrossPrice')} (EUR)`,
+        header: `${t('Вартість Брутто')} (EUR)`,
         accessor: (sale) => toNumber(sale.TotalAmount),
         cell: (sale) => formatAmount(sale.TotalAmount),
         width: 150,
@@ -1520,7 +1514,7 @@ function useBasketSalesColumns({
       },
       {
         id: 'pln',
-        header: `${t('GrossPrice')} (PLN)`,
+        header: `${t('Вартість Брутто')} (PLN)`,
         accessor: (sale) => toNumber(sale.TotalAmountLocal),
         cell: (sale) => formatAmount(sale.TotalAmountLocal),
         width: 150,
@@ -1528,7 +1522,7 @@ function useBasketSalesColumns({
       },
       {
         id: 'responsible',
-        header: t('Responsible'),
+        header: t('Відповідальний'),
         accessor: (sale) => sale.User?.LastName || sale.User?.FullName || '',
         width: 160,
       },
@@ -1597,13 +1591,13 @@ function useCartSourceColumns({
       },
       {
         id: 'vendorCode',
-        header: t('VendorCode'),
+        header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
         width: 140,
       },
       {
         id: 'reservedQty',
-        header: t('ReservedQty'),
+        header: t('Зарезервована К-сть'),
         accessor: (item) => toNumber(item.ReservedQty),
         cell: (item) => formatQty(item.ReservedQty),
         width: 130,
@@ -1611,7 +1605,7 @@ function useCartSourceColumns({
       },
       {
         id: 'availableQty',
-        header: t('AvailableQty'),
+        header: t('Доступна К-сть'),
         accessor: (item) => toNumber(item.AvailableQty),
         cell: (item) => formatQty(item.AvailableQty),
         width: 130,
@@ -1619,13 +1613,13 @@ function useCartSourceColumns({
       },
       {
         id: 'fromDate',
-        header: t('FromDate'),
+        header: t('Від якої дати'),
         accessor: (item) => formatDate(item.FromDate),
         width: 130,
       },
       {
         id: 'productName',
-        header: t('ProductName'),
+        header: t('Назва товару'),
         accessor: (item) => item.Product?.Name || '',
         minWidth: 280,
       },
@@ -1633,9 +1627,9 @@ function useCartSourceColumns({
         id: 'actions',
         header: '',
         cell: (item) => (
-          <Tooltip label={t('Reserve')}>
+          <Tooltip label={t('Резерв')}>
             <ActionIcon
-              aria-label={t('Reserve')}
+              aria-label={t('Резерв')}
               disabled={Boolean(item.IsDirty)}
               size="sm"
               variant="subtle"
@@ -1688,25 +1682,25 @@ function useCartDestinationColumns({
       },
       {
         id: 'vendorCode',
-        header: t('VendorCode'),
+        header: t('Код Виробника'),
         accessor: (item) => item.Product?.VendorCode || '',
         width: 140,
       },
       {
         id: 'fromDate',
-        header: t('FromDate'),
+        header: t('Від якої дати'),
         accessor: (item) => formatDate(item.FromDate),
         width: 130,
       },
       {
         id: 'productName',
-        header: t('ProductName'),
+        header: t('Назва товару'),
         accessor: (item) => item.Product?.Name || '',
         minWidth: 280,
       },
       {
         id: 'changedQty',
-        header: t('SpecificationQty'),
+        header: t('К-сть'),
         cell: (item) => (
           <NumberInput
             allowDecimal={false}
@@ -2035,7 +2029,7 @@ function getBasketSaleClientId(sale?: BasketSale) {
 
 function getPriorityLabel(priority: SupplyOrderUkraineCartItemPriority | undefined, t: (key: string) => string) {
   if (priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.High) {
-    return t('High')
+    return t('Високий')
   }
 
   if (priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.TIR) {
@@ -2043,10 +2037,10 @@ function getPriorityLabel(priority: SupplyOrderUkraineCartItemPriority | undefin
   }
 
   if (priority === SUPPLY_ORDER_UKRAINE_CART_ITEM_PRIORITY.Low) {
-    return t('Low')
+    return t('Низький')
   }
 
-  return t('N/A')
+  return t('—')
 }
 
 function formatDate(value: Date | string | undefined) {

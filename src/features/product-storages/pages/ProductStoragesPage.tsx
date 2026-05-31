@@ -31,6 +31,7 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconHistory,
   IconRefresh,
   IconRestore,
   IconSearch,
@@ -45,6 +46,11 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import {
+  ProductMovementHistoryDrawer,
+  ProductStorageLocationHistoryDrawer,
+  type MovementHistoryProduct,
+} from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
 import { useAuth } from '../../auth/useAuth'
 import {
   createProductStorageSupplyReturn,
@@ -76,6 +82,7 @@ const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = 'Products_Storages_Action_WithAPosition_Btn_PKEY'
 const PRODUCT_STORAGES_PREVIEW_PERMISSION = 'Products_Storages_Preview_Btn_PKEY'
+const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -143,6 +150,8 @@ function useProductStoragesPageModel() {
   const [actionForm, setActionForm] = useValueState<ProductStorageActionForm>(() => createActionForm())
   const [actionError, setActionError] = useValueState<string | null>(null)
   const [isActionSubmitting, setActionSubmitting] = useValueState(false)
+  const [movementHistoryProduct, setMovementHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
+  const [storageLocationHistoryProduct, setStorageLocationHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
   const [returnConsignmentsState, setReturnConsignmentsState] = useValueState<ReturnConsignmentsState>({
     error: null,
     isLoading: false,
@@ -153,6 +162,7 @@ function useProductStoragesPageModel() {
   const listRequestKeyRef = useRef(listRequestKey)
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
+  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const selectedStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === selectedStorageNetId) || null,
@@ -176,10 +186,13 @@ function useProductStoragesPageModel() {
   const columns = useProductStoragesColumns({
     availabilityIndexMap,
     canOpenAction,
+    canOpenProductMovement,
     isAllVisibleSelected,
     isSomeVisibleSelected,
     selectedAvailabilityKeys,
     onOpenAction: openSingleAction,
+    onOpenMovementHistory: openMovementHistory,
+    onOpenStorageLocationHistory: openStorageLocationHistory,
     onToggleAvailability: toggleAvailability,
     onToggleVisible: toggleVisibleAvailabilities,
   })
@@ -189,8 +202,13 @@ function useProductStoragesPageModel() {
     [actionRows, selectedStorage],
   )
   const toStorageOptions = useMemo(
-    () => buildToStorageOptions(storages, actionFromStorage, actionForm.isManagement),
-    [actionForm.isManagement, actionFromStorage, storages],
+    () =>
+      buildToStorageOptions(storages, actionFromStorage, {
+        isPrivilegedUser: isAdmin,
+        isManagement: actionForm.isManagement,
+        scope: actionModal?.scope || 'single',
+      }),
+    [actionForm.isManagement, actionFromStorage, actionModal?.scope, isAdmin, storages],
   )
   const effectiveToStorageNetUid = toStorageOptions.some((option) => option.value === actionForm.toStorageNetUid)
     ? actionForm.toStorageNetUid
@@ -266,7 +284,13 @@ function useProductStoragesPageModel() {
       setActionModal(null)
       setStorages([])
     },
-    [setActionModal, setPreviewOpened, setPreviewRows, setSelectedAvailabilities, setStorages],
+    [
+      setActionModal,
+      setPreviewOpened,
+      setPreviewRows,
+      setSelectedAvailabilities,
+      setStorages,
+    ],
   )
 
   useEffect(() => {
@@ -462,6 +486,10 @@ function useProductStoragesPageModel() {
   }
 
   function openPreview() {
+    if (!canOpenPreview) {
+      return
+    }
+
     const rows = createActionRows(selectedAvailabilities)
 
     setPreviewRows(rows)
@@ -506,7 +534,28 @@ function useProductStoragesPageModel() {
     setActionError(null)
   }
 
+  function openMovementHistory(availability: ProductStorageAvailability) {
+    const product = getMovementHistoryProduct(availability)
+
+    if (product.NetUid) {
+      setMovementHistoryProduct(product)
+    }
+  }
+
+  function openStorageLocationHistory(availability: ProductStorageAvailability) {
+    const product = getMovementHistoryProduct(availability)
+
+    if (product.NetUid) {
+      setStorageLocationHistoryProduct(product)
+    }
+  }
+
   function openGroupAction() {
+    if (!canOpenPreview) {
+      setActionError(t('Недостатньо прав для Preview'))
+      return
+    }
+
     const rows = previewRows.filter(isValidActionRow)
 
     if (rows.length === 0) {
@@ -745,6 +794,8 @@ function useProductStoragesPageModel() {
     selectedActionToStorage,
     selectedStorageNetId,
     selectedReturnConsignment,
+    movementHistoryProduct,
+    storageLocationHistoryProduct,
     storageOptions,
     toDate,
     toolbarLeft,
@@ -764,8 +815,10 @@ function useProductStoragesPageModel() {
     setActionForm,
     setDownloadModalOpened,
     setFromDate,
+    setMovementHistoryProduct,
     setPageSize,
     setPreviewOpened,
+    setStorageLocationHistoryProduct,
     setToDate,
     submitAction,
     toggleAvailability,
@@ -813,6 +866,8 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectedActionToStorage,
     selectedStorageNetId,
     selectedReturnConsignment,
+    movementHistoryProduct,
+    storageLocationHistoryProduct,
     storageOptions,
     toDate,
     toolbarLeft,
@@ -832,8 +887,10 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     setActionForm,
     setDownloadModalOpened,
     setFromDate,
+    setMovementHistoryProduct,
     setPageSize,
     setPreviewOpened,
+    setStorageLocationHistoryProduct,
     setToDate,
     submitAction,
     toggleAvailability,
@@ -967,7 +1024,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             layoutVersion="product-storages-table-2"
             loadingText={t('Завантаження товарів складу')}
             maxHeight="calc(100vh - 320px)"
-            minWidth={1240}
+            minWidth={1320}
             rowClassName={(availability) =>
               selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
             }
@@ -1005,6 +1062,18 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         onChangeMode={changeActionMode}
         onClose={closeActionModal}
         onSubmit={submitAction}
+      />
+
+      <ProductMovementHistoryDrawer
+        opened={Boolean(movementHistoryProduct)}
+        product={movementHistoryProduct}
+        onClose={() => setMovementHistoryProduct(null)}
+      />
+
+      <ProductStorageLocationHistoryDrawer
+        opened={Boolean(storageLocationHistoryProduct)}
+        product={storageLocationHistoryProduct}
+        onClose={() => setStorageLocationHistoryProduct(null)}
       />
 
       <AppModal
@@ -1276,7 +1345,7 @@ function ProductStorageActionModal({
   }
 
   const isSingle = modal.scope === 'single'
-  const canUseManagement = modal.mode === 'return' || isAdmin
+  const showManagementSwitch = modal.mode === 'return' || isAdmin
   const showQuantityField = isSingle
   const showPlacementFields = modal.mode === 'transfer' && isSingle && !selectedToStorage?.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
@@ -1318,13 +1387,15 @@ function ProductStorageActionModal({
             value={form.fromDate}
             onChange={(event) => onChangeForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
           />
-          <Switch
-            checked={form.isManagement}
-            disabled={isSubmitting || !canUseManagement}
-            label={t('Управлінська операція')}
-            mt={30}
-            onChange={(event) => onChangeForm((current) => ({ ...current, isManagement: event.currentTarget.checked }))}
-          />
+          {showManagementSwitch ? (
+            <Switch
+              checked={form.isManagement}
+              disabled={isSubmitting}
+              label={t('Управлінська операція')}
+              mt={30}
+              onChange={(event) => onChangeForm((current) => ({ ...current, isManagement: event.currentTarget.checked }))}
+            />
+          ) : null}
         </SimpleGrid>
 
         {modal.mode === 'transfer' ? (
@@ -1445,19 +1516,25 @@ function ProductStorageActionModal({
 function useProductStoragesColumns({
   availabilityIndexMap,
   canOpenAction,
+  canOpenProductMovement,
   isAllVisibleSelected,
   isSomeVisibleSelected,
   selectedAvailabilityKeys,
   onOpenAction,
+  onOpenMovementHistory,
+  onOpenStorageLocationHistory,
   onToggleAvailability,
   onToggleVisible,
 }: {
   availabilityIndexMap: Map<ProductStorageAvailability, number>
   canOpenAction: boolean
+  canOpenProductMovement: boolean
   isAllVisibleSelected: boolean
   isSomeVisibleSelected: boolean
   selectedAvailabilityKeys: Set<string>
   onOpenAction: (availability: ProductStorageAvailability) => void
+  onOpenMovementHistory: (availability: ProductStorageAvailability) => void
+  onOpenStorageLocationHistory: (availability: ProductStorageAvailability) => void
   onToggleAvailability: (availability: ProductStorageAvailability, checked: boolean) => void
   onToggleVisible: (checked: boolean) => void
 }): DataTableColumn<ProductStorageAvailability>[] {
@@ -1559,38 +1636,81 @@ function useProductStoragesColumns({
       {
         id: 'actions',
         header: '',
-        width: 72,
-        minWidth: 72,
+        width: 140,
+        minWidth: 128,
         align: 'center',
         enableSorting: false,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
-        cell: (availability) =>
-          canOpenAction ? (
-            <Tooltip label={t('Операція зі складської позиції')}>
-              <ActionIcon
-                aria-label={t('Операція зі складської позиції')}
-                color="gray"
-                size="sm"
-                variant="light"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenAction(availability)
-                }}
-              >
-                <IconArrowsExchange size={16} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null,
+        cell: (availability) => {
+          const productNetUid = getProductNetUid(availability)
+          const missingProductLabel = t('У товару немає NetUid')
+
+          return (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              <Tooltip label={productNetUid ? t('Історія місця зберігання') : missingProductLabel}>
+                <ActionIcon
+                  aria-label={t('Історія місця зберігання')}
+                  color="gray"
+                  disabled={!productNetUid}
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenStorageLocationHistory(availability)
+                  }}
+                >
+                  <IconHistory size={16} />
+                </ActionIcon>
+              </Tooltip>
+              {canOpenProductMovement ? (
+                <Tooltip label={productNetUid ? t('Рух товару') : missingProductLabel}>
+                  <ActionIcon
+                    aria-label={t('Рух товару')}
+                    color="gray"
+                    disabled={!productNetUid}
+                    size="sm"
+                    variant="subtle"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onOpenMovementHistory(availability)
+                    }}
+                  >
+                    <IconArrowsExchange size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
+              {canOpenAction ? (
+                <Tooltip label={t('Операція зі складської позиції')}>
+                  <ActionIcon
+                    aria-label={t('Операція зі складської позиції')}
+                    color="gray"
+                    size="sm"
+                    variant="light"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onOpenAction(availability)
+                    }}
+                  >
+                    <IconClipboardList size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              ) : null}
+            </Group>
+          )
+        },
       },
     ],
     [
       availabilityIndexMap,
       canOpenAction,
+      canOpenProductMovement,
       isAllVisibleSelected,
       isSomeVisibleSelected,
       onOpenAction,
+      onOpenMovementHistory,
+      onOpenStorageLocationHistory,
       onToggleAvailability,
       onToggleVisible,
       selectedAvailabilityKeys,
@@ -1795,14 +1915,21 @@ function buildStorageOptions(storages: ProductStorageStorage[]): { label: string
 function buildToStorageOptions(
   storages: ProductStorageStorage[],
   fromStorage: ProductStorageStorage | null,
-  isManagement: boolean,
+  actionOptions: {
+    isManagement: boolean
+    isPrivilegedUser: boolean
+    scope: ProductStorageActionScope
+  },
 ): { label: string; value: string }[] {
+  const canUseCrossOrganizationStorages =
+    actionOptions.isPrivilegedUser && (actionOptions.scope === 'single' || actionOptions.isManagement)
+
   return storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
     if (!storage.NetUid || isSameStorage(storage, fromStorage)) {
       return options
     }
 
-    if (!isManagement && fromStorage?.OrganizationId && storage.OrganizationId !== fromStorage.OrganizationId) {
+    if (!canUseCrossOrganizationStorages && !isSameStorageOrganization(storage, fromStorage)) {
       return options
     }
 
@@ -1831,7 +1958,53 @@ function resolveStorage(
   selectedStorage: ProductStorageStorage | null,
   availability?: ProductStorageAvailability,
 ): ProductStorageStorage | null {
-  return availability?.Storage || selectedStorage || null
+  const availabilityStorage = availability?.Storage || null
+
+  if (!availabilityStorage) {
+    return selectedStorage || null
+  }
+
+  if (!selectedStorage || !isSameStorage(selectedStorage, availabilityStorage)) {
+    return availabilityStorage
+  }
+
+  return {
+    ...selectedStorage,
+    ...availabilityStorage,
+    ForDefective: availabilityStorage.ForDefective ?? selectedStorage.ForDefective,
+    Id: availabilityStorage.Id ?? selectedStorage.Id,
+    Name: availabilityStorage.Name || selectedStorage.Name,
+    NetUid: availabilityStorage.NetUid || selectedStorage.NetUid,
+    Organization: availabilityStorage.Organization || selectedStorage.Organization,
+    OrganizationId: availabilityStorage.OrganizationId ?? selectedStorage.OrganizationId,
+  }
+}
+
+function isSameStorageOrganization(
+  storage: ProductStorageStorage,
+  fromStorage: ProductStorageStorage | null,
+): boolean {
+  const fromOrganizationKey = getStorageOrganizationKey(fromStorage)
+
+  if (!fromOrganizationKey) {
+    return true
+  }
+
+  return getStorageOrganizationKey(storage) === fromOrganizationKey
+}
+
+function getStorageOrganizationKey(storage?: ProductStorageStorage | null): string {
+  if (!storage) {
+    return ''
+  }
+
+  if (storage.Organization?.NetUid) {
+    return storage.Organization.NetUid
+  }
+
+  const organizationId = storage.OrganizationId ?? storage.Organization?.Id
+
+  return organizationId ? String(organizationId) : ''
 }
 
 function getAvailabilityKey(availability?: ProductStorageAvailability): string {
@@ -1870,6 +2043,17 @@ function getAvailabilityProduct(availability?: ProductStorageAvailability): Prod
     Name: availability.ProductName,
     NetUid: availability.ProductNetUid,
     VendorCode: availability.VendorCode,
+  }
+}
+
+function getMovementHistoryProduct(availability: ProductStorageAvailability): MovementHistoryProduct {
+  const product = getAvailabilityProduct(availability)
+
+  return {
+    Name: product?.Name || availability.ProductName,
+    NameUA: product?.NameUA,
+    NetUid: getProductNetUid(availability),
+    VendorCode: product?.VendorCode || availability.VendorCode,
   }
 }
 

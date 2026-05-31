@@ -123,7 +123,7 @@ export async function parseProductCapitalizationItemsFromFile(
 
 function normalizeItemsFromFile(result: unknown): ProductCapitalizationItemsFromFile {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
-  const items = Array.isArray(payload.Items) ? (payload.Items as ProductCapitalizationItem[]) : []
+  const items = readArrayPayload(result, ['Items', 'ProductCapitalizationItems', 'Data']).map(normalizeProductCapitalizationItem)
   const missingVendorCodes = Array.isArray(payload.MissingVendorCodes)
     ? (payload.MissingVendorCodes as unknown[]).map((code) => String(code))
     : []
@@ -139,7 +139,7 @@ function normalizeProductCapitalizationsResponse(result: unknown): ProductCapita
   const items = readArrayPayload(result, ['Items', 'ProductCapitalizations', 'Capitalizations', 'Data'])
 
   return {
-    Items: items.map((item) => normalizeProductCapitalization(item) as ProductCapitalization),
+    Items: items.map(normalizeProductCapitalization).filter((item): item is ProductCapitalization => Boolean(item)),
     Total: readNumber(payload.Total, items.length),
   }
 }
@@ -154,8 +154,19 @@ function normalizeProductCapitalization(result: unknown): ProductCapitalization 
   return {
     ...capitalization,
     ProductCapitalizationItems: Array.isArray(capitalization.ProductCapitalizationItems)
-      ? capitalization.ProductCapitalizationItems
+      ? capitalization.ProductCapitalizationItems.map(normalizeProductCapitalizationItem)
       : [],
+  }
+}
+
+function normalizeProductCapitalizationItem(result: unknown): ProductCapitalizationItem {
+  const item = (result && typeof result === 'object' ? result : {}) as ProductCapitalizationItem
+
+  return {
+    ...item,
+    ProductId: item.ProductId || item.Product?.Id,
+    ProductName: item.ProductName || item.Product?.Name,
+    ProductVendorCode: item.ProductVendorCode || item.Product?.VendorCode,
   }
 }
 
