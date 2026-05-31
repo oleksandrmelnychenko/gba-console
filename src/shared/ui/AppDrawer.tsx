@@ -97,10 +97,12 @@ export function AppDrawer({ position = 'right', size, children, ...props }: Draw
           borderRadius: 14,
           overflow: 'hidden',
         },
-        // Mantine zeroes the body's top padding when a header is present; force
-        // uniform padding on all four sides so every sheet has consistent
-        // breathing room (top / bottom / left / right), regardless of content.
-        body: { padding: 'var(--mantine-spacing-lg)' },
+        // Tighten the header so the title sits close to the content (no tall
+        // fixed header bar and no large bottom gap).
+        header: { minHeight: 'auto', paddingBottom: 'var(--mantine-spacing-xs)' },
+        // Uniform breathing room on the sides/bottom, with a small top gap so
+        // content sits just under the title rather than far below it.
+        body: { padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
       }}
     >
       {children}
