@@ -27,6 +27,7 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowsExchange,
+  IconBox,
   IconClipboardList,
   IconDeviceFloppy,
   IconDownload,
@@ -40,6 +41,7 @@ import {
   IconPlus,
   IconRefresh,
   IconSearch,
+  IconSettings,
   IconStar,
   IconTrash,
   IconUpload,
@@ -53,6 +55,7 @@ import {
   deleteProductOriginalNumber,
   exportProductIncomeMovementsDocument,
   exportProductOutcomeMovementsDocument,
+  getNonDefectiveStorages,
   getProductByNetId,
   getProductIncomeMovements,
   getProductOutcomeMovements,
@@ -63,6 +66,8 @@ import {
   removeProductComponent,
   updateProductOriginalNumber,
   uploadProductsFromFile,
+  uploadProductPlacementStorageFile,
+  uploadProductPlacementStorageReturn,
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -76,12 +81,14 @@ import type {
   ProductMovementExportDocument,
   ProductOriginalNumber,
   ProductOutcomeMovement,
+  ProductPlacementStorage,
   ProductRelatedUploadType,
   ProductReservation,
   ProductSearchMode,
   ProductSortMode,
   ProductUploadDocumentPayload,
   Pricing,
+  Storage,
 } from '../types'
 import {
   displayValue,
@@ -94,6 +101,7 @@ import {
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
   getProductTitle,
+  getRelatedProductRowColor,
   PRODUCT_SEARCH_MODE_OPTIONS,
   PRODUCT_SORT_MODE_OPTIONS,
 } from '../utils'
@@ -109,6 +117,7 @@ import {
 } from './ProductDetailPage'
 import './products.css'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { ShopImageGallery } from '../components/ShopImageGallery'
 
 const PAGE_SIZE = 20
 const VIRTUAL_PAGE_SIZE = 10
@@ -1109,6 +1118,7 @@ function ProductInlineView({
                 ))}
               </Group>
             ) : null}
+            <ShopImageGallery vendorCode={product.VendorCode} onImageClick={setPreviewImageUrl} />
           </Box>
 
           <Box className="product-inline-description">
@@ -1718,7 +1728,14 @@ function ProductRelatedProductsTab({
                     disabled={!row.product.NetUid}
                     onClick={() => onSelectProduct(row.product)}
                   >
-                    <Text fw={650} size="sm" lineClamp={1}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
+                    <Group gap={6} wrap="nowrap" align="center">
+                      {type === 'components' ? (
+                        row.isProductSet
+                          ? <IconBox size={15} stroke={1.6} />
+                          : <IconSettings size={15} stroke={1.6} />
+                      ) : null}
+                      <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
+                    </Group>
                     <Text c="dimmed" size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
                   </button>
                   <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
@@ -1776,6 +1793,7 @@ function ProductUploadDocumentToolbar({
   const { t } = useI18n()
   const [uploadType, setUploadType] = useState<ProductRelatedUploadType | null>(null)
   const [productUploadOpened, setProductUploadOpened] = useState(false)
+  const [storageUploadOpened, setStorageUploadOpened] = useState(false)
 
   return (
     <>
@@ -1802,6 +1820,11 @@ function ProductUploadDocumentToolbar({
             <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setUploadType('originalNumbers')}>
               {t('Оригінальні номери')}
             </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Розміщення')}</Menu.Label>
+            <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setStorageUploadOpened(true)}>
+              {t('Місце зберігання')}
+            </Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </PermissionGate>
@@ -1810,6 +1833,14 @@ function ProductUploadDocumentToolbar({
         <ProductFileUploadModal
           opened
           onClose={() => setProductUploadOpened(false)}
+          onUploadSuccess={onUploadSuccess}
+        />
+      ) : null}
+
+      {storageUploadOpened ? (
+        <ProductPlacementStorageUploadModal
+          opened
+          onClose={() => setStorageUploadOpened(false)}
           onUploadSuccess={onUploadSuccess}
         />
       ) : null}
@@ -1825,6 +1856,226 @@ function ProductUploadDocumentToolbar({
         />
       ) : null}
     </>
+  )
+}
+
+function ProductPlacementStorageUploadModal({
+  onClose,
+  onUploadSuccess,
+  opened,
+}: {
+  onClose: () => void
+  onUploadSuccess: () => void
+  opened: boolean
+}) {
+  const { t } = useI18n()
+  const [storages, setStorages] = useState<Storage[]>([])
+  const [storagesError, setStoragesError] = useState<string | null>(null)
+  const [isLoadingStorages, setLoadingStorages] = useState(true)
+  const [storageId, setStorageId] = useState<string | null>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [startRow, setStartRow] = useState(1)
+  const [endRow, setEndRow] = useState(0)
+  const [columnVendorCode, setColumnVendorCode] = useState(1)
+  const [columnQty, setColumnQty] = useState(2)
+  const [columnPlacement, setColumnPlacement] = useState(3)
+  const [notPassedRows, setNotPassedRows] = useState<ProductPlacementStorage[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isUploading, setUploading] = useState(false)
+  const [isSavingReturn, setSavingReturn] = useState(false)
+  const canUpload = Boolean(file && storageId && startRow > 0 && endRow > 0 && !isUploading)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStorages() {
+      setLoadingStorages(true)
+      setStoragesError(null)
+
+      try {
+        const nextStorages = await getNonDefectiveStorages()
+
+        if (!cancelled) {
+          setStorages(nextStorages)
+          setStorageId((current) => current || (nextStorages[0]?.Id ? String(nextStorages[0].Id) : null))
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setStoragesError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склади'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingStorages(false)
+        }
+      }
+    }
+
+    void loadStorages()
+
+    return () => {
+      cancelled = true
+    }
+  }, [t])
+
+  const storageOptions = storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
+    const value = storage.Id ? String(storage.Id) : ''
+
+    if (value) {
+      options.push({ label: displayValue(storage.Name), value })
+    }
+
+    return options
+  }, [])
+
+  async function uploadFile() {
+    if (!file || !storageId) {
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+
+    try {
+      const returnedRows = await uploadProductPlacementStorageFile(Number(storageId), {
+        ColumnPlacement: columnPlacement,
+        ColumnQty: columnQty,
+        ColumnVendorCode: columnVendorCode,
+        EndRow: endRow,
+        StartRow: startRow,
+      }, file)
+
+      setNotPassedRows(returnedRows)
+      onUploadSuccess()
+
+      if (returnedRows.length === 0) {
+        notifications.show({ color: 'green', message: t('Розміщення завантажено') })
+        onClose()
+      } else {
+        notifications.show({ color: 'yellow', message: t('Деякі позиції потребують виправлення') })
+      }
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити файл розміщення'))
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function updateNotPassedRow(index: number, field: 'Placement' | 'Qty', value: string) {
+    setNotPassedRows((currentRows) => currentRows.map((row, rowIndex) => (
+      rowIndex === index
+        ? { ...row, [field]: field === 'Qty' ? Number(value) || 0 : value }
+        : row
+    )))
+  }
+
+  async function saveNotPassedRows() {
+    if (notPassedRows.length === 0 || !storageId) {
+      return
+    }
+
+    setSavingReturn(true)
+    setError(null)
+
+    try {
+      const stillFailing = await uploadProductPlacementStorageReturn(Number(storageId), notPassedRows)
+
+      onUploadSuccess()
+
+      if (stillFailing.length === 0) {
+        notifications.show({ color: 'green', message: t('Виправлені розміщення збережено') })
+        onClose()
+      } else {
+        setNotPassedRows(stillFailing)
+        notifications.show({ color: 'yellow', message: t('Деякі позиції потребують виправлення') })
+      }
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти виправлені розміщення'))
+    } finally {
+      setSavingReturn(false)
+    }
+  }
+
+  return (
+    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження місць зберігання')} onClose={onClose}>
+      <Stack gap="md">
+        {(error || storagesError) ? (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error || storagesError}</Alert>
+        ) : null}
+
+        {notPassedRows.length === 0 ? (
+          <>
+            <Select
+              data={storageOptions}
+              disabled={isLoadingStorages || storageOptions.length === 0}
+              label={t('Склад')}
+              placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
+              value={storageId}
+              onChange={(value) => setStorageId(value)}
+            />
+            <FileInput
+              clearable
+              accept=".xls,.xlsx,.csv"
+              label={t('Файл')}
+              placeholder={t('Оберіть файл')}
+              value={file}
+              onChange={setFile}
+            />
+            <SimpleGrid cols={{ base: 2, sm: 5 }} spacing="sm">
+              <NumberInput label={t('Початковий рядок')} min={1} value={startRow} onChange={(value) => setStartRow(Number(value) || 0)} />
+              <NumberInput label={t('Кінцевий рядок')} min={0} value={endRow} onChange={(value) => setEndRow(Number(value) || 0)} />
+              <NumberInput label={t('Колонка коду')} min={1} value={columnVendorCode} onChange={(value) => setColumnVendorCode(Number(value) || 0)} />
+              <NumberInput label={t('Колонка кількості')} min={1} value={columnQty} onChange={(value) => setColumnQty(Number(value) || 0)} />
+              <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
+            </SimpleGrid>
+            <Group justify="flex-end">
+              <Button disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
+                {t('Завантажити')}
+              </Button>
+            </Group>
+          </>
+        ) : (
+          <>
+            <Text fw={600} size="sm">{t('Не пройшли позиції')}</Text>
+            <ScrollArea mah={420}>
+              <Table withTableBorder miw={760}>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t('Назва')}</Table.Th>
+                    <Table.Th>{t('Код')}</Table.Th>
+                    <Table.Th>{t('Місце')}</Table.Th>
+                    <Table.Th ta="right">{t('Кількість')}</Table.Th>
+                    <Table.Th>{t('Помилка')}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {notPassedRows.map((row, index) => (
+                    <Table.Tr key={`${row.NetUid || row.VendorCode || index}`}>
+                      <Table.Td>{displayValue(row.Product?.NameUA || row.Product?.Name)}</Table.Td>
+                      <Table.Td>{displayValue(row.VendorCode)}</Table.Td>
+                      <Table.Td>
+                        <TextInput size="xs" value={row.Placement || ''} onChange={(event) => updateNotPassedRow(index, 'Placement', event.currentTarget.value)} />
+                      </Table.Td>
+                      <Table.Td>
+                        <NumberInput hideControls size="xs" min={0} value={row.Qty || 0} onChange={(value) => updateNotPassedRow(index, 'Qty', String(value ?? 0))} />
+                      </Table.Td>
+                      <Table.Td><Text c="red.7" size="xs">{displayValue(row.ErrorMessage)}</Text></Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+            <Group justify="flex-end">
+              <Button color="gray" variant="light" disabled={isSavingReturn} onClick={onClose}>
+                {t('Закрити')}
+              </Button>
+              <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
+                {t('Зберегти')}
+              </Button>
+            </Group>
+          </>
+        )}
+      </Stack>
+    </AppModal>
   )
 }
 
