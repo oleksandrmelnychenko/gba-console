@@ -377,7 +377,7 @@ export function SupplyUkraineOrderOverviewPage() {
               {t('Документи')}
             </Button>
           )}
-          {canOpenPlacement && id && (
+          {canOpenPlacement && id && !order?.IsPlaced && (
             <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate(`/orders/ukraine/placement/${id}`)}>
               {t('Розміщення товару')}
             </Button>

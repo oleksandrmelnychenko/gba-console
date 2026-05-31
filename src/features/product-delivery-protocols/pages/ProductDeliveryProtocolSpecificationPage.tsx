@@ -64,7 +64,8 @@ const PERMISSION_UPLOAD_SPECIFICATIONS = 'ProductDeliveryProtocols_specification
 const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
   'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
-const PERMISSION_EDIT_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
+const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
 
 function invoiceDate(value?: Date | string): string {
   if (!value) {
@@ -511,7 +512,8 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const canUpload =
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
   const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
-  const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION_CODE)
+  const canEditSpecification = hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
+  const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const currencyOptions = [
     { label: t('EUR'), value: CURRENCY_EUR },
     { label: t('UAH'), value: CURRENCY_UAH },
@@ -736,6 +738,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
       />
 
       <ProductSpecificationEditDrawer
+        canSave={canSaveSpecification}
         isSaving={model.isSavingSpecification}
         item={model.editingSpecificationItem}
         onClose={() => model.setEditingSpecificationItem(null)}
