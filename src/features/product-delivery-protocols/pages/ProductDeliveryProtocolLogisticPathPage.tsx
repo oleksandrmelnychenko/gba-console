@@ -12,6 +12,7 @@ import {
   assignInvoicesToMergedService,
   assignInvoicesToProtocol,
   calculateMergedServiceExtraCharge,
+  addDocumentsToSupplyInvoice,
   removeMergedService,
   saveMergedService,
   updateProtocolStatus,
@@ -35,6 +36,7 @@ function useLogisticPathModel(netId: string | undefined) {
   const [error, setError] = useValueState<string | null>(null)
   const [isUpdating, setUpdating] = useValueState(false)
   const [isAssigning, setAssigning] = useValueState(false)
+  const [isSavingInvoiceDocuments, setSavingInvoiceDocuments] = useValueState(false)
   const [isSavingService, setSavingService] = useValueState(false)
 
   useEffect(() => {
@@ -145,6 +147,25 @@ function useLogisticPathModel(netId: string | undefined) {
     }
   }
 
+  async function saveInvoiceDocuments(invoice: SupplyInvoice, documents: File[]) {
+    setSavingInvoiceDocuments(true)
+
+    try {
+      const updated = await addDocumentsToSupplyInvoice(invoice, documents)
+
+      if (updated) {
+        setProtocol(updated)
+      }
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
+      })
+    } finally {
+      setSavingInvoiceDocuments(false)
+    }
+  }
+
   async function saveService(payload: SaveMergedServicePayload) {
     if (!protocol?.NetUid) {
       return
@@ -234,7 +255,7 @@ function useLogisticPathModel(netId: string | undefined) {
 
   return {
     assignInvoices, assignServiceInvoices, calculate, canEdit, changeStatus, error, isAssigning, isLoading,
-    isSavingService, isUpdating, protocol, removeService, saveService,
+    isSavingInvoiceDocuments, isSavingService, isUpdating, protocol, removeService, saveInvoiceDocuments, saveService,
   }
 }
 
@@ -296,8 +317,10 @@ export function ProductDeliveryProtocolLogisticPathPage() {
           <InvoicesSection
             canEdit={model.canEdit}
             isAssigning={model.isAssigning}
+            isSavingInvoiceDocuments={model.isSavingInvoiceDocuments}
             protocol={model.protocol}
             onAssignInvoices={model.assignInvoices}
+            onSaveInvoiceDocuments={model.saveInvoiceDocuments}
           />
 
           {((model.protocol.SupplyInvoices?.length || 0) > 0 ||

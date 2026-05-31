@@ -88,15 +88,32 @@ export type SupplyInvoice = EntityFields & {
   Number?: string
   NumberCustomDeclaration?: string
   ServiceNumber?: string
+  SupplyInvoiceBillOfLadingServices?: SupplyInvoiceBillOfLadingService[]
   SupplyInvoiceDeliveryDocuments?: SupplyDocument[]
+  SupplyInvoiceMergedServices?: SupplyInvoiceMergedService[]
   SupplyOrder?: SupplyOrder | null
   TotalNetPrice?: number
   TotalSpending?: number
 }
 
+export type BillOfLadingService = EntityFields & {
+  SupplyOrganization?: SupplyOrganization | null
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
+}
+
+export type SupplyInvoiceBillOfLadingService = EntityFields & {
+  AccountingValue?: number
+  BillOfLadingService?: BillOfLadingService | null
+  IsCalculatedValue?: boolean
+  Value?: number
+}
+
 export type SupplyInvoiceMergedService = EntityFields & {
   AccountingValue?: number
+  ExchangeRateEurToAgreementCurrency?: number
+  ExchangeRateEurToUah?: number
   IsCalculatedValue?: boolean
+  MergedService?: MergedService | null
   SupplyInvoice?: SupplyInvoice | null
   Value?: number
 }

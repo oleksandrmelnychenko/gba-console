@@ -19,6 +19,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
+  IconArrowsExchange,
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
@@ -26,6 +27,7 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
+  IconHistory,
   IconRefresh,
   IconRestore,
   IconSearch,
@@ -39,6 +41,12 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import {
+  ProductMovementHistoryDrawer,
+  ProductStorageLocationHistoryDrawer,
+  type MovementHistoryProduct,
+} from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import { useAuth } from '../../auth/useAuth'
 import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
 import {
@@ -57,6 +65,7 @@ import type {
 } from '../types'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
+const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
 
@@ -70,6 +79,7 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
+    right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -77,6 +87,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
 const REMAININGS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['storage', 'productCode', 'productName'],
+    right: ['actions'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -119,6 +130,7 @@ type DocumentsListState = {
 
 function useProductIncomeDocumentsPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const restoredFilters = useMemo(() => readStoredFilters(), [])
   const [documentsState, setDocumentsState] = useValueState<DocumentsListState>({
     documents: [],
@@ -134,6 +146,8 @@ function useProductIncomeDocumentsPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [optionsDocument, setOptionsDocument] = useValueState<ProductIncomeDocument | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<ProductIncomeDocument | null>(null)
+  const [movementHistoryProduct, setMovementHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
+  const [storageLocationHistoryProduct, setStorageLocationHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
   const [documentInfoError, setDocumentInfoError] = useValueState<string | null>(null)
   const [detailMode, setDetailMode] = useValueState<'view' | 'remainings'>('view')
   const [isLoadingDocumentInfo, setLoadingDocumentInfo] = useValueState(false)
@@ -155,6 +169,7 @@ function useProductIncomeDocumentsPageModel() {
   const filterError = getFilterError(dateFrom, dateTo)
   const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : documents.length === pageSize
+  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
@@ -360,8 +375,16 @@ function useProductIncomeDocumentsPageModel() {
     onExport: handleExport,
     onOpen: openOptions,
   })
-  const itemColumns = useProductIncomeItemColumns()
-  const remainingColumns = useRemainingConsignmentColumns()
+  const itemColumns = useProductIncomeItemColumns({
+    canOpenProductMovement,
+    onOpenMovementHistory: setMovementHistoryProduct,
+    onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
+  })
+  const remainingColumns = useRemainingConsignmentColumns({
+    canOpenProductMovement,
+    onOpenMovementHistory: setMovementHistoryProduct,
+    onOpenStorageLocationHistory: setStorageLocationHistoryProduct,
+  })
   const capitalizationItemColumns = useCapitalizationOverviewColumns()
 
   useEffect(() => {
@@ -499,6 +522,7 @@ function useProductIncomeDocumentsPageModel() {
     isLoadingDocumentInfo,
     isLoadingRemainings,
     itemColumns,
+    movementHistoryProduct,
     optionsDocument,
     page,
     pageSize,
@@ -508,6 +532,7 @@ function useProductIncomeDocumentsPageModel() {
     rows,
     searchDraft,
     selectedDocument,
+    storageLocationHistoryProduct,
     toolbarLeft,
     closeDetails,
     handleExport,
@@ -519,9 +544,11 @@ function useProductIncomeDocumentsPageModel() {
     setDateFrom,
     setDateTo,
     setDownloadModalOpened,
+    setMovementHistoryProduct,
     setOptionsDocument,
     setPage,
     setPageSize,
+    setStorageLocationHistoryProduct,
     updateSearch,
   }
 }
@@ -554,6 +581,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     isLoadingDocumentInfo,
     isLoadingRemainings,
     itemColumns,
+    movementHistoryProduct,
     optionsDocument,
     page,
     pageSize,
@@ -563,6 +591,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     rows,
     searchDraft,
     selectedDocument,
+    storageLocationHistoryProduct,
     toolbarLeft,
     closeDetails,
     handleExport,
@@ -574,9 +603,11 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     setDateFrom,
     setDateTo,
     setDownloadModalOpened,
+    setMovementHistoryProduct,
     setOptionsDocument,
     setPage,
     setPageSize,
+    setStorageLocationHistoryProduct,
     updateSearch,
   } = model
 
@@ -717,6 +748,18 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
         onClose={closeDetails}
         onExport={handleExport}
         onLoadRemainings={openRemainings}
+      />
+
+      <ProductMovementHistoryDrawer
+        opened={Boolean(movementHistoryProduct)}
+        product={movementHistoryProduct}
+        onClose={() => setMovementHistoryProduct(null)}
+      />
+
+      <ProductStorageLocationHistoryDrawer
+        opened={Boolean(storageLocationHistoryProduct)}
+        product={storageLocationHistoryProduct}
+        onClose={() => setStorageLocationHistoryProduct(null)}
       />
 
       <AppModal
@@ -1126,11 +1169,11 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
           </Text>
         ) : (
           <Stack gap="xs">
-            {items.map((item, index) => {
+            {items.map((item) => {
               const saleReturnItem = item.SaleReturnItem
 
               return (
-                <Card key={index} withBorder radius="sm" padding="sm">
+                <Card key={getSaleReturnIncomeItemKey(item)} withBorder radius="sm" padding="sm">
                   <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
                     <Stack gap={2}>
                       <Group gap={6} align="baseline" wrap="nowrap">
@@ -1421,7 +1464,15 @@ function useProductIncomeDocumentColumns({
   )
 }
 
-function useProductIncomeItemColumns(): DataTableColumn<ProductIncomeItem>[] {
+function useProductIncomeItemColumns({
+  canOpenProductMovement,
+  onOpenMovementHistory,
+  onOpenStorageLocationHistory,
+}: {
+  canOpenProductMovement: boolean
+  onOpenMovementHistory: (product: MovementHistoryProduct) => void
+  onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
+}): DataTableColumn<ProductIncomeItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<ProductIncomeItem>[]>(
@@ -1463,12 +1514,39 @@ function useProductIncomeItemColumns(): DataTableColumn<ProductIncomeItem>[] {
         accessor: getItemComment,
         cell: (item) => displayValue(getItemComment(item)),
       },
+      {
+        id: 'actions',
+        header: '',
+        width: 96,
+        minWidth: 88,
+        align: 'center',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (item) => (
+          <ProductHistoryActionButtons
+            canOpenProductMovement={canOpenProductMovement}
+            product={getMovementHistoryProductFromNamedEntity(item.Product)}
+            onOpenMovementHistory={onOpenMovementHistory}
+            onOpenStorageLocationHistory={onOpenStorageLocationHistory}
+          />
+        ),
+      },
     ],
-    [t],
+    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
   )
 }
 
-function useRemainingConsignmentColumns(): DataTableColumn<RemainingConsignment>[] {
+function useRemainingConsignmentColumns({
+  canOpenProductMovement,
+  onOpenMovementHistory,
+  onOpenStorageLocationHistory,
+}: {
+  canOpenProductMovement: boolean
+  onOpenMovementHistory: (product: MovementHistoryProduct) => void
+  onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
+}): DataTableColumn<RemainingConsignment>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
@@ -1603,8 +1681,105 @@ function useRemainingConsignmentColumns(): DataTableColumn<RemainingConsignment>
         accessor: (item) => item.Weight,
         cell: (item) => formatAmount(item.Weight),
       },
+      {
+        id: 'actions',
+        header: '',
+        width: 96,
+        minWidth: 88,
+        align: 'center',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (item) => (
+          <ProductHistoryActionButtons
+            canOpenProductMovement={canOpenProductMovement}
+            product={getMovementHistoryProductFromNamedEntity(item.Product)}
+            onOpenMovementHistory={onOpenMovementHistory}
+            onOpenStorageLocationHistory={onOpenStorageLocationHistory}
+          />
+        ),
+      },
     ],
-    [t],
+    [canOpenProductMovement, onOpenMovementHistory, onOpenStorageLocationHistory, t],
+  )
+}
+
+function ProductHistoryActionButtons({
+  canOpenProductMovement,
+  product,
+  onOpenMovementHistory,
+  onOpenStorageLocationHistory,
+}: {
+  canOpenProductMovement: boolean
+  product: MovementHistoryProduct
+  onOpenMovementHistory: (product: MovementHistoryProduct) => void
+  onOpenStorageLocationHistory: (product: MovementHistoryProduct) => void
+}) {
+  const { t } = useI18n()
+  const hasProductNetUid = Boolean(product.NetUid)
+  const missingProductLabel = t('У товару немає NetUid')
+
+  return (
+    <Group gap={4} justify="flex-end" wrap="nowrap">
+      <Tooltip label={hasProductNetUid ? t('Історія місця зберігання') : missingProductLabel}>
+        <ActionIcon
+          aria-label={t('Історія місця зберігання')}
+          color="gray"
+          disabled={!hasProductNetUid}
+          size="sm"
+          variant="subtle"
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpenStorageLocationHistory(product)
+          }}
+        >
+          <IconHistory size={16} />
+        </ActionIcon>
+      </Tooltip>
+      {canOpenProductMovement ? (
+        <Tooltip label={hasProductNetUid ? t('Рух товару') : missingProductLabel}>
+          <ActionIcon
+            aria-label={t('Рух товару')}
+            color="gray"
+            disabled={!hasProductNetUid}
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenMovementHistory(product)
+            }}
+          >
+            <IconArrowsExchange size={16} />
+          </ActionIcon>
+        </Tooltip>
+      ) : null}
+    </Group>
+  )
+}
+
+function getMovementHistoryProductFromNamedEntity(entity?: NamedEntity | null): MovementHistoryProduct {
+  return {
+    Name: entity?.Name,
+    NameUA: entity?.NameUA,
+    NetUid: entity?.NetUid,
+    VendorCode: entity?.VendorCode || entity?.Code,
+  }
+}
+
+function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
+  const saleReturnItem = item.SaleReturnItem
+
+  return String(
+    item.NetUid ||
+      item.Id ||
+      saleReturnItem?.SaleReturn?.NetUid ||
+      saleReturnItem?.OrderItem?.Product?.NetUid ||
+      saleReturnItem?.OrderItem?.Product?.VendorCode ||
+      getItemProductCode(item) ||
+      getItemProductName(item) ||
+      saleReturnItem?.Comment ||
+      '',
   )
 }
 

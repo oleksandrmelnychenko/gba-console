@@ -22,7 +22,6 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconDownload,
-  IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
   IconHelpCircle,
@@ -34,9 +33,8 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRed
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import type { TranslateFunction } from '../../../shared/i18n/types'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid'
+import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid'
 import {
   exportAccountingCashFlowDocument,
   getAccountingCashFlow,
@@ -67,14 +65,6 @@ type DetailField = {
   label: string
   value: ReactNode
 }
-
-const ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['date', 'name'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -219,7 +209,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const locationNodeTitle = getLocationNodeTitle(location.state)
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
-  const columns = useAccountingCashFlowColumns(setSelectedItem, t)
   const items = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = items.at(-1)
   const toolbarLeft = useMemo(
@@ -350,7 +339,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     agreements,
     cashFlow,
     cashFlowError,
-    columns,
     counterparty,
     counterpartyError,
     counterpartyName,
@@ -385,7 +373,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     agreements,
     cashFlow,
     cashFlowError,
-    columns,
     counterpartyError,
     counterpartyName,
     document,
@@ -412,6 +399,52 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     submitFilters,
   } = model
   const canExport = Boolean(selectedAgreement?.NetUid)
+  const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
+    () => [
+      {
+        id: 'name',
+        isLabel: true,
+        header: t('Документ'),
+        cell: (item) => (
+          <Text fw={600} lineClamp={1}>
+            {displayValue(item.Name)}
+          </Text>
+        ),
+      },
+      {
+        id: 'organization',
+        header: t('Організація'),
+        width: 220,
+        cell: (item) => displayValue(item.OrganizationName),
+      },
+    ],
+    [t],
+  )
+  const summary = useMemo(
+    () => ({
+      afterInAmount: cashFlow?.AfterRangeInAmount,
+      afterOutAmount: cashFlow?.AfterRangeOutAmount,
+      beforeBalance: cashFlow?.BeforeRangeBalance,
+      beforeInAmount: cashFlow?.BeforeRangeInAmount,
+      beforeOutAmount: cashFlow?.BeforeRangeOutAmount,
+      closingBalance: lastItem?.CurrentBalance,
+    }),
+    [cashFlow, lastItem],
+  )
+  const renderRowBadge = useMemo(
+    () =>
+      mode === 'client'
+        ? (item: AccountingCashFlowHeadItem) =>
+            (item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0 ? (
+              <Tooltip label={t('Накладна була редагована')} position="right">
+                <ThemeIcon color="orange" radius="xl" size="xs" variant="filled">
+                  <IconPencil size={12} />
+                </ThemeIcon>
+              </Tooltip>
+            ) : null
+        : undefined,
+    [mode, t],
+  )
 
   return (
     <Stack gap="lg">
@@ -504,19 +537,20 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       </Card>
 
       <Card withBorder radius="md" padding="md">
-        <DataTable
-          columns={columns}
-          data={items}
-          defaultLayout={ACCOUNTING_CASH_FLOW_TABLE_DEFAULT_LAYOUT}
+        <Group justify="flex-end" mb="xs">
+          {toolbarLeft}
+        </Group>
+        <CashFlowGrid
+          items={items}
+          leadColumns={leadColumns}
+          summary={summary}
           emptyText={t('Рухів коштів не знайдено')}
-          getRowId={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
+          getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
           isLoading={isCashFlowLoading}
-          layoutVersion="accounting-cash-flow-table-1"
+          isRowActive={(item) => item === selectedItem}
           loadingText={t('Завантаження руху коштів')}
           maxHeight="calc(100vh - 430px)"
-          minWidth={1180}
-          tableId={`accounting-cash-flow-${mode}`}
-          toolbarLeft={toolbarLeft}
+          renderRowBadge={renderRowBadge}
           onRowClick={setSelectedItem}
         />
       </Card>
@@ -900,132 +934,6 @@ function DownloadDocumentModal({
         )}
       </Stack>
     </AppModal>
-  )
-}
-
-function useAccountingCashFlowColumns(
-  onOpenDetail: (item: AccountingCashFlowHeadItem) => void,
-  t: TranslateFunction,
-): DataTableColumn<AccountingCashFlowHeadItem>[] {
-  return useMemo<DataTableColumn<AccountingCashFlowHeadItem>[]>(
-    () => [
-      {
-        id: 'date',
-        header: 'Дата',
-        width: 142,
-        minWidth: 124,
-        accessor: (item) => item.FromDate,
-        cell: (item) => formatDateTime(item.FromDate),
-      },
-      {
-        id: 'name',
-        header: 'Документ',
-        width: 300,
-        minWidth: 220,
-        accessor: (item) => item.Name,
-        cell: (item) => (
-          <Group gap={6} wrap="nowrap" align="center">
-            {(item.Sale?.HistoryInvoiceEdit?.length ?? 0) > 0 && (
-              <Tooltip label={t('Накладна була редагована')} position="right">
-                <ThemeIcon color="orange" size="xs" radius="xl" variant="filled">
-                  <IconPencil size={12} />
-                </ThemeIcon>
-              </Tooltip>
-            )}
-            <Text fw={700} lineClamp={2}>
-              {displayValue(item.Name)}
-            </Text>
-          </Group>
-        ),
-      },
-      {
-        id: 'number',
-        header: 'Номер',
-        width: 150,
-        minWidth: 120,
-        accessor: (item) => item.Number,
-        cell: (item) => displayValue(item.Number),
-      },
-      {
-        id: 'type',
-        header: 'Тип',
-        width: 220,
-        minWidth: 170,
-        accessor: (item) => getCashFlowTypeLabel(item.Type),
-        cell: (item) => getCashFlowTypeLabel(item.Type),
-      },
-      {
-        id: 'organization',
-        header: 'Організація',
-        width: 260,
-        minWidth: 180,
-        accessor: (item) => item.OrganizationName,
-        cell: (item) => displayValue(item.OrganizationName),
-      },
-      {
-        id: 'operation',
-        header: 'Операція',
-        width: 110,
-        minWidth: 94,
-        align: 'center',
-        accessor: (item) => (item.IsCreditValue ? 'credit' : 'debit'),
-        cell: (item) => (
-          <Badge color={item.IsCreditValue ? 'red' : 'green'} variant="light">
-            {item.IsCreditValue ? 'Кредит' : 'Дебет'}
-          </Badge>
-        ),
-      },
-      {
-        id: 'debit',
-        header: 'Дебет',
-        width: 128,
-        minWidth: 112,
-        align: 'right',
-        accessor: (item) => (item.IsCreditValue ? undefined : item.CurrentValue),
-        cell: (item) => (item.IsCreditValue ? '-' : formatMoney(item.CurrentValue)),
-      },
-      {
-        id: 'credit',
-        header: 'Кредит',
-        width: 128,
-        minWidth: 112,
-        align: 'right',
-        accessor: (item) => (item.IsCreditValue ? item.CurrentValue : undefined),
-        cell: (item) => (item.IsCreditValue ? formatMoney(item.CurrentValue) : '-'),
-      },
-      {
-        id: 'balance',
-        header: 'Баланс',
-        width: 128,
-        minWidth: 112,
-        align: 'right',
-        accessor: (item) => item.CurrentBalance,
-        cell: (item) => (
-          <Text fw={700} c={typeof item.CurrentBalance === 'number' && item.CurrentBalance < 0 ? 'red' : undefined}>
-            {formatMoney(item.CurrentBalance)}
-          </Text>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 64,
-        minWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableSorting: false,
-        cell: (item) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label="Деталі">
-              <ActionIcon aria-label="Деталі" color="gray" size="sm" variant="subtle" onClick={() => onOpenDetail(item)}>
-                <IconEye size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Box>
-        ),
-      },
-    ],
-    [onOpenDetail, t],
   )
 }
 

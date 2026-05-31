@@ -82,7 +82,13 @@ function toDraftItem(item: ProductCapitalizationItem): DraftItem {
 function fromDraftItem({ __rowKey, ...item }: DraftItem): ProductCapitalizationItem {
   void __rowKey
 
-  return item
+  return {
+    ...item,
+    ProductId: item.ProductId || item.Product?.Id,
+    Qty: toPositiveInteger(item.Qty),
+    UnitPrice: toFiniteNumber(item.UnitPrice),
+    Weight: toFiniteNumber(item.Weight),
+  }
 }
 
 export type NewProductCapitalizationPanelProps = {
@@ -154,12 +160,13 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
             onOptionSubmit={model.selectVendorCode}
           />
           <NumberInput
+            allowDecimal={false}
             allowNegative={false}
             label={t('Кількість')}
-            min={0}
+            min={1}
             style={{ flex: 1 }}
             value={model.itemEntry.quantity}
-            onChange={(value) => model.setItemEntry((current) => ({ ...current, quantity: toNumberOrEmpty(value) }))}
+            onChange={(value) => model.setItemEntry((current) => ({ ...current, quantity: toIntegerOrEmpty(value) }))}
           />
           <NumberInput
             allowNegative={false}
@@ -209,13 +216,15 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         />
       </Stack>
 
-      <ProductCapitalizationUploadModal
-        isSubmitting={model.isParsing}
-        opened={model.uploadModalOpened}
-        submitError={model.uploadError}
-        onClose={() => model.setUploadModalOpened(false)}
-        onSubmit={model.parseFromFile}
-      />
+      {model.uploadModalOpened && (
+        <ProductCapitalizationUploadModal
+          isSubmitting={model.isParsing}
+          opened={model.uploadModalOpened}
+          submitError={model.uploadError}
+          onClose={() => model.setUploadModalOpened(false)}
+          onSubmit={model.parseFromFile}
+        />
+      )}
 
       <ProductCapitalizationMissingItemsModal
         items={model.missingVendorCodes}
@@ -247,49 +256,6 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const [missingVendorCodes, setMissingVendorCodes] = useValueState<string[]>([])
   const [missingModalOpened, setMissingModalOpened] = useValueState(false)
   const [debouncedVendorCode] = useDebouncedValue(vendorCodeQuery, VENDOR_CODE_DEBOUNCE_MS)
-  const [previousOpened, setPreviousOpened] = useValueState(opened)
-
-  const resetState = useCallback(() => {
-    setSelectedOrganizationNetId(null)
-    setStorages([])
-    setSelectedStorageNetId(null)
-    setComment('')
-    setFromDate(toDateTimeLocal(new Date()))
-    setItems([])
-    setItemEntry(EMPTY_ITEM_ENTRY)
-    setSelectedProduct(null)
-    setVendorCodeQuery('')
-    setSearchedProducts([])
-    setError(null)
-    setUploadModalOpened(false)
-    setUploadError(null)
-    setMissingVendorCodes([])
-    setMissingModalOpened(false)
-  }, [
-    setComment,
-    setError,
-    setFromDate,
-    setItemEntry,
-    setItems,
-    setMissingModalOpened,
-    setMissingVendorCodes,
-    setSearchedProducts,
-    setSelectedOrganizationNetId,
-    setSelectedProduct,
-    setSelectedStorageNetId,
-    setStorages,
-    setUploadError,
-    setUploadModalOpened,
-    setVendorCodeQuery,
-  ])
-
-  if (opened !== previousOpened) {
-    setPreviousOpened(opened)
-
-    if (opened) {
-      resetState()
-    }
-  }
 
   useEffect(() => {
     if (!opened) {
@@ -386,18 +352,21 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   }, [debouncedVendorCode, opened, setSearchedProducts])
 
   const organizationOptions = useMemo(
-    () => organizations.filter((organization) => organization.NetUid).map(toSelectOption),
+    () => toSelectOptions(organizations),
     [organizations],
   )
   const storageOptions = useMemo(
-    () => storages.filter((storage) => storage.NetUid).map(toSelectOption),
+    () => toSelectOptions(storages),
     [storages],
   )
   const vendorCodeOptions = useMemo(
-    () =>
-      searchedProducts
-        .map((product) => product.VendorCode)
-        .filter((vendorCode): vendorCode is string => Boolean(vendorCode)),
+    () => searchedProducts.reduce<string[]>((options, product) => {
+      if (product.VendorCode) {
+        options.push(product.VendorCode)
+      }
+
+      return options
+    }, []),
     [searchedProducts],
   )
 
@@ -439,7 +408,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       return
     }
 
-    const quantity = toFiniteNumber(itemEntry.quantity)
+    const quantity = toPositiveInteger(itemEntry.quantity)
     const unitPrice = toFiniteNumber(itemEntry.unitPrice)
 
     if (quantity <= 0) {
@@ -526,6 +495,16 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const submit = useCallback(async () => {
     if (items.length === 0) {
       notifications.show({ color: 'yellow', message: t('Додайте хоча б один товар') })
+      return
+    }
+
+    if (items.some((item) => toPositiveInteger(item.Qty) <= 0)) {
+      notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Кількість')}` })
+      return
+    }
+
+    if (items.some((item) => toFiniteNumber(item.UnitPrice) <= 0)) {
+      notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
       return
     }
 
@@ -659,12 +638,13 @@ function useItemColumns(
         enableSorting: false,
         cell: (item) => (
           <NumberInput
+            allowDecimal={false}
             allowNegative={false}
             hideControls
-            min={0}
+            min={1}
             size="xs"
             value={item.Qty ?? ''}
-            onChange={(value) => onUpdate(item.__rowKey, 'Qty', toFiniteNumber(value))}
+            onChange={(value) => onUpdate(item.__rowKey, 'Qty', toPositiveInteger(value))}
           />
         ),
       },
@@ -739,6 +719,16 @@ function toSelectOption(entity: { NetUid?: string; Name?: string }) {
   }
 }
 
+function toSelectOptions(entities: { NetUid?: string; Name?: string }[]) {
+  return entities.reduce<{ label: string; value: string }[]>((options, entity) => {
+    if (entity.NetUid) {
+      options.push(toSelectOption(entity))
+    }
+
+    return options
+  }, [])
+}
+
 function toDateTimeLocal(date: Date): string {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
 
@@ -751,10 +741,26 @@ function toNumberOrEmpty(value: number | string): number | '' {
   return Number.isFinite(numberValue) ? numberValue : ''
 }
 
+function toIntegerOrEmpty(value: number | string): number | '' {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(numberValue) ? Math.trunc(numberValue) : ''
+}
+
 function toFiniteNumber(value: number | string | undefined): number {
   const numberValue = typeof value === 'number' ? value : Number(value)
 
   return Number.isFinite(numberValue) ? numberValue : 0
+}
+
+function toPositiveInteger(value: number | string | undefined): number {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isFinite(numberValue) || numberValue <= 0) {
+    return 0
+  }
+
+  return Math.trunc(numberValue)
 }
 
 function displayValue(value: unknown): string {

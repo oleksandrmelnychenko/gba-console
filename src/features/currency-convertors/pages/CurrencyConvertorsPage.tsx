@@ -216,7 +216,7 @@ function useCurrencyConvertorsPageModel() {
 
     const payload: CurrencyTraderPayload = {
       ...selectedTrader,
-      CurrencyTraderExchangeRates: [...(selectedTrader.CurrencyTraderExchangeRates || []), ...rates, ...addedRates],
+      CurrencyTraderExchangeRates: [...rates, ...addedRates],
     }
 
     setAdding(false)
