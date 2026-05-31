@@ -389,7 +389,6 @@ export function AvailablePaymentsPage() {
 
   return (
     <Stack gap="lg">
-      <AvailablePaymentsHeader model={model} />
       <AvailablePaymentsTableCard model={model} />
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
@@ -403,28 +402,6 @@ export function AvailablePaymentsPage() {
         onToggleMarked={model.toggleMarked}
       />
     </Stack>
-  )
-}
-
-function AvailablePaymentsHeader({ model }: { model: ReturnType<typeof useAvailablePaymentsPageModel> }) {
-  const { t } = useI18n()
-  const { isLoading, reload } = model
-
-  return (
-    <Group justify="flex-end" align="end" gap="sm" wrap="nowrap">
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon
-          aria-label={t('Оновити')}
-          color="gray"
-          loading={isLoading}
-          size={38}
-          variant="light"
-          onClick={() => reload()}
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
   )
 }
 
@@ -485,13 +462,13 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <Select
             data={organizationOptions}
             label={t('Організація')}
             searchable
             value={filterDraft.organizationNetId}
-            w={240}
+            style={{ flex: '1 1 auto', minWidth: 180 }}
             onChange={(value) => applyFilters({ ...filterDraft, organizationNetId: value || '' })}
           />
           <Select
@@ -499,6 +476,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             label={t('Тип')}
             value={String(filterDraft.type)}
             w={200}
+            style={{ flex: '0 0 auto' }}
             onChange={(value) =>
               applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
             }
@@ -508,6 +486,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
+            style={{ flex: '0 0 auto' }}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
           />
           <TextInput
@@ -515,11 +494,32 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
+            style={{ flex: '0 0 auto' }}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
           <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="gray"
+              size={36}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={resetFilters}
+            >
               <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={36}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>

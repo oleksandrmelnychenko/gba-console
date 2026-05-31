@@ -444,7 +444,6 @@ export function ProductDeliveryProtocolsPage() {
 
   return (
     <Stack gap="lg">
-      <ProtocolsHeader model={model} />
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}
@@ -470,49 +469,12 @@ export function ProductDeliveryProtocolsPage() {
   )
 }
 
-function ProtocolsHeader({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
-  const { t } = useI18n()
-  const { canCreate, canExport, exportDocument, isDownloading, isLoading, openCreateModal, reload } = model
-
-  return (
-    <Group justify="flex-end" align="center" gap="xs">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        {canExport && (
-          <Button
-            color="gray"
-            leftSection={<IconDownload size={16} />}
-            loading={isDownloading}
-            variant="light"
-            onClick={exportDocument}
-          >
-            {t('Завантажити')}
-          </Button>
-        )}
-        {canCreate && (
-          <Button color="violet" leftSection={<IconPlus size={16} />} onClick={openCreateModal}>
-            {t('Додати')}
-          </Button>
-        )}
-    </Group>
-  )
-}
-
 function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, canOpenOptions, columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreProtocols, openOptions, organizations, pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
+    applyFilters, canCreate, canExport, canOpenOptions, columns, error, exportDocument, filterDraft, filterError,
+    hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openCreateModal, openOptions, organizations,
+    pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
   } = model
 
   const organizationOptions = useMemo(
@@ -531,13 +493,20 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <TextInput
+            label={t('Постачальник')}
+            value={filterDraft.supplier}
+            onChange={(event) => applyFilters({ ...filterDraft, supplier: event.currentTarget.value })}
+            style={{ flex: '1 1 auto', minWidth: 180 }}
+          />
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            style={{ flex: '0 0 auto' }}
           />
           <TextInput
             label={t('До якої дати')}
@@ -545,6 +514,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
             type="date"
             value={filterDraft.to}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            style={{ flex: '0 0 auto' }}
           />
           <Select
             data={organizationOptions}
@@ -553,17 +523,55 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
             value={filterDraft.organization}
             w={220}
             onChange={(value) => applyFilters({ ...filterDraft, organization: value || '' })}
-          />
-          <TextInput
-            label={t('Постачальник')}
-            value={filterDraft.supplier}
-            onChange={(event) => applyFilters({ ...filterDraft, supplier: event.currentTarget.value })}
+            style={{ flex: '0 0 auto' }}
           />
           <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="gray"
+              size={36}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={resetFilters}
+            >
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={36}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          {canExport && (
+            <Button
+              color="gray"
+              leftSection={<IconDownload size={16} />}
+              loading={isDownloading}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={exportDocument}
+            >
+              {t('Завантажити')}
+            </Button>
+          )}
+          {canCreate && (
+            <Button
+              color="violet"
+              leftSection={<IconPlus size={16} />}
+              style={{ flex: '0 0 auto' }}
+              onClick={openCreateModal}
+            >
+              {t('Додати')}
+            </Button>
+          )}
         </Group>
 
         {(error || filterError) && (

@@ -172,21 +172,18 @@ export function PaymentAccountsPage() {
     setOrganizationNetId('')
   }
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Пошук')}
-      value={searchValue}
-      w={{ base: '100%', sm: 340 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
-  )
-
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              placeholder={t('Пошук')}
+              value={searchValue}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+            />
             <Tooltip label={t('Скинути фільтри')}>
               <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={36} variant="light" onClick={resetFilters}>
                 <IconRestore size={18} />
@@ -264,7 +261,6 @@ export function PaymentAccountsPage() {
             maxHeight="calc(100vh - 330px)"
             minWidth={1120}
             tableId="payment-accounts"
-            toolbarLeft={toolbarLeft}
             onRowClick={openAccount}
           />
         </Stack>

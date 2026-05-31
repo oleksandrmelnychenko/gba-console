@@ -137,21 +137,18 @@ export function PaymentExpenseArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Пошук')}
-      value={searchValue}
-      w={{ base: '100%', sm: 360 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
-  )
-
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" justify="flex-end" wrap="nowrap" className="clients-filter-row">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              placeholder={t('Пошук')}
+              value={searchValue}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+            />
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
                 <IconRefresh size={18} />
@@ -188,7 +185,6 @@ export function PaymentExpenseArticlesPage() {
             isLoading={isTableBusy}
             layoutVersion="payment-expense-articles-1"
             tableId="payment-expense-articles"
-            toolbarLeft={toolbarLeft}
             onRowClick={openArticle}
           />
         </Stack>

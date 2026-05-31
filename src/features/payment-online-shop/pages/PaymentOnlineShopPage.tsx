@@ -219,7 +219,6 @@ export function PaymentOnlineShopPage() {
 
   return (
     <Stack gap="lg">
-      <PaymentShopHeader model={model} />
       <PaymentShopTableCard model={model} />
       <PaymentShopDetailDrawer
         createError={model.createError}
@@ -240,38 +239,23 @@ export function PaymentOnlineShopPage() {
   )
 }
 
-function PaymentShopHeader({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
-  const { t } = useI18n()
-  const { isLoading, reload } = model
-
-  return (
-    <Group justify="flex-end" align="center">
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon
-          aria-label={t('Оновити')}
-          color="gray"
-          loading={isLoading}
-          size={38}
-          variant="light"
-          onClick={() => reload()}
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  )
-}
-
 function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, error, filterDraft, isLoading, items, openDetail, resetFilters, setFilterDraft, toolbarLeft,
+    applyFilters, columns, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toolbarLeft,
   } = model
 
   return (
     <Card withBorder radius="md" padding="md">
       <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <TextInput
+            label={t('Продажа')}
+            placeholder={t('Номер')}
+            value={filterDraft.saleNumber}
+            onChange={(event) => setFilterDraft({ ...filterDraft, saleNumber: event.currentTarget.value })}
+            style={{ flex: '1 1 auto', minWidth: 180 }}
+          />
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.saleDateTo || undefined}
@@ -287,12 +271,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             onChange={(event) => setFilterDraft({ ...filterDraft, saleDateTo: event.currentTarget.value })}
           />
           <TextInput
-            label={t('Продажа')}
-            placeholder={t('Номер')}
-            value={filterDraft.saleNumber}
-            onChange={(event) => setFilterDraft({ ...filterDraft, saleNumber: event.currentTarget.value })}
-          />
-          <TextInput
             label={t('Клієнт')}
             placeholder={t('Телефон')}
             value={filterDraft.phoneNumber}
@@ -306,6 +284,18 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           <Tooltip label={t('Скинути')}>
             <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
               <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={36}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>

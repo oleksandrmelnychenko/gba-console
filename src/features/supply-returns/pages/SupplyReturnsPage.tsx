@@ -411,32 +411,9 @@ export function SupplyReturnsPage() {
 function SupplyReturnsPageView({ model }: { model: ReturnType<typeof useSupplyReturnsPageModel> }) {
   return (
     <Stack gap="lg">
-      <SupplyReturnsHeader model={model} />
       <SupplyReturnsTableCard model={model} />
       <SupplyReturnDetailDrawer model={model} />
     </Stack>
-  )
-}
-
-function SupplyReturnsHeader({ model }: { model: ReturnType<typeof useSupplyReturnsPageModel> }) {
-  const { t } = useI18n()
-  const { isLoading, reload } = model
-
-  return (
-    <Group justify="flex-end" align="center">
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon
-          aria-label={t('Оновити')}
-          color="gray"
-          loading={isLoading}
-          size={38}
-          variant="light"
-          onClick={() => reload()}
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
   )
 }
 
@@ -452,6 +429,7 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
     isLoadingMore,
     openDetail,
     loadMoreSupplyReturns,
+    reload,
     resetFilters,
     applyFilters,
     toolbarLeft,
@@ -480,6 +458,18 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
           <Tooltip label={t('Скинути')}>
             <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
               <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={36}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>

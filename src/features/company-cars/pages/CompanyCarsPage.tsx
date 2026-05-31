@@ -112,21 +112,18 @@ export function CompanyCarsPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setCompanyCars, setError, setLoading, t])
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Місце вводу для пошуку')}
-      value={searchValue}
-      w={{ base: '100%', sm: 360 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
-  )
-
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="nowrap">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              placeholder={t('Місце вводу для пошуку')}
+              value={searchValue}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+            />
             <Tooltip label={t('Оновити')}>
               <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
                 <IconRefresh size={18} />
@@ -172,7 +169,6 @@ export function CompanyCarsPage() {
             layoutVersion="company-cars-1"
             minWidth={1180}
             tableId="company-cars"
-            toolbarLeft={toolbarLeft}
             onRowClick={openEditor}
           />
         </Stack>
