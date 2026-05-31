@@ -96,6 +96,17 @@ export type SpecificationSupplyOrderClient = EntityFields & {
   Name?: string
 }
 
+export type SpecificationSupplyOrganizationAgreement = EntityFields & {
+  Currency?: SpecificationCurrency | null
+  Name?: string
+  Number?: string
+}
+
+export type SpecificationSupplyOrganization = EntityFields & {
+  Name?: string
+  SupplyOrganizationAgreements?: SpecificationSupplyOrganizationAgreement[]
+}
+
 export type SpecificationSupplyOrder = EntityFields & {
   Client?: SpecificationSupplyOrderClient | null
   ClientAgreement?: SpecificationSupplyOrderAgreement | null
@@ -135,6 +146,8 @@ export type SpecificationSupplyInvoice = EntityFields & {
   Number?: string
   NumberCustomDeclaration?: string
   PackingLists?: SpecificationPackingList[]
+  SupplyOrganization?: SpecificationSupplyOrganization | null
+  SupplyOrganizationAgreement?: SpecificationSupplyOrganizationAgreement | null
   SupplyInvoiceDeliveryDocuments?: SupplyInvoiceDeliveryDocument[]
   SupplyOrder?: SpecificationSupplyOrder | null
   TotalGrossPrice?: number

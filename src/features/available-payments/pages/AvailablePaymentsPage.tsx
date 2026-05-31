@@ -44,7 +44,7 @@ type FilterDraft = {
 const DEFAULT_PAGE_SIZE = 10
 const PAGE_SIZE_OPTIONS = ['10', '20', '40', '60']
 
-const CURRENCY_CODES = ['EUR', 'USD', 'UAH'] as const
+const CURRENCY_CODES = ['EUR', 'USD', 'PLN', 'UAH'] as const
 
 const AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -686,6 +686,15 @@ function useAvailablePaymentsColumns(indexMap: Map<GroupedPaymentTask, number>) 
         align: 'right',
         accessor: (group) => getCurrencyTotal(group, 'USD'),
         cell: (group) => formatAmount(getCurrencyTotal(group, 'USD')),
+      },
+      {
+        id: 'pln',
+        header: 'PLN',
+        width: 120,
+        minWidth: 100,
+        align: 'right',
+        accessor: (group) => getCurrencyTotal(group, 'PLN'),
+        cell: (group) => formatAmount(getCurrencyTotal(group, 'PLN')),
       },
       {
         id: 'uah',

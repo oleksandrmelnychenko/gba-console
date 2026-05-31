@@ -80,6 +80,34 @@ export async function getAvailablePaymentAccountingCashFlow(params: {
   return result && typeof result === 'object' ? (result as AvailablePaymentAccountingCashFlow) : null
 }
 
+const GOV_EXCHANGE_RATE_ORGANIZATION_NAME = 'ТОВ «АМГ «КОНКОРД»'
+
+export async function getAvailablePaymentExchangeRate(params: {
+  fromCurrencyNetId: string
+  fromDate: string
+  organizationName?: string
+  toCurrencyNetId: string
+}): Promise<number> {
+  if (!params.fromCurrencyNetId || !params.toCurrencyNetId) {
+    return 0
+  }
+
+  const endpoint =
+    params.organizationName === GOV_EXCHANGE_RATE_ORGANIZATION_NAME
+      ? '/exchangerates/gov/get/specific'
+      : '/exchangerates/get/specific'
+
+  const result = await apiRequest<unknown>(endpoint, {
+    query: {
+      fromCurrencyNetId: params.fromCurrencyNetId,
+      fromDate: params.fromDate,
+      toCurrencyNetId: params.toCurrencyNetId,
+    },
+  })
+
+  return readExchangeRate(result)
+}
+
 export async function getAvailablePaymentTaskByNetId(netId: string): Promise<SupplyPaymentTask | null> {
   const result = await apiRequest<unknown>('/payments/tasks/get', {
     query: {
@@ -111,6 +139,7 @@ export async function createAvailablePaymentOutcome({
   comment,
   customNumber,
   documents,
+  exchangeRate,
   fromDate,
   isAccounting,
   isManagementAccounting,
@@ -134,6 +163,7 @@ export async function createAvailablePaymentOutcome({
       Amount: amount,
       Comment: comment,
       CustomNumber: customNumber,
+      ExchangeRate: exchangeRate > 0 ? exchangeRate : 0,
       FromDate: fromDate,
       IsAccounting: isAccounting,
       IsManagementAccounting: isManagementAccounting,
@@ -240,6 +270,28 @@ function normalizePaymentRegister(result: unknown): AvailablePaymentRegister | n
 
 function normalizeCurrencyRegister(result: unknown): AvailablePaymentCurrencyRegister {
   return result && typeof result === 'object' ? (result as AvailablePaymentCurrencyRegister) : {}
+}
+
+function readExchangeRate(result: unknown): number {
+  if (typeof result === 'number') {
+    return Number.isFinite(result) ? result : 0
+  }
+
+  if (!result || typeof result !== 'object') {
+    return 0
+  }
+
+  const payload = result as Record<string, unknown>
+
+  for (const key of ['Rate', 'ExchangeRate', 'Value', 'Cross']) {
+    const value = payload[key]
+
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+  }
+
+  return 0
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

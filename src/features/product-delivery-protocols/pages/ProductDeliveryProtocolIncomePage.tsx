@@ -26,11 +26,15 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
+import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
+import type { DirectSupplyOrder } from '../../supply-ukraine-orders/types'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import {
-  createUkraineProductIncomeFromDynamic,
+  createProductIncomeFromPackingListDynamic,
   getOrganizationStorages,
   getPackingListSpecificationProducts,
+  getProductIncomeByDeliveryProtocolNetId,
+  getProductIncomeBySupplyOrderNetId,
   getSupplyOrderItemAudit,
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
@@ -47,6 +51,7 @@ import type {
   DynamicProductPlacementRow,
   IncomeGridRow,
   IncomePackingList,
+  IncomeProductIncome,
   IncomeProtocol,
   IncomeStorage,
   IncomeSupplyInvoice,
@@ -77,6 +82,10 @@ function displayValue(value?: number | string | null): string {
   }
 
   return String(value)
+}
+
+function getIncomeUserName(user?: IncomeProductIncome['User']): string {
+  return [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ') || user?.Name || '-'
 }
 
 function columnKey(column: DynamicProductPlacementColumn): string {
@@ -186,13 +195,62 @@ function lastSpecificationProp(item: PackingListPackageOrderItem, key: 'Specific
   return specs[specs.length - 1][key] || ''
 }
 
+function lastSpecificationNumberProp(
+  item: PackingListPackageOrderItem,
+  key: 'CustomsValue' | 'DutyPercent',
+): number | undefined {
+  const specs = item.SupplyInvoiceOrderItem?.Product?.ProductSpecifications || []
+
+  if (specs.length === 0) {
+    return undefined
+  }
+
+  return specs[specs.length - 1][key]
+}
+
 type DrawerState = {
   item: PackingListPackageOrderItem
   row: DynamicProductPlacementRow
   columnId: string
 }
 
-function useProtocolIncomeModel() {
+type ProductIncomeSource = 'delivery-protocol' | 'direct-supply-order'
+
+function normalizeProtocolIncomeSource(protocol: unknown): IncomeProtocol {
+  const payload = protocol && typeof protocol === 'object' ? (protocol as Partial<IncomeProtocol>) : {}
+
+  return {
+    ...(payload as IncomeProtocol),
+    SupplyInvoices: Array.isArray(payload.SupplyInvoices) ? payload.SupplyInvoices : [],
+  }
+}
+
+function normalizeDirectSupplyOrderIncomeSource(order: DirectSupplyOrder | null): IncomeProtocol {
+  if (!order) {
+    return { SupplyInvoices: [] }
+  }
+
+  return {
+    ...(order as unknown as IncomeProtocol),
+    DeliveryProductProtocolNumber: null,
+    FromDate: order.DateFrom,
+    Organization: order.Organization as IncomeProtocol['Organization'],
+    SupplyInvoices: Array.isArray(order.SupplyInvoices)
+      ? (order.SupplyInvoices as unknown as IncomeSupplyInvoice[])
+      : [],
+    SupplyOrderNumber: order.SupplyOrderNumber || null,
+  }
+}
+
+function getIncomeSourceNumber(source: ProductIncomeSource, protocol?: IncomeProtocol | null): string {
+  if (source === 'direct-supply-order') {
+    return protocol?.SupplyOrderNumber?.Number || protocol?.Number || ''
+  }
+
+  return protocol?.DeliveryProductProtocolNumber?.Number || ''
+}
+
+function useProtocolIncomeModel(source: ProductIncomeSource) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
@@ -203,6 +261,7 @@ function useProtocolIncomeModel() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useValueState<string | null>(null)
   const [invoice, setInvoice] = useValueState<IncomeSupplyInvoice | null>(null)
   const [packingList, setPackingList] = useValueState<IncomePackingList | null>(null)
+  const [productIncome, setProductIncome] = useValueState<IncomeProductIncome | null>(null)
   const [fromDate, setFromDate] = useValueState<string>(() => formatLocalDate(new Date()))
   const [vatPercent, setVatPercent] = useValueState<number>(DEFAULT_VAT_PERCENT)
   const [isDirty, setDirty] = useValueState(false)
@@ -227,30 +286,33 @@ function useProtocolIncomeModel() {
       setError(null)
 
       try {
-        const loadedProtocol = await getProtocolByNetId(id as string)
+        const [loadedSource, loadedProductIncome] = source === 'direct-supply-order'
+          ? await Promise.all([
+              getDirectSupplyOrderById(id as string).then(normalizeDirectSupplyOrderIncomeSource),
+              getProductIncomeBySupplyOrderNetId(id as string),
+            ])
+          : await Promise.all([
+              getProtocolByNetId(id as string).then(normalizeProtocolIncomeSource),
+              getProductIncomeByDeliveryProtocolNetId(id as string),
+            ])
 
         if (cancelled) {
           return
         }
 
-        const normalizedProtocol: IncomeProtocol = {
-          ...(loadedProtocol as unknown as IncomeProtocol),
-          SupplyInvoices: Array.isArray(loadedProtocol?.SupplyInvoices)
-            ? (loadedProtocol?.SupplyInvoices as unknown as IncomeSupplyInvoice[])
-            : [],
-        }
-        const organizationNetId = normalizedProtocol.Organization?.NetUid
+        const organizationNetId = loadedSource.Organization?.NetUid
         const loadedStorages = organizationNetId ? await getOrganizationStorages(organizationNetId) : []
 
         if (!cancelled) {
-          setProtocol(normalizedProtocol)
+          setProtocol(loadedSource)
+          setProductIncome(loadedProductIncome)
           setStorages(loadedStorages)
           setSelectedStorageId((current) =>
             loadedStorages.some((storage) => storage.NetUid === current)
               ? current
               : loadedStorages[0]?.NetUid || null,
           )
-          setSelectedInvoiceId((current) => current || normalizedProtocol.SupplyInvoices[0]?.NetUid || null)
+          setSelectedInvoiceId((current) => current || loadedSource.SupplyInvoices[0]?.NetUid || null)
           setDirty(false)
         }
       } catch (loadError) {
@@ -270,7 +332,8 @@ function useProtocolIncomeModel() {
       cancelled = true
     }
   }, [
-    id, reloadKey, setDirty, setError, setLoading, setProtocol, setSelectedInvoiceId, setSelectedStorageId, setStorages, t,
+    id, reloadKey, setDirty, setError, setLoading, setProductIncome, setProtocol, setSelectedInvoiceId,
+    setSelectedStorageId, setStorages, source, t,
   ])
 
   useEffect(() => {
@@ -681,7 +744,7 @@ function useProtocolIncomeModel() {
     setError(null)
 
     try {
-      await createUkraineProductIncomeFromDynamic(toIso(fromDate), selectedStorage.NetUid, {
+      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
         ...packingList,
         IsPlaced: true,
       })
@@ -703,7 +766,7 @@ function useProtocolIncomeModel() {
     setError(null)
 
     try {
-      await createUkraineProductIncomeFromDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
+      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
@@ -734,8 +797,9 @@ function useProtocolIncomeModel() {
     columnModalOpen, columnToRemove, confirmCarryOut, confirmRemoveColumn, drawer, error, fromDate, gridRows,
     handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut, handleCellChange,
     handleMoveRemnants, handleNetWeightChange, handleOpenPlacements, handleProductIncome, handleReadyToPlace,
-    handleSave, invoice, isDirty, isLoading, isSaving, navigate, packingList, placementStatus, protocol, reloadFromServer,
-    selectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId, setColumnModalOpen, setColumnToRemove,
+    handleSave, invoice, isDirty, isLoading, isSaving, navigate, packingList, placementStatus, productIncome, protocol, reloadFromServer,
+    selectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId, setColumnModalOpen, setColumnToRemove, source,
+    sourceId: id,
     setConfirmCarryOut, setDrawer, setFromDate, setSelectedInvoiceId, setSelectedStorageId, setVatPercent, storages,
     totalQty, vatPercent,
   }
@@ -887,10 +951,19 @@ function WeightAuditDrawer({ item, opened, onClose }: WeightAuditDrawerProps) {
 }
 
 export function ProductDeliveryProtocolIncomePage() {
-  const model = useProtocolIncomeModel()
+  return <PackingListProductIncomePage source="delivery-protocol" />
+}
+
+export function SupplyUkraineDirectOrderProductIncomePage() {
+  return <PackingListProductIncomePage source="direct-supply-order" />
+}
+
+function PackingListProductIncomePage({ source }: { source: ProductIncomeSource }) {
+  const model = useProtocolIncomeModel(source)
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [auditItem, setAuditItem] = useValueState<PackingListPackageOrderItem | null>(null)
+  const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
 
   const isPlaced = Boolean(model.packingList?.IsPlaced)
   const hasColumns = (model.packingList?.DynamicProductPlacementColumns.length || 0) > 0
@@ -898,6 +971,17 @@ export function ProductDeliveryProtocolIncomePage() {
   const canCapitalizeDynamicIncome = hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
   const canCarryOutDynamicIncome = hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
   const canViewWeightHistory = hasPermission(PERMISSION_VIEW_WEIGHT_HISTORY)
+  const filteredGridRows = useMemo(() => {
+    const value = vendorCodeFilter.trim().toLowerCase()
+
+    if (!value) {
+      return model.gridRows
+    }
+
+    return model.gridRows.filter((gridRow) =>
+      (gridRow.item.SupplyInvoiceOrderItem?.Product?.VendorCode || '').toLowerCase().includes(value),
+    )
+  }, [model.gridRows, vendorCodeFilter])
 
   const columns = useMemo<DataTableColumn<IncomeGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<IncomeGridRow>[] = [
@@ -934,6 +1018,12 @@ export function ProductDeliveryProtocolIncomePage() {
         width: 80,
         align: 'right',
         cell: (gridRow) => gridRow.item.Qty || 0,
+      },
+      {
+        id: 'measureUnit',
+        header: t('Одиниця виміру'),
+        width: 110,
+        cell: (gridRow) => gridRow.item.SupplyInvoiceOrderItem?.Product?.MeasureUnit?.Name || '-',
       },
       {
         id: 'netWeight',
@@ -989,6 +1079,20 @@ export function ProductDeliveryProtocolIncomePage() {
         cell: (gridRow) => lastSpecificationProp(gridRow.item, 'SpecificationCode') || '-',
       },
       {
+        id: 'customsRate',
+        header: t('Мито %'),
+        width: 90,
+        align: 'right',
+        cell: (gridRow) => lastSpecificationNumberProp(gridRow.item, 'DutyPercent') ?? '-',
+      },
+      {
+        id: 'customsValue',
+        header: t('Митна вартість'),
+        width: 130,
+        align: 'right',
+        cell: (gridRow) => lastSpecificationNumberProp(gridRow.item, 'CustomsValue') ?? '-',
+      },
+      {
         id: 'unitPrice',
         header: t('Ціна за одиницю нетто'),
         width: 140,
@@ -1015,6 +1119,13 @@ export function ProductDeliveryProtocolIncomePage() {
         width: 120,
         align: 'center',
         cell: (gridRow) => (gridRow.item.IsPlaced ? t('Так') : t('Ні')),
+      },
+      {
+        id: 'isImported',
+        header: t('Імпорт'),
+        width: 90,
+        align: 'center',
+        cell: (gridRow) => (gridRow.item.ProductIsImported ? t('Так') : '-'),
       },
       {
         id: 'totalNetPrice',
@@ -1122,7 +1233,16 @@ export function ProductDeliveryProtocolIncomePage() {
     return [...fixedColumns, ...dynamicColumns]
   }, [canViewWeightHistory, isPlaced, model, setAuditItem, t])
 
-  const protocolNumber = model.protocol?.DeliveryProductProtocolNumber?.Number || ''
+  const sourceNumber = getIncomeSourceNumber(source, model.protocol)
+  const backPath = source === 'direct-supply-order' && model.sourceId
+    ? `/orders/ukraine/all/edit/${model.sourceId}`
+    : '/product-delivery-protocols'
+  const title = source === 'direct-supply-order'
+    ? t('Прихід товару по прямому замовленню')
+    : t('Прихід товару згідно замовлення')
+  const supplierName = model.protocol?.Client?.Name || model.protocol?.Client?.FullName || '-'
+  const agreementName = model.protocol?.ClientAgreement?.Agreement?.Name || '-'
+  const currencyCode = model.protocol?.ClientAgreement?.Agreement?.Currency?.Code || '-'
 
   return (
     <Stack gap="md">
@@ -1131,12 +1251,12 @@ export function ProductDeliveryProtocolIncomePage() {
           color="gray"
           leftSection={<IconArrowLeft size={16} />}
           variant="subtle"
-          onClick={() => model.navigate('/product-delivery-protocols')}
+          onClick={() => model.navigate(backPath)}
         >
           {t('Назад')}
         </Button>
         <Text fw={700} size="lg">
-          {`${t('Прихід товару згідно замовлення')}: ${protocolNumber}`}
+          {`${title}: ${sourceNumber}`}
         </Text>
       </Group>
 
@@ -1160,8 +1280,61 @@ export function ProductDeliveryProtocolIncomePage() {
             </Text>
             <Text size="sm">{model.protocol?.Organization?.Name || '-'}</Text>
           </Stack>
+          {source === 'direct-supply-order' && (
+            <>
+              <Stack gap={2}>
+                <Text c="dimmed" size="xs">
+                  {t('Постачальник')}
+                </Text>
+                <Text size="sm">{supplierName}</Text>
+              </Stack>
+              <Stack gap={2}>
+                <Text c="dimmed" size="xs">
+                  {t('Договір')}
+                </Text>
+                <Text size="sm">{agreementName}</Text>
+              </Stack>
+              <Stack gap={2}>
+                <Text c="dimmed" size="xs">
+                  {t('Валюта')}
+                </Text>
+                <Text size="sm">{currencyCode}</Text>
+              </Stack>
+            </>
+          )}
         </Group>
       </Card>
+
+      {isPlaced && model.productIncome && (model.productIncome.Id || 0) > 0 && (
+        <Card withBorder radius="md" padding="md">
+          <Group gap="xl" wrap="wrap">
+            <Stack gap={2}>
+              <Text c="dimmed" size="xs">
+                {t('Номер')}
+              </Text>
+              <Text size="sm">{model.productIncome.Number || '-'}</Text>
+            </Stack>
+            <Stack gap={2}>
+              <Text c="dimmed" size="xs">
+                {t('Дата оприходування')}
+              </Text>
+              <Text size="sm">{formatDate(model.productIncome.FromDate)}</Text>
+            </Stack>
+            <Stack gap={2}>
+              <Text c="dimmed" size="xs">
+                {t('Склад')}
+              </Text>
+              <Text size="sm">{model.productIncome.Storage?.Name || '-'}</Text>
+            </Stack>
+            <Stack gap={2}>
+              <Text c="dimmed" size="xs">
+                {t('Відповідальний')}
+              </Text>
+              <Text size="sm">{getIncomeUserName(model.productIncome.User)}</Text>
+            </Stack>
+          </Group>
+        </Card>
+      )}
 
       <Card withBorder radius="md" padding="md">
         <Group justify="space-between" align="end" wrap="wrap">
@@ -1223,12 +1396,7 @@ export function ProductDeliveryProtocolIncomePage() {
               {t('Додати')}
             </Button>
           )}
-          {!isPlaced && (
-            <Button disabled={model.isDirty} variant="light" onClick={() => void model.handleAllReadyToPlace()}>
-              {t('Всі товари готові до оприходування')}
-            </Button>
-          )}
-          {!isPlaced && hasColumns && canCapitalizeDynamicIncome && (
+          {!isPlaced && canCapitalizeDynamicIncome && (
             <Button disabled={model.isDirty} variant="light" onClick={() => void model.handleProductIncome()}>
               {t('Оприходувати')}
             </Button>
@@ -1264,9 +1432,16 @@ export function ProductDeliveryProtocolIncomePage() {
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
+          <TextInput
+            label={t('Пошук')}
+            placeholder={t('Код товару')}
+            value={vendorCodeFilter}
+            w={260}
+            onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
+          />
           <DataTable
             columns={columns}
-            data={model.gridRows}
+            data={filteredGridRows}
             emptyText={t('Дані відсутні')}
             getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
             isLoading={model.isLoading}

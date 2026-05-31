@@ -62,6 +62,9 @@ const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
 const PERMISSION_APPROVE_ORDER = 'LOGISTIC_WAY_ordersUkraineAllEdit_ApprovedSupplyOrderStatus_PKEY'
 const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_PKEY'
 const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
+const PERMISSION_OPEN_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
+const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
+const PERMISSION_OPEN_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('uk-UA')
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -85,10 +88,22 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const [statusDocument, setStatusDocument] = useState<SupplyOrderDeliveryDocument | null>(null)
   const [statusComment, setStatusComment] = useState('')
   const [statusReceived, setStatusReceived] = useState(true)
+  const [creditNotesOpen, setCreditNotesOpen] = useState(false)
+  const [creditNoteModalOpen, setCreditNoteModalOpen] = useState(false)
+  const [creditNoteNumber, setCreditNoteNumber] = useState('')
+  const [creditNoteAmount, setCreditNoteAmount] = useState<number | string>('')
+  const [creditNoteComment, setCreditNoteComment] = useState('')
+  const [creditNoteDate, setCreditNoteDate] = useState(() => formatLocalDate(new Date()))
+  const [creditNoteFile, setCreditNoteFile] = useState<File | null>(null)
   const hasInvoices = (order?.SupplyInvoices?.length || 0) > 0
   const isLocked = Boolean(order?.IsOrderShipped) || Boolean(order?.IsCompleted)
+  const areDeliveryDocumentActionsLocked = Boolean(order?.IsCompleted)
   const canApproveOrder = hasPermission(PERMISSION_APPROVE_ORDER)
+  const canOpenCreditNotes = hasPermission(PERMISSION_CREDIT_NOTES)
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
+  const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && Boolean(order?.SupplyProFormId)
+  const canOpenProductIncome = hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME) && hasInvoices
+  const canOpenSpecifications = hasPermission(PERMISSION_OPEN_DIRECT_SPECIFICATIONS) && Boolean(order?.SupplyProFormId)
 
   useEffect(() => {
     let cancelled = false
@@ -236,6 +251,20 @@ export function SupplyUkraineDirectOrderDetailPage() {
     setStatusReceived(true)
   }
 
+  function openCreditNoteModal() {
+    setCreditNoteNumber('')
+    setCreditNoteAmount('')
+    setCreditNoteComment('')
+    setCreditNoteDate(formatLocalDate(new Date()))
+    setCreditNoteFile(null)
+    setCreditNoteModalOpen(true)
+  }
+
+  function closeCreditNoteModal() {
+    setCreditNoteModalOpen(false)
+    setCreditNoteFile(null)
+  }
+
   function saveDocumentStatus() {
     if (!order || !statusDocument) {
       return
@@ -267,6 +296,54 @@ export function SupplyUkraineDirectOrderDetailPage() {
         : current)
 
     savePatch({ SupplyOrderDeliveryDocuments: documents }, t('Файл видалено'))
+  }
+
+  async function saveCreditNote() {
+    if (!order?.NetUid) {
+      return
+    }
+
+    if (!creditNoteFile) {
+      setError(t('Завантажте документ'))
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const amount = Number(creditNoteAmount) || 0
+      const creditNote: CreditNoteDocument = {
+        Amount: amount,
+        Comment: creditNoteComment,
+        ContentType: creditNoteFile.type,
+        FileName: creditNoteFile.name,
+        FromDate: creditNoteDate ? new Date(creditNoteDate).toDateString() : new Date().toDateString(),
+        Number: creditNoteNumber,
+      }
+      const formData = new FormData()
+
+      formData.append('document', creditNoteFile)
+      formData.append('creditNote', JSON.stringify(creditNote))
+
+      const updated = await createSupplyCreditNote(order.NetUid, formData)
+
+      if (updated) {
+        setOrder(updated)
+        setTransportationType(String(updated.TransportationType ?? 0))
+        syncAmountInputs(updated)
+      } else {
+        await reloadOrder()
+      }
+
+      closeCreditNoteModal()
+      setCreditNotesOpen(true)
+      notifications.show({ color: 'green', message: t('Кредит ноту створено') })
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити кредит ноту'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   function saveTransportationType() {
@@ -338,7 +415,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   {...fileProps}
                   aria-label={t('Завантажити файл')}
                   color="blue"
-                  disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
+                  disabled={
+                    isSaving ||
+                    areDeliveryDocumentActionsLocked ||
+                    document.Deleted ||
+                    Boolean(document.IsProcessed && document.IsReceived)
+                  }
                   variant="light"
                 >
                   <IconUpload size={16} />
@@ -350,7 +432,12 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <ActionIcon
               aria-label={t('Зміна статуса документа')}
               color="teal"
-              disabled={isSaving || isLocked || document.Deleted || Boolean(document.IsProcessed && document.IsReceived)}
+              disabled={
+                isSaving ||
+                areDeliveryDocumentActionsLocked ||
+                document.Deleted ||
+                Boolean(document.IsProcessed && document.IsReceived)
+              }
               variant="light"
               onClick={() => openStatusModal(document)}
             >
@@ -362,7 +449,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
               <ActionIcon
                 aria-label={t('Очистити файл')}
                 color="red"
-                disabled={isSaving || isLocked}
+                disabled={isSaving || areDeliveryDocumentActionsLocked}
                 variant="light"
                 onClick={() => clearDocumentFile(document)}
               >
@@ -405,6 +492,11 @@ export function SupplyUkraineDirectOrderDetailPage() {
           {order && !order.IsApproved && canApproveOrder && (
             <Button leftSection={<IconCheck size={16} />} loading={isSaving} variant="light" onClick={approveOrder}>
               {t('Погодити')}
+            </Button>
+          )}
+          {order && canOpenCreditNotes && (
+            <Button leftSection={<IconFileInvoice size={16} />} variant="light" onClick={() => setCreditNotesOpen(true)}>
+              {t('Кредит ноти')}
             </Button>
           )}
         </Group>
@@ -451,13 +543,17 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   <Text fw={600} size="sm">{t('Тип доставки')}</Text>
                   <SegmentedControl
                     data={TRANSPORTATION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-                    disabled={isSaving || Boolean(order.IsOrderShipped)}
+                    disabled={!isEditingAmount || isSaving || Boolean(order.IsOrderShipped)}
                     value={transportationType}
                     onChange={setTransportationType}
                   />
                 </Stack>
                 <Button
-                  disabled={transportationType === String(order.TransportationType ?? 0) || Boolean(order.IsOrderShipped)}
+                  disabled={
+                    !isEditingAmount ||
+                    transportationType === String(order.TransportationType ?? 0) ||
+                    Boolean(order.IsOrderShipped)
+                  }
                   loading={isSaving}
                   variant="light"
                   onClick={saveTransportationType}
@@ -508,14 +604,16 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
           <Card withBorder radius="md" padding="lg">
             <Group gap="xs" wrap="wrap">
-              <Button
-                leftSection={<IconFileInvoice size={16} />}
-                variant="light"
-                onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
-              >
-                {t('Інвойси і пак листи')}
-              </Button>
-              {hasInvoices && (
+              {canOpenInvoices && (
+                <Button
+                  leftSection={<IconFileInvoice size={16} />}
+                  variant="light"
+                  onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
+                >
+                  {t('Інвойси і пак листи')}
+                </Button>
+              )}
+              {canOpenSpecifications && (
                 <Button
                   leftSection={<IconListDetails size={16} />}
                   variant="light"
@@ -524,7 +622,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   {t('Специфікації')}
                 </Button>
               )}
-              {hasInvoices && (
+              {canOpenProductIncome && (
                 <Button
                   leftSection={<IconPackageImport size={16} />}
                   variant="light"
@@ -557,6 +655,119 @@ export function SupplyUkraineDirectOrderDetailPage() {
       ) : (
         <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
       )}
+
+      <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => setCreditNotesOpen(false)}>
+        <Stack gap="md">
+          <Group justify="flex-end">
+            <Button loading={isSaving} variant="light" onClick={openCreditNoteModal}>
+              {t('Створити')}
+            </Button>
+          </Group>
+          {(order?.CreditNoteDocuments || []).length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {t('Кредит нот немає')}
+            </Text>
+          ) : (
+            <Stack gap="xs">
+              {(order?.CreditNoteDocuments || []).map((creditNote, index) => (
+                <Box
+                  key={creditNote.NetUid || creditNote.Id || `${creditNote.Number || 'credit-note'}-${index}`}
+                  style={{
+                    border: '1px solid var(--mantine-color-gray-2)',
+                    borderRadius: 6,
+                    padding: '8px 10px',
+                  }}
+                >
+                  <Group justify="space-between" gap="xs" wrap="nowrap">
+                    <Text fw={600} size="sm">
+                      {creditNote.Number || '-'}
+                    </Text>
+                    <Text c="dimmed" size="xs">
+                      {formatDateTime(creditNote.FromDate)}
+                    </Text>
+                  </Group>
+                  <Text size="sm">
+                    {t('Сума')}: {formatMoney(creditNote.Amount)}
+                  </Text>
+                  {creditNote.Comment && (
+                    <Text c="dimmed" size="sm" style={{ overflowWrap: 'anywhere' }}>
+                      {creditNote.Comment}
+                    </Text>
+                  )}
+                  {creditNote.DocumentUrl && (
+                    <a className="document-link" href={creditNote.DocumentUrl} rel="noreferrer" target="_blank">
+                      {creditNote.FileName || t('Документ')}
+                    </a>
+                  )}
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Stack>
+      </AppDrawer>
+
+      <AppModal opened={creditNoteModalOpen} title={t('Кредит нота')} onClose={closeCreditNoteModal}>
+        <Stack gap="md">
+          <TextInput
+            label={t('Номер')}
+            value={creditNoteNumber}
+            onChange={(event) => setCreditNoteNumber(event.currentTarget.value)}
+          />
+          <NumberInput
+            decimalScale={2}
+            label={t('Сума')}
+            min={0}
+            value={creditNoteAmount}
+            onChange={setCreditNoteAmount}
+          />
+          <TextInput
+            label={t('Дата')}
+            type="date"
+            value={creditNoteDate}
+            onChange={(event) => setCreditNoteDate(event.currentTarget.value)}
+          />
+          <Textarea
+            autosize
+            label={t('Коментар')}
+            minRows={3}
+            value={creditNoteComment}
+            onChange={(event) => setCreditNoteComment(event.currentTarget.value)}
+          />
+          <Group gap="xs">
+            <FileButton onChange={setCreditNoteFile}>
+              {(fileProps) => (
+                <Button {...fileProps} leftSection={<IconUpload size={16} />} variant="light">
+                  {t('Завантажити файл')}
+                </Button>
+              )}
+            </FileButton>
+            {creditNoteFile && (
+              <Group gap={4} wrap="nowrap">
+                <Text size="sm">{creditNoteFile.name}</Text>
+                <Tooltip label={t('Видалити')}>
+                  <ActionIcon
+                    aria-label={t('Видалити')}
+                    color="red"
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => setCreditNoteFile(null)}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            )}
+          </Group>
+          <Group justify="flex-end" gap="xs">
+            <Button color="gray" disabled={isSaving} variant="light" onClick={closeCreditNoteModal}>
+              {t('Скасувати')}
+            </Button>
+            <Button loading={isSaving} variant="light" onClick={() => void saveCreditNote()}>
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
 
       <AppModal
         opened={Boolean(statusDocument)}

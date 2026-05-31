@@ -1,5 +1,6 @@
 import {
   Alert,
+  Anchor,
   Badge,
   Button,
   Checkbox,
@@ -16,17 +17,22 @@ import {
   Text,
   TextInput,
   Textarea,
+  Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCash, IconDeviceFloppy, IconFileUpload, IconInfoCircle } from '@tabler/icons-react'
+import { IconAlertCircle, IconCash, IconDeviceFloppy, IconExternalLink, IconFileUpload, IconInfoCircle } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   createAvailablePaymentOutcome,
   getAvailablePaymentAccountingCashFlow,
+  getAvailablePaymentExchangeRate,
   getAvailablePaymentMovements,
   searchAvailablePaymentMovements,
   searchAvailablePaymentRegisters,
@@ -36,11 +42,14 @@ import {
   TaskStatusValue,
   type AccountingTypeValue,
   type AvailablePaymentAccountingCashFlow,
+  type AvailablePaymentColumn,
   type AvailablePaymentCurrencyRegister,
   type AvailablePaymentDocument,
   type AvailablePaymentMovement,
   type AvailablePaymentRegister,
   type AvailablePaymentTaskModel,
+  type AvailablePaymentTaskRow,
+  type AvailablePaymentsCurrency,
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
   type SupplyPaymentTask,
@@ -62,6 +71,7 @@ type OutcomeFormState = {
   comment: string
   customNumber: string
   date: string
+  exchangeRate: number
   isAccounting: boolean
   isManagementAccounting: boolean
   movementSearch: string
@@ -97,7 +107,8 @@ export function AvailablePaymentsDetailDrawer({
   onToggleMarked,
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
-  const models = useMemo(() => buildTaskModels(group), [group])
+  const navigate = useNavigate()
+  const models = useMemo(() => buildTaskModels(group, t), [group, t])
   const [expandedId, setExpandedId] = useValueState<string | null>(null)
   const [activeTabs, setActiveTabs] = useValueState<Record<string, string>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
@@ -196,6 +207,51 @@ export function AvailablePaymentsDetailDrawer({
     [form.movementValue, movements],
   )
 
+  const targetCurrency = selectedCurrencyRegister?.Currency || outcomeModels[0]?.currency || null
+  const targetCurrencyNetUid = targetCurrency?.NetUid || ''
+  const targetCurrencyCode = targetCurrency?.Code || ''
+  const uahCurrencyNetUid = useMemo(() => findUahCurrencyNetUid(registers, outcomeModels), [outcomeModels, registers])
+  const organizationName = selectedOrganization?.Name || outcomeModels[0]?.organization?.Name || ''
+  const exchangeFromDate = form.date
+
+  useEffect(() => {
+    if (outcomeModels.length === 0) {
+      return
+    }
+
+    if (!uahCurrencyNetUid || !targetCurrencyNetUid || uahCurrencyNetUid === targetCurrencyNetUid || targetCurrencyCode === 'UAH') {
+      setForm((current) => (current.exchangeRate === 0 ? current : { ...current, exchangeRate: 0 }))
+      return
+    }
+
+    let cancelled = false
+
+    void getAvailablePaymentExchangeRate({
+      fromCurrencyNetId: uahCurrencyNetUid,
+      fromDate: toQueryDate(exchangeFromDate),
+      organizationName,
+      toCurrencyNetId: targetCurrencyNetUid,
+    })
+      .then((rate) => {
+        if (!cancelled) {
+          setForm((current) => ({ ...current, exchangeRate: rate }))
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    exchangeFromDate,
+    organizationName,
+    outcomeModels.length,
+    setForm,
+    targetCurrencyCode,
+    targetCurrencyNetUid,
+    uahCurrencyNetUid,
+  ])
+
   function updateForm(patch: Partial<OutcomeFormState>) {
     setForm((current) => ({ ...current, ...patch }))
   }
@@ -285,6 +341,14 @@ export function AvailablePaymentsDetailDrawer({
     setFilesByTaskId((current) => ({ ...current, [model.id]: files }))
   }
 
+  function handleRedirectToSource(model: AvailablePaymentTaskModel) {
+    if (model.supplyOrderUkraineNetUid) {
+      navigate(`/orders/ukraine/view/${model.supplyOrderUkraineNetUid}`)
+    } else if (model.deliveryProductProtocolNetUid) {
+      navigate(`/product-delivery-protocols/${model.deliveryProductProtocolNetUid}`)
+    }
+  }
+
   async function handleCreateOutcome(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -314,6 +378,7 @@ export function AvailablePaymentsDetailDrawer({
         comment: form.comment.trim(),
         customNumber: form.customNumber.trim(),
         documents,
+        exchangeRate: form.exchangeRate,
         fromDate: toIsoDateTime(form.date, form.time),
         isAccounting: form.isAccounting,
         isManagementAccounting: form.isManagementAccounting,
@@ -366,6 +431,7 @@ export function AvailablePaymentsDetailDrawer({
             onCreateOutcome={openOutcomeForm}
             onFilesChanged={handleFilesChanged}
             onMoveToDone={handleMoveToDone}
+            onRedirectToSource={handleRedirectToSource}
             onToggleExpanded={handleToggleExpanded}
             onToggleMarked={onToggleMarked}
           />
@@ -406,6 +472,7 @@ function AvailablePaymentTaskList({
   onCreateOutcome,
   onFilesChanged,
   onMoveToDone,
+  onRedirectToSource,
   onToggleExpanded,
   onToggleMarked,
 }: {
@@ -422,6 +489,7 @@ function AvailablePaymentTaskList({
   onCreateOutcome: (models: AvailablePaymentTaskModel[]) => void
   onFilesChanged: (model: AvailablePaymentTaskModel, files: File[]) => void
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
+  onRedirectToSource: (model: AvailablePaymentTaskModel) => void
   onToggleExpanded: (model: AvailablePaymentTaskModel) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
@@ -478,6 +546,7 @@ function AvailablePaymentTaskList({
               <Text fw={700}>
                 {formatAmount(model.grossPrice)} {model.currencyCode}
               </Text>
+              <RedirectToSourceButton model={model} onRedirectToSource={onRedirectToSource} />
               <Button color="gray" size="xs" variant="light" onClick={() => onToggleExpanded(model)}>
                 {expandedId === model.id ? t('Згорнути') : t('Деталі')}
               </Button>
@@ -646,7 +715,7 @@ function AvailablePaymentOutcomeForm({
               />
             </SimpleGrid>
 
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <SimpleGrid cols={{ base: 1, md: 3 }}>
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
@@ -654,6 +723,14 @@ function AvailablePaymentOutcomeForm({
                 min={0}
                 value={form.amount}
                 onChange={(value) => updateForm({ amount: toNumber(value) })}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={4}
+                label={t('Курс обміну')}
+                min={0}
+                value={form.exchangeRate}
+                onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
               />
               <Select
                 data={movements.map((movement) => ({
@@ -712,6 +789,18 @@ function AvailablePaymentOutcomeForm({
 
 function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
+  const columns = model.columns
+
+  if (columns.length === 0) {
+    return (
+      <Stack gap="md">
+        <DocumentsList documents={model.documents} />
+        <Text c="dimmed" size="sm">
+          {t('Дані рахунку відсутні')}
+        </Text>
+      </Stack>
+    )
+  }
 
   return (
     <Stack gap="md">
@@ -720,30 +809,33 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
         <Table withTableBorder withColumnBorders striped>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th>{t('Назва')}</Table.Th>
-              <Table.Th>{t('Номер')}</Table.Th>
-              <Table.Th>{t('Дата')}</Table.Th>
-              <Table.Th style={{ textAlign: 'right' }}>{t('Кількість')}</Table.Th>
-              <Table.Th style={{ textAlign: 'right' }}>{t('Сума')}</Table.Th>
+              {columns.map((column) => (
+                <Table.Th key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
+                  {column.header}
+                </Table.Th>
+              ))}
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
             {model.rows.length === 0 ? (
               <Table.Tr>
-                <Table.Td colSpan={5}>
+                <Table.Td colSpan={columns.length}>
                   <Text c="dimmed" size="sm">
                     {t('Дані рахунку відсутні')}
                   </Text>
                 </Table.Td>
               </Table.Tr>
             ) : (
-              model.rows.map((row) => (
-                <Table.Tr key={getInvoiceRowKey(model, row)}>
-                  <Table.Td>{row.name || '-'}</Table.Td>
-                  <Table.Td>{row.number || '-'}</Table.Td>
-                  <Table.Td>{formatDate(row.date)}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }}>{row.quantity || '-'}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }}>{formatAmount(row.total ?? row.amount ?? row.price)}</Table.Td>
+              model.rows.map((row, rowIndex) => (
+                <Table.Tr key={getInvoiceRowKey(model, row, rowIndex)}>
+                  {columns.map((column) => (
+                    <Table.Td
+                      key={column.key}
+                      style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}
+                    >
+                      {renderCell(column, row)}
+                    </Table.Td>
+                  ))}
                 </Table.Tr>
               ))
             )}
@@ -752,6 +844,20 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
       </Table.ScrollContainer>
     </Stack>
   )
+}
+
+function renderCell(column: AvailablePaymentColumn, row: AvailablePaymentTaskRow): string {
+  const value = row[column.key]
+
+  if (column.format === 'date') {
+    return formatDate(value as Date | string | undefined)
+  }
+
+  if (column.format === 'price') {
+    return formatAmount(typeof value === 'number' ? value : undefined)
+  }
+
+  return displayValue(value)
 }
 
 function CashFlowTab({ state }: { state?: CashFlowState }) {
@@ -909,6 +1015,51 @@ function InfoCell({ label, value }: { label: string; value: string }) {
   )
 }
 
+function RedirectToSourceButton({
+  model,
+  onRedirectToSource,
+}: {
+  model: AvailablePaymentTaskModel
+  onRedirectToSource: (model: AvailablePaymentTaskModel) => void
+}) {
+  const { t } = useI18n()
+  const canNavigate = Boolean(model.supplyOrderUkraineNetUid || model.deliveryProductProtocolNetUid)
+  const hasPolandOrder = !canNavigate && Boolean(model.supplyOrderNetUid)
+
+  if (!canNavigate && !hasPolandOrder) {
+    return null
+  }
+
+  if (hasPolandOrder) {
+    return (
+      <Tooltip label={t('Перегляд замовлення з Польщі недоступний')}>
+        <Button
+          color="gray"
+          data-disabled
+          leftSection={<IconExternalLink size={16} />}
+          size="xs"
+          variant="subtle"
+          onClick={(event) => event.preventDefault()}
+        >
+          {t('Перейти до замовлення')}
+        </Button>
+      </Tooltip>
+    )
+  }
+
+  return (
+    <Button
+      color="gray"
+      leftSection={<IconExternalLink size={16} />}
+      size="xs"
+      variant="subtle"
+      onClick={() => onRedirectToSource(model)}
+    >
+      {t('Перейти до замовлення')}
+    </Button>
+  )
+}
+
 function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] }) {
   const { t } = useI18n()
 
@@ -922,21 +1073,32 @@ function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] })
 
   return (
     <Stack gap={4}>
-      {documents.map((document) => (
-        <Text key={getDocumentKey(document)} size="sm">
-          {document.FileName || document.Name || document.Url || t('Документ')}
-        </Text>
-      ))}
+      {documents.map((document) => {
+        const label = document.FileName || document.Name || t('Документ')
+        const url = document.DocumentUrl || document.Url
+
+        return url ? (
+          <Anchor key={getDocumentKey(document)} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
+            {label}
+          </Anchor>
+        ) : (
+          <Text key={getDocumentKey(document)} size="sm">
+            {label}
+          </Text>
+        )
+      })}
     </Stack>
   )
 }
 
 function getDocumentKey(document: AvailablePaymentDocument): string {
-  return String(document.NetUid || document.Id || document.FileName || document.Url || document.Name || 'document')
+  return String(
+    document.NetUid || document.Id || document.FileName || document.DocumentUrl || document.Url || document.Name || 'document',
+  )
 }
 
-function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: { date?: Date | string; name: string; number?: string; total?: number }): string {
-  return `${model.id}-${row.number || row.name}-${row.date || ''}-${row.total || ''}`
+function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymentTaskRow, rowIndex: number): string {
+  return `${model.id}-${rowIndex}-${row.number || row.name || ''}-${row.serviceNumber || ''}`
 }
 
 function getCashFlowRowKey(row: DataRecord): string {
@@ -976,194 +1138,6 @@ function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
   )
 }
 
-function buildTaskModels(group: GroupedPaymentTask | null): AvailablePaymentTaskModel[] {
-  if (!group?.SupplyPaymentTasks) {
-    return []
-  }
-
-  return group.SupplyPaymentTasks.flatMap((task, index) => buildModelsFromTask(task, index))
-}
-
-function buildModelsFromTask(task: SupplyPaymentTask, index: number): AvailablePaymentTaskModel[] {
-  const record = task as DataRecord
-  const consumableOrder = asRecord(record.ConsumablesOrder)
-
-  if (consumableOrder) {
-    return [buildConsumableOrderModel(task, consumableOrder, index)]
-  }
-
-  const services = getServiceEntries(record)
-
-  if (services.length === 0) {
-    return [buildFallbackModel(task, index)]
-  }
-
-  return services.map(({ service, serviceName }, serviceIndex) =>
-    buildServiceModel(task, service, serviceName, `${index}-${serviceIndex}`),
-  )
-}
-
-function buildConsumableOrderModel(
-  task: SupplyPaymentTask,
-  consumableOrder: DataRecord,
-  index: number,
-): AvailablePaymentTaskModel {
-  const supplierAgreement = asRecord(consumableOrder.SupplyOrganizationAgreement)
-  const organization = toOrganization(asRecord(consumableOrder.ConsumableProductOrganization))
-  const currency = asRecord(supplierAgreement?.Currency) as AvailablePaymentTaskModel['currency']
-  const rows = readArray(consumableOrder.ConsumablesOrderItems).map((item) => {
-    const product = asRecord(item.ConsumableProduct)
-    const measureUnit = asRecord(product?.MeasureUnit)
-
-    return {
-      amount: toOptionalNumber(item.TotalPriceWithVAT ?? item.TotalPrice),
-      name: readString(product, ['Name']) || readString(item, ['Name']),
-      number: readString(product, ['VendorCode']),
-      price: toOptionalNumber(item.PricePerItem),
-      quantity: `${displayValue(item.Qty)}${measureUnit?.Name ? ` ${String(measureUnit.Name)}` : ''}`,
-      total: toOptionalNumber(item.TotalPriceWithVAT ?? item.TotalPrice),
-      vat: toOptionalNumber(item.VAT),
-      vatPercent: toOptionalNumber(item.VatPercent),
-    }
-  })
-
-  return {
-    currency,
-    currencyCode: readString(currency, ['Code', 'Name']),
-    documents: readDocuments(consumableOrder.ConsumablesOrderDocuments),
-    grossPrice: task.GrossPrice || readNumber(consumableOrder, ['TotalAmount']) || 0,
-    id: getTaskModelId(task, `consumable-${index}`),
-    organization,
-    organizationName: readString(organization, ['Name', 'FullName']) || readString(consumableOrder, ['OrganizationName']),
-    organizationNetUid: getEntityValue(organization),
-    paidOrder: getPaidOrder(task),
-    rows,
-    serviceAgreementNetId: readString(supplierAgreement, ['NetUid']),
-    serviceName: 'Побутові товари',
-    serviceNumber: readString(consumableOrder, ['Number', 'OrganizationNumber']),
-    task,
-  }
-}
-
-function buildServiceModel(
-  task: SupplyPaymentTask,
-  service: DataRecord,
-  serviceName: string,
-  fallbackId: string,
-): AvailablePaymentTaskModel {
-  const agreement = asRecord(service.SupplyOrganizationAgreement) || asRecord(service.ClientAgreement)
-  const agreementCurrency = asRecord(agreement?.Currency) || asRecord(asRecord(agreement?.Agreement)?.Currency)
-  const organization = findOrganization(service)
-  const grossPrice = readNumber(service, ['GrossPrice', 'Value', 'TotalPrice', 'TotalAmount']) || task.GrossPrice || 0
-
-  return {
-    currency: agreementCurrency as AvailablePaymentTaskModel['currency'],
-    currencyCode: readString(agreementCurrency, ['Code', 'Name']),
-    documents: readDocuments(service.InvoiceDocuments || service.BillOfLadingDocuments || service.Documents),
-    grossPrice,
-    id: getTaskModelId(task, fallbackId),
-    organization,
-    organizationName: readString(organization, ['Name', 'FullName']) || readString(service, ['OrganizationName', 'Name']),
-    organizationNetUid: getEntityValue(organization),
-    paidOrder: getPaidOrder(task),
-    rows: [
-      {
-        amount: grossPrice,
-        date: readUnknownDate(service, ['FromDate', 'Date']),
-        name: readString(service, ['Name']) || serviceName,
-        number: readString(service, ['Number', 'InvNumber', 'ServiceNumber']),
-        total: grossPrice,
-        vat: readNumber(service, ['Vat', 'VAT', 'VatAmount']),
-        vatPercent: readNumber(service, ['VatPercent']),
-      },
-    ],
-    serviceAgreementNetId: readString(agreement, ['NetUid']),
-    serviceName,
-    serviceNumber: readString(service, ['ServiceNumber', 'Number']),
-    task,
-  }
-}
-
-function buildFallbackModel(task: SupplyPaymentTask, index: number): AvailablePaymentTaskModel {
-  return {
-    currency: null,
-    currencyCode: '',
-    documents: readDocuments(task.SupplyPaymentTaskDocuments),
-    grossPrice: task.GrossPrice || 0,
-    id: getTaskModelId(task, `task-${index}`),
-    organization: null,
-    organizationName: '',
-    organizationNetUid: '',
-    paidOrder: getPaidOrder(task),
-    rows: [],
-    serviceAgreementNetId: '',
-    serviceName: 'Платіжна задача',
-    serviceNumber: readString(task as DataRecord, ['Number']),
-    task,
-  }
-}
-
-function getServiceEntries(task: DataRecord): Array<{ service: DataRecord; serviceName: string }> {
-  const keys: Array<[string, string]> = [
-    ['SupplyOrderUkrainePaymentDeliveryProtocols', 'Прихідна накладна'],
-    ['CustomAgencyServices', 'Митні послуги'],
-    ['VehicleDeliveryServices', 'Перевезення'],
-    ['TransportationServices', 'Транспортні послуги'],
-    ['PortCustomAgencyServices', 'Портові митні послуги'],
-    ['PlaneDeliveryServices', 'Авіа доставка'],
-    ['BrokerServices', 'Брокерські послуги'],
-    ['ContainerServices', 'Контейнерні послуги'],
-    ['PortWorkServices', 'Портові роботи'],
-    ['BillOfLadingServices', 'Коносамент'],
-    ['CustomServices', 'Митні платежі'],
-    ['ExciseDutyServices', 'Акциз'],
-  ]
-
-  return keys.flatMap(([key, serviceName]) =>
-    readArray(task[key])
-      .map(asRecord)
-      .filter((service): service is DataRecord => Boolean(service))
-      .map((service) => ({ service, serviceName })),
-  )
-}
-
-function findOrganization(service: DataRecord): AvailablePaymentsOrganization | null {
-  const organizationKeys = [
-    'Organization',
-    'PayForSupplyOrganization',
-    'CustomAgencyOrganization',
-    'VehicleDeliveryOrganization',
-    'TransportationOrganization',
-    'PortCustomAgencyOrganization',
-    'PlaneDeliveryOrganization',
-    'ExciseDutyOrganization',
-    'CustomOrganization',
-  ]
-
-  for (const key of organizationKeys) {
-    const organization = toOrganization(asRecord(service[key]))
-
-    if (organization) {
-      return organization
-    }
-  }
-
-  const agreementOrganization = toOrganization(asRecord(asRecord(service.SupplyOrganizationAgreement)?.Organization))
-
-  if (agreementOrganization) {
-    return agreementOrganization
-  }
-
-  return toOrganization(asRecord(asRecord(service.SupplyOrderUkraine)?.Organization))
-}
-
-function getPaidOrder(task: SupplyPaymentTask) {
-  return task.OutcomePaymentOrderSupplyPaymentTasks?.[0]?.OutcomePaymentOrder || null
-}
-
-function getTaskModelId(task: SupplyPaymentTask, fallback: string): string {
-  return String(task.NetUid || task.Id || fallback)
-}
 
 function getAvailableOrganizations(
   models: AvailablePaymentTaskModel[],
@@ -1243,6 +1217,7 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
     comment: '',
     customNumber: '',
     date: formatLocalDate(now),
+    exchangeRate: 0,
     isAccounting: false,
     isManagementAccounting: false,
     movementSearch: '',
@@ -1315,59 +1290,8 @@ function extractCashFlowRows(data: AvailablePaymentAccountingCashFlow | null): D
   return collection.map(asRecord).filter((row): row is DataRecord => Boolean(row))
 }
 
-function readDocuments(value: unknown): AvailablePaymentDocument[] {
-  return readArray(value)
-    .map(asRecord)
-    .filter((document): document is DataRecord => Boolean(document))
-    .map((document) => document as AvailablePaymentDocument)
-}
-
-function readArray(value: unknown): DataRecord[] {
-  return Array.isArray(value) ? value.filter((item): item is DataRecord => Boolean(item && typeof item === 'object')) : []
-}
-
-function toOrganization(record: DataRecord | null): AvailablePaymentsOrganization | null {
-  return record ? (record as AvailablePaymentsOrganization) : null
-}
-
 function asRecord(value: unknown): DataRecord | null {
   return value && typeof value === 'object' ? (value as DataRecord) : null
-}
-
-function readString(record: DataRecord | null | undefined, keys: string[]): string {
-  if (!record) {
-    return ''
-  }
-
-  for (const key of keys) {
-    const value = record[key]
-
-    if (typeof value === 'string' && value) {
-      return value
-    }
-
-    if (typeof value === 'number') {
-      return String(value)
-    }
-  }
-
-  return ''
-}
-
-function readNumber(record: DataRecord | null | undefined, keys: string[]): number {
-  if (!record) {
-    return 0
-  }
-
-  for (const key of keys) {
-    const value = record[key]
-
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value
-    }
-  }
-
-  return 0
 }
 
 function readUnknown(record: DataRecord, keys: string[]): unknown {
@@ -1392,12 +1316,38 @@ function readUnknownDate(record: DataRecord, keys: string[]): Date | string | un
   return value instanceof Date || typeof value === 'string' ? value : undefined
 }
 
-function toOptionalNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
-}
-
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {
   return String(entity?.NetUid || entity?.Id || '')
+}
+
+function findUahCurrencyNetUid(
+  registers: AvailablePaymentRegister[],
+  models: AvailablePaymentTaskModel[],
+): string {
+  const fromRegisters = registers
+    .flatMap((register) => register.PaymentCurrencyRegisters || [])
+    .map((currencyRegister) => currencyRegister.Currency)
+    .find((currency): currency is AvailablePaymentsCurrency => currency?.Code === 'UAH')
+
+  if (fromRegisters?.NetUid) {
+    return fromRegisters.NetUid
+  }
+
+  const fromModels = models
+    .map((model) => model.currency)
+    .find((currency): currency is AvailablePaymentsCurrency => currency?.Code === 'UAH')
+
+  return fromModels?.NetUid || ''
+}
+
+function toQueryDate(value: string): string {
+  if (!value) {
+    return new Date().toISOString()
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
 function getDateShiftedByDays(days: number): string {
