@@ -27,6 +27,7 @@ import {
   IconRefresh,
   IconRestore,
   IconSearch,
+  IconTruckDelivery,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -45,8 +46,10 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
+import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
+import { SaleShipModal } from '../components/SaleShipModal'
 import { SALES_UKRAINE_UNLOCK_PERMISSION, SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION } from '../permissions'
 import type {
   SalesUkraineClientOption,
@@ -171,6 +174,8 @@ export function SalesUkrainePage() {
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
   const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
+  const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
+  const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -195,8 +200,10 @@ export function SalesUkrainePage() {
   const columns = useSalesUkraineColumns({
     canUnlock,
     canWillNotShip,
+    onOpenDetails: setDetailsSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
+    onShip: setShipSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
   })
@@ -534,6 +541,24 @@ export function SalesUkrainePage() {
         }}
       />
 
+      <SaleDetailsDrawer
+        sale={detailsSale}
+        onClose={() => setDetailsSale(null)}
+        onSaved={() => {
+          setDetailsSale(null)
+          reload()
+        }}
+      />
+
+      <SaleShipModal
+        sale={shipSale}
+        onClose={() => setShipSale(null)}
+        onSaved={() => {
+          setShipSale(null)
+          reload()
+        }}
+      />
+
       <AppModal
         centered
         opened={Boolean(confirmState)}
@@ -562,15 +587,19 @@ export function SalesUkrainePage() {
 function useSalesUkraineColumns({
   canUnlock,
   canWillNotShip,
+  onOpenDetails,
   onOpenDiscount,
   onOpenSale,
+  onShip,
   onUnlock,
   onWillNotShip,
 }: {
   canUnlock: boolean
   canWillNotShip: boolean
+  onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
+  onShip: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
 }) {
@@ -760,17 +789,36 @@ function useSalesUkraineColumns({
       {
         id: 'transporter',
         header: t('Перевізник'),
-        width: 160,
+        width: 170,
         minWidth: 130,
         accessor: (sale) => sale.Transporter?.Name || sale.Transporter?.Title,
-        cell: (sale) => displayValue(sale.Transporter?.Name || sale.Transporter?.Title),
+        cell: (sale) => {
+          const name = sale.Transporter?.Name || sale.Transporter?.Title
+
+          if (!sale.Transporter) {
+            return displayValue(name)
+          }
+
+          return (
+            <Anchor
+              component="button"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenDetails(sale)
+              }}
+            >
+              {displayValue(name)}
+            </Anchor>
+          )
+        },
       },
       {
         id: 'actions',
         header: '',
-        width: 152,
-        minWidth: 152,
-        maxWidth: 152,
+        width: 184,
+        minWidth: 184,
+        maxWidth: 184,
         align: 'center',
         enableHiding: false,
         enableReorder: false,
@@ -785,6 +833,13 @@ function useSalesUkraineColumns({
                 </ActionIcon>
               </Tooltip>
               <SaleDocumentsMenu sale={sale} />
+              {sale.BaseLifeCycleStatus?.SaleLifeCycleType === 1 && (
+                <Tooltip label={t('Відвантажити')}>
+                  <ActionIcon aria-label={t('Відвантажити')} color="teal" variant="subtle" onClick={() => onShip(sale)}>
+                    <IconTruckDelivery size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
               {canWillNotShip && sale.IsVatSale && !sale.IsAcceptedToPacking && (
                 <Tooltip label={t('Не буде відвантажено')}>
                   <ActionIcon
@@ -810,7 +865,7 @@ function useSalesUkraineColumns({
         ),
       },
     ],
-    [canUnlock, canWillNotShip, onOpenDiscount, onOpenSale, onUnlock, onWillNotShip, t],
+    [canUnlock, canWillNotShip, onOpenDetails, onOpenDiscount, onOpenSale, onShip, onUnlock, onWillNotShip, t],
   )
 }
 

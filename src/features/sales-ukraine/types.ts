@@ -63,6 +63,42 @@ export type SalesUkraineClient = SalesUkraineEntity & {
   MobileNumber?: string
   Name?: string
   PhoneNumber?: string
+  RegionCode?: { Value?: string }
+}
+
+export type SalesUkraineTransporterType = SalesUkraineEntity & {
+  Name?: string
+}
+
+export type SalesUkraineDeliveryRecipient = SalesUkraineEntity & {
+  FullName?: string
+  MobilePhone?: string
+}
+
+export type SalesUkraineDeliveryRecipientAddress = SalesUkraineEntity & {
+  City?: string
+  Department?: string
+}
+
+export type SalesUkraineCustomersOwnTtn = SalesUkraineEntity & {
+  Number?: string
+  TtnPDFPath?: string
+}
+
+export type SalesUkraineUpdateDataCarrier = SalesUkraineEntity & {
+  CashOnDeliveryAmount?: number
+  City?: string
+  Comment?: string
+  Department?: string
+  FullName?: string
+  HasDocument?: boolean
+  IsCashOnDelivery?: boolean
+  MobilePhone?: string
+  Number?: string
+  ShipmentDate?: Date | string
+  Transporter?: SalesUkraineTransporter
+  TtnPDFPath?: string
+  User?: SalesUkraineUser
 }
 
 export type SalesUkraineClientAgreement = SalesUkraineEntity & {
@@ -110,30 +146,43 @@ export type SalesUkraineOrder = SalesUkraineEntity & {
 }
 
 export type SalesUkraineTransporter = SalesUkraineEntity & {
+  ImageUrl?: string
   Name?: string
   Title?: string
+  TransporterTypeId?: number
 }
 
 export type SalesUkraineSale = SalesUkraineEntity & {
   BaseLifeCycleStatus?: SalesUkraineStatus
   BaseSalePaymentStatus?: SalesUkraineStatus
+  CashOnDeliveryAmount?: number
   ChangedToInvoice?: Date | string
   ClientAgreement?: SalesUkraineClientAgreement
   Comment?: string
+  CustomersOwnTtn?: SalesUkraineCustomersOwnTtn | null
+  CustomersOwnTtnId?: number
+  DeliveryRecipient?: SalesUkraineDeliveryRecipient | null
+  DeliveryRecipientAddress?: SalesUkraineDeliveryRecipientAddress | null
   FromDate?: Date | string
+  HasDocuments?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
   IsAcceptedToPacking?: boolean
+  IsCashOnDelivery?: boolean
   IsDevelopment?: boolean
   IsFullPayment?: boolean
   IsInvoice?: boolean
   IsLocked?: boolean
   IsPrinted?: boolean
+  IsSent?: boolean
   IsVatSale?: boolean
   OneTimeDiscountComment?: string
   Order?: SalesUkraineOrder
   RetailClient?: SalesUkraineRetailClient
   SaleNumber?: { Value?: string }
+  ShipmentDate?: Date | string
+  TTN?: string
   TransporterId?: number | string
+  UpdateDataCarrier?: SalesUkraineUpdateDataCarrier[]
   TotalAmount?: number
   TotalAmountEurToUah?: number
   TotalAmountLocal?: number

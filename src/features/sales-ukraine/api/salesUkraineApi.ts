@@ -5,6 +5,8 @@ import type {
   SalesUkraineFilters,
   SalesUkraineOrganizationOption,
   SalesUkraineSale,
+  SalesUkraineTransporter,
+  SalesUkraineTransporterType,
 } from '../types'
 
 export async function getSalesUkraine(filters: SalesUkraineFilters): Promise<SalesUkraineSale[]> {
@@ -63,6 +65,34 @@ export async function updateSale(sale: SalesUkraineSale): Promise<void> {
 export async function updateSaleDiscount(sale: SalesUkraineSale): Promise<void> {
   await apiRequest<unknown>('/sales/discount/update', {
     body: sale,
+    method: 'POST',
+  })
+}
+
+export async function getSaleTransporterTypes(): Promise<SalesUkraineTransporterType[]> {
+  const result = await apiRequest<unknown>('/transporters/types/all')
+
+  return normalizeArray(result) as SalesUkraineTransporterType[]
+}
+
+export async function getSaleTransportersByType(netId: string): Promise<SalesUkraineTransporter[]> {
+  const result = await apiRequest<unknown>('/transporters/all/type/hidden', {
+    query: { netId },
+  })
+
+  return normalizeArray(result) as SalesUkraineTransporter[]
+}
+
+export async function updateSaleFromData(sale: SalesUkraineSale, file: File | null): Promise<void> {
+  const formData = new FormData()
+  formData.append('sale', JSON.stringify(sale))
+
+  if (file) {
+    formData.append('file', file)
+  }
+
+  await apiRequest<unknown>('/sales/update/file', {
+    body: formData,
     method: 'POST',
   })
 }
@@ -138,7 +168,17 @@ function normalizeArray(result: unknown): unknown[] {
   if (parsed && typeof parsed === 'object') {
     const record = parsed as Record<string, unknown>
 
-    for (const key of ['Items', 'Sales', 'Clients', 'Organizations', 'Organisations', 'Data', 'Collection']) {
+    for (const key of [
+      'Items',
+      'Sales',
+      'Clients',
+      'Organizations',
+      'Organisations',
+      'Transporters',
+      'TransporterTypes',
+      'Data',
+      'Collection',
+    ]) {
       if (Array.isArray(record[key])) {
         return record[key] as unknown[]
       }
