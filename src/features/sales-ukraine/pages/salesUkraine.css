@@ -1,0 +1,27 @@
+.sale-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sale-row {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+  padding: 10px 12px;
+}
+
+.sale-row-main {
+  cursor: pointer;
+}
+
+.sale-row-amount {
+  text-align: right;
+  min-width: 92px;
+}
+
+.sale-row-items {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--mantine-color-gray-3);
+}
