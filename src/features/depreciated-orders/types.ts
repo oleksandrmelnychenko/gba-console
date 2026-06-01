@@ -88,6 +88,12 @@ export type DepreciatedOrder = EntityFields & {
   ResponsibleId?: number
   Storage?: DepreciatedOrderStorage | null
   StorageId?: number
+  TotalRowsQty?: number
+}
+
+export type DepreciatedOrdersResponse = {
+  items: DepreciatedOrder[]
+  totalQty: number
 }
 
 export type DepreciatedOrdersSearchParams = {

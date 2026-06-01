@@ -509,13 +509,6 @@ function CategoryEditorModal({
   onSubmit: (draft: ConsumableProductCategoryDraft) => void
 }) {
   const { t } = useI18n()
-  const [name, setName] = useValueState('')
-  const [isSupplyServiceCategory, setSupplyServiceCategory] = useValueState(false)
-
-  useEffect(() => {
-    setName(editor?.category?.Name || '')
-    setSupplyServiceCategory(Boolean(editor?.category?.IsSupplyServiceCategory))
-  }, [editor, setName, setSupplyServiceCategory])
 
   return (
     <AppModal
@@ -524,27 +517,55 @@ function CategoryEditorModal({
       title={editor?.mode === 'edit' ? t('Редагувати категорію') : t('Нова категорія')}
       onClose={onClose}
     >
-      <Stack gap="md">
-        <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-        <Checkbox
-          checked={isSupplyServiceCategory}
-          label={t('Деталі послуг')}
-          onChange={(event) => setSupplyServiceCategory(event.currentTarget.checked)}
+      {editor && (
+        <CategoryEditorForm
+          key={getCategoryEditorKey(editor)}
+          editor={editor}
+          isSubmitting={isSubmitting}
+          onClose={onClose}
+          onSubmit={onSubmit}
         />
-        <Group justify="flex-end">
-          <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button
-            leftSection={<IconPlus size={16} />}
-            loading={isSubmitting}
-            onClick={() => onSubmit({ isSupplyServiceCategory, name })}
-          >
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      </Stack>
+      )}
     </AppModal>
+  )
+}
+
+function CategoryEditorForm({
+  editor,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: {
+  editor: CategoryEditor
+  isSubmitting: boolean
+  onClose: () => void
+  onSubmit: (draft: ConsumableProductCategoryDraft) => void
+}) {
+  const { t } = useI18n()
+  const [name, setName] = useValueState(editor.category?.Name || '')
+  const [isSupplyServiceCategory, setSupplyServiceCategory] = useValueState(Boolean(editor.category?.IsSupplyServiceCategory))
+
+  return (
+    <Stack gap="md">
+      <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+      <Checkbox
+        checked={isSupplyServiceCategory}
+        label={t('Деталі послуг')}
+        onChange={(event) => setSupplyServiceCategory(event.currentTarget.checked)}
+      />
+      <Group justify="flex-end">
+        <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
+          {t('Скасувати')}
+        </Button>
+        <Button
+          leftSection={<IconPlus size={16} />}
+          loading={isSubmitting}
+          onClick={() => onSubmit({ isSupplyServiceCategory, name })}
+        >
+          {t('Зберегти')}
+        </Button>
+      </Group>
+    </Stack>
   )
 }
 
@@ -560,31 +581,54 @@ function ProductEditorModal({
   onSubmit: (editor: ProductEditor, draft: ConsumableProductDraft) => void
 }) {
   const { t } = useI18n()
-  const [name, setName] = useValueState('')
-  const [vendorCode, setVendorCode] = useValueState('')
-  const [measureUnitSearch, setMeasureUnitSearch] = useValueState('')
-  const [measureUnits, setMeasureUnits] = useValueState<MeasureUnit[]>([])
-  const [selectedMeasureUnit, setSelectedMeasureUnit] = useValueState<MeasureUnit | null>(null)
 
-  useEffect(() => {
-    const product = editor?.product
+  return (
+    <AppModal
+      centered
+      opened={Boolean(editor)}
+      title={editor?.mode === 'edit' ? t('Редагувати товар') : t('Новий товар')}
+      onClose={onClose}
+    >
+      {editor && (
+        <ProductEditorForm
+          key={getProductEditorKey(editor)}
+          editor={editor}
+          isSubmitting={isSubmitting}
+          onClose={onClose}
+          onSubmit={onSubmit}
+        />
+      )}
+    </AppModal>
+  )
+}
 
-    setName(product?.Name || '')
-    setVendorCode(product?.VendorCode || '')
-    setSelectedMeasureUnit(product?.MeasureUnit || null)
-    setMeasureUnitSearch(product?.MeasureUnit?.Name || '')
-    setMeasureUnits(product?.MeasureUnit ? [product.MeasureUnit] : [])
-  }, [editor, setMeasureUnitSearch, setMeasureUnits, setName, setSelectedMeasureUnit, setVendorCode])
+function ProductEditorForm({
+  editor,
+  isSubmitting,
+  onClose,
+  onSubmit,
+}: {
+  editor: ProductEditor
+  isSubmitting: boolean
+  onClose: () => void
+  onSubmit: (editor: ProductEditor, draft: ConsumableProductDraft) => void
+}) {
+  const { t } = useI18n()
+  const product = editor.product
+  const [name, setName] = useValueState(product?.Name || '')
+  const [vendorCode, setVendorCode] = useValueState(product?.VendorCode || '')
+  const [measureUnitSearch, setMeasureUnitSearch] = useValueState(product?.MeasureUnit?.Name || '')
+  const [measureUnits, setMeasureUnits] = useValueState<MeasureUnit[]>(product?.MeasureUnit ? [product.MeasureUnit] : [])
+  const [selectedMeasureUnit, setSelectedMeasureUnit] = useValueState<MeasureUnit | null>(product?.MeasureUnit || null)
 
   useEffect(() => {
     const value = measureUnitSearch.trim()
 
-    if (!editor || value.length === 0 || (selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === value)) {
+    if (value.length === 0 || (selectedMeasureUnit && getMeasureUnitLabel(selectedMeasureUnit) === value)) {
       return
     }
 
     let cancelled = false
-    setMeasureUnits([])
 
     const timeoutId = window.setTimeout(() => {
       searchMeasureUnits(value)
@@ -604,7 +648,7 @@ function ProductEditorModal({
       cancelled = true
       window.clearTimeout(timeoutId)
     }
-  }, [editor, measureUnitSearch, selectedMeasureUnit, setMeasureUnits])
+  }, [measureUnitSearch, selectedMeasureUnit, setMeasureUnits])
 
   const measureUnitOptions = useMemo(
     () =>
@@ -616,10 +660,6 @@ function ProductEditorModal({
   )
 
   function submit() {
-    if (!editor) {
-      return
-    }
-
     const measureUnit = resolveMeasureUnit(measureUnits, measureUnitSearch, selectedMeasureUnit)
 
     onSubmit(editor, {
@@ -630,51 +670,68 @@ function ProductEditorModal({
   }
 
   return (
-    <AppModal
-      centered
-      opened={Boolean(editor)}
-      title={editor?.mode === 'edit' ? t('Редагувати товар') : t('Новий товар')}
-      onClose={onClose}
-    >
-      <Stack gap="md">
-        <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
-        <TextInput label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
-        <Autocomplete
-          data={measureUnitOptions}
-          label={t('Одиниця виміру')}
-          value={measureUnitSearch}
-          onChange={(value) => {
-            setMeasureUnitSearch(value)
-            setSelectedMeasureUnit(null)
-            if (!value.trim()) {
-              setMeasureUnits([])
-            }
-          }}
-          onOptionSubmit={(value) => {
-            const measureUnit = measureUnits.find((item, index) => getMeasureUnitOptionValue(item, index) === value) || null
-            setMeasureUnitSearch(measureUnit ? getMeasureUnitLabel(measureUnit) : value)
-            setSelectedMeasureUnit(measureUnit)
-          }}
-          onBlur={() => {
-            const measureUnit = resolveSingleFilteredMeasureUnit(measureUnits, measureUnitSearch)
+    <Stack gap="md">
+      <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
+      <TextInput label={t('Артикул')} value={vendorCode} onChange={(event) => setVendorCode(event.currentTarget.value)} />
+      <Autocomplete
+        data={measureUnitOptions}
+        label={t('Одиниця виміру')}
+        value={measureUnitSearch}
+        onChange={(value) => {
+          setMeasureUnitSearch(value)
+          setSelectedMeasureUnit(null)
+          setMeasureUnits([])
+        }}
+        onOptionSubmit={(value) => {
+          const measureUnit = measureUnits.find((item, index) => getMeasureUnitOptionValue(item, index) === value) || null
+          setMeasureUnitSearch(measureUnit ? getMeasureUnitLabel(measureUnit) : value)
+          setSelectedMeasureUnit(measureUnit)
+        }}
+        onBlur={() => {
+          const measureUnit = resolveSingleFilteredMeasureUnit(measureUnits, measureUnitSearch)
 
-            if (measureUnit) {
-              setMeasureUnitSearch(getMeasureUnitLabel(measureUnit))
-              setSelectedMeasureUnit(measureUnit)
-            }
-          }}
-        />
-        <Group justify="flex-end">
-          <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button leftSection={<IconPlus size={16} />} loading={isSubmitting} onClick={submit}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
-      </Stack>
-    </AppModal>
+          if (measureUnit) {
+            setMeasureUnitSearch(getMeasureUnitLabel(measureUnit))
+            setSelectedMeasureUnit(measureUnit)
+          }
+        }}
+      />
+      <Group justify="flex-end">
+        <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
+          {t('Скасувати')}
+        </Button>
+        <Button leftSection={<IconPlus size={16} />} loading={isSubmitting} onClick={submit}>
+          {t('Зберегти')}
+        </Button>
+      </Group>
+    </Stack>
   )
+}
+
+function getCategoryEditorKey(editor: CategoryEditor): string {
+  if (editor.mode === 'create') {
+    return 'create'
+  }
+
+  return `edit-${getCategoryKey(editor.category)}`
+}
+
+function getProductEditorKey(editor: ProductEditor): string {
+  const categoryKey = getCategoryKey(editor.category)
+
+  if (editor.mode === 'create') {
+    return `create-${categoryKey}`
+  }
+
+  return `edit-${categoryKey}-${getProductKey(editor.product)}`
+}
+
+function getCategoryKey(category: ConsumableProductCategory): string {
+  return String(category.NetUid || category.Id || category.Name || 'category')
+}
+
+function getProductKey(product: ConsumableProduct): string {
+  return String(product.NetUid || product.Id || product.Name || 'product')
 }
 
 function DeleteModal({

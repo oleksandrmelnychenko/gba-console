@@ -20,6 +20,10 @@ type RolePermissionModalProps = {
   onSubmit: (values: RolePermissionSubmit) => void
 }
 
+function toSecureImageUrl(url: string): string {
+  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+}
+
 export function RolePermissionModal({ isSaving, node, opened, permission, onClose, onSubmit }: RolePermissionModalProps) {
   const { t } = useI18n()
   const [name, setName] = useValueState(permission?.Name || '')
@@ -57,10 +61,6 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
         }
 
     onSubmit({ image, permission: nextPermission })
-  }
-
-  function toSecureImageUrl(url: string): string {
-    return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
   }
 
   return (

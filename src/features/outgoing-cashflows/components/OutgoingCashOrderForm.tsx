@@ -48,6 +48,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 export function OutgoingCashOrderForm({ onCancel, onCreated }: OutgoingCashOrderFormProps) {
   const { t } = useI18n()
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
@@ -583,42 +588,64 @@ function isRegisterForOrganization(register: CreatePaymentRegister, organization
 function toEntityOptions<T extends { Code?: string; Id?: number; Name?: string; NetUid?: string; OperationName?: string }>(
   entities: T[],
   labelGetter: (entity: T) => string = (entity) => entity.Name || entity.OperationName || entity.Code || '',
-) {
-  return entities
-    .map((entity) => ({
-      label: labelGetter(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+): SelectOption[] {
+  return collectValuedOptions(entities, (entity) => {
+    const value = getEntityValue(entity)
+
+    return {
+      label: labelGetter(entity) || value,
+      value,
+    }
+  })
 }
 
-function toCurrencyOptions(currencyRegisters: CreatePaymentCurrencyRegister[]) {
-  return currencyRegisters
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+function toCurrencyOptions(currencyRegisters: CreatePaymentCurrencyRegister[]): SelectOption[] {
+  return collectValuedOptions(currencyRegisters, (currencyRegister) => {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currencyRegister)
+    const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
 
-      return {
-        label: `${currency?.Code || currency?.Name || getEntityValue(currencyRegister)}${balance}`,
-        value: getEntityValue(currencyRegister),
-      }
-    })
-    .filter((option) => option.value)
+    return {
+      label: `${currency?.Code || currency?.Name || value}${balance}`,
+      value,
+    }
+  })
 }
 
-function toUserOptions(users: OutcomePaymentUser[]) {
+function toUserOptions(users: OutcomePaymentUser[]): string[] {
+  return collectUniqueTruthyLabels(users, getUserLabel)
+}
+
+function collectValuedOptions<T>(items: T[], getOption: (item: T) => SelectOption): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const item of items) {
+    const option = getOption(item)
+
+    if (option.value) {
+      options.push(option)
+    }
+  }
+
+  return options
+}
+
+function collectUniqueTruthyLabels<T>(items: T[], getLabel: (item: T) => string): string[] {
   const seen = new Set<string>()
+  const labels: string[] = []
 
-  return users
-    .map((user) => getUserLabel(user))
-    .filter((label) => {
-      if (!label || seen.has(label)) {
-        return false
-      }
+  for (const item of items) {
+    const label = getLabel(item)
 
-      seen.add(label)
-      return true
-    })
+    if (!label || seen.has(label)) {
+      continue
+    }
+
+    seen.add(label)
+    labels.push(label)
+  }
+
+  return labels
 }
 
 function includeEntity<T extends { Id?: number; NetUid?: string }>(entities: T[], entity: T | null): T[] {
@@ -644,9 +671,21 @@ function getUserLabel(user?: OutcomePaymentUser | null): string {
     return ''
   }
 
-  const fullName = [user.LastName, user.FirstName, user.MiddleName].filter(Boolean).join(' ').trim()
+  const fullName = joinTruthyParts([user.LastName, user.FirstName, user.MiddleName]).trim()
 
   return user.FullName || fullName || user.Name || getEntityValue(user)
+}
+
+function joinTruthyParts(parts: Array<string | null | undefined>): string {
+  const truthyParts: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      truthyParts.push(part)
+    }
+  }
+
+  return truthyParts.join(' ')
 }
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {

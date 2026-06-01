@@ -3,6 +3,8 @@ import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { PaymentShopOrderItem, PaymentShopSale } from '../types'
 
+const priceFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export type PaymentShopOrderItemsTableProps = {
   currencyCode: string
   localCurrencyCode: string
@@ -84,7 +86,7 @@ function formatPrice(value: number | undefined): string {
     return ''
   }
 
-  return new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+  return priceFormatter.format(value)
 }
 
 function displayValue(value: unknown): string {

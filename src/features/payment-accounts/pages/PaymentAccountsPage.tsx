@@ -172,14 +172,17 @@ export function PaymentAccountsPage() {
     setOrganizationNetId('')
   }
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Пошук')}
-      value={searchValue}
-      w={{ base: '100%', sm: 340 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
+  const toolbarLeft = useMemo(
+    () => (
+      <TextInput
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Пошук')}
+        value={searchValue}
+        w={{ base: '100%', sm: 340 }}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+    ),
+    [searchValue, setSearchValue, t],
   )
 
   return (
@@ -408,7 +411,9 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
 
 function getPrimaryCurrencyCode(account: PaymentAccount): string | undefined {
   const currencyRegister = account.PaymentCurrencyRegisters?.find(
-    (register) => register.Currency?.Code !== SKIPPED_CURRENCY_CODE && (register.Amount || register.IsSelected),
+    (register) =>
+      register.Currency?.Code !== SKIPPED_CURRENCY_CODE &&
+      (register.IsSelected || register.NetUid || register.Id || Boolean(register.Amount)),
   )
 
   return currencyRegister?.Currency?.Code || currencyRegister?.Currency?.Name

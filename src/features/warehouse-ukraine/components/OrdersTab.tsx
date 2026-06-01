@@ -2,7 +2,6 @@ import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text, TextInput,
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -24,6 +23,89 @@ type FilterDraft = {
   to: string
 }
 
+type OrdersTabState = {
+  filterDraft: FilterDraft
+  activeFilters: FilterDraft
+  orders: SupplyOrderUkraine[]
+  totalQty: number
+  error: string | null
+  isLoading: boolean
+  isLoadingMore: boolean
+  pageSize: number
+  hasMore: boolean
+}
+
+type OrdersTabAction =
+  | { type: 'applyFilters'; filters: FilterDraft }
+  | { type: 'resetFilters'; filters: FilterDraft }
+  | { type: 'setPageSize'; pageSize: number }
+  | { type: 'invalidFilters' }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; orders: SupplyOrderUkraine[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'loadMoreStarted' }
+  | { type: 'loadMoreSucceeded'; orders: SupplyOrderUkraine[]; totalQty: number; hasMore: boolean; requestOffset: number }
+  | { type: 'loadMoreFailed'; error: string }
+
+function createInitialOrdersState(initialFilters: FilterDraft): OrdersTabState {
+  return {
+    filterDraft: initialFilters,
+    activeFilters: initialFilters,
+    orders: [],
+    totalQty: 0,
+    error: null,
+    isLoading: true,
+    isLoadingMore: false,
+    pageSize: DEFAULT_PAGE_SIZE,
+    hasMore: false,
+  }
+}
+
+function ordersTabReducer(state: OrdersTabState, action: OrdersTabAction): OrdersTabState {
+  switch (action.type) {
+    case 'applyFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'resetFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'setPageSize':
+      return { ...state, pageSize: action.pageSize }
+    case 'invalidFilters':
+      return { ...state, orders: [], totalQty: 0, hasMore: false, isLoading: false }
+    case 'loadStarted':
+      return { ...state, isLoading: true, error: null }
+    case 'loadSucceeded':
+      return {
+        ...state,
+        orders: action.orders,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoading: false,
+      }
+    case 'loadFailed':
+      return {
+        ...state,
+        orders: [],
+        totalQty: 0,
+        hasMore: false,
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loadMoreStarted':
+      return { ...state, isLoadingMore: true, error: null }
+    case 'loadMoreSucceeded':
+      return {
+        ...state,
+        orders:
+          state.orders.length === action.requestOffset ? [...state.orders, ...action.orders] : state.orders,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoadingMore: false,
+      }
+    case 'loadMoreFailed':
+      return { ...state, error: action.error, isLoadingMore: false }
+  }
+}
+
 function useOrdersTabModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -31,16 +113,10 @@ function useOrdersTabModel() {
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
     [],
   )
-  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
-  const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
-  const [orders, setOrders] = useValueState<SupplyOrderUkraine[]>([])
-  const [totalQty, setTotalQty] = useValueState(0)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
+  const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
+  const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { activeFilters, orders, pageSize } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -52,18 +128,14 @@ function useOrdersTabModel() {
 
   useEffect(() => {
     if (filterError) {
-      setOrders([])
-      setTotalQty(0)
-      setHasMore(false)
-      setLoading(false)
+      dispatchState({ type: 'invalidFilters' })
       return
     }
 
     let cancelled = false
 
     async function loadOrders() {
-      setLoading(true)
-      setError(null)
+      dispatchState({ type: 'loadStarted' })
 
       try {
         const result = await getWarehouseUkraineOrders({
@@ -74,20 +146,19 @@ function useOrdersTabModel() {
         })
 
         if (!cancelled) {
-          setOrders(result.items)
-          setTotalQty(result.totalQty)
-          setHasMore(result.items.length === pageSize)
+          dispatchState({
+            type: 'loadSucceeded',
+            orders: result.items,
+            totalQty: result.totalQty,
+            hasMore: result.items.length === pageSize,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setOrders([])
-          setTotalQty(0)
-          setHasMore(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchState({
+            type: 'loadFailed',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'),
+          })
         }
       }
     }
@@ -97,13 +168,12 @@ function useOrdersTabModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, setError, setHasMore, setLoading, setOrders, setTotalQty, t])
+  }, [activeFilters, filterError, pageSize, reloadKey, t])
 
   async function loadMoreOrders() {
     const requestKey = listRequestKeyRef.current
     const requestOffset = orders.length
-    setLoadingMore(true)
-    setError(null)
+    dispatchState({ type: 'loadMoreStarted' })
 
     try {
       const result = await getWarehouseUkraineOrders({
@@ -114,29 +184,34 @@ function useOrdersTabModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setOrders((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(result.items.length === pageSize)
+        dispatchState({
+          type: 'loadMoreSucceeded',
+          orders: result.items,
+          totalQty: result.totalQty,
+          hasMore: result.items.length === pageSize,
+          requestOffset,
+        })
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
+        dispatchState({
+          type: 'loadMoreFailed',
+          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'),
+        })
       }
     }
   }
 
   function applyFilters(nextFilters: FilterDraft) {
-    setFilterDraft(nextFilters)
-    setActiveFilters(nextFilters)
+    dispatchState({ type: 'applyFilters', filters: nextFilters })
   }
 
   function resetFilters() {
-    setFilterDraft(initialFilters)
-    setActiveFilters(initialFilters)
+    dispatchState({ type: 'resetFilters', filters: initialFilters })
+  }
+
+  function setPageSize(pageSize: number) {
+    dispatchState({ type: 'setPageSize', pageSize })
   }
 
   function openOrder(order: SupplyOrderUkraine) {
@@ -148,8 +223,15 @@ function useOrdersTabModel() {
   const columns = useOrdersColumns(orderIndexMap)
 
   return {
-    activeFilters, applyFilters, columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreOrders, openOrder, orders, pageSize, reload, resetFilters, setPageSize, totalQty,
+    ...state,
+    applyFilters,
+    columns,
+    filterError,
+    loadMoreOrders,
+    openOrder,
+    reload,
+    resetFilters,
+    setPageSize,
   }
 }
 

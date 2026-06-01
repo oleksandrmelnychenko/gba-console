@@ -56,6 +56,11 @@ export function ProductCapitalizationUploadModal({
       return
     }
 
+    if (parseConfiguration.EndRow < parseConfiguration.StartRow) {
+      setValidationError(t('Кінцевий рядок має бути не меншим за початковий'))
+      return
+    }
+
     setValidationError(null)
     onSubmit(form.file, parseConfiguration)
   }

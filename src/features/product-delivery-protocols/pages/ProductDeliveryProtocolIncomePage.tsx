@@ -16,9 +16,9 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconHistory, IconTrash } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -39,6 +39,7 @@ import {
   getSupplyOrderInvoiceItems,
   markAllItemsReadyToPlace,
   markOrderItemReadyToPlace,
+  recordProductIncomeFromPackingListDynamicHistory,
   updatePackingListPlacement,
   updateVatOfPackListInvoiceItems,
 } from '../api/protocolProductIncomeApi'
@@ -214,6 +215,12 @@ type DrawerState = {
   columnId: string
 }
 
+type PendingDirtyAction =
+  | { type: 'invoice'; netId: string | null }
+  | { type: 'navigate'; path: string }
+  | { type: 'pack-list'; netId: string }
+  | { type: 'reload' }
+
 type ProductIncomeSource = 'delivery-protocol' | 'direct-supply-order'
 
 function normalizeProtocolIncomeSource(protocol: unknown): IncomeProtocol {
@@ -250,6 +257,10 @@ function getIncomeSourceNumber(source: ProductIncomeSource, protocol?: IncomePro
   return protocol?.DeliveryProductProtocolNumber?.Number || ''
 }
 
+function isPlacementLocked(invoice: IncomeSupplyInvoice | null, packingList: IncomePackingList | null): boolean {
+  return Boolean(invoice?.IsFullyPlaced || packingList?.IsPlaced)
+}
+
 function useProtocolIncomeModel(source: ProductIncomeSource) {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -273,6 +284,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   const [columnToRemove, setColumnToRemove] = useValueState<DynamicProductPlacementColumn | null>(null)
   const [confirmCarryOut, setConfirmCarryOut] = useValueState(false)
   const [drawer, setDrawer] = useValueState<DrawerState | null>(null)
+  const [pendingDirtyAction, setPendingDirtyAction] = useValueState<PendingDirtyAction | null>(null)
+  const packingListRequestRef = useRef(0)
 
   useEffect(() => {
     if (!id) {
@@ -312,7 +325,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
               ? current
               : loadedStorages[0]?.NetUid || null,
           )
-          setSelectedInvoiceId((current) => current || loadedSource.SupplyInvoices[0]?.NetUid || null)
+          setSelectedInvoiceId((current) =>
+            loadedSource.SupplyInvoices.some((invoice) => invoice.NetUid === current)
+              ? current
+              : loadedSource.SupplyInvoices[0]?.NetUid || null,
+          )
           setDirty(false)
         }
       } catch (loadError) {
@@ -338,6 +355,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
   useEffect(() => {
     if (!selectedInvoiceId) {
+      packingListRequestRef.current += 1
       setInvoice(null)
       setPackingList(null)
       return
@@ -360,9 +378,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         const firstPackList = loadedInvoice.PackingLists[0]
 
         if (firstPackList?.NetUid) {
+          const requestId = packingListRequestRef.current + 1
+          packingListRequestRef.current = requestId
           const loadedPackList = await getPackingListSpecificationProducts(firstPackList.NetUid)
 
-          if (!cancelled) {
+          if (!cancelled && packingListRequestRef.current === requestId) {
             setPackingList(loadedPackList)
           }
         }
@@ -382,12 +402,20 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
   const selectPackingList = useCallback(
     async (netId: string) => {
+      const requestId = packingListRequestRef.current + 1
+      packingListRequestRef.current = requestId
+      setPackingList(null)
+
       try {
         const loadedPackList = await getPackingListSpecificationProducts(netId)
-        setPackingList(loadedPackList)
-        setDirty(false)
+        if (packingListRequestRef.current === requestId) {
+          setPackingList(loadedPackList)
+          setDirty(false)
+        }
       } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
+        if (packingListRequestRef.current === requestId) {
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
+        }
       }
     },
     [setDirty, setError, setPackingList, t],
@@ -398,6 +426,91 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   const reloadFromServer = useCallback(() => {
     setReloadKey((key) => key + 1)
   }, [setReloadKey])
+
+  const requestNavigate = useCallback(
+    (path: string) => {
+      if (isDirty) {
+        setPendingDirtyAction({ type: 'navigate', path })
+        return
+      }
+
+      navigate(path)
+    },
+    [isDirty, navigate, setPendingDirtyAction],
+  )
+
+  const requestReloadFromServer = useCallback(() => {
+    if (isDirty) {
+      setPendingDirtyAction({ type: 'reload' })
+      return
+    }
+
+    reloadFromServer()
+  }, [isDirty, reloadFromServer, setPendingDirtyAction])
+
+  const requestSelectInvoiceId = useCallback(
+    (netId: string | null) => {
+      if (isDirty) {
+        setPendingDirtyAction({ type: 'invoice', netId })
+        return
+      }
+
+      setSelectedInvoiceId(netId)
+    },
+    [isDirty, setPendingDirtyAction, setSelectedInvoiceId],
+  )
+
+  const requestSelectPackingList = useCallback(
+    async (netId: string) => {
+      if (isDirty) {
+        setPendingDirtyAction({ type: 'pack-list', netId })
+        return
+      }
+
+      await selectPackingList(netId)
+    },
+    [isDirty, selectPackingList, setPendingDirtyAction],
+  )
+
+  const cancelDiscardChanges = useCallback(() => {
+    setPendingDirtyAction(null)
+  }, [setPendingDirtyAction])
+
+  const confirmDiscardChanges = useCallback(() => {
+    const action = pendingDirtyAction
+
+    if (!action) {
+      return
+    }
+
+    setPendingDirtyAction(null)
+    setDirty(false)
+
+    if (action.type === 'navigate') {
+      navigate(action.path)
+      return
+    }
+
+    if (action.type === 'invoice') {
+      setSelectedInvoiceId(action.netId)
+      return
+    }
+
+    if (action.type === 'pack-list') {
+      void selectPackingList(action.netId)
+      return
+    }
+
+    reloadFromServer()
+  }, [
+    navigate,
+    pendingDirtyAction,
+    reloadFromServer,
+    selectPackingList,
+    setDirty,
+    setPendingDirtyAction,
+    setSelectedInvoiceId,
+  ])
 
   const selectedStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
@@ -521,6 +634,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
   const handleOpenPlacements = useCallback(
     (gridRow: IncomeGridRow, columnId: string, row: DynamicProductPlacementRow) => {
+      if (isPlacementLocked(invoice, packingList)) {
+        notifications.show({ color: 'red', message: t('Пак лист уже оприбуткований') })
+        return
+      }
+
       if (!row.Qty) {
         notifications.show({ color: 'red', message: t('Неможливо розмісти нульову кількість') })
         return
@@ -528,7 +646,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
       setDrawer({ item: gridRow.item, row, columnId })
     },
-    [setDrawer, t],
+    [invoice, packingList, setDrawer, t],
   )
 
   const handleApplyPlacements = useCallback(
@@ -537,10 +655,16 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         return
       }
 
+      if (isPlacementLocked(invoice, packingList)) {
+        notifications.show({ color: 'red', message: t('Пак лист уже оприбуткований') })
+        setDrawer(null)
+        return
+      }
+
       applyColumnRowQty(drawer.columnId, drawer.item, sumPlacements(placements), placements)
       setDrawer(null)
     },
-    [applyColumnRowQty, drawer, setDrawer],
+    [applyColumnRowQty, drawer, invoice, packingList, setDrawer, t],
   )
 
   const persistPackingList = useCallback(
@@ -714,6 +838,20 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     }
   }, [invoice, packingList, selectPackingList, setError, setInvoice, setSaving, t, vatPercent])
 
+  const recordDynamicIncomeHistory = useCallback(
+    async (savedPackingList: IncomePackingList) => {
+      try {
+        await recordProductIncomeFromPackingListDynamicHistory(savedPackingList)
+      } catch {
+        notifications.show({
+          color: 'yellow',
+          message: t('Оприходування виконано, але історію руху не записано'),
+        })
+      }
+    },
+    [t],
+  )
+
   const handleAllReadyToPlace = useCallback(async () => {
     if (!packingList?.NetUid) {
       return
@@ -744,17 +882,21 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     setError(null)
 
     try {
-      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
+      const savedPackingList = await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, {
         ...packingList,
         IsPlaced: true,
       })
+      await recordDynamicIncomeHistory(savedPackingList)
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
     } finally {
       setSaving(false)
     }
-  }, [fromDate, packingList, reloadFromServer, selectedStorage, setConfirmCarryOut, setError, setSaving, t])
+  }, [
+    fromDate, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage, setConfirmCarryOut, setError,
+    setSaving, t,
+  ])
 
   const handleProductIncome = useCallback(async () => {
     if (!packingList || !selectedStorage?.NetUid) {
@@ -766,14 +908,15 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     setError(null)
 
     try {
-      await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
+      const savedPackingList = await createProductIncomeFromPackingListDynamic(toIso(fromDate), selectedStorage.NetUid, packingList)
+      await recordDynamicIncomeHistory(savedPackingList)
       reloadFromServer()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати запит'))
     } finally {
       setSaving(false)
     }
-  }, [fromDate, packingList, reloadFromServer, selectedStorage, setError, setSaving, t])
+  }, [fromDate, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage, setError, setSaving, t])
 
   const placementStatus = useMemo(() => {
     if (packingList?.IsPlaced || invoice?.IsFullyPlaced) {
@@ -794,25 +937,23 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   )
 
   return {
-    columnModalOpen, columnToRemove, confirmCarryOut, confirmRemoveColumn, drawer, error, fromDate, gridRows,
+    cancelDiscardChanges, columnModalOpen, columnToRemove, confirmCarryOut, confirmDiscardChanges, confirmRemoveColumn,
+    drawer, error, fromDate, gridRows,
     handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut, handleCellChange,
     handleMoveRemnants, handleNetWeightChange, handleOpenPlacements, handleProductIncome, handleReadyToPlace,
-    handleSave, invoice, isDirty, isLoading, isSaving, navigate, packingList, placementStatus, productIncome, protocol, reloadFromServer,
-    selectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId, setColumnModalOpen, setColumnToRemove, source,
+    handleSave, invoice, isDirty, isLoading, isSaving, navigate: requestNavigate, packingList, pendingDirtyAction,
+    placementStatus, productIncome, protocol, reloadFromServer: requestReloadFromServer,
+    selectPackingList: requestSelectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId,
+    setColumnModalOpen, setColumnToRemove, source,
     sourceId: id,
-    setConfirmCarryOut, setDrawer, setFromDate, setSelectedInvoiceId, setSelectedStorageId, setVatPercent, storages,
+    setConfirmCarryOut, setDrawer, setFromDate, setSelectedInvoiceId: requestSelectInvoiceId, setSelectedStorageId,
+    setVatPercent, storages,
     totalQty, vatPercent,
   }
 }
 
 function toIso(value: string): string {
-  if (!value) {
-    return new Date().toISOString()
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+  return formatLocalInputDateTime(value)
 }
 
 type WeightAuditDrawerProps = {
@@ -965,8 +1106,9 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
   const [auditItem, setAuditItem] = useValueState<PackingListPackageOrderItem | null>(null)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
 
-  const isPlaced = Boolean(model.packingList?.IsPlaced)
+  const isPlaced = isPlacementLocked(model.invoice, model.packingList)
   const hasColumns = (model.packingList?.DynamicProductPlacementColumns.length || 0) > 0
+  const hasItemsNotReadyToPlace = (model.packingList?.PackingListPackageOrderItems || []).some((item) => !item.IsReadyToPlaced)
   const canAddDynamicColumn = hasPermission(PERMISSION_ADD_DYNAMIC_INCOME_COLUMN)
   const canCapitalizeDynamicIncome = hasPermission(PERMISSION_CAPITALIZE_DYNAMIC_INCOME)
   const canCarryOutDynamicIncome = hasPermission(PERMISSION_CARRY_OUT_DYNAMIC_INCOME)
@@ -1218,6 +1360,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
               <ActionIcon
                 aria-label={t('Оприходування')}
                 color="blue"
+                disabled={isPlaced}
                 size="sm"
                 variant="subtle"
                 onClick={() => model.handleOpenPlacements(gridRow, key, row)}
@@ -1362,6 +1505,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
             {!isPlaced && (
               <Select
                 data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
+                disabled={model.isDirty}
                 label={t('Склад')}
                 value={model.selectedStorageId}
                 w={220}
@@ -1391,6 +1535,11 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
           <Button disabled={model.isDirty} variant="light" onClick={() => void model.handleCalculateVat()}>
             {t('Розрахувати ПДВ')}
           </Button>
+          {!isPlaced && hasItemsNotReadyToPlace && (
+            <Button disabled={model.isDirty || model.isSaving} variant="light" onClick={() => void model.handleAllReadyToPlace()}>
+              {t('Всі готові до розміщення')}
+            </Button>
+          )}
           {!isPlaced && canAddDynamicColumn && (
             <Button disabled={model.isDirty} variant="light" onClick={() => model.setColumnModalOpen(true)}>
               {t('Додати')}
@@ -1478,6 +1627,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
       />
 
       <ProtocolIncomePlacementDrawer
+        columnId={model.drawer?.columnId || null}
         item={model.drawer?.item || null}
         opened={Boolean(model.drawer)}
         row={model.drawer?.row || null}
@@ -1514,6 +1664,24 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
           </Button>
           <Button onClick={() => void model.handleCarryOut()}>{t('Провести')}</Button>
         </Group>
+      </AppModal>
+
+      <AppModal
+        opened={Boolean(model.pendingDirtyAction)}
+        title={t('Є незбережені зміни')}
+        onClose={model.cancelDiscardChanges}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо продовжити, незбережені розміщення та зміни кількості будуть втрачені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={model.cancelDiscardChanges}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={model.confirmDiscardChanges}>
+              {t('Продовжити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
       </AppModal>
     </Stack>
   )

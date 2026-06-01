@@ -90,12 +90,27 @@ type FormState = {
   vatRate: number
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
+type DebtSummary = {
+  maxOverdueDays: number
+  totalDebt: number
+}
+
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
+})
+
+const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  dateStyle: 'short',
+  timeStyle: 'short',
 })
 
 export function IncomeCashflowClientFormPage() {
@@ -166,8 +181,9 @@ export function IncomeCashflowClientFormPage() {
 
     return filterClientDebts(selectedClient.ClientInDebts || [], selectedOrganization, selectedClientAgreement)
   }, [selectedClient, selectedClientAgreement, selectedOrganization])
-  const totalDebt = useMemo(() => visibleDebts.reduce((total, debt) => total + readDebtTotal(debt), 0), [visibleDebts])
-  const maxOverdueDays = useMemo(() => visibleDebts.reduce((max, debt) => Math.max(max, debt.Debt?.Days || 0), 0), [visibleDebts])
+  const debtSummary = useMemo(() => summarizeClientDebts(visibleDebts), [visibleDebts])
+  const totalDebt = debtSummary.totalDebt
+  const maxOverdueDays = debtSummary.maxOverdueDays
   const title = getTitle(operationType, registerType, t)
   const operationOptions = useMemo(() => getOperationOptions(registerType, t), [registerType, t])
   const searchTypeOptions = useMemo(() => getSearchTypeOptions(operationType, t), [operationType, t])
@@ -1135,18 +1151,43 @@ function buildIncomePaymentOrder({
   return order
 }
 
+function summarizeClientDebts(debts: ClientInDebt[]): DebtSummary {
+  const summary: DebtSummary = {
+    maxOverdueDays: 0,
+    totalDebt: 0,
+  }
+
+  for (const debt of debts) {
+    summary.totalDebt += readDebtTotal(debt)
+    summary.maxOverdueDays = Math.max(summary.maxOverdueDays, debt.Debt?.Days || 0)
+  }
+
+  return summary
+}
+
 function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): IncomePaymentOrderSale[] {
   if (form.autoAllocate) {
     return []
   }
 
-  const selectedDebts = form.selectedDebtValues.length ? debts.filter((debt) => form.selectedDebtValues.includes(getDebtValue(debt))) : debts
+  const sales: IncomePaymentOrderSale[] = []
+  const selectedDebtValueSet = form.selectedDebtValues.length ? new Set(form.selectedDebtValues) : null
 
-  return selectedDebts.map((debt) => ({
-    Amount: form.debtAmounts[getDebtValue(debt)] || 0,
-    ReSale: debt.ReSale || undefined,
-    Sale: debt.Sale || undefined,
-  }))
+  for (const debt of debts) {
+    const debtValue = getDebtValue(debt)
+
+    if (selectedDebtValueSet && !selectedDebtValueSet.has(debtValue)) {
+      continue
+    }
+
+    sales.push({
+      Amount: form.debtAmounts[debtValue] || 0,
+      ReSale: debt.ReSale || undefined,
+      Sale: debt.Sale || undefined,
+    })
+  }
+
+  return sales
 }
 
 function validateForm({
@@ -1257,15 +1298,29 @@ function getSearchTypeOptions(operationType: IncomePaymentOperationType, t: (val
 }
 
 function pickOrganizationsByClientAgreements(organizations: OrganizationWithDefaults[], agreements: ClientAgreement[]) {
-  const organizationIds = new Set(agreements.map((agreement) => agreement.Agreement?.OrganizationId).filter(Boolean))
+  const organizationIds = collectTruthyIds(agreements, (agreement) => agreement.Agreement?.OrganizationId)
 
   return organizations.filter((organization) => organization.Id && organizationIds.has(organization.Id))
 }
 
 function pickOrganizationsBySupplyAgreements(organizations: OrganizationWithDefaults[], agreements: SupplyOrganizationAgreement[]) {
-  const organizationIds = new Set(agreements.map((agreement) => agreement.Organization?.Id).filter(Boolean))
+  const organizationIds = collectTruthyIds(agreements, (agreement) => agreement.Organization?.Id)
 
   return organizations.filter((organization) => organization.Id && organizationIds.has(organization.Id))
+}
+
+function collectTruthyIds<T>(items: T[], readId: (item: T) => number | undefined): Set<number> {
+  const ids = new Set<number>()
+
+  for (const item of items) {
+    const id = readId(item)
+
+    if (id) {
+      ids.add(id)
+    }
+  }
+
+  return ids
 }
 
 function filterClientAgreementsByOrganization(agreements: ClientAgreement[], organization: Organization): ClientAgreement[] {
@@ -1290,7 +1345,15 @@ function collectClientDebts(client: Client | null, agreements: ClientAgreement[]
     return client.ClientInDebts
   }
 
-  return agreements.flatMap((agreement) => agreement.Agreement?.ClientInDebts || [])
+  const debts: ClientInDebt[] = []
+
+  for (const agreement of agreements) {
+    for (const debt of agreement.Agreement?.ClientInDebts || []) {
+      debts.push(debt)
+    }
+  }
+
+  return debts
 }
 
 function filterClientDebts(
@@ -1314,10 +1377,24 @@ function selectDefaultRegister(
   organization: OrganizationWithDefaults | Organization | null,
   registerType: PaymentRegisterType,
 ): PaymentRegister | null {
-  const organizationRegisters = paymentRegisters.filter((register) => matchesRegister(register, organization, registerType))
   const mainRegister = (organization as OrganizationWithDefaults | null)?.MainPaymentRegister
+  let firstRegister: PaymentRegister | null = null
 
-  return organizationRegisters.find((register) => register.NetUid && register.NetUid === mainRegister?.NetUid) || organizationRegisters[0] || null
+  for (const register of paymentRegisters) {
+    if (!matchesRegister(register, organization, registerType)) {
+      continue
+    }
+
+    if (!firstRegister) {
+      firstRegister = register
+    }
+
+    if (register.NetUid && register.NetUid === mainRegister?.NetUid) {
+      return register
+    }
+  }
+
+  return firstRegister
 }
 
 function matchesRegister(register: PaymentRegister, organization: OrganizationWithDefaults | Organization | null, registerType: PaymentRegisterType): boolean {
@@ -1332,61 +1409,103 @@ function matchesRegister(register: PaymentRegister, organization: OrganizationWi
   return getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
-      label: getEntityName(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: getEntityName(entity) || value,
+      value,
+    })
+  }
+
+  return options
 }
 
-function toCurrencyOptions(register?: PaymentRegister | null) {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const value = getEntityValue(currency)
-      const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+function toCurrencyOptions(register?: PaymentRegister | null): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: `${currency?.Code || currency?.Name || value}${balance}`,
-        value,
-      }
+  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currency)
+    const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: `${currency?.Code || currency?.Name || value}${balance}`,
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
 }
 
-function toClientAgreementOptions(agreements: ClientAgreement[]) {
-  return agreements
-    .map((clientAgreement) => {
-      const agreement = clientAgreement.Agreement
-      const currency = agreement?.Currency
-      const value = getEntityValue(agreement)
+function toClientAgreementOptions(agreements: ClientAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: [agreement?.Name || agreement?.Number || value, currency?.Code || currency?.Name].filter(Boolean).join(' '),
-        value,
-      }
+  for (const clientAgreement of agreements) {
+    const agreement = clientAgreement.Agreement
+    const currency = agreement?.Currency
+    const value = getEntityValue(agreement)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: joinTruthyParts([agreement?.Name || agreement?.Number || value, currency?.Code || currency?.Name]),
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
 }
 
-function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
-  return agreements
-    .map((agreement) => {
-      const currency = agreement.Currency
-      const value = getEntityValue(agreement)
+function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: [agreement.Name || agreement.Number || value, currency?.Code || currency?.Name].filter(Boolean).join(' '),
-        value,
-      }
+  for (const agreement of agreements) {
+    const currency = agreement.Currency
+    const value = getEntityValue(agreement)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: joinTruthyParts([agreement.Name || agreement.Number || value, currency?.Code || currency?.Name]),
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
 }
 
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  const labels: string[] = []
+  const seenLabels = new Set<string>()
+
+  for (const entity of entities) {
+    const label = getEntityName(entity)
+
+    if (!label || seenLabels.has(label)) {
+      continue
+    }
+
+    seenLabels.add(label)
+    labels.push(label)
+  }
+
+  return labels
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {
@@ -1405,6 +1524,18 @@ function getEntityValue(entity?: NamedEntity | null): string {
 
 function getEntityName(entity?: NamedEntity | null): string {
   return entity?.FullName || entity?.LastName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
+}
+
+function joinTruthyParts(parts: Array<string | null | undefined>, separator = ' '): string {
+  const labels: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      labels.push(part)
+    }
+  }
+
+  return labels.join(separator)
 }
 
 function getDebtValue(debt: ClientInDebt): string {
@@ -1465,8 +1596,5 @@ function formatDate(value?: string): string {
     return value
   }
 
-  return new Intl.DateTimeFormat('uk-UA', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date)
+  return dateTimeFormatter.format(date)
 }

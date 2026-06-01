@@ -39,6 +39,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -654,6 +655,13 @@ export function NewResalePage() {
 
     void loadAvailabilities(payload)
   }, [filterOptions, loadAvailabilities, payload])
+  const handleRealtimeAvailabilityUpdate = useCallback(() => {
+    if (filterOptions) {
+      void loadAvailabilities(payload)
+    }
+  }, [filterOptions, loadAvailabilities, payload])
+
+  useRealtimeEvent(realtimeEvents.resaleAvailabilitiesUpdated, handleRealtimeAvailabilityUpdate)
 
   async function exportAvailabilities() {
     setExporting(true)

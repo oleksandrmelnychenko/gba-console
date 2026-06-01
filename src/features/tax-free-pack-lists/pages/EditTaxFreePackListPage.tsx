@@ -138,6 +138,9 @@ export function EditTaxFreePackListPage() {
   const selectedAgreementValue = packList?.ClientAgreement?.NetUid
     || (packList?.ClientAgreement?.AgreementId ? String(packList.ClientAgreement.AgreementId) : null)
   const selectedOrganizationValue = packList?.Organization?.NetUid || (packList?.Organization?.Id ? String(packList.Organization.Id) : null)
+  const organizationOptions = useMemo(() => buildOrganizationOptions(organizations, t('Організація')), [organizations, t])
+  const clientOptions = useMemo(() => buildClientOptions(clients), [clients])
+  const clientAgreementOptions = useMemo(() => buildClientAgreementOptions(clientAgreements), [clientAgreements])
 
   useEffect(() => {
     let cancelled = false
@@ -299,9 +302,13 @@ export function EditTaxFreePackListPage() {
       return
     }
 
-    const selectedItems = sourceRows
-      .filter((row) => selectedSourceIds.has(row.id) && getSourceUnpackedQty(row.entity) > 0)
-      .map((row) => sourceRowToTaxFreeItem(row, packList.IsFromSale))
+    const selectedItems: TaxFreeItem[] = []
+
+    for (const row of sourceRows) {
+      if (selectedSourceIds.has(row.id) && getSourceUnpackedQty(row.entity) > 0) {
+        selectedItems.push(sourceRowToTaxFreeItem(row, packList.IsFromSale))
+      }
+    }
 
     setMoveItems(selectedItems)
     setMoveModalOpen(true)
@@ -330,10 +337,21 @@ export function EditTaxFreePackListPage() {
   }
 
   async function printSelectedTaxFrees() {
-    const selectedIds = (packList?.TaxFrees || [])
+    const selectedTaxFrees = (packList?.TaxFrees || [])
       .filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
-      .map((taxFree) => taxFree.NetUid)
-      .filter(Boolean) as string[]
+
+    if (selectedTaxFrees.some((taxFree) => !isTaxFreePrintable(taxFree))) {
+      notifications.show({ color: 'yellow', message: t('Обрані Tax Free мають бути сформовані або надруковані') })
+      return
+    }
+
+    const selectedIds: string[] = []
+
+    for (const taxFree of selectedTaxFrees) {
+      if (taxFree.NetUid) {
+        selectedIds.push(taxFree.NetUid)
+      }
+    }
 
     if (selectedIds.length === 0) {
       notifications.show({ color: 'yellow', message: t('Оберіть Tax Free для друку') })
@@ -367,6 +385,8 @@ export function EditTaxFreePackListPage() {
     onQtyChange: (row, value) => setPackList((currentPackList) => updateSourceRow(currentPackList, row, { UnpackedQty: value })),
     toggleSource,
   })
+  const selectedTaxFrees = (packList?.TaxFrees || []).filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
+  const hasNonPrintableSelectedTaxFrees = selectedTaxFrees.some((taxFree) => !isTaxFreePrintable(taxFree))
 
   return (
     <Stack gap="md">
@@ -407,14 +427,11 @@ export function EditTaxFreePackListPage() {
             <SimpleGrid cols={{ base: 1, md: 5 }}>
               <Select
                 searchable
-                data={organizations.map((organization) => ({
-                  label: organization.Name || organization.FullName || t('Організація'),
-                  value: organization.NetUid || String(organization.Id || ''),
-                })).filter((item) => item.value)}
+                data={organizationOptions}
                 label={t('Організація')}
                 value={selectedOrganizationValue}
                 onChange={(value) => {
-                  const organization = organizations.find((item) => (item.NetUid || String(item.Id || '')) === value)
+                  const organization = organizations.find((item) => getOrganizationOptionValue(item) === value)
                   setPackList((currentPackList) => ({ ...currentPackList, Organization: organization }))
                 }}
               />
@@ -427,14 +444,11 @@ export function EditTaxFreePackListPage() {
               <Select
                 searchable
                 clearable
-                data={clients.map((client) => ({
-                  label: getClientLabel(client),
-                  value: client.NetUid || String(client.Id || ''),
-                })).filter((item) => item.value)}
+                data={clientOptions}
                 label={t('Клієнт')}
                 value={selectedClientNetUid}
                 onChange={(value) => {
-                  const client = clients.find((item) => item.NetUid === value)
+                  const client = clients.find((item) => getClientOptionValue(item) === value)
                   setPackList((currentPackList) => ({ ...currentPackList, Client: client, ClientAgreement: undefined }))
                   setClientAgreements([])
                   if (client?.NetUid) {
@@ -444,16 +458,13 @@ export function EditTaxFreePackListPage() {
               />
               <Select
                 clearable
-                data={clientAgreements.map((agreement) => ({
-                  label: getClientAgreementLabel(agreement),
-                  value: agreement.NetUid || String(agreement.AgreementId || agreement.Id || ''),
-                })).filter((item) => item.value)}
+                data={clientAgreementOptions}
                 disabled={!packList?.Client}
                 label={t('Договір')}
                 value={selectedAgreementValue}
                 onChange={(value) => {
                   const agreement = clientAgreements.find((item) => (
-                    (item.NetUid || String(item.AgreementId || item.Id || '')) === value
+                    getClientAgreementOptionValue(item) === value
                   ))
                   setPackList((currentPackList) => ({ ...currentPackList, ClientAgreement: agreement }))
                 }}
@@ -502,7 +513,7 @@ export function EditTaxFreePackListPage() {
                 label={t('Обрати всі')}
                 onChange={(event) => {
                   setSelectedSourceIds(event.currentTarget.checked
-                    ? new Set(sourceRows.filter((row) => getSourceUnpackedQty(row.entity) > 0).map((row) => row.id))
+                    ? new Set(getSourceRowsAvailableForMove(sourceRows))
                     : new Set())
                 }}
               />
@@ -578,7 +589,7 @@ export function EditTaxFreePackListPage() {
                   }}
                 />
                 <Button
-                  disabled={selectedTaxFreeIds.size === 0 || isDirty}
+                  disabled={selectedTaxFreeIds.size === 0 || isDirty || hasNonPrintableSelectedTaxFrees}
                   leftSection={<IconPrinter size={16} />}
                   loading={isPrinting}
                   size="xs"
@@ -1196,6 +1207,87 @@ function buildSourceRows(packList: TaxFreePackList | null): SourceRow[] {
   }))
 }
 
+function buildOrganizationOptions(organizations: Organization[], fallbackLabel: string) {
+  const options: Array<{ label: string; value: string }> = []
+
+  for (const organization of organizations) {
+    const value = getOrganizationOptionValue(organization)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: organization.Name || organization.FullName || fallbackLabel,
+      value,
+    })
+  }
+
+  return options
+}
+
+function buildClientOptions(clients: Client[]) {
+  const options: Array<{ label: string; value: string }> = []
+
+  for (const client of clients) {
+    const value = getClientOptionValue(client)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: getClientLabel(client),
+      value,
+    })
+  }
+
+  return options
+}
+
+function buildClientAgreementOptions(agreements: ClientAgreement[]) {
+  const options: Array<{ label: string; value: string }> = []
+
+  for (const agreement of agreements) {
+    const value = getClientAgreementOptionValue(agreement)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: getClientAgreementLabel(agreement),
+      value,
+    })
+  }
+
+  return options
+}
+
+function getSourceRowsAvailableForMove(sourceRows: SourceRow[]) {
+  const ids: string[] = []
+
+  for (const row of sourceRows) {
+    if (getSourceUnpackedQty(row.entity) > 0) {
+      ids.push(row.id)
+    }
+  }
+
+  return ids
+}
+
+function getOrganizationOptionValue(organization: Organization) {
+  return organization.NetUid || String(organization.Id || '')
+}
+
+function getClientOptionValue(client: Client) {
+  return client.NetUid || String(client.Id || '')
+}
+
+function getClientAgreementOptionValue(agreement: ClientAgreement) {
+  return agreement.NetUid || String(agreement.AgreementId || agreement.Id || '')
+}
+
 function sourceRowToTaxFreeItem(row: SourceRow, isFromSale?: boolean): TaxFreeItem {
   const product = getSourceProduct(row.entity)
   const qty = getSourceUnpackedQty(row.entity)
@@ -1330,6 +1422,10 @@ function preparePackListForSave(packList: TaxFreePackList): TaxFreePackList {
 
 function isTaxFreeReadOnly(taxFree: TaxFree, packList?: TaxFreePackList | null): boolean {
   return Boolean(packList?.IsSent || (taxFree.TaxFreeStatus ?? 0) >= TaxFreeStatusValue.Printed)
+}
+
+function isTaxFreePrintable(taxFree: TaxFree): boolean {
+  return taxFree.TaxFreeStatus === TaxFreeStatusValue.Formed || taxFree.TaxFreeStatus === TaxFreeStatusValue.Printed
 }
 
 function getTaxFreeId(taxFree: TaxFree, index: number): string {

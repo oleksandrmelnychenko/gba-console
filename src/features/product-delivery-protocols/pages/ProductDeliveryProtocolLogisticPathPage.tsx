@@ -27,23 +27,36 @@ import {
 import { ProtocolDetailsCard } from '../components/ProtocolDetailsCard'
 import { StatusSection } from '../components/StatusSection'
 
+type LogisticPathLoadState = {
+  error: string | null
+  isLoading: boolean
+  protocol: ProtocolDetail | null
+}
+
+const INITIAL_LOGISTIC_PATH_LOAD_STATE: LogisticPathLoadState = {
+  error: null,
+  isLoading: true,
+  protocol: null,
+}
+
 function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
   const { user } = useAuth()
   const isGba = user?.UserRole?.UserRoleType === UserRoleType.GBA
-  const [protocol, setProtocol] = useValueState<ProtocolDetail | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [error, setError] = useValueState<string | null>(null)
+  const [loadState, setLoadState] = useValueState<LogisticPathLoadState>(INITIAL_LOGISTIC_PATH_LOAD_STATE)
   const [isUpdating, setUpdating] = useValueState(false)
   const [isAssigning, setAssigning] = useValueState(false)
   const [isSavingInvoiceDocuments, setSavingInvoiceDocuments] = useValueState(false)
   const [isSavingService, setSavingService] = useValueState(false)
+  const { error, isLoading, protocol } = loadState
 
   useEffect(() => {
     if (!netId) {
-      setProtocol(null)
-      setLoading(false)
-      setError(t('Помилка'))
+      setLoadState({
+        ...INITIAL_LOGISTIC_PATH_LOAD_STATE,
+        error: t('Помилка'),
+        isLoading: false,
+      })
 
       return
     }
@@ -51,8 +64,11 @@ function useLogisticPathModel(netId: string | undefined) {
     let cancelled = false
 
     async function loadProtocol(currentNetId: string) {
-      setLoading(true)
-      setError(null)
+      setLoadState((current) => ({
+        ...current,
+        error: null,
+        isLoading: true,
+      }))
 
       try {
         const result = await getProtocolByNetId(currentNetId)
@@ -62,9 +78,14 @@ function useLogisticPathModel(netId: string | undefined) {
         }
 
         if (result) {
-          setProtocol(result as ProtocolDetail)
+          const loadedProtocol = result as ProtocolDetail
+          setLoadState({
+            error: null,
+            isLoading: false,
+            protocol: loadedProtocol,
+          })
 
-          const uncalculated = (result as ProtocolDetail).MergedServices?.filter(
+          const uncalculated = loadedProtocol.MergedServices?.filter(
             (service) => service.IsCalculatedValue === false,
           )
 
@@ -77,17 +98,19 @@ function useLogisticPathModel(netId: string | undefined) {
             })
           }
         } else {
-          setProtocol(null)
-          setError(t('Помилка'))
+          setLoadState({
+            ...INITIAL_LOGISTIC_PATH_LOAD_STATE,
+            error: t('Помилка'),
+            isLoading: false,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setProtocol(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити протокол'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          setLoadState({
+            ...INITIAL_LOGISTIC_PATH_LOAD_STATE,
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити протокол'),
+            isLoading: false,
+          })
         }
       }
     }
@@ -97,7 +120,7 @@ function useLogisticPathModel(netId: string | undefined) {
     return () => {
       cancelled = true
     }
-  }, [netId, setError, setLoading, setProtocol, t])
+  }, [netId, setLoadState, t])
 
   const canEdit = isGba || !protocol?.IsCompleted
 
@@ -112,7 +135,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await updateProtocolStatus(protocol.NetUid)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (statusError) {
       notifications.show({
@@ -135,7 +158,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await assignInvoicesToProtocol(protocol, invoices)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (assignError) {
       notifications.show({
@@ -154,7 +177,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await addDocumentsToSupplyInvoice(invoice, documents)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (saveError) {
       notifications.show({
@@ -177,7 +200,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await saveMergedService(protocol.NetUid, payload.service, payload.files)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (saveError) {
       notifications.show({
@@ -199,7 +222,7 @@ function useLogisticPathModel(netId: string | undefined) {
       )
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (calculateError) {
       notifications.show({
@@ -218,7 +241,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await assignInvoicesToMergedService(service, invoices)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (assignError) {
       notifications.show({
@@ -241,7 +264,7 @@ function useLogisticPathModel(netId: string | undefined) {
       const updated = await removeMergedService(service.NetUid)
 
       if (updated) {
-        setProtocol(updated)
+        setLoadState((current) => ({ ...current, protocol: updated }))
       }
     } catch (removeError) {
       notifications.show({

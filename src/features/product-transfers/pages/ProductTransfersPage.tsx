@@ -134,6 +134,7 @@ function useProductTransfersPageModel() {
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -144,9 +145,10 @@ function useProductTransfersPageModel() {
   const resetTransfers = useCallback(() => {
     setTransfers([])
     setHasMore(false)
+    setTotalQty(0)
     setLoading(false)
     setSelectedTransfer(null)
-  }, [setHasMore, setLoading, setSelectedTransfer, setTransfers])
+  }, [setHasMore, setLoading, setSelectedTransfer, setTotalQty, setTransfers])
   const fromStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === createForm.fromStorageNetUid) || null,
     [createForm.fromStorageNetUid, storages],
@@ -261,10 +263,11 @@ function useProductTransfersPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Показано')} {transfers.length}
+        {totalQty > transfers.length ? ` ${t('з')} ${totalQty}` : ''}
         {hasMore ? '+' : ''}
       </Text>
     ),
-    [hasMore, t, transfers.length],
+    [hasMore, t, totalQty, transfers.length],
   )
 
   const toolbarRight = useMemo(
@@ -318,6 +321,7 @@ function useProductTransfersPageModel() {
     setError,
     setHasMore,
     setLoading,
+    setTotalQty,
     setTransfers,
   })
 
@@ -338,7 +342,7 @@ function useProductTransfersPageModel() {
     setError(null)
 
     try {
-      const nextTransfers = await getProductTransfers({
+      const result = await getProductTransfers({
         from: activeFilters.from,
         limit: pageSize,
         offset: requestOffset,
@@ -346,8 +350,9 @@ function useProductTransfersPageModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setTransfers((current) => (current.length === requestOffset ? [...current, ...nextTransfers] : current))
-        setHasMore(nextTransfers.length === pageSize)
+        setTransfers((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
+        setTotalQty(result.totalQty)
+        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
@@ -509,6 +514,7 @@ function useProductTransfersLoader({
   setError,
   setHasMore,
   setLoading,
+  setTotalQty,
   setTransfers,
 }: {
   activeFilters: FilterDraft
@@ -519,6 +525,7 @@ function useProductTransfersLoader({
   setError: (value: string | null) => void
   setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
+  setTotalQty: (value: number) => void
   setTransfers: (value: ProductTransfer[]) => void
 }) {
   const { t } = useI18n()
@@ -536,7 +543,7 @@ function useProductTransfersLoader({
       setError(null)
 
       try {
-        const nextTransfers = await getProductTransfers({
+        const result = await getProductTransfers({
           from: activeFilters.from,
           limit: pageSize,
           offset: 0,
@@ -544,13 +551,15 @@ function useProductTransfersLoader({
         })
 
         if (!cancelled) {
-          setTransfers(nextTransfers)
-          setHasMore(nextTransfers.length === pageSize)
+          setTransfers(result.items)
+          setTotalQty(result.totalQty)
+          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setTransfers([])
           setHasMore(false)
+          setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити переміщення товарів'))
         }
       } finally {
@@ -565,7 +574,19 @@ function useProductTransfersLoader({
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, resetTransfers, setError, setHasMore, setLoading, setTransfers, t])
+  }, [
+    activeFilters,
+    filterError,
+    pageSize,
+    reloadKey,
+    resetTransfers,
+    setError,
+    setHasMore,
+    setLoading,
+    setTotalQty,
+    setTransfers,
+    t,
+  ])
 }
 
 export function ProductTransfersPage() {

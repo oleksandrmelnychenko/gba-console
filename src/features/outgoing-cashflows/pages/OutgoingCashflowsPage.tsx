@@ -14,8 +14,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -32,6 +33,8 @@ import {
   searchOutgoingCashflowPaymentRegisters,
 } from '../api/outgoingCashflowsApi'
 import type {
+  AssignedIncomePaymentOrder,
+  AssignedPaymentOrder,
   Currency,
   NamedEntity,
   Organization,
@@ -45,10 +48,12 @@ import type {
 const PAGE_SIZE = 100
 const SEARCH_DEBOUNCE_MS = 350
 
+const ADVANCE_REPORT_ROUTE = '/accounting/outgoing-cashflow'
+
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['cancel', 'actions'],
+    right: ['documentStructure', 'editReport', 'cancel', 'actions'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -65,6 +70,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function OutgoingCashflowsPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -87,6 +93,7 @@ export function OutgoingCashflowsPage() {
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<OutgoingCashflowRow | null>(null)
+  const [structureRow, setStructureRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [cancelRow, setCancelRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [isCanceling, setCanceling] = useValueState(false)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
@@ -202,9 +209,20 @@ export function OutgoingCashflowsPage() {
     void loadCashflows(0, false)
   }, [loadCashflows])
 
+  const openAdvanceReport = useCallback(
+    (row: OutgoingCashflowRow) => {
+      if (row.order.NetUid) {
+        navigate(`${ADVANCE_REPORT_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`)
+      }
+    },
+    [navigate],
+  )
+
   const rows = useMemo(() => buildCashflowRows(cashflows.Collection), [cashflows.Collection])
   const columns = useOutgoingCashflowColumns({
     onCancel: setCancelRow,
+    onEditReport: openAdvanceReport,
+    onOpenDocumentStructure: setStructureRow,
     onOpen: setSelectedRow,
   })
   const isTableBusy = isLoading || isSearchSettling
@@ -264,6 +282,13 @@ export function OutgoingCashflowsPage() {
         </Group>
 
         <Group align="end" gap="xs">
+          <Button
+            color="violet"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => navigate('/accounting/outgoing-cashflow/new')}
+          >
+            {t('Новий')}
+          </Button>
           <Tooltip label={t('Скинути фільтри')}>
             <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
               {t('Скинути')}
@@ -374,6 +399,7 @@ export function OutgoingCashflowsPage() {
       )}
 
       <OutgoingCashflowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <OutgoingCashflowDocumentStructureDrawer row={structureRow} onClose={() => setStructureRow(null)} />
       <CancelOutgoingCashflowModal
         isSaving={isCanceling}
         row={cancelRow}
@@ -386,9 +412,13 @@ export function OutgoingCashflowsPage() {
 
 function useOutgoingCashflowColumns({
   onCancel,
+  onEditReport,
+  onOpenDocumentStructure,
   onOpen,
 }: {
   onCancel: (row: OutgoingCashflowRow) => void
+  onEditReport: (row: OutgoingCashflowRow) => void
+  onOpenDocumentStructure: (row: OutgoingCashflowRow) => void
   onOpen: (row: OutgoingCashflowRow) => void
 }): DataTableColumn<OutgoingCashflowRow>[] {
   const { t } = useI18n()
@@ -521,6 +551,63 @@ function useOutgoingCashflowColumns({
         cell: (row) => displayValue(row.comment),
       },
       {
+        id: 'documentStructure',
+        header: '',
+        width: 62,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          row.hasDocumentStructure ? (
+            <Tooltip label={t('Структура документів')}>
+              <ActionIcon
+                aria-label={t('Структура документів')}
+                color="blue"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenDocumentStructure(row)
+                }}
+              >
+                <IconHierarchy2 size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
+      {
+        id: 'editReport',
+        header: '',
+        width: 62,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          row.isUnderReport ? (
+            <Tooltip label={t('Редагувати звіт')}>
+              <ActionIcon
+                aria-label={t('Редагувати звіт')}
+                color="violet"
+                disabled={!row.order.NetUid}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEditReport(row)
+                }}
+              >
+                <IconEdit size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
+      {
         id: 'cancel',
         header: '',
         width: 62,
@@ -576,7 +663,7 @@ function useOutgoingCashflowColumns({
         ),
       },
     ],
-    [onCancel, onOpen, t],
+    [onCancel, onEditReport, onOpen, onOpenDocumentStructure, t],
   )
 }
 
@@ -587,7 +674,7 @@ function StatusFlag({ active }: { active?: boolean }) {
     </Badge>
   ) : (
     <Text c="dimmed" size="sm">
-      —
+      -
     </Text>
   )
 }
@@ -681,6 +768,115 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
   )
 }
 
+function OutgoingCashflowDocumentStructureDrawer({
+  onClose,
+  row,
+}: {
+  onClose: () => void
+  row: OutgoingCashflowRow | null
+}) {
+  const { t } = useI18n()
+  const assignedOrders = row?.order.AssignedPaymentOrders || []
+  const rootAssignedOrder = row?.order.RootAssignedPaymentOrder || null
+
+  return (
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
+      {row && (
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.number)} />
+            <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
+            <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber)} />
+          </SimpleGrid>
+
+          <Divider />
+
+          <Stack gap="sm">
+            {rootAssignedOrder && (
+              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} title={t('Кореневий документ')} />
+            )}
+
+            {assignedOrders.length > 0 ? (
+              assignedOrders.map((assignedPaymentOrder, index) => (
+                <AssignedPaymentOrderBlock
+                  key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
+                  assignedPaymentOrder={assignedPaymentOrder}
+                  title={`${t('Пов’язаний документ')} ${index + 1}`}
+                />
+              ))
+            ) : !rootAssignedOrder ? (
+              <Text c="dimmed" size="sm">
+                {t('Структура документів відсутня')}
+              </Text>
+            ) : null}
+          </Stack>
+        </Stack>
+      )}
+    </AppDrawer>
+  )
+}
+
+function AssignedPaymentOrderBlock({
+  assignedPaymentOrder,
+  title,
+}: {
+  assignedPaymentOrder: AssignedPaymentOrder
+  title: string
+}) {
+  const { t } = useI18n()
+  const assignedOutcome = assignedPaymentOrder.AssignedOutcomePaymentOrder || assignedPaymentOrder.RootOutcomePaymentOrder
+  const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
+
+  return (
+    <Stack gap="xs">
+      <Group gap="xs">
+        <IconHierarchy2 size={16} />
+        <Text fw={700}>{title}</Text>
+      </Group>
+      {assignedOutcome && <AssignedOutcomeOrderView order={assignedOutcome} />}
+      {assignedIncome && <AssignedIncomeOrderView order={assignedIncome} />}
+      {!assignedOutcome && !assignedIncome && (
+        <Text c="dimmed" size="sm">
+          {t('Пов’язаний документ не завантажено')}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
+function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
+      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber)} />
+      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem label={t('Отримувач')} value={displayValue(getPayedTo(order))} />
+    </SimpleGrid>
+  )
+}
+
+function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
+      <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
+      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
+      <DetailItem label={t('Колега')} value={displayValue(getColleagueFullName(order.Colleague))} />
+    </SimpleGrid>
+  )
+}
+
 function CancelOutgoingCashflowModal({
   isSaving,
   onCancel,
@@ -729,6 +925,7 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
     currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
     differenceAmount: order.DifferenceAmount,
     fromDate: order.FromDate,
+    hasDocumentStructure: hasDocumentStructure(order),
     id: String(order.NetUid || order.Id || index),
     isAccounting: order.IsAccounting,
     isCanceled: order.IsCanceled,
@@ -769,6 +966,44 @@ function getColleagueFullName(colleague?: NamedEntity | null): string | undefine
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.LastName || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code
+}
+
+function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
+  return Boolean(order.RootAssignedPaymentOrder) || Boolean(order.AssignedPaymentOrders?.length)
+}
+
+function getAssignedPaymentOrderKey(assignedPaymentOrder: AssignedPaymentOrder, index: number): string {
+  return String(
+    assignedPaymentOrder.NetUid ||
+      assignedPaymentOrder.Id ||
+      assignedPaymentOrder.AssignedOutcomePaymentOrder?.NetUid ||
+      assignedPaymentOrder.AssignedIncomePaymentOrder?.NetUid ||
+      `assigned-${index}`,
+  )
+}
+
+function getOutcomePaymentOrderTypeLabel(order: OutcomePaymentOrder, t: (value: string) => string): string {
+  return getPaymentRegisterTypeLabel(order.PaymentCurrencyRegister?.PaymentRegister?.Type, t, 'outcome')
+}
+
+function getIncomePaymentOrderTypeLabel(order: AssignedIncomePaymentOrder, t: (value: string) => string): string {
+  return getPaymentRegisterTypeLabel(order.PaymentRegister?.Type, t, 'income')
+}
+
+function getPaymentRegisterTypeLabel(
+  type: number | undefined,
+  t: (value: string) => string,
+  direction: 'income' | 'outcome',
+): string {
+  if (type === 0) {
+    return direction === 'income' ? t('Прибутковий касовий ордер') : t('Видатковий касовий ордер')
+  }
+
+  if (type === 2) {
+    return direction === 'income' ? t('Прибутковий банківський ордер') : t('Видатковий банківський ордер')
+  }
+
+  return direction === 'income' ? t('Прибутковий картковий ордер') : t('Видатковий картковий ордер')
 }
 
 function toSelectOptions<T extends { NetUid?: string; Id?: number }>(items: T[], getLabel: (item: T) => string | undefined) {

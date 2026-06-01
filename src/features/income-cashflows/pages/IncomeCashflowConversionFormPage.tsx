@@ -64,6 +64,11 @@ type FormState = {
   vatRate: number
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -705,37 +710,75 @@ function matchesRegister(register: PaymentRegister, organization: Organization |
 }
 
 function getRegisterCurrencies(register?: PaymentRegister | null): Currency[] {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => currencyRegister.Currency)
-    .filter((currency): currency is Currency => Boolean(currency && getEntityValue(currency)))
+  const currencies: Currency[] = []
+
+  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
+    const currency = currencyRegister.Currency
+
+    if (currency && getEntityValue(currency)) {
+      currencies.push(currency)
+    }
+  }
+
+  return currencies
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
-      label: getEntityName(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
-}
+function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+  const options: SelectOption[] = []
 
-function toCurrencyOptions(register?: PaymentRegister | null) {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const value = getEntityValue(currency)
-      const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
 
-      return {
-        label: `${currency?.Code || currency?.Name || value}${balance}`,
-        value,
-      }
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: getEntityName(entity) || value,
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
+}
+
+function toCurrencyOptions(register?: PaymentRegister | null): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currency)
+    const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: `${currency?.Code || currency?.Name || value}${balance}`,
+      value,
+    })
+  }
+
+  return options
 }
 
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  const labels: string[] = []
+  const seenLabels = new Set<string>()
+
+  for (const entity of entities) {
+    const label = getEntityName(entity)
+
+    if (!label || seenLabels.has(label)) {
+      continue
+    }
+
+    seenLabels.add(label)
+    labels.push(label)
+  }
+
+  return labels
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {

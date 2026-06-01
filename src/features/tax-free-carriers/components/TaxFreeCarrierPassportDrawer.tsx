@@ -1,6 +1,5 @@
 import { Alert, Button, Group, ScrollArea, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -33,12 +32,10 @@ export function TaxFreeCarrierPassportDrawer({
   const [draft, setDraft] = useValueState<PassportDraft>(() => toDraft(passport))
   const [error, setError] = useValueState<string | null>(null)
 
-  useEffect(() => {
-    if (opened) {
-      setDraft(toDraft(passport))
-      setError(null)
-    }
-  }, [opened, passport, setDraft, setError])
+  function resetDraft() {
+    setDraft(toDraft(passport))
+    setError(null)
+  }
 
   function updateDraft(patch: Partial<PassportDraft>) {
     setDraft((current) => ({ ...current, ...patch }))
@@ -70,6 +67,7 @@ export function TaxFreeCarrierPassportDrawer({
       opened={opened}
       size="lg"
       title={isEditMode ? t('Редагування Паспорту') : t('Новий Паспорт')}
+      transitionProps={{ onEnter: resetDraft }}
       onClose={onClose}
     >
       <ScrollArea h="calc(100vh - 120px)" type="auto">

@@ -13,6 +13,8 @@ type MergeInvoicesModalProps = {
   onToggle: (netId: string) => void
 }
 
+const invoiceDateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+
 export function MergeInvoicesModal({
   invoices,
   isMerging,
@@ -45,11 +47,17 @@ export function MergeInvoicesModal({
           )
         })}
 
+        {selectedNetIds.length < 2 ? (
+          <Text c="dimmed" size="sm">
+            {t('Оберіть щонайменше два інвойси')}
+          </Text>
+        ) : null}
+
         <Group justify="flex-end">
           <Button disabled={isMerging} variant="subtle" onClick={onClose}>
             {t('Ні')}
           </Button>
-          <Button disabled={selectedNetIds.length === 0} loading={isMerging} onClick={onConfirm}>
+          <Button disabled={selectedNetIds.length < 2} loading={isMerging} onClick={onConfirm}>
             {t('Так')}
           </Button>
         </Group>
@@ -69,5 +77,5 @@ function formatInvoiceDate(value?: Date | string): string {
     return String(value)
   }
 
-  return new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' }).format(date)
+  return invoiceDateFormatter.format(date)
 }

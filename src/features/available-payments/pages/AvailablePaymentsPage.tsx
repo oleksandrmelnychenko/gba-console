@@ -14,10 +14,13 @@ import {
 } from '@mantine/core'
 import { IconAlertCircle, IconListDetails, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -43,6 +46,7 @@ type FilterDraft = {
 
 const DEFAULT_PAGE_SIZE = 10
 const PAGE_SIZE_OPTIONS = ['10', '20', '40', '60']
+const OUTCOME_PAYMENT_TASKS_OPERATION_TYPE = '4'
 
 const CURRENCY_CODES = ['EUR', 'USD', 'PLN', 'UAH'] as const
 
@@ -57,14 +61,17 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
 function useAvailablePaymentsPageModel() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const isOutcomePaymentTasksMode = searchParams.get('operationType') === OUTCOME_PAYMENT_TASKS_OPERATION_TYPE
+  const initialAccountingType = parseAccountingType(searchParams.get('type'))
   const initialFilters = useMemo<FilterDraft>(
     () => ({
       from: getDateShiftedByDays(-30),
       organizationNetId: '',
       to: getDateShiftedByDays(30),
-      type: AccountingTypeValue.All,
+      type: initialAccountingType,
     }),
-    [],
+    [initialAccountingType],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
@@ -75,7 +82,10 @@ function useAvailablePaymentsPageModel() {
   const [organizations, setOrganizations] = useValueState<AvailablePaymentsOrganization[]>([])
   const [organizationsError, setOrganizationsError] = useValueState<string | null>(null)
   const [selectedGroup, setSelectedGroup] = useValueState<GroupedPaymentTask | null>(null)
+  const [pendingDetailGroup, setPendingDetailGroup] = useValueState<GroupedPaymentTask | null>(null)
   const [markedModels, setMarkedModels] = useValueState<AvailablePaymentTaskModel[]>([])
+  const [filesByTaskId, setFilesByTaskId] = useValueState<Record<string, File[]>>({})
+  const [confirmCloseDetailOpen, setConfirmCloseDetailOpen] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
@@ -83,13 +93,19 @@ function useAvailablePaymentsPageModel() {
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}`
+  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${isOutcomePaymentTasksMode}`
   const listRequestKeyRef = useRef(listRequestKey)
+  const groupsRef = useRef(groups)
   const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
+  const hasPendingFiles = useMemo(() => Object.values(filesByTaskId).some((files) => files.length > 0), [filesByTaskId])
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
   }, [listRequestKey])
+
+  useEffect(() => {
+    groupsRef.current = groups
+  }, [groups])
 
   const resetGroups = useCallback(() => {
     setGroups([])
@@ -99,8 +115,10 @@ function useAvailablePaymentsPageModel() {
     setHasMore(false)
     setLoading(false)
     setSelectedGroup(null)
+    setFilesByTaskId({})
     setMarkedModels([])
   }, [
+    setFilesByTaskId,
     setGroups,
     setHasMore,
     setLoading,
@@ -116,6 +134,7 @@ function useAvailablePaymentsPageModel() {
   useAvailablePaymentsLoader({
     activeFilters,
     filterError,
+    isOutcomePaymentTasksMode,
     pageSize,
     reloadKey,
     resetGroups,
@@ -127,6 +146,12 @@ function useAvailablePaymentsPageModel() {
     setTotalGrossPrice,
     setTotalNotDoneTasks,
   })
+
+  const handleRealtimePaymentTask = useCallback(() => {
+    reload()
+  }, [reload])
+
+  useRealtimeEvent(realtimeEvents.supplyPaymentTaskNotification, handleRealtimePaymentTask)
 
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
@@ -140,7 +165,7 @@ function useAvailablePaymentsPageModel() {
 
   async function loadMoreGroups() {
     const requestKey = listRequestKeyRef.current
-    const requestOffset = groups.length
+    const requestOffset = groupsRef.current.length
     setLoadingMore(true)
     setError(null)
 
@@ -149,19 +174,23 @@ function useAvailablePaymentsPageModel() {
         from: toQueryDate(activeFilters.from),
         limit: pageSize,
         offset: requestOffset,
+        onlyAvailableForPayment: isOutcomePaymentTasksMode,
         organizationNetId: activeFilters.organizationNetId || undefined,
         to: toQueryDate(activeFilters.to),
         typePaymentTask: activeFilters.type,
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setGroups((current) =>
-          current.length === requestOffset ? [...current, ...result.GroupedPaymentTasks] : current,
-        )
-        setPriceTotals(result.PriceTotals)
-        setTotalGrossPrice(result.TotalGrossPrice)
-        setTotalNotDoneTasks(countNotDoneTasks([...groups, ...result.GroupedPaymentTasks]))
-        setHasMore(result.GroupedPaymentTasks.length === pageSize)
+        const currentGroups = groupsRef.current
+
+        if (currentGroups.length === requestOffset) {
+          const nextGroups = [...currentGroups, ...result.GroupedPaymentTasks]
+          setGroups(nextGroups)
+          setPriceTotals(result.PriceTotals)
+          setTotalGrossPrice(result.TotalGrossPrice)
+          setTotalNotDoneTasks(countNotDoneTasks(nextGroups))
+          setHasMore(result.GroupedPaymentTasks.length === pageSize)
+        }
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
@@ -174,9 +203,43 @@ function useAvailablePaymentsPageModel() {
     }
   }
 
-  const openDetail = useCallback((group: GroupedPaymentTask) => setSelectedGroup(group), [setSelectedGroup])
-  const closeDetail = useCallback(() => setSelectedGroup(null), [setSelectedGroup])
-  const clearMarked = useCallback(() => setMarkedModels([]), [setMarkedModels])
+  const openDetail = useCallback(
+    (group: GroupedPaymentTask) => {
+      if (hasPendingFiles && selectedGroup && getPaymentGroupKey(selectedGroup) !== getPaymentGroupKey(group)) {
+        setPendingDetailGroup(group)
+        setConfirmCloseDetailOpen(true)
+        return
+      }
+
+      setSelectedGroup(group)
+    },
+    [hasPendingFiles, selectedGroup, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup],
+  )
+  const closeDetail = useCallback(() => {
+    if (hasPendingFiles) {
+      setPendingDetailGroup(null)
+      setConfirmCloseDetailOpen(true)
+      return
+    }
+
+    setSelectedGroup(null)
+  }, [hasPendingFiles, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup])
+  const cancelCloseDetail = useCallback(() => {
+    setConfirmCloseDetailOpen(false)
+    setPendingDetailGroup(null)
+  }, [setConfirmCloseDetailOpen, setPendingDetailGroup])
+  const confirmCloseDetail = useCallback(() => {
+    const nextGroup = pendingDetailGroup
+
+    setConfirmCloseDetailOpen(false)
+    setFilesByTaskId({})
+    setPendingDetailGroup(null)
+    setSelectedGroup(nextGroup)
+  }, [pendingDetailGroup, setConfirmCloseDetailOpen, setFilesByTaskId, setPendingDetailGroup, setSelectedGroup])
+  const clearMarked = useCallback(() => {
+    setMarkedModels([])
+    setFilesByTaskId({})
+  }, [setFilesByTaskId, setMarkedModels])
   const toggleMarked = useCallback(
     (model: AvailablePaymentTaskModel) => {
       setMarkedModels((current) => {
@@ -191,6 +254,27 @@ function useAvailablePaymentsPageModel() {
           return current
         }
 
+        const currentCurrencyCode = current[0]?.currencyCode
+
+        if (currentCurrencyCode && currentCurrencyCode !== model.currencyCode) {
+          setError(t('Можна обрати платіжні задачі тільки в одній валюті'))
+          return current
+        }
+
+        const currentAgreementNetId = current[0]?.serviceAgreementNetId
+
+        if (currentAgreementNetId && model.serviceAgreementNetId && currentAgreementNetId !== model.serviceAgreementNetId) {
+          setError(t('Можна обрати платіжні задачі тільки однієї угоди'))
+          return current
+        }
+
+        const currentIsAccounting = Boolean(current[0]?.task.IsAccounting)
+
+        if (current.length > 0 && currentIsAccounting !== Boolean(model.task.IsAccounting)) {
+          setError(t('Можна обрати платіжні задачі тільки одного типу обліку'))
+          return current
+        }
+
         return [...current, model]
       })
     },
@@ -199,8 +283,15 @@ function useAvailablePaymentsPageModel() {
   const handlePaymentChanged = useCallback(() => {
     setSelectedGroup(null)
     setMarkedModels([])
+    setFilesByTaskId({})
     reload()
-  }, [reload, setMarkedModels, setSelectedGroup])
+  }, [reload, setFilesByTaskId, setMarkedModels, setSelectedGroup])
+  const handleFilesChanged = useCallback(
+    (taskId: string, files: File[]) => {
+      setFilesByTaskId((current) => ({ ...current, [taskId]: files }))
+    },
+    [setFilesByTaskId],
+  )
 
   const columns = useAvailablePaymentsColumns(groupIndexMap)
 
@@ -218,13 +309,18 @@ function useAvailablePaymentsPageModel() {
 
   return {
     activeFilters,
+    cancelCloseDetail,
     closeDetail,
     columns,
+    confirmCloseDetail,
+    confirmCloseDetailOpen,
     error,
     filterDraft,
     filterError,
+    filesByTaskId,
     groups,
     hasMore,
+    isOutcomePaymentTasksMode,
     isLoading,
     isLoadingMore,
     loadMoreGroups,
@@ -242,6 +338,7 @@ function useAvailablePaymentsPageModel() {
     applyFilters,
     clearMarked,
     handlePaymentChanged,
+    handleFilesChanged,
     reload,
     resetFilters,
     setPageSize,
@@ -291,6 +388,7 @@ function useAvailablePaymentsOrganizationsLoader({
 function useAvailablePaymentsLoader({
   activeFilters,
   filterError,
+  isOutcomePaymentTasksMode,
   pageSize,
   reloadKey,
   resetGroups,
@@ -304,6 +402,7 @@ function useAvailablePaymentsLoader({
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  isOutcomePaymentTasksMode: boolean
   pageSize: number
   reloadKey: number
   resetGroups: () => void
@@ -334,6 +433,7 @@ function useAvailablePaymentsLoader({
           from: toQueryDate(activeFilters.from),
           limit: pageSize,
           offset: 0,
+          onlyAvailableForPayment: isOutcomePaymentTasksMode,
           organizationNetId: activeFilters.organizationNetId || undefined,
           to: toQueryDate(activeFilters.to),
           typePaymentTask: activeFilters.type,
@@ -370,6 +470,7 @@ function useAvailablePaymentsLoader({
   }, [
     activeFilters,
     filterError,
+    isOutcomePaymentTasksMode,
     pageSize,
     reloadKey,
     resetGroups,
@@ -394,14 +495,34 @@ export function AvailablePaymentsPage() {
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
         group={model.selectedGroup}
+        filesByTaskId={model.filesByTaskId}
         markedModels={model.markedModels}
         markedTaskIds={model.markedTaskIds}
         typePaymentTask={model.activeFilters.type}
         onChanged={model.handlePaymentChanged}
         onClearMarked={model.clearMarked}
         onClose={model.closeDetail}
+        onFilesChanged={model.handleFilesChanged}
         onToggleMarked={model.toggleMarked}
       />
+      <AppModal
+        centered
+        opened={model.confirmCloseDetailOpen}
+        title={translate('Є незбережені зміни')}
+        onClose={model.cancelCloseDetail}
+      >
+        <Stack gap="md">
+          <Text>{translate('Якщо закрити вікно, додані файли не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={model.cancelCloseDetail}>
+              {translate('Залишитися')}
+            </Button>
+            <Button color="red" onClick={model.confirmCloseDetail}>
+              {translate('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -443,6 +564,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     filterError,
     groups,
     hasMore,
+    isOutcomePaymentTasksMode,
     isLoading,
     isLoadingMore,
     loadMoreGroups,
@@ -499,15 +621,17 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             w={240}
             onChange={(value) => applyFilters({ ...filterDraft, organizationNetId: value || '' })}
           />
-          <Select
-            data={typeOptions}
-            label={t('Тип')}
-            value={String(filterDraft.type)}
-            w={200}
-            onChange={(value) =>
-              applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
-            }
-          />
+          {!isOutcomePaymentTasksMode && (
+            <Select
+              data={typeOptions}
+              label={t('Тип')}
+              value={String(filterDraft.type)}
+              w={200}
+              onChange={(value) =>
+                applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
+              }
+            />
+          )}
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}
@@ -765,6 +889,10 @@ function buildIndexMap(groups: GroupedPaymentTask[]): Map<GroupedPaymentTask, nu
   }, new Map<GroupedPaymentTask, number>())
 }
 
+function getPaymentGroupKey(group: GroupedPaymentTask): string {
+  return String(group.NetUid || group.Id || group.PayToDate || '')
+}
+
 function buildCurrencyTotals(priceTotals: PriceTotal[]): Record<string, number> {
   return priceTotals.reduce<Record<string, number>>((totals, priceTotal) => {
     const code = priceTotal.Currency?.Code
@@ -784,7 +912,7 @@ function getCurrencyTotal(group: GroupedPaymentTask, code: string): number {
 }
 
 function countNotDone(group: GroupedPaymentTask): number {
-  return (group.SupplyPaymentTasks || []).filter((task) => task.TaskStatus === TaskStatusValue.NotDone).length
+  return (group.SupplyPaymentTasks || []).filter((task) => task.TaskStatus !== TaskStatusValue.Done).length
 }
 
 function countNotDoneTasks(groups: GroupedPaymentTask[]): number {
@@ -801,6 +929,20 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
+}
+
+function parseAccountingType(value: string | null): AccountingTypeValue {
+  const numericValue = Number(value)
+
+  if (
+    numericValue === AccountingTypeValue.ManagementAccounting ||
+    numericValue === AccountingTypeValue.Accounting ||
+    numericValue === AccountingTypeValue.All
+  ) {
+    return numericValue
+  }
+
+  return AccountingTypeValue.All
 }
 
 function getDateShiftedByDays(days: number): string {

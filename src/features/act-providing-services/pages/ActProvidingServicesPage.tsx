@@ -21,7 +21,7 @@ import {
   IconRoute,
 } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -60,19 +60,32 @@ type ActProvidingServiceRow = ActProvidingServiceDisplayModel & {
   act: ActProvidingService
 }
 
+type ActProvidingServicesLoadState = {
+  acts: ActProvidingService[]
+  error: string | null
+  isLoading: boolean
+  total: number | undefined
+}
+
+const EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE: ActProvidingServicesLoadState = {
+  acts: [],
+  error: null,
+  isLoading: false,
+  total: undefined,
+}
+
 function useActProvidingServicesPageModel() {
   const { t } = useI18n()
   const defaultFilters = useMemo(() => getDefaultFilters(), [])
-  const [acts, setActs] = useValueState<ActProvidingService[]>([])
+  const [loadState, setLoadState] = useValueState<ActProvidingServicesLoadState>(EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE)
   const [dateFrom, setDateFrom] = useValueState(defaultFilters.from)
   const [dateTo, setDateTo] = useValueState(defaultFilters.to)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
-  const [isLoading, setLoading] = useValueState(false)
-  const [error, setError] = useValueState<string | null>(null)
-  const [total, setTotal] = useValueState<number | undefined>(undefined)
   const [selectedRow, setSelectedRow] = useValueState<ActProvidingServiceRow | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const requestRef = useRef(0)
+  const { acts, error, isLoading, total } = loadState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const rows = useMemo(
@@ -90,53 +103,70 @@ function useActProvidingServicesPageModel() {
     ),
     [page, t, total],
   )
-  const columns = useActProvidingServiceColumns((row) => setSelectedRow(row))
+  const openSelectedRow = useCallback(
+    (row: ActProvidingServiceRow) => {
+      if (!row.supplyOrderUkraineNetUid && (!row.protocolNetId || !row.netId)) {
+        notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
+      }
 
-  useEffect(() => {
+      setSelectedRow(row)
+    },
+    [setSelectedRow, t],
+  )
+  const closeSelectedRow = useCallback(() => setSelectedRow(null), [setSelectedRow])
+  const columns = useActProvidingServiceColumns(openSelectedRow)
+
+  const loadActs = useCallback(() => {
+    let isActive = true
+    const requestId = requestRef.current + 1
+    requestRef.current = requestId
+
     if (filterError) {
-      setActs([])
-      setTotal(undefined)
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    async function loadActs() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const response = await getActProvidingServices({
-          from: dateFrom,
-          limit: pageSize,
-          offset,
-          to: dateTo,
-        })
-
-        if (!cancelled) {
-          setActs(response.Items)
-          setTotal(response.Total)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setActs([])
-          setTotal(undefined)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти надання послуг'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+      setLoadState(EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE)
+      return () => {
+        isActive = false
       }
     }
 
-    void loadActs()
+    setLoadState((currentState) => ({ ...currentState, error: null, isLoading: true }))
+
+    void getActProvidingServices({
+      from: dateFrom,
+      limit: pageSize,
+      offset,
+      to: dateTo,
+    })
+      .then((response) => {
+        if (!isActive || requestRef.current !== requestId) {
+          return
+        }
+
+        setLoadState({
+          acts: response.Items,
+          error: null,
+          isLoading: false,
+          total: response.Total,
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (isActive && requestRef.current === requestId) {
+          setLoadState({
+            acts: [],
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти надання послуг'),
+            isLoading: false,
+            total: undefined,
+          })
+        }
+      })
 
     return () => {
-      cancelled = true
+      isActive = false
     }
-  }, [dateFrom, dateTo, filterError, offset, pageSize, reloadKey, setActs, setError, setLoading, setTotal, t])
+  }, [dateFrom, dateTo, filterError, offset, pageSize, setLoadState, t])
+
+  useEffect(() => {
+    return loadActs()
+  }, [loadActs, reloadKey])
 
   function resetFilters() {
     const filters = getDefaultFilters()
@@ -160,13 +190,14 @@ function useActProvidingServicesPageModel() {
     rows,
     selectedRow,
     toolbarLeft,
+    closeSelectedRow,
+    openSelectedRow,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setPage,
     setPageSize,
-    setSelectedRow,
   }
 }
 
@@ -192,13 +223,14 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     rows,
     selectedRow,
     toolbarLeft,
+    closeSelectedRow,
+    openSelectedRow,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setPage,
     setPageSize,
-    setSelectedRow,
   } = model
 
   return (
@@ -308,12 +340,12 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             minWidth={1320}
             tableId="act-providing-services"
             toolbarLeft={toolbarLeft}
-            onRowClick={setSelectedRow}
+            onRowClick={openSelectedRow}
           />
         </Stack>
       </Card>
 
-      <ActProvidingServiceOptionsModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <ActProvidingServiceOptionsModal row={selectedRow} onClose={closeSelectedRow} />
     </Stack>
   )
 }
@@ -330,16 +362,6 @@ function ActProvidingServiceOptionsModal({
   const { hasPermission } = useAuth()
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
   const canOpenViewOption = hasPermission(PERMISSION_VIEW_OPTION)
-
-  useEffect(() => {
-    if (!row || row.supplyOrderUkraineNetUid) {
-      return
-    }
-
-    if (!row.protocolNetId || !row.netId) {
-      notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
-    }
-  }, [row, t])
 
   return (
     <AppModal centered opened={Boolean(row)} title={t('Виберіть опцію')} onClose={onClose}>

@@ -29,6 +29,11 @@ import type {
 } from '../types'
 import { fromDateInput, responsibleName, toDateInput } from './helpers'
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 function createInitialValues(): NewMergedServiceFormValues {
   return {
     accountDocuments: [],
@@ -123,37 +128,23 @@ export function NewMergedServiceForm({
   }, [opened, setLoadError, setOrganizations, setProducts, setUsers, t])
 
   const organizationOptions = useMemo(
-    () =>
-      organizations
-        .filter((organization) => organization.NetUid && organization.Name)
-        .map((organization) => ({ label: organization.Name || '', value: organization.NetUid || '' })),
+    () => toSupplyOrganizationOptions(organizations),
     [organizations],
   )
 
   const agreementOptions = useMemo(() => {
     const agreements = values.supplyOrganization?.SupplyOrganizationAgreements || []
 
-    return agreements
-      .filter((agreement) => agreement.NetUid)
-      .map((agreement) => ({
-        label: `${agreement.Name || ''} (${agreement.Currency?.Code || ''})`,
-        value: agreement.NetUid || '',
-      }))
+    return toSupplyAgreementOptions(agreements)
   }, [values.supplyOrganization])
 
   const productOptions = useMemo(
-    () =>
-      products
-        .filter((product) => product.NetUid && product.Name)
-        .map((product) => ({ label: product.Name || '', value: product.NetUid || '' })),
+    () => toConsumableProductOptions(products),
     [products],
   )
 
   const userOptions = useMemo(
-    () =>
-      users
-        .filter((user) => user.NetUid)
-        .map((user) => ({ label: responsibleName(user) || user.FullName || '', value: user.NetUid || '' })),
+    () => toProtocolUserOptions(users),
     [users],
   )
 
@@ -356,4 +347,63 @@ export function NewMergedServiceForm({
       </Stack>
     </AppDrawer>
   )
+}
+
+function toSupplyOrganizationOptions(organizations: SupplyOrganization[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const organization of organizations) {
+    if (!organization.NetUid || !organization.Name) {
+      continue
+    }
+
+    options.push({ label: organization.Name, value: organization.NetUid })
+  }
+
+  return options
+}
+
+function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const agreement of agreements) {
+    if (!agreement.NetUid) {
+      continue
+    }
+
+    options.push({
+      label: `${agreement.Name || ''} (${agreement.Currency?.Code || ''})`,
+      value: agreement.NetUid,
+    })
+  }
+
+  return options
+}
+
+function toConsumableProductOptions(products: ConsumableProduct[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const product of products) {
+    if (!product.NetUid || !product.Name) {
+      continue
+    }
+
+    options.push({ label: product.Name, value: product.NetUid })
+  }
+
+  return options
+}
+
+function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const user of users) {
+    if (!user.NetUid) {
+      continue
+    }
+
+    options.push({ label: responsibleName(user) || user.FullName || '', value: user.NetUid })
+  }
+
+  return options
 }

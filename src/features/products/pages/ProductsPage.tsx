@@ -52,6 +52,7 @@ import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer,
 import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
   createProductOriginalNumber,
   deleteProductOriginalNumber,
@@ -104,6 +105,7 @@ import {
   getProductOriginalNumbers,
   getProductTitle,
   getRelatedProductRowColor,
+  isProductRealtimePayloadForProduct,
 } from '../utils'
 import { ShopImageGallery } from '../components/ShopImageGallery'
 import {
@@ -761,6 +763,14 @@ export function ProductsPage() {
     }
   }
 
+  const handleRealtimeProductUpdate = useCallback((payload: unknown) => {
+    if (isProductRealtimePayloadForProduct(payload, productForView || selectedProduct)) {
+      reloadProductDetail()
+    }
+  }, [productForView, reloadProductDetail, selectedProduct])
+
+  useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
+
   return (
     <Stack gap="md">
       {error && (
@@ -905,7 +915,6 @@ function ProductAssortmentCarousel({
           <button
             type="button"
             className="product-assortment-selected"
-            autoFocus
             title={t('Скопіювати код')}
             onClick={() => copyToClipboard(getProductCode(selectedProduct))}
           >

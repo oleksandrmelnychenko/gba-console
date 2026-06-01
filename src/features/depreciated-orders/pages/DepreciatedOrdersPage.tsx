@@ -101,6 +101,7 @@ function useDepreciatedOrdersPageModel() {
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -112,9 +113,10 @@ function useDepreciatedOrdersPageModel() {
   const resetOrders = useCallback(() => {
     setOrders([])
     setHasMore(false)
+    setTotalQty(0)
     setLoading(false)
     setSelectedOrder(null)
-  }, [setHasMore, setLoading, setOrders, setSelectedOrder])
+  }, [setHasMore, setLoading, setOrders, setSelectedOrder, setTotalQty])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -204,10 +206,11 @@ function useDepreciatedOrdersPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Показано')} {orders.length}
+        {totalQty > orders.length ? ` ${t('з')} ${totalQty}` : ''}
         {hasMore ? '+' : ''}
       </Text>
     ),
-    [hasMore, orders.length, t],
+    [hasMore, orders.length, t, totalQty],
   )
 
   useDepreciatedOrderStoragesLoader({ reloadKey, setLoadingStorages, setStorageError, setStorages })
@@ -225,6 +228,7 @@ function useDepreciatedOrdersPageModel() {
     setError,
     setHasMore,
     setLoading,
+    setTotalQty,
     setOrders,
   })
 
@@ -245,7 +249,7 @@ function useDepreciatedOrdersPageModel() {
     setError(null)
 
     try {
-      const nextOrders = await getDepreciatedOrders({
+      const result = await getDepreciatedOrders({
         from: activeFilters.from,
         limit: pageSize,
         offset: requestOffset,
@@ -253,8 +257,9 @@ function useDepreciatedOrdersPageModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setOrders((current) => (current.length === requestOffset ? [...current, ...nextOrders] : current))
-        setHasMore(nextOrders.length === pageSize)
+        setOrders((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
+        setTotalQty(result.totalQty)
+        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
@@ -370,6 +375,7 @@ function useDepreciatedOrdersLoader({
   setError,
   setHasMore,
   setLoading,
+  setTotalQty,
   setOrders,
 }: {
   activeFilters: FilterDraft
@@ -380,6 +386,7 @@ function useDepreciatedOrdersLoader({
   setError: (value: string | null) => void
   setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
+  setTotalQty: (value: number) => void
   setOrders: (value: DepreciatedOrder[]) => void
 }) {
   const { t } = useI18n()
@@ -397,7 +404,7 @@ function useDepreciatedOrdersLoader({
       setError(null)
 
       try {
-        const nextOrders = await getDepreciatedOrders({
+        const result = await getDepreciatedOrders({
           from: activeFilters.from,
           limit: pageSize,
           offset: 0,
@@ -405,13 +412,15 @@ function useDepreciatedOrdersLoader({
         })
 
         if (!cancelled) {
-          setOrders(nextOrders)
-          setHasMore(nextOrders.length === pageSize)
+          setOrders(result.items)
+          setTotalQty(result.totalQty)
+          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setOrders([])
           setHasMore(false)
+          setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти списання'))
         }
       } finally {
@@ -426,7 +435,19 @@ function useDepreciatedOrdersLoader({
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, resetOrders, setError, setHasMore, setLoading, setOrders, t])
+  }, [
+    activeFilters,
+    filterError,
+    pageSize,
+    reloadKey,
+    resetOrders,
+    setError,
+    setHasMore,
+    setLoading,
+    setOrders,
+    setTotalQty,
+    t,
+  ])
 }
 
 export function DepreciatedOrdersPage() {

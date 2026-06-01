@@ -1,7 +1,7 @@
 import {
   Alert,
+  Avatar,
   Badge,
-  Box,
   Card,
   Group,
   Loader,
@@ -166,6 +166,12 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
               const isSelected = Boolean(selectedNetUid && manager.NetUid === selectedNetUid)
               const isMainManager =
                 typeof client.MainManagerId === 'number' && client.MainManagerId === manager.Id
+              const cardBorder = isSelected
+                ? '2px solid var(--mantine-color-violet-6)'
+                : isMainManager
+                  ? '2px solid var(--mantine-color-yellow-5)'
+                  : undefined
+              const cardBackground = isSelected ? 'var(--mantine-color-violet-light)' : undefined
 
               return (
                 <UnstyledButton
@@ -174,41 +180,25 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                   onClick={() => handleSelect(manager)}
                 >
                   <Card
+                    bd={cardBorder}
+                    bg={cardBackground}
                     padding="sm"
                     radius="md"
                     withBorder
-                    style={{
-                      borderColor: isSelected
-                        ? 'var(--mantine-color-violet-6)'
-                        : isMainManager
-                          ? 'var(--mantine-color-yellow-5)'
-                          : undefined,
-                      borderWidth: isSelected || isMainManager ? 2 : undefined,
-                      backgroundColor: isSelected ? 'var(--mantine-color-violet-light)' : undefined,
-                    }}
                   >
                     <Group gap="sm" align="flex-start" wrap="nowrap">
-                      <Box
-                        style={{
-                          alignItems: 'center',
-                          backgroundColor: manager.IsActive
-                            ? 'var(--mantine-color-teal-6)'
-                            : 'var(--mantine-color-gray-5)',
-                          borderRadius: '50%',
-                          color: 'var(--mantine-color-white)',
-                          display: 'flex',
-                          flexShrink: 0,
-                          fontSize: 'var(--mantine-font-size-sm)',
-                          fontWeight: 600,
-                          height: 40,
-                          justifyContent: 'center',
-                          width: 40,
-                        }}
+                      <Avatar
+                        color={manager.IsActive ? 'teal' : 'gray'}
+                        fw={600}
+                        fz="sm"
+                        radius="xl"
+                        size={40}
+                        variant="filled"
                       >
                         {manager.Abbreviation}
-                      </Box>
+                      </Avatar>
 
-                      <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                      <Stack flex={1} gap={2} miw={0}>
                         <Group gap="xs" wrap="nowrap">
                           <Text fw={600} size="sm" truncate>
                             {getManagerFullName(manager)}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { useAuth } from '../../auth/useAuth'
 import { getExchangeRatesSnapshot } from '../api/exchangeRatesApi'
 import type { ExchangeRatesSnapshot } from '../types'
@@ -33,6 +34,15 @@ export function useExchangeRates(): ExchangeRatesState {
       setState({ data: null, isLoading: false, error: error as Error })
     }
   }, [session?.csrfToken])
+
+  const refreshFromRealtime = useCallback(() => {
+    void refresh()
+  }, [refresh])
+
+  useRealtimeEvent(realtimeEvents.exchangeRateUpdated, refreshFromRealtime)
+  useRealtimeEvent(realtimeEvents.crossExchangeRateUpdated, refreshFromRealtime)
+  useRealtimeEvent(realtimeEvents.govExchangeRateUpdated, refreshFromRealtime)
+  useRealtimeEvent(realtimeEvents.govCrossExchangeRateUpdated, refreshFromRealtime)
 
   useEffect(() => {
     if (!session?.csrfToken) {

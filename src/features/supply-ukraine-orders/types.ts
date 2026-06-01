@@ -241,6 +241,12 @@ export type ProductDeliveryExpense = EntityFields & {
   VatPercent?: number
 }
 
+export type SupplyOrderUkraineSad = EntityFields & {
+  Client?: Client | null
+  OrganizationClient?: NamedEntity | null
+  SadType?: number
+}
+
 export type SupplyOrderUkraine = EntityFields & {
   AdditionalPercent?: number
   ClientAgreement?: ClientAgreement | null
@@ -254,6 +260,7 @@ export type SupplyOrderUkraine = EntityFields & {
   FromDate?: Date | string
   Organization?: Organization | null
   Responsible?: User | null
+  Sad?: SupplyOrderUkraineSad | null
   Supplier?: Client | null
   SupplyOrderUkraineDocuments?: SupplyOrderUkraineDocument[]
   SupplyOrderUkraineItems?: SupplyOrderUkraineItem[]

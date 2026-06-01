@@ -23,7 +23,7 @@ import {
   IconPlus,
   IconRefresh,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
 import { useI18n } from '../../i18n/useI18n'
@@ -131,6 +131,11 @@ type ProductMovementExportDocument = {
   PdfDocumentURL?: string
 }
 
+type ProductMovementExportState = {
+  document: ProductMovementExportDocument
+  key: string
+}
+
 type ProductMovementParams = {
   from: string
   movementType: number
@@ -152,6 +157,74 @@ type ProductStorageLocationHistoryParams = {
   productNetId: string
   to: string
 }
+
+type StorageLocationDrawerState = {
+  dateFrom: string
+  dateTo: string
+  error: string | null
+  isLoading: boolean
+  loadedProductNetUid: string
+  page: number
+  pageSize: number
+  rows: ProductStorageLocationHistory[]
+}
+
+type StorageLocationDrawerAction =
+  | { type: 'load-failed'; error: string; productNetUid: string }
+  | { type: 'load-started' }
+  | { type: 'load-succeeded'; productNetUid: string; rows: ProductStorageLocationHistory[] }
+  | { type: 'next-page' }
+  | { type: 'previous-page' }
+  | { type: 'set-date-from'; value: string }
+  | { type: 'set-date-to'; value: string }
+  | { type: 'set-page-size'; value: number }
+
+type ProductMovementFilterState = {
+  dateFrom: string
+  dateTo: string
+  movementType: string
+  selectedTypes: number[]
+}
+
+type ProductMovementFilterAction =
+  | { type: 'reset-selected-types' }
+  | { type: 'set-date-from'; value: string }
+  | { type: 'set-date-to'; value: string }
+  | { type: 'set-movement-type'; value: string }
+  | { type: 'toggle-selected-type'; value: number }
+
+type MovementDateState = {
+  dateFrom: string
+  dateTo: string
+}
+
+type MovementDateAction =
+  | { type: 'set-date-from'; value: string }
+  | { type: 'set-date-to'; value: string }
+
+type MovementRowsState<TRow> = {
+  error: string | null
+  isLoading: boolean
+  rows: TRow[]
+}
+
+type MovementRowsAction<TRow> =
+  | { type: 'clear-error' }
+  | { type: 'load-failed'; error: string }
+  | { type: 'load-started' }
+  | { type: 'load-succeeded'; rows: TRow[] }
+  | { type: 'set-error'; error: string }
+
+type ProductMovementExportModalState = {
+  documentState: ProductMovementExportState | null
+  exportingKey: string | null
+}
+
+type ProductMovementExportModalAction =
+  | { type: 'close-document' }
+  | { type: 'export-finished' }
+  | { type: 'export-started'; key: string }
+  | { type: 'export-succeeded'; document: ProductMovementExportDocument; key: string }
 
 const MOVEMENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -219,6 +292,227 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+function createStorageLocationDrawerState(): StorageLocationDrawerState {
+  return {
+    dateFrom: getTodayDate(),
+    dateTo: getTodayDate(),
+    error: null,
+    isLoading: false,
+    loadedProductNetUid: '',
+    page: 1,
+    pageSize: 20,
+    rows: [],
+  }
+}
+
+function storageLocationDrawerReducer(
+  state: StorageLocationDrawerState,
+  action: StorageLocationDrawerAction,
+): StorageLocationDrawerState {
+  switch (action.type) {
+    case 'load-failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        loadedProductNetUid: action.productNetUid,
+        rows: [],
+      }
+    case 'load-started':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+        rows: [],
+      }
+    case 'load-succeeded':
+      return {
+        ...state,
+        isLoading: false,
+        loadedProductNetUid: action.productNetUid,
+        rows: action.rows,
+      }
+    case 'next-page':
+      return {
+        ...state,
+        page: state.page + 1,
+      }
+    case 'previous-page':
+      return {
+        ...state,
+        page: Math.max(1, state.page - 1),
+      }
+    case 'set-date-from':
+      return {
+        ...state,
+        dateFrom: action.value,
+        page: 1,
+      }
+    case 'set-date-to':
+      return {
+        ...state,
+        dateTo: action.value,
+        page: 1,
+      }
+    case 'set-page-size':
+      return {
+        ...state,
+        page: 1,
+        pageSize: action.value,
+      }
+  }
+}
+
+function createProductMovementFilterState(): ProductMovementFilterState {
+  return {
+    dateFrom: getTodayDate(),
+    dateTo: getTodayDate(),
+    movementType: '0',
+    selectedTypes: movementItemTypes,
+  }
+}
+
+function productMovementFilterReducer(
+  state: ProductMovementFilterState,
+  action: ProductMovementFilterAction,
+): ProductMovementFilterState {
+  switch (action.type) {
+    case 'reset-selected-types':
+      return {
+        ...state,
+        selectedTypes: movementItemTypes,
+      }
+    case 'set-date-from':
+      return {
+        ...state,
+        dateFrom: action.value,
+      }
+    case 'set-date-to':
+      return {
+        ...state,
+        dateTo: action.value,
+      }
+    case 'set-movement-type':
+      return {
+        ...state,
+        movementType: action.value,
+      }
+    case 'toggle-selected-type':
+      return {
+        ...state,
+        selectedTypes: state.selectedTypes.includes(action.value)
+          ? state.selectedTypes.filter((type) => type !== action.value)
+          : state.selectedTypes.concat(action.value),
+      }
+  }
+}
+
+function createMovementDateState(): MovementDateState {
+  return {
+    dateFrom: getTodayDate(),
+    dateTo: getTodayDate(),
+  }
+}
+
+function movementDateReducer(state: MovementDateState, action: MovementDateAction): MovementDateState {
+  switch (action.type) {
+    case 'set-date-from':
+      return {
+        ...state,
+        dateFrom: action.value,
+      }
+    case 'set-date-to':
+      return {
+        ...state,
+        dateTo: action.value,
+      }
+  }
+}
+
+function createMovementRowsState<TRow>(): MovementRowsState<TRow> {
+  return {
+    error: null,
+    isLoading: false,
+    rows: [],
+  }
+}
+
+function movementRowsReducer<TRow>(
+  state: MovementRowsState<TRow>,
+  action: MovementRowsAction<TRow>,
+): MovementRowsState<TRow> {
+  switch (action.type) {
+    case 'clear-error':
+      return {
+        ...state,
+        error: null,
+      }
+    case 'load-failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        rows: [],
+      }
+    case 'load-started':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+        rows: [],
+      }
+    case 'load-succeeded':
+      return {
+        ...state,
+        isLoading: false,
+        rows: action.rows,
+      }
+    case 'set-error':
+      return {
+        ...state,
+        error: action.error,
+      }
+  }
+}
+
+function createProductMovementExportModalState(): ProductMovementExportModalState {
+  return {
+    documentState: null,
+    exportingKey: null,
+  }
+}
+
+function productMovementExportModalReducer(
+  state: ProductMovementExportModalState,
+  action: ProductMovementExportModalAction,
+): ProductMovementExportModalState {
+  switch (action.type) {
+    case 'close-document':
+      return {
+        ...state,
+        documentState: null,
+      }
+    case 'export-finished':
+      return {
+        ...state,
+        exportingKey: null,
+      }
+    case 'export-started':
+      return {
+        ...state,
+        exportingKey: action.key,
+      }
+    case 'export-succeeded':
+      return {
+        ...state,
+        documentState: {
+          document: action.document,
+          key: action.key,
+        },
+      }
+  }
+}
+
 export function ProductMovementHistoryDrawer({
   initialTab = 'movement',
   opened,
@@ -226,6 +520,31 @@ export function ProductMovementHistoryDrawer({
   onClose,
 }: {
   initialTab?: ProductMovementHistoryTab
+  opened: boolean
+  product: MovementHistoryProduct | null
+  onClose: () => void
+}) {
+  const productNetUid = product?.NetUid?.trim() || ''
+  const productKey = productNetUid || product?.VendorCode || product?.Name || product?.NameUA || 'closed'
+
+  return (
+    <ProductMovementHistoryDrawerContent
+      key={`${productKey}-${initialTab}`}
+      initialTab={initialTab}
+      opened={opened}
+      product={product}
+      onClose={onClose}
+    />
+  )
+}
+
+function ProductMovementHistoryDrawerContent({
+  initialTab,
+  opened,
+  product,
+  onClose,
+}: {
+  initialTab: ProductMovementHistoryTab
   opened: boolean
   product: MovementHistoryProduct | null
   onClose: () => void
@@ -268,15 +587,31 @@ export function ProductStorageLocationHistoryDrawer({
   product: MovementHistoryProduct | null
   onClose: () => void
 }) {
+  const productNetUid = product?.NetUid?.trim() || ''
+
+  return (
+    <ProductStorageLocationHistoryDrawerContent
+      key={productNetUid || 'closed'}
+      opened={opened}
+      product={product}
+      onClose={onClose}
+    />
+  )
+}
+
+function ProductStorageLocationHistoryDrawerContent({
+  opened,
+  product,
+  onClose,
+}: {
+  opened: boolean
+  product: MovementHistoryProduct | null
+  onClose: () => void
+}) {
   const { t } = useI18n()
   const productNetUid = product?.NetUid?.trim() || ''
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
-  const [dateTo, setDateTo] = useState(getTodayDate)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
-  const [rows, setRows] = useState<ProductStorageLocationHistory[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(false)
+  const [drawerState, dispatchDrawerState] = useReducer(storageLocationDrawerReducer, undefined, createStorageLocationDrawerState)
+  const { dateFrom, dateTo, error, isLoading, loadedProductNetUid, page, pageSize, rows } = drawerState
   const columns = useStorageLocationHistoryColumns()
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії місця зберігання')
@@ -285,6 +620,7 @@ export function ProductStorageLocationHistoryDrawer({
   const canMoveBack = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : rows.length === pageSize
   const title = product ? `${t('Історія місця зберігання')}: ${getProductTitle(product)}` : t('Історія місця зберігання')
+  const tableRows = loadedProductNetUid === productNetUid ? rows : []
 
   useEffect(() => {
     if (!opened || !productNetUid || filterError) {
@@ -295,8 +631,7 @@ export function ProductStorageLocationHistoryDrawer({
     const offset = (page - 1) * pageSize
 
     async function loadRows() {
-      setLoading(true)
-      setError(null)
+      dispatchDrawerState({ type: 'load-started' })
 
       try {
         const nextRows = await getProductStorageLocationHistory({
@@ -308,16 +643,15 @@ export function ProductStorageLocationHistoryDrawer({
         })
 
         if (!cancelled) {
-          setRows(nextRows)
+          dispatchDrawerState({ productNetUid, rows: nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setRows([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити історію місця зберігання'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchDrawerState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити історію місця зберігання'),
+            productNetUid,
+            type: 'load-failed',
+          })
         }
       }
     }
@@ -339,8 +673,7 @@ export function ProductStorageLocationHistoryDrawer({
             value={dateFrom}
             w={150}
             onChange={(event) => {
-              setPage(1)
-              setDateFrom(event.currentTarget.value)
+              dispatchDrawerState({ type: 'set-date-from', value: event.currentTarget.value })
             }}
           />
           <TextInput
@@ -349,8 +682,7 @@ export function ProductStorageLocationHistoryDrawer({
             value={dateTo}
             w={150}
             onChange={(event) => {
-              setPage(1)
-              setDateTo(event.currentTarget.value)
+              dispatchDrawerState({ type: 'set-date-to', value: event.currentTarget.value })
             }}
           />
           <Select
@@ -359,8 +691,7 @@ export function ProductStorageLocationHistoryDrawer({
             value={String(pageSize)}
             w={140}
             onChange={(value) => {
-              setPage(1)
-              setPageSize(Number(value || 20))
+              dispatchDrawerState({ type: 'set-page-size', value: Number(value || 20) })
             }}
           />
           <Group gap="xs">
@@ -369,7 +700,7 @@ export function ProductStorageLocationHistoryDrawer({
               color="gray"
               disabled={!canMoveBack || isLoading || Boolean(filterError)}
               variant="light"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              onClick={() => dispatchDrawerState({ type: 'previous-page' })}
             >
               <IconChevronLeft size={18} />
             </ActionIcon>
@@ -378,7 +709,7 @@ export function ProductStorageLocationHistoryDrawer({
               color="gray"
               disabled={!canMoveForward || isLoading || Boolean(filterError)}
               variant="light"
-              onClick={() => setPage((currentPage) => currentPage + 1)}
+              onClick={() => dispatchDrawerState({ type: 'next-page' })}
             >
               <IconChevronRight size={18} />
             </ActionIcon>
@@ -391,7 +722,7 @@ export function ProductStorageLocationHistoryDrawer({
         ) : null}
         <DataTable
           columns={columns}
-          data={activeError ? [] : rows}
+          data={activeError ? [] : tableRows}
           defaultLayout={STORAGE_LOCATION_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Історію місця зберігання не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || `${row.Created || 'date'}-${index}`)}
@@ -410,21 +741,34 @@ export function ProductStorageLocationHistoryDrawer({
 function ProductMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
-  const [dateTo, setDateTo] = useState(getTodayDate)
-  const [movementType, setMovementType] = useState('0')
-  const [selectedTypes, setSelectedTypes] = useState<number[]>(movementItemTypes)
-  const [rows, setRows] = useState<ProductMovement[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(false)
-  const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
-  const [isExporting, setExporting] = useState(false)
+  const [filterState, dispatchFilterState] = useReducer(productMovementFilterReducer, undefined, createProductMovementFilterState)
+  const { dateFrom, dateTo, movementType, selectedTypes } = filterState
+  const [rowsState, dispatchRowsState] = useReducer(
+    movementRowsReducer<ProductMovement>,
+    undefined,
+    createMovementRowsState<ProductMovement>,
+  )
+  const { error, isLoading, rows } = rowsState
+  const [exportModalState, dispatchExportModalState] = useReducer(
+    productMovementExportModalReducer,
+    undefined,
+    createProductMovementExportModalState,
+  )
+  const { documentState: exportDocumentState, exportingKey } = exportModalState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const exportRequestRef = useRef(0)
   const columns = useProductMovementColumns()
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
   const activeError = filterError || missingNetUidError || typesError || error
+  const exportKey = `${active}|${productNetUid}|${dateFrom}|${dateTo}|${movementType}|${selectedTypes.join(',')}`
+  const exportDocument = exportDocumentState?.key === exportKey ? exportDocumentState.document : null
+  const isExporting = exportingKey === exportKey
+
+  useEffect(() => {
+    exportRequestRef.current += 1
+  }, [active, dateFrom, dateTo, movementType, productNetUid, selectedTypes])
 
   useEffect(() => {
     if (!active || filterError || typesError || !productNetUid) {
@@ -434,8 +778,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
     let cancelled = false
 
     async function loadRows() {
-      setLoading(true)
-      setError(null)
+      dispatchRowsState({ type: 'load-started' })
 
       try {
         const nextRows = await getProductMovements({
@@ -447,16 +790,14 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         })
 
         if (!cancelled) {
-          setRows(nextRows)
+          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setRows([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух товару'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchRowsState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух товару'),
+            type: 'load-failed',
+          })
         }
       }
     }
@@ -469,11 +810,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
   }, [active, dateFrom, dateTo, filterError, movementType, productNetUid, reloadKey, selectedTypes, t, typesError])
 
   function toggleMovementItemType(value: number) {
-    setSelectedTypes((currentTypes) => (
-      currentTypes.includes(value)
-        ? currentTypes.filter((type) => type !== value)
-        : currentTypes.concat(value)
-    ))
+    dispatchFilterState({ type: 'toggle-selected-type', value })
   }
 
   async function exportMovements() {
@@ -481,8 +818,11 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
       return
     }
 
-    setExporting(true)
-    setError(null)
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const requestKey = exportKey
+    dispatchExportModalState({ key: requestKey, type: 'export-started' })
+    dispatchRowsState({ type: 'clear-error' })
 
     try {
       const nextDocument = await exportProductMovementsDocument({
@@ -493,25 +833,46 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         types: selectedTypes,
       })
 
-      setExportDocument(nextDocument)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
+      }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'))
+      if (exportRequestRef.current === requestId) {
+        dispatchRowsState({
+          error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху товару'),
+          type: 'set-error',
+        })
+      }
     } finally {
-      setExporting(false)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ type: 'export-finished' })
+      }
     }
   }
 
   return (
     <Stack gap="md">
       <Group align="end" gap="sm" wrap="wrap" className="clients-filter-row">
-        <TextInput label={t('З')} type="date" value={dateFrom} w={150} onChange={(event) => setDateFrom(event.currentTarget.value)} />
-        <TextInput label={t('По')} type="date" value={dateTo} w={150} onChange={(event) => setDateTo(event.currentTarget.value)} />
+        <TextInput
+          label={t('З')}
+          type="date"
+          value={dateFrom}
+          w={150}
+          onChange={(event) => dispatchFilterState({ type: 'set-date-from', value: event.currentTarget.value })}
+        />
+        <TextInput
+          label={t('По')}
+          type="date"
+          value={dateTo}
+          w={150}
+          onChange={(event) => dispatchFilterState({ type: 'set-date-to', value: event.currentTarget.value })}
+        />
         <Select
           label={t('Тип руху')}
           data={movementTypeOptions.map((option) => ({ ...option, label: t(option.label) }))}
           value={movementType}
           w={220}
-          onChange={(value) => setMovementType(value || '0')}
+          onChange={(value) => dispatchFilterState({ type: 'set-movement-type', value: value || '0' })}
         />
         <Button
           disabled={Boolean(filterError) || Boolean(typesError)}
@@ -542,7 +903,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
             onChange={() => toggleMovementItemType(option.value)}
           />
         ))}
-        <Button size="xs" color="gray" variant="subtle" onClick={() => setSelectedTypes(movementItemTypes)}>
+        <Button size="xs" color="gray" variant="subtle" onClick={() => dispatchFilterState({ type: 'reset-selected-types' })}>
           {t('Скинути')}
         </Button>
       </Group>
@@ -564,7 +925,11 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
         minWidth={1640}
         tableId="product-movement-history"
       />
-      <ProductDocumentDownloadModal document={exportDocument} title={t('Документ руху товару')} onClose={() => setExportDocument(null)} />
+      <ProductDocumentDownloadModal
+        document={exportDocument}
+        title={t('Документ руху товару')}
+        onClose={() => dispatchExportModalState({ type: 'close-document' })}
+      />
     </Stack>
   )
 }
@@ -572,18 +937,33 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
 function ProductIncomeMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
-  const [dateTo, setDateTo] = useState(getTodayDate)
-  const [rows, setRows] = useState<ProductIncomeMovement[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(false)
-  const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
-  const [isExporting, setExporting] = useState(false)
+  const [dateState, dispatchDateState] = useReducer(movementDateReducer, undefined, createMovementDateState)
+  const { dateFrom, dateTo } = dateState
+  const [rowsState, dispatchRowsState] = useReducer(
+    movementRowsReducer<ProductIncomeMovement>,
+    undefined,
+    createMovementRowsState<ProductIncomeMovement>,
+  )
+  const { error, isLoading, rows } = rowsState
+  const [exportModalState, dispatchExportModalState] = useReducer(
+    productMovementExportModalReducer,
+    undefined,
+    createProductMovementExportModalState,
+  )
+  const { documentState: exportDocumentState, exportingKey } = exportModalState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const exportRequestRef = useRef(0)
   const columns = useProductIncomeMovementColumns()
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження приходу')
   const activeError = filterError || missingNetUidError || error
+  const exportKey = `${active}|${productNetUid}|${dateFrom}|${dateTo}`
+  const exportDocument = exportDocumentState?.key === exportKey ? exportDocumentState.document : null
+  const isExporting = exportingKey === exportKey
+
+  useEffect(() => {
+    exportRequestRef.current += 1
+  }, [active, dateFrom, dateTo, productNetUid])
 
   useEffect(() => {
     if (!active || filterError || !productNetUid) {
@@ -593,8 +973,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
     let cancelled = false
 
     async function loadRows() {
-      setLoading(true)
-      setError(null)
+      dispatchRowsState({ type: 'load-started' })
 
       try {
         const nextRows = await getProductIncomeMovements({
@@ -604,16 +983,14 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         })
 
         if (!cancelled) {
-          setRows(nextRows)
+          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setRows([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити прихід товару'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchRowsState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити прихід товару'),
+            type: 'load-failed',
+          })
         }
       }
     }
@@ -630,8 +1007,11 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
       return
     }
 
-    setExporting(true)
-    setError(null)
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const requestKey = exportKey
+    dispatchExportModalState({ key: requestKey, type: 'export-started' })
+    dispatchRowsState({ type: 'clear-error' })
 
     try {
       const nextDocument = await exportProductIncomeMovementsDocument({
@@ -640,11 +1020,20 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         to: dateTo,
       })
 
-      setExportDocument(nextDocument)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
+      }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ приходу'))
+      if (exportRequestRef.current === requestId) {
+        dispatchRowsState({
+          error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ приходу'),
+          type: 'set-error',
+        })
+      }
     } finally {
-      setExporting(false)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ type: 'export-finished' })
+      }
     }
   }
 
@@ -656,8 +1045,8 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         exportDisabled={!productNetUid || Boolean(filterError)}
         exportLoading={isExporting}
         isLoading={isLoading}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
+        onDateFromChange={(value) => dispatchDateState({ type: 'set-date-from', value })}
+        onDateToChange={(value) => dispatchDateState({ type: 'set-date-to', value })}
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
@@ -679,7 +1068,11 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
         minWidth={1780}
         tableId="product-income-movement-history"
       />
-      <ProductDocumentDownloadModal document={exportDocument} title={t('Документ приходу товару')} onClose={() => setExportDocument(null)} />
+      <ProductDocumentDownloadModal
+        document={exportDocument}
+        title={t('Документ приходу товару')}
+        onClose={() => dispatchExportModalState({ type: 'close-document' })}
+      />
     </Stack>
   )
 }
@@ -687,18 +1080,33 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
 function ProductOutcomeMovementPanel({ active, product }: { active: boolean; product: MovementHistoryProduct }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim() || ''
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
-  const [dateTo, setDateTo] = useState(getTodayDate)
-  const [rows, setRows] = useState<ProductOutcomeMovement[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(false)
-  const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
-  const [isExporting, setExporting] = useState(false)
+  const [dateState, dispatchDateState] = useReducer(movementDateReducer, undefined, createMovementDateState)
+  const { dateFrom, dateTo } = dateState
+  const [rowsState, dispatchRowsState] = useReducer(
+    movementRowsReducer<ProductOutcomeMovement>,
+    undefined,
+    createMovementRowsState<ProductOutcomeMovement>,
+  )
+  const { error, isLoading, rows } = rowsState
+  const [exportModalState, dispatchExportModalState] = useReducer(
+    productMovementExportModalReducer,
+    undefined,
+    createProductMovementExportModalState,
+  )
+  const { documentState: exportDocumentState, exportingKey } = exportModalState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const exportRequestRef = useRef(0)
   const columns = useProductOutcomeMovementColumns()
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження виходу')
   const activeError = filterError || missingNetUidError || error
+  const exportKey = `${active}|${productNetUid}|${dateFrom}|${dateTo}`
+  const exportDocument = exportDocumentState?.key === exportKey ? exportDocumentState.document : null
+  const isExporting = exportingKey === exportKey
+
+  useEffect(() => {
+    exportRequestRef.current += 1
+  }, [active, dateFrom, dateTo, productNetUid])
 
   useEffect(() => {
     if (!active || filterError || !productNetUid) {
@@ -708,8 +1116,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
     let cancelled = false
 
     async function loadRows() {
-      setLoading(true)
-      setError(null)
+      dispatchRowsState({ type: 'load-started' })
 
       try {
         const nextRows = await getProductOutcomeMovements({
@@ -719,16 +1126,14 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         })
 
         if (!cancelled) {
-          setRows(nextRows)
+          dispatchRowsState({ rows: nextRows, type: 'load-succeeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setRows([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити вихід товару'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchRowsState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити вихід товару'),
+            type: 'load-failed',
+          })
         }
       }
     }
@@ -745,8 +1150,11 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
       return
     }
 
-    setExporting(true)
-    setError(null)
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const requestKey = exportKey
+    dispatchExportModalState({ key: requestKey, type: 'export-started' })
+    dispatchRowsState({ type: 'clear-error' })
 
     try {
       const nextDocument = await exportProductOutcomeMovementsDocument({
@@ -755,11 +1163,20 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         to: dateTo,
       })
 
-      setExportDocument(nextDocument)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ document: nextDocument, key: requestKey, type: 'export-succeeded' })
+      }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ виходу'))
+      if (exportRequestRef.current === requestId) {
+        dispatchRowsState({
+          error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ виходу'),
+          type: 'set-error',
+        })
+      }
     } finally {
-      setExporting(false)
+      if (exportRequestRef.current === requestId) {
+        dispatchExportModalState({ type: 'export-finished' })
+      }
     }
   }
 
@@ -771,8 +1188,8 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         exportDisabled={!productNetUid || Boolean(filterError)}
         exportLoading={isExporting}
         isLoading={isLoading}
-        onDateFromChange={setDateFrom}
-        onDateToChange={setDateTo}
+        onDateFromChange={(value) => dispatchDateState({ type: 'set-date-from', value })}
+        onDateToChange={(value) => dispatchDateState({ type: 'set-date-to', value })}
         onExport={() => void exportMovements()}
         onRefresh={() => reload()}
       />
@@ -794,7 +1211,11 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
         minWidth={1280}
         tableId="product-outcome-movement-history"
       />
-      <ProductDocumentDownloadModal document={exportDocument} title={t('Документ виходу товару')} onClose={() => setExportDocument(null)} />
+      <ProductDocumentDownloadModal
+        document={exportDocument}
+        title={t('Документ виходу товару')}
+        onClose={() => dispatchExportModalState({ type: 'close-document' })}
+      />
     </Stack>
   )
 }

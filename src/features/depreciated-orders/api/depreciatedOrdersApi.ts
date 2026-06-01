@@ -4,11 +4,12 @@ import type {
   DepreciatedOrderCreateFromFilePayload,
   DepreciatedOrderCreateFromFileResult,
   DepreciatedOrderExportDocument,
+  DepreciatedOrdersResponse,
   DepreciatedOrderStorage,
   DepreciatedOrdersSearchParams,
 } from '../types'
 
-export async function getDepreciatedOrders(params: DepreciatedOrdersSearchParams): Promise<DepreciatedOrder[]> {
+export async function getDepreciatedOrders(params: DepreciatedOrdersSearchParams): Promise<DepreciatedOrdersResponse> {
   const result = await apiRequest<unknown>('/orders/depreciated/all/filtered', {
     query: {
       from: params.from,
@@ -18,7 +19,7 @@ export async function getDepreciatedOrders(params: DepreciatedOrdersSearchParams
     },
   })
 
-  return normalizeDepreciatedOrders(result)
+  return normalizeDepreciatedOrdersResponse(result)
 }
 
 export async function getDepreciatedOrderByNetId(netId: string): Promise<DepreciatedOrder | null> {
@@ -66,6 +67,20 @@ export async function createDepreciatedOrderFromFile(
   }
 }
 
+function normalizeDepreciatedOrdersResponse(result: unknown): DepreciatedOrdersResponse {
+  const items = normalizeDepreciatedOrders(result)
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const totalQty =
+    readNumber(payload.TotalRowsQty) ??
+    readNumber(payload.TotalQty) ??
+    readNumber(payload.Total) ??
+    readNumber(payload.Count) ??
+    readNumber(items[0]?.TotalRowsQty) ??
+    items.length
+
+  return { items, totalQty }
+}
+
 function normalizeDepreciatedOrders(result: unknown): DepreciatedOrder[] {
   if (Array.isArray(result)) {
     return result.map(ensureDepreciatedOrder)
@@ -85,6 +100,22 @@ function normalizeDepreciatedOrders(result: unknown): DepreciatedOrder[] {
         : []
 
   return (items as DepreciatedOrder[]).map(ensureDepreciatedOrder)
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return null
 }
 
 function normalizeDepreciatedOrder(result: unknown): DepreciatedOrder | null {

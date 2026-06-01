@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ProductStorageAvailableConsignment,
+  ProductStorageAvailabilitiesResponse,
   ProductStorageAvailability,
   ProductStoragePlacement,
   ProductStorageStorage,
@@ -19,25 +20,31 @@ export async function getProductStorageStorages(): Promise<ProductStorageStorage
 
 export async function getAvailableProductsByStorage(
   params: ProductStoragesSearchParams,
-): Promise<ProductStorageAvailability[]> {
+): Promise<ProductStorageAvailabilitiesResponse> {
   const result = await apiRequest<unknown>('/storages/all/available/filtered', {
     query: {
+      from: params.from || '',
       limit: params.limit,
       netId: params.storageNetId,
       offset: params.offset,
+      to: params.to || '',
       value: params.value?.trim() || '',
     },
   })
 
-  return normalizeAvailabilities(result)
+  return normalizeAvailabilitiesResponse(result)
 }
 
-export async function exportProductStorageAvailability(
-  storageNetId: string,
-): Promise<ProductStoragesExportDocument> {
+export async function exportProductStorageAvailability(params: {
+  from?: string
+  storageNetId: string
+  to?: string
+}): Promise<ProductStoragesExportDocument> {
   const result = await apiRequest<unknown>('/storages/document/export', {
     query: {
-      netId: storageNetId,
+      from: params.from || '',
+      netId: params.storageNetId,
+      to: params.to || '',
     },
   })
 
@@ -56,10 +63,17 @@ export async function createProductStorageTransfer(payload: ProductStorageTransf
   })
 }
 
-export async function createProductStorageWriteOff(payload: ProductStorageWriteOffPayload): Promise<void> {
-  await apiRequest<unknown>('/orders/depreciated/new', {
+export async function createProductStorageWriteOff(payload: ProductStorageWriteOffPayload): Promise<unknown> {
+  return apiRequest<unknown>('/orders/depreciated/new', {
     method: 'POST',
     body: payload,
+  })
+}
+
+export async function recordProductStorageWriteOffHistory(depreciatedOrder: unknown): Promise<void> {
+  await apiRequest<unknown>('/history/order/item/orders/depreciated/new', {
+    method: 'POST',
+    body: depreciatedOrder,
   })
 }
 
@@ -103,10 +117,19 @@ function normalizeStorages(result: unknown): ProductStorageStorage[] {
   return []
 }
 
-function normalizeAvailabilities(result: unknown): ProductStorageAvailability[] {
+function normalizeAvailabilitiesResponse(result: unknown): ProductStorageAvailabilitiesResponse {
   const items = readArrayPayload(result, ['Items', 'Availabilities', 'ProductAvailabilities', 'Data'])
+    .map((item) => normalizeAvailability(item as ProductStorageAvailability))
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const totalQty =
+    readNumber(payload.TotalRowsQty) ??
+    readNumber(payload.TotalQty) ??
+    readNumber(payload.Total) ??
+    readNumber(payload.Count) ??
+    readNumber(items[0]?.TotalRowsQty) ??
+    items.length
 
-  return items.map((item) => normalizeAvailability(item as ProductStorageAvailability))
+  return { items, totalQty }
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {
@@ -142,6 +165,22 @@ function normalizeAvailability(availability: ProductStorageAvailability): Produc
         }
       : availability.Product,
   }
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return null
 }
 
 function normalizePlacements(placements: ProductStoragePlacement[] | undefined): ProductStoragePlacement[] {

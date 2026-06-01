@@ -523,12 +523,16 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   const organizationOptions = useMemo(
     () => [
       { label: t('Всі організації'), value: '' },
-      ...organizations
-        .filter((organization) => organization.Name || organization.FullName)
-        .map((organization) => ({
-          label: organization.Name || organization.FullName || '',
-          value: organization.Name || organization.FullName || '',
-        })),
+      ...organizations.reduce<{ label: string; value: string }[]>((options, organization) => {
+        if (organization.Name || organization.FullName) {
+          options.push({
+            label: organization.Name || organization.FullName || '',
+            value: organization.Name || organization.FullName || '',
+          })
+        }
+
+        return options
+      }, []),
     ],
     [organizations, t],
   )
@@ -760,10 +764,15 @@ function buildIndexMap(protocols: DeliveryProductProtocol[]): Map<DeliveryProduc
 }
 
 function formatSuppliers(protocol: DeliveryProductProtocol): string {
-  return (protocol.SupplyInvoices || [])
-    .map((invoice) => invoice.SupplyOrder?.Client?.FullName || invoice.SupplyOrder?.Client?.Name || '')
-    .filter(Boolean)
-    .join(', ')
+  return (protocol.SupplyInvoices || []).reduce<string[]>((suppliers, invoice) => {
+    const supplierName = invoice.SupplyOrder?.Client?.FullName || invoice.SupplyOrder?.Client?.Name || ''
+
+    if (supplierName) {
+      suppliers.push(supplierName)
+    }
+
+    return suppliers
+  }, []).join(', ')
 }
 
 function getResponsibleName(protocol: DeliveryProductProtocol): string {

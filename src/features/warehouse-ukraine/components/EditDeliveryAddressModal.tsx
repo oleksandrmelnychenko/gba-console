@@ -12,6 +12,13 @@ type EditDeliveryAddressModalProps = {
   onSave: (address: ShipmentDeliveryRecipientAddress) => void
 }
 
+type AddressDraft = {
+  city: string
+  department: string
+  value: string
+  editedAddress: ShipmentDeliveryRecipientAddress | null
+}
+
 export function EditDeliveryAddressModal({
   address,
   isSaving,
@@ -20,17 +27,16 @@ export function EditDeliveryAddressModal({
   opened,
 }: EditDeliveryAddressModalProps) {
   const { t } = useI18n()
-  const [city, setCity] = useState('')
-  const [department, setDepartment] = useState('')
-  const [value, setValue] = useState('')
-  const [editedAddress, setEditedAddress] = useState<ShipmentDeliveryRecipientAddress | null>(null)
-
-  if (opened && editedAddress !== address) {
-    setEditedAddress(address)
-    setCity(address?.City || '')
-    setDepartment(address?.Department || '')
-    setValue(address?.Value || '')
-  }
+  const [draft, setDraft] = useState<AddressDraft>({
+    city: '',
+    department: '',
+    value: '',
+    editedAddress: null,
+  })
+  const hasDraft = opened && draft.editedAddress === address
+  const city = hasDraft ? draft.city : address?.City || ''
+  const department = hasDraft ? draft.department : address?.Department || ''
+  const value = hasDraft ? draft.value : address?.Value || ''
 
   function handleSave() {
     onSave({ ...(address || {}), City: city, Department: department, Value: value })
@@ -39,13 +45,27 @@ export function EditDeliveryAddressModal({
   return (
     <AppModal centered opened={opened} title={t('Адреса доставки')} onClose={onClose}>
       <Stack gap="sm">
-        <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
+        <TextInput
+          label={t('Місто')}
+          value={city}
+          onChange={(event) =>
+            setDraft({ city: event.currentTarget.value, department, value, editedAddress: address })
+          }
+        />
         <TextInput
           label={t('Відділення')}
           value={department}
-          onChange={(event) => setDepartment(event.currentTarget.value)}
+          onChange={(event) =>
+            setDraft({ city, department: event.currentTarget.value, value, editedAddress: address })
+          }
         />
-        <TextInput label={t('Адреса')} value={value} onChange={(event) => setValue(event.currentTarget.value)} />
+        <TextInput
+          label={t('Адреса')}
+          value={value}
+          onChange={(event) =>
+            setDraft({ city, department, value: event.currentTarget.value, editedAddress: address })
+          }
+        />
         <Group justify="flex-end" gap="sm">
           <Button color="gray" variant="light" onClick={onClose}>
             {t('Скасувати')}

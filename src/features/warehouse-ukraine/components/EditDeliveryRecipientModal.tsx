@@ -12,6 +12,12 @@ type EditDeliveryRecipientModalProps = {
   onSave: (recipient: ShipmentDeliveryRecipient) => void
 }
 
+type RecipientDraft = {
+  fullName: string
+  mobilePhone: string
+  editedRecipient: ShipmentDeliveryRecipient | null
+}
+
 export function EditDeliveryRecipientModal({
   isSaving,
   onClose,
@@ -20,15 +26,14 @@ export function EditDeliveryRecipientModal({
   recipient,
 }: EditDeliveryRecipientModalProps) {
   const { t } = useI18n()
-  const [fullName, setFullName] = useState('')
-  const [mobilePhone, setMobilePhone] = useState('')
-  const [editedRecipient, setEditedRecipient] = useState<ShipmentDeliveryRecipient | null>(null)
-
-  if (opened && editedRecipient !== recipient) {
-    setEditedRecipient(recipient)
-    setFullName(recipient?.FullName || '')
-    setMobilePhone(recipient?.MobilePhone || '')
-  }
+  const [draft, setDraft] = useState<RecipientDraft>({
+    fullName: '',
+    mobilePhone: '',
+    editedRecipient: null,
+  })
+  const hasDraft = opened && draft.editedRecipient === recipient
+  const fullName = hasDraft ? draft.fullName : recipient?.FullName || ''
+  const mobilePhone = hasDraft ? draft.mobilePhone : recipient?.MobilePhone || ''
 
   function handleSave() {
     onSave({ ...(recipient || {}), FullName: fullName, MobilePhone: mobilePhone })
@@ -40,12 +45,16 @@ export function EditDeliveryRecipientModal({
         <TextInput
           label={t("Повне ім'я")}
           value={fullName}
-          onChange={(event) => setFullName(event.currentTarget.value)}
+          onChange={(event) =>
+            setDraft({ fullName: event.currentTarget.value, mobilePhone, editedRecipient: recipient })
+          }
         />
         <TextInput
           label={t('Мобільний телефон')}
           value={mobilePhone}
-          onChange={(event) => setMobilePhone(event.currentTarget.value)}
+          onChange={(event) =>
+            setDraft({ fullName, mobilePhone: event.currentTarget.value, editedRecipient: recipient })
+          }
         />
         <Group justify="flex-end" gap="sm">
           <Button color="gray" variant="light" onClick={onClose}>

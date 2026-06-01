@@ -10,7 +10,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { IconCheck } from '@tabler/icons-react'
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client, ClientAgreement, ClientGroup, ClientWorkplace } from '../../types'
 
@@ -64,7 +64,88 @@ function getInitialAgreements(workplace?: ClientWorkplace | null): ClientAgreeme
     .filter((agreement): agreement is ClientAgreement => Boolean(agreement))
 }
 
-export function WorkplaceForm({
+type WorkplaceFormState = {
+  isWorkplaceMode: boolean
+  values: WorkplaceFormValues
+  selectedGroup: ClientGroup
+  selectedAgreements: ClientAgreement[]
+  showErrors: boolean
+}
+
+type WorkplaceFormAction =
+  | { type: 'setWorkplaceMode'; checked: boolean }
+  | { type: 'updateField'; key: keyof WorkplaceFormValues; value: string }
+  | { type: 'selectGroup'; group: ClientGroup }
+  | { type: 'toggleAgreement'; agreement: ClientAgreement }
+  | { type: 'showErrors' }
+
+function createWorkplaceFormState(
+  workplace: ClientWorkplace | null | undefined,
+  groups: ClientGroup[],
+  isEdit: boolean,
+): WorkplaceFormState {
+  return {
+    isWorkplaceMode: isEdit,
+    values: toFormValues(workplace),
+    selectedGroup: getInitialGroup(workplace, groups),
+    selectedAgreements: getInitialAgreements(workplace),
+    showErrors: false,
+  }
+}
+
+function workplaceFormReducer(state: WorkplaceFormState, action: WorkplaceFormAction): WorkplaceFormState {
+  switch (action.type) {
+    case 'setWorkplaceMode':
+      return { ...state, isWorkplaceMode: action.checked }
+    case 'updateField':
+      return {
+        ...state,
+        values: {
+          ...state.values,
+          [action.key]: action.value,
+        },
+      }
+    case 'selectGroup':
+      return { ...state, selectedGroup: action.group }
+    case 'toggleAgreement': {
+      const exists = state.selectedAgreements.some((item) => item.NetUid === action.agreement.NetUid)
+
+      return {
+        ...state,
+        selectedAgreements: exists
+          ? state.selectedAgreements.filter((item) => item.NetUid !== action.agreement.NetUid)
+          : [...state.selectedAgreements, action.agreement],
+      }
+    }
+    case 'showErrors':
+      return { ...state, showErrors: true }
+    default:
+      return state
+  }
+}
+
+function getWorkplaceFormKey(workplace?: ClientWorkplace | null): string {
+  if (!workplace) {
+    return 'new'
+  }
+
+  return [
+    workplace.NetUid,
+    workplace.Id,
+    workplace.LastName,
+    workplace.FirstName,
+    workplace.MiddleName,
+    workplace.Email,
+    workplace.PhoneNumber,
+    workplace.ClientGroupId,
+  ].join('|')
+}
+
+export function WorkplaceForm(props: WorkplaceFormProps) {
+  return <WorkplaceFormFields key={getWorkplaceFormKey(props.workplace)} {...props} />
+}
+
+function WorkplaceFormFields({
   client,
   groups,
   workplace,
@@ -74,23 +155,11 @@ export function WorkplaceForm({
 }: WorkplaceFormProps) {
   const { t } = useI18n()
   const isEdit = Boolean(workplace && (workplace.Id || 0) > 0)
-  const [isWorkplaceMode, setWorkplaceMode] = useState(() => isEdit)
-  const [values, setValues] = useState<WorkplaceFormValues>(() => toFormValues(workplace))
-  const [selectedGroup, setSelectedGroup] = useState<ClientGroup>(() => getInitialGroup(workplace, groups))
-  const [selectedAgreements, setSelectedAgreements] = useState<ClientAgreement[]>(() =>
-    getInitialAgreements(workplace),
+  const [{ isWorkplaceMode, values, selectedGroup, selectedAgreements, showErrors }, dispatch] = useReducer(
+    workplaceFormReducer,
+    undefined,
+    () => createWorkplaceFormState(workplace, groups, isEdit),
   )
-  const [showErrors, setShowErrors] = useState(false)
-  const [prevWorkplace, setPrevWorkplace] = useState(workplace)
-
-  if (workplace !== prevWorkplace) {
-    setPrevWorkplace(workplace)
-    setWorkplaceMode(Boolean(workplace && (workplace.Id || 0) > 0))
-    setValues(toFormValues(workplace))
-    setSelectedGroup(getInitialGroup(workplace, groups))
-    setSelectedAgreements(getInitialAgreements(workplace))
-    setShowErrors(false)
-  }
 
   const lastNameError = !values.LastName.trim() ? '*' : undefined
   const firstNameError = !values.FirstName.trim() ? '*' : undefined
@@ -104,22 +173,16 @@ export function WorkplaceForm({
   )
 
   function update<K extends keyof WorkplaceFormValues>(key: K, value: string) {
-    setValues((current) => ({ ...current, [key]: value }))
+    dispatch({ type: 'updateField', key, value })
   }
 
   function handleGroupChange(value: string | null) {
     const matched = groupOptions.find((group) => String(group.Id) === value)
-    setSelectedGroup(matched || { Id: WITHOUT_GROUP_ID, Name: WITHOUT_GROUP_NAME })
+    dispatch({ type: 'selectGroup', group: matched || { Id: WITHOUT_GROUP_ID, Name: WITHOUT_GROUP_NAME } })
   }
 
   function toggleAgreement(agreement: ClientAgreement) {
-    setSelectedAgreements((current) => {
-      if (current.some((item) => item.NetUid === agreement.NetUid)) {
-        return current.filter((item) => item.NetUid !== agreement.NetUid)
-      }
-
-      return [...current, agreement]
-    })
+    dispatch({ type: 'toggleAgreement', agreement })
   }
 
   function buildBasePayload(): ClientWorkplace {
@@ -142,7 +205,7 @@ export function WorkplaceForm({
 
   function handleSubmit() {
     if (!isValid) {
-      setShowErrors(true)
+      dispatch({ type: 'showErrors' })
       return
     }
 
@@ -186,7 +249,7 @@ export function WorkplaceForm({
         checked={isWorkplaceMode}
         disabled={disabled}
         label={t('Робоче місце')}
-        onChange={(event) => setWorkplaceMode(event.currentTarget.checked)}
+        onChange={(event) => dispatch({ type: 'setWorkplaceMode', checked: event.currentTarget.checked })}
       />
 
       {isWorkplaceMode && (

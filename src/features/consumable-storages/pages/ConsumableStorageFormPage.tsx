@@ -11,7 +11,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -40,6 +40,25 @@ type StorageFormState = {
   responsibleUserNetUid: string
 }
 
+type ConsumableStorageFormPageState = {
+  error: string | null
+  form: StorageFormState
+  isLoading: boolean
+  organizations: Organization[]
+  storage: ConsumablesStorage
+  users: UserProfile[]
+}
+
+function pageStateReducer(
+  state: ConsumableStorageFormPageState,
+  patch: Partial<ConsumableStorageFormPageState>,
+): ConsumableStorageFormPageState {
+  return {
+    ...state,
+    ...patch,
+  }
+}
+
 const STORAGES_PATH = '/accounting/storages'
 const USER_SEARCH_DEBOUNCE_MS = 300
 
@@ -52,31 +71,24 @@ export function ConsumableStorageFormPage() {
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || STORAGES_PATH
   const isEditMode = Boolean(id)
-  const [storage, setStorage] = useValueState<ConsumablesStorage>(() => createEmptyStorage())
-  const [form, setForm] = useValueState<StorageFormState>(() => createEmptyForm())
-  const [organizations, setOrganizations] = useValueState<Organization[]>([])
-  const [users, setUsers] = useValueState<UserProfile[]>([])
+  const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [userSearchValue, setUserSearchValue] = useValueState('')
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
+  const { error, form, isLoading, organizations, storage, users } = pageState
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const canSave = hasPermission(isEditMode ? CONSUMABLE_STORAGE_EDIT_PERMISSION : CONSUMABLE_STORAGE_CREATE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    async function loadResources() {
-      setLoading(true)
-      setError(null)
+    dispatchPageState({ error: null, isLoading: true })
 
-      try {
-        const [nextOrganizations, nextUsers, nextStorage] = await Promise.all([
-          getConsumableStorageOrganizations(),
-          searchConsumableStorageUsers(''),
-          id ? getConsumableStorage(id) : Promise.resolve(null),
-        ])
-
+    void Promise.all([
+      getConsumableStorageOrganizations(),
+      searchConsumableStorageUsers(''),
+      id ? getConsumableStorage(id) : Promise.resolve(null),
+    ])
+      .then(([nextOrganizations, nextUsers, nextStorage]) => {
         if (controller.signal.aborted) {
           return
         }
@@ -84,30 +96,31 @@ export function ConsumableStorageFormPage() {
         const initialStorage = nextStorage || createEmptyStorage()
         const initialOrganization = initialStorage.Organization || nextOrganizations[0] || null
         const initialUser = initialStorage.ResponsibleUser || null
-        setOrganizations(includeEntity(nextOrganizations, initialOrganization))
-        setUsers(includeEntity(nextUsers, initialUser))
-        setStorage(initialStorage)
-        setForm({
-          description: initialStorage.Description || '',
-          name: initialStorage.Name || '',
-          organizationNetUid: getEntityValue(initialOrganization) || '',
-          responsibleUserNetUid: getEntityValue(initialUser) || '',
+        dispatchPageState({
+          error: null,
+          form: {
+            description: initialStorage.Description || '',
+            name: initialStorage.Name || '',
+            organizationNetUid: getEntityValue(initialOrganization) || '',
+            responsibleUserNetUid: getEntityValue(initialUser) || '',
+          },
+          isLoading: false,
+          organizations: includeEntity(nextOrganizations, initialOrganization),
+          storage: initialStorage,
+          users: includeEntity(nextUsers, initialUser),
         })
-      } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склад'))
+      })
+      .catch((loadError: unknown) => {
+        if (!isAbortError(loadError) && !controller.signal.aborted) {
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склад'),
+            isLoading: false,
+          })
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadResources()
+      })
 
     return () => controller.abort()
-  }, [id, setError, setForm, setLoading, setOrganizations, setStorage, setUsers, t])
+  }, [id, t])
 
   useEffect(() => {
     const responsibleUser = storage.ResponsibleUser || null
@@ -118,11 +131,13 @@ export function ConsumableStorageFormPage() {
         const nextUsers = await searchConsumableStorageUsers(debouncedUserSearchValue.trim())
 
         if (isActive) {
-          setUsers(includeEntity(nextUsers, responsibleUser))
+          dispatchPageState({ users: includeEntity(nextUsers, responsibleUser) })
         }
       } catch (loadError) {
         if (isActive) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувачів'))
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувачів'),
+          })
         }
       }
     }
@@ -132,7 +147,7 @@ export function ConsumableStorageFormPage() {
     return () => {
       isActive = false
     }
-  }, [debouncedUserSearchValue, setError, setUsers, storage.ResponsibleUser, t])
+  }, [debouncedUserSearchValue, storage.ResponsibleUser, t])
 
   const organizationOptions = useMemo(
     () => toSelectOptions(organizations, (organization) => organization.Name || organization.FullName),
@@ -169,17 +184,17 @@ export function ConsumableStorageFormPage() {
     const name = form.name.trim()
 
     if (!canSave) {
-      setError(t('Немає прав для збереження складу'))
+      dispatchPageState({ error: t('Немає прав для збереження складу') })
       return
     }
 
     if (!name) {
-      setError(t('Вкажіть назву складу'))
+      dispatchPageState({ error: t('Вкажіть назву складу') })
       return
     }
 
     if (!selectedOrganization) {
-      setError(t('Оберіть організацію'))
+      dispatchPageState({ error: t('Оберіть організацію') })
       return
     }
 
@@ -192,21 +207,23 @@ export function ConsumableStorageFormPage() {
     }
 
     setSaving(true)
-    setError(null)
+    dispatchPageState({ error: null })
 
     try {
       const savedStorage = isEditMode
         ? await updateConsumableStorage(payload)
         : await createConsumableStorage(payload)
 
-      setStorage(savedStorage || payload)
+      dispatchPageState({ storage: savedStorage || payload })
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Склад оновлено') : t('Склад створено'),
       })
       navigate(returnPath, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти склад'))
+      dispatchPageState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти склад'),
+      })
     } finally {
       setSaving(false)
     }
@@ -258,14 +275,22 @@ export function ConsumableStorageFormPage() {
               placeholder={t('Вкажіть назву')}
               required
               value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.currentTarget.value }))}
+              onChange={(event) =>
+                dispatchPageState({
+                  form: { ...form, name: event.currentTarget.value },
+                })
+              }
             />
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Опис')}
               placeholder={t('Вкажіть опис')}
               value={form.description}
-              onChange={(event) => setForm((current) => ({ ...current, description: event.currentTarget.value }))}
+              onChange={(event) =>
+                dispatchPageState({
+                  form: { ...form, description: event.currentTarget.value },
+                })
+              }
             />
             <Select
               clearable
@@ -276,7 +301,11 @@ export function ConsumableStorageFormPage() {
               placeholder={t('Оберіть відповідального')}
               searchValue={userSearchValue}
               value={form.responsibleUserNetUid || null}
-              onChange={(value) => setForm((current) => ({ ...current, responsibleUserNetUid: value || '' }))}
+              onChange={(value) =>
+                dispatchPageState({
+                  form: { ...form, responsibleUserNetUid: value || '' },
+                })
+              }
               onSearchChange={setUserSearchValue}
             />
             <Select
@@ -286,7 +315,11 @@ export function ConsumableStorageFormPage() {
               placeholder={t('Оберіть організацію')}
               required
               value={form.organizationNetUid || null}
-              onChange={(value) => setForm((current) => ({ ...current, organizationNetUid: value || '' }))}
+              onChange={(value) =>
+                dispatchPageState({
+                  form: { ...form, organizationNetUid: value || '' },
+                })
+              }
             />
           </Stack>
         </form>
@@ -311,6 +344,17 @@ function createEmptyForm(): StorageFormState {
     name: '',
     organizationNetUid: '',
     responsibleUserNetUid: '',
+  }
+}
+
+function createInitialPageState(isLoading: boolean): ConsumableStorageFormPageState {
+  return {
+    error: null,
+    form: createEmptyForm(),
+    isLoading,
+    organizations: [],
+    storage: createEmptyStorage(),
+    users: [],
   }
 }
 

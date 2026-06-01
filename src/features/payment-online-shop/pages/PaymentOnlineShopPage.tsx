@@ -115,7 +115,7 @@ function usePaymentOnlineShopModel() {
       })
       setSelectedItem(null)
       reload()
-      notifications.show({ color: 'green', message: t('Створити') })
+      notifications.show({ color: 'green', message: t('Платіж створено') })
     } catch (addError) {
       setCreateError(addError instanceof Error ? addError.message : t('Сталася помилка, заповніть поля!'))
     } finally {
@@ -132,15 +132,19 @@ function usePaymentOnlineShopModel() {
     setSaving(true)
 
     try {
-      await editPaymentImage({
+      const updatedItem = await editPaymentImage({
         amount,
         comment,
         item: editItem,
         paymentImageId: selectedItem.Id,
         user: user,
       })
+      const fallbackItem = updatePaymentImageItem(selectedItem, editItem, amount, comment, user)
+      const nextSelectedItem = updatedItem?.RetailClientPaymentImageItems ? updatedItem : fallbackItem
+
+      setSelectedItem(nextSelectedItem)
+      setItems((current) => replacePaymentShopItem(current, nextSelectedItem))
       setEditItem(null)
-      reload()
     } catch (saveError) {
       setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {
@@ -536,6 +540,45 @@ function formatAgreement(item: PaymentShopItem): string {
 
 function sumImageAmounts(item: PaymentShopItem): number {
   return (item.RetailClientPaymentImageItems || []).reduce((sum, image) => sum + (image.Amount || 0), 0)
+}
+
+function replacePaymentShopItem(items: PaymentShopItem[], nextItem: PaymentShopItem): PaymentShopItem[] {
+  return items.map((item) => (isSamePaymentShopItem(item, nextItem) ? nextItem : item))
+}
+
+function updatePaymentImageItem(
+  item: PaymentShopItem,
+  imageItem: RetailClientPaymentImageItem,
+  amount: number,
+  comment: string,
+  user: RetailClientPaymentImageItem['User'],
+): PaymentShopItem {
+  return {
+    ...item,
+    RetailClientPaymentImageItems: (item.RetailClientPaymentImageItems || []).map((candidate) =>
+      isSamePaymentImageItem(candidate, imageItem)
+        ? {
+            ...candidate,
+            Amount: amount,
+            Comment: comment,
+            User: user,
+          }
+        : candidate,
+    ),
+  }
+}
+
+function isSamePaymentShopItem(first: PaymentShopItem, second: PaymentShopItem): boolean {
+  return Boolean((first.NetUid && first.NetUid === second.NetUid) || (first.Id && first.Id === second.Id))
+}
+
+function isSamePaymentImageItem(first: RetailClientPaymentImageItem, second: RetailClientPaymentImageItem): boolean {
+  return Boolean(
+    (first.NetUid && first.NetUid === second.NetUid) ||
+      (first.Id && first.Id === second.Id) ||
+      (first.ImgUrl && first.ImgUrl === second.ImgUrl) ||
+      (first.RetailClientPaymentImageId && first.RetailClientPaymentImageId === second.RetailClientPaymentImageId),
+  )
 }
 
 function formatPrice(value: number | undefined): string {

@@ -38,10 +38,13 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DocumentOutcomePaymentModal } from '../../document-outcome-payment'
-import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment'
+import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
+import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { SadAddItemsModal } from '../components/SadAddItemsModal'
+import { SadPaymentFromSadModal } from '../components/SadPaymentFromSadModal'
+import { SadSupplyOrderFromSadModal } from '../components/SadSupplyOrderFromSadModal'
 import {
   deleteSad,
   deleteSadDocument,
@@ -151,6 +154,8 @@ export function AllSadsPage() {
   const [error, setError] = useState<string | null>(null)
   const [selectedSad, setSelectedSad] = useState<Sad | null>(null)
   const [outcomeSource, setOutcomeSource] = useState<DocumentOutcomePaymentSource | null>(null)
+  const [supplyOrderSad, setSupplyOrderSad] = useState<Sad | null>(null)
+  const [paymentAction, setPaymentAction] = useState<{ action: 'advance' | 'income'; sad: Sad } | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Sad | null>(null)
   const [isDeleting, setDeleting] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -332,6 +337,44 @@ export function AllSadsPage() {
     [t],
   )
 
+  const toolbarLeft = useMemo(
+    () => (
+      <Text c="dimmed" size="xs">
+        {t('Показано')} {sads.length}
+        {hasMore ? '+' : ''}
+      </Text>
+    ),
+    [hasMore, sads.length, t],
+  )
+
+  const toolbarRight = useMemo(
+    () => (
+      <Group gap={6} wrap="nowrap">
+        <Select
+          aria-label={t('Кількість рядків')}
+          data={PAGE_SIZE_OPTIONS}
+          size="xs"
+          value={String(pageSize)}
+          w={88}
+          onChange={(value) => {
+            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+            reload()
+          }}
+        />
+        <Button
+          disabled={!hasMore}
+          loading={isLoadingMore}
+          size="xs"
+          variant="light"
+          onClick={() => loadSads(sads.length)}
+        >
+          {t('Ще')}
+        </Button>
+      </Group>
+    ),
+    [hasMore, isLoadingMore, loadSads, pageSize, reload, sads.length, t],
+  )
+
   async function handleDeleteSad() {
     if (!deleteTarget?.NetUid) {
       return
@@ -394,36 +437,8 @@ export function AllSadsPage() {
           isLoading={isLoading}
           minWidth={1420}
           tableId="sad-all"
-          toolbarLeft={
-            <Text c="dimmed" size="xs">
-              {t('Показано')} {sads.length}
-              {hasMore ? '+' : ''}
-            </Text>
-          }
-          toolbarRight={
-            <Group gap={6} wrap="nowrap">
-              <Select
-                aria-label={t('Кількість рядків')}
-                data={PAGE_SIZE_OPTIONS}
-                size="xs"
-                value={String(pageSize)}
-                w={88}
-                onChange={(value) => {
-                  setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-                  reload()
-                }}
-              />
-              <Button
-                disabled={!hasMore}
-                loading={isLoadingMore}
-                size="xs"
-                variant="light"
-                onClick={() => loadSads(sads.length)}
-              >
-                {t('Ще')}
-              </Button>
-            </Group>
-          }
+          toolbarLeft={toolbarLeft}
+          toolbarRight={toolbarRight}
           onRowClick={setSelectedSad}
         />
       </Card>
@@ -431,6 +446,22 @@ export function AllSadsPage() {
       <SadActionModal
         sad={selectedSad}
         onClose={() => setSelectedSad(null)}
+        onCreateAdvancePayment={(sad) => {
+          setSelectedSad(null)
+          setPaymentAction({ action: 'advance', sad })
+        }}
+        onCreateIncomePayment={(sad) => {
+          setSelectedSad(null)
+          setPaymentAction({ action: 'income', sad })
+        }}
+        onCreateOutcomePayment={(sad) => {
+          setSelectedSad(null)
+          setOutcomeSource(buildSadOutcomeSource(sad))
+        }}
+        onCreateSupplyOrder={(sad) => {
+          setSelectedSad(null)
+          setSupplyOrderSad(sad)
+        }}
         onNavigate={(path) => {
           setSelectedSad(null)
           navigate(path)
@@ -441,6 +472,25 @@ export function AllSadsPage() {
         opened={Boolean(outcomeSource)}
         source={outcomeSource}
         onClose={() => setOutcomeSource(null)}
+      />
+
+      <SadPaymentFromSadModal
+        action={paymentAction?.action || null}
+        opened={Boolean(paymentAction)}
+        sad={paymentAction?.sad || null}
+        onClose={() => setPaymentAction(null)}
+      />
+
+      <SadSupplyOrderFromSadModal
+        opened={Boolean(supplyOrderSad)}
+        sad={supplyOrderSad}
+        onClose={() => setSupplyOrderSad(null)}
+        onCreated={(netUid) => {
+          reload()
+          if (netUid) {
+            navigate(`/orders/ukraine/view/${netUid}`)
+          }
+        }}
       />
 
       <AppModal centered opened={Boolean(deleteTarget)} title={t('Видалити SAD')} onClose={() => setDeleteTarget(null)}>
@@ -499,7 +549,7 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
   const [error, setError] = useState<string | null>(null)
   const [documentsOpen, setDocumentsOpen] = useState(false)
   const [downloadDocument, setDownloadDocument] = useState<SadPrintDocument | null>(null)
-  const [addItemPlaceholderOpen, setAddItemPlaceholderOpen] = useState(false)
+  const [addItemsOpen, setAddItemsOpen] = useState(false)
   const [deleteItemTarget, setDeleteItemTarget] = useState<SadItem | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
@@ -552,7 +602,21 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       setError(null)
 
       try {
-        const [loadedSad, loadedOrganizations] = await Promise.all([getSad(netId), getOrganizations()])
+        const loadedSad = await getSad(netId)
+
+        if (ignore) {
+          return
+        }
+
+        if (!loadedSad) {
+          setSad(null)
+          return
+        }
+
+        const agreementsPromise = loadedSad.Client?.NetUid
+          ? getClientAgreements(loadedSad.Client.NetUid)
+          : Promise.resolve<SadClientAgreement[] | null>(null)
+        const [loadedOrganizations, agreements] = await Promise.all([getOrganizations(), agreementsPromise])
 
         if (ignore) {
           return
@@ -560,15 +624,10 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
 
         setSad(loadedSad)
         setOrganizations(loadedOrganizations)
+        hydrateEditorState(loadedSad, loadedOrganizations)
 
-        if (loadedSad) {
-          hydrateEditorState(loadedSad, loadedOrganizations)
-          if (loadedSad.Client?.NetUid) {
-            const agreements = await getClientAgreements(loadedSad.Client.NetUid)
-            if (!ignore) {
-              setClientAgreements(agreements)
-            }
-          }
+        if (agreements) {
+          setClientAgreements(agreements)
         }
       } catch (loadError) {
         if (!ignore) {
@@ -739,6 +798,48 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     setDeleteItemTarget(null)
   }
 
+  async function addSadItems(items: SadItem[]) {
+    if (!sad || items.length === 0) {
+      return
+    }
+
+    const nextSad: Sad = {
+      ...sad,
+      SadItems: [...(sad.SadItems || []), ...items],
+    }
+    const payload = buildSadPayload({
+      isSend: false,
+      marginAmount,
+      sad: nextSad,
+      selectedClient,
+      selectedClientAgreement,
+      selectedOrganization,
+      selectedOrganizationClient,
+      selectedOrganizationClientAgreement,
+      selectedStatham,
+      selectedStathamCar,
+    })
+
+    setSaving(true)
+
+    try {
+      const updatedSad = await updateSad(payload)
+
+      if (updatedSad) {
+        setSad(updatedSad)
+        hydrateEditorState(updatedSad, organizations)
+      } else {
+        setSad(payload)
+      }
+
+      notifications.show({ color: 'green', message: t('Товари додано') })
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: getErrorMessage(saveError, t('Не вдалося додати товари')) })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function persistDocuments(nextSad?: Sad | null) {
     if (nextSad) {
       setSad(nextSad)
@@ -796,8 +897,8 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
           >
             {t('Завантажити')}
           </Button>
-          {!isReadonly && mode !== 'sale' && (
-            <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddItemPlaceholderOpen(true)}>
+          {!isReadonly && mode !== 'sale' && !sad.IsFromSale && (
+            <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddItemsOpen(true)}>
               {t('Додати товар')}
             </Button>
           )}
@@ -940,12 +1041,14 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
 
       <SadTotals sad={sad} />
 
-      <SadDocumentsModal
-        opened={documentsOpen}
-        sad={sad}
-        onClose={() => setDocumentsOpen(false)}
-        onUpdated={(nextSad) => void persistDocuments(nextSad)}
-      />
+      {documentsOpen && (
+        <SadDocumentsModal
+          opened={documentsOpen}
+          sad={sad}
+          onClose={() => setDocumentsOpen(false)}
+          onUpdated={(nextSad) => void persistDocuments(nextSad)}
+        />
+      )}
 
       <DownloadDocumentsModal
         document={downloadDocument}
@@ -953,16 +1056,12 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         onClose={() => setDownloadDocument(null)}
       />
 
-      <AppModal centered opened={addItemPlaceholderOpen} title={t('Додавання товарів')} onClose={() => setAddItemPlaceholderOpen(false)}>
-        <Stack>
-          <Text size="sm">
-            {t('Додавання товарів залежить від екрана кошика/замовлення постачання, який не входить у цей SAD slice. Поточний SAD не буде змінено.')}
-          </Text>
-          <Group justify="flex-end">
-            <Button onClick={() => setAddItemPlaceholderOpen(false)}>{t('Зрозуміло')}</Button>
-          </Group>
-        </Stack>
-      </AppModal>
+      <SadAddItemsModal
+        opened={addItemsOpen}
+        sad={sad}
+        onAdd={(items) => void addSadItems(items)}
+        onClose={() => setAddItemsOpen(false)}
+      />
 
       <AppModal centered opened={Boolean(deleteItemTarget)} title={t('Видалити позицію')} onClose={() => setDeleteItemTarget(null)}>
         <Stack>
@@ -1112,6 +1211,7 @@ function TirMovementPanel({
 }) {
   const { t } = useI18n()
   const [moveModalOpen, setMoveModalOpen] = useState(false)
+  const [deletePalletTarget, setDeletePalletTarget] = useState<SadPallet | null>(null)
   const [palletTypes, setPalletTypes] = useState<SadPalletType[]>([])
   const selectedSourceItems = useMemo(() => (sad.SadItems || []).filter((item) => item.IsSelected), [sad.SadItems])
   const selectedPalletItems = useMemo(
@@ -1184,7 +1284,7 @@ function TirMovementPanel({
             items={sad.SadItems || []}
             readonly={readonly}
             onSelectAll={() => {
-              const shouldSelect = !(sad.SadItems || []).filter((item) => (item.UnpackedQty || 0) > 0).every((item) => item.IsSelected)
+              const shouldSelect = (sad.SadItems || []).some((item) => (item.UnpackedQty || 0) > 0 && !item.IsSelected)
               setSad({
                 ...sad,
                 SadItems: (sad.SadItems || []).map((item) => (item.UnpackedQty || 0) > 0 ? { ...item, IsSelected: shouldSelect } : item),
@@ -1217,12 +1317,7 @@ function TirMovementPanel({
           <SadPalletsTable
             pallets={sad.SadPallets || []}
             readonly={readonly}
-            onDeletePallet={(pallet) => {
-              setSad({
-                ...sad,
-                SadPallets: (sad.SadPallets || []).filter((currentPallet) => getEntityKey(currentPallet) !== getEntityKey(pallet)),
-              })
-            }}
+            onDeletePallet={setDeletePalletTarget}
             onUpdateItem={updatePalletItem}
           />
         </Card>
@@ -1230,7 +1325,17 @@ function TirMovementPanel({
 
       {!readonly && (
         <Group justify="flex-end">
-          <Button loading={isSaving} onClick={() => onPersist(cleanPalletDrafts(sad))}>
+          <Button
+            loading={isSaving}
+            onClick={() => {
+              if (hasPalletItemErrors(sad)) {
+                notifications.show({ color: 'red', message: t('Виправте кількість у палетах перед збереженням') })
+                return
+              }
+
+              void onPersist(cleanPalletDrafts(sad))
+            }}
+          >
             {t('Зберегти палети')}
           </Button>
         </Group>
@@ -1247,6 +1352,33 @@ function TirMovementPanel({
           setMoveModalOpen(false)
         }}
       />
+
+      <AppModal centered opened={Boolean(deletePalletTarget)} title={t('Видалити палету')} onClose={() => setDeletePalletTarget(null)}>
+        <Stack>
+          <Text>{t('Палету буде прибрано з SAD після наступного збереження.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="subtle" onClick={() => setDeletePalletTarget(null)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                if (!deletePalletTarget) {
+                  return
+                }
+
+                setSad({
+                  ...sad,
+                  SadPallets: (sad.SadPallets || []).filter((currentPallet) => getEntityKey(currentPallet) !== getEntityKey(deletePalletTarget)),
+                })
+                setDeletePalletTarget(null)
+              }}
+            >
+              {t('Видалити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -1466,21 +1598,39 @@ function MoveItemsModal({
   sad: Sad
   selectedItems: SadItem[]
 }) {
-  const { t } = useI18n()
-  const [isNewPallet, setNewPallet] = useState(true)
-  const [palletNumber, setPalletNumber] = useState('')
-  const [palletNetId, setPalletNetId] = useState('')
-  const [palletTypeNetId, setPalletTypeNetId] = useState('')
+  if (!opened) {
+    return null
+  }
 
-  useEffect(() => {
-    if (opened) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNewPallet((sad.SadPallets || []).length === 0)
-      setPalletNumber('')
-      setPalletNetId((sad.SadPallets || [])[0]?.NetUid || '')
-      setPalletTypeNetId(palletTypes[0]?.NetUid || '')
-    }
-  }, [opened, palletTypes, sad.SadPallets])
+  return (
+    <MoveItemsModalContent
+      palletTypes={palletTypes}
+      sad={sad}
+      selectedItems={selectedItems}
+      onClose={onClose}
+      onMove={onMove}
+    />
+  )
+}
+
+function MoveItemsModalContent({
+  onClose,
+  onMove,
+  palletTypes,
+  sad,
+  selectedItems,
+}: {
+  onClose: () => void
+  onMove: (sad: Sad) => void
+  palletTypes: SadPalletType[]
+  sad: Sad
+  selectedItems: SadItem[]
+}) {
+  const { t } = useI18n()
+  const [isNewPallet, setNewPallet] = useState(() => (sad.SadPallets || []).length === 0)
+  const [palletNumber, setPalletNumber] = useState('')
+  const [palletNetId, setPalletNetId] = useState(() => (sad.SadPallets || [])[0]?.NetUid || '')
+  const [palletTypeNetId, setPalletTypeNetId] = useState(() => palletTypes[0]?.NetUid || '')
 
   function move() {
     if (!isNewPallet && !palletNetId) {
@@ -1534,7 +1684,7 @@ function MoveItemsModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Перемістити в палету')} onClose={onClose}>
+    <AppModal centered opened size="lg" title={t('Перемістити в палету')} onClose={onClose}>
       <Stack>
         <Alert color="blue" variant="light">
           {t('До палети буде додано')} {selectedItems.length} {t('позицій. Кількість береться з поля "Не в палеті".')}
@@ -1788,15 +1938,17 @@ export function SadSpecificationsPage() {
         />
       </Card>
 
-      <SpecificationEditorModal
-        editor={editingSpec}
-        sadNetId={sad.NetUid}
-        onClose={() => setEditingSpec(null)}
-        onSaved={() => {
-          setEditingSpec(null)
-          reload()
-        }}
-      />
+      {editingSpec && (
+        <SpecificationEditorModal
+          editor={editingSpec}
+          sadNetId={sad.NetUid}
+          onClose={() => setEditingSpec(null)}
+          onSaved={() => {
+            setEditingSpec(null)
+            reload()
+          }}
+        />
+      )}
 
       <SpecificationUploadModal
         opened={uploadOpen}
@@ -1831,13 +1983,6 @@ function SadDocumentsModal({
   const { t } = useI18n()
   const [files, setFiles] = useState<File[]>([])
   const [isSaving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (!opened) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFiles([])
-    }
-  }, [opened])
 
   async function uploadFiles() {
     if (!sad.NetUid || !files.length) {
@@ -1956,22 +2101,19 @@ function SpecificationEditorModal({
   onSaved,
   sadNetId,
 }: {
-  editor: { product: SadProduct; specification: SadProductSpecification | null } | null
+  editor: { product: SadProduct; specification: SadProductSpecification | null }
   onClose: () => void
   onSaved: () => void
   sadNetId?: string
 }) {
   const { t } = useI18n()
-  const [draft, setDraft] = useState<SadProductSpecification>({})
+  const [draft, setDraft] = useState<SadProductSpecification>(() =>
+    editor.specification ? { ...editor.specification } : { ProductId: editor.product.Id, Product: editor.product },
+  )
   const [isSaving, setSaving] = useState(false)
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDraft(editor?.specification ? { ...editor.specification } : { ProductId: editor?.product.Id, Product: editor?.product })
-  }, [editor])
-
   async function save() {
-    if (!sadNetId || !editor?.product) {
+    if (!sadNetId || !editor.product) {
       return
     }
 
@@ -1993,9 +2135,9 @@ function SpecificationEditorModal({
   }
 
   return (
-    <AppModal centered opened={Boolean(editor)} size="lg" title={t('Специфікація товару')} onClose={onClose}>
+    <AppModal centered opened size="lg" title={t('Специфікація товару')} onClose={onClose}>
       <Stack>
-        <Text fw={600}>{editor?.product.VendorCode} · {editor?.product.Name}</Text>
+        <Text fw={600}>{editor.product.VendorCode} · {editor.product.Name}</Text>
         <TextInput
           label={t('Код специфікації')}
           value={draft.SpecificationCode || ''}
@@ -2130,10 +2272,18 @@ function SpecificationUploadModal({
 
 function SadActionModal({
   onClose,
+  onCreateAdvancePayment,
+  onCreateIncomePayment,
+  onCreateOutcomePayment,
+  onCreateSupplyOrder,
   onNavigate,
   sad,
 }: {
   onClose: () => void
+  onCreateAdvancePayment: (sad: Sad) => void
+  onCreateIncomePayment: (sad: Sad) => void
+  onCreateOutcomePayment: (sad: Sad) => void
+  onCreateSupplyOrder: (sad: Sad) => void
   onNavigate: (path: string) => void
   sad: Sad | null
 }) {
@@ -2165,12 +2315,7 @@ function SadActionModal({
             justify="space-between"
             rightSection={<IconArrowRight size={16} />}
             variant="light"
-            onClick={() => {
-              notifications.show({
-                color: 'yellow',
-                message: t('Створення замовлення постачання з SAD буде підключено разом із відповідним екраном.'),
-              })
-            }}
+            onClick={() => onCreateSupplyOrder(sad)}
           >
             {t('Створити замовлення постачання')}
           </Button>
@@ -2178,25 +2323,15 @@ function SadActionModal({
         {sad.IsSend && sad.Client && (
           <>
             <Divider />
-            {[
-              t('Авансовий платіж'),
-              t('Прибутковий касовий ордер'),
-              t('Видатковий касовий ордер'),
-            ].map((label) => (
-              <Button
-                key={label}
-                justify="space-between"
-                variant="subtle"
-                onClick={() => {
-                  notifications.show({
-                    color: 'yellow',
-                    message: t('Бухгалтерська дія SAD очікує міграції відповідної панелі.'),
-                  })
-                }}
-              >
-                {label}
-              </Button>
-            ))}
+            <Button justify="space-between" variant="subtle" onClick={() => onCreateAdvancePayment(sad)}>
+              {t('Авансовий платіж')}
+            </Button>
+            <Button justify="space-between" variant="subtle" onClick={() => onCreateIncomePayment(sad)}>
+              {t('Прибутковий касовий ордер')}
+            </Button>
+            <Button justify="space-between" variant="subtle" onClick={() => onCreateOutcomePayment(sad)}>
+              {t('Видатковий касовий ордер')}
+            </Button>
           </>
         )}
       </Stack>
@@ -2360,6 +2495,12 @@ function cleanPalletDrafts(sad: Sad): Sad {
       })),
     })),
   }
+}
+
+function hasPalletItemErrors(sad: Sad): boolean {
+  return (sad.SadPallets || []).some((pallet) =>
+    (pallet.SadPalletItems || []).some((item) => Boolean(item.IsError)),
+  )
 }
 
 function createDownloadDocumentLinks(document: SadPrintDocument, t: (key: string) => string): DownloadDocumentLink[] {

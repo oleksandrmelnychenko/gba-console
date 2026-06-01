@@ -33,6 +33,26 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type ActProvidingServiceDetailState = {
+  act: ActProvidingService | null
+  comment: string
+  error: string | null
+  fromDate: string
+  isDirty: boolean
+  isLoading: boolean
+  isSaving: boolean
+}
+
+const INITIAL_ACT_PROVIDING_SERVICE_DETAIL_STATE: ActProvidingServiceDetailState = {
+  act: null,
+  comment: '',
+  error: null,
+  fromDate: '',
+  isDirty: false,
+  isLoading: false,
+  isSaving: false,
+}
+
 export function ActProvidingServiceDetailPage() {
   const model = useActProvidingServiceDetailModel()
 
@@ -42,84 +62,91 @@ export function ActProvidingServiceDetailPage() {
 function useActProvidingServiceDetailModel() {
   const { id } = useParams<{ id: string }>()
   const { t } = useI18n()
-  const [act, setAct] = useValueState<ActProvidingService | null>(null)
-  const [comment, setComment] = useValueState('')
-  const [fromDate, setFromDate] = useValueState('')
-  const [isDirty, setDirty] = useValueState(false)
-  const [isLoading, setLoading] = useValueState(false)
-  const [isSaving, setSaving] = useValueState(false)
-  const [error, setError] = useValueState<string | null>(null)
+  const [state, setState] = useValueState<ActProvidingServiceDetailState>(INITIAL_ACT_PROVIDING_SERVICE_DETAIL_STATE)
   const requestRef = useRef(0)
+  const saveRequestRef = useRef(0)
+  const { act, comment, error, fromDate, isDirty, isLoading, isSaving } = state
   const displayModel = useMemo(() => (act ? toActProvidingServiceDisplayModel(act, t) : null), [act, t])
 
   const loadAct = useCallback(() => {
+    let isActive = true
+
     if (!id) {
-      setAct(null)
-      setError(t('Акт надання послуг не вибрано'))
-      return
+      requestRef.current += 1
+      setState((currentState) => ({
+        ...currentState,
+        act: null,
+        error: t('Акт надання послуг не вибрано'),
+        isLoading: false,
+      }))
+      return () => {
+        isActive = false
+      }
     }
 
     const requestId = requestRef.current + 1
     requestRef.current = requestId
-    setLoading(true)
-    setError(null)
+    setState((currentState) => ({ ...currentState, error: null, isLoading: true }))
 
-    async function run(netId: string) {
-      try {
-        const loadedAct = await getActProvidingService(netId)
-
-        if (requestRef.current !== requestId) {
+    void getActProvidingService(id)
+      .then((loadedAct) => {
+        if (!isActive || requestRef.current !== requestId) {
           return
         }
 
         if (!loadedAct) {
-          setAct(null)
-          setError(t('Обраний акт надання послуг не існує'))
+          setState((currentState) => ({
+            ...currentState,
+            act: null,
+            error: t('Обраний акт надання послуг не існує'),
+            isLoading: false,
+          }))
           return
         }
 
-        setAct(loadedAct)
-        setComment(loadedAct.Comment || '')
-        setFromDate(toDateTimeLocal(loadedAct.FromDate))
-        setDirty(false)
-      } catch (loadError) {
-        if (requestRef.current === requestId) {
-          setAct(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акт надання послуг'))
+        setState((currentState) => ({
+          ...currentState,
+          act: loadedAct,
+          comment: loadedAct.Comment || '',
+          error: null,
+          fromDate: toDateTimeLocal(loadedAct.FromDate),
+          isDirty: false,
+          isLoading: false,
+        }))
+      })
+      .catch((loadError: unknown) => {
+        if (isActive && requestRef.current === requestId) {
+          setState((currentState) => ({
+            ...currentState,
+            act: null,
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акт надання послуг'),
+            isLoading: false,
+          }))
         }
-      } finally {
-        if (requestRef.current === requestId) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void run(id)
-  }, [id, setAct, setComment, setDirty, setError, setFromDate, setLoading, t])
-
-  useEffect(() => {
-    loadAct()
+      })
 
     return () => {
-      requestRef.current += 1
+      isActive = false
     }
+  }, [id, setState, t])
+
+  useEffect(() => {
+    return loadAct()
   }, [loadAct])
 
   const updateComment = useCallback(
     (value: string) => {
-      setComment(value)
-      setDirty(true)
+      setState((currentState) => ({ ...currentState, comment: value, isDirty: true }))
     },
-    [setComment, setDirty],
+    [setState],
   )
   const updateFromDate = useCallback(
     (value: string) => {
-      setFromDate(value)
-      setDirty(true)
+      setState((currentState) => ({ ...currentState, fromDate: value, isDirty: true }))
     },
-    [setDirty, setFromDate],
+    [setState],
   )
-  const save = useCallback(async () => {
+  const save = useCallback(() => {
     if (!act) {
       return
     }
@@ -127,36 +154,54 @@ function useActProvidingServiceDetailModel() {
     const nextDate = new Date(fromDate)
 
     if (!fromDate || Number.isNaN(nextDate.getTime())) {
-      setError(t('Оберіть коректну дату акта'))
+      setState((currentState) => ({ ...currentState, error: t('Оберіть коректну дату акта') }))
       return
     }
 
-    setSaving(true)
-    setError(null)
+    const requestId = saveRequestRef.current + 1
+    saveRequestRef.current = requestId
+    setState((currentState) => ({ ...currentState, error: null, isSaving: true }))
 
-    try {
-      const savedAct = await updateActProvidingService({
-        ...act,
-        Comment: comment,
-        FromDate: nextDate.toISOString(),
+    void updateActProvidingService({
+      ...act,
+      Comment: comment,
+      FromDate: nextDate.toISOString(),
+    })
+      .then((savedAct) => {
+        if (saveRequestRef.current !== requestId) {
+          return
+        }
+
+        if (!savedAct) {
+          setState((currentState) => ({
+            ...currentState,
+            error: t('Backend не повернув оновлений акт надання послуг'),
+            isSaving: false,
+          }))
+          return
+        }
+
+        setState((currentState) => ({
+          ...currentState,
+          act: savedAct,
+          comment: savedAct.Comment || '',
+          error: null,
+          fromDate: toDateTimeLocal(savedAct.FromDate),
+          isDirty: false,
+          isSaving: false,
+        }))
+        notifications.show({ color: 'green', message: t('Акт надання послуг оновлено') })
       })
-
-      if (!savedAct) {
-        setError(t('Backend не повернув оновлений акт надання послуг'))
-        return
-      }
-
-      setAct(savedAct)
-      setComment(savedAct.Comment || '')
-      setFromDate(toDateTimeLocal(savedAct.FromDate))
-      setDirty(false)
-      notifications.show({ color: 'green', message: t('Акт надання послуг оновлено') })
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити акт надання послуг'))
-    } finally {
-      setSaving(false)
-    }
-  }, [act, comment, fromDate, setAct, setComment, setDirty, setError, setFromDate, setSaving, t])
+      .catch((saveError: unknown) => {
+        if (saveRequestRef.current === requestId) {
+          setState((currentState) => ({
+            ...currentState,
+            error: saveError instanceof Error ? saveError.message : t('Не вдалося оновити акт надання послуг'),
+            isSaving: false,
+          }))
+        }
+      })
+  }, [act, comment, fromDate, setState, t])
 
   return {
     act,

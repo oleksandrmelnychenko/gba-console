@@ -1,7 +1,7 @@
 import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
-import { type FormEvent, useEffect } from 'react'
+import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -21,6 +21,21 @@ type CurrencyTraderFormState = {
   phoneNumber: string
 }
 
+type CurrencyTraderFormPageState = {
+  error: string | null
+  form: CurrencyTraderFormState
+  isLoading: boolean
+  trader: CurrencyTrader
+}
+
+type CurrencyTraderFormPageAction =
+  | { type: 'failed'; error: string }
+  | { type: 'loaded'; form: CurrencyTraderFormState; trader: CurrencyTrader }
+  | { type: 'patch-form'; patch: Partial<CurrencyTraderFormState> }
+  | { type: 'set-error'; error: string | null }
+  | { type: 'set-trader'; trader: CurrencyTrader }
+  | { type: 'start-loading' }
+
 const CONVERTORS_PATH = '/accounting/currency-convertors'
 
 export function CurrencyConvertorFormPage() {
@@ -32,10 +47,12 @@ export function CurrencyConvertorFormPage() {
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || CONVERTORS_PATH
   const isEditMode = Boolean(id)
-  const [trader, setTrader] = useValueState<CurrencyTrader>(() => createEmptyTrader())
-  const [form, setForm] = useValueState<CurrencyTraderFormState>(() => createEmptyForm())
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(isEditMode)
+  const [pageState, dispatchPageState] = useReducer(
+    currencyTraderFormPageReducer,
+    isEditMode,
+    createCurrencyTraderFormPageState,
+  )
+  const { error, form, isLoading, trader } = pageState
   const [isSaving, setSaving] = useValueState(false)
   const canSave = hasPermission(isEditMode ? CURRENCY_CONVERTOR_EDIT_PERMISSION : CURRENCY_CONVERTOR_CREATE_PERMISSION)
 
@@ -45,43 +62,39 @@ export function CurrencyConvertorFormPage() {
     }
 
     const controller = new AbortController()
+    dispatchPageState({ type: 'start-loading' })
 
-    async function loadTrader() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const nextTrader = await getCurrencyTrader(id as string)
-
+    void getCurrencyTrader(id)
+      .then((nextTrader) => {
         if (controller.signal.aborted) {
           return
         }
 
         const initialTrader = nextTrader || createEmptyTrader()
-        setTrader(initialTrader)
-        setForm(toFormState(initialTrader))
-      } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити валютного трейдера'))
+        dispatchPageState({
+          form: toFormState(initialTrader),
+          trader: initialTrader,
+          type: 'loaded',
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити валютного трейдера'),
+            type: 'failed',
+          })
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadTrader()
+      })
 
     return () => controller.abort()
-  }, [id, setError, setForm, setLoading, setTrader, t])
+  }, [id, t])
 
   if (isEditMode && !id) {
     return <Navigate replace to={CONVERTORS_PATH} />
   }
 
   function updateForm(patch: Partial<CurrencyTraderFormState>) {
-    setForm((current) => ({ ...current, ...patch }))
+    dispatchPageState({ patch, type: 'patch-form' })
   }
 
   function handleCancel() {
@@ -96,24 +109,27 @@ export function CurrencyConvertorFormPage() {
     event.preventDefault()
 
     if (!canSave) {
-      setError(t('Немає прав для збереження валютного трейдера'))
+      dispatchPageState({ error: t('Немає прав для збереження валютного трейдера'), type: 'set-error' })
       return
     }
 
     const payload = toPayload(trader, form)
     setSaving(true)
-    setError(null)
+    dispatchPageState({ error: null, type: 'set-error' })
 
     try {
       const saved = isEditMode ? await updateCurrencyTrader(payload) : await createCurrencyTrader(payload)
-      setTrader(saved || payload)
+      dispatchPageState({ trader: saved || payload, type: 'set-trader' })
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Валютного трейдера оновлено') : t('Валютного трейдера створено'),
       })
       navigate(returnPath, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти валютного трейдера'))
+      dispatchPageState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти валютного трейдера'),
+        type: 'set-error',
+      })
     } finally {
       setSaving(false)
     }
@@ -193,6 +209,62 @@ export function CurrencyConvertorFormPage() {
       </Card>
     </Stack>
   )
+}
+
+function createCurrencyTraderFormPageState(isEditMode: boolean): CurrencyTraderFormPageState {
+  return {
+    error: null,
+    form: createEmptyForm(),
+    isLoading: isEditMode,
+    trader: createEmptyTrader(),
+  }
+}
+
+function currencyTraderFormPageReducer(
+  state: CurrencyTraderFormPageState,
+  action: CurrencyTraderFormPageAction,
+): CurrencyTraderFormPageState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loaded':
+      return {
+        error: null,
+        form: action.form,
+        isLoading: false,
+        trader: action.trader,
+      }
+    case 'patch-form':
+      return {
+        ...state,
+        form: {
+          ...state.form,
+          ...action.patch,
+        },
+      }
+    case 'set-error':
+      return {
+        ...state,
+        error: action.error,
+      }
+    case 'set-trader':
+      return {
+        ...state,
+        trader: action.trader,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    default:
+      return state
+  }
 }
 
 function createEmptyTrader(): CurrencyTrader {

@@ -17,8 +17,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import { getPaymentExpenseArticles, searchPaymentExpenseArticles } from '../api/paymentExpenseArticlesApi'
 import type { PaymentExpenseArticle } from '../types'
+
+const PERMISSION_CREATE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_ADDBtn_PKEY'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -32,6 +35,7 @@ const SEARCH_DEBOUNCE_MS = 350
 
 export function PaymentExpenseArticlesPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [articles, setArticles] = useValueState<PaymentExpenseArticle[]>([])
@@ -43,6 +47,7 @@ export function PaymentExpenseArticlesPage() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
+  const canCreate = hasPermission(PERMISSION_CREATE_EXPENSE_ARTICLE)
 
   const openArticle = useCallback(
     (article: PaymentExpenseArticle) => {
@@ -137,14 +142,21 @@ export function PaymentExpenseArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Пошук')}
-      value={searchValue}
-      w={{ base: '100%', sm: 360 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
+  const toolbarLeft = useMemo(
+    () => {
+      const searchIcon = <IconSearch size={16} />
+
+      return (
+        <TextInput
+          leftSection={searchIcon}
+          placeholder={t('Пошук')}
+          value={searchValue}
+          w={{ base: '100%', sm: 360 }}
+          onChange={(event) => setSearchValue(event.currentTarget.value)}
+        />
+      )
+    },
+    [searchValue, setSearchValue, t],
   )
 
   return (
@@ -164,20 +176,22 @@ export function PaymentExpenseArticlesPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() =>
-                  navigate('/accounting/payment-expense-articles/new', {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Нова стаття')}
-              </Button>
+              {canCreate && (
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate('/accounting/payment-expense-articles/new', {
+                      state: {
+                        backgroundLocation: location,
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Нова стаття')}
+                </Button>
+              )}
             </Group>
           </Group>
 

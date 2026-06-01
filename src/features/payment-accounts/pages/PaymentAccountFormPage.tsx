@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -69,6 +69,43 @@ type PaymentAccountFormState = {
   iban: string
 }
 
+type PaymentAccountPageState = {
+  account: PaymentAccount
+  banks: BankItem[]
+  currencyDrafts: CurrencyDraft[]
+  error: string | null
+  form: PaymentAccountFormState
+  hiddenCurrencyRegisters: PaymentCurrencyRegister[]
+  isLoading: boolean
+  organizations: Organization[]
+}
+
+type PaymentAccountPageStateAction =
+  | Partial<PaymentAccountPageState>
+  | ((state: PaymentAccountPageState) => PaymentAccountPageState)
+
+type PaymentAccountFormHeaderState = {
+  canSave: boolean
+  isDeleting: boolean
+  isEditMode: boolean
+  isLoading: boolean
+  isSaving: boolean
+}
+
+function pageStateReducer(
+  state: PaymentAccountPageState,
+  action: PaymentAccountPageStateAction,
+): PaymentAccountPageState {
+  if (typeof action === 'function') {
+    return action(state)
+  }
+
+  return {
+    ...state,
+    ...action,
+  }
+}
+
 const ACCOUNTS_PATH = '/accounting/payment-accounts'
 const SKIPPED_CURRENCY_CODE = ['P', 'L', 'N'].join('')
 
@@ -81,61 +118,53 @@ export function PaymentAccountFormPage() {
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || ACCOUNTS_PATH
   const isEditMode = Boolean(id)
-  const [account, setAccount] = useValueState<PaymentAccount>(() => createEmptyAccount())
-  const [form, setForm] = useValueState<PaymentAccountFormState>(() => createEmptyForm())
-  const [currencyDrafts, setCurrencyDrafts] = useValueState<CurrencyDraft[]>([])
-  const [hiddenCurrencyRegisters, setHiddenCurrencyRegisters] = useValueState<PaymentCurrencyRegister[]>([])
-  const [organizations, setOrganizations] = useValueState<Organization[]>([])
-  const [banks, setBanks] = useValueState<BankItem[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [pageState, dispatchPageState] = useReducer(pageStateReducer, true, createInitialPageState)
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const { account, banks, currencyDrafts, error, form, hiddenCurrencyRegisters, isLoading, organizations } = pageState
   const canSave = hasPermission(isEditMode ? PAYMENT_ACCOUNT_EDIT_PERMISSION : PAYMENT_ACCOUNT_CREATE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    async function loadForm() {
-      setLoading(true)
-      setError(null)
+    dispatchPageState({ error: null, isLoading: true })
 
-      try {
-        const [nextCurrencies, nextOrganizations, nextBanks, nextAccount] = await Promise.all([
-          getPaymentAccountCurrencies(),
-          getPaymentAccountOrganizations(),
-          getPaymentAccountBanks(),
-          id ? getPaymentAccount(id) : Promise.resolve(null),
-        ])
-
+    void Promise.all([
+      getPaymentAccountCurrencies(),
+      getPaymentAccountOrganizations(),
+      getPaymentAccountBanks(),
+      id ? getPaymentAccount(id) : Promise.resolve(null),
+    ])
+      .then(([nextCurrencies, nextOrganizations, nextBanks, nextAccount]) => {
         if (controller.signal.aborted) {
           return
         }
 
         const initialAccount = nextAccount || createEmptyAccount()
         const initialOrganization = initialAccount.Organization || nextOrganizations[0] || null
-        setAccount(initialAccount)
-        setOrganizations(includeEntity(nextOrganizations, initialOrganization))
-        setBanks(nextBanks)
-        setForm(toFormState(initialAccount, initialOrganization))
-        setCurrencyDrafts(toCurrencyDrafts(nextCurrencies, initialAccount.PaymentCurrencyRegisters || [], initialAccount.Type))
-        setHiddenCurrencyRegisters((initialAccount.PaymentCurrencyRegisters || []).filter(hasSkippedCurrencyCode))
-      } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунок'))
+        dispatchPageState({
+          account: initialAccount,
+          banks: nextBanks,
+          currencyDrafts: toCurrencyDrafts(nextCurrencies, initialAccount.PaymentCurrencyRegisters || []),
+          error: null,
+          form: toFormState(initialAccount, initialOrganization),
+          hiddenCurrencyRegisters: (initialAccount.PaymentCurrencyRegisters || []).filter(hasSkippedCurrencyCode),
+          isLoading: false,
+          organizations: includeEntity(nextOrganizations, initialOrganization),
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (!isAbortError(loadError) && !controller.signal.aborted) {
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунок'),
+            isLoading: false,
+          })
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadForm()
+      })
 
     return () => controller.abort()
-  }, [id, setAccount, setBanks, setCurrencyDrafts, setError, setForm, setHiddenCurrencyRegisters, setLoading, setOrganizations, t])
+  }, [id, t])
 
   const organizationOptions = useMemo(
     () => toSelectOptions(organizations, (organization) => organization.Name || organization.FullName),
@@ -144,6 +173,16 @@ export function PaymentAccountFormPage() {
   const bankOptions = useMemo(
     () => toBankOptions(banks),
     [banks],
+  )
+  const headerState = useMemo<PaymentAccountFormHeaderState>(
+    () => ({
+      canSave,
+      isDeleting,
+      isEditMode,
+      isLoading,
+      isSaving,
+    }),
+    [canSave, isDeleting, isEditMode, isLoading, isSaving],
   )
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationNetId) || null,
@@ -155,27 +194,37 @@ export function PaymentAccountFormPage() {
   }
 
   function updateForm(patch: Partial<PaymentAccountFormState>) {
-    setForm((current) => ({ ...current, ...patch }))
+    dispatchPageState((current) => ({ ...current, form: { ...current.form, ...patch } }))
   }
 
   function setAccountType(value: string) {
     const nextType = Number(value) as PaymentRegisterType
 
-    updateForm({ type: nextType })
-    setCurrencyDrafts((current) => current.map((draft) => ({ ...draft, selected: false })))
+    dispatchPageState((current) => ({
+      ...current,
+      currencyDrafts: current.currencyDrafts.map((draft) => ({ ...draft, selected: false })),
+      form: { ...current.form, type: nextType },
+    }))
   }
 
   function updateCurrency(index: number, patch: Partial<CurrencyDraft>) {
-    setCurrencyDrafts((current) => {
-      if (form.type === PaymentRegisterType.Cash || !patch.selected) {
-        return current.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft))
-      }
+    dispatchPageState((current) => {
+      const nextCurrencyDrafts = (() => {
+        if (current.form.type === PaymentRegisterType.Cash || !patch.selected) {
+          return current.currencyDrafts.map((draft, draftIndex) => (draftIndex === index ? { ...draft, ...patch } : draft))
+        }
 
-      return current.map((draft, draftIndex) => ({
-        ...draft,
-        selected: draftIndex === index,
-        ...(draftIndex === index ? patch : {}),
-      }))
+        return current.currencyDrafts.map((draft, draftIndex) => ({
+          ...draft,
+          selected: draftIndex === index,
+          ...(draftIndex === index ? patch : {}),
+        }))
+      })()
+
+      return {
+        ...current,
+        currencyDrafts: nextCurrencyDrafts,
+      }
     })
   }
 
@@ -193,25 +242,27 @@ export function PaymentAccountFormPage() {
     const validationError = validateForm(form, currencyDrafts, selectedOrganization, canSave, t)
 
     if (validationError) {
-      setError(validationError)
+      dispatchPageState({ error: validationError })
       return
     }
 
     const payload = toPayload(account, form, selectedOrganization as Organization, currencyDrafts, hiddenCurrencyRegisters)
     setSaving(true)
-    setError(null)
+    dispatchPageState({ error: null })
 
     try {
       const savedAccount = isEditMode ? await updatePaymentAccount(payload) : await createPaymentAccount(payload)
       const nextAccount = savedAccount || payload
-      setAccount(nextAccount)
+      dispatchPageState({ account: nextAccount })
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Рахунок оновлено') : t('Рахунок створено'),
       })
       navigate(isEditMode || !nextAccount.NetUid ? returnPath : `${ACCOUNTS_PATH}/edit/${nextAccount.NetUid}`, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти рахунок'))
+      dispatchPageState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти рахунок'),
+      })
     } finally {
       setSaving(false)
     }
@@ -225,14 +276,16 @@ export function PaymentAccountFormPage() {
     }
 
     setDeleting(true)
-    setError(null)
+    dispatchPageState({ error: null })
 
     try {
       await deletePaymentAccount(netId)
       notifications.show({ color: 'green', message: t('Рахунок видалено') })
       navigate(returnPath, { replace: true })
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити рахунок'))
+      dispatchPageState({
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити рахунок'),
+      })
     } finally {
       setDeleting(false)
       setDeleteModalOpened(false)
@@ -245,11 +298,7 @@ export function PaymentAccountFormPage() {
         <form onSubmit={handleSubmit}>
           <Stack gap="md">
             <PaymentAccountFormHeader
-              canSave={canSave}
-              isDeleting={isDeleting}
-              isEditMode={isEditMode}
-              isLoading={isLoading}
-              isSaving={isSaving}
+              state={headerState}
               onCancel={handleCancel}
               onOpenDelete={() => setDeleteModalOpened(true)}
             />
@@ -350,23 +399,16 @@ export function PaymentAccountFormPage() {
 }
 
 function PaymentAccountFormHeader({
-  canSave,
-  isDeleting,
-  isEditMode,
-  isLoading,
-  isSaving,
+  state,
   onCancel,
   onOpenDelete,
 }: {
-  canSave: boolean
-  isDeleting: boolean
-  isEditMode: boolean
-  isLoading: boolean
-  isSaving: boolean
+  state: PaymentAccountFormHeaderState
   onCancel: () => void
   onOpenDelete: () => void
 }) {
   const { t } = useI18n()
+  const { canSave, isDeleting, isEditMode, isLoading, isSaving } = state
 
   return (
     <Group justify="space-between" wrap="wrap">
@@ -585,6 +627,19 @@ function createEmptyForm(): PaymentAccountFormState {
   }
 }
 
+function createInitialPageState(isLoading: boolean): PaymentAccountPageState {
+  return {
+    account: createEmptyAccount(),
+    banks: [],
+    currencyDrafts: [],
+    error: null,
+    form: createEmptyForm(),
+    hiddenCurrencyRegisters: [],
+    isLoading,
+    organizations: [],
+  }
+}
+
 function toFormState(account: PaymentAccount, organization: Organization | null): PaymentAccountFormState {
   return {
     accountNumber: account.AccountNumber || '',
@@ -603,20 +658,26 @@ function toFormState(account: PaymentAccount, organization: Organization | null)
   }
 }
 
-function toCurrencyDrafts(currencies: Currency[], registers: PaymentCurrencyRegister[], accountType?: PaymentRegisterType): CurrencyDraft[] {
-  return currencies
-    .filter((currency) => !hasSkippedCurrencyCode({ Currency: currency }))
-    .map((currency) => {
-      const original = registers.find((register) => getEntityValue(register.Currency) === getEntityValue(currency))
-      const hasOriginalValue = Boolean(original?.NetUid || original?.Id || original?.Amount)
+function toCurrencyDrafts(currencies: Currency[], registers: PaymentCurrencyRegister[]): CurrencyDraft[] {
+  return currencies.reduce<CurrencyDraft[]>((drafts, currency) => {
+    if (hasSkippedCurrencyCode({ Currency: currency })) {
+      return drafts
+    }
 
-      return {
-        amount: typeof original?.Amount === 'number' && Number.isFinite(original.Amount) ? String(original.Amount) : '',
-        currency,
-        original,
-        selected: accountType === PaymentRegisterType.Cash ? hasOriginalValue : Boolean(hasOriginalValue && original?.Amount !== 0),
-      }
+    const original = registers.find((register) => getEntityValue(register.Currency) === getEntityValue(currency))
+    const hasOriginalIdentity = Boolean(original?.NetUid || original?.Id)
+    const hasOriginalAmount = typeof original?.Amount === 'number' && Number.isFinite(original.Amount) && original.Amount !== 0
+    const hasOriginalValue = hasOriginalIdentity || hasOriginalAmount || Boolean(original?.IsSelected)
+
+    drafts.push({
+      amount: typeof original?.Amount === 'number' && Number.isFinite(original.Amount) ? String(original.Amount) : '',
+      currency,
+      original,
+      selected: hasOriginalValue,
     })
+
+    return drafts
+  }, [])
 }
 
 function toPayload(
@@ -639,14 +700,18 @@ function toPayload(
     Name: form.name.trim(),
     Organization: organization,
     PaymentCurrencyRegisters: [
-      ...currencyDrafts
-        .filter((draft) => draft.selected)
-        .map((draft) => ({
-          ...draft.original,
-          Amount: parseAmount(draft.amount),
-          Currency: draft.currency,
-          IsSelected: true,
-        })),
+      ...currencyDrafts.reduce<PaymentCurrencyRegister[]>((registers, draft) => {
+        if (draft.selected) {
+          registers.push({
+            ...draft.original,
+            Amount: parseAmount(draft.amount),
+            Currency: draft.currency,
+            IsSelected: true,
+          })
+        }
+
+        return registers
+      }, []),
       ...hiddenCurrencyRegisters,
     ],
     SortCode: form.sortCode.trim(),

@@ -33,6 +33,16 @@ export function formatLocalDateTime(date: Date): string {
   return `${datePart}T${hours}:${minutes}:${seconds}${millisecondsPart}`
 }
 
+export function formatLocalInputDateTime(dateValue?: string, timeValue = '00:00'): string {
+  const fallback = new Date()
+  const datePart = dateValue || formatLocalDate(fallback)
+  const timePart = timeValue || '00:00'
+  const rawValue = datePart.includes('T') ? datePart : `${datePart}T${timePart}`
+  const date = new Date(rawValue)
+
+  return Number.isNaN(date.getTime()) ? formatLocalDateTime(fallback) : formatLocalDateTime(date)
+}
+
 export function formatDateForQuery(date: Date): string {
   if (
     date.getHours() === 0 &&

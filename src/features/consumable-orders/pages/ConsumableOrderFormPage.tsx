@@ -95,6 +95,11 @@ type ItemEditorState = {
   productSearch: string
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 const ORDERS_PATH = '/accounting/consumable-orders'
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -453,22 +458,7 @@ export function ConsumableOrderFormPage() {
   }
 
   async function toggleItemDeleted(item: ConsumablesOrderItem, index: number) {
-    const nextItems = activeItems
-      .map((currentItem, currentIndex) => {
-        if (currentIndex !== index) {
-          return currentItem
-        }
-
-        if (!currentItem.Id || currentItem.Id < 0) {
-          return null
-        }
-
-        return {
-          ...currentItem,
-          Deleted: !currentItem.Deleted,
-        }
-      })
-      .filter((currentItem): currentItem is ConsumablesOrderItem => Boolean(currentItem))
+    const nextItems = toggleDeletedItemAtIndex(activeItems, index)
 
     const nextOrder = {
       ...order,
@@ -1197,50 +1187,100 @@ function calculateLocalTotals(items: ConsumablesOrderItem[]) {
 }
 
 function flattenConsumableProducts(categories: ConsumableProductCategory[]): ConsumableProduct[] {
-  return categories.flatMap((category) =>
-    (category.ConsumableProducts || []).map((product) => ({
-      ...product,
-      ConsumableProductCategory: product.ConsumableProductCategory || {
-        ...category,
-        ConsumableProducts: undefined,
-      },
-    })),
-  )
-}
+  const products: ConsumableProduct[] = []
 
-function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = getEntityLabel) {
-  return entities
-    .map((entity) => ({
-      label: labelGetter(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
-}
+  for (const category of categories) {
+    for (const product of category.ConsumableProducts || []) {
+      products.push({
+        ...product,
+        ConsumableProductCategory: product.ConsumableProductCategory || {
+          ...category,
+          ConsumableProducts: undefined,
+        },
+      })
+    }
+  }
 
-function toProductOptions(products: ConsumableProduct[]) {
   return products
-    .map((product) => {
-      const label = [product.VendorCode, product.Name].filter(Boolean).join(' - ')
-
-      return {
-        label: label || getEntityValue(product),
-        value: getEntityValue(product),
-      }
-    })
-    .filter((option) => option.value)
 }
 
-function toAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
-  return agreements
-    .map((agreement) => {
-      const parts = [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name].filter(Boolean)
+function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = getEntityLabel): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: parts.join(' / ') || getEntityValue(agreement),
-        value: getEntityValue(agreement),
-      }
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+    const label = labelGetter(entity) || value
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
+}
+
+function toProductOptions(products: ConsumableProduct[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const product of products) {
+    const value = getEntityValue(product)
+    const label = joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
+}
+
+function toAgreementOptions(agreements: SupplyOrganizationAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const agreement of agreements) {
+    const value = getEntityValue(agreement)
+    const label =
+      joinTruthyParts([agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name], ' / ') ||
+      value
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
+}
+
+function joinTruthyParts(parts: Array<string | undefined>, separator: string): string {
+  const truthyParts: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      truthyParts.push(part)
+    }
+  }
+
+  return truthyParts.join(separator)
+}
+
+function toggleDeletedItemAtIndex(items: ConsumablesOrderItem[], index: number): ConsumablesOrderItem[] {
+  return items.reduce<ConsumablesOrderItem[]>((nextItems, currentItem, currentIndex) => {
+    if (currentIndex !== index) {
+      nextItems.push(currentItem)
+      return nextItems
+    }
+
+    if (!currentItem.Id || currentItem.Id < 0) {
+      return nextItems
+    }
+
+    nextItems.push({
+      ...currentItem,
+      Deleted: !currentItem.Deleted,
     })
-    .filter((option) => option.value)
+
+    return nextItems
+  }, [])
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T | null): T[] {

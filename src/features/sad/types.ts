@@ -110,8 +110,10 @@ export type SadProduct = EntityFields & {
 }
 
 export type SadSupplyOrderUkraineCartItem = EntityFields & {
+  AvailableQty?: number
   ChangedQty?: number
   Comment?: string
+  IsSelected?: boolean
   Product?: SadProduct | null
   ProductId?: number
   ReservedQty?: number

@@ -28,16 +28,7 @@ export function PreviewCartItemsModal({
   onClose,
   onLoadValidItems,
 }: PreviewCartItemsModalProps) {
-  const validCartItems = useMemo(() => {
-    return previewItems
-      .filter((item) => !item.ZeroAvailable && !item.NoCartItem && item.SupplyOrderUkraineCartItem)
-      .map((item) => ({
-        ...item.SupplyOrderUkraineCartItem,
-        ChangedQty: item.Qty,
-        IsFromFile: true,
-        IsSelected: false,
-      })) as SupplyOrderUkraineCartItem[]
-  }, [previewItems])
+  const validCartItems = useMemo(() => toValidCartItems(previewItems), [previewItems])
   const hasErrors = previewItems.some((item) => item.HasError || item.ZeroAvailable || item.LessAvailable || item.NoCartItem)
   const columns = useMemo<Array<DataTableColumn<PreviewCartItem>>>(
     () => [
@@ -124,6 +115,23 @@ export function PreviewCartItemsModal({
       </Stack>
     </AppModal>
   )
+}
+
+function toValidCartItems(previewItems: PreviewCartItem[]) {
+  return previewItems.reduce<SupplyOrderUkraineCartItem[]>((validItems, item) => {
+    if (item.ZeroAvailable || item.NoCartItem || !item.SupplyOrderUkraineCartItem) {
+      return validItems
+    }
+
+    validItems.push({
+      ...item.SupplyOrderUkraineCartItem,
+      ChangedQty: item.Qty,
+      IsFromFile: true,
+      IsSelected: false,
+    })
+
+    return validItems
+  }, [])
 }
 
 function getPreviewErrorMessage(item: PreviewCartItem, t: (key: string) => string) {

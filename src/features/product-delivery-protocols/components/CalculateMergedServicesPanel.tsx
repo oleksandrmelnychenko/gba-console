@@ -11,19 +11,30 @@ type CalculateSubmit = {
   items: CalculateMergedServiceInvoiceItem[]
 }
 
-export function CalculateMergedServicesPanel({
-  opened,
-  service,
-  isSaving,
-  onClose,
-  onSubmit,
-}: {
+type CalculateMergedServicesPanelProps = {
   isSaving: boolean
   onClose: () => void
   onSubmit: (payload: CalculateSubmit) => Promise<void>
   opened: boolean
   service: MergedService
-}) {
+}
+
+export function CalculateMergedServicesPanel(props: CalculateMergedServicesPanelProps) {
+  return (
+    <CalculateMergedServicesPanelContent
+      key={props.opened ? getMergedServicePanelKey(props.service) : 'closed'}
+      {...props}
+    />
+  )
+}
+
+function CalculateMergedServicesPanelContent({
+  opened,
+  service,
+  isSaving,
+  onClose,
+  onSubmit,
+}: CalculateMergedServicesPanelProps) {
   const { t } = useI18n()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
 
@@ -42,17 +53,6 @@ export function CalculateMergedServicesPanel({
   const [items, setItems] = useValueState<CalculateMergedServiceInvoiceItem[]>(initialItems)
   const [isAuto, setIsAuto] = useValueState(Boolean(service.IsAutoCalculatedValue))
   const [extraChargeType, setExtraChargeType] = useValueState<SupplyExtraChargeType>(service.SupplyExtraChargeType ?? 0)
-  const [prevOpened, setPrevOpened] = useValueState(opened)
-
-  if (opened !== prevOpened) {
-    setPrevOpened(opened)
-
-    if (opened) {
-      setItems(initialItems)
-      setIsAuto(Boolean(service.IsAutoCalculatedValue))
-      setExtraChargeType(service.SupplyExtraChargeType ?? 0)
-    }
-  }
 
   const typeOptions = [
     { label: t('Розраховано по ціні'), value: '0' },
@@ -129,4 +129,8 @@ export function CalculateMergedServicesPanel({
       </Stack>
     </AppDrawer>
   )
+}
+
+function getMergedServicePanelKey(service: MergedService): string {
+  return String(service.NetUid || service.Id || 'open')
 }

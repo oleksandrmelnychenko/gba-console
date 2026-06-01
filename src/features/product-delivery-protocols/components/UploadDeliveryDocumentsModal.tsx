@@ -144,7 +144,12 @@ export function UploadDeliveryDocumentsModal({
                   {document.fileName}
                 </Text>
                 <Tooltip label={t('Видалити')}>
-                  <ActionIcon color="red" variant="subtle" onClick={() => onRemoveNewDocument(document)}>
+                  <ActionIcon
+                    aria-label={t('Видалити')}
+                    color="red"
+                    variant="subtle"
+                    onClick={() => onRemoveNewDocument(document)}
+                  >
                     <IconTrash size={16} />
                   </ActionIcon>
                 </Tooltip>
@@ -182,6 +187,7 @@ export function UploadDeliveryDocumentsModal({
                 </Group>
                 <Tooltip label={document.deleted ? t('Відновити') : t('Видалити')}>
                   <ActionIcon
+                    aria-label={document.deleted ? t('Відновити') : t('Видалити')}
                     color={document.deleted ? 'gray' : 'red'}
                     variant="subtle"
                     onClick={() => onRemoveExistingDocument(document)}
@@ -197,7 +203,7 @@ export function UploadDeliveryDocumentsModal({
         <Divider />
 
         <Group justify="flex-end">
-          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={onAddFiles}>
+          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => files && onAddFiles(files)}>
             {(props) => (
               <Button disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light" {...props}>
                 {t('Завантажити')}

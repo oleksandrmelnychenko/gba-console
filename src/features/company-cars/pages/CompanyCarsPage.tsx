@@ -34,15 +34,31 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+type CompanyCarsPageState = {
+  companyCars: CompanyCar[]
+  error: string | null
+  isLoading: boolean
+}
+
+type CompanyCarsPageAction =
+  | { type: 'failed'; error: string }
+  | { type: 'loaded'; companyCars: CompanyCar[] }
+  | { type: 'start-loading' }
+
+const initialCompanyCarsPageState: CompanyCarsPageState = {
+  companyCars: [],
+  error: null,
+  isLoading: true,
+}
+
 export function CompanyCarsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const [companyCars, setCompanyCars] = useValueState<CompanyCar[]>([])
+  const [pageState, dispatchPageState] = useReducer(companyCarsPageReducer, initialCompanyCarsPageState)
+  const { companyCars, error, isLoading } = pageState
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
@@ -84,8 +100,7 @@ export function CompanyCarsPage() {
     const controller = new AbortController()
 
     async function loadCompanyCars() {
-      setLoading(true)
-      setError(null)
+      dispatchPageState({ type: 'start-loading' })
 
       try {
         const nextCompanyCars = normalizedSearchValue
@@ -93,15 +108,14 @@ export function CompanyCarsPage() {
           : await getCompanyCars()
 
         if (!controller.signal.aborted) {
-          setCompanyCars(nextCompanyCars)
+          dispatchPageState({ companyCars: nextCompanyCars, type: 'loaded' })
         }
       } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити автомобілі компанії'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити автомобілі компанії'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -109,16 +123,19 @@ export function CompanyCarsPage() {
     void loadCompanyCars()
 
     return () => controller.abort()
-  }, [normalizedSearchValue, reloadKey, setCompanyCars, setError, setLoading, t])
+  }, [normalizedSearchValue, reloadKey, t])
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Місце вводу для пошуку')}
-      value={searchValue}
-      w={{ base: '100%', sm: 360 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
+  const toolbarLeft = useMemo(
+    () => (
+      <TextInput
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Місце вводу для пошуку')}
+        value={searchValue}
+        w={{ base: '100%', sm: 360 }}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+    ),
+    [searchValue, setSearchValue, t],
   )
 
   return (
@@ -183,6 +200,31 @@ export function CompanyCarsPage() {
       </Card>
     </Stack>
   )
+}
+
+function companyCarsPageReducer(state: CompanyCarsPageState, action: CompanyCarsPageAction): CompanyCarsPageState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        companyCars: [],
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loaded':
+      return {
+        companyCars: action.companyCars,
+        error: null,
+        isLoading: false,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    default:
+      return state
+  }
 }
 
 function useCompanyCarColumns({

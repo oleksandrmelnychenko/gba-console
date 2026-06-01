@@ -1,7 +1,6 @@
 import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -24,24 +23,129 @@ type FilterDraft = {
   value: string
 }
 
+type InvoiceRegisterState = {
+  filterDraft: FilterDraft
+  activeFilters: FilterDraft
+  invoices: Sale[]
+  totalQty: number
+  error: string | null
+  isLoading: boolean
+  isLoadingMore: boolean
+  pageSize: number
+  hasMore: boolean
+  downloadOpened: boolean
+  downloadDocument: WarehouseUkraineExportDocument | null
+  downloadError: string | null
+  isDownloading: boolean
+}
+
+type InvoiceRegisterAction =
+  | { type: 'applyFilters'; filters: FilterDraft }
+  | { type: 'resetFilters'; filters: FilterDraft }
+  | { type: 'setPageSize'; pageSize: number }
+  | { type: 'invalidFilters' }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; invoices: Sale[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'loadMoreStarted' }
+  | { type: 'loadMoreSucceeded'; invoices: Sale[]; totalQty: number; hasMore: boolean; requestOffset: number }
+  | { type: 'loadMoreFailed'; error: string }
+  | { type: 'downloadStarted' }
+  | { type: 'downloadSucceeded'; document: WarehouseUkraineExportDocument }
+  | { type: 'downloadFailed'; error: string }
+  | { type: 'downloadClosed' }
+
+function createInitialInvoiceRegisterState(initialFilters: FilterDraft): InvoiceRegisterState {
+  return {
+    filterDraft: initialFilters,
+    activeFilters: initialFilters,
+    invoices: [],
+    totalQty: 0,
+    error: null,
+    isLoading: true,
+    isLoadingMore: false,
+    pageSize: DEFAULT_PAGE_SIZE,
+    hasMore: false,
+    downloadOpened: false,
+    downloadDocument: null,
+    downloadError: null,
+    isDownloading: false,
+  }
+}
+
+function invoiceRegisterReducer(state: InvoiceRegisterState, action: InvoiceRegisterAction): InvoiceRegisterState {
+  switch (action.type) {
+    case 'applyFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'resetFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'setPageSize':
+      return { ...state, pageSize: action.pageSize }
+    case 'invalidFilters':
+      return { ...state, invoices: [], totalQty: 0, hasMore: false, isLoading: false }
+    case 'loadStarted':
+      return { ...state, isLoading: true, error: null }
+    case 'loadSucceeded':
+      return {
+        ...state,
+        invoices: action.invoices,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoading: false,
+      }
+    case 'loadFailed':
+      return {
+        ...state,
+        invoices: [],
+        totalQty: 0,
+        hasMore: false,
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loadMoreStarted':
+      return { ...state, isLoadingMore: true, error: null }
+    case 'loadMoreSucceeded':
+      return {
+        ...state,
+        invoices:
+          state.invoices.length === action.requestOffset ? [...state.invoices, ...action.invoices] : state.invoices,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoadingMore: false,
+      }
+    case 'loadMoreFailed':
+      return { ...state, error: action.error, isLoadingMore: false }
+    case 'downloadStarted':
+      return {
+        ...state,
+        downloadOpened: true,
+        downloadDocument: null,
+        downloadError: null,
+        isDownloading: true,
+      }
+    case 'downloadSucceeded':
+      return { ...state, downloadDocument: action.document, isDownloading: false }
+    case 'downloadFailed':
+      return { ...state, downloadError: action.error, isDownloading: false }
+    case 'downloadClosed':
+      return {
+        ...state,
+        downloadOpened: false,
+        downloadDocument: null,
+        downloadError: null,
+        isDownloading: false,
+      }
+  }
+}
+
 function useInvoiceRegisterModel() {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(() => ({ date: getDateShiftedByDays(0), value: '' }), [])
-  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
-  const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
-  const [invoices, setInvoices] = useValueState<Sale[]>([])
-  const [totalQty, setTotalQty] = useValueState(0)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [downloadOpened, setDownloadOpened] = useValueState(false)
-  const [downloadDocument, setDownloadDocument] = useValueState<WarehouseUkraineExportDocument | null>(null)
-  const [downloadError, setDownloadError] = useValueState<string | null>(null)
-  const [isDownloading, setDownloading] = useValueState(false)
+  const initialState = useMemo(() => createInitialInvoiceRegisterState(initialFilters), [initialFilters])
+  const [state, dispatchState] = useReducer(invoiceRegisterReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
+  const { activeFilters, invoices, pageSize } = state
   const filterError = activeFilters.date ? null : translate('Вкажіть дату')
   const listRequestKey = `${activeFilters.date}|${activeFilters.value}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -53,18 +157,14 @@ function useInvoiceRegisterModel() {
 
   useEffect(() => {
     if (filterError) {
-      setInvoices([])
-      setTotalQty(0)
-      setHasMore(false)
-      setLoading(false)
+      dispatchState({ type: 'invalidFilters' })
       return
     }
 
     let cancelled = false
 
     async function loadInvoices() {
-      setLoading(true)
-      setError(null)
+      dispatchState({ type: 'loadStarted' })
 
       try {
         const result = await getInvoiceRegister({
@@ -75,20 +175,19 @@ function useInvoiceRegisterModel() {
         })
 
         if (!cancelled) {
-          setInvoices(result.items)
-          setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
+          dispatchState({
+            type: 'loadSucceeded',
+            invoices: result.items,
+            totalQty: result.totalQty,
+            hasMore: result.items.length < result.totalQty && result.items.length > 0,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setInvoices([])
-          setTotalQty(0)
-          setHasMore(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити реєстр'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchState({
+            type: 'loadFailed',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити реєстр'),
+          })
         }
       }
     }
@@ -98,13 +197,12 @@ function useInvoiceRegisterModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, setError, setHasMore, setInvoices, setLoading, setTotalQty, t])
+  }, [activeFilters, filterError, pageSize, reloadKey, t])
 
   async function loadMoreInvoices() {
     const requestKey = listRequestKeyRef.current
     const requestOffset = invoices.length
-    setLoadingMore(true)
-    setError(null)
+    dispatchState({ type: 'loadMoreStarted' })
 
     try {
       const result = await getInvoiceRegister({
@@ -115,36 +213,33 @@ function useInvoiceRegisterModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setInvoices((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
+        dispatchState({
+          type: 'loadMoreSucceeded',
+          invoices: result.items,
+          totalQty: result.totalQty,
+          hasMore: requestOffset + result.items.length < result.totalQty && result.items.length > 0,
+          requestOffset,
+        })
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити реєстр'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
+        dispatchState({
+          type: 'loadMoreFailed',
+          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити реєстр'),
+        })
       }
     }
   }
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
-    setDownloadOpened(false)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(false)
-  }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
+    dispatchState({ type: 'downloadClosed' })
+  }, [])
 
   async function exportDocument() {
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
-    setDownloadOpened(true)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(true)
+    dispatchState({ type: 'downloadStarted' })
 
     try {
       const document = await getInvoiceRegisterPrintDocument({
@@ -155,35 +250,43 @@ function useInvoiceRegisterModel() {
       })
 
       if (downloadRequestRef.current === requestId) {
-        setDownloadDocument(document)
+        dispatchState({ type: 'downloadSucceeded', document })
       }
     } catch (exportError) {
       if (downloadRequestRef.current === requestId) {
-        setDownloadError(exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'))
-      }
-    } finally {
-      if (downloadRequestRef.current === requestId) {
-        setDownloading(false)
+        dispatchState({
+          type: 'downloadFailed',
+          error: exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'),
+        })
       }
     }
   }
 
   function applyFilters(nextFilters: FilterDraft) {
-    setFilterDraft(nextFilters)
-    setActiveFilters(nextFilters)
+    dispatchState({ type: 'applyFilters', filters: nextFilters })
   }
 
   function resetFilters() {
-    setFilterDraft(initialFilters)
-    setActiveFilters(initialFilters)
+    dispatchState({ type: 'resetFilters', filters: initialFilters })
+  }
+
+  function setPageSize(pageSize: number) {
+    dispatchState({ type: 'setPageSize', pageSize })
   }
 
   const columns = useInvoiceRegisterColumns(invoiceIndexMap)
 
   return {
-    applyFilters, closeDownload, columns, downloadDocument, downloadError, downloadOpened, error, exportDocument,
-    filterDraft, filterError, hasMore, invoices, isDownloading, isLoading, isLoadingMore, loadMoreInvoices, pageSize,
-    reload, resetFilters, setPageSize, totalQty,
+    ...state,
+    applyFilters,
+    closeDownload,
+    columns,
+    exportDocument,
+    filterError,
+    loadMoreInvoices,
+    reload,
+    resetFilters,
+    setPageSize,
   }
 }
 

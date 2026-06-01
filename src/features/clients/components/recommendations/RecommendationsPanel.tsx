@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconLayoutGrid, IconList, IconPhoto } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import {
@@ -33,15 +33,76 @@ type RecommendationsPanelProps = {
   productNetId?: string
 }
 
+type RecommendationsState = {
+  error: string | null
+  isByRegion: boolean
+  isGrid: boolean
+  isLoading: boolean
+  previewProduct: RecommendationProduct | null
+  products: RecommendationProduct[]
+  selectedProduct: RecommendationProduct | null
+}
+
+type RecommendationsAction =
+  | { type: 'failed'; error: string }
+  | { type: 'loadedMostPurchased'; products: RecommendationProduct[] }
+  | { type: 'loadedProductRecommendations'; products: RecommendationProduct[]; selectedProduct: RecommendationProduct | null }
+  | { type: 'loading' }
+  | { type: 'previewProduct'; product: RecommendationProduct | null }
+  | { type: 'setByRegion'; value: boolean }
+  | { type: 'toggleGrid' }
+
+const initialRecommendationsState: RecommendationsState = {
+  error: null,
+  isByRegion: false,
+  isGrid: false,
+  isLoading: true,
+  previewProduct: null,
+  products: [],
+  selectedProduct: null,
+}
+
+function recommendationsReducer(state: RecommendationsState, action: RecommendationsAction): RecommendationsState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        products: [],
+        selectedProduct: null,
+      }
+    case 'loadedMostPurchased':
+      return {
+        ...state,
+        error: null,
+        isLoading: false,
+        products: action.products,
+        selectedProduct: null,
+      }
+    case 'loadedProductRecommendations':
+      return {
+        ...state,
+        error: null,
+        isLoading: false,
+        products: action.products,
+        selectedProduct: action.selectedProduct,
+      }
+    case 'loading':
+      return { ...state, error: null, isLoading: true }
+    case 'previewProduct':
+      return { ...state, previewProduct: action.product }
+    case 'setByRegion':
+      return { ...state, isByRegion: action.value }
+    case 'toggleGrid':
+      return { ...state, isGrid: !state.isGrid }
+  }
+}
+
 export function RecommendationsPanel({ client, productNetId }: RecommendationsPanelProps) {
   const { t } = useI18n()
-  const [isByRegion, setByRegion] = useState(false)
-  const [isGrid, setGrid] = useState(false)
-  const [isLoading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [products, setProducts] = useState<RecommendationProduct[]>([])
-  const [selectedProduct, setSelectedProduct] = useState<RecommendationProduct | null>(null)
-  const [previewProduct, setPreviewProduct] = useState<RecommendationProduct | null>(null)
+  const [state, dispatch] = useReducer(recommendationsReducer, initialRecommendationsState)
+  const { error, isByRegion, isGrid, isLoading, previewProduct, products, selectedProduct } = state
 
   const clientNetId = client.NetUid || ''
 
@@ -50,8 +111,7 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     const controller = new AbortController()
 
     async function loadProducts() {
-      setLoading(true)
-      setError(null)
+      dispatch({ type: 'loading' })
 
       try {
         if (productNetId) {
@@ -61,15 +121,13 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
           ])
 
           if (!cancelled) {
-            setSelectedProduct(product)
-            setProducts(coPurchase)
+            dispatch({ products: coPurchase, selectedProduct: product, type: 'loadedProductRecommendations' })
           }
         } else {
           const mostPurchased = await getMostPurchasedProductsByClientId(clientNetId, isByRegion, controller.signal)
 
           if (!cancelled) {
-            setSelectedProduct(null)
-            setProducts(mostPurchased)
+            dispatch({ products: mostPurchased, type: 'loadedMostPurchased' })
           }
         }
       } catch (loadError) {
@@ -78,13 +136,10 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
         }
 
         if (!cancelled) {
-          setSelectedProduct(null)
-          setProducts([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рекомендації'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatch({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рекомендації'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -114,10 +169,10 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
               { value: 'region', label: t('За регіоном') },
             ]}
             value={isByRegion ? 'region' : 'sales'}
-            onChange={(value) => setByRegion(value === 'region')}
+            onChange={(value) => dispatch({ type: 'setByRegion', value: value === 'region' })}
           />
           <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
-            <ActionIcon color="violet" variant="light" onClick={() => setGrid((current) => !current)}>
+            <ActionIcon color="violet" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
               {isGrid ? <IconList size={18} /> : <IconLayoutGrid size={18} />}
             </ActionIcon>
           </Tooltip>
@@ -138,12 +193,12 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
           </Text>
         </Group>
       ) : selectedProduct ? (
-        <SelectedProductCard product={selectedProduct} onPreview={() => setPreviewProduct(selectedProduct)} />
+        <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
       ) : (
-        <RecommendationsList isGrid={isGrid} products={products} onPreview={setPreviewProduct} />
+        <RecommendationsList isGrid={isGrid} products={products} onPreview={(product) => dispatch({ product, type: 'previewProduct' })} />
       )}
 
-      <ProductImagePreviewModal product={previewProduct} onClose={() => setPreviewProduct(null)} />
+      <ProductImagePreviewModal product={previewProduct} onClose={() => dispatch({ product: null, type: 'previewProduct' })} />
     </Stack>
   )
 }

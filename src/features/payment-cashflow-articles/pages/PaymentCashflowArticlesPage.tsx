@@ -17,8 +17,11 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
+
+const PERMISSION_CREATE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_AddBtn_PKEY'
 
 const PAYMENT_CASHFLOW_ARTICLES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -32,6 +35,7 @@ const SEARCH_DEBOUNCE_MS = 350
 
 export function PaymentCashflowArticlesPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [articles, setArticles] = useValueState<PaymentCashflowArticle[]>([])
@@ -43,6 +47,7 @@ export function PaymentCashflowArticlesPage() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
+  const canCreate = hasPermission(PERMISSION_CREATE_CASHFLOW_ARTICLE)
 
   const openArticle = useCallback(
     (article: PaymentCashflowArticle) => {
@@ -137,14 +142,17 @@ export function PaymentCashflowArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
-  const toolbarLeft = (
-    <TextInput
-      leftSection={<IconSearch size={16} />}
-      placeholder={t('Пошук')}
-      value={searchValue}
-      w={{ base: '100%', sm: 360 }}
-      onChange={(event) => setSearchValue(event.currentTarget.value)}
-    />
+  const toolbarLeft = useMemo(
+    () => (
+      <TextInput
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Пошук')}
+        value={searchValue}
+        w={{ base: '100%', sm: 360 }}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+    ),
+    [searchValue, setSearchValue, t],
   )
 
   return (
@@ -164,20 +172,22 @@ export function PaymentCashflowArticlesPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() =>
-                  navigate('/accounting/payment-cashflow-articles/new', {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Нова стаття')}
-              </Button>
+              {canCreate && (
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate('/accounting/payment-cashflow-articles/new', {
+                      state: {
+                        backgroundLocation: location,
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Нова стаття')}
+                </Button>
+              )}
             </Group>
           </Group>
 

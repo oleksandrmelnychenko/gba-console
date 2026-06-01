@@ -32,7 +32,7 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -72,6 +72,149 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type AmountEditState = {
+  amountValue: number | string
+  dateValue: string
+  isEditingAmount: boolean
+  transportationType: string
+}
+
+type AmountEditAction =
+  | { type: 'setAmountValue', value: number | string }
+  | { type: 'setDateValue', value: string }
+  | { type: 'setTransportationType', value: string }
+  | { type: 'startEditing' }
+  | { type: 'syncAmountInputs', order: DirectSupplyOrder | null }
+
+type StatusModalState = {
+  comment: string
+  document: SupplyOrderDeliveryDocument | null
+  received: boolean
+}
+
+type StatusModalAction =
+  | { type: 'close' }
+  | { type: 'open', document: SupplyOrderDeliveryDocument }
+  | { type: 'setComment', value: string }
+  | { type: 'setReceived', value: boolean }
+
+type CreditNoteState = {
+  amount: number | string
+  comment: string
+  date: string
+  file: File | null
+  isDrawerOpen: boolean
+  isModalOpen: boolean
+  number: string
+}
+
+type CreditNoteAction =
+  | { type: 'closeModal' }
+  | { type: 'openModal' }
+  | { type: 'setAmount', value: number | string }
+  | { type: 'setComment', value: string }
+  | { type: 'setDate', value: string }
+  | { type: 'setDrawerOpen', open: boolean }
+  | { type: 'setFile', value: File | null }
+  | { type: 'setNumber', value: string }
+
+const INITIAL_AMOUNT_EDIT_STATE: AmountEditState = {
+  amountValue: '',
+  dateValue: '',
+  isEditingAmount: false,
+  transportationType: '0',
+}
+
+const CLOSED_STATUS_MODAL_STATE: StatusModalState = {
+  comment: '',
+  document: null,
+  received: true,
+}
+
+function createInitialCreditNoteState(): CreditNoteState {
+  return {
+    amount: '',
+    comment: '',
+    date: formatLocalDate(new Date()),
+    file: null,
+    isDrawerOpen: false,
+    isModalOpen: false,
+    number: '',
+  }
+}
+
+function amountEditReducer(state: AmountEditState, action: AmountEditAction): AmountEditState {
+  switch (action.type) {
+    case 'setAmountValue':
+      return { ...state, amountValue: action.value }
+    case 'setDateValue':
+      return { ...state, dateValue: action.value }
+    case 'setTransportationType':
+      return { ...state, transportationType: action.value }
+    case 'startEditing':
+      return { ...state, isEditingAmount: true }
+    case 'syncAmountInputs':
+      return {
+        ...state,
+        amountValue: typeof action.order?.NetPrice === 'number' ? action.order.NetPrice : '',
+        dateValue: toDateTimeInput(action.order?.DateFrom),
+        isEditingAmount: false,
+      }
+    default:
+      return state
+  }
+}
+
+function statusModalReducer(state: StatusModalState, action: StatusModalAction): StatusModalState {
+  switch (action.type) {
+    case 'close':
+      return CLOSED_STATUS_MODAL_STATE
+    case 'open':
+      return {
+        comment: action.document.Comment || '',
+        document: action.document,
+        received: action.document.IsReceived ?? true,
+      }
+    case 'setComment':
+      return { ...state, comment: action.value }
+    case 'setReceived':
+      return { ...state, received: action.value }
+    default:
+      return state
+  }
+}
+
+function creditNoteReducer(state: CreditNoteState, action: CreditNoteAction): CreditNoteState {
+  switch (action.type) {
+    case 'closeModal':
+      return { ...state, file: null, isModalOpen: false }
+    case 'openModal':
+      return {
+        ...state,
+        amount: '',
+        comment: '',
+        date: formatLocalDate(new Date()),
+        file: null,
+        isModalOpen: true,
+        number: '',
+      }
+    case 'setAmount':
+      return { ...state, amount: action.value }
+    case 'setComment':
+      return { ...state, comment: action.value }
+    case 'setDate':
+      return { ...state, date: action.value }
+    case 'setDrawerOpen':
+      return { ...state, isDrawerOpen: action.open }
+    case 'setFile':
+      return { ...state, file: action.value }
+    case 'setNumber':
+      return { ...state, number: action.value }
+    default:
+      return state
+  }
+}
+
 export function SupplyUkraineDirectOrderDetailPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -81,20 +224,29 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [transportationType, setTransportationType] = useState('0')
-  const [isEditingAmount, setEditingAmount] = useState(false)
-  const [amountValue, setAmountValue] = useState<number | string>('')
-  const [dateValue, setDateValue] = useState('')
-  const [statusDocument, setStatusDocument] = useState<SupplyOrderDeliveryDocument | null>(null)
-  const [statusComment, setStatusComment] = useState('')
-  const [statusReceived, setStatusReceived] = useState(true)
-  const [creditNotesOpen, setCreditNotesOpen] = useState(false)
-  const [creditNoteModalOpen, setCreditNoteModalOpen] = useState(false)
-  const [creditNoteNumber, setCreditNoteNumber] = useState('')
-  const [creditNoteAmount, setCreditNoteAmount] = useState<number | string>('')
-  const [creditNoteComment, setCreditNoteComment] = useState('')
-  const [creditNoteDate, setCreditNoteDate] = useState(() => formatLocalDate(new Date()))
-  const [creditNoteFile, setCreditNoteFile] = useState<File | null>(null)
+  const [amountEditState, dispatchAmountEdit] = useReducer(amountEditReducer, INITIAL_AMOUNT_EDIT_STATE)
+  const [statusModalState, dispatchStatusModal] = useReducer(statusModalReducer, CLOSED_STATUS_MODAL_STATE)
+  const [creditNoteState, dispatchCreditNote] = useReducer(creditNoteReducer, undefined, createInitialCreditNoteState)
+  const {
+    amountValue,
+    dateValue,
+    isEditingAmount,
+    transportationType,
+  } = amountEditState
+  const {
+    comment: statusComment,
+    document: statusDocument,
+    received: statusReceived,
+  } = statusModalState
+  const {
+    amount: creditNoteAmount,
+    comment: creditNoteComment,
+    date: creditNoteDate,
+    file: creditNoteFile,
+    isDrawerOpen: creditNotesOpen,
+    isModalOpen: creditNoteModalOpen,
+    number: creditNoteNumber,
+  } = creditNoteState
   const hasInvoices = (order?.SupplyInvoices?.length || 0) > 0
   const isLocked = Boolean(order?.IsOrderShipped) || Boolean(order?.IsCompleted)
   const areDeliveryDocumentActionsLocked = Boolean(order?.IsCompleted)
@@ -123,7 +275,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
         if (!cancelled) {
           setOrder(nextOrder)
-          setTransportationType(String(nextOrder?.TransportationType ?? 0))
+          dispatchAmountEdit({ type: 'setTransportationType', value: String(nextOrder?.TransportationType ?? 0) })
           syncAmountInputs(nextOrder)
         }
       } catch (loadError) {
@@ -156,7 +308,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
     try {
       const nextOrder = await getDirectSupplyOrderById(id)
       setOrder(nextOrder)
-      setTransportationType(String(nextOrder?.TransportationType ?? 0))
+      dispatchAmountEdit({ type: 'setTransportationType', value: String(nextOrder?.TransportationType ?? 0) })
       syncAmountInputs(nextOrder)
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
@@ -166,9 +318,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
   }
 
   function syncAmountInputs(nextOrder: DirectSupplyOrder | null) {
-    setAmountValue(typeof nextOrder?.NetPrice === 'number' ? nextOrder.NetPrice : '')
-    setDateValue(toDateTimeInput(nextOrder?.DateFrom))
-    setEditingAmount(false)
+    dispatchAmountEdit({ type: 'syncAmountInputs', order: nextOrder })
   }
 
   async function savePatch(patch: Partial<DirectSupplyOrder>, successMessage: string) {
@@ -183,7 +333,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
       const updated = await updateDirectSupplyOrder({ ...order, ...patch })
       setOrder(updated)
       if (updated) {
-        setTransportationType(String(updated.TransportationType ?? 0))
+        dispatchAmountEdit({ type: 'setTransportationType', value: String(updated.TransportationType ?? 0) })
       }
       syncAmountInputs(updated)
       notifications.show({ color: 'green', message: successMessage })
@@ -240,29 +390,19 @@ export function SupplyUkraineDirectOrderDetailPage() {
   }
 
   function openStatusModal(document: SupplyOrderDeliveryDocument) {
-    setStatusDocument(document)
-    setStatusComment(document.Comment || '')
-    setStatusReceived(document.IsReceived ?? true)
+    dispatchStatusModal({ type: 'open', document })
   }
 
   function closeStatusModal() {
-    setStatusDocument(null)
-    setStatusComment('')
-    setStatusReceived(true)
+    dispatchStatusModal({ type: 'close' })
   }
 
   function openCreditNoteModal() {
-    setCreditNoteNumber('')
-    setCreditNoteAmount('')
-    setCreditNoteComment('')
-    setCreditNoteDate(formatLocalDate(new Date()))
-    setCreditNoteFile(null)
-    setCreditNoteModalOpen(true)
+    dispatchCreditNote({ type: 'openModal' })
   }
 
   function closeCreditNoteModal() {
-    setCreditNoteModalOpen(false)
-    setCreditNoteFile(null)
+    dispatchCreditNote({ type: 'closeModal' })
   }
 
   function saveDocumentStatus() {
@@ -330,14 +470,14 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
       if (updated) {
         setOrder(updated)
-        setTransportationType(String(updated.TransportationType ?? 0))
+        dispatchAmountEdit({ type: 'setTransportationType', value: String(updated.TransportationType ?? 0) })
         syncAmountInputs(updated)
       } else {
         await reloadOrder()
       }
 
       closeCreditNoteModal()
-      setCreditNotesOpen(true)
+      dispatchCreditNote({ type: 'setDrawerOpen', open: true })
       notifications.show({ color: 'green', message: t('Кредит ноту створено') })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити кредит ноту'))
@@ -495,7 +635,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             </Button>
           )}
           {order && canOpenCreditNotes && (
-            <Button leftSection={<IconFileInvoice size={16} />} variant="light" onClick={() => setCreditNotesOpen(true)}>
+            <Button leftSection={<IconFileInvoice size={16} />} variant="light" onClick={() => dispatchCreditNote({ type: 'setDrawerOpen', open: true })}>
               {t('Кредит ноти')}
             </Button>
           )}
@@ -545,7 +685,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     data={TRANSPORTATION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
                     disabled={!isEditingAmount || isSaving || Boolean(order.IsOrderShipped)}
                     value={transportationType}
-                    onChange={setTransportationType}
+                    onChange={(value) => dispatchAmountEdit({ type: 'setTransportationType', value })}
                   />
                 </Stack>
                 <Button
@@ -570,14 +710,14 @@ export function SupplyUkraineDirectOrderDetailPage() {
                   label={t('Сума замовлення')}
                   min={0}
                   value={amountValue}
-                  onChange={setAmountValue}
+                  onChange={(value) => dispatchAmountEdit({ type: 'setAmountValue', value })}
                 />
                 <TextInput
                   disabled={!isEditingAmount || isSaving}
                   label={t('Від якої дати')}
                   type="datetime-local"
                   value={dateValue}
-                  onChange={(event) => setDateValue(event.currentTarget.value)}
+                  onChange={(event) => dispatchAmountEdit({ type: 'setDateValue', value: event.currentTarget.value })}
                 />
                 {isEditingAmount ? (
                   <Group gap="xs">
@@ -593,7 +733,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     disabled={isLocked}
                     leftSection={<IconPencil size={16} />}
                     variant="light"
-                    onClick={() => setEditingAmount(true)}
+                    onClick={() => dispatchAmountEdit({ type: 'startEditing' })}
                   >
                     {t('Редагувати')}
                   </Button>
@@ -656,7 +796,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
       )}
 
-      <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => setCreditNotesOpen(false)}>
+      <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}>
         <Stack gap="md">
           <Group justify="flex-end">
             <Button loading={isSaving} variant="light" onClick={openCreditNoteModal}>
@@ -711,30 +851,30 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <TextInput
             label={t('Номер')}
             value={creditNoteNumber}
-            onChange={(event) => setCreditNoteNumber(event.currentTarget.value)}
+            onChange={(event) => dispatchCreditNote({ type: 'setNumber', value: event.currentTarget.value })}
           />
           <NumberInput
             decimalScale={2}
             label={t('Сума')}
             min={0}
             value={creditNoteAmount}
-            onChange={setCreditNoteAmount}
+            onChange={(value) => dispatchCreditNote({ type: 'setAmount', value })}
           />
           <TextInput
             label={t('Дата')}
             type="date"
             value={creditNoteDate}
-            onChange={(event) => setCreditNoteDate(event.currentTarget.value)}
+            onChange={(event) => dispatchCreditNote({ type: 'setDate', value: event.currentTarget.value })}
           />
           <Textarea
             autosize
             label={t('Коментар')}
             minRows={3}
             value={creditNoteComment}
-            onChange={(event) => setCreditNoteComment(event.currentTarget.value)}
+            onChange={(event) => dispatchCreditNote({ type: 'setComment', value: event.currentTarget.value })}
           />
           <Group gap="xs">
-            <FileButton onChange={setCreditNoteFile}>
+            <FileButton onChange={(file) => dispatchCreditNote({ type: 'setFile', value: file })}>
               {(fileProps) => (
                 <Button {...fileProps} leftSection={<IconUpload size={16} />} variant="light">
                   {t('Завантажити файл')}
@@ -750,7 +890,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     color="red"
                     size="sm"
                     variant="subtle"
-                    onClick={() => setCreditNoteFile(null)}
+                    onClick={() => dispatchCreditNote({ type: 'setFile', value: null })}
                   >
                     <IconTrash size={16} />
                   </ActionIcon>
@@ -781,14 +921,14 @@ export function SupplyUkraineDirectOrderDetailPage() {
           <Checkbox
             checked={statusReceived}
             label={t('Отримано')}
-            onChange={(event) => setStatusReceived(event.currentTarget.checked)}
+            onChange={(event) => dispatchStatusModal({ type: 'setReceived', value: event.currentTarget.checked })}
           />
           <Textarea
             autosize
             label={t('Коментар')}
             minRows={3}
             value={statusComment}
-            onChange={(event) => setStatusComment(event.currentTarget.value)}
+            onChange={(event) => dispatchStatusModal({ type: 'setComment', value: event.currentTarget.value })}
           />
           <Group justify="flex-end" gap="xs">
             <Button color="gray" disabled={isSaving} variant="light" onClick={closeStatusModal}>

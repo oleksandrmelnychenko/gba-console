@@ -7,12 +7,13 @@ import type {
   SupplyOrderFromPackListPayload,
   TaxFree,
   TaxFreePackList,
+  TaxFreePackListsResponse,
   TaxFreePackListsSearchParams,
   TaxFreePrintDocument,
 } from '../types'
 import { normalizePackList, normalizeTaxFree } from '../utils'
 
-export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams): Promise<TaxFreePackList[]> {
+export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams): Promise<TaxFreePackListsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/filtered', {
     query: {
       from: params.from,
@@ -22,7 +23,12 @@ export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams):
     },
   })
 
-  return readList<TaxFreePackList>(result).map(normalizePackList)
+  const items = readList<TaxFreePackList>(result).map(normalizePackList)
+
+  return {
+    items,
+    totalQty: readTotalQty(result, items),
+  }
 }
 
 export async function getTaxFreePackListById(netId: string): Promise<TaxFreePackList | null> {
@@ -234,6 +240,32 @@ function readList<T>(result: unknown): T[] {
   const items = payload.Items ?? payload.Data ?? payload.Collection ?? payload.Values
 
   return Array.isArray(items) ? (items as T[]) : []
+}
+
+function readTotalQty(result: unknown, items: TaxFreePackList[]): number | undefined {
+  const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
+
+  return readNumber(payload.TotalQty)
+    ?? readNumber(payload.Total)
+    ?? readNumber(payload.TotalRowsQty)
+    ?? readNumber(payload.TotalRowQty)
+    ?? readNumber(items[0]?.TotalRowsQty)
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return undefined
 }
 
 function normalizeObject<T>(result: unknown): T | null

@@ -98,7 +98,7 @@ export function AdvanceReportFuelGrid({
       },
     ]
 
-    if (canRemove && onRemove) {
+    if (canRemove && onRemove && rows.some((row) => row.canRemove !== false)) {
       base.push({
         id: 'remove',
         header: '',
@@ -110,26 +110,27 @@ export function AdvanceReportFuelGrid({
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (row) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="red"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onRemove(row)
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Tooltip>
-        ),
+        cell: (row) =>
+          row.canRemove === false ? null : (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onRemove(row)
+                }}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ),
       })
     }
 
     return base
-  }, [canRemove, onRemove, t])
+  }, [canRemove, onRemove, rows, t])
 
   return (
     <DataTable

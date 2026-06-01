@@ -23,7 +23,7 @@ import {
   IconShieldCheck,
   IconTrash,
 } from '@tabler/icons-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
@@ -62,6 +62,66 @@ export type ClientAgreementsPanelProps = {
   onExportAgreementWarrantyConditions?: (netId: string) => void
 }
 
+type AgreementsPanelState = {
+  downloadModalOpened: boolean
+  formDraft: Agreement | null
+  formError: string | null
+  formIsEdit: boolean
+  formOpened: boolean
+}
+
+type AgreementsPanelAction =
+  | { type: 'closeDownload' }
+  | { type: 'closeForm' }
+  | { type: 'openCreate'; draft: Agreement }
+  | { type: 'openDownload' }
+  | { type: 'openEdit'; agreement: Agreement }
+  | { type: 'patchDraft'; patch: Partial<Agreement> }
+  | { type: 'setFormError'; error: string | null }
+
+const initialAgreementsPanelState: AgreementsPanelState = {
+  downloadModalOpened: false,
+  formDraft: null,
+  formError: null,
+  formIsEdit: false,
+  formOpened: false,
+}
+
+function agreementsPanelReducer(state: AgreementsPanelState, action: AgreementsPanelAction): AgreementsPanelState {
+  switch (action.type) {
+    case 'closeDownload':
+      return { ...state, downloadModalOpened: false }
+    case 'closeForm':
+      return { ...state, formOpened: false }
+    case 'openCreate':
+      return {
+        ...state,
+        formDraft: action.draft,
+        formError: null,
+        formIsEdit: false,
+        formOpened: true,
+      }
+    case 'openDownload':
+      return { ...state, downloadModalOpened: true }
+    case 'openEdit':
+      return {
+        ...state,
+        formDraft: { ...action.agreement },
+        formError: null,
+        formIsEdit: true,
+        formOpened: true,
+      }
+    case 'patchDraft':
+      return {
+        ...state,
+        formDraft: state.formDraft ? { ...state.formDraft, ...action.patch } : state.formDraft,
+        formError: null,
+      }
+    case 'setFormError':
+      return { ...state, formError: action.error }
+  }
+}
+
 export function ClientAgreementsPanel({
   agreements,
   isProvider,
@@ -86,11 +146,8 @@ export function ClientAgreementsPanel({
   const { hasPermission } = useAuth()
   const canEdit = hasPermission(EDIT_AGREEMENT_PERMISSION)
 
-  const [formOpened, setFormOpened] = useState(false)
-  const [formDraft, setFormDraft] = useState<Agreement | null>(null)
-  const [formIsEdit, setFormIsEdit] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [downloadModalOpened, setDownloadModalOpened] = useState(false)
+  const [state, dispatch] = useReducer(agreementsPanelReducer, initialAgreementsPanelState)
+  const { downloadModalOpened, formDraft, formError, formIsEdit, formOpened } = state
 
   const isVatAccountingHidden = useMemo(
     () => !(formDraft?.IsAccounting),
@@ -98,24 +155,18 @@ export function ClientAgreementsPanel({
   )
 
   function openCreate() {
-    setFormDraft(
-      createAgreementDraft(isProvider, currencies, organizations, pricings, t(AGREEMENT_DEFAULT_NAME)),
-    )
-    setFormIsEdit(false)
-    setFormError(null)
-    setFormOpened(true)
+    dispatch({
+      draft: createAgreementDraft(isProvider, currencies, organizations, pricings, t(AGREEMENT_DEFAULT_NAME)),
+      type: 'openCreate',
+    })
   }
 
   function openEdit(agreement: Agreement) {
-    setFormDraft({ ...agreement })
-    setFormIsEdit(true)
-    setFormError(null)
-    setFormOpened(true)
+    dispatch({ agreement, type: 'openEdit' })
   }
 
   function patchDraft(patch: Partial<Agreement>) {
-    setFormDraft((draft) => (draft ? { ...draft, ...patch } : draft))
-    setFormError(null)
+    dispatch({ patch, type: 'patchDraft' })
   }
 
   function handleSave() {
@@ -124,22 +175,22 @@ export function ClientAgreementsPanel({
     }
 
     if (!formDraft.Name || !formDraft.Name.trim()) {
-      setFormError(t('Вкажіть найменування'))
+      dispatch({ error: t('Вкажіть найменування'), type: 'setFormError' })
       return
     }
 
     if (isProvider && !formDraft.ProviderPricing?.Name) {
-      setFormError(t('Створіть тип цін'))
+      dispatch({ error: t('Створіть тип цін'), type: 'setFormError' })
       return
     }
 
     if (!isProvider && !formDraft.Pricing?.Id) {
-      setFormError(`${t('Не обрано')} - ${t('Тип ціни')}`)
+      dispatch({ error: `${t('Не обрано')} - ${t('Тип ціни')}`, type: 'setFormError' })
       return
     }
 
     onSaveAgreement(formDraft, formIsEdit)
-    setFormOpened(false)
+    dispatch({ type: 'closeForm' })
   }
 
   function handleDelete() {
@@ -148,17 +199,17 @@ export function ClientAgreementsPanel({
     }
 
     onDeleteAgreement(formDraft)
-    setFormOpened(false)
+    dispatch({ type: 'closeForm' })
   }
 
   function handlePrint(netId: string) {
     onExportAgreementDocument?.(netId)
-    setDownloadModalOpened(true)
+    dispatch({ type: 'openDownload' })
   }
 
   function handleWarranty(netId: string) {
     onExportAgreementWarrantyConditions?.(netId)
-    setDownloadModalOpened(true)
+    dispatch({ type: 'openDownload' })
   }
 
   return (
@@ -243,7 +294,7 @@ export function ClientAgreementsPanel({
         opened={formOpened}
         size="lg"
         title={formIsEdit ? t('Редагування договору') : t('Новий договір')}
-        onClose={() => setFormOpened(false)}
+        onClose={() => dispatch({ type: 'closeForm' })}
       >
         {formDraft && (
           <Stack gap="md">
@@ -281,7 +332,7 @@ export function ClientAgreementsPanel({
                 )}
               </div>
               <Group justify="flex-end">
-                <Button color="gray" variant="subtle" onClick={() => setFormOpened(false)}>
+                <Button color="gray" variant="subtle" onClick={() => dispatch({ type: 'closeForm' })}>
                   {t('Скасувати')}
                 </Button>
                 <Button
@@ -302,7 +353,7 @@ export function ClientAgreementsPanel({
         centered
         opened={downloadModalOpened}
         title={t('Друк договору')}
-        onClose={() => setDownloadModalOpened(false)}
+        onClose={() => dispatch({ type: 'closeDownload' })}
       >
         <Stack gap="sm">
           {isExporting ? (

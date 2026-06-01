@@ -8,6 +8,11 @@ import type {
 } from '../types'
 import { SAD_TYPES } from '../types'
 
+type DocumentSelectOption = {
+  label: string
+  value: string
+}
+
 type DocumentTargetControlsProps = {
   disabled?: boolean
   documentState: BasketSupplyDocumentState
@@ -33,14 +38,8 @@ export function DocumentTargetControls({
     { label: t('Sad'), value: String(SAD_TYPES.Sad) },
     { label: t('TIR'), value: String(SAD_TYPES.TIR) },
   ]
-  const taxFreeOptions = notSentTaxFreePackLists.map((packList) => ({
-    label: packList.Number || packList.NetUid || t('Без номера'),
-    value: packList.NetUid || String(packList.Id || ''),
-  })).filter((option) => option.value)
-  const sadOptions = notSentSads.map((sad) => ({
-    label: sad.Number || sad.NetUid || t('Без номера'),
-    value: sad.NetUid || String(sad.Id || ''),
-  })).filter((option) => option.value)
+  const taxFreeOptions = toDocumentSelectOptions(notSentTaxFreePackLists, t)
+  const sadOptions = toDocumentSelectOptions(notSentSads, t)
   const canSelectExisting =
     documentState.documentType === 'taxFree' ? taxFreeOptions.length > 0 : sadOptions.length > 0
 
@@ -105,4 +104,24 @@ export function DocumentTargetControls({
       )}
     </Stack>
   )
+}
+
+function toDocumentSelectOptions<TDocument extends { Id?: number; NetUid?: string; Number?: string }>(
+  documents: TDocument[],
+  t: (key: string) => string,
+) {
+  return documents.reduce<DocumentSelectOption[]>((options, document) => {
+    const value = document.NetUid || String(document.Id || '')
+
+    if (!value) {
+      return options
+    }
+
+    options.push({
+      label: document.Number || document.NetUid || t('Без номера'),
+      value,
+    })
+
+    return options
+  }, [])
 }

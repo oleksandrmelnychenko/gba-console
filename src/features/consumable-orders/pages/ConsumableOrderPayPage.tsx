@@ -57,6 +57,11 @@ type PayFormState = {
   time: string
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 const ORDERS_PATH = '/accounting/consumable-orders'
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -580,27 +585,36 @@ function calculateLocalTotal(items: ConsumablesOrderItem[]): number {
   return items.reduce((total, item) => total + (item.TotalPriceWithVAT || 0), 0)
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = getEntityLabel) {
-  return entities
-    .map((entity) => ({
-      label: labelGetter(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = getEntityLabel): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+    const label = labelGetter(entity) || value
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
 }
 
-function toCurrencyOptions(currencyRegisters: PaymentCurrencyRegister[]) {
-  return currencyRegisters
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const balance = typeof currencyRegister.Amount === 'number' ? ` (${formatMoney(currencyRegister.Amount)})` : ''
+function toCurrencyOptions(currencyRegisters: PaymentCurrencyRegister[]): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: `${currency?.Code || currency?.Name || getEntityValue(currencyRegister)}${balance}`,
-        value: getEntityValue(currencyRegister),
-      }
-    })
-    .filter((option) => option.value)
+  for (const currencyRegister of currencyRegisters) {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currencyRegister)
+    const balance = typeof currencyRegister.Amount === 'number' ? ` (${formatMoney(currencyRegister.Amount)})` : ''
+    const label = `${currency?.Code || currency?.Name || value}${balance}`
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T | null): T[] {

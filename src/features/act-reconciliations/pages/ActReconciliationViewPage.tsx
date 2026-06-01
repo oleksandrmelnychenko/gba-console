@@ -59,7 +59,7 @@ function useActReconciliationViewModel() {
     [items, selectedNetIds],
   )
 
-  const loadReconciliation = useCallback(async () => {
+  const loadReconciliation = useCallback(() => {
     if (!netid) {
       setReconciliation(null)
       setError(translate('Акт звірки не вибрано'))
@@ -72,35 +72,36 @@ function useActReconciliationViewModel() {
     setLoading(true)
     setError(null)
 
-    try {
-      const loaded = await getActReconciliationByNetId(netid)
+    void getActReconciliationByNetId(netid)
+      .then((loaded) => {
+        if (requestRef.current !== requestId) {
+          return
+        }
 
-      if (requestRef.current !== requestId) {
-        return
-      }
+        if (!loaded) {
+          setReconciliation(null)
+          setError(translate('Обраний акт звірки не існує'))
+          return
+        }
 
-      if (!loaded) {
-        setReconciliation(null)
-        setError(translate('Обраний акт звірки не існує'))
-        return
-      }
-
-      setReconciliation(loaded)
-      setSelectedNetIds(new Set())
-    } catch (loadError) {
-      if (requestRef.current === requestId) {
-        setReconciliation(null)
-        setError(loadError instanceof Error ? loadError.message : translate('Не вдалося завантажити акт звірки'))
-      }
-    } finally {
-      if (requestRef.current === requestId) {
-        setLoading(false)
-      }
-    }
+        setReconciliation(loaded)
+        setSelectedNetIds(new Set())
+      })
+      .catch((loadError: unknown) => {
+        if (requestRef.current === requestId) {
+          setReconciliation(null)
+          setError(loadError instanceof Error ? loadError.message : translate('Не вдалося завантажити акт звірки'))
+        }
+      })
+      .finally(() => {
+        if (requestRef.current === requestId) {
+          setLoading(false)
+        }
+      })
   }, [netid, setError, setLoading, setReconciliation, setSelectedNetIds])
 
   useEffect(() => {
-    void loadReconciliation()
+    loadReconciliation()
   }, [loadReconciliation, reloadKey])
 
   const toggleItem = useCallback(

@@ -128,12 +128,18 @@ export function ShiftForm({
 }
 
 function buildStorageOptions(storages: ReconciliationStorageOption[]) {
-  return storages
-    .filter((storage) => Boolean(storage.NetUid))
-    .map((storage) => ({
+  return storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
+    if (!storage.NetUid) {
+      return options
+    }
+
+    options.push({
       label: `${storage.Name || ''}${storage.Organization?.Name ? ` (${storage.Organization.Name})` : ''}`,
-      value: storage.NetUid as string,
-    }))
+      value: storage.NetUid,
+    })
+
+    return options
+  }, [])
 }
 
 function getQtyError(

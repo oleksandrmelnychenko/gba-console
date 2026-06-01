@@ -43,6 +43,29 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   timeStyle: 'short',
 })
 
+type CompanyCarRoadListsState = {
+  companyCar: CompanyCar | null
+  error: string | null
+  isLoading: boolean
+  roadLists: CompanyCarRoadList[]
+}
+
+type CompanyCarRoadListsAction =
+  | { type: 'append-road-list'; roadList: CompanyCarRoadList }
+  | { type: 'delete-road-list'; netUid: string }
+  | { type: 'failed'; error: string }
+  | { type: 'missing-company-car' }
+  | { type: 'set-error'; error: string | null }
+  | { type: 'start-loading' }
+  | { type: 'loaded'; companyCar: CompanyCar | null; roadLists: CompanyCarRoadList[] }
+
+const initialRoadListsState: CompanyCarRoadListsState = {
+  companyCar: null,
+  error: null,
+  isLoading: true,
+  roadLists: [],
+}
+
 export function CompanyCarRoadListsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -50,12 +73,10 @@ export function CompanyCarRoadListsPage() {
   const { id } = useParams<{ id?: string }>()
   const locationState = location.state as { returnPath?: string } | null
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
-  const [companyCar, setCompanyCar] = useValueState<CompanyCar | null>(null)
-  const [roadLists, setRoadLists] = useValueState<CompanyCarRoadList[]>([])
+  const [loadState, dispatchLoadState] = useReducer(roadListsReducer, initialRoadListsState)
+  const { companyCar, error, isLoading, roadLists } = loadState
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
@@ -65,54 +86,45 @@ export function CompanyCarRoadListsPage() {
 
   useEffect(() => {
     if (!id) {
-      setCompanyCar(null)
-      setRoadLists([])
-      setLoading(false)
+      dispatchLoadState({ type: 'missing-company-car' })
       return
     }
 
     const controller = new AbortController()
+    dispatchLoadState({ type: 'start-loading' })
 
-    async function loadResources(companyCarNetId: string) {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const nextCompanyCar = await getCompanyCar(companyCarNetId)
-        const nextRoadLists = await getCompanyCarRoadLists({
-          companyCarNetId,
-          from: toLegacyDateString(fromDate),
-          to: toLegacyDateString(toDate),
-        })
-
+    void Promise.all([
+      getCompanyCar(id),
+      getCompanyCarRoadLists({
+        companyCarNetId: id,
+        from: toLegacyDateString(fromDate),
+        to: toLegacyDateString(toDate),
+      }),
+    ])
+      .then(([nextCompanyCar, nextRoadLists]) => {
         if (!controller.signal.aborted) {
-          setCompanyCar(nextCompanyCar)
-          setRoadLists(nextRoadLists)
+          dispatchLoadState({ companyCar: nextCompanyCar, roadLists: nextRoadLists, type: 'loaded' })
         }
-      } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setRoadLists([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити шляхові листи'))
+      })
+      .catch((loadError: unknown) => {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
+          dispatchLoadState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити шляхові листи'),
+            type: 'failed',
+          })
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadResources(id)
+      })
 
     return () => controller.abort()
-  }, [fromDate, id, reloadKey, setCompanyCar, setError, setLoading, setRoadLists, t, toDate])
+  }, [fromDate, id, reloadKey, t, toDate])
 
   const handleCreated = useCallback(
     (roadList: CompanyCarRoadList) => {
-      setRoadLists((current) => [...current, roadList])
+      dispatchLoadState({ roadList, type: 'append-road-list' })
       setFormOpen(false)
       notifications.show({ color: 'green', message: t('Шляховий лист створено') })
     },
-    [setFormOpen, setRoadLists, t],
+    [setFormOpen, t],
   )
 
   async function handleDelete() {
@@ -121,15 +133,18 @@ export function CompanyCarRoadListsPage() {
     }
 
     setDeleting(true)
-    setError(null)
+    dispatchLoadState({ error: null, type: 'set-error' })
 
     try {
       await deleteCompanyCarRoadList(deleteTarget.NetUid)
-      setRoadLists((current) => current.filter((roadList) => roadList.NetUid !== deleteTarget.NetUid))
+      dispatchLoadState({ netUid: deleteTarget.NetUid, type: 'delete-road-list' })
       notifications.show({ color: 'green', message: t('Шляховий лист видалено') })
       setDeleteTarget(null)
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити шляховий лист'))
+      dispatchLoadState({
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити шляховий лист'),
+        type: 'set-error',
+      })
     } finally {
       setDeleting(false)
     }
@@ -226,6 +241,58 @@ export function CompanyCarRoadListsPage() {
       />
     </Stack>
   )
+}
+
+function roadListsReducer(
+  state: CompanyCarRoadListsState,
+  action: CompanyCarRoadListsAction,
+): CompanyCarRoadListsState {
+  switch (action.type) {
+    case 'append-road-list':
+      return {
+        ...state,
+        roadLists: [...state.roadLists, action.roadList],
+      }
+    case 'delete-road-list':
+      return {
+        ...state,
+        roadLists: state.roadLists.filter((roadList) => roadList.NetUid !== action.netUid),
+      }
+    case 'failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        roadLists: [],
+      }
+    case 'missing-company-car':
+      return {
+        companyCar: null,
+        error: null,
+        isLoading: false,
+        roadLists: [],
+      }
+    case 'set-error':
+      return {
+        ...state,
+        error: action.error,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    case 'loaded':
+      return {
+        companyCar: action.companyCar,
+        error: null,
+        isLoading: false,
+        roadLists: action.roadLists,
+      }
+    default:
+      return state
+  }
 }
 
 function useRoadListColumns(onDelete: (roadList: CompanyCarRoadList) => void): DataTableColumn<CompanyCarRoadList>[] {

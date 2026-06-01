@@ -1052,15 +1052,32 @@ function getDefaultSearchType(operationType: OutcomeOperationType): IncomeCounte
 }
 
 function pickOrganizationsByClientAgreements(organizations: Organization[], agreements: ClientAgreement[]) {
-  const organizationIds = new Set(agreements.map((agreement) => agreement.Agreement?.OrganizationId || agreement.Agreement?.Organization?.Id).filter(Boolean))
+  const organizationIds = collectTruthyIds(
+    agreements,
+    (agreement) => agreement.Agreement?.OrganizationId || agreement.Agreement?.Organization?.Id,
+  )
 
   return organizations.filter((organization) => organization.Id && organizationIds.has(organization.Id))
 }
 
 function pickOrganizationsBySupplyAgreements(organizations: Organization[], agreements: SupplyOrganizationAgreement[]) {
-  const organizationIds = new Set(agreements.map((agreement) => agreement.Organization?.Id).filter(Boolean))
+  const organizationIds = collectTruthyIds(agreements, (agreement) => agreement.Organization?.Id)
 
   return organizations.filter((organization) => organization.Id && organizationIds.has(organization.Id))
+}
+
+function collectTruthyIds<T>(items: T[], getId: (item: T) => number | undefined): Set<number> {
+  const ids = new Set<number>()
+
+  for (const item of items) {
+    const id = getId(item)
+
+    if (id) {
+      ids.add(id)
+    }
+  }
+
+  return ids
 }
 
 function filterClientAgreementsByOrganization(agreements: ClientAgreement[], organization: Organization): ClientAgreement[] {

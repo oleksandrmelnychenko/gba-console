@@ -53,9 +53,6 @@ export function VatReportsPage() {
 
   useEffect(() => {
     let isActive = true
-    setLoading(true)
-    setError(null)
-    setHasMore(false)
 
     async function loadReports() {
       try {
@@ -89,6 +86,17 @@ export function VatReportsPage() {
     }
   }, [fromDate, reloadKey, setError, setHasMore, setLoading, setReports, t, toDate])
 
+  function prepareReportsLoad() {
+    setLoading(true)
+    setError(null)
+    setHasMore(false)
+  }
+
+  function refreshReports() {
+    prepareReportsLoad()
+    reload()
+  }
+
   async function loadMore() {
     setLoadingMore(true)
     setError(null)
@@ -111,8 +119,34 @@ export function VatReportsPage() {
   }
 
   function resetFilters() {
-    setFromDate(shiftDate(-7))
-    setToDate(formatLocalDate(new Date()))
+    const nextFromDate = shiftDate(-7)
+    const nextToDate = formatLocalDate(new Date())
+
+    if (nextFromDate === fromDate && nextToDate === toDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setFromDate(nextFromDate)
+    setToDate(nextToDate)
+  }
+
+  function updateFromDate(value: string) {
+    if (value === fromDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setFromDate(value)
+  }
+
+  function updateToDate(value: string) {
+    if (value === toDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setToDate(value)
   }
 
   return (
@@ -133,7 +167,7 @@ export function VatReportsPage() {
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={refreshReports}>
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -141,8 +175,8 @@ export function VatReportsPage() {
           </Group>
 
           <Group align="end" gap="sm">
-            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => updateFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => updateToDate(event.currentTarget.value)} />
           </Group>
 
           {error && (

@@ -14,6 +14,7 @@ import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { useAuth } from '../../auth/useAuth'
 import {
   createPaymentExpenseArticle,
   deletePaymentExpenseArticle,
@@ -26,52 +27,76 @@ type LocationState = {
   returnPath?: string
 }
 
+type ArticleFormState = {
+  article: PaymentExpenseArticle
+  operationName: string
+  error: string | null
+  isLoading: boolean
+  isSaving: boolean
+  isDeleting: boolean
+  deleteModalOpened: boolean
+}
+
 const ARTICLES_PATH = '/accounting/payment-expense-articles'
+const PERMISSION_DELETE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_DeleteBtn_PKEY'
+const PERMISSION_SAVE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_Edit_SaveBtn_PKEY'
 
 export function PaymentExpenseArticleFormPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
   const navigate = useNavigate()
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || ARTICLES_PATH
   const isEditMode = Boolean(id)
-  const [article, setArticle] = useValueState<PaymentExpenseArticle>(() => createEmptyArticle())
-  const [operationName, setOperationName] = useValueState('')
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(isEditMode)
-  const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
-  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [formState, setFormState] = useValueState<ArticleFormState>(() => createInitialFormState(isEditMode))
+  const { article, deleteModalOpened, error, isDeleting, isLoading, isSaving, operationName } = formState
+  const canDelete = hasPermission(PERMISSION_DELETE_EXPENSE_ARTICLE)
+  const canSave = hasPermission(PERMISSION_SAVE_EXPENSE_ARTICLE)
 
   useEffect(() => {
     if (!id) {
-      setArticle(createEmptyArticle())
-      setOperationName('')
-      setLoading(false)
+      setFormState((current) => ({
+        ...current,
+        article: createEmptyArticle(),
+        isLoading: false,
+        operationName: '',
+      }))
       return
     }
 
     const controller = new AbortController()
 
     async function loadArticle() {
-      setLoading(true)
-      setError(null)
+      setFormState((current) => ({
+        ...current,
+        error: null,
+        isLoading: true,
+      }))
 
       try {
         const nextArticle = await getPaymentExpenseArticle(id as string)
 
         if (!controller.signal.aborted) {
-          setArticle(nextArticle || createEmptyArticle())
-          setOperationName(nextArticle?.OperationName || '')
+          setFormState((current) => ({
+            ...current,
+            article: nextArticle || createEmptyArticle(),
+            isLoading: false,
+            operationName: nextArticle?.OperationName || '',
+          }))
         }
       } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити статтю витрат'))
-        }
-      } finally {
         if (!controller.signal.aborted) {
-          setLoading(false)
+          setFormState((current) => ({
+            ...current,
+            error: isAbortError(loadError)
+              ? current.error
+              : loadError instanceof Error
+                ? loadError.message
+                : t('Не вдалося завантажити статтю витрат'),
+            isLoading: false,
+          }))
         }
       }
     }
@@ -79,7 +104,7 @@ export function PaymentExpenseArticleFormPage() {
     void loadArticle()
 
     return () => controller.abort()
-  }, [id, setArticle, setError, setLoading, setOperationName, t])
+  }, [id, setFormState, t])
 
   if (isEditMode && !id) {
     return <Navigate replace to={ARTICLES_PATH} />
@@ -96,10 +121,15 @@ export function PaymentExpenseArticleFormPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canSave) {
+      setFormState((current) => ({ ...current, error: t('Недостатньо прав для збереження') }))
+      return
+    }
+
     const trimmedOperationName = operationName.trim()
 
     if (!trimmedOperationName) {
-      setError(t('Вкажіть назву статті витрат'))
+      setFormState((current) => ({ ...current, error: t('Вкажіть назву статті витрат') }))
       return
     }
 
@@ -108,49 +138,65 @@ export function PaymentExpenseArticleFormPage() {
       OperationName: trimmedOperationName,
     }
 
-    setSaving(true)
-    setError(null)
+    setFormState((current) => ({ ...current, error: null, isSaving: true }))
 
     try {
       const savedArticle = isEditMode
         ? await updatePaymentExpenseArticle(payload)
         : await createPaymentExpenseArticle(payload)
 
-      setArticle(savedArticle || payload)
+      setFormState((current) => ({
+        ...current,
+        article: savedArticle || payload,
+        isSaving: false,
+      }))
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Статтю витрат оновлено') : t('Статтю витрат створено'),
       })
       navigate(returnPath, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти статтю витрат'))
-    } finally {
-      setSaving(false)
+      setFormState((current) => ({
+        ...current,
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти статтю витрат'),
+        isSaving: false,
+      }))
     }
   }
 
   async function handleDelete() {
+    if (!canDelete) {
+      setFormState((current) => ({ ...current, error: t('Недостатньо прав для видалення') }))
+      return
+    }
+
     const netId = article.NetUid || id
 
     if (!netId) {
       return
     }
 
-    setDeleting(true)
-    setError(null)
+    setFormState((current) => ({ ...current, error: null, isDeleting: true }))
 
     try {
       await deletePaymentExpenseArticle(netId)
+      setFormState((current) => ({
+        ...current,
+        deleteModalOpened: false,
+        isDeleting: false,
+      }))
       notifications.show({
         color: 'green',
         message: t('Статтю витрат видалено'),
       })
       navigate(returnPath, { replace: true })
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити статтю витрат'))
-    } finally {
-      setDeleting(false)
-      setDeleteModalOpened(false)
+      setFormState((current) => ({
+        ...current,
+        deleteModalOpened: false,
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити статтю витрат'),
+        isDeleting: false,
+      }))
     }
   }
 
@@ -176,7 +222,7 @@ export function PaymentExpenseArticleFormPage() {
                 >
                   {t('Назад')}
                 </Button>
-                {isEditMode && (
+                {isEditMode && canDelete && (
                   <Button
                     color="red"
                     disabled={isLoading}
@@ -184,20 +230,22 @@ export function PaymentExpenseArticleFormPage() {
                     loading={isDeleting}
                     type="button"
                     variant="light"
-                    onClick={() => setDeleteModalOpened(true)}
+                    onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: true }))}
                   >
                     {t('Видалити')}
                   </Button>
                 )}
-                <Button
-                  color="violet"
-                  disabled={isLoading}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
+                {canSave && (
+                  <Button
+                    color="violet"
+                    disabled={isLoading}
+                    leftSection={<IconDeviceFloppy size={16} />}
+                    loading={isSaving}
+                    type="submit"
+                  >
+                    {t('Зберегти')}
+                  </Button>
+                )}
               </Group>
             </Group>
 
@@ -213,7 +261,12 @@ export function PaymentExpenseArticleFormPage() {
               placeholder={t('Вкажіть назву')}
               required
               value={operationName}
-              onChange={(event) => setOperationName(event.currentTarget.value)}
+              onChange={(event) =>
+                setFormState((current) => ({
+                  ...current,
+                  operationName: event.currentTarget.value,
+                }))
+              }
             />
           </Stack>
         </form>
@@ -223,14 +276,19 @@ export function PaymentExpenseArticleFormPage() {
         centered
         opened={deleteModalOpened}
         title={t('Видалити статтю витрат')}
-        onClose={() => setDeleteModalOpened(false)}
+        onClose={() => setFormState((current) => ({ ...current, deleteModalOpened: false }))}
       >
         <Stack gap="md">
           <Text>
             {t('Видалити статтю')} <Text span fw={600}>{operationName || t('Без назви')}</Text>?
           </Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteModalOpened(false)}>
+            <Button
+              color="gray"
+              disabled={isDeleting}
+              variant="light"
+              onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: false }))}
+            >
               {t('Скасувати')}
             </Button>
             <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={handleDelete}>
@@ -241,6 +299,18 @@ export function PaymentExpenseArticleFormPage() {
       </AppModal>
     </Stack>
   )
+}
+
+function createInitialFormState(isLoading: boolean): ArticleFormState {
+  return {
+    article: createEmptyArticle(),
+    deleteModalOpened: false,
+    error: null,
+    isDeleting: false,
+    isLoading,
+    isSaving: false,
+    operationName: '',
+  }
 }
 
 function createEmptyArticle(): PaymentExpenseArticle {

@@ -667,31 +667,41 @@ function getTotalRows(orders: OutcomePaymentOrder[]): number {
 }
 
 function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportRow[] {
-  return orders
-    .filter((order) => Boolean(order.AdvanceNumber?.trim()))
-    .map((order, index) => {
-      const firstConsumablesOrder = order.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder
+  const rows: AdvancedReportRow[] = []
 
-      return {
-        amount: order.Amount,
-        comment: order.Comment,
-        currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
-        differenceAmount: order.DifferenceAmount,
-        fromDate: order.FromDate,
-        id: String(order.NetUid || order.Id || index),
-        isUnderReport: order.IsUnderReport,
-        number: order.AdvanceNumber,
-        order,
-        organization: getEntityName(order.Organization),
-        payedTo: getPayedTo(order),
-        paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
-        paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,
-        responsible: getEntityName(order.User),
-        role: order.Colleague?.UserRole?.Name,
-        rootAssigned: Boolean(order.RootAssignedPaymentOrder),
-        storage: getEntityName(firstConsumablesOrder?.ConsumablesStorage),
-      }
-    })
+  for (const order of orders) {
+    if (!order.AdvanceNumber?.trim()) {
+      continue
+    }
+
+    rows.push(toAdvancedReportRow(order, rows.length))
+  }
+
+  return rows
+}
+
+function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): AdvancedReportRow {
+  const firstConsumablesOrder = order.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder
+
+  return {
+    amount: order.Amount,
+    comment: order.Comment,
+    currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
+    differenceAmount: order.DifferenceAmount,
+    fromDate: order.FromDate,
+    id: String(order.NetUid || order.Id || index),
+    isUnderReport: order.IsUnderReport,
+    number: order.AdvanceNumber,
+    order,
+    organization: getEntityName(order.Organization),
+    payedTo: getPayedTo(order),
+    paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
+    paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,
+    responsible: getEntityName(order.User),
+    role: order.Colleague?.UserRole?.Name,
+    rootAssigned: Boolean(order.RootAssignedPaymentOrder),
+    storage: getEntityName(firstConsumablesOrder?.ConsumablesStorage),
+  }
 }
 
 function getPayedTo(order: OutcomePaymentOrder): string | undefined {
@@ -701,11 +711,25 @@ function getPayedTo(order: OutcomePaymentOrder): string | undefined {
     return colleagueName
   }
 
-  const organizations = (order.OutcomePaymentOrderConsumablesOrders || [])
-    .map((item) => getEntityName(item.ConsumablesOrder?.ConsumableProductOrganization))
-    .filter((name): name is string => Boolean(name))
+  const organizations = getConsumableProductOrganizationNames(order.OutcomePaymentOrderConsumablesOrders || [])
 
   return unique(organizations).join(' ') || undefined
+}
+
+function getConsumableProductOrganizationNames(
+  items: NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']>,
+): string[] {
+  const names: string[] = []
+
+  for (const item of items) {
+    const name = getEntityName(item.ConsumablesOrder?.ConsumableProductOrganization)
+
+    if (name) {
+      names.push(name)
+    }
+  }
+
+  return names
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {

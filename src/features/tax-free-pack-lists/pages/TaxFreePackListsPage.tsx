@@ -66,36 +66,61 @@ const EXPORT_COLUMNS = [
   { Number: 9, TableName: 'TaxFreePackList', ColumnName: 'Comment', Translate: 'Коментар' },
 ]
 
-type ListState = {
-  isLoading: boolean
-  packLists: TaxFreePackList[]
+type PackListFilters = {
+  from: string
+  to: string
 }
+
+type ListState = {
+  error: string | null
+  filters: PackListFilters
+  isLoading: boolean
+  page: number
+  packLists: TaxFreePackList[]
+  reloadKey: number
+  totalQty?: number
+}
+
+type ListAction =
+  | { type: 'filterChanged'; field: keyof PackListFilters; value: string }
+  | { type: 'filtersReset'; filters: PackListFilters }
+  | { type: 'pageChanged'; page: number }
+  | { type: 'reloadRequested' }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; packLists: TaxFreePackList[]; totalQty?: number }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'errorChanged'; error: string | null }
 
 export function TaxFreePackListsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const restoredFilters = useMemo(() => readStoredFilters(), [])
-  const [dateFrom, setDateFrom] = useState(restoredFilters.from)
-  const [dateTo, setDateTo] = useState(restoredFilters.to)
-  const [page, setPage] = useState(1)
-  const [state, setState] = useState<ListState>({ isLoading: false, packLists: [] })
-  const [error, setError] = useState<string | null>(null)
+  const [listState, dispatchList] = useReducer(listReducer, undefined, createInitialListState)
   const [selectedPackList, setSelectedPackList] = useState<TaxFreePackList | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<TaxFreePackList | null>(null)
   const [orderPackList, setOrderPackList] = useState<TaxFreePackList | null>(null)
   const [isExporting, setExporting] = useState(false)
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const filterError = dateFrom > dateTo ? t('Початкова дата має бути не пізніше кінцевої') : null
+  const { error, filters, isLoading, packLists, page, reloadKey, totalQty } = listState
+  const filterError = filters.from > filters.to ? t('Початкова дата має бути не пізніше кінцевої') : null
   const offset = (page - 1) * PAGE_SIZE
-  const canMoveForward = state.packLists.length === PAGE_SIZE
+  const totalPages = typeof totalQty === 'number' ? Math.max(1, Math.ceil(totalQty / PAGE_SIZE)) : page
+  const canMoveForward = typeof totalQty === 'number' ? page < totalPages : packLists.length === PAGE_SIZE
   const columns = usePackListColumns({
     onDelete: setDeleteCandidate,
     onOpen: setSelectedPackList,
   })
+  const toolbarLeft = useMemo(
+    () => (
+      <Text size="xs" c="dimmed">
+        {t('Сторінка')} {page}
+        {typeof totalQty === 'number' ? `, ${t('усього')}: ${totalQty}` : ''}
+      </Text>
+    ),
+    [page, totalQty, t],
+  )
 
   useEffect(() => {
-    writeStoredFilters({ from: dateFrom, to: dateTo })
-  }, [dateFrom, dateTo])
+    writeStoredFilters(filters)
+  }, [filters])
 
   useEffect(() => {
     if (filterError) {
@@ -105,24 +130,25 @@ export function TaxFreePackListsPage() {
     let cancelled = false
 
     async function loadPackLists() {
-      setState((currentState) => ({ ...currentState, isLoading: true }))
-      setError(null)
+      dispatchList({ type: 'loadStarted' })
 
       try {
-        const nextPackLists = await getTaxFreePackLists({
-          from: dateFrom,
+        const response = await getTaxFreePackLists({
+          from: filters.from,
           limit: PAGE_SIZE,
           offset,
-          to: dateTo,
+          to: filters.to,
         })
 
         if (!cancelled) {
-          setState({ isLoading: false, packLists: nextPackLists })
+          dispatchList({ type: 'loadSucceeded', packLists: response.items, totalQty: response.totalQty })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setState({ isLoading: false, packLists: [] })
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити пакувальні листи'))
+          dispatchList({
+            type: 'loadFailed',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити пакувальні листи'),
+          })
         }
       }
     }
@@ -132,13 +158,10 @@ export function TaxFreePackListsPage() {
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, offset, reloadKey, t])
+  }, [filters.from, filters.to, filterError, offset, reloadKey, t])
 
   function resetFilters() {
-    const filters = getDefaultFilters()
-    setDateFrom(filters.from)
-    setDateTo(filters.to)
-    setPage(1)
+    dispatchList({ type: 'filtersReset', filters: getDefaultFilters() })
   }
 
   async function confirmDelete() {
@@ -150,7 +173,7 @@ export function TaxFreePackListsPage() {
       await deleteTaxFreePackList(deleteCandidate.NetUid)
       notifications.show({ color: 'green', message: t('Пакувальний лист видалено') })
       setDeleteCandidate(null)
-      reload()
+      dispatchList({ type: 'reloadRequested' })
     } catch (deleteError) {
       notifications.show({
         color: 'red',
@@ -161,25 +184,28 @@ export function TaxFreePackListsPage() {
 
   async function exportPackLists() {
     if (filterError) {
-      setError(filterError)
+      dispatchList({ type: 'errorChanged', error: filterError })
       return
     }
 
     setExporting(true)
-    setError(null)
+    dispatchList({ type: 'errorChanged', error: null })
 
     try {
       const document = await exportTaxFreePackLists({
         columns: EXPORT_COLUMNS,
-        from: dateFrom,
-        to: dateTo,
+        from: filters.from,
+        to: filters.to,
       })
 
       if (!openDocumentUrl(document)) {
         notifications.show({ color: 'yellow', message: t('Документ не містить посилання для відкриття') })
       }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+      dispatchList({
+        type: 'errorChanged',
+        error: exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'),
+      })
     } finally {
       setExporting(false)
     }
@@ -190,7 +216,12 @@ export function TaxFreePackListsPage() {
       <Group justify="flex-end" align="center">
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
-            <ActionIcon variant="light" size={36} aria-label={t('Оновити')} onClick={reload}>
+            <ActionIcon
+              variant="light"
+              size={36}
+              aria-label={t('Оновити')}
+              onClick={() => dispatchList({ type: 'reloadRequested' })}
+            >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
@@ -206,19 +237,17 @@ export function TaxFreePackListsPage() {
             <TextInput
               label={t('Дата з')}
               type="date"
-              value={dateFrom}
+              value={filters.from}
               onChange={(event) => {
-                setPage(1)
-                setDateFrom(event.currentTarget.value)
+                dispatchList({ type: 'filterChanged', field: 'from', value: event.currentTarget.value })
               }}
             />
             <TextInput
               label={t('Дата по')}
               type="date"
-              value={dateTo}
+              value={filters.to}
               onChange={(event) => {
-                setPage(1)
-                setDateTo(event.currentTarget.value)
+                dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
               }}
             />
             <Tooltip label={t('Скинути')}>
@@ -236,26 +265,26 @@ export function TaxFreePackListsPage() {
 
           <DataTable
             columns={columns}
-            data={filterError ? [] : state.packLists}
+            data={filterError ? [] : packLists}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             emptyText={t('Пакувальних листів не знайдено')}
             getRowId={(packList, index) => packList.NetUid || String(packList.Id || index)}
-            isLoading={state.isLoading}
+            isLoading={isLoading}
             layoutVersion="tax-free-pack-lists-table-1"
             loadingText={t('Завантаження пакувальних листів')}
             maxHeight="calc(100vh - 330px)"
             minWidth={1290}
             tableId="tax-free-pack-lists"
-            toolbarLeft={<Text size="xs" c="dimmed">{t('Сторінка')} {page}</Text>}
+            toolbarLeft={toolbarLeft}
             onRowClick={setSelectedPackList}
           />
 
           {(page > 1 || canMoveForward) && (
             <Group justify="flex-end">
               <Pagination
-                total={canMoveForward ? page + 1 : page}
+                total={typeof totalQty === 'number' ? totalPages : canMoveForward ? page + 1 : page}
                 value={page}
-                onChange={setPage}
+                onChange={(nextPage) => dispatchList({ type: 'pageChanged', page: nextPage })}
               />
             </Group>
           )}
@@ -311,15 +340,83 @@ export function TaxFreePackListsPage() {
         packList={orderPackList}
         onClose={() => setOrderPackList(null)}
         onCreated={(netUid) => {
-          notifications.show({
-            color: 'yellow',
-            message: t('Маршрут перегляду створеного замовлення ще не підключено'),
-          })
-          void netUid
+          if (netUid) {
+            navigate(`/orders/ukraine/view/${netUid}`)
+          }
         }}
       />
     </Stack>
   )
+}
+
+function createInitialListState(): ListState {
+  const filters = readStoredFilters()
+
+  return {
+    error: null,
+    filters,
+    isLoading: false,
+    page: 1,
+    packLists: [],
+    reloadKey: 0,
+    totalQty: undefined,
+  }
+}
+
+function listReducer(state: ListState, action: ListAction): ListState {
+  switch (action.type) {
+    case 'filterChanged':
+      return {
+        ...state,
+        filters: {
+          ...state.filters,
+          [action.field]: action.value,
+        },
+        page: 1,
+      }
+    case 'filtersReset':
+      return {
+        ...state,
+        filters: action.filters,
+        page: 1,
+      }
+    case 'pageChanged':
+      return {
+        ...state,
+        page: action.page,
+      }
+    case 'reloadRequested':
+      return {
+        ...state,
+        reloadKey: state.reloadKey + 1,
+      }
+    case 'loadStarted':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    case 'loadSucceeded':
+      return {
+        ...state,
+        isLoading: false,
+        packLists: action.packLists,
+        totalQty: action.totalQty,
+      }
+    case 'loadFailed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+        packLists: [],
+        totalQty: undefined,
+      }
+    case 'errorChanged':
+      return {
+        ...state,
+        error: action.error,
+      }
+  }
 }
 
 function usePackListColumns({

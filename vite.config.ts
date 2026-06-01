@@ -43,10 +43,21 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '^/api/v1/[^/]+/history': {
+        target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api': {
         target: process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io',
         changeOrigin: true,
         secure: false,
+      },
+      '/hubs': {
+        target: process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       },
     },
   },

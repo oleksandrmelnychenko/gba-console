@@ -77,6 +77,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 export function IncomeCashflowsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -168,7 +173,7 @@ export function IncomeCashflowsPage() {
         from: fromDate,
         limit: PAGE_SIZE,
         offset,
-        organizationIds: selectedOrganizationIds.map(Number).filter((id) => Number.isFinite(id)),
+        organizationIds: toFiniteNumberIds(selectedOrganizationIds),
         registerNetId: paymentRegisterNetId,
         to: toDate,
         value: normalizedSearchValue,
@@ -790,67 +795,25 @@ function ReassignIncomeClientModal({
 
   const counterpartyOptions = useMemo(() => {
     const source: NamedEntity[] = isSupplier ? supplyOrganizations : clients
-    return source
-      .map((entity) => ({
-        label: getEntityName(entity) || String(entity.NetUid || entity.Id || ''),
-        value: String(entity.NetUid || entity.Id || ''),
-      }))
-      .filter((option) => option.value)
+    return toSelectOptions(source, getEntityName)
   }, [clients, isSupplier, supplyOrganizations])
 
   const agreementOptions = useMemo(
-    () =>
-      isSupplier
-        ? supplyAgreements
-            .map((agreement) => ({
-              label: [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name]
-                .filter(Boolean)
-                .join(' '),
-              value: String(agreement.NetUid || agreement.Id || ''),
-            }))
-            .filter((option) => option.value)
-        : clientAgreements
-            .map((clientAgreement) => {
-              const agreement = clientAgreement.Agreement
-              return {
-                label: [agreement?.Name || agreement?.Number, agreement?.Currency?.Code || agreement?.Currency?.Name]
-                  .filter(Boolean)
-                  .join(' '),
-                value: String(clientAgreement.NetUid || clientAgreement.Id || ''),
-              }
-            })
-            .filter((option) => option.value),
+    () => (isSupplier ? toSupplyAgreementOptions(supplyAgreements) : toClientAgreementOptions(clientAgreements)),
     [clientAgreements, isSupplier, supplyAgreements],
   )
 
-  useEffect(() => {
-    if (opened) {
-      return
-    }
-
-    let cancelled = false
-    const timeoutId = window.setTimeout(() => {
-      if (cancelled) {
-        return
-      }
-
-      setSearchType(IncomeCounterpartySearchType.Client)
-      setSearchValue('')
-      setClients([])
-      setSupplyOrganizations([])
-      setSelectedClientValue('')
-      setClientAgreements([])
-      setSupplyAgreements([])
-      setSelectedAgreementValue('')
-      setError(null)
-    }, 0)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(timeoutId)
-    }
+  const resetReassignForm = useCallback(() => {
+    setSearchType(IncomeCounterpartySearchType.Client)
+    setSearchValue('')
+    setClients([])
+    setSupplyOrganizations([])
+    setSelectedClientValue('')
+    setClientAgreements([])
+    setSupplyAgreements([])
+    setSelectedAgreementValue('')
+    setError(null)
   }, [
-    opened,
     setClientAgreements,
     setClients,
     setError,
@@ -861,6 +824,16 @@ function ReassignIncomeClientModal({
     setSupplyAgreements,
     setSupplyOrganizations,
   ])
+
+  const handleClose = useCallback(() => {
+    resetReassignForm()
+    onClose()
+  }, [onClose, resetReassignForm])
+
+  const handleSaved = useCallback(() => {
+    resetReassignForm()
+    onSaved()
+  }, [onSaved, resetReassignForm])
 
   useEffect(() => {
     if (!opened) {
@@ -993,16 +966,16 @@ function ReassignIncomeClientModal({
         clientNetId: selectedClientValue,
         incomeNetId,
       })
-      onSaved()
+      handleSaved()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося переназначити клієнта'))
     } finally {
       setSaving(false)
     }
-  }, [onSaved, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
+  }, [handleSaved, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
 
   return (
-    <AppModal centered opened={opened} title={t('Переназначити клієнта')} onClose={onClose}>
+    <AppModal centered opened={opened} title={t('Переназначити клієнта')} onClose={handleClose}>
       <Stack gap="md">
         {row && (
           <Text c="dimmed" size="sm">
@@ -1053,7 +1026,7 @@ function ReassignIncomeClientModal({
         )}
 
         <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          <Button color="gray" disabled={isSaving} variant="light" onClick={handleClose}>
             {t('Скасувати')}
           </Button>
           <Button
@@ -1081,7 +1054,7 @@ function StatusFlag({ active }: { active?: boolean }) {
     </Badge>
   ) : (
     <Text c="dimmed" size="sm">
-      —
+      -
     </Text>
   )
 }
@@ -1140,19 +1113,92 @@ function getIncomePayerName(income: IncomePaymentOrder): string | undefined {
   }
 
   if (income.Colleague) {
-    return [income.Colleague.FirstName, income.Colleague.LastName].filter(Boolean).join(' ') || getEntityName(income.Colleague)
+    return joinTruthyParts(income.Colleague.FirstName, income.Colleague.LastName) || getEntityName(income.Colleague)
   }
 
   return getEntityName(income.SupplyOrganization)
 }
 
-function toSelectOptions<T extends NamedEntity>(items: T[], labelGetter: (item: T) => string | undefined) {
-  return items
-    .map((item) => ({
-      label: labelGetter(item) || getEntityName(item) || String(item.NetUid || item.Id || ''),
-      value: String(item.NetUid || item.Id || ''),
-    }))
-    .filter((item) => item.value)
+function toSelectOptions<T extends NamedEntity>(items: T[], labelGetter: (item: T) => string | undefined): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const item of items) {
+    const value = getEntityOptionValue(item)
+
+    if (value) {
+      options.push({
+        label: labelGetter(item) || getEntityName(item) || value,
+        value,
+      })
+    }
+  }
+
+  return options
+}
+
+function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const agreement of agreements) {
+    const value = getEntityOptionValue(agreement)
+
+    if (value) {
+      options.push({
+        label: joinTruthyParts(agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name),
+        value,
+      })
+    }
+  }
+
+  return options
+}
+
+function toClientAgreementOptions(clientAgreements: ClientAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const clientAgreement of clientAgreements) {
+    const agreement = clientAgreement.Agreement
+    const value = getEntityOptionValue(clientAgreement)
+
+    if (value) {
+      options.push({
+        label: joinTruthyParts(agreement?.Name || agreement?.Number, agreement?.Currency?.Code || agreement?.Currency?.Name),
+        value,
+      })
+    }
+  }
+
+  return options
+}
+
+function toFiniteNumberIds(values: string[]): number[] {
+  const ids: number[] = []
+
+  for (const value of values) {
+    const id = Number(value)
+
+    if (Number.isFinite(id)) {
+      ids.push(id)
+    }
+  }
+
+  return ids
+}
+
+function joinTruthyParts(...parts: Array<string | undefined>): string {
+  const nextParts: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      nextParts.push(part)
+    }
+  }
+
+  return nextParts.join(' ')
+}
+
+function getEntityOptionValue(entity: { Id?: number; NetUid?: string }): string {
+  return String(entity.NetUid || entity.Id || '')
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {

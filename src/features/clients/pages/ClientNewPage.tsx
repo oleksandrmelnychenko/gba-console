@@ -15,7 +15,7 @@ import {
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
@@ -23,6 +23,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
 import { createClient } from '../api/clientFormApi'
+import { uploadClientContract } from '../api/clientCabinetApi'
 import {
   checkRegionCodeAvailability,
   createCountry,
@@ -38,7 +39,7 @@ import { GeneralInfoFields, type ClientFormRole } from '../components/form/Gener
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
 import { validateClientForm } from '../components/form/validateClientForm'
-import type { Client, ClientType, ClientTypeRole, Currency, Region } from '../types'
+import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -79,6 +80,8 @@ type NewStepContentProps = {
   setIbanNumberCurrency: (currency: Currency | null) => void
   onRegionChange: (region: Region | null) => void
   onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
+  onAddDocuments: (files: File[]) => void
+  onRemoveDocument: (document: ClientContractDocument) => void
   onCreateIncoterm: (name: string) => void
   onCreateCountry: (name: string, code: string) => void
   onCreateRegion: (name: string) => void
@@ -111,6 +114,7 @@ export function ClientNewPage() {
   const [isPricingValid, setPricingValid] = useValueState(false)
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
+  const pendingDocumentsRef = useRef<File[]>([])
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
@@ -362,6 +366,25 @@ export function ClientNewPage() {
     }
   }
 
+  function handleAddDocuments(files: File[]) {
+    pendingDocumentsRef.current = [...pendingDocumentsRef.current, ...files]
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientContractDocuments: [
+        ...(currentDraft.ClientContractDocuments || []),
+        ...files.map(toPendingContractDocument),
+      ],
+    }))
+  }
+
+  function handleRemoveDocument(document: ClientContractDocument) {
+    pendingDocumentsRef.current = pendingDocumentsRef.current.filter((file) => file.name !== document.FileName)
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      ClientContractDocuments: (currentDraft.ClientContractDocuments || []).filter((item) => item !== document),
+    }))
+  }
+
   function goToStep(nextStep: NewClientStep) {
     navigate(`/clients/new/${nextStep}`, {
       state: location.state,
@@ -420,11 +443,38 @@ export function ClientNewPage() {
 
     try {
       const createdClient = await createClient(buildCreatePayload(draft), routeState?.parentClientId)
+      const pendingDocuments = pendingDocumentsRef.current
+      let documentsWereSaved = true
+
+      if (!createdClient && pendingDocuments.length > 0) {
+        documentsWereSaved = false
+      } else if (createdClient && pendingDocuments.length > 0) {
+        try {
+          await uploadClientContract(
+            {
+              ...createdClient,
+              ClientContractDocuments: [
+                ...(createdClient.ClientContractDocuments || []),
+                ...(draft.ClientContractDocuments || []),
+              ],
+            },
+            pendingDocuments,
+          )
+        } catch (uploadError) {
+          documentsWereSaved = false
+          notifications.show({
+            color: 'red',
+            message: uploadError instanceof Error ? uploadError.message : t('Клієнта створено, але документи не збережено'),
+          })
+        }
+      }
+
       notifications.show({
-        color: 'green',
-        message: t('Клієнта створено'),
+        color: documentsWereSaved ? 'green' : 'yellow',
+        message: documentsWereSaved ? t('Клієнта створено') : t('Клієнта створено без документів'),
       })
       setDraft(createEmptyDraft())
+      pendingDocumentsRef.current = []
       navigate(getClientType(draft) === CLIENT_TYPE_PROVIDER ? '/suppliers' : '/clients', {
         replace: true,
         state: createdClient
@@ -507,6 +557,8 @@ export function ClientNewPage() {
                     step={currentStep}
                     onRegionChange={handleRegionChange}
                     onRegionCodeFieldChange={handleRegionCodeFieldChange}
+                    onAddDocuments={handleAddDocuments}
+                    onRemoveDocument={handleRemoveDocument}
                     onCreateIncoterm={handleCreateIncoterm}
                     onCreateCountry={handleCreateCountry}
                     onCreateRegion={handleCreateRegion}
@@ -573,6 +625,8 @@ function NewStepContent({
   step,
   onRegionChange,
   onRegionCodeFieldChange,
+  onAddDocuments,
+  onRemoveDocument,
   onCreateIncoterm,
   onCreateCountry,
   onCreateRegion,
@@ -691,21 +745,20 @@ function NewStepContent({
         regionCodeError={regionCodeError}
         regions={lookups.regions}
         role={role}
-        onAddDocuments={noop}
+        canSaveDocuments={false}
+        onAddDocuments={onAddDocuments}
         onChange={setDraftField}
         onCreateCountry={onCreateCountry}
         onCreateIncoterm={onCreateIncoterm}
         onCreateRegion={onCreateRegion}
         onRegionChange={onRegionChange}
         onRegionCodeFieldChange={onRegionCodeFieldChange}
-        onRemoveDocument={noop}
-        onSaveDocuments={noop}
+        onRemoveDocument={onRemoveDocument}
+        onSaveDocuments={() => undefined}
       />
     </Stack>
   )
 }
-
-function noop() {}
 
 function createEmptyDraft(isSubClient = false): ClientDraft {
   return {
@@ -759,13 +812,24 @@ function buildVisibleNewSteps(draft: ClientDraft): NewClientStep[] {
 }
 
 function buildCreatePayload(draft: ClientDraft): Client {
-  return {
+  const payload: Client = {
     ...draft,
     Manufacturer: draft.SupplierName || draft.Manufacturer,
     ClientInRole: {
       ClientType: draft.ClientInRole.ClientType,
       ClientTypeRole: draft.ClientInRole.ClientTypeRole,
     },
+  }
+
+  delete payload.ClientContractDocuments
+
+  return payload
+}
+
+function toPendingContractDocument(file: File): ClientContractDocument {
+  return {
+    FileName: file.name,
+    ContentType: file.type,
   }
 }
 

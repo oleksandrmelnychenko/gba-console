@@ -3,11 +3,12 @@ import type {
   ProductTransfer,
   ProductTransferCreateFromFilePayload,
   ProductTransferExportDocument,
+  ProductTransfersResponse,
   ProductTransfersSearchParams,
   ProductTransferStorage,
 } from '../types'
 
-export async function getProductTransfers(params: ProductTransfersSearchParams): Promise<ProductTransfer[]> {
+export async function getProductTransfers(params: ProductTransfersSearchParams): Promise<ProductTransfersResponse> {
   const result = await apiRequest<unknown>('/products/transfers/all/filtered', {
     query: {
       from: params.from,
@@ -17,7 +18,7 @@ export async function getProductTransfers(params: ProductTransfersSearchParams):
     },
   })
 
-  return normalizeProductTransfers(result)
+  return normalizeProductTransfersResponse(result)
 }
 
 export async function getProductTransferByNetId(netId: string): Promise<ProductTransfer | null> {
@@ -60,6 +61,20 @@ export async function addProductTransferFromFile(payload: ProductTransferCreateF
   return normalizeMessages(result)
 }
 
+function normalizeProductTransfersResponse(result: unknown): ProductTransfersResponse {
+  const items = normalizeProductTransfers(result)
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const totalQty =
+    readNumber(payload.TotalRowsQty) ??
+    readNumber(payload.TotalQty) ??
+    readNumber(payload.Total) ??
+    readNumber(payload.Count) ??
+    readNumber(items[0]?.TotalRowsQty) ??
+    items.length
+
+  return { items, totalQty }
+}
+
 function normalizeProductTransfers(result: unknown): ProductTransfer[] {
   if (Array.isArray(result)) {
     return result.map(ensureProductTransfer)
@@ -79,6 +94,22 @@ function normalizeProductTransfers(result: unknown): ProductTransfer[] {
         : []
 
   return (items as ProductTransfer[]).map(ensureProductTransfer)
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return null
 }
 
 function normalizeProductTransfer(result: unknown): ProductTransfer | null {

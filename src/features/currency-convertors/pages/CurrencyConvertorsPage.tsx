@@ -124,6 +124,16 @@ function useCurrencyConvertorsPageModel() {
   )
 
   const showAddButton = useMemo(() => computeShowAddButton(rates), [rates])
+  const ratesDrawerViewState = useMemo(
+    () => ({
+      canEdit,
+      isAdding,
+      isLoading: isRatesLoading,
+      isSaving,
+      showAddButton,
+    }),
+    [canEdit, isAdding, isRatesLoading, isSaving, showAddButton],
+  )
 
   const openTrader = useCallback(
     (trader: CurrencyTrader) => {
@@ -291,6 +301,7 @@ function useCurrencyConvertorsPageModel() {
     newRateDraft,
     rates,
     ratesError,
+    ratesDrawerViewState,
     reload,
     selectedTrader,
     showAddButton,
@@ -367,19 +378,15 @@ export function CurrencyConvertorsPage() {
       </Card>
 
       <CurrencyTraderExchangeRatesDrawer
-        canEdit={model.canEdit}
         editingRate={model.editingRate}
         editingValue={model.editingValue}
         error={model.ratesError}
         from={model.from}
-        isAdding={model.isAdding}
-        isLoading={model.isRatesLoading}
-        isSaving={model.isSaving}
         newRateDraft={model.newRateDraft}
         rates={model.rates}
-        showAddButton={model.showAddButton}
         to={model.to}
         trader={model.selectedTrader}
+        viewState={model.ratesDrawerViewState}
         onCancelAdd={model.cancelAdd}
         onCancelEdit={model.cancelEdit}
         onChangeEditingValue={model.setEditingValue}
