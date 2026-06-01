@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import { getNodeIcon } from '../../../features/navigation/navigationIcons'
@@ -8,6 +9,38 @@ export function ConsoleNav() {
   const { error, getNodePath, isLoading, modules, selectedModule, selectedNode } = useNavigation()
   const navigate = useNavigate()
   const { t } = useI18n()
+  const modulesRowRef = useRef<HTMLDivElement>(null)
+  const [indicatorLeft, setIndicatorLeft] = useState<number | null>(null)
+
+  const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
+  const activeNodeKey = selectedNode ? selectedNode.NetUid || String(selectedNode.Id) : null
+  const items = selectedModule?.Children ?? []
+
+  // Position the sliding dot under the active module's centre (it transitions
+  // its `left` so it slides along the border when the active module changes).
+  useLayoutEffect(() => {
+    function positionIndicator() {
+      const row = modulesRowRef.current
+
+      if (!row) {
+        return
+      }
+
+      const active = row.querySelector<HTMLElement>('.console-subnav-module.is-active')
+
+      if (!active) {
+        setIndicatorLeft(null)
+        return
+      }
+
+      setIndicatorLeft(active.offsetLeft + active.offsetWidth / 2)
+    }
+
+    positionIndicator()
+    window.addEventListener('resize', positionIndicator)
+
+    return () => window.removeEventListener('resize', positionIndicator)
+  }, [activeModuleKey, modules])
 
   if (isLoading) {
     return <div className="console-subnav console-subnav-state">{t('Меню завантажується')}</div>
@@ -20,10 +53,6 @@ export function ConsoleNav() {
   if (modules.length === 0) {
     return null
   }
-
-  const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
-  const activeNodeKey = selectedNode ? selectedNode.NetUid || String(selectedNode.Id) : null
-  const items = selectedModule?.Children ?? []
 
   function openModule(module: NavigationModule) {
     const firstChild = module.Children[0]
@@ -39,7 +68,7 @@ export function ConsoleNav() {
 
   return (
     <nav className="console-subnav" aria-label={t('Навігація')}>
-      <div className="console-subnav-row console-subnav-modules">
+      <div ref={modulesRowRef} className="console-subnav-row console-subnav-modules">
         {modules.map((module) => {
           const key = module.NetUid || String(module.Id)
           const active = key === activeModuleKey
@@ -56,6 +85,11 @@ export function ConsoleNav() {
             </button>
           )
         })}
+        <span
+          className="console-subnav-indicator"
+          aria-hidden="true"
+          style={{ left: indicatorLeft ?? 0, opacity: indicatorLeft == null ? 0 : 1 }}
+        />
       </div>
 
       {items.length > 0 && (
