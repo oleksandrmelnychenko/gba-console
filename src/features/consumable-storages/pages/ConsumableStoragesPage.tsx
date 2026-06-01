@@ -21,6 +21,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -175,37 +176,35 @@ export function ConsumableStoragesPage() {
 
   return (
     <Stack gap="md">
+      <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() =>
+              navigate('/accounting/storages/new', {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Новий склад')}
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
+
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Склади витратних матеріалів')}
-              </Text>
-            </div>
-
+          <Group justify="flex-end" wrap="wrap">
             <Group gap="xs">
               <Tooltip label={t('Оновити')}>
                 <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/storages/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Новий склад')}
-                </Button>
-              </PermissionGate>
             </Group>
           </Group>
 

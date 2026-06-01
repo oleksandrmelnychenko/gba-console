@@ -19,6 +19,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   deleteCompanyCarRoadList,
@@ -162,19 +163,23 @@ export function CompanyCarRoadListsPage() {
     setToDate(formatLocalDate(new Date()))
   }
 
-  const title = companyCar
-    ? `${t('Шляхові листи автомобіля')} ${companyCar.LicensePlate || ''} ${companyCar.CarBrand || ''}`.trim()
-    : t('Шляхові листи автомобіля')
-
   return (
     <Stack gap="md">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          disabled={!companyCar?.NetUid}
+          leftSection={<IconPlus size={16} />}
+          onClick={() => setFormOpen(true)}
+        >
+          {t('Створення шляхового листа')}
+        </Button>
+      </PageHeaderActions>
+
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <Text fw={700} size="xl">
-              {title}
-            </Text>
-
+          <Group justify="flex-end" wrap="wrap">
             <Group gap="xs">
               <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="light" onClick={() => navigate(returnPath)}>
                 {t('Назад')}
@@ -184,14 +189,6 @@ export function CompanyCarRoadListsPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Button
-                color="violet"
-                disabled={!companyCar?.NetUid}
-                leftSection={<IconPlus size={16} />}
-                onClick={() => setFormOpen(true)}
-              >
-                {t('Створення шляхового листа')}
-              </Button>
             </Group>
           </Group>
 

@@ -17,6 +17,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
@@ -157,6 +158,25 @@ export function PaymentCashflowArticlesPage() {
 
   return (
     <Stack gap="md">
+      {canCreate && (
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() =>
+              navigate('/accounting/payment-cashflow-articles/new', {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Нова стаття')}
+          </Button>
+        </PageHeaderActions>
+      )}
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
           <Group justify="flex-end" wrap="wrap">
@@ -166,22 +186,6 @@ export function PaymentCashflowArticlesPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              {canCreate && (
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/payment-cashflow-articles/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Нова стаття')}
-                </Button>
-              )}
             </Group>
           </Group>
 

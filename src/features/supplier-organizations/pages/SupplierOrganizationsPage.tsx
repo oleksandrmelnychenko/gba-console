@@ -28,6 +28,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
@@ -167,6 +168,14 @@ export function SupplierOrganizationsPage() {
 
   return (
     <Stack gap="md">
+      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
+        <PageHeaderActions>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
+            {t('Додати')}
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
+
       <Group justify="space-between" align="end" gap="sm">
         <TextInput
           leftSection={<IconSearch size={16} />}
@@ -177,11 +186,6 @@ export function SupplierOrganizationsPage() {
           onChange={(event) => updateSearchValue(event.currentTarget.value)}
         />
         <Group gap="xs">
-          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
-            <Button leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
-              {t('Додати')}
-            </Button>
-          </PermissionGate>
           <Tooltip label={t('Друк')}>
             <ActionIcon
               aria-label={t('Друк')}

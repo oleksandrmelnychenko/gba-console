@@ -31,6 +31,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -533,13 +534,12 @@ export function NewUkraineSaleReturnPage() {
 
   return (
     <Box p="lg">
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+          {t('Створити')}
+        </Button>
+      </PageHeaderActions>
       <Stack gap="md">
-        <Group justify="flex-end" align="flex-start">
-          <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
-            {t('Створити')}
-          </Button>
-        </Group>
-
         {listError ? (
           <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
             {listError}

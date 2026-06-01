@@ -33,6 +33,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
@@ -388,10 +389,13 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
 
   return (
     <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
           {t('Нове оприбуткування')}
         </Button>
+      </PageHeaderActions>
+
+      <Group justify="flex-end" align="end">
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}

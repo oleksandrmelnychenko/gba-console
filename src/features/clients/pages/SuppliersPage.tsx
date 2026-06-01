@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
@@ -536,6 +537,12 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
 
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
+          {t('Новий виробник...')}
+        </Button>
+      </PageHeaderActions>
+
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <SuppliersFilterToolbar
@@ -548,7 +555,6 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             searchFieldOptions={searchFieldOptions}
             searchInputRef={searchInputRef}
             searchValue={searchValue}
-            onCreate={openNewSupplier}
             onExport={handleExport}
             onReset={resetSearch}
             onSetActiveFilter={setActiveFilter}
@@ -720,7 +726,6 @@ function SuppliersFilterToolbar({
   searchFieldOptions,
   searchInputRef,
   searchValue,
-  onCreate,
   onExport,
   onReset,
   onSetActiveFilter,
@@ -738,7 +743,6 @@ function SuppliersFilterToolbar({
   searchFieldOptions: Array<{ label: string; value: string }>
   searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
-  onCreate: () => void
   onExport: () => void
   onReset: () => void
   onSetActiveFilter: (value: ActiveFilter) => void
@@ -818,9 +822,6 @@ function SuppliersFilterToolbar({
           <ExcelIcon size={20} />
         </ActionIcon>
       </Tooltip>
-      <Button leftSection={<IconPlus size={16} />} color="violet" onClick={onCreate} style={{ flex: '0 0 auto' }}>
-        {t('Новий виробник...')}
-      </Button>
     </Group>
   )
 }

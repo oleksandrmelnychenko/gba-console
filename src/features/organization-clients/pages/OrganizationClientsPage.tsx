@@ -16,6 +16,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getOrganizationClients } from '../api/organizationClientsApi'
 import type { OrganizationClient } from '../types'
@@ -200,6 +201,24 @@ export function OrganizationClientsPage() {
 
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          type="button"
+          onClick={() =>
+            navigate('/organization-clients/new', {
+              state: {
+                backgroundLocation: location,
+                returnPath: `${location.pathname}${location.search}`,
+              },
+            })
+          }
+        >
+          {t('Нова організація')}
+        </Button>
+      </PageHeaderActions>
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -236,22 +255,6 @@ export function OrganizationClientsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-            <Button
-              color="violet"
-              leftSection={<IconPlus size={16} />}
-              style={{ flex: '0 0 auto' }}
-              type="button"
-              onClick={() =>
-                navigate('/organization-clients/new', {
-                  state: {
-                    backgroundLocation: location,
-                    returnPath: `${location.pathname}${location.search}`,
-                  },
-                })
-              }
-            >
-              {t('Нова організація')}
-            </Button>
           </Group>
 
           {error && (

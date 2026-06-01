@@ -20,6 +20,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   getPaymentAccountOrganizations,
@@ -182,15 +183,28 @@ export function PaymentAccountsPage() {
 
   return (
     <Stack gap="md">
+      <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() =>
+              navigate('/accounting/payment-accounts/new', {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Новий рахунок')}
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Платіжні рахунки')}
-              </Text>
-            </div>
-
+          <Group justify="flex-end" wrap="wrap">
             <Group gap="xs">
               <Tooltip label={t('Скинути фільтри')}>
                 <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={36} variant="light" onClick={resetFilters}>
@@ -202,22 +216,6 @@ export function PaymentAccountsPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/payment-accounts/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Новий рахунок')}
-                </Button>
-              </PermissionGate>
             </Group>
           </Group>
 

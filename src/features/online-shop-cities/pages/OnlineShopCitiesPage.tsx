@@ -31,6 +31,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
 
@@ -222,6 +223,18 @@ export function OnlineShopCitiesPage() {
 
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          type="button"
+          onClick={() => openEditor()}
+        >
+          {t('Нове місто')}
+        </Button>
+      </PageHeaderActions>
+
       <OnlineShopCitiesTableCard
         columns={columns}
         error={error}
@@ -324,15 +337,6 @@ function OnlineShopCitiesTableCard({
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
-          <Button
-            color="violet"
-            leftSection={<IconPlus size={16} />}
-            type="button"
-            onClick={() => onOpenEditor()}
-            style={{ flex: '0 0 auto' }}
-          >
-            {t('Нове місто')}
-          </Button>
         </Group>
 
         {error && (

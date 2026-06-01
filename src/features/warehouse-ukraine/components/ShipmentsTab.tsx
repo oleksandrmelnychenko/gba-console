@@ -37,6 +37,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getAllShipmentLists,
   getAutoShipmentList,
@@ -1217,27 +1218,25 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
-          {t('Усі відвантаження')}
-        </Text>
-        <Group gap="sm">
-          <Button leftSection={<IconPlus size={18} />} variant="light" onClick={onCreate}>
-            {t('Створити')}
-          </Button>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={38}
-              variant="light"
-              onClick={refreshList}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
+          {t('Створити')}
+        </Button>
+      </PageHeaderActions>
+
+      <Group justify="flex-end" align="center">
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoading}
+            size={38}
+            variant="light"
+            onClick={refreshList}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
       <Card withBorder radius="md" padding="md">

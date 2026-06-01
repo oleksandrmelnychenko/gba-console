@@ -28,6 +28,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   createDepreciatedOrderFromFile,
@@ -457,8 +458,22 @@ export function DepreciatedOrdersPage() {
 }
 
 function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
+  const { t } = useI18n()
+
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          disabled={!model.isLoadingStorages && model.storages.length === 0}
+          leftSection={<IconPlus size={16} />}
+          loading={model.isLoadingStorages}
+          onClick={model.openCreateModal}
+        >
+          {t('Створити акт списання')}
+        </Button>
+      </PageHeaderActions>
       <DepreciatedOrdersHeader model={model} />
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
@@ -494,7 +509,7 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
 
 function DepreciatedOrdersHeader({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   const { t } = useI18n()
-  const { isLoading, isLoadingStorages, openCreateModal, reload, storages } = model
+  const { isLoading, isLoadingStorages, reload } = model
 
   return (
     <Group justify="flex-end" align="center">
@@ -510,17 +525,6 @@ function DepreciatedOrdersHeader({ model }: { model: ReturnType<typeof useDeprec
           >
             <IconRefresh size={18} />
           </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t('Створити акт списання')}>
-          <Button
-            color="violet"
-            disabled={!isLoadingStorages && storages.length === 0}
-            leftSection={<IconPlus size={16} />}
-            loading={isLoadingStorages}
-            onClick={openCreateModal}
-          >
-            {t('Створити акт списання')}
-          </Button>
         </Tooltip>
       </Group>
     </Group>

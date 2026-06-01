@@ -24,6 +24,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   cancelOutgoingCashflow,
   getOutgoingCashflowCurrencies,
@@ -288,6 +289,17 @@ export function OutgoingCashflowsPage() {
 
   return (
     <Stack gap="md">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          onClick={() => navigate('/accounting/outgoing-cashflow/new')}
+        >
+          {t('Новий')}
+        </Button>
+      </PageHeaderActions>
+
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
@@ -303,13 +315,6 @@ export function OutgoingCashflowsPage() {
         </Group>
 
         <Group align="end" gap="xs">
-          <Button
-            color="violet"
-            leftSection={<IconPlus size={16} />}
-            onClick={() => navigate('/accounting/outgoing-cashflow/new')}
-          >
-            {t('Новий')}
-          </Button>
           <Tooltip label={t('Скинути фільтри')}>
             <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
               {t('Скинути')}

@@ -20,6 +20,7 @@ import {
   IconRestore,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -441,10 +442,23 @@ function useProtocolsLoader({
 }
 
 export function ProductDeliveryProtocolsPage() {
+  const { t } = useI18n()
   const model = useProtocolsPageModel()
 
   return (
     <Stack gap="lg">
+      {model.canCreate && (
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={model.openCreateModal}
+          >
+            {t('Додати')}
+          </Button>
+        </PageHeaderActions>
+      )}
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}
@@ -473,8 +487,8 @@ export function ProductDeliveryProtocolsPage() {
 function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, canCreate, canExport, canOpenOptions, columns, error, exportDocument, filterDraft, filterError,
-    hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openCreateModal, openOptions, organizations,
+    applyFilters, canExport, canOpenOptions, columns, error, exportDocument, filterDraft, filterError,
+    hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openOptions, organizations,
     pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
   } = model
 
@@ -565,16 +579,6 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               onClick={exportDocument}
             >
               {t('Завантажити')}
-            </Button>
-          )}
-          {canCreate && (
-            <Button
-              color="violet"
-              leftSection={<IconPlus size={16} />}
-              style={{ flex: '0 0 auto' }}
-              onClick={openCreateModal}
-            >
-              {t('Додати')}
             </Button>
           )}
         </Group>

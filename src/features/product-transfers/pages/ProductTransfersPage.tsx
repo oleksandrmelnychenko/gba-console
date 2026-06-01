@@ -22,6 +22,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -613,22 +614,11 @@ function ProductTransfersHeader({ model }: { model: ReturnType<typeof useProduct
   const { isLoading, isLoadingStorages, openCreateModal, reload, storageOptions } = model
 
   return (
-    <Group justify="flex-end" align="center">
-      <Group gap="xs">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading || isLoadingStorages}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+    <>
+      <PageHeaderActions>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
+          size="sm"
           disabled={!isLoadingStorages && storageOptions.length === 0}
           leftSection={<IconPlus size={16} />}
           loading={isLoadingStorages}
@@ -636,8 +626,24 @@ function ProductTransfersHeader({ model }: { model: ReturnType<typeof useProduct
         >
           {t('Нове переміщення')}
         </Button>
+      </PageHeaderActions>
+      <Group justify="flex-end" align="center">
+        <Group gap="xs">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading || isLoadingStorages}
+              size={38}
+              variant="light"
+              onClick={() => reload()}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
-    </Group>
+    </>
   )
 }
 

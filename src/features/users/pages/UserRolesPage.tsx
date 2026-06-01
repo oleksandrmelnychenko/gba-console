@@ -29,6 +29,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -311,6 +312,17 @@ export function UserRolesPage() {
 
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          onClick={() => setRoleModalState({ open: true, role: null })}
+        >
+          {t('Створити')}
+        </Button>
+      </PageHeaderActions>
+
       <Group justify="space-between">
         <Button
           color="gray"
@@ -321,13 +333,6 @@ export function UserRolesPage() {
           onClick={() => navigate('/users')}
         >
           {t('Назад')}
-        </Button>
-        <Button
-          color="violet"
-          leftSection={<IconPlus size={16} />}
-          onClick={() => setRoleModalState({ open: true, role: null })}
-        >
-          {t('Створити')}
         </Button>
       </Group>
 

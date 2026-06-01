@@ -27,6 +27,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getUsers } from '../api/usersApi'
 import type { UserProfile } from '../types'
 import { displayValue, getUserFullName, getUserRegionName, getUserRoleName } from '../utils'
@@ -214,6 +215,23 @@ export function UsersPage() {
 
   return (
     <Stack gap="lg">
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          onClick={() =>
+            navigate('/users/new', {
+              state: {
+                backgroundLocation: location,
+                returnPath: `${location.pathname}${location.search}`,
+              },
+            })
+          }
+        >
+          {t('Новий користувач')}
+        </Button>
+      </PageHeaderActions>
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -258,21 +276,6 @@ export function UsersPage() {
               style={{ flex: '0 0 auto' }}
             >
               {t('Ролі')}
-            </Button>
-            <Button
-              color="violet"
-              leftSection={<IconPlus size={16} />}
-              onClick={() =>
-                navigate('/users/new', {
-                  state: {
-                    backgroundLocation: location,
-                    returnPath: `${location.pathname}${location.search}`,
-                  },
-                })
-              }
-              style={{ flex: '0 0 auto' }}
-            >
-              {t('Новий користувач')}
             </Button>
           </Group>
 

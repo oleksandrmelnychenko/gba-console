@@ -44,6 +44,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
@@ -555,11 +556,18 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
 
   return (
     <Stack gap="lg">
+      {canCreateClient && (
+        <PageHeaderActions>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openCreateClient}>
+            {t('Новий клієнт')}
+          </Button>
+        </PageHeaderActions>
+      )}
+
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <ClientsFilterToolbar
             activeFilter={activeFilter}
-            canCreateClient={canCreateClient}
             clientTypes={clientTypes}
             isExporting={clientAction === 'export'}
             isTableBusy={isTableBusy}
@@ -568,7 +576,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             searchFieldOptions={searchFieldOptions}
             searchInputRef={searchInputRef}
             searchValue={searchValue}
-            onCreate={openCreateClient}
             onExport={handleExport}
             onReset={resetSearch}
             onSetActiveFilter={setActiveFilter}
@@ -760,7 +767,6 @@ function ClientActionsModal({
 
 function ClientsFilterToolbar({
   activeFilter,
-  canCreateClient,
   clientTypes,
   isExporting,
   isTableBusy,
@@ -769,7 +775,6 @@ function ClientsFilterToolbar({
   searchFieldOptions,
   searchInputRef,
   searchValue,
-  onCreate,
   onExport,
   onReset,
   onSetActiveFilter,
@@ -779,7 +784,6 @@ function ClientsFilterToolbar({
   onSetSearchValue,
 }: {
   activeFilter: ActiveFilter
-  canCreateClient: boolean
   clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
@@ -788,7 +792,6 @@ function ClientsFilterToolbar({
   searchFieldOptions: Array<{ label: string; value: string }>
   searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
-  onCreate: () => void
   onExport: () => void
   onReset: () => void
   onSetActiveFilter: (value: ActiveFilter) => void
@@ -863,11 +866,6 @@ function ClientsFilterToolbar({
           <ExcelIcon size={22} />
         </ActionIcon>
       </Tooltip>
-      {canCreateClient && (
-        <Button leftSection={<IconPlus size={16} />} color="violet" onClick={onCreate} style={{ flex: '0 0 auto' }}>
-          {t('Новий клієнт')}
-        </Button>
-      )}
     </Group>
   )
 }

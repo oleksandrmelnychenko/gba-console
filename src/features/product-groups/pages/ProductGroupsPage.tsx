@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
@@ -235,6 +236,19 @@ export function ProductGroupsPage() {
 
   return (
     <Stack gap="lg">
+      <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() => setCreateModalOpened(true)}
+            type="button"
+          >
+            {t('Нова група')}
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -271,17 +285,6 @@ export function ProductGroupsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-            <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() => setCreateModalOpened(true)}
-                style={{ flex: '0 0 auto' }}
-                type="button"
-              >
-                {t('Нова група')}
-              </Button>
-            </PermissionGate>
           </Group>
 
           {error && (

@@ -8,6 +8,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   getAllCurrencyTraders,
@@ -331,6 +332,19 @@ export function CurrencyConvertorsPage() {
 
   return (
     <Stack gap="lg">
+      {model.canCreate && (
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={model.goToCreate}
+          >
+            {t('Створення валютного трейдера')}
+          </Button>
+        </PageHeaderActions>
+      )}
+
       <Group justify="flex-end" align="center">
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
@@ -345,11 +359,6 @@ export function CurrencyConvertorsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-          {model.canCreate && (
-            <Button color="violet" leftSection={<IconPlus size={16} />} onClick={model.goToCreate}>
-              {t('Створення валютного трейдера')}
-            </Button>
-          )}
         </Group>
       </Group>
 

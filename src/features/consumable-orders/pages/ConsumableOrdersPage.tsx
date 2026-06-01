@@ -21,6 +21,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getConsumableOrders,
   searchConsumableOrders,
@@ -121,6 +122,12 @@ export function ConsumableOrdersPage() {
 
   return (
     <Stack gap="md">
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { returnPath: '/accounting/consumable-orders' } })}>
+          {t('Додати')}
+        </Button>
+      </PageHeaderActions>
+
       <Group justify="space-between" align="end" gap="sm">
         <Group align="end" gap="sm">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
@@ -140,9 +147,6 @@ export function ConsumableOrdersPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-          <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { returnPath: '/accounting/consumable-orders' } })}>
-            {t('Додати')}
-          </Button>
         </Group>
       </Group>
 

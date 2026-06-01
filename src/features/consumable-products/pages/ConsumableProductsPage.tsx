@@ -29,6 +29,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createConsumableProduct,
   createConsumableProductCategory,
@@ -263,6 +264,14 @@ export function ConsumableProductsPage() {
 
   return (
     <Stack gap="lg">
+      <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
+        <PageHeaderActions>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
+            {t('Додати категорію')}
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
+
       <Group justify="space-between" align="end" gap="sm">
         <TextInput
           leftSection={<IconSearch size={16} />}
@@ -276,18 +285,11 @@ export function ConsumableProductsPage() {
             setCategories([])
           }}
         />
-        <Group gap="xs">
-          <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
-            <Button leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
-              {t('Додати категорію')}
-            </Button>
-          </PermissionGate>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
       {error && (

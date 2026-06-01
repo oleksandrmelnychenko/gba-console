@@ -27,6 +27,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   cancelIncomeCashflow,
   getIncomeCashflowClientAgreements,
@@ -269,6 +270,55 @@ export function IncomeCashflowsPage() {
 
   return (
     <Stack gap="md">
+      <PageHeaderActions>
+        <Menu position="bottom-end" shadow="md" width={300} withinPortal>
+          <Menu.Target>
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />}>
+              {t('Новий')}
+            </Button>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Label>{t('Каса')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0')}>
+              {t('Інший касовий прихід')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0')}>
+              {t('Оплата покупця')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1')}>
+              {t('Повернення постачальника')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2')}>
+              {t('Інші з контрагентами')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Банк')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2')}>
+              {t('Інші надходження на рахунок')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0')}>
+              {t('Оплата покупця')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1')}>
+              {t('Повернення постачальника')}
+            </Menu.Item>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2')}>
+              {t('Інші з контрагентами')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Колеги')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user')}>
+              {t('Повернення від колеги')}
+            </Menu.Item>
+            <Menu.Divider />
+            <Menu.Label>{t('Магазин')}</Menu.Label>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop')}>
+              {t('Оплата магазину')}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </PageHeaderActions>
+
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
@@ -284,52 +334,6 @@ export function IncomeCashflowsPage() {
         </Group>
 
         <Group align="end" gap="xs">
-          <Menu position="bottom-end" shadow="md" width={300} withinPortal>
-            <Menu.Target>
-              <Button leftSection={<IconPlus size={16} />} rightSection={<IconChevronDown size={14} />}>
-                {t('Новий')}
-              </Button>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Label>{t('Каса')}</Menu.Label>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0')}>
-                {t('Інший касовий прихід')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0')}>
-                {t('Оплата покупця')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1')}>
-                {t('Повернення постачальника')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2')}>
-                {t('Інші з контрагентами')}
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Label>{t('Банк')}</Menu.Label>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2')}>
-                {t('Інші надходження на рахунок')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0')}>
-                {t('Оплата покупця')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1')}>
-                {t('Повернення постачальника')}
-              </Menu.Item>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2')}>
-                {t('Інші з контрагентами')}
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Label>{t('Колеги')}</Menu.Label>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user')}>
-                {t('Повернення від колеги')}
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Label>{t('Магазин')}</Menu.Label>
-              <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop')}>
-                {t('Оплата магазину')}
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
           <Tooltip label={t('Скинути фільтри')}>
             <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
               {t('Скинути')}
