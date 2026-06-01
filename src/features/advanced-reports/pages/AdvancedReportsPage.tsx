@@ -13,8 +13,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -41,10 +42,12 @@ const DEFAULT_LIMIT = 100
 const DEFAULT_OFFSET = 0
 const SEARCH_DEBOUNCE_MS = 350
 
+const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
+
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['actions'],
+    right: ['edit', 'actions'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -61,6 +64,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function AdvancedReportsPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [reports, setReports] = useValueState<AdvancedReportsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -160,8 +164,29 @@ export function AdvancedReportsPage() {
     void loadReports()
   }, [loadReports])
 
+  const openAdvanceReport = useCallback(
+    (row: AdvancedReportRow) => {
+      if (row.order.NetUid) {
+        navigate(`${OUTGOING_CASHFLOW_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`)
+      }
+    },
+    [navigate],
+  )
+
+  const handleRowClick = useCallback(
+    (row: AdvancedReportRow) => {
+      if (row.isUnderReport && row.order.NetUid) {
+        openAdvanceReport(row)
+        return
+      }
+
+      setSelectedRow(row)
+    },
+    [openAdvanceReport, setSelectedRow],
+  )
+
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
-  const columns = useAdvancedReportColumns(setSelectedRow)
+  const columns = useAdvancedReportColumns({ onEdit: openAdvanceReport, onOpen: setSelectedRow })
   const isTableBusy = isLoading || isSearchSettling
 
   const resetFilters = useCallback(() => {
@@ -278,7 +303,7 @@ export function AdvancedReportsPage() {
         maxHeight="calc(100vh - 315px)"
         minWidth={1720}
         tableId="advanced-reports"
-        onRowClick={setSelectedRow}
+        onRowClick={handleRowClick}
       />
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
@@ -286,7 +311,13 @@ export function AdvancedReportsPage() {
   )
 }
 
-function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): DataTableColumn<AdvancedReportRow>[] {
+function useAdvancedReportColumns({
+  onEdit,
+  onOpen,
+}: {
+  onEdit: (row: AdvancedReportRow) => void
+  onOpen: (row: AdvancedReportRow) => void
+}): DataTableColumn<AdvancedReportRow>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<AdvancedReportRow>[]>(
@@ -389,6 +420,35 @@ function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): Dat
         cell: (row) => displayValue(row.comment),
       },
       {
+        id: 'edit',
+        header: '',
+        width: 62,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          row.isUnderReport ? (
+            <Tooltip label={t('Редагувати звіт')}>
+              <ActionIcon
+                aria-label={t('Редагувати звіт')}
+                color="violet"
+                disabled={!row.order.NetUid}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(row)
+                }}
+              >
+                <IconEdit size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
+      {
         id: 'actions',
         header: '',
         width: 62,
@@ -416,7 +476,7 @@ function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): Dat
         ),
       },
     ],
-    [onOpen, t],
+    [onEdit, onOpen, t],
   )
 }
 

@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { IdentityResponse, UserProfile, UserRole } from '../types'
+import type { DashboardNodeModule, IdentityResponse, UserPermission, UserProfile, UserRole } from '../types'
 
 export async function getUsers(value?: string, signal?: AbortSignal): Promise<UserProfile[]> {
   const normalizedValue = value?.trim()
@@ -80,6 +80,70 @@ export async function getUserRoles(): Promise<UserRole[]> {
   return normalizeUserRoles(result)
 }
 
+export async function createUserRole(role: UserRole): Promise<UserRole | null> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/new', {
+    method: 'POST',
+    body: role,
+  })
+
+  return normalizeRole(result)
+}
+
+export async function updateUserRole(role: UserRole): Promise<UserRole | null> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/update', {
+    method: 'POST',
+    body: role,
+  })
+
+  return normalizeRole(result)
+}
+
+export async function deleteUserRole(netId: string): Promise<void> {
+  await apiRequest<unknown>('/usermanagement/profiles/roles/delete', {
+    method: 'DELETE',
+    query: {
+      netId,
+    },
+  })
+}
+
+export async function getDashboardModules(): Promise<DashboardNodeModule[]> {
+  const result = await apiRequest<unknown>('/dashboards/modules/all')
+
+  return normalizeModules(result)
+}
+
+export async function changePermissionsToRole(role: UserRole): Promise<UserRole | null> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/roles/add/nodes', {
+    method: 'POST',
+    body: role,
+  })
+
+  return normalizeRole(result)
+}
+
+export async function addPermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
+  await apiRequest<unknown>('/permissions/new', {
+    method: 'POST',
+    body: buildPermissionFormData(permission, image),
+  })
+}
+
+export async function updatePermissionToNode(permission: UserPermission, image?: File | null): Promise<void> {
+  await apiRequest<unknown>('/permissions/update', {
+    method: 'POST',
+    body: buildPermissionFormData(permission, image),
+  })
+}
+
+function buildPermissionFormData(permission: UserPermission, image?: File | null): FormData {
+  const formData = new FormData()
+  formData.append('image', image || '')
+  formData.append('permission', JSON.stringify(permission))
+
+  return formData
+}
+
 function normalizeUsers(result: unknown): UserProfile[] {
   if (Array.isArray(result)) {
     return result as UserProfile[]
@@ -118,4 +182,24 @@ function normalizeIdentityResponse(result: unknown): IdentityResponse | null {
   }
 
   return null
+}
+
+function normalizeRole(result: unknown): UserRole | null {
+  if (result && typeof result === 'object') {
+    return result as UserRole
+  }
+
+  return null
+}
+
+function normalizeModules(result: unknown): DashboardNodeModule[] {
+  if (Array.isArray(result)) {
+    return result as DashboardNodeModule[]
+  }
+
+  if (result && typeof result === 'object' && 'Items' in result && Array.isArray(result.Items)) {
+    return result.Items as DashboardNodeModule[]
+  }
+
+  return []
 }

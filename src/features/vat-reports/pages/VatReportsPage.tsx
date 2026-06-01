@@ -236,6 +236,15 @@ function useVatReportColumns(): DataTableColumn<VatReport>[] {
         accessor: (report) => report.VatAmountEU,
         cell: (report) => formatMoney(report.VatAmountEU),
       },
+      {
+        id: 'amountPln',
+        header: t('Сума в PLN (ПДВ)'),
+        width: 150,
+        minWidth: 130,
+        align: 'right',
+        accessor: (report) => report.VatAmountPL,
+        cell: (report) => formatMoney(report.VatAmountPL),
+      },
     ],
     [t],
   )

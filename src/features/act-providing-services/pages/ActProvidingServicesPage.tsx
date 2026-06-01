@@ -20,20 +20,24 @@ import {
   IconRestore,
   IconRoute,
 } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import { getActProvidingServices } from '../api/actProvidingServicesApi'
 import type { ActProvidingService } from '../types'
 import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel } from '../utils'
 
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
+const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
+const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -322,6 +326,20 @@ function ActProvidingServiceOptionsModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const { hasPermission } = useAuth()
+  const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
+  const canOpenViewOption = hasPermission(PERMISSION_VIEW_OPTION)
+
+  useEffect(() => {
+    if (!row || row.supplyOrderUkraineNetUid) {
+      return
+    }
+
+    if (!row.protocolNetId || !row.netId) {
+      notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
+    }
+  }, [row, t])
 
   return (
     <AppModal centered opened={Boolean(row)} title={t('Виберіть опцію')} onClose={onClose}>
@@ -346,11 +364,34 @@ function ActProvidingServiceOptionsModal({
           >
             {t('Огляд')}
           </Button>
-          {(row.protocolNetId || row.supplyOrderUkraineNetUid) && (
-            <Button disabled justify="flex-start" leftSection={<IconRoute size={18} />} variant="light">
-              {row.supplyOrderUkraineNetUid ? t('Замовлення в Україну') : t('Логістичний шлях')}
-            </Button>
-          )}
+          {row.supplyOrderUkraineNetUid
+            ? canOpenViewOption && (
+                <Button
+                  justify="flex-start"
+                  leftSection={<IconRoute size={18} />}
+                  variant="light"
+                  onClick={() => {
+                    navigate(`/orders/ukraine/view/${row.supplyOrderUkraineNetUid}`)
+                    onClose()
+                  }}
+                >
+                  {t('Замовлення в Україну')}
+                </Button>
+              )
+            : row.protocolNetId
+              && canOpenLogisticWay && (
+                <Button
+                  justify="flex-start"
+                  leftSection={<IconRoute size={18} />}
+                  variant="light"
+                  onClick={() => {
+                    navigate(`/product-delivery-protocols/${row.protocolNetId}`)
+                    onClose()
+                  }}
+                >
+                  {t('Логістичний шлях')}
+                </Button>
+              )}
         </Stack>
       )}
     </AppModal>

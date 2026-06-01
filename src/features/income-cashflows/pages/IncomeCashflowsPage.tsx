@@ -1,12 +1,14 @@
 import {
   ActionIcon,
   Alert,
+  Autocomplete,
   Badge,
   Button,
   Divider,
   Group,
   Menu,
   MultiSelect,
+  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -15,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconEye, IconPlus, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronDown, IconEye, IconPlus, IconRefresh, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -27,18 +29,31 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   cancelIncomeCashflow,
+  getIncomeCashflowClientAgreements,
   getIncomeCashflowCurrencies,
   getIncomeCashflowOrganizations,
+  getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflows,
+  searchIncomeCashflowClientPayers,
+  searchIncomeCashflowCounterparties,
   searchIncomeCashflowPaymentRegisters,
+  updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
+import {
+  IncomeCounterpartySearchType,
+  IncomePaymentOperationType,
+} from '../types'
 import type {
+  Client,
+  ClientAgreement,
   Currency,
   IncomeCashflowRow,
   IncomePaymentOrder,
   NamedEntity,
   Organization,
   PaymentRegister,
+  SupplyOrganization,
+  SupplyOrganizationAgreement,
 } from '../types'
 
 const PAGE_SIZE = 20
@@ -47,7 +62,7 @@ const SEARCH_DEBOUNCE_MS = 350
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['cancel', 'actions'],
+    right: ['reassign', 'cancel', 'actions'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -99,11 +114,13 @@ export function IncomeCashflowsPage() {
         })),
     [organizations],
   )
+  const [reassignRow, setReassignRow] = useValueState<IncomeCashflowRow | null>(null)
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
   const totalQty = incomeOrders[0]?.TotalQty || incomeOrders.length
   const columns = useIncomeCashflowColumns({
     onCancel: setCancelRow,
     onOpen: setSelectedRow,
+    onReassign: setReassignRow,
   })
   const isTableBusy = isLoading || isSearchSettling
 
@@ -393,12 +410,27 @@ export function IncomeCashflowsPage() {
         </Group>
       )}
 
-      <IncomeCashflowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <IncomeCashflowDetailDrawer
+        row={selectedRow}
+        onClose={() => setSelectedRow(null)}
+        onReassign={(row) => {
+          setSelectedRow(null)
+          setReassignRow(row)
+        }}
+      />
       <CancelIncomeCashflowModal
         isSaving={isCanceling}
         row={cancelRow}
         onCancel={handleCancel}
         onClose={() => setCancelRow(null)}
+      />
+      <ReassignIncomeClientModal
+        row={reassignRow}
+        onClose={() => setReassignRow(null)}
+        onSaved={() => {
+          setReassignRow(null)
+          void loadIncomeOrders(0, false)
+        }}
       />
     </Stack>
   )
@@ -407,9 +439,11 @@ export function IncomeCashflowsPage() {
 function useIncomeCashflowColumns({
   onCancel,
   onOpen,
+  onReassign,
 }: {
   onCancel: (row: IncomeCashflowRow) => void
   onOpen: (row: IncomeCashflowRow) => void
+  onReassign: (row: IncomeCashflowRow) => void
 }): DataTableColumn<IncomeCashflowRow>[] {
   const { t } = useI18n()
 
@@ -532,6 +566,34 @@ function useIncomeCashflowColumns({
         cell: (row) => displayValue(row.comment),
       },
       {
+        id: 'reassign',
+        header: '',
+        width: 62,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          isClientPaymentReassignable(row.income) ? (
+            <Tooltip label={t('Переназначити клієнта')}>
+              <ActionIcon
+                aria-label={t('Переназначити клієнта')}
+                color="blue"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onReassign(row)
+                }}
+              >
+                <IconUserShare size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
+      {
         id: 'cancel',
         header: '',
         width: 62,
@@ -587,11 +649,19 @@ function useIncomeCashflowColumns({
         ),
       },
     ],
-    [onCancel, onOpen, t],
+    [onCancel, onOpen, onReassign, t],
   )
 }
 
-function IncomeCashflowDetailDrawer({ row, onClose }: { row: IncomeCashflowRow | null; onClose: () => void }) {
+function IncomeCashflowDetailDrawer({
+  row,
+  onClose,
+  onReassign,
+}: {
+  row: IncomeCashflowRow | null
+  onClose: () => void
+  onReassign: (row: IncomeCashflowRow) => void
+}) {
   const { t } = useI18n()
   const income = row?.income
 
@@ -599,6 +669,19 @@ function IncomeCashflowDetailDrawer({ row, onClose }: { row: IncomeCashflowRow |
     <AppDrawer opened={Boolean(row)} padding="md" size="lg" title={t('Прибутковий ордер')} onClose={onClose}>
       {row && income && (
         <Stack gap="md">
+          {isClientPaymentReassignable(income) && (
+            <Group justify="flex-end">
+              <Button
+                color="blue"
+                leftSection={<IconUserShare size={16} />}
+                variant="light"
+                onClick={() => onReassign(row)}
+              >
+                {t('Переназначити клієнта')}
+              </Button>
+            </Group>
+          )}
+
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(income.FromDate)} />
             <DetailItem label={t('Номер')} value={displayValue(income.Number)} />
@@ -676,6 +759,319 @@ function CancelIncomeCashflowModal({
       </Stack>
     </AppModal>
   )
+}
+
+type ReassignSearchType = typeof IncomeCounterpartySearchType.Client | typeof IncomeCounterpartySearchType.Supplier
+
+function ReassignIncomeClientModal({
+  row,
+  onClose,
+  onSaved,
+}: {
+  row: IncomeCashflowRow | null
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useI18n()
+  const [searchType, setSearchType] = useValueState<ReassignSearchType>(IncomeCounterpartySearchType.Client)
+  const [searchValue, setSearchValue] = useValueState('')
+  const [clients, setClients] = useValueState<Client[]>([])
+  const [supplyOrganizations, setSupplyOrganizations] = useValueState<SupplyOrganization[]>([])
+  const [selectedClientValue, setSelectedClientValue] = useValueState('')
+  const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
+  const [supplyAgreements, setSupplyAgreements] = useValueState<SupplyOrganizationAgreement[]>([])
+  const [selectedAgreementValue, setSelectedAgreementValue] = useValueState('')
+  const [error, setError] = useValueState<string | null>(null)
+  const [isSaving, setSaving] = useValueState(false)
+  const [debouncedSearch] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
+
+  const isSupplier = searchType === IncomeCounterpartySearchType.Supplier
+  const opened = Boolean(row)
+
+  const counterpartyOptions = useMemo(() => {
+    const source: NamedEntity[] = isSupplier ? supplyOrganizations : clients
+    return source
+      .map((entity) => ({
+        label: getEntityName(entity) || String(entity.NetUid || entity.Id || ''),
+        value: String(entity.NetUid || entity.Id || ''),
+      }))
+      .filter((option) => option.value)
+  }, [clients, isSupplier, supplyOrganizations])
+
+  const agreementOptions = useMemo(
+    () =>
+      isSupplier
+        ? supplyAgreements
+            .map((agreement) => ({
+              label: [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name]
+                .filter(Boolean)
+                .join(' '),
+              value: String(agreement.NetUid || agreement.Id || ''),
+            }))
+            .filter((option) => option.value)
+        : clientAgreements
+            .map((clientAgreement) => {
+              const agreement = clientAgreement.Agreement
+              return {
+                label: [agreement?.Name || agreement?.Number, agreement?.Currency?.Code || agreement?.Currency?.Name]
+                  .filter(Boolean)
+                  .join(' '),
+                value: String(agreement?.NetUid || agreement?.Id || ''),
+              }
+            })
+            .filter((option) => option.value),
+    [clientAgreements, isSupplier, supplyAgreements],
+  )
+
+  useEffect(() => {
+    if (opened) {
+      return
+    }
+
+    let cancelled = false
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled) {
+        return
+      }
+
+      setSearchType(IncomeCounterpartySearchType.Client)
+      setSearchValue('')
+      setClients([])
+      setSupplyOrganizations([])
+      setSelectedClientValue('')
+      setClientAgreements([])
+      setSupplyAgreements([])
+      setSelectedAgreementValue('')
+      setError(null)
+    }, 0)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [
+    opened,
+    setClientAgreements,
+    setClients,
+    setError,
+    setSearchType,
+    setSearchValue,
+    setSelectedAgreementValue,
+    setSelectedClientValue,
+    setSupplyAgreements,
+    setSupplyOrganizations,
+  ])
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    let cancelled = false
+
+    const loadCounterparties = async () => {
+      const value = debouncedSearch.trim()
+
+      if (!value) {
+        if (!cancelled) {
+          setClients([])
+          setSupplyOrganizations([])
+        }
+        return
+      }
+
+      if (isSupplier) {
+        const result = await searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Supplier).catch(() => [])
+        if (!cancelled) {
+          setSupplyOrganizations(result as SupplyOrganization[])
+        }
+        return
+      }
+
+      const result = await searchIncomeCashflowClientPayers(value).catch(() => [])
+      if (!cancelled) {
+        setClients(result)
+      }
+    }
+
+    void loadCounterparties()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedSearch, isSupplier, opened, setClients, setSupplyOrganizations])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAgreements = async () => {
+      if (!selectedClientValue) {
+        if (!cancelled) {
+          setClientAgreements([])
+          setSupplyAgreements([])
+          setSelectedAgreementValue('')
+        }
+        return
+      }
+
+      if (isSupplier) {
+        const selected = supplyOrganizations.find(
+          (entity) => String(entity.NetUid || entity.Id || '') === selectedClientValue,
+        )
+        const supplyId = selected?.Id
+
+        if (!supplyId) {
+          if (!cancelled) {
+            setSupplyAgreements([])
+          }
+          return
+        }
+
+        const result = await getIncomeCashflowSupplyOrganizationAgreements(supplyId).catch(() => [])
+        if (!cancelled) {
+          setSupplyAgreements(result)
+        }
+        return
+      }
+
+      const result = await getIncomeCashflowClientAgreements(selectedClientValue).catch(() => [])
+      if (!cancelled) {
+        setClientAgreements(result)
+      }
+    }
+
+    void loadAgreements()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    isSupplier,
+    selectedClientValue,
+    setClientAgreements,
+    setSelectedAgreementValue,
+    setSupplyAgreements,
+    supplyOrganizations,
+  ])
+
+  const handleSearchTypeChanged = useCallback(
+    (value: string) => {
+      setSearchType(Number(value) as ReassignSearchType)
+      setSearchValue('')
+      setClients([])
+      setSupplyOrganizations([])
+      setSelectedClientValue('')
+      setClientAgreements([])
+      setSupplyAgreements([])
+      setSelectedAgreementValue('')
+    },
+    [
+      setClientAgreements,
+      setClients,
+      setSearchType,
+      setSearchValue,
+      setSelectedAgreementValue,
+      setSelectedClientValue,
+      setSupplyAgreements,
+      setSupplyOrganizations,
+    ],
+  )
+
+  const handleSubmit = useCallback(async () => {
+    const incomeNetId = row?.income.NetUid
+
+    if (!incomeNetId || !selectedClientValue || !selectedAgreementValue) {
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await updateIncomeCashflowClient({
+        clientAgreementNetId: selectedAgreementValue,
+        clientNetId: selectedClientValue,
+        incomeNetId,
+      })
+      onSaved()
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося переназначити клієнта'))
+    } finally {
+      setSaving(false)
+    }
+  }, [onSaved, row, selectedAgreementValue, selectedClientValue, setError, setSaving, t])
+
+  return (
+    <AppModal centered opened={opened} title={t('Переназначити клієнта')} onClose={onClose}>
+      <Stack gap="md">
+        {row && (
+          <Text c="dimmed" size="sm">
+            {t('Ордер')}: <Text span fw={600}>{row.number || t('Без номера')}</Text>
+          </Text>
+        )}
+
+        <SegmentedControl
+          data={[
+            { label: t('За клієнтами'), value: String(IncomeCounterpartySearchType.Client) },
+            { label: t('За постачальниками'), value: String(IncomeCounterpartySearchType.Supplier) },
+          ]}
+          disabled={isSaving}
+          value={String(searchType)}
+          onChange={handleSearchTypeChanged}
+        />
+
+        <Autocomplete
+          data={counterpartyOptions.map((option) => option.label)}
+          disabled={isSaving}
+          label={isSupplier ? t('Постачальник') : t('Клієнт')}
+          placeholder={t('Почніть вводити назву')}
+          value={searchValue}
+          onChange={setSearchValue}
+          onOptionSubmit={(label) => {
+            const option = counterpartyOptions.find((item) => item.label === label)
+            if (option) {
+              setSelectedClientValue(option.value)
+              setSelectedAgreementValue('')
+            }
+          }}
+        />
+
+        <Select
+          data={agreementOptions}
+          disabled={!agreementOptions.length || isSaving}
+          label={t('Договір')}
+          placeholder={t('Оберіть договір')}
+          searchable
+          value={selectedAgreementValue || null}
+          onChange={(value) => setSelectedAgreementValue(value || '')}
+        />
+
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <Group justify="flex-end">
+          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            disabled={!selectedClientValue || !selectedAgreementValue}
+            leftSection={<IconUserShare size={16} />}
+            loading={isSaving}
+            onClick={() => void handleSubmit()}
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </Stack>
+    </AppModal>
+  )
+}
+
+function isClientPaymentReassignable(income: IncomePaymentOrder): boolean {
+  return Number(income.OperationType) === IncomePaymentOperationType.ClientPayment && !income.IsCanceled && Boolean(income.NetUid)
 }
 
 function StatusFlag({ active }: { active?: boolean }) {

@@ -44,6 +44,23 @@ export async function cancelIncomeCashflow(netId: string): Promise<IncomePayment
   return normalizeCancelResult(result)
 }
 
+export async function updateIncomeCashflowClient(params: {
+  clientAgreementNetId: string
+  clientNetId: string
+  incomeNetId: string
+}): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/update/client', {
+    method: 'PUT',
+    query: {
+      clientAgreementNetId: params.clientAgreementNetId,
+      clientNetId: params.clientNetId,
+      incomeNetId: params.incomeNetId,
+    },
+  })
+
+  return normalizeCancelResult(result)
+}
+
 export async function getIncomeCashflowCurrencies(): Promise<Currency[]> {
   const result = await apiRequest<unknown>('/currencies/all')
 
