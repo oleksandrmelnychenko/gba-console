@@ -28,7 +28,7 @@ These legacy gates have **no console counterpart because the underlying action/e
 
 | Legacy key | Where (legacy) | Why not migrated |
 | --- | --- | --- |
-| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | opens the full `NewActReconciliationView` sub-form (reconciliation creation) — larger piece, still deferred |
+| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | drawer + API **BUILT** (§13); only the header button-wire is pending (placement page is user-WIP) |
 | ~~`PlacementHeader_…_CarryOut` (Провести / full-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
 | ~~`PlacementHeader_…_GetUp` (Оприходувати / partial-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
 | `Sales_Ukraine_all_Change_Products_Btn_PKEY` | shared product carousel | console renders product description read-only; editing goes through the full edit panel gated by `Product_Entire_Assortment_EditBtn_PKEY` instead |
@@ -508,3 +508,33 @@ Legacy `SaleLifeCycleStatusConvertor.Parse` maps **both** `Packaging`(1) and `Pa
   discount is clickable for **any** non-uniform sale (was gated to New/Packaging), and the empty
   «Знижка» add link shows **only for New(0)** (legacy hides the add for IsInvoice = Packaging/Packaged).
   Removed the now-unused local `isNewOrPackagingStatus`. tsc 0 / eslint 0.
+
+---
+
+## 13. ActReconciliationNew (placement «Інший товар / більша кількість») — drawer BUILT, wire pending (2026-06-01)
+
+Despite the name, the legacy `NewActReconciliationView` (opened from the placement header) is an
+**"add unordered / extra product"** form: it appends a `SupplyOrderUkraineItem` with `NotOrdered: true`
+(Product + Qty + UnitPrice + NetWeight) to the supply order and saves via the SAME
+`POST /supplies/ukraine/order/update` the console already uses (`updateSupplyOrderUkraine`). It also lists
+existing `NotOrdered` items with a delete. It is **placement-only** (not reachable from the standalone
+Act Reconciliations list) and does NOT hit any `/reconciliation/*` create endpoint.
+
+Built (warehouse-ukraine, self-contained, tsc 0 / eslint 0):
+- `api/orderPlacementsApi.ts` → `searchPlacementProducts` (`/products/search/vendorcode`).
+- `placementsTypes.ts` → added `UnitPrice?` to `PlacementOrderItem`.
+- `components/PlacementUnorderedProductsDrawer.tsx` → lists `NotOrdered` items (delete) + add-form
+  (product search + Qty/Ціна/Вага → `NotOrdered:true` item → `updateSupplyOrderUkraine`). Validation
+  = product selected && qty>0 (legacy). The console placement grid already filters `NotOrdered` items out,
+  so these extras now have a home.
+
+**Wire pending (the placement page is user-WIP — not touched to avoid clobbering uncommitted changes).**
+To finish, add to `WarehouseUkraineOrderPlacementsPage`:
+1. `import { PlacementUnorderedProductsDrawer } from '../components/PlacementUnorderedProductsDrawer'`
+2. model: `const [unorderedOpen, setUnorderedOpen] = useValueState(false)` + expose `setOrder`,
+   `unorderedOpen`, `setUnorderedOpen`; perm `const canActReconciliation =
+   hasPermission('PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY')`.
+3. header button (when `!order.IsPlaced && canActReconciliation`):
+   `<Button variant="light" onClick={() => model.setUnorderedOpen(true)}>{t('Інший товар / більша кількість')}</Button>`
+4. render: `<PlacementUnorderedProductsDrawer order={model.order} opened={model.unorderedOpen}
+   onClose={() => model.setUnorderedOpen(false)} onSaved={(updated) => { model.setOrder(updated); model.setUnorderedOpen(false) }} />`

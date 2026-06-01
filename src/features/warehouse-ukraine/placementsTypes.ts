@@ -50,6 +50,7 @@ export type PlacementOrderItem = EntityFields & {
   PlacedQty?: number
   NotOrdered?: boolean
   NetWeight?: number
+  UnitPrice?: number
   ProductId?: number
   Product?: PlacementProduct | null
 }
