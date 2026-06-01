@@ -10,7 +10,6 @@ import {
   Group,
   Menu,
   MultiSelect,
-  Pagination,
   Select,
   Stack,
   Text,
@@ -23,6 +22,8 @@ import {
   IconAlertTriangle,
   IconArrowsLeftRight,
   IconBrandEdge,
+  IconChevronLeft,
+  IconChevronRight,
   IconDots,
   IconExternalLink,
   IconEye,
@@ -546,18 +547,42 @@ export function SalesUkrainePage() {
 
   const toolbarRight = useMemo(
     () => (
-      <Group gap={6} wrap="nowrap">
+      <Group gap={4} wrap="nowrap">
         <Select
           aria-label={t('Кількість рядків')}
           data={PAGE_SIZE_OPTIONS}
+          disabled={isLoading}
           size="xs"
           value={String(pageSize)}
-          w={88}
+          w={72}
           onChange={(value) => {
             setPage(1)
             setPageSize(Number(value || DEFAULT_PAGE_SIZE))
           }}
         />
+        <Text size="xs" c="dark" fw={700} style={{ whiteSpace: 'nowrap' }}>
+          {t('стор.')} {page}
+        </Text>
+        <ActionIcon
+          aria-label={t('Попередня сторінка')}
+          color="gray"
+          disabled={page <= 1 || isLoading}
+          size="sm"
+          variant="subtle"
+          onClick={() => setPage((current) => Math.max(1, current - 1))}
+        >
+          <IconChevronLeft size={16} />
+        </ActionIcon>
+        <ActionIcon
+          aria-label={t('Наступна сторінка')}
+          color="gray"
+          disabled={page >= totalPages || isLoading}
+          size="sm"
+          variant="subtle"
+          onClick={() => setPage((current) => current + 1)}
+        >
+          <IconChevronRight size={16} />
+        </ActionIcon>
         <Tooltip label={t('Оновити')}>
           <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
             <IconRefresh size={16} />
@@ -565,7 +590,7 @@ export function SalesUkrainePage() {
         </Tooltip>
       </Group>
     ),
-    [isLoading, pageSize, setPage, setPageSize, t],
+    [isLoading, page, pageSize, reload, setPage, setPageSize, t, totalPages],
   )
 
   return (
@@ -680,12 +705,6 @@ export function SalesUkrainePage() {
             renderExpandedRow={renderSaleExpandContent}
             onRowClick={setSelectedSale}
           />
-
-          {totalPages > 1 && (
-            <Group justify="flex-end">
-              <Pagination total={totalPages} value={page} onChange={setPage} />
-            </Group>
-          )}
         </Stack>
       </Card>
 
