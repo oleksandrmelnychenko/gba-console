@@ -16,11 +16,11 @@ import {
   IconDownload,
   IconEye,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconSearch,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -471,7 +471,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
         {document?.DocumentURL && (
           <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
-              <IconFileTypeXls size={22} stroke={1.8} />
+              <ExcelIcon size={22} />
               <span>{t('Excel')}</span>
             </Group>
           </Anchor>

@@ -14,8 +14,8 @@ import {
   IconAlertCircle,
   IconDownload,
   IconFileTypePdf,
-  IconFileTypeXls,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useMemo } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -162,7 +162,7 @@ export function DepreciatedOrderDetailDrawer({
               {downloadDocument.DocumentURL && (
                 <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

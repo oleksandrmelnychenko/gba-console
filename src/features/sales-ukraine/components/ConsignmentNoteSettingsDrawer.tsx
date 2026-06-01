@@ -1,6 +1,7 @@
 import { Alert, Anchor, Box, Button, Group, NumberInput, Select, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconFileTypePdf, IconFileTypeXls, IconTruckDelivery } from '@tabler/icons-react'
+import { IconAlertCircle, IconFileTypePdf, IconTruckDelivery } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -413,7 +414,7 @@ function DownloadDocumentModal({
             {excelUrl && (
               <Anchor href={excelUrl} target="_blank" rel="noopener noreferrer">
                 <Group gap="xs">
-                  <IconFileTypeXls size={20} />
+                  <ExcelIcon size={20} />
                   <Text>{t('Excel документ')}</Text>
                 </Group>
               </Anchor>

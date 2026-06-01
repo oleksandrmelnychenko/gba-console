@@ -9,7 +9,8 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconArrowBackUp, IconFile, IconFileTypePdf, IconFileTypeXls, IconTrash, IconUpload } from '@tabler/icons-react'
+import { IconArrowBackUp, IconFile, IconFileTypePdf, IconTrash, IconUpload } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { SupplyOrderUkraineDocument } from '../types'
@@ -137,7 +138,7 @@ function DocumentTypeIcon({ contentType }: { contentType?: string }) {
   const normalizedType = contentType?.toLowerCase()
 
   if (normalizedType === 'xls' || normalizedType === 'xlsx') {
-    return <IconFileTypeXls size={18} />
+    return <ExcelIcon size={18} />
   }
 
   if (normalizedType === 'pdf') {

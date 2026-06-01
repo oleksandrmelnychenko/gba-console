@@ -26,11 +26,11 @@ import {
   IconDownload,
   IconEye,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -744,7 +744,7 @@ export function NewUkraineSaleReturnPage() {
 
       <AppModal opened={downloadModalOpened} onClose={() => setDownloadModalOpened(false)} title={t('Документи')}>
         <Stack gap="sm">
-          <DownloadLink icon={<IconFileTypeXls size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
+          <DownloadLink icon={<ExcelIcon size={16} />} label={t('Excel')} url={downloadDocument?.DocumentURL || downloadDocument?.XlsxDocument} />
           <DownloadLink icon={<IconFileTypePdf size={16} />} label={t('PDF')} url={downloadDocument?.PdfDocumentURL || downloadDocument?.PdfDocument} />
         </Stack>
       </AppModal>

@@ -26,7 +26,6 @@ import {
   IconFileInvoice,
   IconFileSpreadsheet,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconListDetails,
   IconPackageImport,
   IconReceipt,
@@ -35,6 +34,7 @@ import {
   IconRoute,
   IconTrash,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -1142,7 +1142,7 @@ function DownloadDocumentModal({
           <Group>
             {document.DocumentURL && (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><IconFileTypeXls size={16} /> XLS</Group>
+                <Group gap={6}><ExcelIcon size={16} /> XLS</Group>
               </Anchor>
             )}
             {document.PdfDocumentURL && (

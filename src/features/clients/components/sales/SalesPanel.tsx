@@ -24,12 +24,12 @@ import {
   IconEdit,
   IconFileInvoice,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconHistory,
   IconReportAnalytics,
   IconTag,
   IconTruckDelivery,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { useEffect, useRef } from 'react'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../../shared/ui/AppModal'
@@ -744,7 +744,7 @@ function SaleAuditDetail({
                   target="_blank"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

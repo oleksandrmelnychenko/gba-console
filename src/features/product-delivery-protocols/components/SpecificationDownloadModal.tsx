@@ -1,5 +1,6 @@
 import { Alert, Anchor, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-react'
+import { IconAlertCircle, IconFileTypePdf } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { SpecificationDownloadDocument } from '../specificationTypes'
@@ -37,7 +38,7 @@ export function SpecificationDownloadModal({
             {document.DocumentURL && (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer">
                 <Stack gap={2}>
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                   <Text size="sm">{t('Excel документ')}</Text>
                 </Stack>
               </Anchor>

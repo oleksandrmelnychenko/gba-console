@@ -25,12 +25,12 @@ import {
   IconDownload,
   IconFileImport,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconUpload,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -714,7 +714,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               {downloadDocument.DocumentURL && (
                 <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

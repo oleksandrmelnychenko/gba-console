@@ -33,7 +33,6 @@ import {
   IconDownload,
   IconEdit,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconFileDescription,
   IconHistory,
   IconPackage,
@@ -2305,7 +2304,7 @@ function ProductMovementDownloadModal({
             {document.DocumentURL ? (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

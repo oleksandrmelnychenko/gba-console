@@ -23,13 +23,13 @@ import {
   IconAlertCircle,
   IconDownload,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconPrinter,
   IconRefresh,
   IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -433,7 +433,7 @@ export function ReportsStocksPage() {
         <Stack>
           {result?.document.DocumentURL ? (
             <Anchor href={result.document.DocumentURL} target="_blank" rel="noreferrer">
-              <Group gap="xs"><IconFileTypeXls size={18} /> XLSX</Group>
+              <Group gap="xs"><ExcelIcon size={18} /> XLSX</Group>
             </Anchor>
           ) : null}
           {result?.document.PdfDocumentURL ? (

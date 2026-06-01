@@ -17,9 +17,9 @@ import {
   IconArrowLeft,
   IconDownload,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconRefresh,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api/accountingCashFlowApi'
@@ -377,7 +377,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
         {document?.DocumentURL && (
           <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
-              <IconFileTypeXls size={22} stroke={1.8} />
+              <ExcelIcon size={22} />
               <span>{t('Excel')}</span>
             </Group>
           </Anchor>

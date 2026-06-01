@@ -22,11 +22,11 @@ import {
   IconChevronDown,
   IconDownload,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -838,7 +838,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               {downloadDocument.DocumentURL && (
                 <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

@@ -11,7 +11,8 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconArrowBackUp, IconFileTypePdf, IconFileTypeXls, IconTrash, IconUpload } from '@tabler/icons-react'
+import { IconArrowBackUp, IconFileTypePdf, IconTrash, IconUpload } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { SupplyOrganization } from '../detailTypes'
@@ -165,7 +166,7 @@ export function UploadDeliveryDocumentsModal({
                     <Anchor href={document.documentUrl} target="_blank" rel="noreferrer">
                       <Group gap={4} wrap="nowrap">
                         {document.contentType === 'xls' || document.contentType === 'xlsx' ? (
-                          <IconFileTypeXls size={18} />
+                          <ExcelIcon size={18} />
                         ) : (
                           <IconFileTypePdf size={18} />
                         )}

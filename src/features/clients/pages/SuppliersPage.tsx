@@ -26,7 +26,6 @@ import {
   IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconId,
   IconPlus,
   IconRestore,
@@ -34,6 +33,7 @@ import {
   IconToggleLeft,
   IconToggleRight,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { SupplierPassport } from '../components/SupplierPassport'
@@ -814,7 +814,7 @@ function SuppliersFilterToolbar({
           onClick={onExport}
           style={{ flex: '0 0 auto' }}
         >
-          <IconFileTypeXls size={20} stroke={1.8} />
+          <ExcelIcon size={20} />
         </ActionIcon>
       </Tooltip>
       <Button leftSection={<IconPlus size={16} />} color="violet" onClick={onCreate} style={{ flex: '0 0 auto' }}>
@@ -925,7 +925,7 @@ function SupplierDocumentModal({
             {document.DocumentURL && (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

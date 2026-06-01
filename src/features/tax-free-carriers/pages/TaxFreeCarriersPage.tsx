@@ -17,12 +17,12 @@ import {
   IconDownload,
   IconEdit,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -362,7 +362,7 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
             {downloadDocument.DocumentURL && (
               <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

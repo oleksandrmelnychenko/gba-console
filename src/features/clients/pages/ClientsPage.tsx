@@ -27,7 +27,6 @@ import {
   IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconHierarchy2,
   IconPlus,
   IconRestore,
@@ -940,7 +939,7 @@ function ClientDocumentModal({
             {document.DocumentURL && (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

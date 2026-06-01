@@ -29,11 +29,11 @@ import {
   IconEye,
   IconFileSpreadsheet,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -739,7 +739,7 @@ function ProductTransferDetailDrawer({ model }: { model: ReturnType<typeof usePr
               {downloadDocument.DocumentURL && (
                 <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>
