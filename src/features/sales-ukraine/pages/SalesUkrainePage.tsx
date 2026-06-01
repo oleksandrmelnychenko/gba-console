@@ -8,6 +8,7 @@ import {
   Card,
   Divider,
   Group,
+  Menu,
   MultiSelect,
   Pagination,
   Select,
@@ -20,10 +21,12 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
+  IconDots,
   IconEye,
   IconLockOpen,
   IconPencil,
   IconPrinter,
+  IconReceipt,
   IconRefresh,
   IconRestore,
   IconSearch,
@@ -46,6 +49,7 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
+import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
@@ -176,6 +180,7 @@ export function SalesUkrainePage() {
   const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
+  const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -200,6 +205,7 @@ export function SalesUkrainePage() {
   const columns = useSalesUkraineColumns({
     canUnlock,
     canWillNotShip,
+    onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
@@ -559,6 +565,12 @@ export function SalesUkrainePage() {
         }}
       />
 
+      <ConsignmentNoteSettingsDrawer
+        opened={Boolean(consignmentSale)}
+        sale={consignmentSale}
+        onClose={() => setConsignmentSale(null)}
+      />
+
       <AppModal
         centered
         opened={Boolean(confirmState)}
@@ -587,6 +599,7 @@ export function SalesUkrainePage() {
 function useSalesUkraineColumns({
   canUnlock,
   canWillNotShip,
+  onOpenConsignment,
   onOpenDetails,
   onOpenDiscount,
   onOpenSale,
@@ -596,6 +609,7 @@ function useSalesUkraineColumns({
 }: {
   canUnlock: boolean
   canWillNotShip: boolean
+  onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
@@ -816,56 +830,74 @@ function useSalesUkraineColumns({
       {
         id: 'actions',
         header: '',
-        width: 184,
-        minWidth: 184,
-        maxWidth: 184,
+        width: 132,
+        minWidth: 132,
+        maxWidth: 132,
         align: 'center',
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (sale) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <Group gap={2} justify="center" wrap="nowrap">
-              <Tooltip label={t('Деталі')}>
-                <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenSale(sale)}>
-                  <IconEye size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <SaleDocumentsMenu sale={sale} />
-              {sale.BaseLifeCycleStatus?.SaleLifeCycleType === 1 && (
-                <Tooltip label={t('Відвантажити')}>
-                  <ActionIcon aria-label={t('Відвантажити')} color="teal" variant="subtle" onClick={() => onShip(sale)}>
-                    <IconTruckDelivery size={18} />
+        cell: (sale) => {
+          const isPackaging = sale.BaseLifeCycleStatus?.SaleLifeCycleType === 1
+          const showShip = isPackaging
+          const showTtn = Boolean(sale.TransporterId) && isPackaging
+          const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+          const showUnlock = canUnlock && Boolean(sale.IsLocked)
+          const hasMenu = showShip || showTtn || showWillNotShip || showUnlock
+
+          return (
+            <Box onClick={(event) => event.stopPropagation()}>
+              <Group gap={2} justify="center" wrap="nowrap">
+                <Tooltip label={t('Деталі')}>
+                  <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenSale(sale)}>
+                    <IconEye size={18} />
                   </ActionIcon>
                 </Tooltip>
-              )}
-              {canWillNotShip && sale.IsVatSale && !sale.IsAcceptedToPacking && (
-                <Tooltip label={t('Не буде відвантажено')}>
-                  <ActionIcon
-                    aria-label={t('Не буде відвантажено')}
-                    color="orange"
-                    disabled={!sale.ChangedToInvoice}
-                    variant="subtle"
-                    onClick={() => onWillNotShip(sale)}
-                  >
-                    <IconAlertTriangle size={18} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-              {canUnlock && sale.IsLocked && (
-                <Tooltip label={t('Розблокувати')}>
-                  <ActionIcon aria-label={t('Розблокувати')} color="red" variant="subtle" onClick={() => onUnlock(sale)}>
-                    <IconLockOpen size={18} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </Group>
-          </Box>
-        ),
+                <SaleDocumentsMenu sale={sale} />
+                {hasMenu && (
+                  <Menu position="bottom-end" shadow="md" withinPortal>
+                    <Menu.Target>
+                      <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
+                        <IconDots size={18} />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      {showShip && (
+                        <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onShip(sale)}>
+                          {t('Відвантажити')}
+                        </Menu.Item>
+                      )}
+                      {showTtn && (
+                        <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
+                          {t('Друк ТТН')}
+                        </Menu.Item>
+                      )}
+                      {showWillNotShip && (
+                        <Menu.Item
+                          color="orange"
+                          disabled={!sale.ChangedToInvoice}
+                          leftSection={<IconAlertTriangle size={16} />}
+                          onClick={() => onWillNotShip(sale)}
+                        >
+                          {t('Не буде відвантажено')}
+                        </Menu.Item>
+                      )}
+                      {showUnlock && (
+                        <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
+                          {t('Розблокувати')}
+                        </Menu.Item>
+                      )}
+                    </Menu.Dropdown>
+                  </Menu>
+                )}
+              </Group>
+            </Box>
+          )
+        },
       },
     ],
-    [canUnlock, canWillNotShip, onOpenDetails, onOpenDiscount, onOpenSale, onShip, onUnlock, onWillNotShip, t],
+    [canUnlock, canWillNotShip, onOpenConsignment, onOpenDetails, onOpenDiscount, onOpenSale, onShip, onUnlock, onWillNotShip, t],
   )
 }
 

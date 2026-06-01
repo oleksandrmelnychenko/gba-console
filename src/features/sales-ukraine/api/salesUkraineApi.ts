@@ -1,5 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  SaleConsignmentDocument,
+  SaleConsignmentNoteSetting,
   SaleDocumentResult,
   SalesUkraineClientOption,
   SalesUkraineFilters,
@@ -8,6 +10,8 @@ import type {
   SalesUkraineTransporter,
   SalesUkraineTransporterType,
 } from '../types'
+
+const CONSIGNMENT_QUERY = { forReSale: false }
 
 export async function getSalesUkraine(filters: SalesUkraineFilters): Promise<SalesUkraineSale[]> {
   const result = await apiRequest<unknown>('/sales/all/filtered', {
@@ -95,6 +99,61 @@ export async function updateSaleFromData(sale: SalesUkraineSale, file: File | nu
     body: formData,
     method: 'POST',
   })
+}
+
+export async function getSaleConsignmentNoteSettings(): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/all/get', {
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function addSaleConsignmentNoteSetting(
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/add', {
+    body: setting,
+    method: 'POST',
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function updateSaleConsignmentNoteSetting(
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/update', {
+    body: setting,
+    method: 'POST',
+    query: CONSIGNMENT_QUERY,
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function removeSaleConsignmentNoteSetting(netId: string): Promise<SaleConsignmentNoteSetting[]> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/remove', {
+    body: {},
+    method: 'POST',
+    query: { ...CONSIGNMENT_QUERY, netId },
+  })
+
+  return normalizeArray(result) as SaleConsignmentNoteSetting[]
+}
+
+export async function printSaleConsignmentNoteDocument(
+  saleNetId: string,
+  setting: SaleConsignmentNoteSetting,
+): Promise<SaleConsignmentDocument> {
+  const result = await apiRequest<unknown>('/consignment/note/settings/print/document', {
+    body: setting,
+    method: 'POST',
+    query: { ...CONSIGNMENT_QUERY, netId: saleNetId },
+  })
+
+  return (result && typeof result === 'object' ? result : {}) as SaleConsignmentDocument
 }
 
 async function fetchSaleDocument(path: string, query: Record<string, string>): Promise<SaleDocumentResult> {

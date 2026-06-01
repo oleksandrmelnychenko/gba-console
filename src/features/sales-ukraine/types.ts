@@ -43,7 +43,38 @@ export type SalesUkraineCurrency = SalesUkraineEntity & {
 }
 
 export type SalesUkraineOrganization = SalesUkraineEntity & {
+  Address?: string
   Name?: string
+}
+
+export type SaleConsignmentNoteSetting = SalesUkraineEntity & {
+  BrandAndNumberCar?: string
+  CarGrossWeight?: number
+  CarHeight?: number
+  CarLabel?: string
+  CarLength?: number
+  CarNetWeight?: number
+  Carrier?: string
+  CarWidth?: number
+  Customer?: string
+  Driver?: string
+  LoadingPoint?: string
+  Name?: string
+  Number?: string
+  TrailerGrossWeight?: number
+  TrailerHeight?: number
+  TrailerLabel?: string
+  TrailerLength?: number
+  TrailerNetWeight?: number
+  TrailerNumber?: string
+  TrailerWidth?: number
+  TypeTransportation?: string
+  UnloadingPoint?: string
+}
+
+export type SaleConsignmentDocument = {
+  DocumentURL?: string
+  PdfDocumentURL?: string
 }
 
 export type SalesUkraineAgreement = SalesUkraineEntity & {
