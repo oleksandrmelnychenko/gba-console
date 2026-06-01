@@ -15,6 +15,7 @@ import {
   IconAlertCircle,
   IconCheck,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconHelpCircle,
   IconPencil,
   IconPlus,
@@ -369,7 +370,7 @@ export function ClientAgreementsPanel({
                   target="_blank"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
+                    <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

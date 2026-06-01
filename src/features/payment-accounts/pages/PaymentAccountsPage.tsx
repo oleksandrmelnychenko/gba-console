@@ -189,40 +189,41 @@ export function PaymentAccountsPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<IconSearch size={16} />}
-              placeholder={t('Пошук')}
-              value={searchValue}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
-              onChange={(event) => setSearchValue(event.currentTarget.value)}
-            />
-            <Tooltip label={t('Скинути фільтри')}>
-              <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading || isLoadingLookups} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() =>
-                  navigate('/accounting/payment-accounts/new', {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Новий рахунок')}
-              </Button>
-            </PermissionGate>
+          <Group justify="space-between" wrap="wrap">
+            <div>
+              <Text fw={700} size="xl">
+                {t('Платіжні рахунки')}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              <Tooltip label={t('Скинути фільтри')}>
+                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={36} variant="light" onClick={resetFilters}>
+                  <IconRestore size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading || isLoadingLookups} variant="light" onClick={reload}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate('/accounting/payment-accounts/new', {
+                      state: {
+                        backgroundLocation: location,
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Новий рахунок')}
+                </Button>
+              </PermissionGate>
+            </Group>
           </Group>
 
           <Group align="end" gap="sm" wrap="wrap">
@@ -255,7 +256,7 @@ export function PaymentAccountsPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="violet" variant="light">
+            <Badge color="blue" variant="light">
               {t('Завантажено')}: {accounts.length}
             </Badge>
             <Badge color="gray" variant="light">
@@ -274,6 +275,7 @@ export function PaymentAccountsPage() {
             maxHeight="calc(100vh - 330px)"
             minWidth={1120}
             tableId="payment-accounts"
+            toolbarLeft={toolbarLeft}
             onRowClick={openAccount}
           />
         </Stack>

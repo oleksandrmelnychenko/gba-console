@@ -3,15 +3,14 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Checkbox,
   Divider,
   FileInput,
-  Grid,
   Group,
   Select,
   SimpleGrid,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -19,18 +18,19 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconArrowLeft,
   IconDeviceFloppy,
   IconFile,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconTrash,
   IconUpload,
   IconX,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
-import { type Location, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -77,8 +77,6 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function SupplierOrganizationEditPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const location = useLocation()
-  const backgroundLocation = (location.state as { backgroundLocation?: Location } | null)?.backgroundLocation
   const { id } = useParams()
   const isNew = !id
   const [organization, setOrganization] = useValueState<SupplyOrganization>(() => createEmptySupplyOrganization())
@@ -199,10 +197,7 @@ export function SupplierOrganizationEditPage() {
         setOrganizationRevision((current) => current + 1)
 
         if (isNew && savedOrganization.NetUid) {
-          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, {
-            replace: true,
-            state: backgroundLocation ? { backgroundLocation } : undefined,
-          })
+          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true })
         }
       }
     } catch (saveError) {
@@ -238,16 +233,14 @@ export function SupplierOrganizationEditPage() {
   const organizationFormKey = `${organization.NetUid || organization.Id || 'new'}-${organizationRevision}`
 
   return (
-    <AppDrawer
-      opened
-      closeOnClickOutside={!isSaving && !isDeleting}
-      keepMounted={false}
-      position="right"
-      size="min(980px, 100vw)"
-      onClose={closeSheet}
-    >
-      <Stack gap="lg">
-        <Group justify="space-between" align="center" gap="sm">
+    <Stack gap="md">
+      <Group justify="space-between" align="center" gap="sm">
+        <Group gap="xs">
+          <Tooltip label={t('Назад')}>
+            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={() => navigate('/accounting/supplier-organizations')}>
+              <IconArrowLeft size={18} />
+            </ActionIcon>
+          </Tooltip>
           <Stack gap={0}>
             <Text fw={700} size="lg">
               {organization.Id ? t('Редагувати постачальника послуг') : t('Новий постачальник послуг')}
@@ -256,54 +249,44 @@ export function SupplierOrganizationEditPage() {
               {displayValue(organization.Name)}
             </Text>
           </Stack>
-          <Group gap="xs">
-            {!isNew && (
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
-              {!isNew && (
-                <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
-                  {t('Видалити')}
-                </Button>
-              )}
-            </PermissionGate>
-            <Tooltip label={t('Закрити')}>
-              <ActionIcon aria-label={t('Закрити')} color="gray" size={38} variant="light" onClick={closeSheet}>
-                <IconX size={18} />
+        </Group>
+        <Group gap="xs">
+          {!isNew && (
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganization()}>
+                <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
-          </Group>
+          )}
+          <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_DelBtn_PKEY">
+            {!isNew && (
+              <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={() => setDeleteOpened(true)}>
+                {t('Видалити')}
+              </Button>
+            )}
+          </PermissionGate>
         </Group>
+      </Group>
 
-        {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
-        <Grid gap="md">
-          <Grid.Col span={{ base: 12, lg: 3 }}>
-            <Card withBorder radius="md" padding="md">
-              <Stack gap="xs">
-                {sections.map((section) => (
-                  <Button
-                    key={section.value}
-                    color={section.value === activeSection.value ? 'violet' : 'gray'}
-                    disabled={section.disabled}
-                    justify="flex-start"
-                    variant={section.value === activeSection.value ? 'light' : 'subtle'}
-                    onClick={() => setActiveTab(section.value)}
-                  >
-                    {section.label}
-                  </Button>
-                ))}
-              </Stack>
-            </Card>
-          </Grid.Col>
+      <Tabs value={activeTab} onChange={setActiveTab}>
+        <Tabs.List>
+          <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
+          <Tabs.Tab value="agreements" disabled={tabsDisabled}>
+            {t('Договори')}
+          </Tabs.Tab>
+          <Tabs.Tab value="bank" disabled={tabsDisabled}>
+            {t('Банківські реквізити')}
+          </Tabs.Tab>
+          <Tabs.Tab value="contact" disabled={tabsDisabled}>
+            {t('Контактна особа')}
+          </Tabs.Tab>
+        </Tabs.List>
 
         <Tabs.Panel value="general" pt="md">
           <GeneralInfoForm key={`general-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
@@ -590,7 +573,7 @@ function AgreementsPanel({
     <Stack gap="md">
       <Group justify="space-between">
         <Group gap="xs">
-          <Badge color="violet" variant="light">
+          <Badge color="blue" variant="light">
             {t('Договорів')}: {agreements.length}
           </Badge>
         </Group>
@@ -791,7 +774,7 @@ function AgreementDrawer({
                   {document.DocumentURL && (
                     <Tooltip label={t('Excel')}>
                       <ActionIcon component="a" href={document.DocumentURL} target="_blank" rel="noreferrer" aria-label={t('Excel')} size="sm" variant="subtle">
-                        <ExcelIcon size={16} />
+                        <IconFileTypeXls size={16} />
                       </ActionIcon>
                     </Tooltip>
                   )}

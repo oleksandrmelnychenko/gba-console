@@ -177,42 +177,36 @@ export function ConsumableStoragesPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<IconSearch size={16} />}
-              placeholder={t('Пошук')}
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
-            />
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                loading={isLoading}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={reload}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                style={{ flex: '0 0 auto' }}
-                onClick={() =>
-                  navigate('/accounting/storages/new', {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Новий склад')}
-              </Button>
-            </PermissionGate>
+          <Group justify="space-between" wrap="wrap">
+            <div>
+              <Text fw={700} size="xl">
+                {t('Склади витратних матеріалів')}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate('/accounting/storages/new', {
+                      state: {
+                        backgroundLocation: location,
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Новий склад')}
+                </Button>
+              </PermissionGate>
+            </Group>
           </Group>
 
           {error && (
@@ -222,7 +216,7 @@ export function ConsumableStoragesPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="violet" variant="light">
+            <Badge color="blue" variant="light">
               {t('Складів')}: {storages.length}
             </Badge>
             <Badge color="gray" variant="light">
@@ -239,6 +233,7 @@ export function ConsumableStoragesPage() {
             isLoading={isTableBusy}
             layoutVersion="consumable-storages-1"
             tableId="consumable-storages"
+            toolbarLeft={toolbarLeft}
             onRowClick={setSelectedStorage}
           />
         </Stack>

@@ -28,11 +28,14 @@ import {
   IconAlertCircle,
   IconArrowsExchange,
   IconBox,
+  IconChevronLeft,
+  IconChevronRight,
   IconClipboardList,
   IconDeviceFloppy,
   IconDownload,
   IconEdit,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconFileDescription,
   IconHistory,
   IconPackage,
@@ -45,7 +48,9 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
-import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
@@ -54,9 +59,12 @@ import {
   exportProductIncomeMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getNonDefectiveStorages,
+  getProductByNetId,
   getProductIncomeMovements,
   getProductOutcomeMovements,
+  getProductReservationByNetId,
   getProductUploadPricings,
+  getProducts,
   removeProductAnalogue,
   removeProductComponent,
   updateProductOriginalNumber,
@@ -66,8 +74,6 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
@@ -81,6 +87,8 @@ import type {
   ProductPlacementStorage,
   ProductRelatedUploadType,
   ProductReservation,
+  ProductSearchMode,
+  ProductSortMode,
   ProductUploadDocumentPayload,
   Pricing,
   Storage,
@@ -99,6 +107,7 @@ import {
   getRelatedProductRowColor,
   isProductRealtimePayloadForProduct,
 } from '../utils'
+import { ShopImageGallery } from '../components/ShopImageGallery'
 import {
   PRODUCT_BALANCES_PERMISSION,
   PRODUCT_EDIT_PERMISSION,
@@ -110,10 +119,12 @@ import {
   type ProductDetailPanel,
 } from './ProductDetailPage'
 import './products.css'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { ShopImageGallery } from '../components/ShopImageGallery'
-import { useAssortment } from '../hooks/useAssortment'
 
+const PAGE_SIZE = 20
+const VIRTUAL_PAGE_SIZE = 10
+const SEARCH_DEBOUNCE_MS = 250
+const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
+const DEFAULT_SORT_MODE: ProductSortMode = '2'
 const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = 'Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY'
 const inlineMovementLabels = {
   income: {
@@ -180,6 +191,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   year: 'numeric',
 })
 
+type CarouselMode = 'search' | 'selection'
 type InlineMovementDirection = 'income' | 'outcome'
 type InlineMovementRow = ProductIncomeMovement | ProductOutcomeMovement
 type InlineMovementState = {
@@ -190,6 +202,13 @@ type InlineMovementState = {
   isLoading: boolean
   rows: InlineMovementRow[]
 }
+type InlineDetailState = {
+  error: string | null
+  isLoading: boolean
+  product: Product | null
+  reservation: ProductReservation
+  reservationError: string | null
+}
 type InlineMovementAction =
   | { type: 'export-clear' }
   | { type: 'export-error'; error: string }
@@ -198,6 +217,12 @@ type InlineMovementAction =
   | { type: 'error'; error: string }
   | { type: 'loading' }
   | { type: 'success'; rows: InlineMovementRow[] }
+type InlineDetailAction =
+  | { type: 'clear' }
+  | { type: 'error'; error: string; product: Product | null }
+  | { type: 'loading' }
+  | { type: 'saved'; product: Product }
+  | { type: 'success'; product: Product | null; reservation: ProductReservation; reservationError: string | null }
 type RelatedProductRow = {
   isProductSet: boolean
   product: Partial<Product>
@@ -239,9 +264,504 @@ type ProductFileUploadForm = ProductFileUploadColumnForm & {
 
 export function ProductsPage() {
   const { t } = useI18n()
-  const searchModeOptions = useMemo(() => PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
-  const sortModeOptions = useMemo(() => PRODUCT_SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
-  const assortment = useAssortment()
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams()
+  const routeProductNetId = urlSearchParams.get('netId')?.trim() || ''
+  const [topProducts, setTopProducts] = useValueState<Product[]>([])
+  const [bottomProducts, setBottomProducts] = useValueState<Product[]>([])
+  const [selectedProduct, setSelectedProduct] = useValueState<Product | null>(null)
+  const [error, setError] = useValueState<string | null>(null)
+  const [isLoading, setLoading] = useValueState(false)
+  const [hasRequestedProducts, setHasRequestedProducts] = useValueState(false)
+  const [isVirtualLoad, setVirtualLoad] = useValueState(false)
+  const [loadedProductsCount, setLoadedProductsCount] = useValueState(0)
+  const [carouselMode, setCarouselMode] = useValueState<CarouselMode>('search')
+  const [searchDraft, setSearchDraft] = useValueState('')
+  const [searchValue, setSearchValue] = useValueState('')
+  const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
+  const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
+    error: null,
+    isLoading: false,
+    product: null,
+    reservation: {},
+    reservationError: null,
+  })
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [detailReloadKey, reloadProductDetail] = useReducer((key: number) => key + 1, 0)
+  const searchRequestRef = useRef(0)
+  const detailRequestRef = useRef(0)
+  const routeProductRequestRef = useRef(0)
+  const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
+  const productForView = detailState.product || selectedProduct
+  const canMoveBack = topProducts.length > 0
+  const canMoveForward = bottomProducts.length > 0
+
+  const clearRouteProductParam = useCallback(() => {
+    routeProductRequestRef.current += 1
+
+    if (!routeProductNetId) {
+      return
+    }
+
+    setUrlSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      nextParams.delete('netId')
+
+      return nextParams
+    }, { replace: true })
+  }, [routeProductNetId, setUrlSearchParams])
+
+  const applySearchResults = useCallback(
+    (nextProducts: Product[]) => {
+      setActivePanel(null)
+      dispatchDetail({ type: 'clear' })
+
+      if (nextProducts.length === 0) {
+        setTopProducts([])
+        setBottomProducts([])
+        setSelectedProduct(null)
+        setCarouselMode('search')
+        setLoadedProductsCount(0)
+        return
+      }
+
+      setLoadedProductsCount(nextProducts.length)
+
+      if (nextProducts.length === 1) {
+        const nextProduct = nextProducts[0]
+
+        setTopProducts([])
+        setBottomProducts(getNextSearchedProducts(nextProduct))
+        setSelectedProduct(nextProduct)
+        setCarouselMode('selection')
+        return
+      }
+
+      const halfLength = Math.ceil(nextProducts.length / 2)
+
+      setTopProducts(nextProducts.slice(0, halfLength))
+      setBottomProducts(nextProducts.slice(halfLength))
+      setSelectedProduct(null)
+      setCarouselMode('search')
+    },
+    [
+      setActivePanel,
+      setBottomProducts,
+      setCarouselMode,
+      setLoadedProductsCount,
+      setSelectedProduct,
+      setTopProducts,
+    ],
+  )
+
+  const loadProducts = useCallback(
+    async ({
+      append,
+      limit,
+      offset,
+      searchMode: nextSearchMode,
+      sortMode: nextSortMode,
+      value,
+    }: {
+      append: boolean
+      limit: number
+      offset: number
+      searchMode: ProductSearchMode
+      sortMode: ProductSortMode
+      value: string
+    }) => {
+      const requestId = ++searchRequestRef.current
+
+      setLoading(true)
+      setError(null)
+
+      try {
+        if (requestId !== searchRequestRef.current) {
+          return
+        }
+
+        const nextProducts = await getProducts({
+          limit,
+          offset,
+          searchMode: nextSearchMode,
+          sortMode: nextSortMode,
+          value,
+        })
+
+        if (requestId === searchRequestRef.current) {
+          if (append) {
+            setBottomProducts((currentProducts) => [...currentProducts, ...nextProducts])
+            setLoadedProductsCount((currentCount) => currentCount + nextProducts.length)
+            setVirtualLoad(false)
+          } else {
+            applySearchResults(nextProducts)
+          }
+        }
+      } catch (loadError) {
+        if (requestId === searchRequestRef.current) {
+          setTopProducts([])
+          setBottomProducts([])
+          setSelectedProduct(null)
+          dispatchDetail({ type: 'clear' })
+          setCarouselMode('search')
+          setLoadedProductsCount(0)
+          setVirtualLoad(false)
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари'))
+        }
+      } finally {
+        if (requestId === searchRequestRef.current) {
+          setLoading(false)
+        }
+      }
+    },
+    [
+      applySearchResults,
+      setBottomProducts,
+      setCarouselMode,
+      setError,
+      setLoadedProductsCount,
+      setLoading,
+      setSelectedProduct,
+      setTopProducts,
+      setVirtualLoad,
+      t,
+    ],
+  )
+
+  useEffect(() => {
+    if (!hasRequestedProducts) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadProducts({
+        append: false,
+        limit: PAGE_SIZE,
+        offset: 0,
+        searchMode: DEFAULT_SEARCH_MODE,
+        sortMode: DEFAULT_SORT_MODE,
+        value: searchValue,
+      })
+    }, SEARCH_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue])
+
+  useEffect(() => {
+    if (!routeProductNetId) {
+      return
+    }
+
+    const requestId = ++routeProductRequestRef.current
+
+    searchRequestRef.current += 1
+    detailRequestRef.current += 1
+
+    async function loadRouteProduct() {
+      if (requestId !== routeProductRequestRef.current) {
+        return
+      }
+
+      try {
+        const nextProduct = await getProductByNetId(routeProductNetId)
+
+        if (requestId === routeProductRequestRef.current) {
+          setVirtualLoad(false)
+
+          if (!nextProduct) {
+            setTopProducts([])
+            setBottomProducts([])
+            setSelectedProduct(null)
+            dispatchDetail({ type: 'clear' })
+            setActivePanel(null)
+            setCarouselMode('search')
+            setLoadedProductsCount(0)
+            setHasRequestedProducts(false)
+            setSearchDraft('')
+            setSearchValue('')
+            setError(t('Товар не знайдено'))
+          } else {
+            setTopProducts([])
+            setBottomProducts(getNextSearchedProducts(nextProduct))
+            setLoadedProductsCount(1)
+            setSelectedProduct(nextProduct)
+            dispatchDetail({ type: 'clear' })
+            setActivePanel(null)
+            setCarouselMode('selection')
+            setHasRequestedProducts(false)
+            setSearchDraft('')
+            setSearchValue('')
+            setError(null)
+          }
+        }
+      } catch (loadError) {
+        if (requestId === routeProductRequestRef.current) {
+          setTopProducts([])
+          setBottomProducts([])
+          setSelectedProduct(null)
+          dispatchDetail({ type: 'clear' })
+          setActivePanel(null)
+          setCarouselMode('search')
+          setLoadedProductsCount(0)
+          setHasRequestedProducts(false)
+          setSearchDraft('')
+          setSearchValue('')
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
+        }
+      } finally {
+        if (requestId === routeProductRequestRef.current) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadRouteProduct()
+  }, [
+    routeProductNetId,
+    setActivePanel,
+    setBottomProducts,
+    setCarouselMode,
+    setError,
+    setHasRequestedProducts,
+    setLoadedProductsCount,
+    setLoading,
+    setSearchDraft,
+    setSearchValue,
+    setSelectedProduct,
+    setTopProducts,
+    setVirtualLoad,
+    t,
+  ])
+
+  useEffect(() => {
+    if (!selectedProductNetUid) {
+      return
+    }
+
+    const requestId = ++detailRequestRef.current
+
+    dispatchDetail({ type: 'loading' })
+
+    async function loadProductDetails() {
+      try {
+        const [nextProduct, nextReservationResult] = await Promise.all([
+          getProductByNetId(selectedProductNetUid),
+          getProductReservationByNetId(selectedProductNetUid)
+            .then((value) => ({ error: null, value }))
+            .catch((reservationLoadError: unknown) => ({
+              error: reservationLoadError instanceof Error ? reservationLoadError.message : t('Не вдалося завантажити резерви товару'),
+              value: {},
+            })),
+        ])
+
+        if (requestId === detailRequestRef.current) {
+          dispatchDetail({
+            product: nextProduct || selectedProduct,
+            reservation: nextReservationResult.value,
+            reservationError: nextReservationResult.error,
+            type: 'success',
+          })
+        }
+      } catch (loadError) {
+        if (requestId === detailRequestRef.current) {
+          dispatchDetail({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'),
+            product: selectedProduct,
+            type: 'error',
+          })
+        }
+      }
+    }
+
+    void loadProductDetails()
+  }, [
+    detailReloadKey,
+    selectedProduct,
+    selectedProductNetUid,
+    t,
+  ])
+
+  function updateSearchDraft(nextValue: string) {
+    clearRouteProductParam()
+    setSearchDraft(nextValue)
+    setSearchValue(nextValue.trim())
+    setHasRequestedProducts(true)
+    setCarouselMode('search')
+    setSelectedProduct(null)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+  }
+
+  function commitSearch() {
+    clearRouteProductParam()
+    setSearchValue(searchDraft.trim())
+    setHasRequestedProducts(true)
+    reload()
+  }
+
+  function resetSearch() {
+    clearRouteProductParam()
+    searchRequestRef.current += 1
+    setTopProducts([])
+    setBottomProducts([])
+    setSelectedProduct(null)
+    dispatchDetail({ type: 'clear' })
+    setError(null)
+    setLoading(false)
+    setVirtualLoad(false)
+    setLoadedProductsCount(0)
+    setHasRequestedProducts(false)
+    setCarouselMode('search')
+    setSearchDraft('')
+    setSearchValue('')
+    setActivePanel(null)
+  }
+
+  function loadMoreProducts() {
+    if (!hasRequestedProducts || isLoading || isVirtualLoad) {
+      return
+    }
+
+    setVirtualLoad(true)
+    void loadProducts({
+      append: true,
+      limit: VIRTUAL_PAGE_SIZE,
+      offset: loadedProductsCount,
+      searchMode: DEFAULT_SEARCH_MODE,
+      sortMode: DEFAULT_SORT_MODE,
+      value: searchValue,
+    })
+  }
+
+  function selectProduct(product: Product) {
+    clearRouteProductParam()
+    const productId = getProductIdentity(product)
+
+    setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
+    setBottomProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
+    setSelectedProduct(product)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    setCarouselMode('selection')
+    setSearchDraft('')
+  }
+
+  function selectRelatedProduct(product: Partial<Product>) {
+    clearRouteProductParam()
+    const netUid = product.NetUid?.trim()
+
+    if (!netUid) {
+      notifications.show({ color: 'yellow', message: t('Не вдалося відкрити повʼязаний товар') })
+      return
+    }
+
+    const nextProduct = { ...product, NetUid: netUid } as Product
+
+    setTopProducts([])
+    setBottomProducts(getNextSearchedProducts(nextProduct))
+    setLoadedProductsCount(1)
+    setSelectedProduct(nextProduct)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    setCarouselMode('selection')
+    setSearchDraft('')
+  }
+
+  function selectPreviousProduct() {
+    clearRouteProductParam()
+    const nextProduct = topProducts[topProducts.length - 1]
+
+    if (!nextProduct) {
+      return
+    }
+
+    if (selectedProduct) {
+      setBottomProducts((currentProducts) => [selectedProduct, ...currentProducts])
+    }
+
+    setTopProducts((currentProducts) => currentProducts.slice(0, -1))
+    setSelectedProduct(nextProduct)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    setCarouselMode('selection')
+    setSearchDraft('')
+  }
+
+  function selectNextProduct() {
+    clearRouteProductParam()
+    const nextProduct = bottomProducts[0]
+
+    if (!nextProduct) {
+      return
+    }
+
+    if (selectedProduct) {
+      setTopProducts((currentProducts) => [...currentProducts, selectedProduct])
+    }
+
+    setBottomProducts((currentProducts) => currentProducts.slice(1))
+    setSelectedProduct(nextProduct)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+    setCarouselMode('selection')
+    setSearchDraft('')
+
+    if (bottomProducts.length === 1) {
+      loadMoreProducts()
+    }
+  }
+
+  function returnToSearchMode() {
+    clearRouteProductParam()
+    setCarouselMode('search')
+    setSearchDraft('')
+    setSelectedProduct(null)
+    dispatchDetail({ type: 'clear' })
+    setActivePanel(null)
+  }
+
+  function handleCarouselKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      selectPreviousProduct()
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      selectNextProduct()
+    }
+
+    if (event.key === 'Escape' && carouselMode === 'selection') {
+      event.preventDefault()
+      returnToSearchMode()
+    }
+
+    if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
+      event.preventDefault()
+      commitSearch()
+    }
+  }
+
+  function handleProductSaved(nextProduct: Product | null) {
+    if (nextProduct) {
+      dispatchDetail({ product: nextProduct, type: 'saved' })
+      setSelectedProduct(nextProduct)
+      return
+    }
+
+    reloadProductDetail()
+  }
+
+  function handleAssortmentUploadSuccess() {
+    setHasRequestedProducts(true)
+    reload()
+
+    if (selectedProductNetUid) {
+      reloadProductDetail()
+    }
+  }
 
   const handleRealtimeProductUpdate = useCallback((payload: unknown) => {
     if (isProductRealtimePayloadForProduct(payload, productForView || selectedProduct)) {
@@ -253,81 +773,53 @@ export function ProductsPage() {
 
   return (
     <Stack gap="md">
-      {assortment.error && (
+      {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {assortment.error}
+          {error}
         </Alert>
       )}
 
       <Box className="product-assortment-workspace">
-        <Box className="product-assortment-column">
-          <Box className="product-assortment-controls">
-            <Group justify="flex-start">
-              <ProductUploadDocumentToolbar product={assortment.selectedProduct} onUploadSuccess={assortment.handleAssortmentUploadSuccess} />
-            </Group>
-            <Group grow gap={8} align="flex-end">
-              <Select
-                allowDeselect={false}
-                aria-label={t('Місце вводу для пошуку')}
-                label={t('Місце вводу для пошуку')}
-                data={searchModeOptions}
-                disabled={assortment.isLoading}
-                size="xs"
-                value={assortment.searchMode}
-                onChange={assortment.changeSearchMode}
-              />
-              <Select
-                allowDeselect={false}
-                aria-label={t('Сортувати За')}
-                label={t('Сортувати За')}
-                data={sortModeOptions}
-                disabled={assortment.isLoading}
-                size="xs"
-                value={assortment.sortMode}
-                onChange={assortment.changeSortMode}
-              />
-            </Group>
-          </Box>
-          <ProductAssortmentCarousel
-            bottomProducts={assortment.bottomProducts}
-            canMoveBack={assortment.canMoveBack}
-            canMoveForward={assortment.canMoveForward}
-            isLoading={assortment.isLoading}
-            isSelectionMode={assortment.carouselMode === 'selection'}
-            isVirtualLoad={assortment.isVirtualLoad}
-            searchDraft={assortment.searchDraft}
-            selectedProduct={assortment.selectedProduct}
-            topProducts={assortment.topProducts}
-            onKeyDown={assortment.handleCarouselKeyDown}
-            onNext={assortment.selectNextProduct}
-            onPrevious={assortment.selectPreviousProduct}
-            onRefresh={assortment.commitSearch}
-            onReset={assortment.resetSearch}
-            onSearchDraftChange={assortment.updateSearchDraft}
-            onSelectProduct={assortment.selectProduct}
-          />
-        </Box>
+        <ProductAssortmentCarousel
+          bottomProducts={bottomProducts}
+          canMoveBack={canMoveBack}
+          canMoveForward={canMoveForward}
+          isLoading={isLoading}
+          isSelectionMode={carouselMode === 'selection'}
+          isVirtualLoad={isVirtualLoad}
+          searchDraft={searchDraft}
+          selectedProduct={selectedProduct}
+          topProducts={topProducts}
+          onKeyDown={handleCarouselKeyDown}
+          onNext={selectNextProduct}
+          onPrevious={selectPreviousProduct}
+          onRefresh={commitSearch}
+          onReset={resetSearch}
+          onSearchDraftChange={updateSearchDraft}
+          onSelectProduct={selectProduct}
+          onUploadSuccess={handleAssortmentUploadSuccess}
+        />
 
         <ProductInlineView
-          detailError={assortment.detailState.error}
-          isLoading={assortment.detailState.isLoading}
-          product={assortment.productForView}
-          reservation={assortment.detailState.reservation}
-          reservationError={assortment.detailState.reservationError}
-          onOpenPanel={assortment.setActivePanel}
-          onProductChanged={assortment.handleProductSaved}
-          onReload={assortment.reloadProductDetail}
-          onSelectRelatedProduct={assortment.selectRelatedProduct}
+          detailError={detailState.error}
+          isLoading={detailState.isLoading}
+          product={productForView}
+          reservation={detailState.reservation}
+          reservationError={detailState.reservationError}
+          onOpenPanel={setActivePanel}
+          onProductChanged={handleProductSaved}
+          onReload={reloadProductDetail}
+          onSelectRelatedProduct={selectRelatedProduct}
         />
       </Box>
 
-      {assortment.productForView && (
+      {productForView && (
         <ProductActionDrawer
-          activePanel={assortment.activePanel}
-          product={assortment.productForView}
-          onClose={() => assortment.setActivePanel(null)}
-          onProductSaved={assortment.handleProductSaved}
-          onReload={assortment.reloadProductDetail}
+          activePanel={activePanel}
+          product={productForView}
+          onClose={() => setActivePanel(null)}
+          onProductSaved={handleProductSaved}
+          onReload={reloadProductDetail}
         />
       )}
     </Stack>
@@ -340,8 +832,11 @@ function ProductAssortmentCarousel({
   isSelectionMode,
   isVirtualLoad,
   onKeyDown,
+  onNext,
+  onPrevious,
   onSearchDraftChange,
   onSelectProduct,
+  onUploadSuccess,
   searchDraft,
   selectedProduct,
   topProducts,
@@ -359,6 +854,7 @@ function ProductAssortmentCarousel({
   onReset: () => void
   onSearchDraftChange: (value: string) => void
   onSelectProduct: (product: Product) => void
+  onUploadSuccess: () => void
   searchDraft: string
   selectedProduct: Product | null
   topProducts: Product[]
@@ -366,7 +862,38 @@ function ProductAssortmentCarousel({
   const { t } = useI18n()
 
   return (
-    <Box className="product-assortment-carousel" role="region" onKeyDown={onKeyDown}>
+    <Box className="product-assortment-carousel" role="region" tabIndex={0} onKeyDown={onKeyDown}>
+      <Group justify="space-between" className="product-assortment-carousel-header">
+        <Text size="xs" c="dimmed" fw={600}>
+          {t('Весь асортимент')}
+        </Text>
+        <Group gap={6}>
+          <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
+          <Tooltip label={t('Попередній товар')}>
+            <ActionIcon
+              aria-label={t('Попередній товар')}
+              color="gray"
+              disabled={isLoading}
+              variant="light"
+              onClick={onPrevious}
+            >
+              <IconChevronLeft size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Наступний товар')}>
+            <ActionIcon
+              aria-label={t('Наступний товар')}
+              color="gray"
+              disabled={isLoading}
+              variant="light"
+              onClick={onNext}
+            >
+              <IconChevronRight size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
+
       <Box className="product-assortment-rail product-assortment-rail-top">
         {isLoading && !isVirtualLoad ? (
           <Stack align="center" justify="center" h="100%">
@@ -386,7 +913,6 @@ function ProductAssortmentCarousel({
       <Box className="product-assortment-drum">
         {isSelectionMode && selectedProduct ? (
           <button
-            key={getProductIdentity(selectedProduct)}
             type="button"
             className="product-assortment-selected"
             title={t('Скопіювати код')}
@@ -394,17 +920,14 @@ function ProductAssortmentCarousel({
           >
             <span className="product-assortment-selected-code">{getProductCode(selectedProduct)}</span>
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
-            {selectedProduct.Top?.trim() ? (
-              <span className="product-assortment-selected-top">{selectedProduct.Top.trim()}</span>
-            ) : null}
           </button>
         ) : (
           <TextInput
             autoFocus
             aria-label={t('Введіть товар')}
-            leftSection={<IconSearch size={15} />}
+            leftSection={<IconSearch size={17} />}
             placeholder={t('Введіть артикул або назву товару')}
-            size="sm"
+            size="md"
             value={searchDraft}
             className="product-assortment-search-input"
             onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
@@ -487,6 +1010,21 @@ function ProductInlineView({
 
   return (
     <Box className="product-inline-view">
+      <Group align="flex-start" justify="space-between" gap="sm" className="product-inline-title">
+        <Box className="product-inline-title-text">
+          <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
+          <Text component="span" fw={650} className="product-inline-name">{getProductTitle(product)}</Text>
+        </Box>
+        <Group gap="xs" justify="flex-end" className="product-inline-title-actions">
+          <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      </Group>
+
       {detailError && (
         <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {detailError}
@@ -494,104 +1032,92 @@ function ProductInlineView({
       )}
 
       <Box className="product-inline-main">
-        <Box className="product-inline-primary">
-          <Group justify="space-between" align="center" gap="sm" className="product-inline-headline">
-            <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
-            <Group gap="xs" justify="flex-end" className="product-inline-title-actions">
-              <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
+        <Box className="product-inline-info">
+          <Box
+            className="product-inline-image"
+            role={mainImage?.ImageUrl ? 'button' : undefined}
+            tabIndex={mainImage?.ImageUrl ? 0 : undefined}
+            onClick={() => mainImage?.ImageUrl ? setPreviewImageUrl(mainImage.ImageUrl || null) : onOpenPanel('images')}
+            onKeyDown={(event) => {
+              if (mainImage?.ImageUrl && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault()
+                setPreviewImageUrl(mainImage.ImageUrl || null)
+              }
+            }}
+          >
+            {mainImage?.ImageUrl ? (
+              <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
+            ) : (
+              <IconPackage size={42} stroke={1.5} />
+            )}
+          </Box>
+          {productImages.length > 1 ? (
+            <Group gap={6} className="product-inline-thumbs">
+              {productImages.slice(0, 8).map((image, index) => (
+                <button
+                  type="button"
+                  className="product-inline-thumb"
+                  key={`${image.NetUid || image.ImageUrl || index}`}
+                  onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
+                >
+                  <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
+                </button>
+              ))}
             </Group>
-          </Group>
-
-          <Box className="product-inline-info">
-            <Box
-              className="product-inline-image"
-              role={mainImage?.ImageUrl ? 'button' : undefined}
-              tabIndex={mainImage?.ImageUrl ? 0 : undefined}
-              onClick={() => mainImage?.ImageUrl ? setPreviewImageUrl(mainImage.ImageUrl || null) : onOpenPanel('images')}
-              onKeyDown={(event) => {
-                if (mainImage?.ImageUrl && (event.key === 'Enter' || event.key === ' ')) {
-                  event.preventDefault()
-                  setPreviewImageUrl(mainImage.ImageUrl || null)
-                }
-              }}
-            >
-              {mainImage?.ImageUrl ? (
-                <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
-              ) : (
-                <IconPackage size={42} stroke={1.5} />
-              )}
-            </Box>
-            {productImages.length > 1 ? (
-              <Group gap={6} className="product-inline-thumbs">
-                {productImages.slice(0, 8).map((image, index) => (
-                  <button
-                    type="button"
-                    className="product-inline-thumb"
-                    key={`${image.NetUid || image.ImageUrl || index}`}
-                    onClick={() => setPreviewImageUrl(image.ImageUrl || null)}
-                  >
-                    <Image src={image.ImageUrl} alt={image.FileName || getProductTitle(product)} fit="cover" h="100%" w="100%" />
-                  </button>
-                ))}
-              </Group>
-            ) : null}
-            <ShopImageGallery vendorCode={product.VendorCode} onImageClick={setPreviewImageUrl} />
-          </Box>
-
-          <Box className="product-inline-description">
-            <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
-            <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
-            <InfoBlock label="Top" value={product.Top} />
-            <InfoBlock label="Вага" value={formatAmount(product.Weight)} />
-            <InfoBlock label="Розмір" value={product.Size} />
-            <InfoBlock label="Об'єм" value={product.Volume} />
-            <InfoBlock label="Норма пакування" value={product.OrderStandard} />
-            <InfoBlock label="Пакування" value={product.PackingStandard} />
-            <InfoBlock label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
-            <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
-            <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
-            <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
-          </Box>
+          ) : null}
+          <ShopImageGallery vendorCode={product.VendorCode} onImageClick={setPreviewImageUrl} />
         </Box>
 
-        <Box className="product-inline-aside">
-          <Text component="span" fw={700} className="product-inline-name">{getProductTitle(product)}</Text>
+        <Box className="product-inline-description">
+          <InfoBlock label="Опис" value={product.DescriptionUA || product.Description} wide />
+          <InfoBlock label="Нотатки" value={product.NotesUA || product.Notes} wide />
+          <InfoBlock label="Top" value={product.Top} />
+          <InfoBlock label="Вага" value={formatAmount(product.Weight)} />
+          <InfoBlock label="Розмір" value={product.Size} />
+          <InfoBlock label="Об'єм" value={product.Volume} />
+          <InfoBlock label="Норма пакування" value={product.OrderStandard} />
+          <InfoBlock label="Пакування" value={product.PackingStandard} />
+          <InfoBlock label="Оригінальний номер" value={getProductMainOriginalNumber(product)} />
+          <InfoBlock label="Синоніми UA" value={product.SynonymsUA} />
+          <InfoBlock label="Група товару" value={getProductGroupNames(product)} />
+          <InfoBlock label="Одиниця" value={product.MeasureUnit?.Name} />
+        </Box>
 
-          <Box className="product-inline-prices">
+        <Box className="product-inline-prices">
+          <Group justify="space-between" mb="xs">
+            <Text fw={700}>{t('Тип ціни')}</Text>
+            <Group gap="lg">
+              <Text c="dimmed" size="sm">{t('EUR')}</Text>
+              <Text c="dimmed" size="sm">{t('UAH')}</Text>
+            </Group>
+          </Group>
+          <Stack gap={4}>
             {prices.length > 0 ? (
-              <table className="product-inline-price-table">
-                <thead>
-                  <tr>
-                    <th className="product-inline-price-name">{t('Тип ціни')}</th>
-                    <th className="product-inline-price-num">{t('EUR')}</th>
-                    <th className="product-inline-price-num">{t('UAH')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prices.map((price, index) => (
-                    <tr key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`}>
-                      <td className="product-inline-price-name">{displayValue(price.Pricing?.Name)}</td>
-                      <td className="product-inline-price-num">{formatPrice(price.RetailPriceEUR)}</td>
-                      <td className="product-inline-price-num">{formatPrice(price.RetailPriceLocal)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              prices.map((price, index) => (
+                <Group
+                  key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`}
+                  justify="space-between"
+                  gap="sm"
+                  wrap="nowrap"
+                  className="product-inline-price-row"
+                >
+                  <Text size="sm" lineClamp={1}>{displayValue(price.Pricing?.Name)}</Text>
+                  <Group gap="md" wrap="nowrap">
+                    <Text size="sm" fw={650}>{formatPrice(price.RetailPriceEUR)}</Text>
+                    <Text size="sm" fw={650}>{formatPrice(price.RetailPriceLocal)}</Text>
+                  </Group>
+                </Group>
+              ))
             ) : (
               <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
             )}
-            <Divider my="sm" />
-            <Group gap="xs">
-              <Badge color={getBooleanBadgeColor(product.IsForZeroSale)} variant="light">{t('Нульовий продаж')}</Badge>
-              <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">{t('Продаж')}</Badge>
-              <Badge color={getBooleanBadgeColor(product.IsForWeb)} variant="light">{t('Сайт')}</Badge>
-            </Group>
-          </Box>
+          </Stack>
+          <Divider my="sm" />
+          <Group gap="xs">
+            <Badge color={getBooleanBadgeColor(product.IsForZeroSale)} variant="light">{t('Нульовий продаж')}</Badge>
+            <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">{t('Продаж')}</Badge>
+            <Badge color={getBooleanBadgeColor(product.IsForWeb)} variant="light">{t('Сайт')}</Badge>
+          </Group>
         </Box>
       </Box>
 
@@ -669,10 +1195,16 @@ function InfoBlock({
 }) {
   const { t } = useI18n()
 
+  const isPrimitive = typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+
   return (
     <Box className={`product-inline-info-block ${wide ? 'is-wide' : ''}`}>
       <Text c="dimmed" size="xs">{t(label)}</Text>
-      <Text size="sm" fw={600}>{displayValue(typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? value : undefined)}</Text>
+      {isPrimitive ? (
+        <Text size="sm" fw={600}>{displayValue(value as boolean | number | string)}</Text>
+      ) : (
+        <Text size="sm" fw={600} component="div">{value ?? '-'}</Text>
+      )}
     </Box>
   )
 }
@@ -1140,6 +1672,7 @@ function ProductRelatedProductsTab({
           {rows.map((row) => {
             const rowKey = getRelatedProductKey(row.source)
             const isRemoving = removingNetUid === row.product.NetUid
+            const rowColor = getRelatedProductRowColor(row.product)
 
             return (
               <Card withBorder radius="sm" padding="xs" key={rowKey}>
@@ -1152,13 +1685,15 @@ function ProductRelatedProductsTab({
                   >
                     <Group gap={6} wrap="nowrap" align="center">
                       {type === 'components' ? (
-                        row.isProductSet
-                          ? <IconBox size={15} stroke={1.6} />
-                          : <IconSettings size={15} stroke={1.6} />
+                        row.isProductSet ? (
+                          <IconBox size={15} className="product_page_iconBox" />
+                        ) : (
+                          <IconSettings size={15} />
+                        )
                       ) : null}
-                      <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
+                      <Text fw={650} size="sm" lineClamp={1} c={rowColor}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
                     </Group>
-                    <Text c="dimmed" size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
+                    <Text c={rowColor ?? 'dimmed'} size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
                   </button>
                   <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
                     <Tooltip label={t('Видалити')}>
@@ -1176,7 +1711,7 @@ function ProductRelatedProductsTab({
                   </PermissionGate>
                 </Group>
                 <SimpleGrid cols={2} spacing={6} mt="xs">
-                  <InfoBlock label="Оригінальний номер" value={row.product.MainOriginalNumber} />
+                  <InfoBlock label="Оригінальний номер" value={row.product.MainOriginalNumber ? <Text size="sm" fw={600} c={rowColor}>{row.product.MainOriginalNumber}</Text> : undefined} />
                   <InfoBlock label="Пакування" value={row.product.PackingStandard} />
                   <InfoBlock label="Склад Укр." value={formatAmount(getRelatedProductAvailableQty(row.product, type))} />
                   {type === 'components' ? (
@@ -1222,7 +1757,7 @@ function ProductUploadDocumentToolbar({
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
         <Menu position="bottom-start" shadow="md" width={260} withinPortal>
           <Menu.Target>
-            <Button size="xs" variant="default" leftSection={<ExcelIcon size={18} />}>
+            <Button size="xs" variant="light" leftSection={<IconUpload size={16} />}>
               {t('Завантажити')}
             </Button>
           </Menu.Target>
@@ -2221,74 +2756,110 @@ function ProductInlineMovementsTab({
 function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }) {
   const { t } = useI18n()
 
-  const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(() => [
-    { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
-    { id: 'supplier', header: t('Постачальник'), accessor: (row) => row.SupplierName, cell: (row) => displayValue(row.SupplierName) },
-    { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
-    { id: 'incomeDate', header: t('Дата приходу'), accessor: (row) => row.IncomeToStorageDate, cell: (row) => formatInlineDateTime(row.IncomeToStorageDate) },
-    { id: 'incomeNumber', header: t('Номер приходу'), accessor: (row) => row.IncomeToStorageNumber, cell: (row) => displayValue(row.IncomeToStorageNumber) },
-    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.IncomeInvoiceNumber, cell: (row) => displayValue(row.IncomeInvoiceNumber) },
-    { id: 'invoiceDate', header: t('Дата інвойсу'), accessor: (row) => row.IncomeInvoiceDate, cell: (row) => formatInlineDateTime(row.IncomeInvoiceDate) },
-    { id: 'currency', header: t('Валюта'), accessor: (row) => row.Currency, cell: (row) => displayValue(row.Currency) },
-    { id: 'exchangeRate', header: t('Курс'), align: 'right', accessor: (row) => row.ExchangeRate, cell: (row) => formatAmount(row.ExchangeRate) },
-    { id: 'unitPriceLocal', header: t('Ціна UAH'), align: 'right', accessor: (row) => row.UnitPriceLocal, cell: (row) => formatPrice(row.UnitPriceLocal) },
-    { id: 'netPrice', header: t('Net'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => formatPrice(row.NetPrice) },
-    { id: 'totalNetPrice', header: t('Total Net'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => formatPrice(row.TotalNetPrice) },
-    { id: 'grossPrice', header: t('Gross'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => formatPrice(row.GrossPrice) },
-    { id: 'accountingGrossPrice', header: t('Бух. Gross'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => formatPrice(row.AccountingGrossPrice) },
-    { id: 'managementEurUnitPrice', header: t('Упр. EUR'), align: 'right', accessor: (row) => row.ManagementEurUnitPrice, cell: (row) => formatPrice(row.ManagementEurUnitPrice) },
-    { id: 'accountingEurUnitPrice', header: t('Бух. EUR'), align: 'right', accessor: (row) => row.AccountingEurUnitPrice, cell: (row) => formatPrice(row.AccountingEurUnitPrice) },
-    { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => formatAmount(row.Weight) },
-    { id: 'incomeQty', header: t('Прихід'), align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => formatAmount(row.IncomeQty) },
-    { id: 'remainingQty', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => formatAmount(row.RemainingQty) },
-    { id: 'fromInvoiceNumber', header: t('З інвойсу'), accessor: (row) => row.FromInvoiceNumber, cell: (row) => displayValue(row.FromInvoiceNumber) },
-    { id: 'fromInvoiceDate', header: t('Дата з інвойсу'), accessor: (row) => row.FromInvoiceDate, cell: (row) => formatInlineDateTime(row.FromInvoiceDate) },
-    { id: 'returnPrice', header: t('Ціна повернення'), align: 'right', accessor: (row) => row.ReturnPrice, cell: (row) => formatPrice(row.ReturnPrice) },
-    { id: 'priceDifference', header: t('Різниця'), align: 'right', accessor: (row) => row.PriceDifference, cell: (row) => formatPrice(row.PriceDifference) },
-  ], [t])
-
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      getRowId={(row, index) => getIncomeMovementRowKey(row, index)}
-      maxHeight="calc(100vh - 320px)"
-      minWidth={1960}
-      tableId="product-inline-income-movements"
-    />
+    <ScrollArea>
+      <Table striped highlightOnHover withTableBorder miw={1960}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>{t('Склад')}</Table.Th>
+            <Table.Th>{t('Постачальник')}</Table.Th>
+            <Table.Th>{t('Організація')}</Table.Th>
+            <Table.Th>{t('Дата приходу')}</Table.Th>
+            <Table.Th>{t('Номер приходу')}</Table.Th>
+            <Table.Th>{t('Інвойс')}</Table.Th>
+            <Table.Th>{t('Дата інвойсу')}</Table.Th>
+            <Table.Th>{t('Валюта')}</Table.Th>
+            <Table.Th ta="right">{t('Курс')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна UAH')}</Table.Th>
+            <Table.Th ta="right">{t('Net')}</Table.Th>
+            <Table.Th ta="right">{t('Total Net')}</Table.Th>
+            <Table.Th ta="right">{t('Gross')}</Table.Th>
+            <Table.Th ta="right">{t('Бух. Gross')}</Table.Th>
+            <Table.Th ta="right">{t('Упр. EUR')}</Table.Th>
+            <Table.Th ta="right">{t('Бух. EUR')}</Table.Th>
+            <Table.Th ta="right">{t('Вага')}</Table.Th>
+            <Table.Th ta="right">{t('Прихід')}</Table.Th>
+            <Table.Th ta="right">{t('Залишок')}</Table.Th>
+            <Table.Th>{t('З інвойсу')}</Table.Th>
+            <Table.Th>{t('Дата з інвойсу')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна повернення')}</Table.Th>
+            <Table.Th ta="right">{t('Різниця')}</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row, index) => (
+            <Table.Tr key={getIncomeMovementRowKey(row, index)}>
+              <Table.Td>{displayValue(row.StorageName)}</Table.Td>
+              <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
+              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
+              <Table.Td>{displayValue(row.IncomeToStorageNumber)}</Table.Td>
+              <Table.Td>{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
+              <Table.Td>{displayValue(row.Currency)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
+              <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
+              <Table.Td>{displayValue(row.FromInvoiceNumber)}</Table.Td>
+              <Table.Td>{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
+              <Table.Td ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    </ScrollArea>
   )
 }
 
 function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[] }) {
   const { t } = useI18n()
 
-  const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(() => {
-    const editedCell = (row: ProductOutcomeMovement, value: ReactNode): ReactNode =>
-      row.HasUpdateDataCarrier ? <span className="product-inline-table-cell-edited">{value}</span> : value
-
-    return [
-      { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => editedCell(row, formatInlineDateTime(row.FromDate)) },
-      { id: 'documentType', header: t('Тип документа'), accessor: (row) => row.DocumentTypeName, cell: (row) => editedCell(row, displayValue(row.DocumentTypeName)) },
-      { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
-      { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
-      { id: 'number', header: t('Номер'), accessor: (row) => row.DocumentNumber, cell: (row) => editedCell(row, displayValue(row.DocumentNumber)) },
-      { id: 'client', header: t('Клієнт'), accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
-      { id: 'responsible', header: t('Відповідальний'), accessor: (row) => row.ResponsibleName, cell: (row) => displayValue(row.ResponsibleName) },
-      { id: 'price', header: t('Ціна'), align: 'right', accessor: (row) => row.Price, cell: (row) => formatPrice(row.Price) },
-      { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => row.Qty, cell: (row) => formatAmount(row.Qty) },
-    ]
-  }, [t])
-
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      getRowId={(row, index) => getOutcomeMovementRowKey(row, index)}
-      maxHeight="calc(100vh - 320px)"
-      minWidth={1280}
-      rowClassName={(row) => (row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined)}
-      tableId="product-inline-outcome-movements"
-    />
+    <ScrollArea>
+      <Table striped highlightOnHover withTableBorder miw={1280}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>{t('Дата')}</Table.Th>
+            <Table.Th>{t('Тип документа')}</Table.Th>
+            <Table.Th>{t('Склад')}</Table.Th>
+            <Table.Th>{t('Організація')}</Table.Th>
+            <Table.Th>{t('Номер')}</Table.Th>
+            <Table.Th>{t('Клієнт')}</Table.Th>
+            <Table.Th>{t('Відповідальний')}</Table.Th>
+            <Table.Th ta="right">{t('Ціна')}</Table.Th>
+            <Table.Th ta="right">{t('Кількість')}</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {rows.map((row, index) => {
+            const editedClassName = row.HasUpdateDataCarrier ? 'product-inline-table-cell-edited' : undefined
+
+            return (
+              <Table.Tr className={row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined} key={getOutcomeMovementRowKey(row, index)}>
+                <Table.Td className={editedClassName}>{formatInlineDateTime(row.FromDate)}</Table.Td>
+                <Table.Td className={editedClassName}>{displayValue(row.DocumentTypeName)}</Table.Td>
+                <Table.Td>{displayValue(row.StorageName)}</Table.Td>
+                <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
+                <Table.Td className={editedClassName}>{displayValue(row.DocumentNumber)}</Table.Td>
+                <Table.Td>{displayValue(row.ClientName)}</Table.Td>
+                <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
+                <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
+                <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
+              </Table.Tr>
+            )
+          })}
+        </Table.Tbody>
+      </Table>
+    </ScrollArea>
   )
 }
 
@@ -2311,7 +2882,7 @@ function ProductMovementDownloadModal({
             {document.DocumentURL ? (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
+                  <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>
@@ -2389,6 +2960,48 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
   }
 }
 
+function inlineDetailReducer(state: InlineDetailState, action: InlineDetailAction): InlineDetailState {
+  switch (action.type) {
+    case 'clear':
+      return {
+        error: null,
+        isLoading: false,
+        product: null,
+        reservation: {},
+        reservationError: null,
+      }
+    case 'error':
+      return {
+        error: action.error,
+        isLoading: false,
+        product: action.product,
+        reservation: {},
+        reservationError: null,
+      }
+    case 'loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+        reservationError: null,
+      }
+    case 'saved':
+      return {
+        ...state,
+        error: null,
+        isLoading: false,
+        product: action.product,
+      }
+    case 'success':
+      return {
+        error: null,
+        isLoading: false,
+        product: action.product,
+        reservation: action.reservation,
+        reservationError: action.reservationError,
+      }
+  }
+}
 
 function applyOriginalNumbersResponse(
   product: Product,
@@ -2430,7 +3043,6 @@ function getProductIdentity(product: Product): string {
   return String(product.NetUid || product.Id || product.VendorCode || product.Name || 'product')
 }
 
-
 function getProductRowToneClass(product: Product): string {
   const top = product.Top?.trim().toLowerCase()
 
@@ -2449,6 +3061,11 @@ function getProductRowToneClass(product: Product): string {
   return ''
 }
 
+function getNextSearchedProducts(product: Product): Product[] {
+  const nextProducts = (product as Product & { NextSearchedProducts?: Product[] }).NextSearchedProducts
+
+  return Array.isArray(nextProducts) ? nextProducts : []
+}
 
 function copyToClipboard(value: string) {
   if (!value || !navigator.clipboard) {

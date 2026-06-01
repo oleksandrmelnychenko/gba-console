@@ -72,7 +72,6 @@ export function CompanyCarsPage() {
 
       navigate(`${COMPANY_CARS_PATH}/edit/${companyCar.NetUid}`, {
         state: {
-          backgroundLocation: location,
           returnPath: `${location.pathname}${location.search}`,
         },
       })
@@ -143,35 +142,33 @@ export function CompanyCarsPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<IconSearch size={16} />}
-              placeholder={t('Місце вводу для пошуку')}
-              value={searchValue}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
-              onChange={(event) => setSearchValue(event.currentTarget.value)}
-            />
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
-              <Button
-                color="violet"
-                leftSection={<IconPlus size={16} />}
-                onClick={() =>
-                  navigate(`${COMPANY_CARS_PATH}/new`, {
-                    state: {
-                      backgroundLocation: location,
-                      returnPath: `${location.pathname}${location.search}`,
-                    },
-                  })
-                }
-              >
-                {t('Завести нову машину компанії')}
-              </Button>
-            </PermissionGate>
+          <Group justify="space-between" wrap="wrap">
+            <Text fw={700} size="xl">
+              {t('Автомобілі компанії')}
+            </Text>
+
+            <Group gap="xs">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate(`${COMPANY_CARS_PATH}/new`, {
+                      state: {
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Завести нову машину компанії')}
+                </Button>
+              </PermissionGate>
+            </Group>
           </Group>
 
           {error && (
@@ -181,7 +178,7 @@ export function CompanyCarsPage() {
           )}
 
           <Group gap="xs">
-            <Badge color="violet" variant="light">
+            <Badge color="blue" variant="light">
               {t('Автомобілів')}: {companyCars.length}
             </Badge>
           </Group>
@@ -196,6 +193,7 @@ export function CompanyCarsPage() {
             layoutVersion="company-cars-1"
             minWidth={1180}
             tableId="company-cars"
+            toolbarLeft={toolbarLeft}
             onRowClick={openEditor}
           />
         </Stack>

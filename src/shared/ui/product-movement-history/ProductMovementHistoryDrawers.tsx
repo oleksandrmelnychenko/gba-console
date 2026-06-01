@@ -18,6 +18,7 @@ import {
   IconChevronRight,
   IconDownload,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconMinus,
   IconPlus,
   IconRefresh,
@@ -1275,7 +1276,7 @@ function ProductDocumentDownloadModal({
             {document.DocumentURL ? (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
+                  <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

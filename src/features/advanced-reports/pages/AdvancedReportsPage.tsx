@@ -78,8 +78,6 @@ export function AdvancedReportsPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
-  const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_LIMIT)
   const [currencyNetId, setCurrencyNetId] = useValueState('')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')

@@ -1,4 +1,4 @@
-import { Badge, Box, Group, Stack } from '@mantine/core'
+import { Badge, Group, Stack, Tabs, Text } from '@mantine/core'
 import {
   IconChecklist,
   IconEdit,
@@ -125,20 +125,15 @@ export function WarehouseUkrainePage() {
 
   return (
     <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
-        {visibleTabs.map((tab) => {
-          const isActive = tab.value === activeTabItem.value
+      <Text fw={700} size="xl">
+        {t('Склад Україна')}
+      </Text>
 
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              className={`pill-tab${isActive ? ' is-active' : ''}`}
-              aria-pressed={isActive}
-              onClick={() => setActiveTab(tab.value)}
-            >
-              <Group gap={6} wrap="nowrap" align="center">
-                {tab.icon}
+      <Tabs defaultValue={defaultTab} keepMounted={false}>
+        <Tabs.List>
+          {visibleTabs.map((tab) => (
+            <Tabs.Tab key={tab.value} value={tab.value} leftSection={tab.icon}>
+              <Group gap={6}>
                 {tab.label}
                 {tab.showBadge && editingTotal > 0 && (
                   <Badge color="violet" size="sm" variant="light">
@@ -146,12 +141,16 @@ export function WarehouseUkrainePage() {
                   </Badge>
                 )}
               </Group>
-            </button>
-          )
-        })}
-      </div>
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
 
-      <Box>{activeTabItem.render()}</Box>
+        {visibleTabs.map((tab) => (
+          <Tabs.Panel key={tab.value} value={tab.value} pt="md">
+            {tab.render()}
+          </Tabs.Panel>
+        ))}
+      </Tabs>
     </Stack>
   )
 }

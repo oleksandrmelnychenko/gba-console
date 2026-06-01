@@ -210,6 +210,7 @@ export function PaymentExpenseArticlesPage() {
             isLoading={isTableBusy}
             layoutVersion="payment-expense-articles-1"
             tableId="payment-expense-articles"
+            toolbarLeft={toolbarLeft}
             onRowClick={openArticle}
           />
         </Stack>

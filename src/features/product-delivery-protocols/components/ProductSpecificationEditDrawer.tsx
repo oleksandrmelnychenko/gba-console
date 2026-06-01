@@ -1,4 +1,4 @@
-import { Alert, Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Stack, Table, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -163,16 +163,32 @@ function ProductSpecificationEditDrawerContent({
 
           <Stack gap="xs">
             <Text fw={700}>{t('Історія митних кодів')}</Text>
-            <DataTable
-              columns={historyColumns}
-              data={history}
-              emptyText={t('Немає даних')}
-              getRowId={(row, index) => String(row.NetUid || row.Id || index)}
-              layoutVersion="product-specification-history-1"
-              maxHeight="calc(100vh - 320px)"
-              minWidth={480}
-              tableId="product-specification-history"
-            />
+            {history.length === 0 ? (
+              <Text c="dimmed" size="sm">
+                {t('Немає даних')}
+              </Text>
+            ) : (
+              <Table striped withTableBorder withColumnBorders>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>{t('Митний код')}</Table.Th>
+                    <Table.Th>{t('% Мита')}</Table.Th>
+                    <Table.Th>{t('Користувач')}</Table.Th>
+                    <Table.Th>{t('Дата')}</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {history.map((specification, index) => (
+                    <Table.Tr key={specification.NetUid || specification.Id || index}>
+                      <Table.Td>{specification.SpecificationCode || '-'}</Table.Td>
+                      <Table.Td>{specification.DutyPercent ?? 0}</Table.Td>
+                      <Table.Td>{getUserName(specification)}</Table.Td>
+                      <Table.Td>{formatDate(specification.Created)}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            )}
           </Stack>
         </Stack>
       )}

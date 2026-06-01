@@ -14,6 +14,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   TextInput,
   Textarea,
@@ -930,18 +931,6 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
   const columns = model.columns
 
-  const dataColumns = useMemo<DataTableColumn<AvailablePaymentTaskRow>[]>(
-    () =>
-      columns.map((column) => ({
-        id: column.key,
-        header: column.header,
-        align: column.align === 'right' ? 'right' : 'left',
-        accessor: (row) => row[column.key],
-        cell: (row) => renderCell(column, row),
-      })),
-    [columns],
-  )
-
   if (columns.length === 0) {
     return (
       <Stack gap="md">
@@ -1038,37 +1027,6 @@ function CashFlowTab({
         onChange={(event) => onFiltersChange({ ...filters, to: event.currentTarget.value })}
       />
     </Group>
-  )
-
-  const columns = useMemo<DataTableColumn<DataRecord>[]>(
-    () => [
-      {
-        id: 'date',
-        header: t('Дата'),
-        accessor: (row) => readUnknownDate(row, ['FromDate', 'Date', 'Created']),
-        cell: (row) => formatDate(readUnknownDate(row, ['FromDate', 'Date', 'Created'])),
-      },
-      {
-        id: 'number',
-        header: t('Номер'),
-        accessor: (row) => readUnknown(row, ['Number', 'CustomNumber']),
-        cell: (row) => displayValue(readUnknown(row, ['Number', 'CustomNumber'])),
-      },
-      {
-        id: 'type',
-        header: t('Тип'),
-        accessor: (row) => readUnknown(row, ['Type', 'OperationTypeName']),
-        cell: (row) => displayValue(readUnknown(row, ['Type', 'OperationTypeName'])),
-      },
-      {
-        id: 'amount',
-        header: t('Сума'),
-        align: 'right',
-        accessor: (row) => readUnknownNumber(row, ['Amount', 'Total']),
-        cell: (row) => formatAmount(readUnknownNumber(row, ['Amount', 'Total'])),
-      },
-    ],
-    [t],
   )
 
   if (!state || state.isLoading) {

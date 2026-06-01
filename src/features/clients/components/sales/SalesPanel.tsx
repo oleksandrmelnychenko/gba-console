@@ -24,7 +24,6 @@ import {
   IconTag,
   IconTruckDelivery,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { useEffect, useRef } from 'react'
 import { AppDrawer } from '../../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -397,7 +396,7 @@ function SaleAccordionItem({
                     {t('Облік ПДВ')}
                   </Badge>
                 )}
-                <Badge color="violet" variant="light">
+                <Badge color="blue" variant="light">
                   {getLifeCycleLabel(lifeCycle, t)}
                 </Badge>
                 {!isNew && (
@@ -555,7 +554,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
 
   return (
     <Stack gap="md">
-      <Alert color="violet" icon={<IconAlertCircle size={18} />} variant="light">
+      <Alert color="blue" icon={<IconAlertCircle size={18} />} variant="light">
         {t('Редагування продажу доступне у застосунку менеджера продажів')}
       </Alert>
 
