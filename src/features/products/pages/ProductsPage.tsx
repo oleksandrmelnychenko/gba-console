@@ -46,9 +46,7 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useValueState } from '../../../shared/hooks/useValueState'
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   createProductOriginalNumber,
@@ -56,12 +54,9 @@ import {
   exportProductIncomeMovementsDocument,
   exportProductOutcomeMovementsDocument,
   getNonDefectiveStorages,
-  getProductByNetId,
   getProductIncomeMovements,
   getProductOutcomeMovements,
-  getProductReservationByNetId,
   getProductUploadPricings,
-  getProducts,
   removeProductAnalogue,
   removeProductComponent,
   updateProductOriginalNumber,
@@ -86,8 +81,6 @@ import type {
   ProductPlacementStorage,
   ProductRelatedUploadType,
   ProductReservation,
-  ProductSearchMode,
-  ProductSortMode,
   ProductUploadDocumentPayload,
   Pricing,
   Storage,
@@ -120,12 +113,8 @@ import {
 import './products.css'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { ShopImageGallery } from '../components/ShopImageGallery'
+import { useAssortment } from '../hooks/useAssortment'
 
-const PAGE_SIZE = 20
-const VIRTUAL_PAGE_SIZE = 10
-const SEARCH_DEBOUNCE_MS = 250
-const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
-const DEFAULT_SORT_MODE: ProductSortMode = '2'
 const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = 'Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY'
 const inlineMovementLabels = {
   income: {
@@ -192,7 +181,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   year: 'numeric',
 })
 
-type CarouselMode = 'search' | 'selection'
 type InlineMovementDirection = 'income' | 'outcome'
 type InlineMovementRow = ProductIncomeMovement | ProductOutcomeMovement
 type InlineMovementState = {
@@ -203,13 +191,6 @@ type InlineMovementState = {
   isLoading: boolean
   rows: InlineMovementRow[]
 }
-type InlineDetailState = {
-  error: string | null
-  isLoading: boolean
-  product: Product | null
-  reservation: ProductReservation
-  reservationError: string | null
-}
 type InlineMovementAction =
   | { type: 'export-clear' }
   | { type: 'export-error'; error: string }
@@ -218,12 +199,6 @@ type InlineMovementAction =
   | { type: 'error'; error: string }
   | { type: 'loading' }
   | { type: 'success'; rows: InlineMovementRow[] }
-type InlineDetailAction =
-  | { type: 'clear' }
-  | { type: 'error'; error: string; product: Product | null }
-  | { type: 'loading' }
-  | { type: 'saved'; product: Product }
-  | { type: 'success'; product: Product | null; reservation: ProductReservation; reservationError: string | null }
 type RelatedProductRow = {
   isProductSet: boolean
   product: Partial<Product>
@@ -267,571 +242,13 @@ export function ProductsPage() {
   const { t } = useI18n()
   const searchModeOptions = useMemo(() => PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
   const sortModeOptions = useMemo(() => PRODUCT_SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
-  const [urlSearchParams, setUrlSearchParams] = useSearchParams()
-  const routeProductNetId = urlSearchParams.get('netId')?.trim() || ''
-  const [topProducts, setTopProducts] = useValueState<Product[]>([])
-  const [bottomProducts, setBottomProducts] = useValueState<Product[]>([])
-  const [selectedProduct, setSelectedProduct] = useValueState<Product | null>(null)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(false)
-  const [hasRequestedProducts, setHasRequestedProducts] = useValueState(false)
-  const [isVirtualLoad, setVirtualLoad] = useValueState(false)
-  const [loadedProductsCount, setLoadedProductsCount] = useValueState(0)
-  const [carouselMode, setCarouselMode] = useValueState<CarouselMode>('search')
-  const [searchDraft, setSearchDraft] = useValueState('')
-  const [searchValue, setSearchValue] = useValueState('')
-  const [searchMode, setSearchMode] = useValueState<ProductSearchMode>(DEFAULT_SEARCH_MODE)
-  const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
-  const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
-  const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
-    error: null,
-    isLoading: false,
-    product: null,
-    reservation: {},
-    reservationError: null,
-  })
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const [detailReloadKey, reloadProductDetail] = useReducer((key: number) => key + 1, 0)
-  const searchRequestRef = useRef(0)
-  const detailRequestRef = useRef(0)
-  const routeProductRequestRef = useRef(0)
-  const loadedIdsRef = useRef<Set<string>>(new Set())
-  const hasMoreRef = useRef(true)
-  const selectedProductRef = useRef<Product | null>(selectedProduct)
-  const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
-  const productForView = detailState.product || selectedProduct
-  selectedProductRef.current = selectedProduct
-  const canMoveBack = topProducts.length > 0
-  const canMoveForward = bottomProducts.length > 0
-
-  const clearRouteProductParam = useCallback(() => {
-    routeProductRequestRef.current += 1
-
-    if (!routeProductNetId) {
-      return
-    }
-
-    setUrlSearchParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams)
-
-      nextParams.delete('netId')
-
-      return nextParams
-    }, { replace: true })
-  }, [routeProductNetId, setUrlSearchParams])
-
-  const applySearchResults = useCallback(
-    (nextProducts: Product[]) => {
-      setActivePanel(null)
-      dispatchDetail({ type: 'clear' })
-
-      if (nextProducts.length === 0) {
-        loadedIdsRef.current = new Set()
-        hasMoreRef.current = false
-        setTopProducts([])
-        setBottomProducts([])
-        setSelectedProduct(null)
-        setCarouselMode('search')
-        setLoadedProductsCount(0)
-        return
-      }
-
-      setLoadedProductsCount(nextProducts.length)
-
-      const seen = new Set<string>()
-      const unique = dedupeProductsBySet(nextProducts, seen)
-
-      if (unique.length === 1) {
-        const nextProduct = unique[0]
-        const tail = dedupeProductsBySet(getNextSearchedProducts(nextProduct), seen)
-
-        loadedIdsRef.current = seen
-        hasMoreRef.current = false // a single match → bottom is the curated "next" list, not offset-paged
-        setTopProducts([])
-        setBottomProducts(tail)
-        setSelectedProduct(nextProduct)
-        setCarouselMode('selection')
-        return
-      }
-
-      loadedIdsRef.current = seen
-      hasMoreRef.current = true
-      const halfLength = Math.ceil(unique.length / 2)
-
-      setTopProducts(unique.slice(0, halfLength))
-      setBottomProducts(unique.slice(halfLength))
-      setSelectedProduct(null)
-      setCarouselMode('search')
-    },
-    [
-      setActivePanel,
-      setBottomProducts,
-      setCarouselMode,
-      setLoadedProductsCount,
-      setSelectedProduct,
-      setTopProducts,
-    ],
-  )
-
-  const loadProducts = useCallback(
-    async ({
-      append,
-      limit,
-      offset,
-      searchMode: nextSearchMode,
-      sortMode: nextSortMode,
-      value,
-    }: {
-      append: boolean
-      limit: number
-      offset: number
-      searchMode: ProductSearchMode
-      sortMode: ProductSortMode
-      value: string
-    }) => {
-      const requestId = ++searchRequestRef.current
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        const nextProducts = await getProducts({
-          limit,
-          offset,
-          searchMode: nextSearchMode,
-          sortMode: nextSortMode,
-          value,
-        })
-
-        if (requestId === searchRequestRef.current) {
-          if (append) {
-            const uniqueProducts = dedupeProductsBySet(nextProducts, loadedIdsRef.current)
-            hasMoreRef.current = nextProducts.length >= limit && uniqueProducts.length > 0
-
-            if (uniqueProducts.length > 0) {
-              setBottomProducts((currentProducts) => [...currentProducts, ...uniqueProducts])
-            }
-
-            setLoadedProductsCount((currentCount) => currentCount + nextProducts.length)
-            setVirtualLoad(false)
-          } else {
-            applySearchResults(nextProducts)
-          }
-        }
-      } catch (loadError) {
-        if (requestId === searchRequestRef.current) {
-          setTopProducts([])
-          setBottomProducts([])
-          setSelectedProduct(null)
-          dispatchDetail({ type: 'clear' })
-          setCarouselMode('search')
-          setLoadedProductsCount(0)
-          setVirtualLoad(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари'))
-        }
-      } finally {
-        if (requestId === searchRequestRef.current) {
-          setLoading(false)
-        }
-      }
-    },
-    [
-      applySearchResults,
-      setBottomProducts,
-      setCarouselMode,
-      setError,
-      setLoadedProductsCount,
-      setLoading,
-      setSelectedProduct,
-      setTopProducts,
-      setVirtualLoad,
-      t,
-    ],
-  )
-
-  useEffect(() => {
-    if (!hasRequestedProducts) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      void loadProducts({
-        append: false,
-        limit: PAGE_SIZE,
-        offset: 0,
-        searchMode,
-        sortMode,
-        value: searchValue,
-      })
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue, searchMode, sortMode])
-
-  useEffect(() => {
-    function handleArrowNavigation(event: globalThis.KeyboardEvent) {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
-        return
-      }
-
-      const target = event.target instanceof Element ? event.target : null
-      const insideCarousel = !!target && !!target.closest('.product-assortment-carousel')
-
-      // Outside the drum: only while actively browsing a selection, and never while typing in another field.
-      // Inside the drum (incl. the search box) arrows always drive the wheel.
-      if (!insideCarousel && (carouselMode !== 'selection' || isEditableKeyboardTarget(event.target))) {
-        return
-      }
-
-      event.preventDefault()
-
-      if (event.key === 'ArrowUp') {
-        selectPreviousProduct()
-      } else {
-        selectNextProduct()
-      }
-    }
-
-    window.addEventListener('keydown', handleArrowNavigation)
-
-    return () => {
-      window.removeEventListener('keydown', handleArrowNavigation)
-    }
-  }, [carouselMode, selectNextProduct, selectPreviousProduct])
-
-  useEffect(() => {
-    if (!routeProductNetId) {
-      return
-    }
-
-    const requestId = ++routeProductRequestRef.current
-
-    searchRequestRef.current += 1
-    detailRequestRef.current += 1
-
-    async function loadRouteProduct() {
-      if (requestId !== routeProductRequestRef.current) {
-        return
-      }
-
-      try {
-        const nextProduct = await getProductByNetId(routeProductNetId)
-
-        if (requestId === routeProductRequestRef.current) {
-          setVirtualLoad(false)
-
-          if (!nextProduct) {
-            setTopProducts([])
-            setBottomProducts([])
-            setSelectedProduct(null)
-            dispatchDetail({ type: 'clear' })
-            setActivePanel(null)
-            setCarouselMode('search')
-            setLoadedProductsCount(0)
-            setHasRequestedProducts(false)
-            setSearchDraft('')
-            setSearchValue('')
-            setError(t('Товар не знайдено'))
-          } else {
-            const seen = new Set<string>([getProductIdentity(nextProduct)])
-            const tail = dedupeProductsBySet(getNextSearchedProducts(nextProduct), seen)
-
-            loadedIdsRef.current = seen
-            hasMoreRef.current = false
-            setTopProducts([])
-            setBottomProducts(tail)
-            setLoadedProductsCount(1)
-            setSelectedProduct(nextProduct)
-            dispatchDetail({ type: 'clear' })
-            setActivePanel(null)
-            setCarouselMode('selection')
-            setHasRequestedProducts(false)
-            setSearchDraft('')
-            setSearchValue('')
-            setError(null)
-          }
-        }
-      } catch (loadError) {
-        if (requestId === routeProductRequestRef.current) {
-          setTopProducts([])
-          setBottomProducts([])
-          setSelectedProduct(null)
-          dispatchDetail({ type: 'clear' })
-          setActivePanel(null)
-          setCarouselMode('search')
-          setLoadedProductsCount(0)
-          setHasRequestedProducts(false)
-          setSearchDraft('')
-          setSearchValue('')
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
-        }
-      } finally {
-        if (requestId === routeProductRequestRef.current) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadRouteProduct()
-  }, [
-    routeProductNetId,
-    setActivePanel,
-    setBottomProducts,
-    setCarouselMode,
-    setError,
-    setHasRequestedProducts,
-    setLoadedProductsCount,
-    setLoading,
-    setSearchDraft,
-    setSearchValue,
-    setSelectedProduct,
-    setTopProducts,
-    setVirtualLoad,
-    t,
-  ])
-
-  useEffect(() => {
-    if (!selectedProductNetUid) {
-      return
-    }
-
-    const requestId = ++detailRequestRef.current
-
-    dispatchDetail({ type: 'loading' })
-
-    async function loadProductDetails() {
-      try {
-        const [nextProduct, nextReservationResult] = await Promise.all([
-          getProductByNetId(selectedProductNetUid),
-          getProductReservationByNetId(selectedProductNetUid)
-            .then((value) => ({ error: null, value }))
-            .catch((reservationLoadError: unknown) => ({
-              error: reservationLoadError instanceof Error ? reservationLoadError.message : t('Не вдалося завантажити резерви товару'),
-              value: {},
-            })),
-        ])
-
-        if (requestId === detailRequestRef.current) {
-          dispatchDetail({
-            product: nextProduct || selectedProductRef.current,
-            reservation: nextReservationResult.value,
-            reservationError: nextReservationResult.error,
-            type: 'success',
-          })
-        }
-      } catch (loadError) {
-        if (requestId === detailRequestRef.current) {
-          dispatchDetail({
-            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'),
-            product: selectedProductRef.current,
-            type: 'error',
-          })
-        }
-      }
-    }
-
-    void loadProductDetails()
-  }, [
-    detailReloadKey,
-    selectedProductNetUid,
-    t,
-  ])
-
-  function updateSearchDraft(nextValue: string) {
-    clearRouteProductParam()
-    setSearchDraft(nextValue)
-    setSearchValue(nextValue.trim())
-    setHasRequestedProducts(true)
-    setCarouselMode('search')
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-  }
-
-  function commitSearch() {
-    clearRouteProductParam()
-    setSearchValue(searchDraft.trim())
-    setHasRequestedProducts(true)
-    reload()
-  }
-
-  function resetSearch() {
-    clearRouteProductParam()
-    searchRequestRef.current += 1
-    setTopProducts([])
-    setBottomProducts([])
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setError(null)
-    setLoading(false)
-    setVirtualLoad(false)
-    setLoadedProductsCount(0)
-    setHasRequestedProducts(false)
-    setCarouselMode('search')
-    setSearchDraft('')
-    setSearchValue('')
-    setActivePanel(null)
-  }
-
-  function changeSearchMode(nextValue: string | null) {
-    clearRouteProductParam()
-    setSearchMode((nextValue || DEFAULT_SEARCH_MODE) as ProductSearchMode)
-    setSearchDraft(searchValue) // re-run with the last committed query, keep the box in sync
-    setHasRequestedProducts(true)
-  }
-
-  function changeSortMode(nextValue: string | null) {
-    clearRouteProductParam()
-    setSortMode((nextValue || DEFAULT_SORT_MODE) as ProductSortMode)
-    setSearchDraft(searchValue) // re-run with the last committed query, keep the box in sync
-    setHasRequestedProducts(true)
-  }
-
-  function loadMoreProducts() {
-    if (!hasRequestedProducts || isLoading || isVirtualLoad || !hasMoreRef.current) {
-      return
-    }
-
-    setVirtualLoad(true)
-    void loadProducts({
-      append: true,
-      limit: VIRTUAL_PAGE_SIZE,
-      offset: loadedProductsCount,
-      searchMode,
-      sortMode,
-      value: searchValue,
-    })
-  }
-
-  function selectProduct(product: Product) {
-    clearRouteProductParam()
-    const productId = getProductIdentity(product)
-
-    setTopProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
-    setBottomProducts((currentProducts) => currentProducts.filter((item) => getProductIdentity(item) !== productId))
-    setSelectedProduct(product)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    setCarouselMode('selection')
-    setSearchDraft('')
-  }
-
-  function selectRelatedProduct(product: Partial<Product>) {
-    clearRouteProductParam()
-    const netUid = product.NetUid?.trim()
-
-    if (!netUid) {
-      notifications.show({ color: 'yellow', message: t('Не вдалося відкрити повʼязаний товар') })
-      return
-    }
-
-    const nextProduct = { ...product, NetUid: netUid } as Product
-    const seen = new Set<string>([getProductIdentity(nextProduct)])
-    const tail = dedupeProductsBySet(getNextSearchedProducts(nextProduct), seen)
-
-    loadedIdsRef.current = seen
-    hasMoreRef.current = false
-    setTopProducts([])
-    setBottomProducts(tail)
-    setLoadedProductsCount(1)
-    setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    setCarouselMode('selection')
-    setSearchDraft('')
-  }
-
-  function selectPreviousProduct() {
-    clearRouteProductParam()
-    const nextProduct = topProducts[topProducts.length - 1]
-
-    if (!nextProduct) {
-      return
-    }
-
-    if (selectedProduct) {
-      setBottomProducts((currentProducts) => [selectedProduct, ...currentProducts])
-    }
-
-    setTopProducts((currentProducts) => currentProducts.slice(0, -1))
-    setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    setCarouselMode('selection')
-    setSearchDraft('')
-  }
-
-  function selectNextProduct() {
-    clearRouteProductParam()
-    const nextProduct = bottomProducts[0]
-
-    if (!nextProduct) {
-      return
-    }
-
-    if (selectedProduct) {
-      setTopProducts((currentProducts) => [...currentProducts, selectedProduct])
-    }
-
-    setBottomProducts((currentProducts) => currentProducts.slice(1))
-    setSelectedProduct(nextProduct)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-    setCarouselMode('selection')
-    setSearchDraft('')
-
-    if (bottomProducts.length - 1 <= 6) {
-      loadMoreProducts()
-    }
-  }
-
-  function returnToSearchMode() {
-    clearRouteProductParam()
-    setCarouselMode('search')
-    setSearchDraft('')
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
-  }
-
-  function handleCarouselKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Escape' && carouselMode === 'selection') {
-      event.preventDefault()
-      returnToSearchMode()
-    }
-
-    if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
-      event.preventDefault()
-      commitSearch()
-    }
-  }
-
-  function handleProductSaved(nextProduct: Product | null) {
-    if (nextProduct) {
-      dispatchDetail({ product: nextProduct, type: 'saved' })
-      setSelectedProduct(nextProduct)
-      return
-    }
-
-    reloadProductDetail()
-  }
-
-  function handleAssortmentUploadSuccess() {
-    setHasRequestedProducts(true)
-    reload()
-
-    if (selectedProductNetUid) {
-      reloadProductDetail()
-    }
-  }
+  const assortment = useAssortment()
 
   return (
     <Stack gap="md">
-      {error && (
+      {assortment.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
+          {assortment.error}
         </Alert>
       )}
 
@@ -839,7 +256,7 @@ export function ProductsPage() {
         <Box className="product-assortment-column">
           <Box className="product-assortment-controls">
             <Group justify="flex-start">
-              <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={handleAssortmentUploadSuccess} />
+              <ProductUploadDocumentToolbar product={assortment.selectedProduct} onUploadSuccess={assortment.handleAssortmentUploadSuccess} />
             </Group>
             <Group grow gap={8} align="flex-end">
               <Select
@@ -847,63 +264,63 @@ export function ProductsPage() {
                 aria-label={t('Місце вводу для пошуку')}
                 label={t('Місце вводу для пошуку')}
                 data={searchModeOptions}
-                disabled={isLoading}
+                disabled={assortment.isLoading}
                 size="xs"
-                value={searchMode}
-                onChange={changeSearchMode}
+                value={assortment.searchMode}
+                onChange={assortment.changeSearchMode}
               />
               <Select
                 allowDeselect={false}
                 aria-label={t('Сортувати За')}
                 label={t('Сортувати За')}
                 data={sortModeOptions}
-                disabled={isLoading}
+                disabled={assortment.isLoading}
                 size="xs"
-                value={sortMode}
-                onChange={changeSortMode}
+                value={assortment.sortMode}
+                onChange={assortment.changeSortMode}
               />
             </Group>
           </Box>
           <ProductAssortmentCarousel
-            bottomProducts={bottomProducts}
-            canMoveBack={canMoveBack}
-            canMoveForward={canMoveForward}
-            isLoading={isLoading}
-            isSelectionMode={carouselMode === 'selection'}
-            isVirtualLoad={isVirtualLoad}
-            searchDraft={searchDraft}
-            selectedProduct={selectedProduct}
-            topProducts={topProducts}
-            onKeyDown={handleCarouselKeyDown}
-            onNext={selectNextProduct}
-            onPrevious={selectPreviousProduct}
-            onRefresh={commitSearch}
-            onReset={resetSearch}
-            onSearchDraftChange={updateSearchDraft}
-            onSelectProduct={selectProduct}
+            bottomProducts={assortment.bottomProducts}
+            canMoveBack={assortment.canMoveBack}
+            canMoveForward={assortment.canMoveForward}
+            isLoading={assortment.isLoading}
+            isSelectionMode={assortment.carouselMode === 'selection'}
+            isVirtualLoad={assortment.isVirtualLoad}
+            searchDraft={assortment.searchDraft}
+            selectedProduct={assortment.selectedProduct}
+            topProducts={assortment.topProducts}
+            onKeyDown={assortment.handleCarouselKeyDown}
+            onNext={assortment.selectNextProduct}
+            onPrevious={assortment.selectPreviousProduct}
+            onRefresh={assortment.commitSearch}
+            onReset={assortment.resetSearch}
+            onSearchDraftChange={assortment.updateSearchDraft}
+            onSelectProduct={assortment.selectProduct}
           />
         </Box>
 
         <ProductInlineView
-          detailError={detailState.error}
-          isLoading={detailState.isLoading}
-          product={productForView}
-          reservation={detailState.reservation}
-          reservationError={detailState.reservationError}
-          onOpenPanel={setActivePanel}
-          onProductChanged={handleProductSaved}
-          onReload={reloadProductDetail}
-          onSelectRelatedProduct={selectRelatedProduct}
+          detailError={assortment.detailState.error}
+          isLoading={assortment.detailState.isLoading}
+          product={assortment.productForView}
+          reservation={assortment.detailState.reservation}
+          reservationError={assortment.detailState.reservationError}
+          onOpenPanel={assortment.setActivePanel}
+          onProductChanged={assortment.handleProductSaved}
+          onReload={assortment.reloadProductDetail}
+          onSelectRelatedProduct={assortment.selectRelatedProduct}
         />
       </Box>
 
-      {productForView && (
+      {assortment.productForView && (
         <ProductActionDrawer
-          activePanel={activePanel}
-          product={productForView}
-          onClose={() => setActivePanel(null)}
-          onProductSaved={handleProductSaved}
-          onReload={reloadProductDetail}
+          activePanel={assortment.activePanel}
+          product={assortment.productForView}
+          onClose={() => assortment.setActivePanel(null)}
+          onProductSaved={assortment.handleProductSaved}
+          onReload={assortment.reloadProductDetail}
         />
       )}
     </Stack>
@@ -2966,48 +2383,6 @@ function inlineMovementReducer(state: InlineMovementState, action: InlineMovemen
   }
 }
 
-function inlineDetailReducer(state: InlineDetailState, action: InlineDetailAction): InlineDetailState {
-  switch (action.type) {
-    case 'clear':
-      return {
-        error: null,
-        isLoading: false,
-        product: null,
-        reservation: {},
-        reservationError: null,
-      }
-    case 'error':
-      return {
-        error: action.error,
-        isLoading: false,
-        product: action.product,
-        reservation: {},
-        reservationError: null,
-      }
-    case 'loading':
-      return {
-        ...state,
-        error: null,
-        isLoading: true,
-        reservationError: null,
-      }
-    case 'saved':
-      return {
-        ...state,
-        error: null,
-        isLoading: false,
-        product: action.product,
-      }
-    case 'success':
-      return {
-        error: null,
-        isLoading: false,
-        product: action.product,
-        reservation: action.reservation,
-        reservationError: action.reservationError,
-      }
-  }
-}
 
 function applyOriginalNumbersResponse(
   product: Product,
@@ -3049,24 +2424,6 @@ function getProductIdentity(product: Product): string {
   return String(product.NetUid || product.Id || product.VendorCode || product.Name || 'product')
 }
 
-// Keeps only products whose identity hasn't been seen yet; mutates `seen` so the
-// same identity can never appear twice across the top rail / selection / bottom rail.
-function dedupeProductsBySet(products: Product[], seen: Set<string>): Product[] {
-  const result: Product[] = []
-
-  for (const product of products) {
-    const id = getProductIdentity(product)
-
-    if (seen.has(id)) {
-      continue
-    }
-
-    seen.add(id)
-    result.push(product)
-  }
-
-  return result
-}
 
 function getProductRowToneClass(product: Product): string {
   const top = product.Top?.trim().toLowerCase()
@@ -3086,11 +2443,6 @@ function getProductRowToneClass(product: Product): string {
   return ''
 }
 
-function getNextSearchedProducts(product: Product): Product[] {
-  const nextProducts = (product as Product & { NextSearchedProducts?: Product[] }).NextSearchedProducts
-
-  return Array.isArray(nextProducts) ? nextProducts : []
-}
 
 function copyToClipboard(value: string) {
   if (!value || !navigator.clipboard) {
