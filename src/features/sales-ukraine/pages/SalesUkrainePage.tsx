@@ -24,6 +24,7 @@ import {
   IconDots,
   IconExternalLink,
   IconEye,
+  IconHistory,
   IconLockOpen,
   IconPencil,
   IconPlus,
@@ -34,13 +35,14 @@ import {
   IconSearch,
   IconTruckDelivery,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
@@ -191,6 +193,11 @@ export function SalesUkrainePage() {
   const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
+  const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
+  const [auditLoading, setAuditLoading] = useValueState(false)
+  const [auditError, setAuditError] = useValueState<string | null>(null)
+  const auditRequestRef = useRef(0)
   const [isNewSaleOpen, setNewSaleOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
@@ -213,10 +220,56 @@ export function SalesUkrainePage() {
     [activeDraft, offset, pageSize],
   )
 
+  const openAudit = useCallback(
+    (sale: SalesUkraineSale) => {
+      setAuditSale(sale)
+      setAuditStatistic(null)
+      setAuditError(null)
+
+      if (!sale.NetUid) {
+        return
+      }
+
+      setAuditLoading(true)
+      const requestId = auditRequestRef.current + 1
+      auditRequestRef.current = requestId
+
+      void (async () => {
+        try {
+          const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+
+          if (auditRequestRef.current === requestId) {
+            setAuditStatistic(statistic)
+          }
+        } catch (auditFetchError) {
+          if (auditRequestRef.current === requestId) {
+            setAuditError(
+              auditFetchError instanceof Error ? auditFetchError.message : t('Не вдалося завантажити дані'),
+            )
+          }
+        } finally {
+          if (auditRequestRef.current === requestId) {
+            setAuditLoading(false)
+          }
+        }
+      })()
+    },
+    [setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
+  )
+
+  function closeAudit() {
+    auditRequestRef.current += 1
+    setAuditSale(null)
+    setAuditStatistic(null)
+    setAuditError(null)
+    setAuditLoading(false)
+  }
+
   const columns = useSalesUkraineColumns({
     canEditSale,
     canUnlock,
     canWillNotShip,
+    onOpenAudit: openAudit,
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
     onOpenEditor: setEditorSale,
@@ -589,6 +642,16 @@ export function SalesUkrainePage() {
 
       <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
 
+      <AppDrawer
+        opened={Boolean(auditSale)}
+        position="right"
+        size="min(720px, 100vw)"
+        title={t('Історія редагувань')}
+        onClose={closeAudit}
+      >
+        <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+      </AppDrawer>
+
       <NewSaleModal
         opened={isNewSaleOpen}
         onClose={() => setNewSaleOpen(false)}
@@ -627,6 +690,7 @@ function useSalesUkraineColumns({
   canEditSale,
   canUnlock,
   canWillNotShip,
+  onOpenAudit,
   onOpenConsignment,
   onOpenDetails,
   onOpenDiscount,
@@ -639,6 +703,7 @@ function useSalesUkraineColumns({
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
+  onOpenAudit: (sale: SalesUkraineSale) => void
   onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
@@ -930,6 +995,9 @@ function useSalesUkraineColumns({
                           {t('Розблокувати')}
                         </Menu.Item>
                       )}
+                      <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+                        {t('Історія редагувань')}
+                      </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
               </Group>
@@ -942,6 +1010,7 @@ function useSalesUkraineColumns({
       canEditSale,
       canUnlock,
       canWillNotShip,
+      onOpenAudit,
       onOpenConsignment,
       onOpenDetails,
       onOpenDiscount,
