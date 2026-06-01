@@ -1,6 +1,9 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { PRINTER_API_BASE_URL } from '../../../shared/config/env'
 import type {
+  IncomePaymentOrder,
+} from '../../income-cashflows/types'
+import type {
   PrintTaxFreeResponse,
   Statham,
   TaxFreeDocument,
@@ -8,6 +11,16 @@ import type {
   TaxFreeDocumentsSearchParams,
   TaxFreeItem,
 } from '../types'
+
+export type TaxFreeAdvancePaymentPayload = {
+  Amount?: number
+  ClientAgreement?: unknown
+  Comment?: string
+  FromDate?: string
+  Organization?: unknown
+  VatAmount?: number
+  VatPercent?: number
+}
 
 export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams): Promise<TaxFreeDocumentsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/all/filtered', {
@@ -79,6 +92,36 @@ export async function getTaxFreeCarrier(netId: string): Promise<Statham | null> 
   })
 
   return result && typeof result === 'object' ? (result as Statham) : null
+}
+
+export async function createIncomePaymentFromTaxFree(
+  taxFreeNetId: string,
+  paymentIncome: IncomePaymentOrder,
+): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/new/taxfree', {
+    method: 'POST',
+    query: {
+      taxFreeNetId,
+    },
+    body: paymentIncome,
+  })
+
+  return result && typeof result === 'object' ? (result as IncomePaymentOrder) : null
+}
+
+export async function createAdvancePaymentFromTaxFree(
+  taxFreeNetId: string,
+  advancePayment: TaxFreeAdvancePaymentPayload,
+): Promise<TaxFreeAdvancePaymentPayload | null> {
+  const result = await apiRequest<unknown>('/payments/advance/new', {
+    method: 'POST',
+    query: {
+      taxFreeNetId,
+    },
+    body: advancePayment,
+  })
+
+  return result && typeof result === 'object' ? (result as TaxFreeAdvancePaymentPayload) : null
 }
 
 function normalizeTaxFreeDocumentsResponse(result: unknown): TaxFreeDocumentsResponse {

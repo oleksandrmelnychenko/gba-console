@@ -1,3 +1,8 @@
+import type {
+  SalesUkraineHistoryInvoiceEdit,
+  SalesUkraineSaleMerged,
+} from '../sales-ukraine/types'
+
 export type SalesOnlineShopStatusFilter =
   | 'all'
   | 'New'
@@ -50,6 +55,7 @@ export type SalesOnlineShopAgreement = SalesOnlineShopEntity & {
   Currency?: SalesOnlineShopCurrency
   Name?: string
   Organization?: SalesOnlineShopOrganization
+  WithVATAccounting?: boolean
 }
 
 export type SalesOnlineShopClient = SalesOnlineShopEntity & {
@@ -97,6 +103,7 @@ export type SalesOnlineShopProduct = SalesOnlineShopEntity & {
 
 export type SalesOnlineShopOrderItem = SalesOnlineShopEntity & {
   OneTimeDiscount?: number
+  OneTimeDiscountComment?: string
   PricePerItem?: number
   Product?: SalesOnlineShopProduct
   Qty?: number
@@ -125,11 +132,18 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   ClientAgreement?: SalesOnlineShopClientAgreement
   Comment?: string
   FromDate?: Date | string
+  HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
+  InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean
+  IsDevelopment?: boolean
   IsFullPayment?: boolean
+  IsInvoice?: boolean
   IsLocked?: boolean
+  IsPrinted?: boolean
+  IsSent?: boolean
   IsVatSale?: boolean
   MisplacedSaleId?: string
+  OneTimeDiscountComment?: string
   Order?: SalesOnlineShopOrder
   RetailClient?: SalesOnlineShopRetailClient
   SaleNumber?: SalesOnlineShopSaleNumber
@@ -139,6 +153,8 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   TotalAmountLocal?: number
   TotalCount?: number
   TotalRowsQty?: number
+  TransporterId?: number | string
+  TTN?: string
   Transporter?: SalesOnlineShopTransporter
   UpdateUser?: SalesOnlineShopUser
   User?: SalesOnlineShopUser

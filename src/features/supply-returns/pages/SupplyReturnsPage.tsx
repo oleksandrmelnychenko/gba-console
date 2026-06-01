@@ -96,6 +96,7 @@ function useSupplyReturnsPageModel() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -105,9 +106,10 @@ function useSupplyReturnsPageModel() {
   const resetSupplyReturns = useCallback(() => {
     setSupplyReturns([])
     setHasMore(false)
+    setTotalQty(0)
     setLoading(false)
     setSelectedReturn(null)
-  }, [setHasMore, setLoading, setSelectedReturn, setSupplyReturns])
+  }, [setHasMore, setLoading, setSelectedReturn, setSupplyReturns, setTotalQty])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -202,10 +204,11 @@ function useSupplyReturnsPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Показано')} {supplyReturns.length}
+        {totalQty > supplyReturns.length ? ` ${t('з')} ${totalQty}` : ''}
         {hasMore ? '+' : ''}
       </Text>
     ),
-    [hasMore, t, supplyReturns.length],
+    [hasMore, t, supplyReturns.length, totalQty],
   )
 
   const toolbarRight = useMemo(
@@ -252,6 +255,7 @@ function useSupplyReturnsPageModel() {
     setError,
     setHasMore,
     setLoading,
+    setTotalQty,
     setSupplyReturns,
   })
 
@@ -272,7 +276,7 @@ function useSupplyReturnsPageModel() {
     setError(null)
 
     try {
-      const nextReturns = await getSupplyReturns({
+      const result = await getSupplyReturns({
         from: activeFilters.from,
         limit: pageSize,
         offset: requestOffset,
@@ -280,8 +284,9 @@ function useSupplyReturnsPageModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setSupplyReturns((current) => (current.length === requestOffset ? [...current, ...nextReturns] : current))
-        setHasMore(nextReturns.length === pageSize)
+        setSupplyReturns((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
+        setTotalQty(result.totalQty)
+        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
@@ -332,6 +337,7 @@ function useSupplyReturnsLoader({
   setError,
   setHasMore,
   setLoading,
+  setTotalQty,
   setSupplyReturns,
 }: {
   activeFilters: FilterDraft
@@ -342,6 +348,7 @@ function useSupplyReturnsLoader({
   setError: (value: string | null) => void
   setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
+  setTotalQty: (value: number) => void
   setSupplyReturns: (value: SupplyReturn[]) => void
 }) {
   const { t } = useI18n()
@@ -359,7 +366,7 @@ function useSupplyReturnsLoader({
       setError(null)
 
       try {
-        const nextReturns = await getSupplyReturns({
+        const result = await getSupplyReturns({
           from: activeFilters.from,
           limit: pageSize,
           offset: 0,
@@ -367,13 +374,15 @@ function useSupplyReturnsLoader({
         })
 
         if (!cancelled) {
-          setSupplyReturns(nextReturns)
-          setHasMore(nextReturns.length === pageSize)
+          setSupplyReturns(result.items)
+          setTotalQty(result.totalQty)
+          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setSupplyReturns([])
           setHasMore(false)
+          setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити повернення постачальникам'))
         }
       } finally {
@@ -397,6 +406,7 @@ function useSupplyReturnsLoader({
     setError,
     setHasMore,
     setLoading,
+    setTotalQty,
     setSupplyReturns,
     t,
   ])

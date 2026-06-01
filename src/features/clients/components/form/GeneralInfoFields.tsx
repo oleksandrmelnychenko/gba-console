@@ -46,6 +46,7 @@ export type GeneralInfoFieldsProps = {
   errors?: ClientFieldErrors
   isLoadingRegionCode?: boolean
   isUploadingDocuments?: boolean
+  canSaveDocuments?: boolean
   regionCodeError?: string
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
@@ -344,6 +345,7 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
       )}
 
       <ContractDocuments
+        canSave={props.canSaveDocuments !== false}
         documents={client.ClientContractDocuments || []}
         isUploading={props.isUploadingDocuments}
         onAdd={props.onAddDocuments}
@@ -357,12 +359,14 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
 function ContractDocuments({
   documents,
   isUploading,
+  canSave,
   onAdd,
   onRemove,
   onSave,
 }: {
   documents: ClientContractDocument[]
   isUploading?: boolean
+  canSave: boolean
   onAdd: (files: File[]) => void
   onRemove: (document: ClientContractDocument) => void
   onSave: () => void
@@ -394,7 +398,7 @@ function ContractDocuments({
         </Group>
       ))}
 
-      {visibleDocuments.length > 0 && (
+      {canSave && visibleDocuments.length > 0 && (
         <Group justify="flex-end">
           <Button color="violet" loading={isUploading} variant="light" onClick={onSave}>
             {t('Зберегти')}

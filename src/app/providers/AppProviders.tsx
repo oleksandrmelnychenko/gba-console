@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import type { PropsWithChildren } from 'react'
 import { AuthProvider } from '../../features/auth/AuthProvider'
 import { I18nProvider } from '../../shared/i18n/I18nProvider'
+import { RealtimeProvider } from '../../shared/realtime/RealtimeProvider'
 import { theme } from '../../shared/theme/theme'
 
 export function AppProviders({ children }: PropsWithChildren) {
@@ -12,7 +13,9 @@ export function AppProviders({ children }: PropsWithChildren) {
       <Notifications position="top-right" />
       <BrowserRouter>
         <I18nProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <RealtimeProvider>{children}</RealtimeProvider>
+          </AuthProvider>
         </I18nProvider>
       </BrowserRouter>
     </MantineProvider>

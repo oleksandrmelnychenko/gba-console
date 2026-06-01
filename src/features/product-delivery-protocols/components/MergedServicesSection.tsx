@@ -1,5 +1,6 @@
 import { Button, Group, Stack, Text } from '@mantine/core'
 import { IconPlus } from '@tabler/icons-react'
+import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -46,7 +47,7 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
     AccountingGrossPrice: Number(values.grossPriceAccounting) || 0,
     AccountingVatPercent: Number(values.percentAccounting) || 0,
     ConsumableProduct: values.consumableProduct,
-    FromDate: values.fromDate ? values.fromDate.toISOString() : undefined,
+    FromDate: values.fromDate ? formatLocalDateTime(values.fromDate) : undefined,
     GrossPrice: Number(values.grossPrice) || 0,
     IsIncludeAccountingValue: values.isIncludeAccountingValue,
     Name: values.name,
@@ -67,7 +68,7 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
   if (values.isSupplyInformationTask) {
     const informationTask: SupplyInformationTask = {
       Comment: values.supplyInformationTaskComment,
-      FromDate: values.payToDate ? values.payToDate.toISOString() : undefined,
+      FromDate: values.payToDate ? formatLocalDateTime(values.payToDate) : undefined,
       GrossPrice: Number(values.supplyInformationTaskGrossPrice) || 0,
       User: values.supplyInformationTaskUser,
     }
@@ -86,7 +87,8 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
   if (values.createTask) {
     const task: SupplyPaymentTask = {
       Comment: values.taskComment,
-      PayToDate: values.taskPayToDate ? values.taskPayToDate.toISOString() : undefined,
+      PayToDate: values.taskPayToDate ? formatLocalDateTime(values.taskPayToDate) : undefined,
+      SupplyPaymentTaskDocuments: [],
       User: values.taskUser,
     }
     service.SupplyPaymentTask = task
@@ -95,7 +97,8 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
   if (values.createAccountingTask) {
     const accountingTask: SupplyPaymentTask = {
       Comment: values.accountingTaskComment,
-      PayToDate: values.accountingTaskPayToDate ? values.accountingTaskPayToDate.toISOString() : undefined,
+      PayToDate: values.accountingTaskPayToDate ? formatLocalDateTime(values.accountingTaskPayToDate) : undefined,
+      SupplyPaymentTaskDocuments: [],
       User: values.accountingTaskUser,
     }
     service.AccountingPaymentTask = accountingTask

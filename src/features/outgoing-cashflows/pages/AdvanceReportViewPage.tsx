@@ -10,23 +10,33 @@ import {
   Text,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
+import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconGasStation, IconReceipt2 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import {
   calculateAdvanceReportOrder,
   getAdvanceReportOrder,
   updateAdvanceReportOrder,
 } from '../api/advanceReportApi'
 import {
+  canRemoveAdvanceReportConsumableRow,
+  canRemoveAdvanceReportFuelRow,
+  isLocalAdvanceReportEntity,
+} from '../advanceReportRowPermissions'
+import {
   PaymentRegisterTypeValue,
+  type AdvanceReportConsumablesOrder,
   type AdvanceReportConsumableRow,
   type AdvanceReportFuelRow,
   type AdvanceReportOrder,
+  type CompanyCarFueling,
 } from '../advanceReportTypes'
+import { AdvanceReportConsumableOrderModal } from '../components/AdvanceReportConsumableOrderModal'
 import { AdvanceReportFuelGrid } from '../components/AdvanceReportFuelGrid'
+import { AdvanceReportFuelModal } from '../components/AdvanceReportFuelModal'
 import { AdvanceReportProductsGrid } from '../components/AdvanceReportProductsGrid'
 
 const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
@@ -41,47 +51,75 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type AdvanceReportViewState = {
+  consumableDocumentFilesByOrderKey: Record<string, File[]>
+  error: string | null
+  hasLocalChanges: boolean
+  isLoading: boolean
+  order: AdvanceReportOrder | null
+}
+
+const INITIAL_ADVANCE_REPORT_VIEW_STATE: AdvanceReportViewState = {
+  consumableDocumentFilesByOrderKey: {},
+  error: null,
+  hasLocalChanges: false,
+  isLoading: true,
+  order: null,
+}
+
 function useAdvanceReportViewModel() {
   const { t } = useI18n()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [order, setOrder] = useValueState<AdvanceReportOrder | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [error, setError] = useValueState<string | null>(null)
+  const [viewState, setViewState] = useValueState<AdvanceReportViewState>(INITIAL_ADVANCE_REPORT_VIEW_STATE)
   const [isSaving, setSaving] = useValueState(false)
+  const [isConsumableModalOpen, setConsumableModalOpen] = useValueState(false)
+  const [isFuelModalOpen, setFuelModalOpen] = useValueState(false)
   const [createIncomeAutomatically, setCreateIncomeAutomatically] = useValueState(false)
+  const [confirmLeaveOpen, setConfirmLeaveOpen] = useValueState(false)
   const requestRef = useRef(0)
+  const recalculateRef = useRef(0)
+  const { consumableDocumentFilesByOrderKey, error, hasLocalChanges, isLoading, order } = viewState
 
   useEffect(() => {
     if (!id) {
-      setOrder(null)
-      setLoading(false)
-      setError(t('Не вказано ідентифікатор авансового звіту'))
+      setViewState({
+        ...INITIAL_ADVANCE_REPORT_VIEW_STATE,
+        error: t('Не вказано ідентифікатор авансового звіту'),
+        isLoading: false,
+      })
       return
     }
 
     const requestId = requestRef.current + 1
     requestRef.current = requestId
     let cancelled = false
-    setLoading(true)
-    setError(null)
+    setViewState((current) => ({
+      ...current,
+      error: null,
+      isLoading: true,
+    }))
 
     async function load(netId: string) {
       try {
         const result = await getAdvanceReportOrder(netId)
 
         if (!cancelled && requestRef.current === requestId) {
-          setOrder(result)
-          setError(result ? null : t('Авансовий звіт не знайдено'))
+          setViewState({
+            consumableDocumentFilesByOrderKey: {},
+            error: result ? null : t('Авансовий звіт не знайдено'),
+            hasLocalChanges: false,
+            isLoading: false,
+            order: result,
+          })
         }
       } catch (loadError) {
         if (!cancelled && requestRef.current === requestId) {
-          setOrder(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансовий звіт'))
-        }
-      } finally {
-        if (!cancelled && requestRef.current === requestId) {
-          setLoading(false)
+          setViewState({
+            ...INITIAL_ADVANCE_REPORT_VIEW_STATE,
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансовий звіт'),
+            isLoading: false,
+          })
         }
       }
     }
@@ -91,37 +129,76 @@ function useAdvanceReportViewModel() {
     return () => {
       cancelled = true
     }
-  }, [id, setError, setLoading, setOrder, t])
+  }, [id, setViewState, t])
 
-  const consumableRows = useMemo(() => buildConsumableRows(order), [order])
-  const fuelRows = useMemo(() => buildFuelRows(order), [order])
+  const isDone = Boolean(order?.IsUnderReportDone)
+  const consumableRows = useMemo(() => buildConsumableRows(order, isDone), [isDone, order])
+  const fuelRows = useMemo(() => buildFuelRows(order, isDone), [isDone, order])
   const totals = useMemo(() => calculateTotals(order), [order])
   const orderAmount = order?.Amount || 0
   const reportTotal = totals.total
-  const isDone = Boolean(order?.IsUnderReportDone)
+  const canAppendRows = Boolean(order && (!isDone || (order.DifferenceAmount || 0) < 0))
+  const hasUnsavedRows = useMemo(() => Boolean(order && hasNewRows(order)), [order])
+  const hasPendingConsumableFiles = hasFilesByOrderKey(consumableDocumentFilesByOrderKey)
+  const hasPendingChanges = hasLocalChanges || hasUnsavedRows || hasPendingConsumableFiles
+  const canSave = Boolean(order && hasAnyRows(order) && (!isDone || hasUnsavedRows))
   const currencyCode = order?.PaymentCurrencyRegister?.Currency?.Code || order?.PaymentCurrencyRegister?.Currency?.Name
   const headerTitle = useMemo(() => buildHeaderTitle(order, t), [order, t])
   const reportTitle = useMemo(() => buildReportTitle(order, t), [order, t])
 
   const goBack = useCallback(() => {
+    if (hasPendingChanges) {
+      setConfirmLeaveOpen(true)
+      return
+    }
+
     navigate(OUTGOING_CASHFLOW_ROUTE)
-  }, [navigate])
+  }, [hasPendingChanges, navigate, setConfirmLeaveOpen])
+
+  const confirmLeave = useCallback(() => {
+    setConfirmLeaveOpen(false)
+    navigate(OUTGOING_CASHFLOW_ROUTE)
+  }, [navigate, setConfirmLeaveOpen])
+
+  useEffect(() => {
+    if (!hasPendingChanges) {
+      return undefined
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [hasPendingChanges])
 
   const recalculate = useCallback(
     async (nextOrder: AdvanceReportOrder) => {
-      setError(null)
+      const requestId = recalculateRef.current + 1
+      recalculateRef.current = requestId
+      setViewState((current) => ({ ...current, error: null }))
 
       try {
         const calculated = await calculateAdvanceReportOrder(nextOrder)
 
-        if (calculated) {
-          setOrder(calculated)
+        if (calculated && recalculateRef.current === requestId) {
+          setViewState((current) => ({ ...current, order: calculated }))
         }
       } catch (calculateError) {
-        setError(calculateError instanceof Error ? calculateError.message : t('Не вдалося перерахувати суму'))
+        if (recalculateRef.current === requestId) {
+          setViewState((current) => ({
+            ...current,
+            error: calculateError instanceof Error ? calculateError.message : t('Не вдалося перерахувати суму'),
+          }))
+        }
       }
     },
-    [setError, setOrder, t],
+    [setViewState, t],
   )
 
   const removeConsumableRow = useCallback(
@@ -130,10 +207,16 @@ function useAdvanceReportViewModel() {
         return
       }
 
-      setOrder(removeConsumableItem(order, row.id))
-      void recalculate(removeConsumableItem(order, row.id))
+      const nextOrder = removeConsumableItem(order, row.id)
+      setViewState((current) => ({
+        ...current,
+        consumableDocumentFilesByOrderKey: pruneConsumableDocumentFiles(current.consumableDocumentFilesByOrderKey, nextOrder),
+        hasLocalChanges: true,
+        order: nextOrder,
+      }))
+      void recalculate(nextOrder)
     },
-    [order, recalculate, setOrder],
+    [order, recalculate, setViewState],
   )
 
   const removeFuelRow = useCallback(
@@ -143,10 +226,79 @@ function useAdvanceReportViewModel() {
       }
 
       const nextOrder = removeFuelItem(order, row.id)
-      setOrder(nextOrder)
+      setViewState((current) => ({
+        ...current,
+        hasLocalChanges: true,
+        order: nextOrder,
+      }))
       void recalculate(nextOrder)
     },
-    [order, recalculate, setOrder],
+    [order, recalculate, setViewState],
+  )
+
+  const addConsumableOrder = useCallback(
+    (consumablesOrder: AdvanceReportConsumablesOrder, documentFiles: File[]) => {
+      if (!order) {
+        return
+      }
+
+      const entryNetUid = createLocalId()
+      const nextOrder: AdvanceReportOrder = {
+        ...order,
+        OutcomePaymentOrderConsumablesOrders: [
+          ...(order.OutcomePaymentOrderConsumablesOrders || []),
+          {
+            ConsumablesOrder: {
+              ...consumablesOrder,
+              Id: consumablesOrder.Id || 0,
+              NetUid: consumablesOrder.NetUid || entryNetUid,
+            },
+            Id: 0,
+            NetUid: entryNetUid,
+          },
+        ],
+      }
+
+      setViewState((current) => ({
+        ...current,
+        consumableDocumentFilesByOrderKey:
+          documentFiles.length > 0
+            ? { ...current.consumableDocumentFilesByOrderKey, [entryNetUid]: documentFiles }
+            : current.consumableDocumentFilesByOrderKey,
+        hasLocalChanges: true,
+        order: nextOrder,
+      }))
+      void recalculate(nextOrder)
+    },
+    [order, recalculate, setViewState],
+  )
+
+  const addFueling = useCallback(
+    (fueling: CompanyCarFueling) => {
+      if (!order) {
+        return
+      }
+
+      const nextOrder: AdvanceReportOrder = {
+        ...order,
+        CompanyCarFuelings: [
+          ...(order.CompanyCarFuelings || []),
+          {
+            ...fueling,
+            Id: fueling.Id || 0,
+            NetUid: fueling.NetUid || createLocalId(),
+          },
+        ],
+      }
+
+      setViewState((current) => ({
+        ...current,
+        hasLocalChanges: true,
+        order: nextOrder,
+      }))
+      void recalculate(nextOrder)
+    },
+    [order, recalculate, setViewState],
   )
 
   const save = useCallback(
@@ -160,8 +312,9 @@ function useAdvanceReportViewModel() {
         return
       }
 
+      const consumableDocumentFiles = getConsumableDocumentFiles(consumableDocumentFilesByOrderKey)
       setSaving(true)
-      setError(null)
+      setViewState((current) => ({ ...current, error: null }))
 
       const payload: AdvanceReportOrder = {
         ...order,
@@ -175,26 +328,84 @@ function useAdvanceReportViewModel() {
       }
 
       try {
-        await updateAdvanceReportOrder(auto, payload)
+        await updateAdvanceReportOrder(auto, payload, consumableDocumentFiles)
+        setViewState((current) => ({
+          ...current,
+          consumableDocumentFilesByOrderKey: {},
+          hasLocalChanges: false,
+        }))
         notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
         navigate(OUTGOING_CASHFLOW_ROUTE)
       } catch (saveError) {
-        setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти авансовий звіт'))
+        setViewState((current) => ({
+          ...current,
+          error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти авансовий звіт'),
+        }))
       } finally {
         setSaving(false)
       }
     },
-    [navigate, order, setError, setSaving, t],
+    [
+      consumableDocumentFilesByOrderKey,
+      navigate,
+      order,
+      setSaving,
+      setViewState,
+      t,
+    ],
   )
 
+  const settleDifference = useCallback(async () => {
+    if (!order) {
+      return
+    }
+
+    const consumableDocumentFiles = getConsumableDocumentFiles(consumableDocumentFilesByOrderKey)
+    setSaving(true)
+    setViewState((current) => ({ ...current, error: null }))
+
+    try {
+      await updateAdvanceReportOrder(true, order, consumableDocumentFiles)
+      setViewState((current) => ({
+        ...current,
+        consumableDocumentFilesByOrderKey: {},
+        hasLocalChanges: false,
+      }))
+      notifications.show({ color: 'green', message: t('Оновлення видаткового ордера') })
+      navigate(OUTGOING_CASHFLOW_ROUTE)
+    } catch (saveError) {
+      setViewState((current) => ({
+        ...current,
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти авансовий звіт'),
+      }))
+    } finally {
+      setSaving(false)
+    }
+  }, [
+    consumableDocumentFilesByOrderKey,
+    navigate,
+    order,
+    setSaving,
+    setViewState,
+    t,
+  ])
+
   return {
+    addConsumableOrder,
+    addFueling,
+    canAppendRows,
+    canSave,
+    confirmLeave,
+    confirmLeaveOpen,
     consumableRows,
     createIncomeAutomatically,
     currencyCode,
     error,
     fuelRows,
     headerTitle,
+    isConsumableModalOpen,
     isDone,
+    isFuelModalOpen,
     isLoading,
     isSaving,
     order,
@@ -203,10 +414,16 @@ function useAdvanceReportViewModel() {
     reportTotal,
     totals,
     goBack,
+    openConsumableModal: () => setConsumableModalOpen(true),
+    openFuelModal: () => setFuelModalOpen(true),
     removeConsumableRow,
     removeFuelRow,
     save,
+    settleDifference,
+    setConsumableModalOpen,
+    setConfirmLeaveOpen,
     setCreateIncomeAutomatically,
+    setFuelModalOpen,
   }
 }
 
@@ -220,16 +437,28 @@ export function AdvanceReportViewPage() {
         <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="light" onClick={model.goBack}>
           {t('Назад')}
         </Button>
-        {!model.isDone && model.order && hasAnyRows(model.order) && (
-          <Button
-            color="violet"
-            leftSection={<IconDeviceFloppy size={16} />}
-            loading={model.isSaving}
-            onClick={() => model.save(model.createIncomeAutomatically)}
-          >
-            {t('Зберегти')}
-          </Button>
-        )}
+        <Group gap="xs" justify="flex-end">
+          {!model.isDone && (
+            <>
+              <Button leftSection={<IconReceipt2 size={16} />} variant="light" onClick={model.openConsumableModal}>
+                {t('Додати товар / послугу')}
+              </Button>
+              <Button leftSection={<IconGasStation size={16} />} variant="light" onClick={model.openFuelModal}>
+                {t('Додати пальне')}
+              </Button>
+            </>
+          )}
+          {model.canSave && (
+            <Button
+              color="violet"
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={model.isSaving}
+              onClick={() => model.save(model.createIncomeAutomatically)}
+            >
+              {t('Зберегти')}
+            </Button>
+          )}
+        </Group>
       </Group>
 
       {model.error && (
@@ -245,6 +474,42 @@ export function AdvanceReportViewPage() {
       ) : model.order ? (
         <AdvanceReportContent model={model} />
       ) : null}
+
+      {model.order && (
+        <>
+          <AdvanceReportConsumableOrderModal
+            opened={model.isConsumableModalOpen}
+            outcomeOrder={model.order}
+            onAdd={model.addConsumableOrder}
+            onClose={() => model.setConsumableModalOpen(false)}
+          />
+          <AdvanceReportFuelModal
+            opened={model.isFuelModalOpen}
+            outcomeOrder={model.order}
+            onAdd={model.addFueling}
+            onClose={() => model.setFuelModalOpen(false)}
+          />
+        </>
+      )}
+
+      <AppModal
+        centered
+        opened={model.confirmLeaveOpen}
+        title={t('Є незбережені зміни')}
+        onClose={() => model.setConfirmLeaveOpen(false)}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо вийти зі сторінки, додані рядки, видалення і прикріплені файли не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={() => model.setConfirmLeaveOpen(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={model.confirmLeave}>
+              {t('Вийти без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -257,8 +522,8 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
     return null
   }
 
-  const hasConsumables = (order.OutcomePaymentOrderConsumablesOrders || []).length > 0
-  const hasFuel = (order.CompanyCarFuelings || []).length > 0
+  const hasConsumables = model.consumableRows.length > 0
+  const hasFuel = model.fuelRows.length > 0
 
   return (
     <Stack gap="md">
@@ -286,7 +551,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
               {t('Товари')} / {t('Послуги')}
             </Text>
             <AdvanceReportProductsGrid
-              canRemove={!model.isDone}
+              canRemove
               rows={model.consumableRows}
               onRemove={model.removeConsumableRow}
             />
@@ -298,7 +563,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
         <Card withBorder padding="md" radius="md">
           <Stack gap="sm">
             <Text fw={700}>{t('Пальне')}</Text>
-            <AdvanceReportFuelGrid canRemove={!model.isDone} rows={model.fuelRows} onRemove={model.removeFuelRow} />
+            <AdvanceReportFuelGrid canRemove rows={model.fuelRows} onRemove={model.removeFuelRow} />
           </Stack>
         </Card>
       )}
@@ -370,9 +635,19 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         <Badge color="red" variant="light">
           {t('Борг колеги')}: {formatMoney(difference)}
         </Badge>
-        <Button color="green" size="xs" variant="light" onClick={() => model.save(true)}>
+        <Button color="green" size="xs" variant="light" onClick={model.settleDifference}>
           {t('Оплатив')}
         </Button>
+        {model.canAppendRows && (
+          <>
+            <Button leftSection={<IconReceipt2 size={14} />} size="xs" variant="light" onClick={model.openConsumableModal}>
+              {t('Прикріпити накладну')}
+            </Button>
+            <Button leftSection={<IconGasStation size={14} />} size="xs" variant="light" onClick={model.openFuelModal}>
+              {t('Додати пальне')}
+            </Button>
+          </>
+        )}
       </Group>
     )
   }
@@ -382,7 +657,7 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
       <Badge color="green" variant="light">
         {t('Винні колезі')}: {formatMoney(difference)}
       </Badge>
-      <Button color="violet" size="xs" variant="light" onClick={() => model.save(true)}>
+      <Button color="violet" size="xs" variant="light" onClick={model.settleDifference}>
         {t('Погасити борг')}
       </Button>
     </Group>
@@ -398,7 +673,7 @@ function TotalItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function buildConsumableRows(order: AdvanceReportOrder | null): AdvanceReportConsumableRow[] {
+function buildConsumableRows(order: AdvanceReportOrder | null, isDone: boolean): AdvanceReportConsumableRow[] {
   if (!order?.OutcomePaymentOrderConsumablesOrders) {
     return []
   }
@@ -410,10 +685,16 @@ function buildConsumableRows(order: AdvanceReportOrder | null): AdvanceReportCon
     const items = consumablesOrder?.ConsumablesOrderItems || []
 
     items.forEach((item, itemIndex) => {
+      if (item.Deleted) {
+        return
+      }
+
       rows.push({
         agreementName: consumablesOrder?.SupplyOrganizationAgreement?.Name || '',
         amount: item.TotalPrice,
+        canRemove: canRemoveAdvanceReportConsumableRow(isDone, entry, consumablesOrder, item),
         category: item.ConsumableProductCategory?.Name || '',
+        documentUrls: getConsumablesOrderDocumentUrls(consumablesOrder?.ConsumablesOrderDocuments),
         id: String(item.NetUid || item.Id || `${entryIndex}-${itemIndex}`),
         name: item.ConsumableProduct?.Name || '',
         organization: consumablesOrder?.ConsumableProductOrganization?.Name || '',
@@ -433,23 +714,55 @@ function buildConsumableRows(order: AdvanceReportOrder | null): AdvanceReportCon
   return rows
 }
 
-function buildFuelRows(order: AdvanceReportOrder | null): AdvanceReportFuelRow[] {
+function getConsumablesOrderDocumentUrls(
+  documents?: AdvanceReportConsumablesOrder['ConsumablesOrderDocuments'],
+): string[] {
+  return (documents || []).reduce<string[]>((urls, document) => {
+    if (document.Deleted) {
+      return urls
+    }
+
+    const url =
+      document.DocumentURL ||
+      document.DocumentUrl ||
+      document.PdfDocumentURL ||
+      document.PdfDocumentUrl ||
+      document.URL ||
+      document.Url ||
+      document.url
+
+    if (url) {
+      urls.push(url)
+    }
+
+    return urls
+  }, [])
+}
+
+function buildFuelRows(order: AdvanceReportOrder | null, isDone: boolean): AdvanceReportFuelRow[] {
   if (!order?.CompanyCarFuelings) {
     return []
   }
 
-  return order.CompanyCarFuelings.map((fueling, index) => ({
-    companyCar: fueling.CompanyCar?.LicensePlate || '',
-    fuelAmount: fueling.FuelAmount,
-    id: String(fueling.Id || `fuel-${index}`),
-    paymentCostMovement: fueling.PaymentCostMovementOperation?.PaymentCostMovement?.OperationName || '',
-    pricePerLiter: fueling.PricePerLiter,
-    serviceOrganization: fueling.ConsumableProductOrganization?.Name || '',
-    totalAmountWithoutVat: fueling.TotalPrice,
-    totalPrice: fueling.TotalPriceWithVat,
-    vatAmount: fueling.VatAmount,
-    vatPercent: fueling.VatPercent,
-  }))
+  return order.CompanyCarFuelings.reduce<AdvanceReportFuelRow[]>((rows, fueling, index) => {
+    if (!fueling.Deleted) {
+      rows.push({
+        canRemove: canRemoveAdvanceReportFuelRow(isDone, fueling),
+        companyCar: fueling.CompanyCar?.LicensePlate || '',
+        fuelAmount: fueling.FuelAmount,
+        id: String(fueling.NetUid || fueling.Id || `fuel-${index}`),
+        paymentCostMovement: fueling.PaymentCostMovementOperation?.PaymentCostMovement?.OperationName || '',
+        pricePerLiter: fueling.PricePerLiter,
+        serviceOrganization: fueling.ConsumableProductOrganization?.Name || '',
+        totalAmountWithoutVat: fueling.TotalPrice,
+        totalPrice: fueling.TotalPriceWithVat,
+        vatAmount: fueling.VatAmount,
+        vatPercent: fueling.VatPercent,
+      })
+    }
+
+    return rows
+  }, [])
 }
 
 function calculateTotals(order: AdvanceReportOrder | null): { total: number; totalVat: number } {
@@ -457,55 +770,141 @@ function calculateTotals(order: AdvanceReportOrder | null): { total: number; tot
     return { total: 0, totalVat: 0 }
   }
 
-  const fuelings = order.CompanyCarFuelings || []
-  const items = (order.OutcomePaymentOrderConsumablesOrders || []).flatMap(
-    (entry) => entry.ConsumablesOrder?.ConsumablesOrderItems || [],
-  )
+  let total = 0
+  let totalVat = 0
 
-  const total =
-    fuelings.reduce((sum, fueling) => sum + (fueling.TotalPriceWithVat || 0), 0) +
-    items.reduce((sum, item) => sum + (item.TotalPriceWithVAT || 0), 0)
-  const totalVat =
-    fuelings.reduce((sum, fueling) => sum + (fueling.VatAmount || 0), 0) +
-    items.reduce((sum, item) => sum + (item.VAT || 0), 0)
+  for (const fueling of order.CompanyCarFuelings || []) {
+    if (!fueling.Deleted) {
+      total += fueling.TotalPriceWithVat || 0
+      totalVat += fueling.VatAmount || 0
+    }
+  }
+
+  for (const entry of order.OutcomePaymentOrderConsumablesOrders || []) {
+    for (const item of entry.ConsumablesOrder?.ConsumablesOrderItems || []) {
+      if (!item.Deleted) {
+        total += item.TotalPriceWithVAT || 0
+        totalVat += item.VAT || 0
+      }
+    }
+  }
 
   return { total, totalVat }
 }
 
 function removeConsumableItem(order: AdvanceReportOrder, rowId: string): AdvanceReportOrder {
-  const entries = (order.OutcomePaymentOrderConsumablesOrders || [])
-    .map((entry, entryIndex) => {
-      const consumablesOrder = entry.ConsumablesOrder
+  const entries = (order.OutcomePaymentOrderConsumablesOrders || []).reduce<
+    NonNullable<AdvanceReportOrder['OutcomePaymentOrderConsumablesOrders']>
+  >((nextEntries, entry, entryIndex) => {
+    const consumablesOrder = entry.ConsumablesOrder
 
-      if (!consumablesOrder) {
-        return entry
+    if (!consumablesOrder) {
+      nextEntries.push(entry)
+      return nextEntries
+    }
+
+    let removedFromEntry = false
+    const items = (consumablesOrder.ConsumablesOrderItems || []).reduce<
+      NonNullable<typeof consumablesOrder.ConsumablesOrderItems>
+    >((nextItems, item, itemIndex) => {
+      const itemId = String(item.NetUid || item.Id || `${entryIndex}-${itemIndex}`)
+
+      if (itemId !== rowId) {
+        nextItems.push(item)
+        return nextItems
       }
 
-      const items = (consumablesOrder.ConsumablesOrderItems || []).filter(
-        (item, itemIndex) => String(item.NetUid || item.Id || `${entryIndex}-${itemIndex}`) !== rowId,
-      )
+      removedFromEntry = true
 
-      return {
+      if (!isLocalAdvanceReportEntity(item)) {
+        nextItems.push({ ...item, Deleted: true })
+      }
+
+      return nextItems
+    }, [])
+
+    if (items.length > 0 || !removedFromEntry) {
+      nextEntries.push({
         ...entry,
         ConsumablesOrder: { ...consumablesOrder, ConsumablesOrderItems: items },
-      }
-    })
-    .filter((entry) => (entry.ConsumablesOrder?.ConsumablesOrderItems || []).length > 0)
+      })
+    }
+
+    return nextEntries
+  }, [])
 
   return { ...order, OutcomePaymentOrderConsumablesOrders: entries }
 }
 
 function removeFuelItem(order: AdvanceReportOrder, rowId: string): AdvanceReportOrder {
-  const fuelings = (order.CompanyCarFuelings || []).filter(
-    (fueling, index) => String(fueling.Id || `fuel-${index}`) !== rowId,
+  const fuelings = (order.CompanyCarFuelings || []).reduce<NonNullable<AdvanceReportOrder['CompanyCarFuelings']>>(
+    (nextFuelings, fueling, index) => {
+      const fuelingId = String(fueling.NetUid || fueling.Id || `fuel-${index}`)
+
+      if (fuelingId !== rowId) {
+        nextFuelings.push(fueling)
+        return nextFuelings
+      }
+
+      if (!isLocalAdvanceReportEntity(fueling)) {
+        nextFuelings.push({ ...fueling, Deleted: true })
+      }
+
+      return nextFuelings
+    },
+    [],
   )
 
   return { ...order, CompanyCarFuelings: fuelings }
 }
 
+function hasFilesByOrderKey(filesByOrderKey: Record<string, File[]>): boolean {
+  return Object.values(filesByOrderKey).some((files) => files.length > 0)
+}
+
+function getConsumableDocumentFiles(filesByOrderKey: Record<string, File[]>): File[] {
+  return Object.values(filesByOrderKey).flat()
+}
+
+function pruneConsumableDocumentFiles(
+  filesByOrderKey: Record<string, File[]>,
+  order: AdvanceReportOrder,
+): Record<string, File[]> {
+  const activeOrderKeys = new Set(
+    (order.OutcomePaymentOrderConsumablesOrders || []).flatMap((entry) => getConsumableEntryKeys(entry)),
+  )
+
+  return Object.entries(filesByOrderKey).reduce<Record<string, File[]>>((nextFiles, [orderKey, files]) => {
+    if (activeOrderKeys.has(orderKey)) {
+      nextFiles[orderKey] = files
+    }
+
+    return nextFiles
+  }, {})
+}
+
+function getConsumableEntryKeys(
+  entry: NonNullable<AdvanceReportOrder['OutcomePaymentOrderConsumablesOrders']>[number],
+): string[] {
+  return [entry.NetUid, entry.ConsumablesOrder?.NetUid].filter((netUid): netUid is string => Boolean(netUid))
+}
+
 function hasAnyRows(order: AdvanceReportOrder): boolean {
   return (
-    (order.OutcomePaymentOrderConsumablesOrders || []).length > 0 || (order.CompanyCarFuelings || []).length > 0
+    (order.OutcomePaymentOrderConsumablesOrders || []).some(
+      (entry) => (entry.ConsumablesOrder?.ConsumablesOrderItems || []).some((item) => !item.Deleted),
+    ) || (order.CompanyCarFuelings || []).some((fueling) => !fueling.Deleted)
+  )
+}
+
+function hasNewRows(order: AdvanceReportOrder): boolean {
+  return (
+    (order.OutcomePaymentOrderConsumablesOrders || []).some(
+      (entry) =>
+        !entry.Id ||
+        !entry.ConsumablesOrder?.Id ||
+        (entry.ConsumablesOrder.ConsumablesOrderItems || []).some((item) => !item.Id),
+    ) || (order.CompanyCarFuelings || []).some((fueling) => !fueling.Id)
   )
 }
 
@@ -561,4 +960,8 @@ function formatMoney(value?: number): string {
 
 function displayValue(value?: string): string {
   return value ? value : '—'
+}
+
+function createLocalId(): string {
+  return `local-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`
 }

@@ -5,6 +5,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { PaymentShopOrderItem, PaymentShopSale } from '../types'
 
+const priceFormatter = new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export type PaymentShopOrderItemsTableProps = {
   currencyCode: string
   localCurrencyCode: string
@@ -87,7 +89,7 @@ function formatPrice(value: number | undefined): string {
     return ''
   }
 
-  return new Intl.NumberFormat('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+  return priceFormatter.format(value)
 }
 
 function displayValue(value: unknown): string {

@@ -413,7 +413,7 @@ function mapRows(items: ProductIncomeItem[]): SupplyPlacementRow[] {
       (consignmentItem) => consignmentItem.ProductSpecification,
     )?.ProductSpecification
     const totalNetPrice = roundMoney(packingItem?.TotalNetPrice)
-    const vatAmount = readFiniteNumber(packingItem?.VatAmount)
+    const vatAmount = roundMoney(packingItem?.VatAmount)
 
     return {
       actualQty: readFiniteNumber(item.Qty),

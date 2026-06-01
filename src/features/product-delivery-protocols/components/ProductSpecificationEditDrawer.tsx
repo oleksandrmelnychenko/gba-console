@@ -4,8 +4,7 @@ import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { AppModal } from '../../../shared/ui/AppModal'
 import type {
   PackingListPackageOrderItem,
   ProductSpecificationEntity,
@@ -37,7 +36,11 @@ export type ProductSpecificationEditDrawerProps = {
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 
-export function ProductSpecificationEditDrawer({
+export function ProductSpecificationEditDrawer(props: ProductSpecificationEditDrawerProps) {
+  return <ProductSpecificationEditDrawerContent key={getProductDrawerKey(props.item)} {...props} />
+}
+
+function ProductSpecificationEditDrawerContent({
   canSave = true,
   isSaving,
   item,
@@ -46,23 +49,12 @@ export function ProductSpecificationEditDrawer({
 }: ProductSpecificationEditDrawerProps) {
   const { t } = useI18n()
   const product = item?.SupplyInvoiceOrderItem?.Product || null
+  const initialDraft = useMemo(() => buildDraft(product), [product])
   const [draft, setDraft] = useValueState<ProductSpecificationDraft>(() => buildDraft(product))
   const [error, setError] = useValueState<string | null>(null)
-  const [previousProductKey, setPreviousProductKey] = useValueState(getProductKey(product))
-  const currentProductKey = getProductKey(product)
+  const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const history = useMemo(() => buildSpecificationHistory(product), [product])
-  const historyColumns = useMemo<DataTableColumn<ProductSpecificationEntity>[]>(() => [
-    { id: 'specificationCode', header: t('Митний код'), accessor: (row) => row.SpecificationCode, cell: (row) => row.SpecificationCode || '-' },
-    { id: 'dutyPercent', header: t('% Мита'), accessor: (row) => row.DutyPercent ?? 0, cell: (row) => row.DutyPercent ?? 0 },
-    { id: 'user', header: t('Користувач'), accessor: (row) => getUserName(row), cell: (row) => getUserName(row) },
-    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDate(row.Created) },
-  ], [t])
-
-  if (currentProductKey !== previousProductKey) {
-    setPreviousProductKey(currentProductKey)
-    setDraft(buildDraft(product))
-    setError(null)
-  }
+  const isDraftDirty = canSave && !areDraftsEqual(draft, initialDraft)
 
   async function submit() {
     if (!product) {
@@ -87,6 +79,24 @@ export function ProductSpecificationEditDrawer({
     })
   }
 
+  function requestClose() {
+    if (isSaving) {
+      return
+    }
+
+    if (isDraftDirty) {
+      setConfirmCloseOpen(true)
+      return
+    }
+
+    onClose()
+  }
+
+  function confirmClose() {
+    setConfirmCloseOpen(false)
+    onClose()
+  }
+
   return (
     <AppDrawer
       opened={Boolean(item)}
@@ -94,7 +104,7 @@ export function ProductSpecificationEditDrawer({
       position="right"
       size="34rem"
       title={`${t('Митний код')} ${product?.VendorCode || ''}`.trim()}
-      onClose={onClose}
+      onClose={requestClose}
     >
       {product && (
         <Stack gap="md">
@@ -112,7 +122,7 @@ export function ProductSpecificationEditDrawer({
           </Stack>
 
           <TextInput
-            disabled={isSaving}
+            disabled={isSaving || !canSave}
             label={t('Митний код')}
             required
             value={draft.specificationCode}
@@ -120,28 +130,28 @@ export function ProductSpecificationEditDrawer({
           />
           <NumberInput
             decimalScale={2}
-            disabled={isSaving}
+            disabled={isSaving || !canSave}
             label={t('Митна вартість')}
             value={draft.customsValue}
             onChange={(value) => setDraft((current) => ({ ...current, customsValue: toNumberOrEmpty(value) }))}
           />
           <NumberInput
             decimalScale={2}
-            disabled={isSaving}
+            disabled={isSaving || !canSave}
             label={t('Мито')}
             value={draft.duty}
             onChange={(value) => setDraft((current) => ({ ...current, duty: toNumberOrEmpty(value) }))}
           />
           <NumberInput
             decimalScale={2}
-            disabled={isSaving}
+            disabled={isSaving || !canSave}
             label={t('ПДВ')}
             value={draft.vatValue}
             onChange={(value) => setDraft((current) => ({ ...current, vatValue: toNumberOrEmpty(value) }))}
           />
 
           <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+            <Button color="gray" disabled={isSaving} variant="light" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
             {canSave && (
@@ -166,6 +176,25 @@ export function ProductSpecificationEditDrawer({
           </Stack>
         </Stack>
       )}
+
+      <AppModal
+        centered
+        opened={confirmCloseOpen}
+        title={t('Є незбережені зміни')}
+        onClose={() => setConfirmCloseOpen(false)}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={confirmClose}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </AppDrawer>
   )
 }
@@ -181,14 +210,58 @@ function buildDraft(product: SpecificationProduct | null): ProductSpecificationD
   }
 }
 
+function areDraftsEqual(left: ProductSpecificationDraft, right: ProductSpecificationDraft): boolean {
+  return (
+    left.customsValue === right.customsValue &&
+    left.duty === right.duty &&
+    left.specificationCode === right.specificationCode &&
+    left.vatValue === right.vatValue
+  )
+}
+
 function buildSpecificationHistory(product: SpecificationProduct | null): ProductSpecificationEntity[] {
-  return [...(product?.ProductSpecifications || [])].sort((left, right) => getDateTime(left.Created) - getDateTime(right.Created))
+  return (product?.ProductSpecifications || []).toSorted((left, right) => getDateTime(left.Created) - getDateTime(right.Created))
 }
 
 function getLastSpecification(product: SpecificationProduct | null): ProductSpecificationEntity | null {
-  const specifications = product?.ProductSpecifications || []
+  return (product?.ProductSpecifications || []).reduce<ProductSpecificationEntity | null>((latest, current) => {
+    if (!latest) {
+      return current
+    }
 
-  return specifications.length > 0 ? specifications[specifications.length - 1] : null
+    const currentTime = getDateTime(current.Created)
+    const latestTime = getDateTime(latest.Created)
+
+    if (currentTime > latestTime) {
+      return current
+    }
+
+    if (currentTime === latestTime && (current.Id || 0) > (latest.Id || 0)) {
+      return current
+    }
+
+    return latest
+  }, null)
+}
+
+function getProductDrawerKey(item: PackingListPackageOrderItem | null): string {
+  if (!item) {
+    return 'closed'
+  }
+
+  const product = item.SupplyInvoiceOrderItem?.Product || null
+  const specification = getLastSpecification(product)
+  const keyParts = [
+    getProductKey(product),
+    specification?.NetUid,
+    specification?.Id,
+    specification?.SpecificationCode,
+    specification?.CustomsValue,
+    specification?.Duty,
+    specification?.VATValue,
+  ].filter(Boolean)
+
+  return keyParts.length > 0 ? keyParts.join('|') : 'open'
 }
 
 function getProductKey(product: SpecificationProduct | null): string {

@@ -118,14 +118,10 @@ export function WarehouseUkrainePage() {
   )
 
   const visibleTabs = useMemo(() => {
-    const permitted = tabs.filter((tab) => hasPermission(tab.permissionKey))
-
-    return permitted.length > 0 ? permitted : tabs
+    return tabs.filter((tab) => hasPermission(tab.permissionKey))
   }, [hasPermission, tabs])
 
-  const defaultTab = visibleTabs[0].value
-  const [activeTab, setActiveTab] = useValueState(defaultTab)
-  const activeTabItem = visibleTabs.find((tab) => tab.value === activeTab) ?? visibleTabs[0]
+  const defaultTab = visibleTabs[0]?.value
 
   return (
     <Stack gap="md">

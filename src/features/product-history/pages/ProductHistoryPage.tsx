@@ -582,26 +582,26 @@ function PlacementGroupRows({ group, t }: { group: PlacementGroup; t: (key: stri
 
 function groupAvailabilityPlacements(placements: ProductHistoryPlacement[]): PlacementGroup[] {
   const groups: PlacementGroup[] = []
+  const groupMap = new Map<string, PlacementGroup>()
 
   for (const placement of placements) {
-    const existingGroup = groups.find(
-      (group) =>
-        group.storageNumber === placement.StorageNumber
-        && group.rowNumber === placement.RowNumber
-        && group.cellNumber === placement.CellNumber,
-    )
+    const key = `${placement.StorageNumber ?? ''}\u0000${placement.RowNumber ?? ''}\u0000${placement.CellNumber ?? ''}`
+    const existingGroup = groupMap.get(key)
+    const quantity = toFiniteNumber(placement.Qty) ?? 0
 
     if (existingGroup) {
       existingGroup.items.push(placement)
-      existingGroup.quantity = existingGroup.items.reduce((sum, item) => sum + (toFiniteNumber(item.Qty) ?? 0), 0)
+      existingGroup.quantity += quantity
     } else {
-      groups.push({
+      const group = {
         cellNumber: placement.CellNumber,
         items: [placement],
-        quantity: toFiniteNumber(placement.Qty) ?? 0,
+        quantity,
         rowNumber: placement.RowNumber,
         storageNumber: placement.StorageNumber,
-      })
+      }
+      groupMap.set(key, group)
+      groups.push(group)
     }
   }
 
@@ -709,7 +709,7 @@ function useProductHistoryColumns(
           )
 
           if (availabilities.length === 0) {
-            return <Text size="sm" c="dimmed">—</Text>
+            return <Text size="sm" c="dimmed">-</Text>
           }
 
           return (

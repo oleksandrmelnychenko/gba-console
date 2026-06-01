@@ -13,8 +13,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconDeviceFloppy, IconX } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
-import { useValueState } from '../../../shared/hooks/useValueState'
+import { useEffect, useMemo, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
@@ -44,6 +43,32 @@ type RoadListFormState = {
   outsideCityKilometers: string
 }
 
+type RoadListModalState = {
+  calculated: CompanyCarRoadList | null
+  drivers: CompanyCarRoadListDriver[]
+  error: string | null
+  form: RoadListFormState
+  isSaving: boolean
+  outcomeOrders: OutcomePaymentOrder[]
+  selectedOutcomeNetUid: string
+  userSearchValue: string
+  users: UserProfile[]
+}
+
+type RoadListModalAction =
+  | { type: 'add-driver'; driver: CompanyCarRoadListDriver }
+  | { type: 'calculated'; calculated: CompanyCarRoadList | null }
+  | { type: 'failed'; error: string }
+  | { type: 'finished-saving' }
+  | { type: 'loaded-outcome-orders'; outcomeOrders: OutcomePaymentOrder[] }
+  | { type: 'loaded-users'; users: UserProfile[] }
+  | { type: 'patch-form'; patch: Partial<RoadListFormState> }
+  | { type: 'remove-driver'; driver: CompanyCarRoadListDriver }
+  | { type: 'reset' }
+  | { type: 'selected-outcome-changed'; selectedOutcomeNetUid: string }
+  | { type: 'started-saving' }
+  | { type: 'user-search-changed'; userSearchValue: string }
+
 export function CompanyCarRoadListFormModal({
   companyCar,
   onClose,
@@ -57,15 +82,18 @@ export function CompanyCarRoadListFormModal({
 }) {
   const { t } = useI18n()
   const { user } = useAuth()
-  const [form, setForm] = useValueState<RoadListFormState>(() => createEmptyForm())
-  const [calculated, setCalculated] = useValueState<CompanyCarRoadList | null>(null)
-  const [outcomeOrders, setOutcomeOrders] = useValueState<OutcomePaymentOrder[]>([])
-  const [selectedOutcomeNetUid, setSelectedOutcomeNetUid] = useValueState<string>('')
-  const [drivers, setDrivers] = useValueState<CompanyCarRoadListDriver[]>([])
-  const [users, setUsers] = useValueState<UserProfile[]>([])
-  const [userSearchValue, setUserSearchValue] = useValueState('')
-  const [error, setError] = useValueState<string | null>(null)
-  const [isSaving, setSaving] = useValueState(false)
+  const [state, dispatchState] = useReducer(roadListModalReducer, undefined, createRoadListModalState)
+  const {
+    calculated,
+    drivers,
+    error,
+    form,
+    isSaving,
+    outcomeOrders,
+    selectedOutcomeNetUid,
+    userSearchValue,
+    users,
+  } = state
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const [debouncedForm] = useDebouncedValue(form, CALCULATE_DEBOUNCE_MS)
 
@@ -78,12 +106,8 @@ export function CompanyCarRoadListFormModal({
       return
     }
 
-    setForm(createEmptyForm())
-    setCalculated(null)
-    setDrivers([])
-    setUserSearchValue('')
-    setError(null)
-  }, [opened, setCalculated, setDrivers, setError, setForm, setUserSearchValue])
+    dispatchState({ type: 'reset' })
+  }, [opened])
 
   useEffect(() => {
     if (!opened || !companyCarNetUid) {
@@ -92,29 +116,25 @@ export function CompanyCarRoadListFormModal({
 
     let cancelled = false
 
-    async function loadOutcomeOrders(netId: string) {
-      try {
-        const nextOrders = await getOutcomeOrdersByCompanyCar(netId)
-
+    void getOutcomeOrdersByCompanyCar(companyCarNetUid)
+      .then((nextOrders) => {
         if (!cancelled) {
-          setOutcomeOrders(nextOrders)
-          setSelectedOutcomeNetUid(getEntityValue(nextOrders[0]) || '')
+          dispatchState({ outcomeOrders: nextOrders, type: 'loaded-outcome-orders' })
         }
-      } catch (loadError) {
+      })
+      .catch((loadError: unknown) => {
         if (!cancelled) {
-          setOutcomeOrders([])
-          setSelectedOutcomeNetUid('')
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити видаткові статті'))
+          dispatchState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити видаткові статті'),
+            type: 'failed',
+          })
         }
-      }
-    }
-
-    void loadOutcomeOrders(companyCarNetUid)
+      })
 
     return () => {
       cancelled = true
     }
-  }, [companyCarNetUid, opened, setError, setOutcomeOrders, setSelectedOutcomeNetUid, t])
+  }, [companyCarNetUid, opened, t])
 
   useEffect(() => {
     if (!opened) {
@@ -123,26 +143,25 @@ export function CompanyCarRoadListFormModal({
 
     let cancelled = false
 
-    async function loadUsers() {
-      try {
-        const nextUsers = await searchCompanyCarUsers(debouncedUserSearchValue.trim())
-
+    void searchCompanyCarUsers(debouncedUserSearchValue.trim())
+      .then((nextUsers) => {
         if (!cancelled) {
-          setUsers(nextUsers)
+          dispatchState({ type: 'loaded-users', users: nextUsers })
         }
-      } catch (loadError) {
+      })
+      .catch((loadError: unknown) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувачів'))
+          dispatchState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувачів'),
+            type: 'failed',
+          })
         }
-      }
-    }
-
-    void loadUsers()
+      })
 
     return () => {
       cancelled = true
     }
-  }, [debouncedUserSearchValue, opened, setError, setUsers, t])
+  }, [debouncedUserSearchValue, opened, t])
 
   useEffect(() => {
     if (!opened || !companyCarNetUid) {
@@ -160,32 +179,33 @@ export function CompanyCarRoadListFormModal({
 
     let cancelled = false
 
-    async function calculate() {
-      try {
-        const result = await calculateCompanyCarRoadList(buildRoadListPayload({
-          companyCar,
-          drivers,
-          form: debouncedForm,
-          outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
-          responsible: toUserProfile(user),
-        }))
-
+    void calculateCompanyCarRoadList(
+      buildRoadListPayload({
+        companyCar,
+        drivers,
+        form: debouncedForm,
+        outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
+        responsible: toUserProfile(user),
+      }),
+    )
+      .then((result) => {
         if (!cancelled) {
-          setCalculated(result)
+          dispatchState({ calculated: result, type: 'calculated' })
         }
-      } catch (calculateError) {
+      })
+      .catch((calculateError: unknown) => {
         if (!cancelled) {
-          setError(calculateError instanceof Error ? calculateError.message : t('Не вдалося розрахувати шляховий лист'))
+          dispatchState({
+            error: calculateError instanceof Error ? calculateError.message : t('Не вдалося розрахувати шляховий лист'),
+            type: 'failed',
+          })
         }
-      }
-    }
-
-    void calculate()
+      })
 
     return () => {
       cancelled = true
     }
-  }, [companyCar, companyCarNetUid, debouncedForm, drivers, opened, outcomeOrders, selectedOutcomeNetUid, setCalculated, setError, t, user])
+  }, [companyCar, companyCarNetUid, debouncedForm, drivers, opened, outcomeOrders, selectedOutcomeNetUid, t, user])
 
   const outcomeOptions = useMemo(
     () => toSelectOptions(outcomeOrders, (order) => order.Number),
@@ -207,12 +227,11 @@ export function CompanyCarRoadListFormModal({
       return
     }
 
-    setDrivers((current) => [...current, { User: profile }])
-    setUserSearchValue('')
+    dispatchState({ driver: { User: profile }, type: 'add-driver' })
   }
 
   function removeDriver(driver: CompanyCarRoadListDriver) {
-    setDrivers((current) => current.filter((candidate) => candidate !== driver))
+    dispatchState({ driver, type: 'remove-driver' })
   }
 
   async function handleSave() {
@@ -220,8 +239,7 @@ export function CompanyCarRoadListFormModal({
       return
     }
 
-    setSaving(true)
-    setError(null)
+    dispatchState({ type: 'started-saving' })
 
     try {
       const payload = buildRoadListPayload({
@@ -238,9 +256,12 @@ export function CompanyCarRoadListFormModal({
         onCreated(created)
       }
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти шляховий лист'))
+      dispatchState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти шляховий лист'),
+        type: 'failed',
+      })
     } finally {
-      setSaving(false)
+      dispatchState({ type: 'finished-saving' })
     }
   }
 
@@ -272,39 +293,39 @@ export function CompanyCarRoadListFormModal({
           label={t('Виберіть вихідну статтю бюджету')}
           placeholder={t('Видаткова стаття бюджету')}
           value={selectedOutcomeNetUid || null}
-          onChange={(value) => setSelectedOutcomeNetUid(value || '')}
+          onChange={(value) => dispatchState({ selectedOutcomeNetUid: value || '', type: 'selected-outcome-changed' })}
         />
 
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <TextInput
             label={t('Показники одометра')}
             value={form.mileage}
-            onChange={(event) => setForm((current) => ({ ...current, mileage: event.currentTarget.value }))}
+            onChange={(event) => dispatchState({ patch: { mileage: event.currentTarget.value }, type: 'patch-form' })}
           />
           <TextInput
             disabled={isMileageOnly}
             label={t('По місту')}
             value={form.inCityKilometers}
-            onChange={(event) => setForm((current) => ({ ...current, inCityKilometers: event.currentTarget.value }))}
+            onChange={(event) => dispatchState({ patch: { inCityKilometers: event.currentTarget.value }, type: 'patch-form' })}
           />
           <TextInput
             disabled={isMileageOnly}
             label={t('За містом')}
             value={form.outsideCityKilometers}
-            onChange={(event) => setForm((current) => ({ ...current, outsideCityKilometers: event.currentTarget.value }))}
+            onChange={(event) => dispatchState({ patch: { outsideCityKilometers: event.currentTarget.value }, type: 'patch-form' })}
           />
           <TextInput
             disabled={isMixedDisabled}
             label={t('Змішаний режим')}
             value={form.mixedModeKilometers}
-            onChange={(event) => setForm((current) => ({ ...current, mixedModeKilometers: event.currentTarget.value }))}
+            onChange={(event) => dispatchState({ patch: { mixedModeKilometers: event.currentTarget.value }, type: 'patch-form' })}
           />
         </SimpleGrid>
 
         <TextInput
           label={t('Коментар')}
           value={form.comment}
-          onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+          onChange={(event) => dispatchState({ patch: { comment: event.currentTarget.value }, type: 'patch-form' })}
         />
 
         <Select
@@ -316,7 +337,7 @@ export function CompanyCarRoadListFormModal({
           searchValue={userSearchValue}
           value={null}
           onChange={addDriver}
-          onSearchChange={setUserSearchValue}
+          onSearchChange={(value) => dispatchState({ type: 'user-search-changed', userSearchValue: value })}
         />
 
         {drivers.length > 0 && (
@@ -367,6 +388,90 @@ function ReadonlyItem({ label, value }: { label: string; value: string }) {
       <Text size="sm">{value}</Text>
     </Stack>
   )
+}
+
+function createRoadListModalState(): RoadListModalState {
+  return {
+    calculated: null,
+    drivers: [],
+    error: null,
+    form: createEmptyForm(),
+    isSaving: false,
+    outcomeOrders: [],
+    selectedOutcomeNetUid: '',
+    userSearchValue: '',
+    users: [],
+  }
+}
+
+function roadListModalReducer(state: RoadListModalState, action: RoadListModalAction): RoadListModalState {
+  switch (action.type) {
+    case 'add-driver':
+      return {
+        ...state,
+        drivers: [...state.drivers, action.driver],
+        userSearchValue: '',
+      }
+    case 'calculated':
+      return {
+        ...state,
+        calculated: action.calculated,
+      }
+    case 'failed':
+      return {
+        ...state,
+        error: action.error,
+      }
+    case 'finished-saving':
+      return {
+        ...state,
+        isSaving: false,
+      }
+    case 'loaded-outcome-orders':
+      return {
+        ...state,
+        outcomeOrders: action.outcomeOrders,
+        selectedOutcomeNetUid: getEntityValue(action.outcomeOrders[0]) || '',
+      }
+    case 'loaded-users':
+      return {
+        ...state,
+        users: action.users,
+      }
+    case 'patch-form':
+      return {
+        ...state,
+        form: {
+          ...state.form,
+          ...action.patch,
+        },
+      }
+    case 'remove-driver':
+      return {
+        ...state,
+        drivers: state.drivers.filter((candidate) => candidate !== action.driver),
+      }
+    case 'reset':
+      return createRoadListModalState()
+    case 'selected-outcome-changed':
+      return {
+        ...state,
+        selectedOutcomeNetUid: action.selectedOutcomeNetUid,
+      }
+    case 'started-saving':
+      return {
+        ...state,
+        error: null,
+        isSaving: true,
+      }
+    case 'user-search-changed':
+      return {
+        ...state,
+        userSearchValue: action.userSearchValue,
+      }
+    default:
+      return state
+  }
 }
 
 function buildRoadListPayload({

@@ -1,6 +1,5 @@
 import { Alert, Button, Group, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -29,12 +28,10 @@ export function TaxFreeCarrierCarModal({
   const [draft, setDraft] = useValueState<CarDraft>(EMPTY_DRAFT)
   const [error, setError] = useValueState<string | null>(null)
 
-  useEffect(() => {
-    if (opened) {
-      setDraft(EMPTY_DRAFT)
-      setError(null)
-    }
-  }, [opened, setDraft, setError])
+  function resetDraft() {
+    setDraft(EMPTY_DRAFT)
+    setError(null)
+  }
 
   function handleSubmit() {
     if (!draft.number.trim()) {
@@ -49,7 +46,13 @@ export function TaxFreeCarrierCarModal({
   }
 
   return (
-    <AppModal centered opened={opened} title={t('Машина перевізника')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={opened}
+      title={t('Машина перевізника')}
+      transitionProps={{ onEnter: resetDraft }}
+      onClose={onClose}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">

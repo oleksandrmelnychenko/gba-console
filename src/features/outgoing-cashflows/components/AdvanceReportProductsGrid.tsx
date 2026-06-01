@@ -1,5 +1,5 @@
-import { ActionIcon, Tooltip } from '@mantine/core'
-import { IconTrash } from '@tabler/icons-react'
+import { ActionIcon, Group, Tooltip } from '@mantine/core'
+import { IconFileText, IconTrash } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -136,9 +136,18 @@ export function AdvanceReportProductsGrid({
         accessor: (row) => row.totalAmount,
         cell: (row) => formatMoney(row.totalAmount),
       },
+      {
+        id: 'documents',
+        header: t('Документи'),
+        width: 140,
+        minWidth: 120,
+        enableSorting: false,
+        accessor: (row) => row.documentUrls.length,
+        cell: (row) => <DocumentsCell urls={row.documentUrls} />,
+      },
     ]
 
-    if (canRemove && onRemove) {
+    if (canRemove && onRemove && rows.some((row) => row.canRemove !== false)) {
       base.push({
         id: 'remove',
         header: '',
@@ -150,26 +159,27 @@ export function AdvanceReportProductsGrid({
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: (row) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="red"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onRemove(row)
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Tooltip>
-        ),
+        cell: (row) =>
+          row.canRemove === false ? null : (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onRemove(row)
+                }}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ),
       })
     }
 
     return base
-  }, [canRemove, onRemove, t])
+  }, [canRemove, onRemove, rows, t])
 
   return (
     <DataTable
@@ -181,6 +191,34 @@ export function AdvanceReportProductsGrid({
       minWidth={1980}
       tableId="advance-report-products"
     />
+  )
+}
+
+function DocumentsCell({ urls }: { urls: string[] }) {
+  const { t } = useI18n()
+
+  if (urls.length === 0) {
+    return displayValue()
+  }
+
+  return (
+    <Group gap={4} wrap="nowrap">
+      {urls.map((url, index) => (
+        <Tooltip key={`${url}-${index}`} label={t('Відкрити документ')}>
+          <ActionIcon
+            aria-label={t('Відкрити документ')}
+            component="a"
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            size="sm"
+            variant="subtle"
+          >
+            <IconFileText size={16} />
+          </ActionIcon>
+        </Tooltip>
+      ))}
+    </Group>
   )
 }
 

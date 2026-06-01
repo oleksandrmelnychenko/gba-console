@@ -100,11 +100,15 @@ export type SupplyPaymentTask = EntityFields & {
 
 export type ConsumablesOrderDocument = EntityFields & {
   ContentType?: string
+  DocumentUrl?: string
   DocumentURL?: string
   FileName?: string
   Name?: string
+  PdfDocumentUrl?: string
   PdfDocumentURL?: string
+  Url?: string
   URL?: string
+  url?: string
 }
 
 export type OutcomePaymentOrder = EntityFields & {

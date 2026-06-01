@@ -17,6 +17,24 @@ export type NewProductDeliveryProtocolModalProps = {
   onCreate: (payload: CreateProtocolPayload) => void
 }
 
+type NewProductDeliveryProtocolFormState = {
+  comment: string
+  fromDate: string
+  organizationId: string | null
+  submitted: boolean
+  transportationType: string
+}
+
+function createInitialFormState(): NewProductDeliveryProtocolFormState {
+  return {
+    comment: '',
+    fromDate: formatLocalDate(new Date()),
+    organizationId: null,
+    submitted: false,
+    transportationType: String(SupplyTransportationType.Vehicle),
+  }
+}
+
 export function NewProductDeliveryProtocolModal({
   createError,
   isCreating,
@@ -27,33 +45,53 @@ export function NewProductDeliveryProtocolModal({
   onCreate,
 }: NewProductDeliveryProtocolModalProps) {
   const { t } = useI18n()
-  const [organizationId, setOrganizationId] = useState<string | null>(null)
-  const [transportationType, setTransportationType] = useState<string>(String(SupplyTransportationType.Vehicle))
-  const [fromDate, setFromDate] = useState(formatLocalDate(new Date()))
-  const [comment, setComment] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-  const [wasOpened, setWasOpened] = useState(opened)
 
-  if (opened !== wasOpened) {
-    setWasOpened(opened)
+  return (
+    <AppModal
+      centered
+      opened={opened}
+      size="md"
+      title={`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`}
+      onClose={onClose}
+    >
+      {opened ? (
+        <NewProductDeliveryProtocolForm
+          createError={createError}
+          isCreating={isCreating}
+          organizations={organizations}
+          organizationsError={organizationsError}
+          onClose={onClose}
+          onCreate={onCreate}
+        />
+      ) : null}
+    </AppModal>
+  )
+}
 
-    if (opened) {
-      setOrganizationId(null)
-      setTransportationType(String(SupplyTransportationType.Vehicle))
-      setFromDate(formatLocalDate(new Date()))
-      setComment('')
-      setSubmitted(false)
-    }
-  }
+function NewProductDeliveryProtocolForm({
+  createError,
+  isCreating,
+  organizations,
+  organizationsError,
+  onClose,
+  onCreate,
+}: Omit<NewProductDeliveryProtocolModalProps, 'opened'>) {
+  const { t } = useI18n()
+  const [form, setForm] = useState(createInitialFormState)
+  const { comment, fromDate, organizationId, submitted, transportationType } = form
 
   const organizationOptions = useMemo(
     () =>
-      organizations
-        .filter((organization) => organization.NetUid || organization.Id)
-        .map((organization) => ({
-          label: organization.Name || organization.FullName || String(organization.NetUid || organization.Id),
-          value: String(organization.NetUid || organization.Id),
-        })),
+      organizations.reduce<{ label: string; value: string }[]>((options, organization) => {
+        if (organization.NetUid || organization.Id) {
+          options.push({
+            label: organization.Name || organization.FullName || String(organization.NetUid || organization.Id),
+            value: String(organization.NetUid || organization.Id),
+          })
+        }
+
+        return options
+      }, []),
     [organizations],
   )
 
@@ -70,7 +108,7 @@ export function NewProductDeliveryProtocolModal({
   const dateMissing = submitted && !fromDate
 
   function handleSubmit() {
-    setSubmitted(true)
+    setForm((current) => ({ ...current, submitted: true }))
 
     const organization = organizations.find(
       (candidate) => String(candidate.NetUid || candidate.Id) === organizationId,
@@ -89,59 +127,62 @@ export function NewProductDeliveryProtocolModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="md" title={`${t('Додати')} ${t('Протокол доставки товару').toLowerCase()}`} onClose={onClose}>
-      <Stack gap="md">
-        {(createError || organizationsError) && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {createError || organizationsError}
-          </Alert>
-        )}
+    <Stack gap="md">
+      {(createError || organizationsError) && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {createError || organizationsError}
+        </Alert>
+      )}
 
+      <Select
+        searchable
+        data={organizationOptions}
+        error={organizationMissing ? t('Вкажіть організацію') : undefined}
+        label={t('Організація')}
+        nothingFoundMessage={t('Нічого не знайдено')}
+        placeholder={t('Організація')}
+        value={organizationId}
+        onChange={(value) => setForm((current) => ({ ...current, organizationId: value }))}
+      />
+
+      <Group grow align="start">
         <Select
-          searchable
-          data={organizationOptions}
-          error={organizationMissing ? t('Вкажіть організацію') : undefined}
-          label={t('Організація')}
-          nothingFoundMessage={t('Нічого не знайдено')}
-          placeholder={t('Організація')}
-          value={organizationId}
-          onChange={setOrganizationId}
+          allowDeselect={false}
+          data={transportationOptions}
+          label={t('Тип')}
+          value={transportationType}
+          onChange={(value) =>
+            setForm((current) => ({
+              ...current,
+              transportationType: value || String(SupplyTransportationType.Vehicle),
+            }))
+          }
         />
-
-        <Group grow align="start">
-          <Select
-            allowDeselect={false}
-            data={transportationOptions}
-            label={t('Тип')}
-            value={transportationType}
-            onChange={(value) => setTransportationType(value || String(SupplyTransportationType.Vehicle))}
-          />
-          <TextInput
-            error={dateMissing ? t('Вкажіть дату') : undefined}
-            label={t('Від якої дати')}
-            type="date"
-            value={fromDate}
-            onChange={(event) => setFromDate(event.currentTarget.value)}
-          />
-        </Group>
-
-        <Textarea
-          autosize
-          label={t('Коментар')}
-          minRows={2}
-          value={comment}
-          onChange={(event) => setComment(event.currentTarget.value)}
+        <TextInput
+          error={dateMissing ? t('Вкажіть дату') : undefined}
+          label={t('Від якої дати')}
+          type="date"
+          value={fromDate}
+          onChange={(event) => setForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
         />
+      </Group>
 
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isCreating} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button color="violet" loading={isCreating} onClick={handleSubmit}>
-            {t('Створити')}
-          </Button>
-        </Group>
-      </Stack>
-    </AppModal>
+      <Textarea
+        autosize
+        label={t('Коментар')}
+        minRows={2}
+        value={comment}
+        onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+      />
+
+      <Group justify="flex-end" gap="sm">
+        <Button color="gray" disabled={isCreating} variant="light" onClick={onClose}>
+          {t('Скасувати')}
+        </Button>
+        <Button color="violet" loading={isCreating} onClick={handleSubmit}>
+          {t('Створити')}
+        </Button>
+      </Group>
+    </Stack>
   )
 }

@@ -16,6 +16,7 @@ export type VatReport = {
   Sale?: Sale | null
   SupplyInvoice?: SupplyInvoice | null
   VatAmountEU?: number
+  VatAmountPL?: number
   VatPercent?: number
 }
 

@@ -21,27 +21,36 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
+  IconBrandEdge,
   IconDots,
+  IconExternalLink,
   IconEye,
+  IconFileInvoice,
+  IconHistory,
   IconLockOpen,
   IconPencil,
+  IconPlus,
   IconPrinter,
   IconReceipt,
+  IconReceipt2,
   IconRefresh,
   IconRestore,
   IconSearch,
-  IconTruckDelivery,
+  IconTag,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
+import { UserRoleType } from '../../../shared/auth/types'
 import {
   getSalesUkraine,
   getSalesUkraineOrganizations,
@@ -50,11 +59,16 @@ import {
   updateSale,
 } from '../api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
+import { NewSaleModal } from '../components/NewSaleModal'
+import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
-import { SaleShipModal } from '../components/SaleShipModal'
-import { SALES_UKRAINE_UNLOCK_PERMISSION, SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION } from '../permissions'
+import {
+  SALES_UKRAINE_EDIT_PERMISSION,
+  SALES_UKRAINE_UNLOCK_PERMISSION,
+  SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
+} from '../permissions'
 import type {
   SalesUkraineClientOption,
   SalesUkraineFilters,
@@ -123,19 +137,19 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  Await: 'Очікує',
-  InvoiceChanged: 'Змінено рахунок',
-  New: 'Новий',
-  OrderClosed: 'Закритий',
-  Packaged: 'Запаковано',
-  Packaging: 'Пакування',
+  Await: 'Очікування',
+  InvoiceChanged: 'Редаговані накладні',
+  New: 'Рахунок',
+  OrderClosed: 'Закриті рахунки',
+  Packaged: 'Накладна',
+  Packaging: 'Накладна',
   Received: 'Отримано',
-  Shipping: 'Доставка',
-  TransporterChanged: 'Змінено перевізника',
+  Shipping: 'Відправлено',
+  TransporterChanged: 'Редаговані перевізники',
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  0: 'Не оплачено',
+  0: 'Неоплаченно',
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
@@ -148,7 +162,10 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SalesUkrainePage() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { hasPermission, user } = useAuth()
+  const isAdmin =
+    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
+  const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
   const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
   const today = useMemo(() => formatLocalDate(new Date()), [])
@@ -179,8 +196,14 @@ export function SalesUkrainePage() {
   const [isConfirming, setConfirming] = useValueState(false)
   const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
-  const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
+  const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
+  const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
+  const [auditLoading, setAuditLoading] = useValueState(false)
+  const [auditError, setAuditError] = useValueState<string | null>(null)
+  const auditRequestRef = useRef(0)
+  const [isNewSaleOpen, setNewSaleOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -202,14 +225,120 @@ export function SalesUkrainePage() {
     [activeDraft, offset, pageSize],
   )
 
+  const openAudit = useCallback(
+    (sale: SalesUkraineSale) => {
+      setAuditSale(sale)
+      setAuditStatistic(null)
+      setAuditError(null)
+
+      if (!sale.NetUid) {
+        return
+      }
+
+      setAuditLoading(true)
+      const requestId = auditRequestRef.current + 1
+      auditRequestRef.current = requestId
+
+      void (async () => {
+        try {
+          const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+
+          if (auditRequestRef.current === requestId) {
+            setAuditStatistic(statistic)
+          }
+        } catch (auditFetchError) {
+          if (auditRequestRef.current === requestId) {
+            setAuditError(
+              auditFetchError instanceof Error ? auditFetchError.message : t('Не вдалося завантажити дані'),
+            )
+          }
+        } finally {
+          if (auditRequestRef.current === requestId) {
+            setAuditLoading(false)
+          }
+        }
+      })()
+    },
+    [setAuditSale, setAuditStatistic, setAuditError, setAuditLoading, t],
+  )
+
+  function closeAudit() {
+    auditRequestRef.current += 1
+    setAuditSale(null)
+    setAuditStatistic(null)
+    setAuditError(null)
+    setAuditLoading(false)
+  }
+
+  const realtimeReloadRef = useRef<number | null>(null)
+  const backgroundReloadRef = useRef(false)
+  const salesRef = useRef<SalesUkraineSale[]>(sales)
+
+  useEffect(() => {
+    salesRef.current = sales
+  }, [sales])
+
+  const scheduleRealtimeReload = useCallback(() => {
+    if (realtimeReloadRef.current !== null) {
+      window.clearTimeout(realtimeReloadRef.current)
+    }
+
+    realtimeReloadRef.current = window.setTimeout(() => {
+      realtimeReloadRef.current = null
+      backgroundReloadRef.current = true
+      reload()
+    }, 800)
+  }, [reload])
+
+  useEffect(
+    () => () => {
+      if (realtimeReloadRef.current !== null) {
+        window.clearTimeout(realtimeReloadRef.current)
+      }
+    },
+    [],
+  )
+
+  const handleRealtimeSaleAdded = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const number = sale?.SaleNumber?.Value
+
+      if (typeof number === 'string' && number.trim().startsWith('P')) {
+        return
+      }
+
+      scheduleRealtimeReload()
+    },
+    [scheduleRealtimeReload],
+  )
+
+  const handleRealtimeSaleUpdated = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const netId = sale?.NetUid
+
+      if (!netId || salesRef.current.some((current) => current.NetUid === netId)) {
+        scheduleRealtimeReload()
+      }
+    },
+    [scheduleRealtimeReload],
+  )
+
+  useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
+  useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
+
   const columns = useSalesUkraineColumns({
+    canEditSale,
     canUnlock,
     canWillNotShip,
+    isAdmin,
+    onOpenAudit: openAudit,
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
+    onOpenEditor: setEditorSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
-    onShip: setShipSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
   })
@@ -270,22 +399,31 @@ export function SalesUkrainePage() {
     let cancelled = false
 
     async function loadSales() {
-      setLoading(true)
-      setError(null)
+      const isBackgroundReload = backgroundReloadRef.current
+      backgroundReloadRef.current = false
+
+      if (!isBackgroundReload) {
+        setLoading(true)
+        setError(null)
+      }
 
       try {
         const next = await getSalesUkraine(activeFilters)
 
         if (!cancelled) {
           setSales(next)
+
+          if (isBackgroundReload) {
+            setError(null)
+          }
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setSales([])
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продажі'))
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setLoading(false)
         }
       }
@@ -414,7 +552,10 @@ export function SalesUkrainePage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="flex-end" align="center">
+      <Group justify="space-between" align="center">
+        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+          {t('Новий продаж')}
+        </Button>
         <Badge color="gray" variant="light">
           {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || sales.length}`}
         </Badge>
@@ -556,19 +697,31 @@ export function SalesUkrainePage() {
         }}
       />
 
-      <SaleShipModal
-        sale={shipSale}
-        onClose={() => setShipSale(null)}
-        onSaved={() => {
-          setShipSale(null)
-          reload()
-        }}
-      />
-
       <ConsignmentNoteSettingsDrawer
         opened={Boolean(consignmentSale)}
         sale={consignmentSale}
         onClose={() => setConsignmentSale(null)}
+      />
+
+      <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
+
+      <AppDrawer
+        opened={Boolean(auditSale)}
+        position="right"
+        size="min(720px, 100vw)"
+        title={t('Історія редагувань')}
+        onClose={closeAudit}
+      >
+        <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+      </AppDrawer>
+
+      <NewSaleModal
+        opened={isNewSaleOpen}
+        onClose={() => setNewSaleOpen(false)}
+        onCreated={(sale) => {
+          setNewSaleOpen(false)
+          setEditorSale(sale)
+        }}
       />
 
       <AppModal
@@ -597,23 +750,29 @@ export function SalesUkrainePage() {
 }
 
 function useSalesUkraineColumns({
+  canEditSale,
   canUnlock,
   canWillNotShip,
+  isAdmin,
+  onOpenAudit,
   onOpenConsignment,
   onOpenDetails,
   onOpenDiscount,
+  onOpenEditor,
   onOpenSale,
-  onShip,
   onUnlock,
   onWillNotShip,
 }: {
+  canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
+  isAdmin: boolean
+  onOpenAudit: (sale: SalesUkraineSale) => void
   onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
+  onOpenEditor: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
-  onShip: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
 }) {
@@ -644,6 +803,7 @@ function useSalesUkraineColumns({
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid,
         cell: (sale) => (
           <Group gap={5} wrap="wrap">
+            <SaleSourceIcon sale={sale} />
             <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
             {sale.IsVatSale && (
               <Badge color="violet" size="xs" variant="light">
@@ -734,23 +894,36 @@ function useSalesUkraineColumns({
         minWidth: 116,
         align: 'right',
         accessor: (sale) => getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount),
-        cell: (sale) => (
-          <>
-            <Text fw={600}>{formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(getSaleCurrencyCode(sale))}
-            </Text>
-          </>
-        ),
+        cell: (sale) => {
+          const unpaid = isUnpaidSale(sale)
+
+          return (
+            <>
+              <Text c={unpaid ? 'red' : undefined} fw={600}>
+                {formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}
+              </Text>
+              <Text c={unpaid ? 'red' : 'dimmed'} size="xs">
+                {displayValue(getSaleCurrencyCode(sale))}
+              </Text>
+            </>
+          )
+        },
       },
       {
         id: 'amountEur',
-        header: t('Екв. EUR'),
+        header: t('Екв.'),
         width: 124,
         minWidth: 112,
         align: 'right',
-        accessor: (sale) => getNumber(sale.TotalAmount),
-        cell: (sale) => formatAmount(getNumber(sale.TotalAmount)),
+        accessor: (sale) => getSecondaryAmount(sale),
+        cell: (sale) => (
+          <>
+            <Text>{formatAmount(getSecondaryAmount(sale))}</Text>
+            <Text size="xs" c="dimmed">
+              {getSecondaryAmountCode(sale)}
+            </Text>
+          </>
+        ),
       },
       {
         id: 'vat',
@@ -839,12 +1012,13 @@ function useSalesUkraineColumns({
         enableResizing: false,
         enableSorting: false,
         cell: (sale) => {
-          const isPackaging = sale.BaseLifeCycleStatus?.SaleLifeCycleType === 1
-          const showShip = isPackaging
-          const showTtn = Boolean(sale.TransporterId) && isPackaging
+          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+          const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
+          const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+          const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
           const showUnlock = canUnlock && Boolean(sale.IsLocked)
-          const hasMenu = showShip || showTtn || showWillNotShip || showUnlock
+          const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
 
           return (
             <Box onClick={(event) => event.stopPropagation()}>
@@ -854,20 +1028,19 @@ function useSalesUkraineColumns({
                     <IconEye size={18} />
                   </ActionIcon>
                 </Tooltip>
-                <SaleDocumentsMenu sale={sale} />
-                {hasMenu && (
-                  <Menu position="bottom-end" shadow="md" withinPortal>
-                    <Menu.Target>
-                      <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
-                        <IconDots size={18} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      {showShip && (
-                        <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onShip(sale)}>
-                          {t('Відвантажити')}
-                        </Menu.Item>
-                      )}
+                {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
+                <Menu position="bottom-end" shadow="md" withinPortal>
+                  <Menu.Target>
+                    <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
+                      <IconDots size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    {showEdit && (
+                      <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+                        {t('Відкрити продаж')}
+                      </Menu.Item>
+                    )}
                       {showTtn && (
                         <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                           {t('Друк ТТН')}
@@ -888,16 +1061,32 @@ function useSalesUkraineColumns({
                           {t('Розблокувати')}
                         </Menu.Item>
                       )}
-                    </Menu.Dropdown>
-                  </Menu>
-                )}
+                      <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+                        {t('Історія редагувань')}
+                      </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               </Group>
             </Box>
           )
         },
       },
     ],
-    [canUnlock, canWillNotShip, onOpenConsignment, onOpenDetails, onOpenDiscount, onOpenSale, onShip, onUnlock, onWillNotShip, t],
+    [
+      canEditSale,
+      canUnlock,
+      canWillNotShip,
+      isAdmin,
+      onOpenAudit,
+      onOpenConsignment,
+      onOpenDetails,
+      onOpenDiscount,
+      onOpenEditor,
+      onOpenSale,
+      onUnlock,
+      onWillNotShip,
+      t,
+    ],
   )
 }
 
@@ -1084,10 +1273,46 @@ function getSaleStatusKey(sale: SalesUkraineSale): string {
   return String(status || sale.BaseLifeCycleStatus?.Name || '')
 }
 
+function resolveRealtimeSale(payload: unknown): { NetUid?: string; SaleNumber?: { Value?: string } } | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const record = payload as { Sale?: unknown }
+  const sale = record.Sale && typeof record.Sale === 'object' ? record.Sale : payload
+
+  return sale as { NetUid?: string; SaleNumber?: { Value?: string } }
+}
+
+function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+  const source = sale.Order?.OrderSource
+  const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+  const isInvoiceStage = lifeCycleType === 1 || lifeCycleType === 2
+
+  const indicator =
+    source === 0
+      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
+      : source === 2
+        ? { icon: <IconTag size={14} />, label: t('Оферта') }
+        : isInvoiceStage
+          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
+          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
+
+  return (
+    <Tooltip label={indicator.label}>
+      <Box c="gray.6" style={{ display: 'inline-flex' }}>
+        {indicator.icon}
+      </Box>
+    </Tooltip>
+  )
+}
+
 function getSaleStatusLabel(sale: SalesUkraineSale): string {
   const statusKey = getSaleStatusKey(sale)
+  const label = translate(STATUS_LABELS[statusKey] || sale.BaseLifeCycleStatus?.Name || displayValue(statusKey))
 
-  return translate(STATUS_LABELS[statusKey] || sale.BaseLifeCycleStatus?.Name || displayValue(statusKey))
+  return sale.IsVatSale ? `(${translate('ПДВ')}) ${label}` : label
 }
 
 function getPaymentStatusLabel(sale: SalesUkraineSale): string {
@@ -1095,6 +1320,10 @@ function getPaymentStatusLabel(sale: SalesUkraineSale): string {
   const key = typeof status === 'undefined' || status === null ? '' : String(status)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
+}
+
+function isUnpaidSale(sale: SalesUkraineSale): boolean {
+  return sale.BaseSalePaymentStatus?.SalePaymentStatusType === 0
 }
 
 function getPaymentStatusColor(sale: SalesUkraineSale): string | undefined {
@@ -1120,6 +1349,18 @@ function getRetailPaymentSuffix(sale: SalesUkraineSale): string {
 
 function getSaleCurrencyCode(sale: SalesUkraineSale): string {
   return sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+}
+
+function isNonVatEurAgreement(sale: SalesUkraineSale): boolean {
+  return !sale.ClientAgreement?.Agreement?.WithVATAccounting && getSaleCurrencyCode(sale) === 'EUR'
+}
+
+function getSecondaryAmount(sale: SalesUkraineSale): number | null {
+  return isNonVatEurAgreement(sale) ? getNumber(sale.TotalAmountEurToUah) : getNumber(sale.TotalAmount)
+}
+
+function getSecondaryAmountCode(sale: SalesUkraineSale): string {
+  return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
 }
 
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
@@ -1154,6 +1395,8 @@ function lifecycleStatusFromNumber(status: number): string {
       return 'Received'
     case 5:
       return 'Await'
+    case 6:
+      return 'All'
     case 100:
       return 'OrderClosed'
     case 101:

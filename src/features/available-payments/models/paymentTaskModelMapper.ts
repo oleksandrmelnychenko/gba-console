@@ -676,7 +676,9 @@ function getPaidOrder(task: SupplyPaymentTask) {
 }
 
 function getTaskModelId(task: SupplyPaymentTask, fallback: string): string {
-  return String(task.NetUid || task.Id || fallback)
+  const taskId = String(task.NetUid || task.Id || 'task')
+
+  return `${taskId}-${fallback}`
 }
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {

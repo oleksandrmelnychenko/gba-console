@@ -140,6 +140,19 @@ export function ConsumableStoragesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setError, setLoading, setStorages, t])
 
+  const toolbarLeft = useMemo(
+    () => (
+      <TextInput
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Пошук')}
+        value={searchValue}
+        w={{ base: '100%', sm: 360 }}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+    ),
+    [searchValue, setSearchValue, t],
+  )
+
   async function handleDelete() {
     if (!deleteStorageTarget?.NetUid) {
       return
@@ -435,8 +448,8 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
       {totals && totals.length > 0 && (
         <Stack gap="xs">
           <Text fw={700}>{t('Підсумки')}</Text>
-          {totals.map((total, index) => (
-            <SimpleGrid key={`${total.Currency?.Code || total.Currency?.Name || 'total'}-${index}`} cols={{ base: 1, sm: 3 }}>
+          {totals.map((total) => (
+            <SimpleGrid key={getPriceTotalKey(total)} cols={{ base: 1, sm: 3 }}>
               <DetailItem label={t('Валюта')} value={displayValue(total.Currency?.Code || total.Currency?.Name)} />
               <DetailItem label={t('Кількість')} value={formatAmount(total.Qty)} />
               <DetailItem label={t('Сума')} value={formatMoney(total.TotalPrice ?? total.Amount)} />
@@ -446,6 +459,17 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
       )}
     </Stack>
   )
+}
+
+function getPriceTotalKey(total: NonNullable<ConsumablesStorage['PriceTotals']>[number]): string {
+  const currencyKey =
+    total.Currency?.NetUid ||
+    total.Currency?.Code ||
+    total.Currency?.Name ||
+    total.Currency?.Id ||
+    'without-currency'
+
+  return `${currencyKey}-${total.Qty ?? 0}-${total.TotalPrice ?? total.Amount ?? 0}`
 }
 
 function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
@@ -505,33 +529,48 @@ type DeprecatedConsumableOrderRow = {
   order: DeprecatedConsumableOrder
 }
 
+type DeprecatedConsumableOrdersState = {
+  error: string | null
+  isLoading: boolean
+  orders: DeprecatedConsumableOrder[]
+}
+
+const EMPTY_DEPRECATED_CONSUMABLE_ORDERS_STATE: DeprecatedConsumableOrdersState = {
+  error: null,
+  isLoading: false,
+  orders: [],
+}
+
 function DeprecatedConsumableOrdersPanel({ storage }: { storage: ConsumablesStorage }) {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
-  const [orders, setOrders] = useValueState<DeprecatedConsumableOrder[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(false)
+  const [ordersState, setOrdersState] = useValueState<DeprecatedConsumableOrdersState>(
+    EMPTY_DEPRECATED_CONSUMABLE_ORDERS_STATE,
+  )
   const [debouncedSearchValue] = useDebouncedValue(searchValue, DEPRECATED_SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const requestRef = useRef(0)
   const storageNetId = storage.NetUid || ''
+  const { error, isLoading, orders } = ordersState
   const rows = useMemo(() => flattenDeprecatedConsumableOrders(orders), [orders])
   const columns = useDeprecatedConsumableOrderColumns()
 
   useEffect(() => {
     if (!storageNetId) {
-      setOrders([])
-      setLoading(false)
+      setOrdersState(EMPTY_DEPRECATED_CONSUMABLE_ORDERS_STATE)
       return
     }
 
     const requestId = requestRef.current + 1
     requestRef.current = requestId
-    setLoading(true)
-    setError(null)
+    setOrdersState((current) => ({
+      ...current,
+      error: null,
+      isLoading: true,
+    }))
 
     async function loadOrders() {
       try {
@@ -543,22 +582,25 @@ function DeprecatedConsumableOrdersPanel({ storage }: { storage: ConsumablesStor
         })
 
         if (requestRef.current === requestId) {
-          setOrders(nextOrders)
+          setOrdersState({
+            error: null,
+            isLoading: false,
+            orders: nextOrders,
+          })
         }
       } catch (loadError) {
         if (requestRef.current === requestId) {
-          setOrders([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити списані товари'))
-        }
-      } finally {
-        if (requestRef.current === requestId) {
-          setLoading(false)
+          setOrdersState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити списані товари'),
+            isLoading: false,
+            orders: [],
+          })
         }
       }
     }
 
     void loadOrders()
-  }, [fromDate, normalizedSearchValue, setError, setLoading, setOrders, storageNetId, t, toDate])
+  }, [fromDate, normalizedSearchValue, setOrdersState, storageNetId, t, toDate])
 
   function resetFilters() {
     setFromDate(shiftDate(-7))

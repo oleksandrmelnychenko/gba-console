@@ -19,11 +19,12 @@ import {
   IconFilesOff,
   IconLayersIntersect,
 } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import { getSupplyOrganizations } from '../api/protocolDetailApi'
@@ -51,6 +52,7 @@ import type {
   DeliveryDocumentDraft,
   PackingListPackageOrderItem,
   ProductSpecificationParseConfiguration,
+  SupplyInvoiceDeliveryDocument,
   SpecificationDownloadDocument,
   SpecificationPackingList,
   SpecificationProtocol,
@@ -69,6 +71,44 @@ const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
 const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
 const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const SPECIFICATION_CURRENCY_OPTIONS = [
+  { label: 'EUR', value: CURRENCY_EUR },
+  { label: 'UAH', value: CURRENCY_UAH },
+]
+const SERVICE_MODE_OPTIONS = [
+  { label: 'УО', value: SERVICES_MANAGEMENT },
+  { label: 'БО', value: SERVICES_ACCOUNTING },
+]
+
+type ProtocolSelectionState = {
+  error: string | null
+  isLoading: boolean
+  protocol: SpecificationProtocol | null
+  selectedInvoiceNetId: string | null
+  selectedMergeNetIds: string[]
+  selectedPackListNetId: string | null
+}
+
+type PackingListState = {
+  error: string | null
+  isLoading: boolean
+  packingList: SpecificationPackingList | null
+}
+
+const INITIAL_PROTOCOL_SELECTION_STATE: ProtocolSelectionState = {
+  error: null,
+  isLoading: true,
+  protocol: null,
+  selectedInvoiceNetId: null,
+  selectedMergeNetIds: [],
+  selectedPackListNetId: null,
+}
+
+const EMPTY_PACKING_LIST_STATE: PackingListState = {
+  error: null,
+  isLoading: false,
+  packingList: null,
+}
 
 function invoiceDate(value?: Date | string): string {
   if (!value) {
@@ -84,16 +124,29 @@ function invoiceDate(value?: Date | string): string {
   return invoiceDateFormatter.format(date)
 }
 
+function getMergeInvoiceNetIds(protocol: SpecificationProtocol | null): string[] {
+  return (protocol?.SupplyInvoices || [])
+    .map((invoice) => invoice.NetUid)
+    .filter((value): value is string => Boolean(value))
+}
+
+function getLoadedProtocolSelectionState(protocol: SpecificationProtocol): ProtocolSelectionState {
+  const firstInvoice = protocol.SupplyInvoices?.find((invoice) => (invoice.PackingLists?.length || 0) > 0)
+
+  return {
+    error: null,
+    isLoading: false,
+    protocol,
+    selectedInvoiceNetId: firstInvoice?.NetUid || null,
+    selectedMergeNetIds: getMergeInvoiceNetIds(protocol),
+    selectedPackListNetId: firstInvoice?.PackingLists?.[0]?.NetUid || null,
+  }
+}
+
 function useSpecificationModel(netId: string | undefined) {
   const { t } = useI18n()
-  const [protocol, setProtocol] = useValueState<SpecificationProtocol | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [error, setError] = useValueState<string | null>(null)
-  const [selectedInvoiceNetId, setSelectedInvoiceNetId] = useValueState<string | null>(null)
-  const [selectedPackListNetId, setSelectedPackListNetId] = useValueState<string | null>(null)
-  const [packingList, setPackingList] = useValueState<SpecificationPackingList | null>(null)
-  const [isPackingListLoading, setPackingListLoading] = useValueState(false)
-  const [packingListError, setPackingListError] = useValueState<string | null>(null)
+  const [protocolState, setProtocolState] = useValueState<ProtocolSelectionState>(INITIAL_PROTOCOL_SELECTION_STATE)
+  const [packingListState, setPackingListState] = useValueState<PackingListState>(EMPTY_PACKING_LIST_STATE)
   const [currencyIsEur, setCurrencyIsEur] = useValueState(true)
   const [withManagementServices, setWithManagementServices] = useValueState(false)
 
@@ -102,6 +155,7 @@ function useSpecificationModel(netId: string | undefined) {
   const [uploadResult, setUploadResult] = useValueState<UploadProductSpecificationResult | null>(null)
 
   const [isDocumentsOpen, setDocumentsOpen] = useValueState(false)
+  const [isDocumentsCloseConfirmOpen, setDocumentsCloseConfirmOpen] = useValueState(false)
   const [isSavingDocuments, setSavingDocuments] = useValueState(false)
   const [existingDocuments, setExistingDocuments] = useValueState<DeliveryDocumentDraft[]>([])
   const [newDocuments, setNewDocuments] = useValueState<DeliveryDocumentDraft[]>([])
@@ -113,7 +167,6 @@ function useSpecificationModel(netId: string | undefined) {
 
   const [isMergeOpen, setMergeOpen] = useValueState(false)
   const [isMerging, setMerging] = useValueState(false)
-  const [selectedMergeNetIds, setSelectedMergeNetIds] = useValueState<string[]>([])
 
   const [isDownloadOpen, setDownloadOpen] = useValueState(false)
   const [isDownloading, setDownloading] = useValueState(false)
@@ -121,14 +174,41 @@ function useSpecificationModel(netId: string | undefined) {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [editingSpecificationItem, setEditingSpecificationItem] = useValueState<PackingListPackageOrderItem | null>(null)
   const [isSavingSpecification, setSavingSpecification] = useValueState(false)
+  const uploadRequestRef = useRef(0)
+  const downloadRequestRef = useRef(0)
+  const specificationSaveRequestRef = useRef(0)
+  const documentsSaveRequestRef = useRef(0)
+  const {
+    error,
+    isLoading,
+    protocol,
+    selectedInvoiceNetId,
+    selectedMergeNetIds,
+    selectedPackListNetId,
+  } = protocolState
+  const {
+    error: packingListError,
+    isLoading: isPackingListLoading,
+    packingList,
+  } = packingListState
 
   const navigate = useNavigate()
 
   useEffect(() => {
+    uploadRequestRef.current += 1
+    downloadRequestRef.current += 1
+    specificationSaveRequestRef.current += 1
+    documentsSaveRequestRef.current += 1
+  }, [selectedInvoiceNetId, selectedPackListNetId])
+
+  useEffect(() => {
     if (!netId) {
-      setProtocol(null)
-      setLoading(false)
-      setError(t('Помилка'))
+      setProtocolState({
+        ...INITIAL_PROTOCOL_SELECTION_STATE,
+        error: t('Помилка'),
+        isLoading: false,
+      })
+      setPackingListState(EMPTY_PACKING_LIST_STATE)
 
       return
     }
@@ -136,8 +216,11 @@ function useSpecificationModel(netId: string | undefined) {
     let cancelled = false
 
     async function loadProtocol(currentNetId: string) {
-      setLoading(true)
-      setError(null)
+      setProtocolState((current) => ({
+        ...current,
+        error: null,
+        isLoading: true,
+      }))
 
       try {
         const result = await getProtocolByNetId(currentNetId)
@@ -148,33 +231,29 @@ function useSpecificationModel(netId: string | undefined) {
 
         if (result) {
           const protocolResult = result as unknown as SpecificationProtocol
-          setProtocol(protocolResult)
-          setSelectedMergeNetIds(
-            (protocolResult.SupplyInvoices || [])
-              .map((invoice) => invoice.NetUid)
-              .filter((value): value is string => Boolean(value)),
-          )
+          const nextProtocolState = getLoadedProtocolSelectionState(protocolResult)
 
-          const firstInvoice = protocolResult.SupplyInvoices?.find(
-            (invoice) => (invoice.PackingLists?.length || 0) > 0,
-          )
+          setProtocolState(nextProtocolState)
 
-          if (firstInvoice?.NetUid && firstInvoice.PackingLists?.[0]?.NetUid) {
-            setSelectedInvoiceNetId(firstInvoice.NetUid)
-            setSelectedPackListNetId(firstInvoice.PackingLists[0].NetUid || null)
+          if (!nextProtocolState.selectedPackListNetId) {
+            setPackingListState(EMPTY_PACKING_LIST_STATE)
           }
         } else {
-          setProtocol(null)
-          setError(t('Помилка'))
+          setProtocolState({
+            ...INITIAL_PROTOCOL_SELECTION_STATE,
+            error: t('Помилка'),
+            isLoading: false,
+          })
+          setPackingListState(EMPTY_PACKING_LIST_STATE)
         }
       } catch (loadError) {
         if (!cancelled) {
-          setProtocol(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити протокол'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          setProtocolState({
+            ...INITIAL_PROTOCOL_SELECTION_STATE,
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити протокол'),
+            isLoading: false,
+          })
+          setPackingListState(EMPTY_PACKING_LIST_STATE)
         }
       }
     }
@@ -186,18 +265,14 @@ function useSpecificationModel(netId: string | undefined) {
     }
   }, [
     netId,
-    setError,
-    setLoading,
-    setProtocol,
-    setSelectedInvoiceNetId,
-    setSelectedMergeNetIds,
-    setSelectedPackListNetId,
+    setPackingListState,
+    setProtocolState,
     t,
   ])
 
   useEffect(() => {
     if (!selectedPackListNetId) {
-      setPackingList(null)
+      setPackingListState(EMPTY_PACKING_LIST_STATE)
 
       return
     }
@@ -205,23 +280,29 @@ function useSpecificationModel(netId: string | undefined) {
     let cancelled = false
 
     async function loadPackingList(packListNetId: string) {
-      setPackingListLoading(true)
-      setPackingListError(null)
+      setPackingListState({
+        error: null,
+        isLoading: true,
+        packingList: null,
+      })
 
       try {
         const result = await getPackingListSpecificationProducts(packListNetId)
 
         if (!cancelled) {
-          setPackingList(result)
+          setPackingListState({
+            error: null,
+            isLoading: false,
+            packingList: result,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setPackingList(null)
-          setPackingListError(loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'))
-        }
-      } finally {
-        if (!cancelled) {
-          setPackingListLoading(false)
+          setPackingListState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'),
+            isLoading: false,
+            packingList: null,
+          })
         }
       }
     }
@@ -231,7 +312,7 @@ function useSpecificationModel(netId: string | undefined) {
     return () => {
       cancelled = true
     }
-  }, [selectedPackListNetId, setPackingList, setPackingListError, setPackingListLoading, t])
+  }, [selectedPackListNetId, setPackingListState, t])
 
   const selectedInvoice =
     protocol?.SupplyInvoices?.find((invoice) => invoice.NetUid === selectedInvoiceNetId) || null
@@ -267,51 +348,98 @@ function useSpecificationModel(netId: string | undefined) {
       return
     }
 
-    setSelectedInvoiceNetId(invoice.NetUid || null)
-    setSelectedPackListNetId(invoice.PackingLists[0].NetUid || null)
+    invalidateActionRequests()
+    setProtocolState((current) => ({
+      ...current,
+      selectedInvoiceNetId: invoice.NetUid || null,
+      selectedPackListNetId: invoice.PackingLists[0].NetUid || null,
+    }))
   }
 
   function selectPackList(packList: SpecificationPackingList) {
-    setSelectedPackListNetId(packList.NetUid || null)
+    invalidateActionRequests()
+    setProtocolState((current) => ({
+      ...current,
+      selectedPackListNetId: packList.NetUid || null,
+    }))
   }
 
-  async function reloadProtocol(): Promise<SpecificationProtocol | null> {
-    if (!netId) {
+  function invalidateActionRequests() {
+    uploadRequestRef.current += 1
+    downloadRequestRef.current += 1
+    specificationSaveRequestRef.current += 1
+    documentsSaveRequestRef.current += 1
+    setUploading(false)
+    setDownloading(false)
+    setSavingSpecification(false)
+    setSavingDocuments(false)
+  }
+
+  async function reloadProtocol(isCurrent: () => boolean = () => true): Promise<SpecificationProtocol | null> {
+    if (!netId || !isCurrent()) {
       return null
     }
 
     const result = await getProtocolByNetId(netId)
     const protocolResult = result ? (result as unknown as SpecificationProtocol) : null
-    setProtocol(protocolResult)
 
-    return protocolResult
+    if (isCurrent()) {
+      setProtocolState((current) => ({
+        ...current,
+        protocol: protocolResult,
+      }))
+    }
+
+    return isCurrent() ? protocolResult : null
   }
 
   async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
-    if (!selectedInvoice?.NetUid) {
+    const invoiceNetUid = selectedInvoice?.NetUid || null
+    const packListNetUid = selectedPackListNetId
+    const requestId = uploadRequestRef.current + 1
+    uploadRequestRef.current = requestId
+    const isCurrentUpload = () => uploadRequestRef.current === requestId
+
+    if (!invoiceNetUid) {
       return
     }
 
     setUploading(true)
 
     try {
-      const result = await uploadProductSpecificationForInvoice(selectedInvoice.NetUid, parseConfiguration, file)
-      setUploadOpen(false)
-      setUploadResult(result)
+      const result = await uploadProductSpecificationForInvoice(invoiceNetUid, parseConfiguration, file)
 
-      if (selectedPackListNetId) {
-        const refreshed = await getPackingListSpecificationProducts(selectedPackListNetId)
-        setPackingList(refreshed)
+      if (isCurrentUpload()) {
+        setUploadOpen(false)
+        setUploadResult(result)
       }
 
-      await reloadProtocol()
+      if (packListNetUid && isCurrentUpload()) {
+        const refreshed = await getPackingListSpecificationProducts(packListNetUid)
+
+        if (isCurrentUpload()) {
+          setPackingListState({
+            error: null,
+            isLoading: false,
+            packingList: refreshed,
+          })
+        }
+      }
+
+      if (isCurrentUpload()) {
+        await reloadProtocol(isCurrentUpload)
+      }
     } catch (uploadError) {
-      notifications.show({
-        color: 'red',
-        message: uploadError instanceof Error ? uploadError.message : t('Не вдалося виконати запит'),
-      })
+      if (isCurrentUpload()) {
+        notifications.show({
+          color: 'red',
+          message: uploadError instanceof Error ? uploadError.message : t('Не вдалося виконати запит'),
+        })
+      }
     } finally {
-      setUploading(false)
+      if (isCurrentUpload()) {
+        setUploading(false)
+      }
     }
   }
 
@@ -323,11 +451,7 @@ function useSpecificationModel(netId: string | undefined) {
     }
 
     setNumberCustomDeclaration(selectedInvoice.NumberCustomDeclaration || '')
-    setDateCustomDeclaration(
-      selectedInvoice.DateCustomDeclaration
-        ? formatLocalDate(new Date(selectedInvoice.DateCustomDeclaration))
-        : formatLocalDate(new Date()),
-    )
+    setDateCustomDeclaration(getInvoiceCustomDeclarationDate(selectedInvoice))
     setExistingDocuments(
       (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => ({
         contentType: document.ContentType || '',
@@ -335,17 +459,57 @@ function useSpecificationModel(netId: string | undefined) {
         documentUrl: document.DocumentUrl || '',
         file: null,
         fileName: document.FileName || '',
-        id: document.Id || index,
+        id: getDeliveryDocumentDraftId(document, index),
       })),
     )
     setNewDocuments([])
     setDocumentOrganizationNetId(selectedInvoice.SupplyOrganization?.NetUid || null)
     setDocumentAgreementNetId(selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
     setDocumentsOpen(true)
+    setDocumentsCloseConfirmOpen(false)
 
     if (documentOrganizations.length === 0) {
       void loadDocumentOrganizations()
     }
+  }
+
+  function hasDeliveryDocumentDraftChanges(): boolean {
+    if (!selectedInvoice) {
+      return newDocuments.length > 0 || existingDocuments.some((document) => document.deleted)
+    }
+
+    return (
+      newDocuments.length > 0 ||
+      existingDocuments.some((document) => document.deleted) ||
+      numberCustomDeclaration !== (selectedInvoice.NumberCustomDeclaration || '') ||
+      dateCustomDeclaration !== getInvoiceCustomDeclarationDate(selectedInvoice) ||
+      documentOrganizationNetId !== (selectedInvoice.SupplyOrganization?.NetUid || null) ||
+      documentAgreementNetId !== (selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
+    )
+  }
+
+  function requestCloseDocuments() {
+    if (isSavingDocuments) {
+      return
+    }
+
+    if (hasDeliveryDocumentDraftChanges()) {
+      setDocumentsCloseConfirmOpen(true)
+      return
+    }
+
+    closeDocumentsDraft()
+  }
+
+  function cancelCloseDocuments() {
+    setDocumentsCloseConfirmOpen(false)
+  }
+
+  function closeDocumentsDraft() {
+    setDocumentsCloseConfirmOpen(false)
+    setDocumentsOpen(false)
+    setNewDocuments([])
+    setExistingDocuments([])
   }
 
   function addDocumentFiles(files: File[]) {
@@ -380,7 +544,12 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   async function saveDocuments() {
-    if (!selectedInvoice?.NetUid || (selectedInvoice.PackingLists?.length || 0) === 0) {
+    const invoice = selectedInvoice
+    const requestId = documentsSaveRequestRef.current + 1
+    documentsSaveRequestRef.current = requestId
+    const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
+
+    if (!invoice?.NetUid || (invoice.PackingLists?.length || 0) === 0) {
       notifications.show({ color: 'red', message: t('В інвойсі відсутні пак лісти') })
 
       return
@@ -390,13 +559,13 @@ function useSpecificationModel(netId: string | undefined) {
 
     try {
       const invoicePayload: SpecificationSupplyInvoice = {
-        ...selectedInvoice,
+        ...invoice,
         DateCustomDeclaration: dateCustomDeclaration
-          ? new Date(dateCustomDeclaration).toISOString()
-          : new Date().toISOString(),
+          ? formatLocalInputDateTime(dateCustomDeclaration)
+          : formatLocalInputDateTime(),
         NumberCustomDeclaration: numberCustomDeclaration,
-        SupplyInvoiceDeliveryDocuments: (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).map((document) => {
-          const draft = existingDocuments.find((item) => item.id === document.Id)
+        SupplyInvoiceDeliveryDocuments: (invoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => {
+          const draft = existingDocuments.find((item) => item.id === getDeliveryDocumentDraftId(document, index))
 
           return draft ? { ...document, Deleted: draft.deleted } : document
         }),
@@ -407,45 +576,62 @@ function useSpecificationModel(netId: string | undefined) {
       const files = newDocuments.map((document) => document.file).filter((file): file is File => Boolean(file))
       const updated = await addDeliveryDocumentsToInvoice(invoicePayload, files)
 
-      if (updated) {
-        setProtocol(updated)
-      } else {
-        await reloadProtocol()
+      if (isCurrentDocumentsSave()) {
+        if (updated) {
+          setProtocolState((current) => ({
+            ...current,
+            protocol: updated,
+          }))
+        } else {
+          await reloadProtocol(isCurrentDocumentsSave)
+        }
       }
 
-      setDocumentsOpen(false)
-      setNewDocuments([])
-      setExistingDocuments([])
-      notifications.show({ color: 'green', message: t('Зберегти') })
+      if (isCurrentDocumentsSave()) {
+        setDocumentsOpen(false)
+        setDocumentsCloseConfirmOpen(false)
+        setNewDocuments([])
+        setExistingDocuments([])
+        notifications.show({ color: 'green', message: t('Документи збережено') })
+      }
     } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
-      })
+      if (isCurrentDocumentsSave()) {
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
+        })
+      }
     } finally {
-      setSavingDocuments(false)
+      if (isCurrentDocumentsSave()) {
+        setSavingDocuments(false)
+      }
     }
   }
 
   function openMerge() {
-    setSelectedMergeNetIds(
-      (protocol?.SupplyInvoices || [])
-        .map((invoice) => invoice.NetUid)
-        .filter((value): value is string => Boolean(value)),
-    )
+    setProtocolState((current) => ({
+      ...current,
+      selectedMergeNetIds: getMergeInvoiceNetIds(protocol),
+    }))
     setMergeOpen(true)
   }
 
   function toggleMergeInvoice(invoiceNetId: string) {
-    setSelectedMergeNetIds((current) =>
-      current.includes(invoiceNetId)
-        ? current.filter((value) => value !== invoiceNetId)
-        : [...current, invoiceNetId],
-    )
+    setProtocolState((current) => ({
+      ...current,
+      selectedMergeNetIds: current.selectedMergeNetIds.includes(invoiceNetId)
+        ? current.selectedMergeNetIds.filter((value) => value !== invoiceNetId)
+        : [...current.selectedMergeNetIds, invoiceNetId],
+    }))
   }
 
   async function confirmMerge() {
     if (!netId) {
+      return
+    }
+
+    if (selectedMergeNetIds.length < 2) {
+      notifications.show({ color: 'red', message: t('Оберіть щонайменше два інвойси') })
       return
     }
 
@@ -466,7 +652,11 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   async function openDownload() {
-    if (!selectedPackListNetId) {
+    const packListNetUid = selectedPackListNetId
+    const requestId = downloadRequestRef.current + 1
+    downloadRequestRef.current = requestId
+
+    if (!packListNetUid) {
       return
     }
 
@@ -476,16 +666,23 @@ function useSpecificationModel(netId: string | undefined) {
     setDownloading(true)
 
     try {
-      const document = await getSpecificationDownloadUrls(selectedPackListNetId)
-      setDownloadDocument(document)
+      const document = await getSpecificationDownloadUrls(packListNetUid)
+
+      if (downloadRequestRef.current === requestId) {
+        setDownloadDocument(document)
+      }
     } catch (downloadFetchError) {
-      setDownloadError(
-        downloadFetchError instanceof Error
-          ? downloadFetchError.message
-          : t('Документ недоступний для завантаження'),
-      )
+      if (downloadRequestRef.current === requestId) {
+        setDownloadError(
+          downloadFetchError instanceof Error
+            ? downloadFetchError.message
+            : t('Документ недоступний для завантаження'),
+        )
+      }
     } finally {
-      setDownloading(false)
+      if (downloadRequestRef.current === requestId) {
+        setDownloading(false)
+      }
     }
   }
 
@@ -494,7 +691,13 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   async function saveSpecification(payload: ProductSpecificationSubmitPayload) {
-    if (!selectedInvoiceNetId) {
+    const invoiceNetUid = selectedInvoiceNetId
+    const packListNetUid = selectedPackListNetId
+    const requestId = specificationSaveRequestRef.current + 1
+    specificationSaveRequestRef.current = requestId
+    const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
+
+    if (!invoiceNetUid) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
 
       return
@@ -503,34 +706,51 @@ function useSpecificationModel(netId: string | undefined) {
     setSavingSpecification(true)
 
     try {
-      await addOrUpdateProductSpecification(selectedInvoiceNetId, payload)
+      await addOrUpdateProductSpecification(invoiceNetUid, payload)
 
-      if (selectedPackListNetId) {
-        const refreshed = await getPackingListSpecificationProducts(selectedPackListNetId)
-        setPackingList(refreshed)
+      if (packListNetUid && isCurrentSpecificationSave()) {
+        const refreshed = await getPackingListSpecificationProducts(packListNetUid)
+
+        if (isCurrentSpecificationSave()) {
+          setPackingListState({
+            error: null,
+            isLoading: false,
+            packingList: refreshed,
+          })
+        }
       }
 
-      await reloadProtocol()
-      setEditingSpecificationItem(null)
-      notifications.show({ color: 'green', message: t('Зміни збережено') })
+      if (isCurrentSpecificationSave()) {
+        await reloadProtocol(isCurrentSpecificationSave)
+      }
+
+      if (isCurrentSpecificationSave()) {
+        setEditingSpecificationItem(null)
+        notifications.show({ color: 'green', message: t('Зміни збережено') })
+      }
     } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
-      })
+      if (isCurrentSpecificationSave()) {
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
+        })
+      }
     } finally {
-      setSavingSpecification(false)
+      if (isCurrentSpecificationSave()) {
+        setSavingSpecification(false)
+      }
     }
   }
 
   return {
     addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, documentAgreementNetId,
     documentOrganizationNetId, documentOrganizations, downloadDocument, downloadError, editingSpecificationItem,
-    error, existingDocuments, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
+    error, existingDocuments, isDocumentsCloseConfirmOpen, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
     isMergeOpen, isMerging, isPackingListLoading, isSavingDocuments, isSavingSpecification, isUploading,
     isUploadOpen, newDocuments, numberCustomDeclaration, openDocuments, openDownload, openMerge,
     openSpecificationEditor, packingList, packingListError, protocol, removeExistingDocument,
-    removeNewDocument, saveDocuments, selectDocumentOrganization, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
+    removeNewDocument, requestCloseDocuments, cancelCloseDocuments, closeDocumentsDraft,
+    saveDocuments, selectDocumentOrganization, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
     selectedMergeNetIds, selectedPackListNetId, setCurrencyIsEur, setDateCustomDeclaration, setDocumentsOpen,
     setDocumentAgreementNetId, setDownloadOpen, setEditingSpecificationItem, setMergeOpen, setNumberCustomDeclaration, setUploadOpen,
     setUploadResult, setWithManagementServices, saveSpecification, submitUpload, toggleMergeInvoice, uploadResult,
@@ -555,14 +775,6 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const canEditSpecification = hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
   const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
-  const currencyOptions = [
-    { label: t('EUR'), value: CURRENCY_EUR },
-    { label: t('UAH'), value: CURRENCY_UAH },
-  ]
-  const serviceModeOptions = [
-    { label: 'УО', value: SERVICES_MANAGEMENT },
-    { label: 'БО', value: SERVICES_ACCOUNTING },
-  ]
 
   return (
     <Stack gap="lg">
@@ -587,12 +799,12 @@ export function ProductDeliveryProtocolSpecificationPage() {
         </Group>
         <Group gap="sm" align="center">
           <SegmentedControl
-            data={currencyOptions}
+            data={SPECIFICATION_CURRENCY_OPTIONS}
             value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
             onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
           />
           <SegmentedControl
-            data={serviceModeOptions}
+            data={SERVICE_MODE_OPTIONS}
             value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
             onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
           />
@@ -769,7 +981,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
         onChangeNumberCustomDeclaration={model.setNumberCustomDeclaration}
         onChangeSupplyOrganization={model.selectDocumentOrganization}
         onChangeSupplyOrganizationAgreement={model.setDocumentAgreementNetId}
-        onClose={() => model.setDocumentsOpen(false)}
+        onClose={model.requestCloseDocuments}
         onRemoveExistingDocument={model.removeExistingDocument}
         onRemoveNewDocument={model.removeNewDocument}
         onSave={model.saveDocuments}
@@ -800,8 +1012,37 @@ export function ProductDeliveryProtocolSpecificationPage() {
         onClose={() => model.setEditingSpecificationItem(null)}
         onSave={model.saveSpecification}
       />
+
+      <AppModal
+        centered
+        opened={model.isDocumentsCloseConfirmOpen}
+        title={t('Є незбережені зміни')}
+        onClose={model.cancelCloseDocuments}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={model.cancelCloseDocuments}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={model.closeDocumentsDraft}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
+}
+
+function getInvoiceCustomDeclarationDate(invoice: SpecificationSupplyInvoice): string {
+  return invoice.DateCustomDeclaration
+    ? formatLocalDate(new Date(invoice.DateCustomDeclaration))
+    : formatLocalDate(new Date())
+}
+
+function getDeliveryDocumentDraftId(document: SupplyInvoiceDeliveryDocument, index: number): number {
+  return document.Id ?? index
 }
 
 function filterPackingListByVendorCode(

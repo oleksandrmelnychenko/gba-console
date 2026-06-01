@@ -22,6 +22,7 @@ import {
   IconPackageImport,
   IconPlus,
   IconRefresh,
+  IconReportAnalytics,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
@@ -30,6 +31,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ClientReturnsReportPanel } from '../components/ClientReturnsReportPanel'
 import {
   createDirectSaleReturn,
   getIncomeConsignments,
@@ -96,6 +98,7 @@ export function SalesReturnClientPage() {
   const [status, setStatus] = useState<SalesReturnItemStatusValue | undefined>()
   const [batch, setBatch] = useState<SalesReturnBatch | null>(null)
   const [createOpened, setCreateOpened] = useState(true)
+  const [reportOpened, setReportOpened] = useState(false)
   const [batchModalOpened, setBatchModalOpened] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
@@ -492,11 +495,20 @@ export function SalesReturnClientPage() {
     <Box p="lg">
       <Stack gap="md">
         <Group justify="flex-end" align="flex-start">
+          <Button
+            leftSection={<IconReportAnalytics size={16} />}
+            variant="light"
+            onClick={() => setReportOpened(true)}
+          >
+            {t('Сформувати звіт')}
+          </Button>
           <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
             {t('Створити повернення')}
           </Button>
         </Group>
       </Stack>
+
+      <ClientReturnsReportPanel opened={reportOpened} onClose={() => setReportOpened(false)} />
 
       <AppDrawer
         opened={createOpened}

@@ -32,26 +32,19 @@ export function ShopImageGallery({ vendorCode, onImageClick }: ShopImageGalleryP
         return
       }
 
-      const found: string[] = []
+      const probeUrls = Array.from({ length: MAX_SHOP_GALLERY_PROBES }, (_unused, index) =>
+        getProductShopGalleryImageUrl(code, index + 1),
+      )
+      const probeResults = await Promise.all(probeUrls.map((url) => probeImage(url)))
 
-      for (let suffix = 1; suffix <= MAX_SHOP_GALLERY_PROBES; suffix += 1) {
-        const url = getProductShopGalleryImageUrl(code, suffix)
-        const exists = await probeImage(url)
-
-        if (cancelled) {
-          return
-        }
-
-        if (!exists) {
-          break
-        }
-
-        found.push(url)
+      if (cancelled) {
+        return
       }
 
-      if (!cancelled) {
-        setImages(found)
-      }
+      const firstMissingIndex = probeResults.findIndex((exists) => !exists)
+      const found = firstMissingIndex === -1 ? probeUrls : probeUrls.slice(0, firstMissingIndex)
+
+      setImages(found)
     }
 
     void loadGallery()

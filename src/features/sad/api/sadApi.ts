@@ -11,7 +11,20 @@ import type {
   SadSearchParams,
   SadSpecificationParseConfiguration,
   SadStatham,
+  SadSupplyOrderUkraineCartItem,
 } from '../types'
+import type { SupplyOrderUkraine } from '../../supply-ukraine-orders/types'
+import type { IncomePaymentOrder } from '../../income-cashflows/types'
+
+export type SadAdvancePaymentPayload = {
+  Amount?: number
+  ClientAgreement?: unknown
+  Comment?: string
+  FromDate?: string
+  Organization?: unknown
+  VatAmount?: number
+  VatPercent?: number
+}
 
 export async function getSads(params: SadSearchParams): Promise<Sad[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/filtered', {
@@ -194,6 +207,62 @@ export async function uploadProductSpecificationForSad(
   })
 }
 
+export async function getAllUkraineCartItemsForSad(): Promise<SadSupplyOrderUkraineCartItem[]> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/cart/items/all')
+
+  return normalizeArray<SadSupplyOrderUkraineCartItem>(result)
+    .filter((item) => (item.ReservedQty || 0) > 0)
+    .sort((first, second) => (
+      (second.ReservedQty || 0) - (first.ReservedQty || 0)
+      || (second.AvailableQty || 0) - (first.AvailableQty || 0)
+    ))
+}
+
+export async function createSupplyOrderFromSad(
+  sadNetId: string,
+  order: Partial<SupplyOrderUkraine>,
+): Promise<SupplyOrderUkraine | null> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/packlist/sad', {
+    method: 'POST',
+    query: {
+      sadNetId,
+    },
+    body: order,
+  })
+
+  return normalizeItem<SupplyOrderUkraine>(result)
+}
+
+export async function createIncomePaymentFromSad(
+  sadNetId: string,
+  paymentIncome: IncomePaymentOrder,
+): Promise<IncomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/income/new/sad', {
+    method: 'POST',
+    query: {
+      sadNetId,
+    },
+    body: paymentIncome,
+  })
+
+  return normalizeItem<IncomePaymentOrder>(result)
+}
+
+export async function createAdvancePaymentFromSad(
+  sadNetId: string,
+  advancePayment: SadAdvancePaymentPayload,
+): Promise<SadAdvancePaymentPayload | null> {
+  const result = await apiRequest<unknown>('/payments/advance/new', {
+    method: 'POST',
+    query: {
+      sadNetId,
+    },
+    body: advancePayment,
+  })
+
+  return normalizeItem<SadAdvancePaymentPayload>(result)
+}
+
 function normalizeArray<TItem>(result: unknown): TItem[] {
   const parsedResult = parseJsonPayload(result)
 
@@ -270,4 +339,3 @@ function ensureStatham(statham: SadStatham): SadStatham {
     StathamCars: Array.isArray(statham.StathamCars) ? statham.StathamCars : [],
   }
 }
-

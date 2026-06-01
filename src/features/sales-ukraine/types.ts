@@ -77,6 +77,11 @@ export type SaleConsignmentDocument = {
   PdfDocumentURL?: string
 }
 
+export type SaleClientDebtTotal = {
+  TotalEuro?: number
+  TotalLocal?: number
+}
+
 export type SalesUkraineAgreement = SalesUkraineEntity & {
   Currency?: SalesUkraineCurrency
   Name?: string
@@ -89,6 +94,8 @@ export type SalesUkraineHistoryInvoiceEdit = SalesUkraineEntity
 export type SalesUkraineClient = SalesUkraineEntity & {
   FirstName?: string
   FullName?: string
+  IsSubClient?: boolean
+  IsTradePoint?: boolean
   LastName?: string
   MiddleName?: string
   MobileNumber?: string
@@ -197,6 +204,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   FromDate?: Date | string
   HasDocuments?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
+  InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean
   IsCashOnDelivery?: boolean
   IsDevelopment?: boolean
@@ -204,6 +212,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   IsInvoice?: boolean
   IsLocked?: boolean
   IsPrinted?: boolean
+  IsPrintedPaymentInvoice?: boolean
   IsSent?: boolean
   IsVatSale?: boolean
   OneTimeDiscountComment?: string
@@ -222,6 +231,15 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   Transporter?: SalesUkraineTransporter
   UpdateUser?: SalesUkraineUser
   User?: SalesUkraineUser
+}
+
+export type SalesUkraineSaleMerged = {
+  InputSale?: SalesUkraineSale
+  InputSaleId?: number
+  IsEditMode?: boolean
+  IsSelected?: boolean
+  OutputSale?: SalesUkraineSale
+  OutputSaleId?: number
 }
 
 export type SalesUkraineOrganizationOption = SalesUkraineEntity & {

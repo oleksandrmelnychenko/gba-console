@@ -2,10 +2,11 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   SupplyReturn,
   SupplyReturnExportDocument,
+  SupplyReturnsResponse,
   SupplyReturnsSearchParams,
 } from '../types'
 
-export async function getSupplyReturns(params: SupplyReturnsSearchParams): Promise<SupplyReturn[]> {
+export async function getSupplyReturns(params: SupplyReturnsSearchParams): Promise<SupplyReturnsResponse> {
   const result = await apiRequest<unknown>('/supplies/returns/all/filtered', {
     query: {
       from: params.from,
@@ -15,7 +16,7 @@ export async function getSupplyReturns(params: SupplyReturnsSearchParams): Promi
     },
   })
 
-  return normalizeSupplyReturns(result)
+  return normalizeSupplyReturnsResponse(result)
 }
 
 export async function getSupplyReturnByNetId(netId: string): Promise<SupplyReturn | null> {
@@ -38,6 +39,20 @@ export async function exportSupplyReturnDocument(netId: string): Promise<SupplyR
   return normalizeExportDocument(result)
 }
 
+function normalizeSupplyReturnsResponse(result: unknown): SupplyReturnsResponse {
+  const items = normalizeSupplyReturns(result)
+  const payload = result && typeof result === 'object' && !Array.isArray(result) ? (result as Record<string, unknown>) : {}
+  const totalQty =
+    readNumber(payload.TotalRowsQty) ??
+    readNumber(payload.TotalQty) ??
+    readNumber(payload.Total) ??
+    readNumber(payload.Count) ??
+    readNumber(items[0]?.TotalRowsQty) ??
+    items.length
+
+  return { items, totalQty }
+}
+
 function normalizeSupplyReturns(result: unknown): SupplyReturn[] {
   if (Array.isArray(result)) {
     return result.map(ensureSupplyReturn)
@@ -57,6 +72,22 @@ function normalizeSupplyReturns(result: unknown): SupplyReturn[] {
         : []
 
   return (items as SupplyReturn[]).map(ensureSupplyReturn)
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    if (Number.isFinite(parsedValue)) {
+      return parsedValue
+    }
+  }
+
+  return null
 }
 
 function normalizeSupplyReturn(result: unknown): SupplyReturn | null {

@@ -18,26 +18,6 @@ export function NewDeliveryRecipientModal({
   onSave,
 }: NewDeliveryRecipientModalProps) {
   const { t } = useI18n()
-  const [name, setName] = useState('')
-  const [prevOpened, setPrevOpened] = useState(opened)
-
-  if (opened !== prevOpened) {
-    setPrevOpened(opened)
-
-    if (opened) {
-      setName('')
-    }
-  }
-
-  const trimmedName = name.trim()
-
-  function handleSave() {
-    if (!trimmedName || isSaving) {
-      return
-    }
-
-    onSave(trimmedName)
-  }
 
   function handleClose() {
     if (isSaving) {
@@ -55,36 +35,68 @@ export function NewDeliveryRecipientModal({
       title={t('Отримувач')}
       onClose={handleClose}
     >
-      <Stack gap="md">
-        <TextInput
-          disabled={isSaving}
-          label={t("Ім'я")}
-          maxLength={100}
-          value={name}
-          onChange={(event) => setName(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault()
-              handleSave()
-            }
-          }}
+      {opened && (
+        <NewDeliveryRecipientForm
+          isSaving={isSaving}
+          onClose={handleClose}
+          onSave={onSave}
         />
-
-        <Group justify="flex-end">
-          <Button color="gray" disabled={isSaving} variant="subtle" onClick={handleClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button
-            color="violet"
-            disabled={!trimmedName}
-            leftSection={<IconCheck size={16} />}
-            loading={isSaving}
-            onClick={handleSave}
-          >
-            {t('Створити')}
-          </Button>
-        </Group>
-      </Stack>
+      )}
     </AppModal>
+  )
+}
+
+function NewDeliveryRecipientForm({
+  isSaving,
+  onClose,
+  onSave,
+}: {
+  isSaving: boolean
+  onClose: () => void
+  onSave: (name: string) => void
+}) {
+  const { t } = useI18n()
+  const [name, setName] = useState('')
+  const trimmedName = name.trim()
+
+  function handleSave() {
+    if (!trimmedName || isSaving) {
+      return
+    }
+
+    onSave(trimmedName)
+  }
+
+  return (
+    <Stack gap="md">
+      <TextInput
+        disabled={isSaving}
+        label={t("Ім'я")}
+        maxLength={100}
+        value={name}
+        onChange={(event) => setName(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            handleSave()
+          }
+        }}
+      />
+
+      <Group justify="flex-end">
+        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
+          {t('Скасувати')}
+        </Button>
+        <Button
+          color="violet"
+          disabled={!trimmedName}
+          leftSection={<IconCheck size={16} />}
+          loading={isSaving}
+          onClick={handleSave}
+        >
+          {t('Створити')}
+        </Button>
+      </Group>
+    </Stack>
   )
 }

@@ -356,6 +356,7 @@ export function SupplyUkraineOrderOverviewPage() {
   const documentColumns = useDocumentColumns()
   const documents = order?.SupplyOrderUkraineDocuments || []
   const orderRecord = asRecord(order)
+  const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name || ''
 
   return (
     <Stack gap="lg">
@@ -407,11 +408,12 @@ export function SupplyUkraineOrderOverviewPage() {
             <DetailValue label={t('Дата інвойсу')} value={formatDateTime(order?.InvDate)} />
             <DetailValue label={t('Постачальник')} value={getEntityName(order?.Supplier)} />
             <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
-            <DetailValue label={t('Валюта')} value={order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name} />
-            <DetailValue label={t('Організація')} value={order?.Organization?.Name} />
+            <DetailValue label={t('Валюта')} value={currencyCode} />
+            <DetailValue label={t('Організація')} value={getRecipientOrganizationName(order)} />
             <DetailValue label={t('Відповідальний')} value={getEntityName(order?.Responsible)} />
             <DetailValue label={t('Кількість')} value={formatAmount(order?.TotalQty)} />
             <DetailValue label={t('Сума')} value={formatMoney(order?.TotalGrossPriceLocal)} />
+            <DetailValue label={currencyCode ? `${t('Курс')} ${currencyCode} ${t('до')} EUR` : t('Курс')} value={formatAmount(order?.ExchangeRateAmount)} />
             <DetailValue label={t('Додатковий відсоток')} value={formatAmount(order?.AdditionalPercent)} />
             <DetailValue label={t('ПДВ')} value={formatAmount(order?.VatPercent)} />
           </SimpleGrid>
@@ -440,32 +442,34 @@ export function SupplyUkraineOrderOverviewPage() {
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Stack gap={2}>
-              <Text fw={700}>{t('Документи замовлення')}</Text>
-              <Text c="dimmed" size="sm">
-                {t('Показано')} {documents.length}
-              </Text>
-            </Stack>
-            {canManageDocuments && order && (
-              <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
-                {t('Завантажити')}
-              </Button>
-            )}
-          </Group>
-          <DataTable
-            columns={documentColumns}
-            data={documents}
-            emptyText={t('Документів немає')}
-            getRowId={(document, index) => document.NetUid || String(document.Id || index)}
-            layoutVersion="supply-ukraine-order-documents-1"
-            minWidth={760}
-            tableId="supply-ukraine-order-documents"
-          />
-        </Stack>
-      </Card>
+      {canManageDocuments && (
+        <Card withBorder radius="md" padding="md">
+          <Stack gap="md">
+            <Group justify="space-between" align="center">
+              <Stack gap={2}>
+                <Text fw={700}>{t('Документи замовлення')}</Text>
+                <Text c="dimmed" size="sm">
+                  {t('Показано')} {documents.length}
+                </Text>
+              </Stack>
+              {order && (
+                <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                  {t('Завантажити')}
+                </Button>
+              )}
+            </Group>
+            <DataTable
+              columns={documentColumns}
+              data={documents}
+              emptyText={t('Документів немає')}
+              getRowId={(document, index) => document.NetUid || String(document.Id || index)}
+              layoutVersion="supply-ukraine-order-documents-1"
+              minWidth={760}
+              tableId="supply-ukraine-order-documents"
+            />
+          </Stack>
+        </Card>
+      )}
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -676,20 +680,20 @@ function useOverviewColumns({
         cell: (row) => formatAmount(row.grossWeight),
       },
       {
-        id: 'deliveryExpenseAmount',
-        header: t('Витрати упр.'),
-        width: 120,
-        align: 'right',
-        accessor: (row) => row.deliveryExpenseAmount,
-        cell: (row) => formatMoney(row.deliveryExpenseAmount),
-      },
-      {
         id: 'accountingDeliveryExpenseAmount',
         header: t('Витрати бух.'),
         width: 120,
         align: 'right',
         accessor: (row) => row.accountingDeliveryExpenseAmount,
         cell: (row) => formatMoney(row.accountingDeliveryExpenseAmount),
+      },
+      {
+        id: 'deliveryExpenseAmount',
+        header: t('Витрати упр.'),
+        width: 120,
+        align: 'right',
+        accessor: (row) => row.deliveryExpenseAmount,
+        cell: (row) => formatMoney(row.deliveryExpenseAmount),
       },
       {
         id: 'accountingCost',
@@ -939,6 +943,28 @@ function readNumber(value: unknown): number | undefined {
 
 function getEntityName(entity?: { FullName?: string, LastName?: string, Name?: string } | null): string {
   return entity?.FullName || entity?.Name || entity?.LastName || ''
+}
+
+function getRecipientOrganizationName(order?: SupplyOrderUkraine | null): string {
+  if (!order) {
+    return ''
+  }
+
+  const sad = order.Sad
+
+  if (sad) {
+    const sadType = Number(sad.SadType)
+
+    if (sadType === 0) {
+      return getEntityName(sad.Client)
+    }
+
+    if (sadType === 1) {
+      return getEntityName(sad.OrganizationClient)
+    }
+  }
+
+  return order.Organization?.Name || ''
 }
 
 function formatDateTime(value?: Date | string): string {

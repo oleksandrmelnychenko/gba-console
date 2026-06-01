@@ -1,4 +1,4 @@
-import type { IdentityResponse, UserProfile, UserRole } from './types'
+import type { DashboardNode, DashboardNodeModule, IdentityResponse, UserPermission, UserProfile, UserRole } from './types'
 import { translate } from '../../shared/i18n/translate'
 
 const EMPTY_NET_UID = '00000000-0000-0000-0000-000000000000'
@@ -171,4 +171,67 @@ export function getIdentityResponseError(response: IdentityResponse | null): str
   const error = response?.Errors?.find((item) => item.Description?.trim())
 
   return error?.Description?.trim() || null
+}
+
+export const MIN_DELETABLE_USER_ROLE_TYPE = 12
+
+export function canDeleteUserRole(role?: UserRole | null): boolean {
+  return typeof role?.UserRoleType === 'number' && role.UserRoleType > MIN_DELETABLE_USER_ROLE_TYPE
+}
+
+export function isNodeSelected(selectedNodes: DashboardNode[], node: DashboardNode): boolean {
+  return selectedNodes.some((item) => item.NetUid === node.NetUid)
+}
+
+export function isPermissionSelected(selectedPermissions: UserPermission[], permission: UserPermission): boolean {
+  return selectedPermissions.some((item) => item.NetUid === permission.NetUid)
+}
+
+export function toggleNodeSelection(selectedNodes: DashboardNode[], node: DashboardNode): DashboardNode[] {
+  return isNodeSelected(selectedNodes, node)
+    ? selectedNodes.filter((item) => item.NetUid !== node.NetUid)
+    : [...selectedNodes, node]
+}
+
+export function togglePermissionSelection(selectedPermissions: UserPermission[], permission: UserPermission): UserPermission[] {
+  return isPermissionSelected(selectedPermissions, permission)
+    ? selectedPermissions.filter((item) => item.NetUid !== permission.NetUid)
+    : [...selectedPermissions, permission]
+}
+
+export function getModuleNodes(modules: DashboardNodeModule[]): DashboardNode[] {
+  return modules.reduce<DashboardNode[]>((nodes, module) => [...(module.Children || []), ...nodes], [])
+}
+
+export function toggleAllPages(selectedNodes: DashboardNode[], modules: DashboardNodeModule[]): DashboardNode[] {
+  const allNodes = getModuleNodes(modules)
+
+  if (selectedNodes.length === 0 || selectedNodes.length < allNodes.length) {
+    return allNodes
+  }
+
+  return []
+}
+
+export function toggleModuleNodes(selectedNodes: DashboardNode[], module: DashboardNodeModule): DashboardNode[] {
+  const children = module.Children || []
+  const allSelected = children.length > 0 && children.every((child) => isNodeSelected(selectedNodes, child))
+
+  if (allSelected) {
+    return selectedNodes.filter((item) => !children.some((child) => child.NetUid === item.NetUid))
+  }
+
+  const missing = children.filter((child) => !isNodeSelected(selectedNodes, child))
+
+  return [...selectedNodes, ...missing]
+}
+
+export function toggleSubPermissions(selectedPermissions: UserPermission[], permissions: UserPermission[]): UserPermission[] {
+  const missing = permissions.filter((permission) => !isPermissionSelected(selectedPermissions, permission))
+
+  if (missing.length === 0 && permissions.length > 0) {
+    return selectedPermissions.filter((permission) => !permissions.some((item) => item.NetUid === permission.NetUid))
+  }
+
+  return [...selectedPermissions, ...missing]
 }

@@ -163,6 +163,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
   const orderItemColumns = useOrderItemColumns()
   const invoiceItemColumns = useInvoiceItemColumns()
   const packListItemColumns = usePackListItemColumns()
+  const orderTotalsToolbar = useMemo(() => <TotalsBadges totals={totals} />, [totals])
 
   useEffect(() => {
     let cancelled = false
@@ -471,7 +472,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                   layoutVersion="supply-direct-order-items-1"
                   minWidth={980}
                   tableId="supply-direct-order-items"
-                  toolbarLeft={<TotalsBadges totals={totals} />}
+                  toolbarLeft={orderTotalsToolbar}
                 />
               </Card>
             </Tabs.Panel>

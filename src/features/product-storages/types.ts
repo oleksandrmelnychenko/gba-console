@@ -46,13 +46,21 @@ export type ProductStorageAvailability = {
   StorageId?: number
   StorageName?: string
   StorageNetUid?: string
+  TotalRowsQty?: number
   VendorCode?: string
 }
 
+export type ProductStorageAvailabilitiesResponse = {
+  items: ProductStorageAvailability[]
+  totalQty: number
+}
+
 export type ProductStoragesSearchParams = {
+  from?: string
   limit: number
   offset: number
   storageNetId: string
+  to?: string
   value?: string
 }
 

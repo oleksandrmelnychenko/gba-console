@@ -22,7 +22,7 @@ import {
   IconFileSpreadsheet,
   IconUpload,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -63,6 +63,9 @@ type ParseForm = {
   withTotalAmount: boolean
 }
 
+type DirectOrderFormAction = { type: 'patch', patch: Partial<DirectOrderForm> }
+type ParseFormAction = { type: 'patch', patch: Partial<ParseForm> }
+
 const TARGET_ORGANIZATION_CULTURE_PREFIX = 'uk'
 const SUPPLY_TRANSPORTATION_TYPES: Array<{ label: string, value: string }> = [
   { label: 'Авто', value: '0' },
@@ -80,13 +83,8 @@ const EMPTY_PARSE_FORM: ParseForm = {
   withTotalAmount: false,
 }
 
-export function SupplyUkraineDirectOrderCreatePage() {
-  const { t } = useI18n()
-  const navigate = useNavigate()
-  const [organizations, setOrganizations] = useState<Organization[]>([])
-  const [suppliers, setSuppliers] = useState<Client[]>([])
-  const [supplierSearch, setSupplierSearch] = useState('')
-  const [form, setForm] = useState<DirectOrderForm>(() => ({
+function createInitialDirectOrderForm(): DirectOrderForm {
+  return {
     clientAgreementKey: '',
     comment: '',
     dateFrom: formatDateTimeInput(new Date()),
@@ -94,8 +92,35 @@ export function SupplyUkraineDirectOrderCreatePage() {
     organizationKey: '',
     supplierKey: '',
     transportationType: '0',
-  }))
-  const [parseForm, setParseForm] = useState<ParseForm>(EMPTY_PARSE_FORM)
+  }
+}
+
+function directOrderFormReducer(state: DirectOrderForm, action: DirectOrderFormAction): DirectOrderForm {
+  switch (action.type) {
+    case 'patch':
+      return { ...state, ...action.patch }
+    default:
+      return state
+  }
+}
+
+function parseFormReducer(state: ParseForm, action: ParseFormAction): ParseForm {
+  switch (action.type) {
+    case 'patch':
+      return { ...state, ...action.patch }
+    default:
+      return state
+  }
+}
+
+export function SupplyUkraineDirectOrderCreatePage() {
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const [organizations, setOrganizations] = useState<Organization[]>([])
+  const [suppliers, setSuppliers] = useState<Client[]>([])
+  const [supplierSearch, setSupplierSearch] = useState('')
+  const [form, dispatchForm] = useReducer(directOrderFormReducer, undefined, createInitialDirectOrderForm)
+  const [parseForm, dispatchParseForm] = useReducer(parseFormReducer, EMPTY_PARSE_FORM)
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,12 +149,14 @@ export function SupplyUkraineDirectOrderCreatePage() {
         const defaultSupplier = nextSuppliers.find((supplier) => (supplier.ClientAgreements || []).length > 0) || nextSuppliers[0]
         const defaults = getDefaultsForSupplier(defaultSupplier || null, nextOrganizations)
 
-        setForm((current) => ({
-          ...current,
-          clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
-          organizationKey: getEntityKey(defaults.organization),
-          supplierKey: getEntityKey(defaultSupplier),
-        }))
+        dispatchForm({
+          type: 'patch',
+          patch: {
+            clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
+            organizationKey: getEntityKey(defaults.organization),
+            supplierKey: getEntityKey(defaultSupplier),
+          },
+        })
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити довідники'))
@@ -191,23 +218,22 @@ export function SupplyUkraineDirectOrderCreatePage() {
   )
 
   function updateForm(patch: Partial<DirectOrderForm>) {
-    setForm((current) => ({ ...current, ...patch }))
+    dispatchForm({ type: 'patch', patch })
   }
 
   function updateParseForm(patch: Partial<ParseForm>) {
-    setParseForm((current) => ({ ...current, ...patch }))
+    dispatchParseForm({ type: 'patch', patch })
   }
 
   function changeSupplier(value: string | null) {
     const supplier = suppliers.find((item) => getEntityKey(item) === value) || null
     const defaults = getDefaultsForSupplier(supplier, organizations)
 
-    setForm((current) => ({
-      ...current,
+    updateForm({
       clientAgreementKey: getClientAgreementKey(defaults.clientAgreement),
       organizationKey: getEntityKey(defaults.organization),
       supplierKey: value || '',
-    }))
+    })
     setUploadResponse(null)
   }
 
@@ -215,11 +241,10 @@ export function SupplyUkraineDirectOrderCreatePage() {
     const organization = availableOrganizations.find((item) => getEntityKey(item) === value) || null
     const nextAgreement = filterAgreementsByOrganization(supplierAgreements, organization)[0] || null
 
-    setForm((current) => ({
-      ...current,
+    updateForm({
       clientAgreementKey: getClientAgreementKey(nextAgreement),
       organizationKey: value || '',
-    }))
+    })
     setUploadResponse(null)
   }
 

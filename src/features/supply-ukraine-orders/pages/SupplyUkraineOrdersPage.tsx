@@ -123,6 +123,37 @@ type OrdersState = {
   toUkraineTotal: number
 }
 
+type OrdersAction =
+  | { type: 'loading' }
+  | {
+    directOrders: DirectSupplyOrder[]
+    directTotal: number
+    toUkraineOrders: SupplyOrderUkraine[]
+    toUkraineTotal: number
+    type: 'loaded'
+  }
+  | { error: string; type: 'failed' }
+
+type CurrenciesState = {
+  error: string | null
+  items: Currency[]
+}
+
+type CurrenciesAction =
+  | { currencies: Currency[]; type: 'loaded' }
+  | { error: string; type: 'failed' }
+
+type OrderActionsPermissions = {
+  canOpenDirectInvoices: boolean
+  canOpenDirectLogistics: boolean
+  canOpenDirectProductIncome: boolean
+  canOpenDirectSpecifications: boolean
+  canOpenToUkraineOfficialCosts: boolean
+  canOpenToUkrainePlacement: boolean
+  canOpenToUkraineProtocols: boolean
+  canOpenToUkraineView: boolean
+}
+
 const initialState: OrdersState = {
   directOrders: [],
   directTotal: 0,
@@ -130,6 +161,45 @@ const initialState: OrdersState = {
   isLoading: true,
   toUkraineOrders: [],
   toUkraineTotal: 0,
+}
+
+const initialCurrenciesState: CurrenciesState = {
+  error: null,
+  items: [],
+}
+
+function ordersReducer(state: OrdersState, action: OrdersAction): OrdersState {
+  switch (action.type) {
+    case 'loading':
+      return { ...state, error: null, isLoading: true }
+    case 'loaded':
+      return {
+        directOrders: action.directOrders,
+        directTotal: action.directTotal,
+        error: null,
+        isLoading: false,
+        toUkraineOrders: action.toUkraineOrders,
+        toUkraineTotal: action.toUkraineTotal,
+      }
+    case 'failed':
+      return {
+        directOrders: [],
+        directTotal: 0,
+        error: action.error,
+        isLoading: false,
+        toUkraineOrders: [],
+        toUkraineTotal: 0,
+      }
+  }
+}
+
+function currenciesReducer(_state: CurrenciesState, action: CurrenciesAction): CurrenciesState {
+  switch (action.type) {
+    case 'loaded':
+      return { error: null, items: action.currencies }
+    case 'failed':
+      return { error: action.error, items: [] }
+  }
 }
 
 export function SupplyUkraineOrdersPage() {
@@ -141,9 +211,8 @@ export function SupplyUkraineOrdersPage() {
   const [activeFilters, setActiveFilters] = useState<SupplyUkraineOrdersFilter>(() => readSavedFilters(defaultFilters))
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [state, setState] = useState<OrdersState>(initialState)
-  const [currencies, setCurrencies] = useState<Currency[]>([])
-  const [currenciesError, setCurrenciesError] = useState<string | null>(null)
+  const [state, dispatchOrders] = useReducer(ordersReducer, initialState)
+  const [currenciesState, dispatchCurrencies] = useReducer(currenciesReducer, initialCurrenciesState)
   const [expandedDirectOrders, setExpandedDirectOrders] = useState<Set<string>>(() => new Set())
   const [selectedRow, setSelectedRow] = useState<SupplyUkraineOrderRow | null>(null)
   const [deleteCandidate, setDeleteCandidate] = useState<SupplyUkraineOrderRow | null>(null)
@@ -178,13 +247,14 @@ export function SupplyUkraineOrdersPage() {
         const nextCurrencies = await getSupplyOrderCurrencies()
 
         if (!cancelled) {
-          setCurrencies(nextCurrencies)
-          setCurrenciesError(null)
+          dispatchCurrencies({ currencies: nextCurrencies, type: 'loaded' })
         }
       } catch (error) {
         if (!cancelled) {
-          setCurrencies([])
-          setCurrenciesError(error instanceof Error ? error.message : t('Не вдалося завантажити валюти'))
+          dispatchCurrencies({
+            error: error instanceof Error ? error.message : t('Не вдалося завантажити валюти'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -217,48 +287,39 @@ export function SupplyUkraineOrdersPage() {
       to: activeFilters.to,
     }
 
-    async function loadOrders() {
-      setState((current) => ({ ...current, error: null, isLoading: true }))
+    dispatchOrders({ type: 'loading' })
 
-      try {
-        const [toUkraineResult, directResult] = await Promise.all([
-          activeFilters.type === 'direct'
-            ? Promise.resolve<SupplyUkraineOrdersResponse<SupplyOrderUkraine>>({ items: [], totalQty: 0 })
-            : getSupplyUkraineOrders(params),
-          activeFilters.type === 'toUkraine'
-            ? Promise.resolve<SupplyUkraineOrdersResponse<DirectSupplyOrder>>({ items: [], totalQty: 0 })
-            : getDirectSupplyUkraineOrders(params),
-        ])
-
+    void Promise.all([
+      activeFilters.type === 'direct'
+        ? Promise.resolve<SupplyUkraineOrdersResponse<SupplyOrderUkraine>>({ items: [], totalQty: 0 })
+        : getSupplyUkraineOrders(params),
+      activeFilters.type === 'toUkraine'
+        ? Promise.resolve<SupplyUkraineOrdersResponse<DirectSupplyOrder>>({ items: [], totalQty: 0 })
+        : getDirectSupplyUkraineOrders(params),
+    ])
+      .then(([toUkraineResult, directResult]) => {
         if (requestIdRef.current !== requestId) {
           return
         }
 
-        setState({
+        dispatchOrders({
           directOrders: directResult.items,
           directTotal: directResult.totalQty,
-          error: null,
-          isLoading: false,
           toUkraineOrders: toUkraineResult.items,
           toUkraineTotal: toUkraineResult.totalQty,
+          type: 'loaded',
         })
-      } catch (error) {
+      })
+      .catch((error: unknown) => {
         if (requestIdRef.current !== requestId) {
           return
         }
 
-        setState({
-          directOrders: [],
-          directTotal: 0,
+        dispatchOrders({
           error: error instanceof Error ? error.message : t('Не вдалося завантажити замовлення'),
-          isLoading: false,
-          toUkraineOrders: [],
-          toUkraineTotal: 0,
+          type: 'failed',
         })
-      }
-    }
-
-    void loadOrders()
+      })
   }, [activeFilters, filterError, page, pageSize, reloadKey, t])
 
   const rows = useMemo(
@@ -268,8 +329,40 @@ export function SupplyUkraineOrdersPage() {
   const totalQty = state.toUkraineTotal + state.directTotal
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
   const currencyOptions = useMemo(
-    () => currencies.map((currency) => ({ label: getCurrencyLabel(currency), value: String(currency.Id || currency.NetUid || '') })).filter((option) => option.value),
-    [currencies],
+    () => toSelectOptions(currenciesState.items, getCurrencyLabel),
+    [currenciesState.items],
+  )
+  const toolbarLeft = useMemo(
+    () => (
+      <Group gap="xs">
+        <Badge color="gray" variant="light">{t('Сторінка')} {page}</Badge>
+        <Badge color="blue" variant="light">{t('Поставки')}: {state.toUkraineTotal}</Badge>
+        <Badge color="teal" variant="light">{t('Замовлення')}: {state.directTotal}</Badge>
+      </Group>
+    ),
+    [page, state.directTotal, state.toUkraineTotal, t],
+  )
+  const orderActionsPermissions = useMemo<OrderActionsPermissions>(
+    () => ({
+      canOpenDirectInvoices,
+      canOpenDirectLogistics,
+      canOpenDirectProductIncome,
+      canOpenDirectSpecifications,
+      canOpenToUkraineOfficialCosts,
+      canOpenToUkrainePlacement,
+      canOpenToUkraineProtocols,
+      canOpenToUkraineView,
+    }),
+    [
+      canOpenDirectInvoices,
+      canOpenDirectLogistics,
+      canOpenDirectProductIncome,
+      canOpenDirectSpecifications,
+      canOpenToUkraineOfficialCosts,
+      canOpenToUkrainePlacement,
+      canOpenToUkraineProtocols,
+      canOpenToUkraineView,
+    ],
   )
   const columns = useSupplyUkraineOrdersColumns({
     canDelete,
@@ -475,13 +568,9 @@ export function SupplyUkraineOrdersPage() {
             )}
           </Group>
 
-          <Text c="dimmed" size="sm">
-            {t('Показано')} {rows.length} {t('з')} {totalQty}
-          </Text>
-
-          {currenciesError && (
+          {currenciesState.error && (
             <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {currenciesError}
+              {currenciesState.error}
             </Alert>
           )}
 
@@ -504,13 +593,7 @@ export function SupplyUkraineOrdersPage() {
             minWidth={1680}
             rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
             tableId="supply-ukraine-orders"
-            toolbarLeft={(
-              <Group gap="xs">
-                <Badge color="gray" variant="light">{t('Сторінка')} {page}</Badge>
-                <Badge color="blue" variant="light">{t('Поставки')}: {state.toUkraineTotal}</Badge>
-                <Badge color="teal" variant="light">{t('Замовлення')}: {state.directTotal}</Badge>
-              </Group>
-            )}
+            toolbarLeft={toolbarLeft}
             onRowClick={openRow}
           />
 
@@ -523,14 +606,7 @@ export function SupplyUkraineOrdersPage() {
       </Card>
 
       <OrderActionsModal
-        canOpenDirectInvoices={canOpenDirectInvoices}
-        canOpenDirectLogistics={canOpenDirectLogistics}
-        canOpenDirectProductIncome={canOpenDirectProductIncome}
-        canOpenDirectSpecifications={canOpenDirectSpecifications}
-        canOpenToUkrainePlacement={canOpenToUkrainePlacement}
-        canOpenToUkraineOfficialCosts={canOpenToUkraineOfficialCosts}
-        canOpenToUkraineProtocols={canOpenToUkraineProtocols}
-        canOpenToUkraineView={canOpenToUkraineView}
+        permissions={orderActionsPermissions}
         row={selectedRow}
         onClose={() => setSelectedRow(null)}
         onOpenOfficialCosts={openOfficialCosts}
@@ -754,33 +830,29 @@ function useSupplyUkraineOrdersColumns({
 }
 
 function OrderActionsModal({
-  canOpenDirectInvoices,
-  canOpenDirectLogistics,
-  canOpenDirectProductIncome,
-  canOpenDirectSpecifications,
-  canOpenToUkraineOfficialCosts,
-  canOpenToUkrainePlacement,
-  canOpenToUkraineProtocols,
-  canOpenToUkraineView,
+  permissions,
   row,
   onClose,
   onOpenOfficialCosts,
   onNavigate,
 }: {
-  canOpenDirectInvoices: boolean
-  canOpenDirectLogistics: boolean
-  canOpenDirectProductIncome: boolean
-  canOpenDirectSpecifications: boolean
-  canOpenToUkraineOfficialCosts: boolean
-  canOpenToUkrainePlacement: boolean
-  canOpenToUkraineProtocols: boolean
-  canOpenToUkraineView: boolean
+  permissions: OrderActionsPermissions
   row: SupplyUkraineOrderRow | null
   onClose: () => void
   onOpenOfficialCosts: (row: SupplyUkraineOrderRow) => void
   onNavigate: (path: string) => void
 }) {
   const { t } = useI18n()
+  const {
+    canOpenDirectInvoices,
+    canOpenDirectLogistics,
+    canOpenDirectProductIncome,
+    canOpenDirectSpecifications,
+    canOpenToUkraineOfficialCosts,
+    canOpenToUkrainePlacement,
+    canOpenToUkraineProtocols,
+    canOpenToUkraineView,
+  } = permissions
   const directHasInvoices = (row?.directOrder?.SupplyInvoices?.length || 0) > 0
 
   return (
@@ -960,6 +1032,18 @@ function OfficialCostsModal({
     () => products.find((product) => getEntityKey(product) === form.consumableProductKey) || null,
     [form.consumableProductKey, products],
   )
+  const organizationOptions = useMemo(
+    () => toSelectOptions(organizations, (organization) => organization.Name || String(organization.Id || '')),
+    [organizations],
+  )
+  const agreementOptions = useMemo(
+    () => toSelectOptions(selectedOrganization?.SupplyOrganizationAgreements || [], getServiceAgreementLabel),
+    [selectedOrganization],
+  )
+  const productOptions = useMemo(
+    () => toSelectOptions(products, (product) => product.Name || String(product.Id || '')),
+    [products],
+  )
 
   function updateForm(patch: Partial<OfficialCostsForm>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -1033,7 +1117,7 @@ function OfficialCostsModal({
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <Select
-            data={organizations.map((organization) => ({ label: organization.Name || String(organization.Id || ''), value: getEntityKey(organization) })).filter((option) => option.value)}
+            data={organizationOptions}
             disabled={isLoading || isSaving}
             label={t('Постачальник послуг')}
             searchable
@@ -1041,7 +1125,7 @@ function OfficialCostsModal({
             onChange={changeOrganization}
           />
           <Select
-            data={(selectedOrganization?.SupplyOrganizationAgreements || []).map((agreement) => ({ label: getServiceAgreementLabel(agreement), value: getEntityKey(agreement) })).filter((option) => option.value)}
+            data={agreementOptions}
             disabled={isLoading || isSaving || !selectedOrganization}
             label={t('Договір')}
             searchable
@@ -1049,7 +1133,7 @@ function OfficialCostsModal({
             onChange={(value) => updateForm({ serviceAgreementKey: value || '' })}
           />
           <Select
-            data={products.map((product) => ({ label: product.Name || String(product.Id || ''), value: getEntityKey(product) })).filter((option) => option.value)}
+            data={productOptions}
             disabled={isLoading || isSaving}
             label={t('Тип')}
             searchable
@@ -1434,6 +1518,26 @@ function getServiceAgreementLabel(agreement: SupplyServiceOrganizationAgreement)
   const currencyCode = agreement.Currency?.Code || agreement.Currency?.Name
 
   return [agreement.Name || agreement.Number, currencyCode].filter(Boolean).join(' - ') || String(agreement.Id || agreement.NetUid || '')
+}
+
+function toSelectOptions<T extends { Id?: number; NetUid?: string }>(
+  items: T[],
+  getLabel: (item: T) => string,
+): Array<{ label: string; value: string }> {
+  return items.reduce<Array<{ label: string; value: string }>>((options, item) => {
+    const value = getEntityKey(item)
+
+    if (!value) {
+      return options
+    }
+
+    options.push({
+      label: getLabel(item),
+      value,
+    })
+
+    return options
+  }, [])
 }
 
 function getEntityKey(entity?: { Id?: number; NetUid?: string } | null): string {

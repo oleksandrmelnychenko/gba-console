@@ -26,6 +26,11 @@ import type {
 import { formatDate, formatMoney, responsibleName } from './helpers'
 import { fromDateInput, toDateInput } from './helpers'
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 function ProtocolRow({
   onRemove,
   protocol,
@@ -125,12 +130,8 @@ export function PaymentDeliveryProtocolsSection({
   }
 
   const visibleProtocols = protocols.filter((protocol) => !protocol.Deleted)
-  const keyOptions = protocolKeys
-    .filter((key) => key.NetUid && key.Key)
-    .map((key) => ({ label: key.Key || '', value: key.NetUid || '' }))
-  const userOptions = users
-    .filter((user) => user.NetUid)
-    .map((user) => ({ label: responsibleName(user) || user.FullName || '', value: user.NetUid || '' }))
+  const keyOptions = toProtocolKeyOptions(protocolKeys)
+  const userOptions = toProtocolUserOptions(users)
 
   async function handleSubmit() {
     if (!value || Number(value) <= 0) {
@@ -256,4 +257,32 @@ export function PaymentDeliveryProtocolsSection({
       </AppModal>
     </Stack>
   )
+}
+
+function toProtocolKeyOptions(protocolKeys: SupplyOrderUkrainePaymentDeliveryProtocolKey[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const key of protocolKeys) {
+    if (!key.NetUid || !key.Key) {
+      continue
+    }
+
+    options.push({ label: key.Key, value: key.NetUid })
+  }
+
+  return options
+}
+
+function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const user of users) {
+    if (!user.NetUid) {
+      continue
+    }
+
+    options.push({ label: responsibleName(user) || user.FullName || '', value: user.NetUid })
+  }
+
+  return options
 }

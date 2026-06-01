@@ -182,6 +182,7 @@ export type TaxFreePackList = EntityBase & {
   TaxFreePackListOrderItems?: TaxFreePackListOrderItem[]
   TaxFrees?: TaxFree[]
   TaxFreesCount?: number
+  TotalRowsQty?: number
   TotalAmount?: number
   TotalAmountLocal?: number
   TotalUnspecifiedAmount?: number
@@ -202,6 +203,11 @@ export type TaxFreePackListsSearchParams = {
   limit: number
   offset: number
   to: string
+}
+
+export type TaxFreePackListsResponse = {
+  items: TaxFreePackList[]
+  totalQty?: number
 }
 
 export type SupplyOrderFromPackListPayload = {

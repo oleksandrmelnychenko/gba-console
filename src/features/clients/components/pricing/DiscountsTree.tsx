@@ -1,5 +1,4 @@
 import { Alert, Box, Button, Checkbox, Group, Loader, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { usePrevious } from '@mantine/hooks'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
@@ -133,7 +132,7 @@ export function DiscountsTree({
   const canSelectAll = hasPermission(DISCOUNT_SELECT_ALL_PERMISSION)
   const canEditPercent = hasPermission(DISCOUNT_PERCENT_INPUT_PERMISSION)
   const canCheckRow = hasPermission(DISCOUNT_ROW_CHECKBOX_PERMISSION)
-  const [tree, setTree] = useState<ProductGroupDiscount[]>([])
+  const treeRef = useRef<ProductGroupDiscount[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [percent, setPercent] = useState('')
@@ -143,8 +142,6 @@ export function DiscountsTree({
   const [initialValue, setInitialValue] = useState('')
 
   const requestIdRef = useRef(0)
-  const prevClientAgreementNetId = usePrevious(clientAgreementNetId)
-  const prevAgreementName = usePrevious(selectedAgreementName)
 
   useEffect(() => {
     let cancelled = false
@@ -163,7 +160,7 @@ export function DiscountsTree({
         }
 
         const map = buildDiscountMap(result)
-        setTree(result)
+        treeRef.current = result
         setDiscountMap(map)
         setInitialValue(toCompareValue(map))
         setPercent('')
@@ -174,7 +171,7 @@ export function DiscountsTree({
           return
         }
 
-        setTree([])
+        treeRef.current = []
         setDiscountMap({})
         setInitialValue('')
         setPercent('')
@@ -203,22 +200,48 @@ export function DiscountsTree({
     return toCompareValue(discountMap) !== initialValue
   }, [discountMap, initialValue])
 
-  const isDirtyRef = useRef(isDirty)
-  useEffect(() => {
-    isDirtyRef.current = isDirty
-  }, [isDirty])
+  const agreementStatusRef = useRef({
+    clientAgreementNetId,
+    selectedAgreementName,
+    isDirty,
+  })
 
   useEffect(() => {
-    return () => {
-      if (isDirtyRef.current && clientAgreementNetId !== prevClientAgreementNetId) {
-        window.confirm(`${t('Застосувати зміни')} ${t('Договір')}: ${prevAgreementName}`)
-      }
+    const previous = agreementStatusRef.current
+
+    if (previous.clientAgreementNetId !== clientAgreementNetId && previous.isDirty) {
+      window.confirm(`${t('Застосувати зміни')} ${t('Договір')}: ${previous.selectedAgreementName}`)
     }
-  }, [clientAgreementNetId, prevClientAgreementNetId, prevAgreementName, t])
+
+    agreementStatusRef.current = {
+      clientAgreementNetId,
+      selectedAgreementName,
+      isDirty,
+    }
+  }, [clientAgreementNetId, isDirty, selectedAgreementName, t])
 
   const nodes = useMemo(() => Object.values(discountMap), [discountMap])
   const isAnySelected = useMemo(() => nodes.some((node) => node.isSelected), [nodes])
   const rootNodes = useMemo(() => nodes.filter((node) => !node.parentNetId), [nodes])
+  const childNodesByParent = useMemo(() => {
+    const nextChildNodesByParent = new Map<string, DiscountNode[]>()
+
+    for (const node of nodes) {
+      if (!node.parentNetId) {
+        continue
+      }
+
+      const childNodes = nextChildNodesByParent.get(node.parentNetId)
+
+      if (childNodes) {
+        childNodes.push(node)
+      } else {
+        nextChildNodesByParent.set(node.parentNetId, [node])
+      }
+    }
+
+    return nextChildNodesByParent
+  }, [nodes])
   const currentNode = selectedNetId ? discountMap[selectedNetId] : undefined
   const selectedLabel = currentNode ? currentNode.name : t('Усі вибрані')
 
@@ -314,14 +337,14 @@ export function DiscountsTree({
   }
 
   function handleCancel() {
-    setDiscountMap(buildDiscountMap(tree))
+    setDiscountMap(buildDiscountMap(treeRef.current))
     setPercent('')
     setIsAllSelected(false)
     setSelectedNetId('')
   }
 
   function handleApply() {
-    onApplyChanges(mapToDiscountArray(discountMap, tree))
+    onApplyChanges(mapToDiscountArray(discountMap, treeRef.current))
   }
 
   if (isLoading) {
@@ -419,21 +442,19 @@ export function DiscountsTree({
                 t={t}
               />
               {node.hasSubGroups &&
-                nodes
-                  .filter((sub) => sub.parentNetId === node.netId)
-                  .map((sub) => (
-                    <Box key={sub.netId} pl="lg">
-                      <GroupRow
-                        canCheck={canCheckRow}
-                        disabled={disabled}
-                        node={sub}
-                        onCheck={handleCheckNode}
-                        onSelect={handleSelectNode}
-                        onToggleActive={handleToggleActive}
-                        t={t}
-                      />
-                    </Box>
-                  ))}
+                (childNodesByParent.get(node.netId) || []).map((sub) => (
+                  <Box key={sub.netId} pl="lg">
+                    <GroupRow
+                      canCheck={canCheckRow}
+                      disabled={disabled}
+                      node={sub}
+                      onCheck={handleCheckNode}
+                      onSelect={handleSelectNode}
+                      onToggleActive={handleToggleActive}
+                      t={t}
+                    />
+                  </Box>
+                ))}
             </Box>
           ))}
         </Stack>

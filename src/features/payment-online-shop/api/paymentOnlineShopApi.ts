@@ -39,8 +39,8 @@ export async function addPaymentImage(payload: AddPaymentImagePayload): Promise<
   })
 }
 
-export async function editPaymentImage(payload: EditPaymentImagePayload): Promise<void> {
-  await apiRequest<unknown>('/retail/clients/update/payment/item', {
+export async function editPaymentImage(payload: EditPaymentImagePayload): Promise<PaymentShopItem | null> {
+  const result = await apiRequest<unknown>('/retail/clients/update/payment/item', {
     method: 'POST',
     body: {
       ...payload.item,
@@ -51,6 +51,8 @@ export async function editPaymentImage(payload: EditPaymentImagePayload): Promis
       PaymentType: 0,
     },
   })
+
+  return normalizePaymentShopItem(result)
 }
 
 function normalizePaymentShopItems(result: unknown): PaymentShopItem[] {
@@ -72,4 +74,15 @@ function normalizePaymentShopItems(result: unknown): PaymentShopItem[] {
         : []
 
   return items as PaymentShopItem[]
+}
+
+function normalizePaymentShopItem(result: unknown): PaymentShopItem | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const payload = result as Record<string, unknown>
+  const item = payload.Entity || payload.PaymentShopItem || payload.Data || result
+
+  return item && typeof item === 'object' ? (item as PaymentShopItem) : null
 }

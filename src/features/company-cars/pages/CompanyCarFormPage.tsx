@@ -8,8 +8,8 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -41,6 +41,22 @@ type CompanyCarFormState = {
   tankCapacity: string
 }
 
+type CompanyCarFormPageState = {
+  companyCar: CompanyCar
+  error: string | null
+  form: CompanyCarFormState
+  isLoading: boolean
+  organizations: Organization[]
+}
+
+type CompanyCarFormPageAction =
+  | { type: 'failed'; error: string }
+  | { type: 'loaded'; companyCar: CompanyCar; form: CompanyCarFormState; organizations: Organization[] }
+  | { type: 'patch-form'; patch: Partial<CompanyCarFormState> }
+  | { type: 'set-company-car'; companyCar: CompanyCar }
+  | { type: 'set-error'; error: string | null }
+  | { type: 'start-loading' }
+
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 
 export function CompanyCarFormPage() {
@@ -52,52 +68,45 @@ export function CompanyCarFormPage() {
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
   const isEditMode = Boolean(id)
-  const [companyCar, setCompanyCar] = useValueState<CompanyCar>(() => createEmptyCompanyCar())
-  const [form, setForm] = useValueState<CompanyCarFormState>(() => createEmptyForm())
-  const [organizations, setOrganizations] = useValueState<Organization[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [pageState, dispatchPageState] = useReducer(companyCarFormPageReducer, undefined, createCompanyCarFormPageState)
+  const { companyCar, error, form, isLoading, organizations } = pageState
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const canSave = hasPermission(COMPANY_CAR_CREATE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()
+    dispatchPageState({ type: 'start-loading' })
 
-    async function loadResources() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const [nextOrganizations, nextCompanyCar] = await Promise.all([
-          getCompanyCarOrganizations(),
-          id ? getCompanyCar(id) : Promise.resolve(null),
-        ])
-
+    void Promise.all([
+      getCompanyCarOrganizations(),
+      id ? getCompanyCar(id) : Promise.resolve(null),
+    ])
+      .then(([nextOrganizations, nextCompanyCar]) => {
         if (controller.signal.aborted) {
           return
         }
 
         const initialCompanyCar = nextCompanyCar || createEmptyCompanyCar()
         const initialOrganization = initialCompanyCar.Organization || null
-        setOrganizations(includeEntity(nextOrganizations, initialOrganization))
-        setCompanyCar(initialCompanyCar)
-        setForm(toFormState(initialCompanyCar, initialOrganization))
-      } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити автомобіль компанії'))
+        dispatchPageState({
+          companyCar: initialCompanyCar,
+          form: toFormState(initialCompanyCar, initialOrganization),
+          organizations: includeEntity(nextOrganizations, initialOrganization),
+          type: 'loaded',
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
+          dispatchPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити автомобіль компанії'),
+            type: 'failed',
+          })
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadResources()
+      })
 
     return () => controller.abort()
-  }, [id, setCompanyCar, setError, setForm, setLoading, setOrganizations, t])
+  }, [id, t])
 
   const organizationOptions = useMemo(
     () => toSelectOptions(organizations, (organization) => organization.Name || organization.FullName),
@@ -107,6 +116,10 @@ export function CompanyCarFormPage() {
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationNetUid) || null,
     [form.organizationNetUid, organizations],
   )
+
+  function updateForm(patch: Partial<CompanyCarFormState>) {
+    dispatchPageState({ patch, type: 'patch-form' })
+  }
 
   function handleCancel() {
     if (isSaving || isDeleting) {
@@ -120,7 +133,7 @@ export function CompanyCarFormPage() {
     event.preventDefault()
 
     if (!canSave) {
-      setError(t('Немає прав для збереження автомобіля компанії'))
+      dispatchPageState({ error: t('Немає прав для збереження автомобіля компанії'), type: 'set-error' })
       return
     }
 
@@ -129,17 +142,17 @@ export function CompanyCarFormPage() {
     const tankCapacity = parseDecimal(form.tankCapacity)
 
     if (!fuelAmount) {
-      setError(t('Введіть кількість пального'))
+      dispatchPageState({ error: t('Введіть кількість пального'), type: 'set-error' })
       return
     }
 
     if (!mileage) {
-      setError(t('Введіть пробіг'))
+      dispatchPageState({ error: t('Введіть пробіг'), type: 'set-error' })
       return
     }
 
     if (tankCapacity > 0 && tankCapacity < fuelAmount) {
-      setError(t('Вміст баку менший ніж кількість топлива'))
+      dispatchPageState({ error: t('Вміст баку менший ніж кількість топлива'), type: 'set-error' })
       return
     }
 
@@ -157,19 +170,22 @@ export function CompanyCarFormPage() {
     }
 
     setSaving(true)
-    setError(null)
+    dispatchPageState({ error: null, type: 'set-error' })
 
     try {
       const savedCompanyCar = isEditMode ? await updateCompanyCar(payload) : await createCompanyCar(payload)
 
-      setCompanyCar(savedCompanyCar || payload)
+      dispatchPageState({ companyCar: savedCompanyCar || payload, type: 'set-company-car' })
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Автомобіль компанії оновлено') : t('Автомобіль компанії створено'),
       })
       navigate(returnPath, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти автомобіль компанії'))
+      dispatchPageState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти автомобіль компанії'),
+        type: 'set-error',
+      })
     } finally {
       setSaving(false)
     }
@@ -181,14 +197,17 @@ export function CompanyCarFormPage() {
     }
 
     setDeleting(true)
-    setError(null)
+    dispatchPageState({ error: null, type: 'set-error' })
 
     try {
       await deleteCompanyCar(companyCar.NetUid)
       notifications.show({ color: 'green', message: t('Автомобіль компанії видалено') })
       navigate(returnPath, { replace: true })
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити автомобіль компанії'))
+      dispatchPageState({
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити автомобіль компанії'),
+        type: 'set-error',
+      })
     } finally {
       setDeleting(false)
     }
@@ -227,7 +246,7 @@ export function CompanyCarFormPage() {
               label={t('Організація')}
               placeholder={t('Оберіть організацію')}
               value={form.organizationNetUid || null}
-              onChange={(value) => setForm((current) => ({ ...current, organizationNetUid: value || '' }))}
+              onChange={(value) => updateForm({ organizationNetUid: value || '' })}
             />
 
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -235,49 +254,49 @@ export function CompanyCarFormPage() {
                 disabled={isLoading || isSaving}
                 label={t('Марка автомобіля')}
                 value={form.carBrand}
-                onChange={(event) => setForm((current) => ({ ...current, carBrand: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('№ Авто')}
                 value={form.licensePlate}
-                onChange={(event) => setForm((current) => ({ ...current, licensePlate: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ licensePlate: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Вмістимість баку')}
                 value={form.tankCapacity}
-                onChange={(event) => setForm((current) => ({ ...current, tankCapacity: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Кількість пального')}
                 value={form.fuelAmount}
-                onChange={(event) => setForm((current) => ({ ...current, fuelAmount: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Показники одометра')}
                 value={form.mileage}
-                onChange={(event) => setForm((current) => ({ ...current, mileage: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Розхід по місту на 100 км')}
                 value={form.inCityConsumption}
-                onChange={(event) => setForm((current) => ({ ...current, inCityConsumption: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Розхід по трасі на 100 км')}
                 value={form.outsideCityConsumption}
-                onChange={(event) => setForm((current) => ({ ...current, outsideCityConsumption: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
               />
               <TextInput
                 disabled={isLoading || isSaving}
                 label={t('Змішаний розхід')}
                 value={form.mixedModeConsumption}
-                onChange={(event) => setForm((current) => ({ ...current, mixedModeConsumption: event.currentTarget.value }))}
+                onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
               />
             </SimpleGrid>
 
@@ -309,6 +328,64 @@ export function CompanyCarFormPage() {
       </form>
     </AppDrawer>
   )
+}
+
+function createCompanyCarFormPageState(): CompanyCarFormPageState {
+  return {
+    companyCar: createEmptyCompanyCar(),
+    error: null,
+    form: createEmptyForm(),
+    isLoading: true,
+    organizations: [],
+  }
+}
+
+function companyCarFormPageReducer(
+  state: CompanyCarFormPageState,
+  action: CompanyCarFormPageAction,
+): CompanyCarFormPageState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loaded':
+      return {
+        companyCar: action.companyCar,
+        error: null,
+        form: action.form,
+        isLoading: false,
+        organizations: action.organizations,
+      }
+    case 'patch-form':
+      return {
+        ...state,
+        form: {
+          ...state.form,
+          ...action.patch,
+        },
+      }
+    case 'set-company-car':
+      return {
+        ...state,
+        companyCar: action.companyCar,
+      }
+    case 'set-error':
+      return {
+        ...state,
+        error: action.error,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    default:
+      return state
+  }
 }
 
 function createEmptyCompanyCar(): CompanyCar {

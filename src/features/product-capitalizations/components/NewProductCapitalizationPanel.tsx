@@ -21,8 +21,9 @@ import {
   IconPlus,
   IconTrash,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -33,8 +34,10 @@ import {
   getProductCapitalizationOrganizations,
   getProductCapitalizationStoragesByOrganization,
   parseProductCapitalizationItemsFromFile,
+  recordProductCapitalizationHistory,
   searchProductsByVendorCode,
 } from '../api/productCapitalizationsApi'
+import { resolveProductCapitalizationSelection } from '../productCapitalizationSelection'
 import type {
   ProductCapitalizationItem,
   ProductCapitalizationParseConfiguration,
@@ -66,6 +69,18 @@ const EMPTY_ITEM_ENTRY: ItemEntryDraft = {
 }
 
 type DraftItem = ProductCapitalizationItem & { __rowKey: string }
+
+type StorageSelectionState = {
+  items: ClientResourceStorage[]
+  isLoading: boolean
+  selectedNetId: string | null
+}
+
+const EMPTY_STORAGE_SELECTION: StorageSelectionState = {
+  items: [],
+  isLoading: false,
+  selectedNetId: null,
+}
 
 let rowKeySequence = 0
 
@@ -109,7 +124,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
       position="right"
       size="78rem"
       title={t('Нове оприбуткування')}
-      onClose={onClose}
+      onClose={model.requestClose}
     >
       <Stack gap="md">
         {model.error && (
@@ -139,9 +154,9 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           />
           <Select
             data={model.storageOptions}
-            disabled={!model.selectedOrganizationNetId}
+            disabled={!model.selectedOrganizationNetId || model.isLoadingStorages}
             label={t('Склад')}
-            placeholder={t('Оберіть склад')}
+            placeholder={model.isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
             searchable
             value={model.selectedStorageNetId}
             onChange={model.selectStorage}
@@ -194,7 +209,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           <Button
             leftSection={<IconFileSpreadsheet size={16} />}
             variant="light"
-            onClick={() => model.setUploadModalOpened(true)}
+            onClick={model.openUploadModal}
           >
             {t('Імпорт з Excel')}
           </Button>
@@ -221,7 +236,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           isSubmitting={model.isParsing}
           opened={model.uploadModalOpened}
           submitError={model.uploadError}
-          onClose={() => model.setUploadModalOpened(false)}
+          onClose={model.closeUploadModal}
           onSubmit={model.parseFromFile}
         />
       )}
@@ -231,6 +246,20 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         opened={model.missingModalOpened}
         onClose={() => model.setMissingModalOpened(false)}
       />
+
+      <AppModal centered opened={model.confirmCloseOpen} title={t('Є незбережені зміни')} onClose={model.cancelClose}>
+        <Stack gap="md">
+          <Text>{t('Якщо закрити форму, документ оприбуткування не буде створено.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={model.cancelClose}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={model.confirmClose}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </AppDrawer>
   )
 }
@@ -239,8 +268,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const { t } = useI18n()
   const [organizations, setOrganizations] = useValueState<ClientResourceOrganization[]>([])
   const [selectedOrganizationNetId, setSelectedOrganizationNetId] = useValueState<string | null>(null)
-  const [storages, setStorages] = useValueState<ClientResourceStorage[]>([])
-  const [selectedStorageNetId, setSelectedStorageNetId] = useValueState<string | null>(null)
+  const [storageState, setStorageState] = useValueState<StorageSelectionState>(EMPTY_STORAGE_SELECTION)
   const [comment, setComment] = useValueState('')
   const [fromDate, setFromDate] = useValueState(() => toDateTimeLocal(new Date()))
   const [items, setItems] = useValueState<DraftItem[]>([])
@@ -256,6 +284,13 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const [missingVendorCodes, setMissingVendorCodes] = useValueState<string[]>([])
   const [missingModalOpened, setMissingModalOpened] = useValueState(false)
   const [debouncedVendorCode] = useDebouncedValue(vendorCodeQuery, VENDOR_CODE_DEBOUNCE_MS)
+  const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
+  const [initialFromDate, setInitialFromDate] = useValueState(fromDate)
+  const parseRequestRef = useRef(0)
+  const submitRequestRef = useRef(0)
+  const storages = storageState.items
+  const selectedStorageNetId = storageState.selectedNetId
+  const isLoadingStorages = storageState.isLoading
 
   useEffect(() => {
     if (!opened) {
@@ -292,12 +327,20 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
   useEffect(() => {
     if (!opened || !selectedOrganizationNetId) {
+      setStorageState(EMPTY_STORAGE_SELECTION)
       return
     }
 
     let cancelled = false
 
     async function loadStorages() {
+      setStorageState({
+        items: [],
+        isLoading: true,
+        selectedNetId: null,
+      })
+      setError(null)
+
       try {
         const loadedStorages = await getProductCapitalizationStoragesByOrganization(selectedOrganizationNetId as string)
 
@@ -305,10 +348,14 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
           return
         }
 
-        setStorages(loadedStorages)
-        setSelectedStorageNetId(loadedStorages.find((storage) => storage.NetUid)?.NetUid || null)
+        setStorageState({
+          items: loadedStorages,
+          isLoading: false,
+          selectedNetId: loadedStorages.find((storage) => storage.NetUid)?.NetUid || null,
+        })
       } catch {
         if (!cancelled) {
+          setStorageState(EMPTY_STORAGE_SELECTION)
           setError(t('Не вдалося завантажити склади'))
         }
       }
@@ -319,7 +366,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     return () => {
       cancelled = true
     }
-  }, [opened, selectedOrganizationNetId, setError, setSelectedStorageNetId, setStorages, t])
+  }, [opened, selectedOrganizationNetId, setError, setStorageState, t])
 
   useEffect(() => {
     const query = debouncedVendorCode.trim()
@@ -373,24 +420,31 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const selectOrganization = useCallback(
     (value: string | null) => {
       setSelectedOrganizationNetId(value)
-      setSelectedStorageNetId(null)
+      setStorageState(EMPTY_STORAGE_SELECTION)
     },
-    [setSelectedOrganizationNetId, setSelectedStorageNetId],
+    [setSelectedOrganizationNetId, setStorageState],
   )
 
   const selectStorage = useCallback(
     (value: string | null) => {
-      setSelectedStorageNetId(value)
+      setStorageState((current) => ({
+        ...current,
+        selectedNetId: value,
+      }))
     },
-    [setSelectedStorageNetId],
+    [setStorageState],
   )
 
   const changeVendorCodeQuery = useCallback(
     (value: string) => {
       setVendorCodeQuery(value)
       setSelectedProduct(null)
+
+      if (!value.trim()) {
+        setSearchedProducts([])
+      }
     },
-    [setSelectedProduct, setVendorCodeQuery],
+    [setSearchedProducts, setSelectedProduct, setVendorCodeQuery],
   )
 
   const selectVendorCode = useCallback(
@@ -403,7 +457,9 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   )
 
   const addItem = useCallback(() => {
-    if (!selectedProduct || !selectedProduct.Id) {
+    const product = resolveProductCapitalizationSelection(selectedProduct, searchedProducts, vendorCodeQuery)
+
+    if (!product || !product.Id) {
       notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Артикул')}` })
       return
     }
@@ -423,12 +479,12 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
     const newItem = toDraftItem({
       Product: {
-        Id: selectedProduct.Id,
-        Name: selectedProduct.Name,
-        NetUid: selectedProduct.NetUid,
-        VendorCode: selectedProduct.VendorCode,
+        Id: product.Id,
+        Name: product.Name,
+        NetUid: product.NetUid,
+        VendorCode: product.VendorCode,
       },
-      ProductId: selectedProduct.Id,
+      ProductId: product.Id,
       Qty: quantity,
       UnitPrice: unitPrice,
       Weight: toFiniteNumber(itemEntry.weight),
@@ -443,6 +499,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     itemEntry.quantity,
     itemEntry.unitPrice,
     itemEntry.weight,
+    searchedProducts,
     selectedProduct,
     setItemEntry,
     setItems,
@@ -450,6 +507,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     setSelectedProduct,
     setVendorCodeQuery,
     t,
+    vendorCodeQuery,
   ])
 
   const updateItem = useCallback(
@@ -468,31 +526,92 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     [setItems],
   )
 
+  const openUploadModal = useCallback(() => {
+    setUploadError(null)
+    setUploadModalOpened(true)
+  }, [setUploadError, setUploadModalOpened])
+
+  const closeUploadModal = useCallback(() => {
+    setUploadError(null)
+    setUploadModalOpened(false)
+  }, [setUploadError, setUploadModalOpened])
+
+  const resetDraft = useCallback(() => {
+    const nextFromDate = toDateTimeLocal(new Date())
+
+    parseRequestRef.current += 1
+    submitRequestRef.current += 1
+    setInitialFromDate(nextFromDate)
+    setComment('')
+    setFromDate(nextFromDate)
+    setItems([])
+    setItemEntry(EMPTY_ITEM_ENTRY)
+    setSelectedProduct(null)
+    setVendorCodeQuery('')
+    setSearchedProducts([])
+    setError(null)
+    setUploadError(null)
+    setUploadModalOpened(false)
+    setParsing(false)
+    setSubmitting(false)
+    setMissingVendorCodes([])
+    setMissingModalOpened(false)
+  }, [
+    setComment,
+    setError,
+    setFromDate,
+    setItemEntry,
+    setItems,
+    setInitialFromDate,
+    setMissingModalOpened,
+    setMissingVendorCodes,
+    setParsing,
+    setSearchedProducts,
+    setSelectedProduct,
+    setSubmitting,
+    setUploadError,
+    setUploadModalOpened,
+    setVendorCodeQuery,
+  ])
+
   const parseFromFile = useCallback(
     async (file: File, parseConfiguration: ProductCapitalizationParseConfiguration) => {
+      const requestId = parseRequestRef.current + 1
+      parseRequestRef.current = requestId
+      const isCurrentParse = () => parseRequestRef.current === requestId
       setParsing(true)
       setUploadError(null)
 
       try {
         const result = await parseProductCapitalizationItemsFromFile(file, parseConfiguration)
 
-        setItems((current) => [...current, ...result.Items.map(toDraftItem)])
-        setUploadModalOpened(false)
+        if (isCurrentParse()) {
+          setItems((current) => [...current, ...result.Items.map(toDraftItem)])
+          setUploadModalOpened(false)
+        }
 
-        if (result.MissingVendorCodes.length > 0) {
+        if (isCurrentParse() && result.MissingVendorCodes.length > 0) {
           setMissingVendorCodes(result.MissingVendorCodes)
           setMissingModalOpened(true)
         }
       } catch (parseError) {
-        setUploadError(parseError instanceof Error ? parseError.message : t('Не вдалося розпізнати файл'))
+        if (isCurrentParse()) {
+          setUploadError(parseError instanceof Error ? parseError.message : t('Не вдалося розпізнати файл'))
+        }
       } finally {
-        setParsing(false)
+        if (isCurrentParse()) {
+          setParsing(false)
+        }
       }
     },
     [setItems, setMissingModalOpened, setMissingVendorCodes, setParsing, setUploadError, setUploadModalOpened, t],
   )
 
   const submit = useCallback(async () => {
+    const requestId = submitRequestRef.current + 1
+    submitRequestRef.current = requestId
+    const isCurrentSubmit = () => submitRequestRef.current === requestId
+
     if (items.length === 0) {
       notifications.show({ color: 'yellow', message: t('Додайте хоча б один товар') })
       return
@@ -525,7 +644,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     setError(null)
 
     try {
-      await createProductCapitalization({
+      const productCapitalization = await createProductCapitalization({
         Comment: comment,
         FromDate: new Date(fromDate).toISOString(),
         Organization: organization,
@@ -533,13 +652,27 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
         Storage: storage,
       })
 
-      notifications.show({ color: 'green', message: t('Оприбуткування створено') })
-      onCreated()
-      onClose()
+      if (isCurrentSubmit() && productCapitalization) {
+        await recordHistoryUpdate(
+          () => recordProductCapitalizationHistory(productCapitalization),
+          t('Оприбуткування створено, але історію руху товару не оновлено'),
+        )
+      }
+
+      if (isCurrentSubmit()) {
+        notifications.show({ color: 'green', message: t('Оприбуткування створено') })
+        resetDraft()
+        onCreated()
+        onClose()
+      }
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити оприбуткування'))
+      if (isCurrentSubmit()) {
+        setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити оприбуткування'))
+      }
     } finally {
-      setSubmitting(false)
+      if (isCurrentSubmit()) {
+        setSubmitting(false)
+      }
     }
   }, [
     comment,
@@ -548,6 +681,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     onClose,
     onCreated,
     organizations,
+    resetDraft,
     selectedOrganizationNetId,
     selectedStorageNetId,
     setError,
@@ -556,11 +690,52 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     t,
   ])
 
+  const hasDraftChanges = useMemo(
+    () =>
+      Boolean(comment.trim()) ||
+      fromDate !== initialFromDate ||
+      items.length > 0 ||
+      Boolean(vendorCodeQuery.trim()) ||
+      Boolean(selectedProduct) ||
+      itemEntry.quantity !== '' ||
+      itemEntry.unitPrice !== '' ||
+      itemEntry.weight !== '',
+    [comment, fromDate, initialFromDate, itemEntry.quantity, itemEntry.unitPrice, itemEntry.weight, items.length, selectedProduct, vendorCodeQuery],
+  )
+
+  const requestClose = useCallback(() => {
+    if (isSubmitting || isParsing) {
+      return
+    }
+
+    if (hasDraftChanges) {
+      setConfirmCloseOpen(true)
+      return
+    }
+
+    resetDraft()
+    onClose()
+  }, [hasDraftChanges, isParsing, isSubmitting, onClose, resetDraft, setConfirmCloseOpen])
+
+  const cancelClose = useCallback(() => {
+    setConfirmCloseOpen(false)
+  }, [setConfirmCloseOpen])
+
+  const confirmClose = useCallback(() => {
+    setConfirmCloseOpen(false)
+    resetDraft()
+    onClose()
+  }, [onClose, resetDraft, setConfirmCloseOpen])
+
   return {
+    cancelClose,
     comment,
+    confirmClose,
+    confirmCloseOpen,
     error,
     fromDate,
     isParsing,
+    isLoadingStorages,
     isSubmitting,
     itemEntry,
     items,
@@ -576,8 +751,11 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     vendorCodeQuery,
     addItem,
     changeVendorCodeQuery,
+    closeUploadModal,
+    openUploadModal,
     parseFromFile,
     removeItem,
+    requestClose,
     selectOrganization,
     selectStorage,
     selectVendorCode,
@@ -585,9 +763,19 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     setFromDate,
     setItemEntry,
     setMissingModalOpened,
-    setUploadModalOpened,
     submit,
     updateItem,
+  }
+}
+
+async function recordHistoryUpdate(record: () => Promise<void>, warningMessage: string): Promise<void> {
+  try {
+    await record()
+  } catch {
+    notifications.show({
+      color: 'yellow',
+      message: warningMessage,
+    })
   }
 }
 

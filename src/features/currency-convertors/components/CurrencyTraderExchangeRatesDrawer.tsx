@@ -22,17 +22,23 @@ type NewRateDraft = {
   rates: Record<string, string>
 }
 
+const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+
+type CurrencyTraderExchangeRatesViewState = {
+  canEdit: boolean
+  isAdding: boolean
+  isLoading: boolean
+  isSaving: boolean
+  showAddButton: boolean
+}
+
 type CurrencyTraderExchangeRatesDrawerProps = {
   trader: CurrencyTrader | null
   rates: CurrencyTraderExchangeRate[]
   from: string
   to: string
-  isLoading: boolean
   error: string | null
-  canEdit: boolean
-  isSaving: boolean
-  showAddButton: boolean
-  isAdding: boolean
+  viewState: CurrencyTraderExchangeRatesViewState
   newRateDraft: NewRateDraft
   editingRate: CurrencyTraderExchangeRate | null
   editingValue: string
@@ -56,12 +62,8 @@ export function CurrencyTraderExchangeRatesDrawer({
   rates,
   from,
   to,
-  isLoading,
   error,
-  canEdit,
-  isSaving,
-  showAddButton,
-  isAdding,
+  viewState,
   newRateDraft,
   editingRate,
   editingValue,
@@ -81,6 +83,7 @@ export function CurrencyTraderExchangeRatesDrawer({
 }: CurrencyTraderExchangeRatesDrawerProps) {
   const { t } = useI18n()
   const title = trader ? getTraderTitle(trader) : t('Курс валют')
+  const { canEdit, isAdding, isLoading, isSaving, showAddButton } = viewState
 
   return (
     <AppDrawer opened={Boolean(trader)} size="lg" title={title} onClose={onClose}>
@@ -256,5 +259,5 @@ function formatDate(value?: string): string {
     return value
   }
 
-  return new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' }).format(date)
+  return dateFormatter.format(date)
 }

@@ -85,6 +85,13 @@ import {
   RetailIncompleteSalePage,
   SalesOnlineShopPage,
   SalesUkrainePage,
+  SalesDebtorsPage,
+  SalesPreordersInterestPage,
+  ShoppingCartReservePage,
+  ClientProductMovementPage,
+  OffersPage,
+  SalesPredictionPage,
+  SalesChartsPage,
   SupplyOrderProductPlacementPage,
   SupplyOrderUkraineProductPlacementPage,
   SupplierAccountingCashFlowPage,
@@ -120,6 +127,7 @@ import {
 } from './lazyConsolePages'
 import { lazyRoute } from './lazyRoute'
 import { ProductCarouselDeepLinkRedirect } from './ProductCarouselDeepLinkRedirect'
+import { SalesDashboardShell } from '../../shared/ui/SalesDashboardShell'
 
 export type ConsoleRoute = {
   path: string
@@ -283,8 +291,15 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/resales/:id', element: lazyRoute(<ResalePage />) },
   { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
   { path: '/reports/sale', element: lazyRoute(<ReportsSalePage />) },
-  { path: '/sales/return/client', element: lazyRoute(<SalesReturnClientPage />) },
-  { path: '/sales/ukraine/all', element: lazyRoute(<SalesUkrainePage />) },
+  { path: '/sales/return/client', element: <SalesDashboardShell>{lazyRoute(<SalesReturnClientPage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/all', element: <SalesDashboardShell>{lazyRoute(<SalesUkrainePage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/debtors', element: <SalesDashboardShell>{lazyRoute(<SalesDebtorsPage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/interest', element: <SalesDashboardShell>{lazyRoute(<SalesPreordersInterestPage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/cart-reserve', element: <SalesDashboardShell>{lazyRoute(<ShoppingCartReservePage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/client-product-movement', element: <SalesDashboardShell>{lazyRoute(<ClientProductMovementPage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/offers', element: <SalesDashboardShell>{lazyRoute(<OffersPage />)}</SalesDashboardShell> },
+  { path: '/sales/ukraine/prediction', element: <SalesDashboardShell>{lazyRoute(<SalesPredictionPage />)}</SalesDashboardShell> },
+  { path: '/sales/charts', element: <SalesDashboardShell>{lazyRoute(<SalesChartsPage />)}</SalesDashboardShell> },
   { path: '/sales/ukraine/all/returns/new', element: lazyRoute(<NewUkraineSaleReturnPage />) },
   { path: '/sales', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/service/organisations', element: lazyRoute(<OrganisationServicesPage />) },

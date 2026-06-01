@@ -59,7 +59,9 @@ export async function deletePaymentCashflowArticle(netId: string): Promise<void>
 }
 
 function normalizeArticles(result: unknown): PaymentCashflowArticle[] {
-  return Array.isArray(result) ? result.map(normalizeArticle).filter(isArticle) : []
+  return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data', 'Collection'])
+    .map(normalizeArticle)
+    .filter(isArticle)
 }
 
 function normalizeArticle(result: unknown): PaymentCashflowArticle | null {
@@ -77,4 +79,19 @@ function normalizeArticle(result: unknown): PaymentCashflowArticle | null {
 
 function isArticle(article: PaymentCashflowArticle | null): article is PaymentCashflowArticle {
   return Boolean(article)
+}
+
+function readArrayPayload(result: unknown, keys: string[]): unknown[] {
+  if (Array.isArray(result)) {
+    return result
+  }
+
+  if (!result || typeof result !== 'object') {
+    return []
+  }
+
+  const payload = result as Record<string, unknown>
+  const wrappedItems = keys.map((key) => payload[key]).find(Array.isArray)
+
+  return wrappedItems || []
 }

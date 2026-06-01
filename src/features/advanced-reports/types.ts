@@ -73,6 +73,7 @@ export type OutcomePaymentOrder = EntityFields & {
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   RootAssignedPaymentOrder?: unknown
+  TotalRowsQty?: number
   User?: NamedEntity | null
 }
 

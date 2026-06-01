@@ -75,13 +75,6 @@ export function ActReconciliationActionsModal({
     }
   }, [opened, organizationNetId, setStorages, setStoragesError, setStoragesLoading, t])
 
-  useEffect(() => {
-    if (!opened) {
-      setSubmitError(null)
-      setSubmitting(false)
-    }
-  }, [opened, setSubmitError, setSubmitting])
-
   const singleItem = target?.mode === 'single' ? target.item : null
   const maxAvailableQty = singleItem?.QtyDifference
 
@@ -94,12 +87,18 @@ export function ActReconciliationActionsModal({
 
       notifications.show({ color: 'green', message: t('Операцію виконано') })
       onApplied()
-      onClose()
+      handleClose()
     } catch (actionError) {
       setSubmitError(actionError instanceof Error ? actionError.message : t('Не вдалося виконати операцію'))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleClose() {
+    setSubmitError(null)
+    setSubmitting(false)
+    onClose()
   }
 
   function handlePlacementSubmit(values: ProductPlacementFormValues) {
@@ -174,7 +173,7 @@ export function ActReconciliationActionsModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={onClose}>
+    <AppModal centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={handleClose}>
       {(storagesError || submitError) && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} mb="sm" variant="light">
           {submitError || storagesError}

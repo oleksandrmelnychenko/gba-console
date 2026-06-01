@@ -20,20 +20,24 @@ import {
   IconRestore,
   IconRoute,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
-import { Link } from 'react-router-dom'
+import { notifications } from '@mantine/notifications'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { useAuth } from '../../auth/useAuth'
 import { getActProvidingServices } from '../api/actProvidingServicesApi'
 import type { ActProvidingService } from '../types'
 import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel } from '../utils'
 
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
+const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
+const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -56,19 +60,32 @@ type ActProvidingServiceRow = ActProvidingServiceDisplayModel & {
   act: ActProvidingService
 }
 
+type ActProvidingServicesLoadState = {
+  acts: ActProvidingService[]
+  error: string | null
+  isLoading: boolean
+  total: number | undefined
+}
+
+const EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE: ActProvidingServicesLoadState = {
+  acts: [],
+  error: null,
+  isLoading: false,
+  total: undefined,
+}
+
 function useActProvidingServicesPageModel() {
   const { t } = useI18n()
   const defaultFilters = useMemo(() => getDefaultFilters(), [])
-  const [acts, setActs] = useValueState<ActProvidingService[]>([])
+  const [loadState, setLoadState] = useValueState<ActProvidingServicesLoadState>(EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE)
   const [dateFrom, setDateFrom] = useValueState(defaultFilters.from)
   const [dateTo, setDateTo] = useValueState(defaultFilters.to)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
-  const [isLoading, setLoading] = useValueState(false)
-  const [error, setError] = useValueState<string | null>(null)
-  const [total, setTotal] = useValueState<number | undefined>(undefined)
   const [selectedRow, setSelectedRow] = useValueState<ActProvidingServiceRow | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const requestRef = useRef(0)
+  const { acts, error, isLoading, total } = loadState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const rows = useMemo(
@@ -86,53 +103,70 @@ function useActProvidingServicesPageModel() {
     ),
     [page, t, total],
   )
-  const columns = useActProvidingServiceColumns((row) => setSelectedRow(row))
+  const openSelectedRow = useCallback(
+    (row: ActProvidingServiceRow) => {
+      if (!row.supplyOrderUkraineNetUid && (!row.protocolNetId || !row.netId)) {
+        notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
+      }
 
-  useEffect(() => {
+      setSelectedRow(row)
+    },
+    [setSelectedRow, t],
+  )
+  const closeSelectedRow = useCallback(() => setSelectedRow(null), [setSelectedRow])
+  const columns = useActProvidingServiceColumns(openSelectedRow)
+
+  const loadActs = useCallback(() => {
+    let isActive = true
+    const requestId = requestRef.current + 1
+    requestRef.current = requestId
+
     if (filterError) {
-      setActs([])
-      setTotal(undefined)
-      setLoading(false)
-      return
-    }
-
-    let cancelled = false
-
-    async function loadActs() {
-      setLoading(true)
-      setError(null)
-
-      try {
-        const response = await getActProvidingServices({
-          from: dateFrom,
-          limit: pageSize,
-          offset,
-          to: dateTo,
-        })
-
-        if (!cancelled) {
-          setActs(response.Items)
-          setTotal(response.Total)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setActs([])
-          setTotal(undefined)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти надання послуг'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+      setLoadState(EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE)
+      return () => {
+        isActive = false
       }
     }
 
-    void loadActs()
+    setLoadState((currentState) => ({ ...currentState, error: null, isLoading: true }))
+
+    void getActProvidingServices({
+      from: dateFrom,
+      limit: pageSize,
+      offset,
+      to: dateTo,
+    })
+      .then((response) => {
+        if (!isActive || requestRef.current !== requestId) {
+          return
+        }
+
+        setLoadState({
+          acts: response.Items,
+          error: null,
+          isLoading: false,
+          total: response.Total,
+        })
+      })
+      .catch((loadError: unknown) => {
+        if (isActive && requestRef.current === requestId) {
+          setLoadState({
+            acts: [],
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти надання послуг'),
+            isLoading: false,
+            total: undefined,
+          })
+        }
+      })
 
     return () => {
-      cancelled = true
+      isActive = false
     }
-  }, [dateFrom, dateTo, filterError, offset, pageSize, reloadKey, setActs, setError, setLoading, setTotal, t])
+  }, [dateFrom, dateTo, filterError, offset, pageSize, setLoadState, t])
+
+  useEffect(() => {
+    return loadActs()
+  }, [loadActs, reloadKey])
 
   function resetFilters() {
     const filters = getDefaultFilters()
@@ -156,13 +190,14 @@ function useActProvidingServicesPageModel() {
     rows,
     selectedRow,
     toolbarLeft,
+    closeSelectedRow,
+    openSelectedRow,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setPage,
     setPageSize,
-    setSelectedRow,
   }
 }
 
@@ -188,13 +223,14 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     rows,
     selectedRow,
     toolbarLeft,
+    closeSelectedRow,
+    openSelectedRow,
     reload,
     resetFilters,
     setDateFrom,
     setDateTo,
     setPage,
     setPageSize,
-    setSelectedRow,
   } = model
 
   return (
@@ -304,12 +340,12 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             minWidth={1320}
             tableId="act-providing-services"
             toolbarLeft={toolbarLeft}
-            onRowClick={setSelectedRow}
+            onRowClick={openSelectedRow}
           />
         </Stack>
       </Card>
 
-      <ActProvidingServiceOptionsModal row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <ActProvidingServiceOptionsModal row={selectedRow} onClose={closeSelectedRow} />
     </Stack>
   )
 }
@@ -322,6 +358,10 @@ function ActProvidingServiceOptionsModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const { hasPermission } = useAuth()
+  const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
+  const canOpenViewOption = hasPermission(PERMISSION_VIEW_OPTION)
 
   return (
     <AppModal centered opened={Boolean(row)} title={t('Виберіть опцію')} onClose={onClose}>
@@ -346,11 +386,34 @@ function ActProvidingServiceOptionsModal({
           >
             {t('Огляд')}
           </Button>
-          {(row.protocolNetId || row.supplyOrderUkraineNetUid) && (
-            <Button disabled justify="flex-start" leftSection={<IconRoute size={18} />} variant="light">
-              {row.supplyOrderUkraineNetUid ? t('Замовлення в Україну') : t('Логістичний шлях')}
-            </Button>
-          )}
+          {row.supplyOrderUkraineNetUid
+            ? canOpenViewOption && (
+                <Button
+                  justify="flex-start"
+                  leftSection={<IconRoute size={18} />}
+                  variant="light"
+                  onClick={() => {
+                    navigate(`/orders/ukraine/view/${row.supplyOrderUkraineNetUid}`)
+                    onClose()
+                  }}
+                >
+                  {t('Замовлення в Україну')}
+                </Button>
+              )
+            : row.protocolNetId
+              && canOpenLogisticWay && (
+                <Button
+                  justify="flex-start"
+                  leftSection={<IconRoute size={18} />}
+                  variant="light"
+                  onClick={() => {
+                    navigate(`/product-delivery-protocols/${row.protocolNetId}`)
+                    onClose()
+                  }}
+                >
+                  {t('Логістичний шлях')}
+                </Button>
+              )}
         </Stack>
       )}
     </AppModal>

@@ -12,22 +12,26 @@ type ChangeCommentModalProps = {
   onSave: (comment: string) => void
 }
 
+type CommentDraft = {
+  value: string
+  touched: boolean
+  trackedComment: string | null
+}
+
 export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened }: ChangeCommentModalProps) {
   const { t } = useI18n()
-  const [value, setValue] = useState('')
-  const [touched, setTouched] = useState(false)
-  const [trackedComment, setTrackedComment] = useState<string | null>(null)
-
-  if (opened && trackedComment !== comment) {
-    setTrackedComment(comment)
-    setValue(comment || '')
-    setTouched(false)
-  }
-
+  const [draft, setDraft] = useState<CommentDraft>({
+    value: '',
+    touched: false,
+    trackedComment: null,
+  })
+  const hasDraft = opened && draft.trackedComment === comment
+  const value = hasDraft ? draft.value : comment || ''
+  const touched = hasDraft ? draft.touched : false
   const error = !value.trim() ? t('Поле - обов’язкове') : null
 
   function handleSave() {
-    setTouched(true)
+    setDraft({ value, touched: true, trackedComment: comment })
 
     if (error) {
       return
@@ -44,7 +48,7 @@ export function ChangeCommentModal({ comment, isSaving, onClose, onSave, opened 
           label={t('Коментар')}
           minRows={3}
           value={value}
-          onChange={(event) => setValue(event.currentTarget.value)}
+          onChange={(event) => setDraft({ value: event.currentTarget.value, touched, trackedComment: comment })}
         />
         {touched && error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">

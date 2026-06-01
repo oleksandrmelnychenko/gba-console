@@ -5,6 +5,7 @@ import {
   Button,
   Divider,
   Group,
+  Pagination,
   Select,
   SimpleGrid,
   Stack,
@@ -13,8 +14,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -30,6 +32,7 @@ import {
 import type {
   AdvancedReportRow,
   AdvancedReportsResponse,
+  AdvancedReportsSearchParams,
   Currency,
   NamedEntity,
   OutcomePaymentOrder,
@@ -37,14 +40,16 @@ import type {
   PaymentRegister,
 } from '../types'
 
-const DEFAULT_LIMIT = 100
-const PAGE_SIZE_OPTIONS = ['50', '100', '200', '500']
+const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const DEFAULT_PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 350
+
+const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['actions'],
+    right: ['edit', 'actions'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -61,6 +66,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function AdvancedReportsPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [reports, setReports] = useValueState<AdvancedReportsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -77,14 +83,34 @@ export function AdvancedReportsPage() {
   const [currencyNetId, setCurrencyNetId] = useValueState('')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AdvancedReportRow | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
-  const requestRef = useRef(0)
+
+  const offset = (page - 1) * pageSize
+  const totalRows = getTotalRows(reports.Collection)
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
+
+  const activeFilters = useMemo<AdvancedReportsSearchParams>(
+    () => ({
+      currencyNetId,
+      from: fromDate,
+      limit: pageSize,
+      offset,
+      paymentMovementNetId,
+      registerNetId: paymentRegisterNetId,
+      to: toDate,
+      value: normalizedSearchValue,
+    }),
+    [currencyNetId, fromDate, normalizedSearchValue, offset, pageSize, paymentMovementNetId, paymentRegisterNetId, toDate],
+  )
 
   const loadLookups = useCallback(async () => {
     setLoadingLookups(true)
@@ -106,67 +132,126 @@ export function AdvancedReportsPage() {
     }
   }, [setCurrencies, setError, setLoadingLookups, setPaymentMovements, setPaymentRegisters, t])
 
-  const loadReports = useCallback(async () => {
-    const requestId = requestRef.current + 1
-    requestRef.current = requestId
-    setLoading(true)
-    setError(null)
-
-    try {
-      const nextReports = await getAdvancedReports({
-        currencyNetId,
-        from: fromDate,
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        paymentMovementNetId,
-        registerNetId: paymentRegisterNetId,
-        to: toDate,
-        value: normalizedSearchValue,
-      })
-
-      if (requestRef.current === requestId) {
-        setReports(nextReports)
-      }
-    } catch (loadError) {
-      if (requestRef.current === requestId) {
-        setReports({
-          Collection: [],
-          NegativeDifferenceAmount: 0,
-          PositiveDifferenceAmount: 0,
-        })
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
-      }
-    } finally {
-      if (requestRef.current === requestId) {
-        setLoading(false)
-      }
-    }
-  }, [
-    currencyNetId,
-    fromDate,
-    normalizedSearchValue,
-    page,
-    pageSize,
-    paymentMovementNetId,
-    paymentRegisterNetId,
-    setError,
-    setLoading,
-    setReports,
-    t,
-    toDate,
-  ])
-
   useEffect(() => {
     void loadLookups()
   }, [loadLookups])
 
   useEffect(() => {
+    let cancelled = false
+
+    async function loadReports() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const nextReports = await getAdvancedReports(activeFilters)
+
+        if (!cancelled) {
+          setReports(nextReports)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setReports({
+            Collection: [],
+            NegativeDifferenceAmount: 0,
+            PositiveDifferenceAmount: 0,
+          })
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
     void loadReports()
-  }, [loadReports])
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeFilters, reloadKey, setError, setLoading, setReports, t])
+
+  const openAdvanceReport = useCallback(
+    (row: AdvancedReportRow) => {
+      if (row.order.NetUid) {
+        navigate(`${OUTGOING_CASHFLOW_ROUTE}/${encodeURIComponent(row.order.NetUid)}/advanced-report/view`)
+      }
+    },
+    [navigate],
+  )
+
+  const handleRowClick = useCallback(
+    (row: AdvancedReportRow) => {
+      if (row.isUnderReport && row.order.NetUid) {
+        openAdvanceReport(row)
+        return
+      }
+
+      setSelectedRow(row)
+    },
+    [openAdvanceReport, setSelectedRow],
+  )
 
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
-  const columns = useAdvancedReportColumns(setSelectedRow)
+  const columns = useAdvancedReportColumns({ onEdit: openAdvanceReport, onOpen: setSelectedRow })
   const isTableBusy = isLoading || isSearchSettling
+
+  const changeFromDate = useCallback(
+    (value: string) => {
+      setPage(1)
+      setFromDate(value)
+    },
+    [setFromDate, setPage],
+  )
+
+  const changeToDate = useCallback(
+    (value: string) => {
+      setPage(1)
+      setToDate(value)
+    },
+    [setPage, setToDate],
+  )
+
+  const changeSearchValue = useCallback(
+    (value: string) => {
+      setPage(1)
+      setSearchValue(value)
+    },
+    [setPage, setSearchValue],
+  )
+
+  const changeCurrencyNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setCurrencyNetId(value)
+    },
+    [setCurrencyNetId, setPage],
+  )
+
+  const changePaymentRegisterNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setPaymentRegisterNetId(value)
+    },
+    [setPage, setPaymentRegisterNetId],
+  )
+
+  const changePaymentMovementNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setPaymentMovementNetId(value)
+    },
+    [setPage, setPaymentMovementNetId],
+  )
+
+  const changePageSize = useCallback(
+    (value: string | null) => {
+      setPage(1)
+      setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+    },
+    [setPage, setPageSize],
+  )
 
   const resetFilters = useCallback(() => {
     setPage(1)
@@ -178,27 +263,19 @@ export function AdvancedReportsPage() {
     setPaymentMovementNetId('')
   }, [setCurrencyNetId, setFromDate, setPage, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
 
-  const changePageSize = useCallback((value: string | null) => {
-    setPage(1)
-    setPageSize(Number(value || DEFAULT_LIMIT))
-  }, [setPage, setPageSize])
-
-  const canMoveBack = page > 1
-  const canMoveForward = reports.Collection.length === pageSize
-
   return (
     <Stack gap="md">
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => { setPage(1); setFromDate(event.currentTarget.value) }} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => { setPage(1); setToDate(event.currentTarget.value) }} />
+          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
+          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, організація, отримувач або коментар')}
             value={searchValue}
             w={340}
-            onChange={(event) => { setPage(1); setSearchValue(event.currentTarget.value) }}
+            onChange={(event) => changeSearchValue(event.currentTarget.value)}
           />
         </Group>
 
@@ -217,7 +294,7 @@ export function AdvancedReportsPage() {
               variant="light"
               onClick={() => {
                 void loadLookups()
-                void loadReports()
+                reload()
               }}
             >
               <IconRefresh size={18} />
@@ -235,7 +312,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={currencyNetId || null}
           w={210}
-          onChange={(value) => { setPage(1); setCurrencyNetId(value || '') }}
+          onChange={(value) => changeCurrencyNetId(value || '')}
         />
         <Select
           clearable
@@ -245,7 +322,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={260}
-          onChange={(value) => { setPage(1); setPaymentRegisterNetId(value || '') }}
+          onChange={(value) => changePaymentRegisterNetId(value || '')}
         />
         <Select
           clearable
@@ -255,7 +332,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentMovementNetId || null}
           w={300}
-          onChange={(value) => { setPage(1); setPaymentMovementNetId(value || '') }}
+          onChange={(value) => changePaymentMovementNetId(value || '')}
         />
       </Group>
 
@@ -265,13 +342,16 @@ export function AdvancedReportsPage() {
         </Alert>
       )}
 
-      <Group justify="space-between" align="center" gap="xs" wrap="nowrap">
-        <Group gap="xs" wrap="wrap">
-          <Badge color="violet" variant="light">
+      <Group gap="xs" justify="space-between">
+        <Group gap="xs">
+          <Badge color="blue" variant="light">
             {t('Завантажено')}: {reports.Collection.length}
           </Badge>
           <Badge color="gray" variant="light">
             {t('Рядків')}: {rows.length}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Записів')}: {totalRows || reports.Collection.length}
           </Badge>
           <Badge color="green" variant="light">
             {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
@@ -280,40 +360,14 @@ export function AdvancedReportsPage() {
             {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
           </Badge>
         </Group>
-        <Group gap={4} wrap="nowrap">
-          <Select
-            aria-label={t('Розмір сторінки')}
-            data={PAGE_SIZE_OPTIONS}
-            disabled={isTableBusy}
-            size="xs"
-            value={String(pageSize)}
-            w={80}
-            onChange={changePageSize}
-          />
-          <Text c="dark" fw={700} size="xs" style={{ whiteSpace: 'nowrap' }}>
-            {t('стор.')} {page}
-          </Text>
-          <ActionIcon
-            aria-label={t('Попередня сторінка')}
-            color="gray"
-            disabled={!canMoveBack || isTableBusy}
-            size="sm"
-            variant="subtle"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
-          >
-            <IconChevronLeft size={16} />
-          </ActionIcon>
-          <ActionIcon
-            aria-label={t('Наступна сторінка')}
-            color="gray"
-            disabled={!canMoveForward || isTableBusy}
-            size="sm"
-            variant="subtle"
-            onClick={() => setPage((current) => current + 1)}
-          >
-            <IconChevronRight size={16} />
-          </ActionIcon>
-        </Group>
+        <Select
+          aria-label={t('Кількість рядків')}
+          data={PAGE_SIZE_OPTIONS}
+          size="xs"
+          value={String(pageSize)}
+          w={88}
+          onChange={changePageSize}
+        />
       </Group>
 
       <DataTable
@@ -327,15 +381,27 @@ export function AdvancedReportsPage() {
         maxHeight="calc(100vh - 315px)"
         minWidth={1720}
         tableId="advanced-reports"
-        onRowClick={setSelectedRow}
+        onRowClick={handleRowClick}
       />
+
+      {totalPages > 1 && (
+        <Group justify="flex-end">
+          <Pagination total={totalPages} value={page} onChange={setPage} />
+        </Group>
+      )}
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </Stack>
   )
 }
 
-function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): DataTableColumn<AdvancedReportRow>[] {
+function useAdvancedReportColumns({
+  onEdit,
+  onOpen,
+}: {
+  onEdit: (row: AdvancedReportRow) => void
+  onOpen: (row: AdvancedReportRow) => void
+}): DataTableColumn<AdvancedReportRow>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<AdvancedReportRow>[]>(
@@ -438,6 +504,35 @@ function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): Dat
         cell: (row) => displayValue(row.comment),
       },
       {
+        id: 'edit',
+        header: '',
+        width: 62,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          row.isUnderReport ? (
+            <Tooltip label={t('Редагувати звіт')}>
+              <ActionIcon
+                aria-label={t('Редагувати звіт')}
+                color="violet"
+                disabled={!row.order.NetUid}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(row)
+                }}
+              >
+                <IconEdit size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
+      {
         id: 'actions',
         header: '',
         width: 62,
@@ -465,7 +560,7 @@ function useAdvancedReportColumns(onOpen: (row: AdvancedReportRow) => void): Dat
         ),
       },
     ],
-    [onOpen, t],
+    [onEdit, onOpen, t],
   )
 }
 
@@ -567,32 +662,48 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportRow[] {
-  return orders
-    .filter((order) => Boolean(order.AdvanceNumber?.trim()))
-    .map((order, index) => {
-      const firstConsumablesOrder = order.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder
+function getTotalRows(orders: OutcomePaymentOrder[]): number {
+  const total = orders[0]?.TotalRowsQty
 
-      return {
-        amount: order.Amount,
-        comment: order.Comment,
-        currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
-        differenceAmount: order.DifferenceAmount,
-        fromDate: order.FromDate,
-        id: String(order.NetUid || order.Id || index),
-        isUnderReport: order.IsUnderReport,
-        number: order.AdvanceNumber,
-        order,
-        organization: getEntityName(order.Organization),
-        payedTo: getPayedTo(order),
-        paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
-        paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,
-        responsible: getEntityName(order.User),
-        role: order.Colleague?.UserRole?.Name,
-        rootAssigned: Boolean(order.RootAssignedPaymentOrder),
-        storage: getEntityName(firstConsumablesOrder?.ConsumablesStorage),
-      }
-    })
+  return typeof total === 'number' && Number.isFinite(total) ? total : orders.length
+}
+
+function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportRow[] {
+  const rows: AdvancedReportRow[] = []
+
+  for (const order of orders) {
+    if (!order.AdvanceNumber?.trim()) {
+      continue
+    }
+
+    rows.push(toAdvancedReportRow(order, rows.length))
+  }
+
+  return rows
+}
+
+function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): AdvancedReportRow {
+  const firstConsumablesOrder = order.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder
+
+  return {
+    amount: order.Amount,
+    comment: order.Comment,
+    currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
+    differenceAmount: order.DifferenceAmount,
+    fromDate: order.FromDate,
+    id: String(order.NetUid || order.Id || index),
+    isUnderReport: order.IsUnderReport,
+    number: order.AdvanceNumber,
+    order,
+    organization: getEntityName(order.Organization),
+    payedTo: getPayedTo(order),
+    paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
+    paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,
+    responsible: getEntityName(order.User),
+    role: order.Colleague?.UserRole?.Name,
+    rootAssigned: Boolean(order.RootAssignedPaymentOrder),
+    storage: getEntityName(firstConsumablesOrder?.ConsumablesStorage),
+  }
 }
 
 function getPayedTo(order: OutcomePaymentOrder): string | undefined {
@@ -602,11 +713,25 @@ function getPayedTo(order: OutcomePaymentOrder): string | undefined {
     return colleagueName
   }
 
-  const organizations = (order.OutcomePaymentOrderConsumablesOrders || [])
-    .map((item) => getEntityName(item.ConsumablesOrder?.ConsumableProductOrganization))
-    .filter((name): name is string => Boolean(name))
+  const organizations = getConsumableProductOrganizationNames(order.OutcomePaymentOrderConsumablesOrders || [])
 
   return unique(organizations).join(' ') || undefined
+}
+
+function getConsumableProductOrganizationNames(
+  items: NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']>,
+): string[] {
+  const names: string[] = []
+
+  for (const item of items) {
+    const name = getEntityName(item.ConsumablesOrder?.ConsumableProductOrganization)
+
+    if (name) {
+      names.push(name)
+    }
+  }
+
+  return names
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {

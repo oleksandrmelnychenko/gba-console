@@ -47,6 +47,7 @@ import {
 } from '@tabler/icons-react'
 import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
   createProductOriginalNumber,
   deleteProductOriginalNumber,
@@ -96,8 +97,7 @@ import {
   getProductOriginalNumbers,
   getProductTitle,
   getRelatedProductRowColor,
-  PRODUCT_SEARCH_MODE_OPTIONS,
-  PRODUCT_SORT_MODE_OPTIONS,
+  isProductRealtimePayloadForProduct,
 } from '../utils'
 import {
   PRODUCT_BALANCES_PERMISSION,
@@ -243,6 +243,14 @@ export function ProductsPage() {
   const sortModeOptions = useMemo(() => PRODUCT_SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
   const assortment = useAssortment()
 
+  const handleRealtimeProductUpdate = useCallback((payload: unknown) => {
+    if (isProductRealtimePayloadForProduct(payload, productForView || selectedProduct)) {
+      reloadProductDetail()
+    }
+  }, [productForView, reloadProductDetail, selectedProduct])
+
+  useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
+
   return (
     <Stack gap="md">
       {assortment.error && (
@@ -380,8 +388,7 @@ function ProductAssortmentCarousel({
           <button
             key={getProductIdentity(selectedProduct)}
             type="button"
-            className={`product-assortment-selected ${getProductRowToneClass(selectedProduct)}`}
-            autoFocus
+            className="product-assortment-selected"
             title={t('Скопіювати код')}
             onClick={() => copyToClipboard(getProductCode(selectedProduct))}
           >

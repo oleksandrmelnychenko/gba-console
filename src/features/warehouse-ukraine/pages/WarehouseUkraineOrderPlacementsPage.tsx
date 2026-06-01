@@ -3,6 +3,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -25,6 +26,8 @@ import type {
   PlacementStorage,
   PlacementSupplyOrder,
 } from '../placementsTypes'
+
+const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_ordersUkrainePlacement_PKEY'
 
 function columnKey(column: DynamicProductPlacementColumn): string {
   return column.NetUid || String(column.Id || '')
@@ -430,6 +433,8 @@ function useOrderPlacementsModel() {
 export function WarehouseUkraineOrderPlacementsPage() {
   const model = useOrderPlacementsModel()
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
+  const canEditPlacement = hasPermission(PLACEMENT_ADD_CANCEL_SAVE_PERMISSION)
 
   const columns = useMemo<DataTableColumn<PlacementGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<PlacementGridRow>[] = [
@@ -593,7 +598,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 onChange={(value) => model.setSelectedStorageId(value)}
               />
             )}
-            {!model.order?.IsPlaced && (
+            {canEditPlacement && !model.order?.IsPlaced && (
               <Button variant="light" onClick={() => model.setColumnModalOpen(true)}>
                 {t('Додати колонку')}
               </Button>
@@ -605,14 +610,16 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 {t('Є незбережені зміни')}
               </Text>
             )}
-            {model.isDirty && (
+            {canEditPlacement && model.isDirty && (
               <Button color="gray" variant="light" onClick={model.reloadFromServer}>
                 {t('Скасувати')}
               </Button>
             )}
-            <Button disabled={!model.isDirty} loading={model.isSaving} onClick={model.handleSave}>
-              {t('Зберегти')}
-            </Button>
+            {canEditPlacement && (
+              <Button disabled={!model.isDirty} loading={model.isSaving} onClick={model.handleSave}>
+                {t('Зберегти')}
+              </Button>
+            )}
           </Group>
         </Group>
       </Card>

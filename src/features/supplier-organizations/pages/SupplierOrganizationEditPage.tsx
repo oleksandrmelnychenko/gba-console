@@ -82,6 +82,7 @@ export function SupplierOrganizationEditPage() {
   const { id } = useParams()
   const isNew = !id
   const [organization, setOrganization] = useValueState<SupplyOrganization>(() => createEmptySupplyOrganization())
+  const [organizationRevision, setOrganizationRevision] = useValueState(0)
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
   const [ownerOrganizations, setOwnerOrganizations] = useValueState<Organization[]>([])
   const [activeTab, setActiveTab] = useValueState<string | null>('general')
@@ -110,6 +111,7 @@ export function SupplierOrganizationEditPage() {
           setCurrencies(nextCurrencies)
           setOwnerOrganizations(nextOwnerOrganizations)
           setOrganization(nextOrganization || createEmptySupplyOrganization())
+          setOrganizationRevision((current) => current + 1)
         }
       } catch (loadError) {
         if (requestRef.current === requestId) {
@@ -123,7 +125,7 @@ export function SupplierOrganizationEditPage() {
     }
 
     void load()
-  }, [id, setCurrencies, setError, setLoading, setOrganization, setOwnerOrganizations, t])
+  }, [id, setCurrencies, setError, setLoading, setOrganization, setOrganizationRevision, setOwnerOrganizations, t])
 
   async function reloadOrganization() {
     if (!id) {
@@ -140,6 +142,7 @@ export function SupplierOrganizationEditPage() {
 
       if (requestRef.current === requestId && nextOrganization) {
         setOrganization(nextOrganization)
+        setOrganizationRevision((current) => current + 1)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
@@ -193,6 +196,7 @@ export function SupplierOrganizationEditPage() {
 
       if (savedOrganization) {
         setOrganization(savedOrganization)
+        setOrganizationRevision((current) => current + 1)
 
         if (isNew && savedOrganization.NetUid) {
           navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, {
@@ -231,21 +235,7 @@ export function SupplierOrganizationEditPage() {
   }
 
   const tabsDisabled = !organization.Id
-  const sections = [
-    { value: 'general', label: t('Загальна інформація'), disabled: false },
-    { value: 'agreements', label: t('Договори'), disabled: tabsDisabled },
-    { value: 'bank', label: t('Банківські реквізити'), disabled: tabsDisabled },
-    { value: 'contact', label: t('Контактна особа'), disabled: tabsDisabled },
-  ]
-  const activeSection = sections.find((section) => section.value === activeTab && !section.disabled) || sections[0]
-
-  function closeSheet() {
-    if (isSaving || isDeleting) {
-      return
-    }
-
-    navigate(backgroundLocation ?? '/accounting/supplier-organizations')
-  }
+  const organizationFormKey = `${organization.NetUid || organization.Id || 'new'}-${organizationRevision}`
 
   return (
     <AppDrawer
@@ -315,42 +305,40 @@ export function SupplierOrganizationEditPage() {
             </Card>
           </Grid.Col>
 
-          <Grid.Col span={{ base: 12, lg: 9 }}>
-            <Card withBorder radius="md" padding="md">
-              {activeSection.value === 'general' && (
-                <GeneralInfoForm isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
-              )}
-              {activeSection.value === 'agreements' && (
-                <AgreementsPanel
-                  currencies={currencies}
-                  isLoading={isLoading}
-                  isSaving={isSaving}
-                  organization={organization}
-                  ownerOrganizations={ownerOrganizations}
-                  onError={setError}
-                  onReload={reloadOrganization}
-                  setSaving={setSaving}
-                />
-              )}
-              {activeSection.value === 'bank' && (
-                <BankDetailsForm isSaving={isSaving} organization={organization} onSubmit={saveBank} />
-              )}
-              {activeSection.value === 'contact' && (
-                <ContactPersonForm isSaving={isSaving} organization={organization} onSubmit={saveContact} />
-              )}
-            </Card>
-          </Grid.Col>
-        </Grid>
+        <Tabs.Panel value="general" pt="md">
+          <GeneralInfoForm key={`general-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveGeneral} />
+        </Tabs.Panel>
 
-        <DeleteModal
-          isSubmitting={isDeleting}
-          opened={deleteOpened}
-          organization={organization}
-          onClose={() => setDeleteOpened(false)}
-          onConfirm={confirmDelete}
-        />
-      </Stack>
-    </AppDrawer>
+        <Tabs.Panel value="agreements" pt="md">
+          <AgreementsPanel
+            currencies={currencies}
+            isLoading={isLoading}
+            isSaving={isSaving}
+            organization={organization}
+            ownerOrganizations={ownerOrganizations}
+            onError={setError}
+            onReload={reloadOrganization}
+            setSaving={setSaving}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="bank" pt="md">
+          <BankDetailsForm key={`bank-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveBank} />
+        </Tabs.Panel>
+
+        <Tabs.Panel value="contact" pt="md">
+          <ContactPersonForm key={`contact-${organizationFormKey}`} isSaving={isSaving} organization={organization} onSubmit={saveContact} />
+        </Tabs.Panel>
+      </Tabs>
+
+      <DeleteModal
+        isSubmitting={isDeleting}
+        opened={deleteOpened}
+        organization={organization}
+        onClose={() => setDeleteOpened(false)}
+        onConfirm={confirmDelete}
+      />
+    </Stack>
   )
 }
 
@@ -365,10 +353,6 @@ function GeneralInfoForm({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toGeneralFormValues(organization))
-
-  useEffect(() => {
-    setValues(toGeneralFormValues(organization))
-  }, [organization, setValues])
 
   function setField<K extends keyof SupplyOrganizationGeneralFormValues>(key: K, value: SupplyOrganizationGeneralFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -430,10 +414,6 @@ function BankDetailsForm({
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toBankFormValues(organization))
 
-  useEffect(() => {
-    setValues(toBankFormValues(organization))
-  }, [organization, setValues])
-
   function setField<K extends keyof SupplyOrganizationBankFormValues>(key: K, value: SupplyOrganizationBankFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
   }
@@ -479,10 +459,6 @@ function ContactPersonForm({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toContactFormValues(organization))
-
-  useEffect(() => {
-    setValues(toContactFormValues(organization))
-  }, [organization, setValues])
 
   function setField<K extends keyof SupplyOrganizationContactFormValues>(key: K, value: SupplyOrganizationContactFormValues[K]) {
     setValues((current) => ({ ...current, [key]: value }))
@@ -534,9 +510,15 @@ function AgreementsPanel({
   setSaving: (value: boolean) => void
 }) {
   const { t } = useI18n()
-  const [editor, setEditor] = useValueState<SupplyOrganizationAgreement | null>(null)
+  const [editor, setEditorState] = useValueState<SupplyOrganizationAgreement | null>(null)
+  const [editorRevision, setEditorRevision] = useValueState(0)
   const agreements = organization.SupplyOrganizationAgreements || []
   const columns = useAgreementColumns((agreement) => setEditor(agreement))
+
+  function setEditor(nextEditor: SupplyOrganizationAgreement | null) {
+    setEditorState(nextEditor)
+    setEditorRevision((current) => current + 1)
+  }
 
   async function saveAgreement(values: SupplyOrganizationAgreementFormValues) {
     if (!values.name.trim()) {
@@ -630,6 +612,7 @@ function AgreementsPanel({
         onRowClick={setEditor}
       />
       <AgreementDrawer
+        key={`agreement-${editorRevision}-${getLookupKey(ownerOrganizations)}-${getLookupKey(currencies)}`}
         currencies={currencies}
         editor={editor}
         isSubmitting={isSaving}
@@ -734,10 +717,6 @@ function AgreementDrawer({
 }) {
   const { t } = useI18n()
   const [values, setValues] = useValueState(() => toAgreementFormValues(editor, ownerOrganizations, currencies))
-
-  useEffect(() => {
-    setValues(toAgreementFormValues(editor, ownerOrganizations, currencies))
-  }, [currencies, editor, ownerOrganizations, setValues])
 
   function setField<K extends keyof SupplyOrganizationAgreementFormValues>(
     key: K,
@@ -1008,6 +987,10 @@ function isEmail(value: string): boolean {
 
 function findEntity<TEntity extends { Id?: number; NetUid?: string }>(items: TEntity[], key: string): TEntity | null {
   return items.find((item) => entityKey(item) === key) || null
+}
+
+function getLookupKey<TEntity extends { Id?: number; NetUid?: string }>(items: TEntity[]): string {
+  return items.map(entityKey).join('|')
 }
 
 function entityKey(entity?: { Id?: number; NetUid?: string } | null): string {

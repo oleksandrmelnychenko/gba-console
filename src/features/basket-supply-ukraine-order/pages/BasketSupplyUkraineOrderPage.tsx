@@ -134,6 +134,14 @@ const qtyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
 
+const ALERT_CIRCLE_ICON = <IconAlertCircle size={16} />
+const ARROW_LEFT_ICON = <IconArrowLeft size={16} />
+const ARROW_RIGHT_ICON = <IconArrowRight size={16} />
+const CHECK_ICON = <IconCheck size={16} />
+const FILE_IMPORT_ICON = <IconFileImport size={16} />
+const FILE_SPREADSHEET_ICON = <IconFileSpreadsheet size={16} />
+const SEARCH_ICON = <IconSearch size={16} />
+
 export function BasketSupplyUkraineOrderPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -211,11 +219,12 @@ function BasketCartWorkflow() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filteredCartItems = useMemo(() => filterCartItems(cartItems, filters), [cartItems, filters])
   const selectedSourceCount = useMemo(
-    () => filteredCartItems.filter((item) => selectedSourceIds.has(getCartItemKey(item))).length,
+    () => countItems(filteredCartItems, (item) => selectedSourceIds.has(getCartItemKey(item))),
     [filteredCartItems, selectedSourceIds],
   )
+  const movableSourceCount = useMemo(() => countItems(filteredCartItems, canMoveCartItem), [filteredCartItems])
   const selectedDestinationCount = useMemo(
-    () => destinationItems.filter((item) => selectedDestinationIds.has(getCartItemKey(item))).length,
+    () => countItems(destinationItems, (item) => selectedDestinationIds.has(getCartItemKey(item))),
     [destinationItems, selectedDestinationIds],
   )
   const visibleTotals = destinationItems.length ? totals : EMPTY_TOTALS
@@ -400,32 +409,6 @@ function BasketCartWorkflow() {
     setSelectedDestinationIds((currentSelection) => toggleSetValue(currentSelection, getCartItemKey(item)))
   }
 
-  function toggleAllSourceItems() {
-    const movableIds = filteredCartItems.filter(canMoveCartItem).map(getCartItemKey)
-    const hasUnselectedItems = movableIds.some((id) => !selectedSourceIds.has(id))
-
-    setSelectedSourceIds((currentSelection) => {
-      const nextSelection = new Set(currentSelection)
-
-      movableIds.forEach((id) => {
-        if (hasUnselectedItems) {
-          nextSelection.add(id)
-        } else {
-          nextSelection.delete(id)
-        }
-      })
-
-      return nextSelection
-    })
-  }
-
-  function toggleAllDestinationItems() {
-    const destinationIds = destinationItems.map(getCartItemKey)
-    const hasUnselectedItems = destinationIds.some((id) => !selectedDestinationIds.has(id))
-
-    setSelectedDestinationIds(hasUnselectedItems ? new Set(destinationIds) : new Set())
-  }
-
   function moveSelectedRight() {
     const selectedItems = cartItems.filter((item) => selectedSourceIds.has(getCartItemKey(item)) && canMoveCartItem(item))
 
@@ -450,13 +433,15 @@ function BasketCartWorkflow() {
   }
 
   function moveSelectedLeft() {
-    const selectedItems = destinationItems.filter((item) => selectedDestinationIds.has(getCartItemKey(item)))
+    const { items: selectedItems, keySet: selectedIds } = collectSelectedItems(
+      destinationItems,
+      selectedDestinationIds,
+      getCartItemKey,
+    )
 
     if (!selectedItems.length) {
       return
     }
-
-    const selectedIds = new Set(selectedItems.map(getCartItemKey))
 
     setCartItems((currentItems) =>
       currentItems.map((item) => {
@@ -576,25 +561,97 @@ function BasketCartWorkflow() {
     setCreateModalOpen(false)
   }
 
+  const toggleAllSourceItems = useCallback(() => {
+    const { hasUnselected: hasUnselectedItems, keys: movableIds } = collectSelectionKeys(
+      filteredCartItems,
+      selectedSourceIds,
+      getCartItemKey,
+      canMoveCartItem,
+    )
+
+    setSelectedSourceIds((currentSelection) => {
+      const nextSelection = new Set(currentSelection)
+
+      movableIds.forEach((id) => {
+        if (hasUnselectedItems) {
+          nextSelection.add(id)
+        } else {
+          nextSelection.delete(id)
+        }
+      })
+
+      return nextSelection
+    })
+  }, [filteredCartItems, selectedSourceIds])
+  const toggleAllDestinationItems = useCallback(() => {
+    const { hasUnselected: hasUnselectedItems, keys: destinationIds } = collectSelectionKeys(
+      destinationItems,
+      selectedDestinationIds,
+      getCartItemKey,
+    )
+
+    setSelectedDestinationIds(hasUnselectedItems ? new Set(destinationIds) : new Set())
+  }, [destinationItems, selectedDestinationIds])
+  const sourceToolbarLeft = useMemo(
+    () => (
+      <Group gap="xs">
+        <Checkbox
+          aria-label={t('Обрати всі')}
+          checked={selectedSourceCount > 0 && selectedSourceCount === movableSourceCount}
+          indeterminate={selectedSourceCount > 0 && selectedSourceCount < movableSourceCount}
+          onChange={toggleAllSourceItems}
+        />
+        <Text size="xs" c="dimmed">
+          {t('Показано')}: {filteredCartItems.length} / {cartItems.length}
+        </Text>
+      </Group>
+    ),
+    [cartItems.length, filteredCartItems.length, movableSourceCount, selectedSourceCount, t, toggleAllSourceItems],
+  )
+  const destinationToolbarLeft = useMemo(
+    () => (
+      <Group gap="xs">
+        <Checkbox
+          aria-label={t('Обрати всі')}
+          checked={selectedDestinationCount > 0 && selectedDestinationCount === destinationItems.length}
+          indeterminate={selectedDestinationCount > 0 && selectedDestinationCount < destinationItems.length}
+          onChange={toggleAllDestinationItems}
+        />
+        <Text size="xs" c="dimmed">
+          {t('Позицій')}: {destinationItems.length}
+        </Text>
+      </Group>
+    ),
+    [destinationItems.length, selectedDestinationCount, t, toggleAllDestinationItems],
+  )
+  const destinationToolbarRight = useMemo(
+    () => (
+      <Button disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+        {isCreatingDocument ? t('Створення') : t('Створити')}
+      </Button>
+    ),
+    [destinationItems.length, isCreatingDocument, t],
+  )
+
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
           {error}
         </Alert>
       )}
       {referenceError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="yellow" icon={ALERT_CIRCLE_ICON} variant="light">
           {referenceError}
         </Alert>
       )}
       {createError && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
           {createError}
         </Alert>
       )}
       {createdDocument && (
-        <Alert color="green" icon={<IconCheck size={16} />} variant="light">
+        <Alert color="green" icon={CHECK_ICON} variant="light">
           {t('Створено')} {createdDocument.kind}: {createdDocument.number || createdDocument.netUid || t('без номера')}
         </Alert>
       )}
@@ -605,7 +662,7 @@ function BasketCartWorkflow() {
             <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
               <TextInput
                 label={t('Пошук по товару')}
-                leftSection={<IconSearch size={16} />}
+                leftSection={SEARCH_ICON}
                 placeholder={t('Код Виробника')}
                 value={filters.search}
                 onChange={(event) => setFilters((current) => ({ ...current, search: event.currentTarget.value }))}
@@ -641,10 +698,10 @@ function BasketCartWorkflow() {
                   <IconRefresh size={16} />
                 </ActionIcon>
               </Tooltip>
-              <Button leftSection={<IconFileImport size={16} />} variant="light" onClick={() => openUploadModal('load')}>
+              <Button leftSection={FILE_IMPORT_ICON} variant="light" onClick={() => openUploadModal('load')}>
                 {t('Завантажити в корзину')}
               </Button>
-              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => openUploadModal('preview')}>
+              <Button leftSection={FILE_SPREADSHEET_ICON} variant="light" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
             </Group>
@@ -661,19 +718,7 @@ function BasketCartWorkflow() {
             minWidth={1120}
             rowClassName={(item) => (selectedSourceIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
             tableId="basket-supply-ukraine-order-source"
-            toolbarLeft={
-              <Group gap="xs">
-                <Checkbox
-                  aria-label={t('Обрати всі')}
-                  checked={selectedSourceCount > 0 && selectedSourceCount === filteredCartItems.filter(canMoveCartItem).length}
-                  indeterminate={selectedSourceCount > 0 && selectedSourceCount < filteredCartItems.filter(canMoveCartItem).length}
-                  onChange={toggleAllSourceItems}
-                />
-                <Text size="xs" c="dimmed">
-                  {t('Показано')}: {filteredCartItems.length} / {cartItems.length}
-                </Text>
-              </Group>
-            }
+            toolbarLeft={sourceToolbarLeft}
           />
         </Stack>
       </Card>
@@ -681,7 +726,7 @@ function BasketCartWorkflow() {
       <Group align="center" className="basket-supply-transfer-controls" justify="center">
         <Button
           disabled={!selectedSourceCount}
-          leftSection={<IconArrowRight size={16} />}
+          leftSection={ARROW_RIGHT_ICON}
           variant="light"
           onClick={moveSelectedRight}
         >
@@ -689,7 +734,7 @@ function BasketCartWorkflow() {
         </Button>
         <Button
           disabled={!selectedDestinationCount}
-          leftSection={<IconArrowLeft size={16} />}
+          leftSection={ARROW_LEFT_ICON}
           variant="light"
           onClick={moveSelectedLeft}
         >
@@ -709,24 +754,8 @@ function BasketCartWorkflow() {
             minWidth={960}
             rowClassName={(item) => (selectedDestinationIds.has(getCartItemKey(item)) ? 'basket-supply-row-selected' : undefined)}
             tableId="basket-supply-ukraine-order-destination"
-            toolbarLeft={
-              <Group gap="xs">
-                <Checkbox
-                  aria-label={t('Обрати всі')}
-                  checked={selectedDestinationCount > 0 && selectedDestinationCount === destinationItems.length}
-                  indeterminate={selectedDestinationCount > 0 && selectedDestinationCount < destinationItems.length}
-                  onChange={toggleAllDestinationItems}
-                />
-                <Text size="xs" c="dimmed">
-                  {t('Позицій')}: {destinationItems.length}
-                </Text>
-              </Group>
-            }
-            toolbarRight={
-              <Button disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
-                {isCreatingDocument ? t('Створення') : t('Створити')}
-              </Button>
-            }
+            toolbarLeft={destinationToolbarLeft}
+            toolbarRight={destinationToolbarRight}
           />
 
           <TotalsBar isLoading={visibleIsTotalsLoading} totals={visibleTotals} />
@@ -1349,10 +1378,29 @@ function RecommendationsTab() {
     }
   }, [reloadKey, t])
 
+  const recommendationsToolbarLeft = useMemo(
+    () => (
+      <Text c="dimmed" size="xs">
+        {t('Показано')}: {recommendations.length}
+      </Text>
+    ),
+    [recommendations.length, t],
+  )
+  const recommendationsToolbarRight = useMemo(
+    () => (
+      <Tooltip label={t('Оновити')}>
+        <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
+          <IconRefresh size={16} />
+        </ActionIcon>
+      </Tooltip>
+    ),
+    [isLoading, reload, t],
+  )
+
   return (
     <Stack gap="md">
       {error && (
-        <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
+        <Alert color="red" icon={ALERT_CIRCLE_ICON} variant="light">
           {error}
         </Alert>
       )}
@@ -1368,18 +1416,8 @@ function RecommendationsTab() {
           maxHeight={620}
           minWidth={960}
           tableId="basket-supply-ukraine-order-recommendations"
-          toolbarLeft={
-            <Text c="dimmed" size="xs">
-              {t('Показано')}: {recommendations.length}
-            </Text>
-          }
-          toolbarRight={
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
-                <IconRefresh size={16} />
-              </ActionIcon>
-            </Tooltip>
-          }
+          toolbarLeft={recommendationsToolbarLeft}
+          toolbarRight={recommendationsToolbarRight}
         />
       </Card>
     </Stack>
@@ -1878,6 +1916,54 @@ async function createSaleSadDocument(
   }
 }
 
+function countItems<TItem>(items: TItem[], matches: (item: TItem) => boolean) {
+  return items.reduce((count, item) => (matches(item) ? count + 1 : count), 0)
+}
+
+function collectSelectionKeys<TItem>(
+  items: TItem[],
+  selectedIds: ReadonlySet<string>,
+  getKey: (item: TItem) => string,
+  matches?: (item: TItem) => boolean,
+) {
+  const keys: string[] = []
+  let hasUnselected = false
+
+  items.forEach((item) => {
+    if (matches && !matches(item)) {
+      return
+    }
+
+    const key = getKey(item)
+
+    keys.push(key)
+
+    if (!selectedIds.has(key)) {
+      hasUnselected = true
+    }
+  })
+
+  return { hasUnselected, keys }
+}
+
+function collectSelectedItems<TItem>(items: TItem[], selectedIds: ReadonlySet<string>, getKey: (item: TItem) => string) {
+  const selectedItems: TItem[] = []
+  const selectedKeySet = new Set<string>()
+
+  items.forEach((item) => {
+    const key = getKey(item)
+
+    if (!selectedIds.has(key)) {
+      return
+    }
+
+    selectedItems.push(item)
+    selectedKeySet.add(key)
+  })
+
+  return { items: selectedItems, keySet: selectedKeySet }
+}
+
 function mergeDestinationItems(
   currentItems: SupplyOrderUkraineCartItem[],
   itemsToAdd: SupplyOrderUkraineCartItem[],
@@ -1943,7 +2029,7 @@ function toCartItemsForDocument(items: SupplyOrderUkraineCartItem[]) {
 }
 
 function sortCartItems(items: SupplyOrderUkraineCartItem[]) {
-  return [...items].sort((left, right) => {
+  return items.toSorted((left, right) => {
     const reservedDiff = toNumber(right.ReservedQty) - toNumber(left.ReservedQty)
 
     if (reservedDiff !== 0) {

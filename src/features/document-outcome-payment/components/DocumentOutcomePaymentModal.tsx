@@ -59,7 +59,8 @@ export function DocumentOutcomePaymentModal({
   const [isSaving, setSaving] = useValueState(false)
 
   const documentNetId = source?.documentNetId || ''
-  const minDate = source?.created ? formatLocalDate(new Date(source.created)) : ''
+  const minDate = getMinPaymentDate(source)
+  const maxDate = getMaxPaymentDate(source)
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityValue(organization) === form.organizationValue) || null,
@@ -124,7 +125,7 @@ export function DocumentOutcomePaymentModal({
         setForm(() => ({
           ...createInitialForm(),
           amount: activeSource.amount || 0,
-          fromDate: formatLocalDate(new Date()),
+          fromDate: getInitialPaymentDate(activeSource),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedAgreementValue: defaultAgreement?.Agreement ? getEntityValue(defaultAgreement.Agreement) : '',
@@ -224,8 +225,28 @@ export function DocumentOutcomePaymentModal({
       return
     }
 
+    if (!selectedOrganization) {
+      setError(t('Оберіть організацію'))
+      return
+    }
+
+    if (!selectedRegister || !currencyRegister) {
+      setError(t('Оберіть касу / рахунок і валюту'))
+      return
+    }
+
+    if (source.type === 'taxfree' && !selectedAgreement) {
+      setError(t('Оберіть договір'))
+      return
+    }
+
     if (!form.amount || form.amount <= 0) {
       setError(t('Сума має бути більшою за нуль'))
+      return
+    }
+
+    if (isDateOutsideRange(form.fromDate, minDate, maxDate)) {
+      setError(t('Дата виходить за дозволений період'))
       return
     }
 
@@ -330,6 +351,7 @@ export function DocumentOutcomePaymentModal({
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
+              max={maxDate || undefined}
               min={minDate || undefined}
               type="date"
               value={form.fromDate}
@@ -400,6 +422,61 @@ function pickDefaultOrganization(organizations: OutcomeOrganization[]): OutcomeO
   return organizations[0] || null
 }
 
+function getInitialPaymentDate(source: DocumentOutcomePaymentSource): string {
+  const today = formatLocalDate(new Date())
+  const minDate = getMinPaymentDate(source)
+  const maxDate = getMaxPaymentDate(source)
+
+  if (maxDate && today > maxDate) {
+    return maxDate
+  }
+
+  if (minDate && today < minDate) {
+    return minDate
+  }
+
+  return today
+}
+
+function getMinPaymentDate(source: DocumentOutcomePaymentSource | null): string {
+  if (!source?.created) {
+    return ''
+  }
+
+  const createdDate = new Date(source.created)
+
+  return Number.isNaN(createdDate.getTime()) ? '' : formatLocalDate(createdDate)
+}
+
+function getMaxPaymentDate(source: DocumentOutcomePaymentSource | null): string {
+  if (source?.type !== 'taxfree' || !source.created) {
+    return ''
+  }
+
+  const createdDate = new Date(source.created)
+
+  if (Number.isNaN(createdDate.getTime())) {
+    return ''
+  }
+
+  const maxDate = new Date(createdDate)
+  maxDate.setMonth(maxDate.getMonth() + 3)
+
+  return formatLocalDate(maxDate)
+}
+
+function isDateOutsideRange(value: string, minDate: string, maxDate: string): boolean {
+  if (!value) {
+    return true
+  }
+
+  if (minDate && value < minDate) {
+    return true
+  }
+
+  return Boolean(maxDate && value > maxDate)
+}
+
 function pickCurrencyRegister(register: OutcomePaymentRegister | null) {
   if (!register) {
     return null
@@ -410,33 +487,60 @@ function pickCurrencyRegister(register: OutcomePaymentRegister | null) {
 }
 
 function toAgreementOptions(agreements: ClientAgreement[]) {
-  return agreements
-    .map((clientAgreement) => {
-      const agreement = clientAgreement.Agreement
-      const currency = agreement?.Currency
-      const value = getEntityValue(agreement)
+  const options: Array<{ label: string; value: string }> = []
 
-      return {
-        label: [agreement?.Name || agreement?.Number || clientAgreement.Name || value, currency?.Code || currency?.Name]
-          .filter(Boolean)
-          .join(' '),
-        value,
-      }
+  for (const clientAgreement of agreements) {
+    const agreement = clientAgreement.Agreement
+    const currency = agreement?.Currency
+    const value = getEntityValue(agreement)
+
+    if (!value) {
+      continue
+    }
+
+    const baseLabel = agreement?.Name || agreement?.Number || clientAgreement.Name || value
+    const currencyLabel = currency?.Code || currency?.Name
+
+    options.push({
+      label: currencyLabel ? `${baseLabel} ${currencyLabel}` : baseLabel,
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
 }
 
 function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
+  const options: Array<{ label: string; value: string }> = []
+
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
       label: getEntityName(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+      value,
+    })
+  }
+
+  return options
 }
 
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  const labels = new Set<string>()
+
+  for (const entity of entities) {
+    const label = getEntityName(entity)
+
+    if (label) {
+      labels.add(label)
+    }
+  }
+
+  return Array.from(labels)
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {

@@ -53,7 +53,6 @@ import { IncomePaymentOperationType, IncomePaymentOrderType, PaymentRegisterType
 type FormState = {
   amount: number
   autoAllocate: boolean
-  calculatedValue: number
   comment: string
   date: string
   debtAmounts: Record<string, number>
@@ -70,6 +69,11 @@ type FormState = {
   selectedMovementValue: string
   selectedRetailClientValue: string
   time: string
+}
+
+type ExchangeCalculationState = {
+  key: string
+  value: number
 }
 
 type ApplyRetailAgreementsParams = {
@@ -94,6 +98,11 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
 })
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 export function IncomeCashflowShopFormPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -109,6 +118,7 @@ export function IncomeCashflowShopFormPage() {
   const [selectedRetailClient, setSelectedRetailClient] = useValueState<RetailClient | null>(null)
   const [retailAgreements, setRetailAgreements] = useValueState<ClientAgreement[]>([])
   const [form, setForm] = useValueState<FormState>(() => createInitialForm(queryAmount))
+  const [exchangeCalculation, setExchangeCalculation] = useValueState<ExchangeCalculationState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isResolvingClient, setResolvingClient] = useValueState(false)
@@ -175,6 +185,19 @@ export function IncomeCashflowShopFormPage() {
     [form.selectedDebtValues, visibleDebts],
   )
   const debtTotal = useMemo(() => visibleDebts.reduce((sum, debt) => sum + readDebtTotal(debt), 0), [visibleDebts])
+  const exchangeCalculationKey = createExchangeCalculationKey({
+    amount: form.amount,
+    exchangeRate: form.exchangeRate,
+    fromCurrencyId: selectedCurrency?.Id,
+    toCurrencyId: selectedAgreementCurrency?.Id,
+  })
+  const calculatedValue = resolveCalculatedValue({
+    amount: form.amount,
+    calculation: exchangeCalculation,
+    calculationKey: exchangeCalculationKey,
+    fromCurrencyId: selectedCurrency?.Id,
+    toCurrencyId: selectedAgreementCurrency?.Id,
+  })
 
   const applyRetailAgreements = useCallback(
     ({
@@ -191,7 +214,7 @@ export function IncomeCashflowShopFormPage() {
       const nextRegister = selectDefaultRegister(nextPaymentRegisters, nextOrganization, Boolean(selectedAgreementId || selectedSaleId))
       const nextCurrency = nextRegister?.PaymentCurrencyRegisters?.[0]?.Currency || null
       const nextDebts = filterClientDebts(collectClientDebts(readPaymentClient(nextAgreement, retailClient), agreements), nextOrganization, nextAgreement)
-      const nextSelectedDebtValues = selectedSaleId ? nextDebts.filter((debt) => matchesDebtSaleId(debt, selectedSaleId)).map(getDebtValue) : []
+      const nextSelectedDebtValues = selectedSaleId ? getDebtValuesBySaleId(nextDebts, selectedSaleId) : []
       const nextDebtAmounts = nextSelectedDebtValues.length === 1 && amount && !autoAllocate
         ? { [nextSelectedDebtValues[0]]: amount }
         : {}
@@ -344,13 +367,7 @@ export function IncomeCashflowShopFormPage() {
     const fromCurrencyId = selectedCurrency?.Id
     const toCurrencyId = selectedAgreementCurrency?.Id
 
-    if (!amount || !fromCurrencyId || !toCurrencyId) {
-      setForm((current) => ({ ...current, calculatedValue: 0 }))
-      return
-    }
-
-    if (fromCurrencyId === toCurrencyId) {
-      setForm((current) => ({ ...current, calculatedValue: amount }))
+    if (!amount || !fromCurrencyId || !toCurrencyId || fromCurrencyId === toCurrencyId) {
       return
     }
 
@@ -364,7 +381,10 @@ export function IncomeCashflowShopFormPage() {
     })
       .then((calculation) => {
         if (!cancelled) {
-          setForm((current) => ({ ...current, calculatedValue: calculation?.ConvertedAmount || 0 }))
+          setExchangeCalculation({
+            key: exchangeCalculationKey,
+            value: calculation?.ConvertedAmount || 0,
+          })
         }
       })
       .catch(() => undefined)
@@ -372,7 +392,14 @@ export function IncomeCashflowShopFormPage() {
     return () => {
       cancelled = true
     }
-  }, [form.amount, form.exchangeRate, selectedAgreementCurrency?.Id, selectedCurrency?.Id, setForm])
+  }, [
+    exchangeCalculationKey,
+    form.amount,
+    form.exchangeRate,
+    selectedAgreementCurrency?.Id,
+    selectedCurrency?.Id,
+    setExchangeCalculation,
+  ])
 
   function updateForm(patch: Partial<FormState>) {
     setForm((current) => ({ ...current, ...patch }))
@@ -734,8 +761,8 @@ export function IncomeCashflowShopFormPage() {
 
             {form.amount > 0 && selectedAgreementCurrency && selectedCurrency && (
               <Group gap="xs">
-                <Badge color="violet" variant="light">
-                  {t('Зарахування')}: {formatMoney(form.calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
+                <Badge color="blue" variant="light">
+                  {t('Зарахування')}: {formatMoney(calculatedValue || form.amount)} {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
                 </Badge>
                 <Badge color="gray" variant="light">
                   {selectedCurrency.Code || selectedCurrency.Name} → {selectedAgreementCurrency.Code || selectedAgreementCurrency.Name}
@@ -820,7 +847,7 @@ export function IncomeCashflowShopFormPage() {
                               <Checkbox
                                 aria-label={t('Вибрати рахунок')}
                                 checked={checked}
-                                disabled={form.autoAllocate || isSaving}
+                                disabled={isSaving}
                                 onChange={(event) => handleDebtChecked(debt, event.currentTarget.checked)}
                               />
                             </Table.Td>
@@ -868,7 +895,6 @@ function createInitialForm(queryAmount: number): FormState {
   return {
     amount: queryAmount || 0,
     autoAllocate: false,
-    calculatedValue: 0,
     comment: '',
     date: formatLocalDate(now),
     debtAmounts: {},
@@ -886,6 +912,44 @@ function createInitialForm(queryAmount: number): FormState {
     selectedRetailClientValue: '',
     time: toTimeValue(now),
   }
+}
+
+function createExchangeCalculationKey({
+  amount,
+  exchangeRate,
+  fromCurrencyId,
+  toCurrencyId,
+}: {
+  amount: number
+  exchangeRate: number
+  fromCurrencyId?: number
+  toCurrencyId?: number
+}): string {
+  return [amount, exchangeRate || 0, fromCurrencyId || 0, toCurrencyId || 0].join(':')
+}
+
+function resolveCalculatedValue({
+  amount,
+  calculation,
+  calculationKey,
+  fromCurrencyId,
+  toCurrencyId,
+}: {
+  amount: number
+  calculation: ExchangeCalculationState | null
+  calculationKey: string
+  fromCurrencyId?: number
+  toCurrencyId?: number
+}): number {
+  if (!amount || !fromCurrencyId || !toCurrencyId) {
+    return 0
+  }
+
+  if (fromCurrencyId === toCurrencyId) {
+    return amount
+  }
+
+  return calculation?.key === calculationKey ? calculation.value : 0
 }
 
 function buildIncomePaymentOrder({
@@ -947,7 +1011,7 @@ function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): I
 
 function pickSelectedDebts(debts: ClientInDebt[], form: FormState): ClientInDebt[] {
   if (!form.selectedDebtValues.length) {
-    return debts
+    return form.autoAllocate ? [] : debts
   }
 
   return debts.filter((debt) => form.selectedDebtValues.includes(getDebtValue(debt)))
@@ -1018,12 +1082,16 @@ function validateDebtSelection({
   t: (value: string) => string
   visibleDebts: ClientInDebt[]
 }): string | null {
-  if (!visibleDebts.length || autoAllocate) {
+  if (!visibleDebts.length) {
     return null
   }
 
   if (!selectedDebtValues.length) {
-    return t('Оберіть рахунок для оплати')
+    return autoAllocate ? t('Оберіть рахунок для автоматичного рознесення') : t('Оберіть рахунок для оплати')
+  }
+
+  if (autoAllocate) {
+    return null
   }
 
   const totalPayment = selectedDebtValues.reduce((sum, debtValue) => sum + (debtAmounts[debtValue] || 0), 0)
@@ -1130,51 +1198,113 @@ function matchesDebtSaleId(debt: ClientInDebt, saleId: string): boolean {
   return String(debt.SaleId || debt.Sale?.Id || debt.ReSaleId || debt.ReSale?.Id || '') === saleId
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
-      label: getEntityName(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+function getDebtValuesBySaleId(debts: ClientInDebt[], saleId: string): string[] {
+  const values: string[] = []
+
+  for (const debt of debts) {
+    if (matchesDebtSaleId(debt, saleId)) {
+      values.push(getDebtValue(debt))
+    }
+  }
+
+  return values
 }
 
-function toCurrencyOptions(register?: PaymentRegister | null) {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const value = getEntityValue(currency)
+function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+
+    if (value) {
+      options.push({
+        label: getEntityName(entity) || value,
+        value,
+      })
+    }
+  }
+
+  return options
+}
+
+function toCurrencyOptions(register?: PaymentRegister | null): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currency)
+
+    if (value) {
       const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
 
-      return {
+      options.push({
         label: `${currency?.Code || currency?.Name || value}${balance}`,
         value,
-      }
-    })
-    .filter((option) => option.value)
+      })
+    }
+  }
+
+  return options
 }
 
-function toClientAgreementOptions(agreements: ClientAgreement[]) {
-  return agreements
-    .map((clientAgreement) => {
-      const agreement = clientAgreement.Agreement
-      const currency = agreement?.Currency
-      const value = getEntityValue(agreement)
+function toClientAgreementOptions(agreements: ClientAgreement[]): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: [agreement?.Name || agreement?.Number || value, currency?.Code || currency?.Name].filter(Boolean).join(' '),
+  for (const clientAgreement of agreements) {
+    const agreement = clientAgreement.Agreement
+    const currency = agreement?.Currency
+    const value = getEntityValue(agreement)
+
+    if (value) {
+      options.push({
+        label: joinTruthyParts(agreement?.Name || agreement?.Number || value, currency?.Code || currency?.Name),
         value,
-      }
-    })
-    .filter((option) => option.value)
+      })
+    }
+  }
+
+  return options
 }
 
 function toRetailClientLabels(clients: RetailClient[]): string[] {
-  return Array.from(new Set(clients.map(getRetailClientLabel).filter(Boolean)))
+  const labels: string[] = []
+  const seenLabels = new Set<string>()
+
+  for (const client of clients) {
+    appendUniqueTruthyLabel(labels, seenLabels, getRetailClientLabel(client))
+  }
+
+  return labels
 }
 
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  const labels: string[] = []
+  const seenLabels = new Set<string>()
+
+  for (const entity of entities) {
+    appendUniqueTruthyLabel(labels, seenLabels, getEntityName(entity))
+  }
+
+  return labels
+}
+
+function appendUniqueTruthyLabel(labels: string[], seenLabels: Set<string>, label: string): void {
+  if (label && !seenLabels.has(label)) {
+    seenLabels.add(label)
+    labels.push(label)
+  }
+}
+
+function joinTruthyParts(...parts: Array<string | undefined>): string {
+  const labels: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      labels.push(part)
+    }
+  }
+
+  return labels.join(' ')
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {
@@ -1192,7 +1322,7 @@ function getRetailClientLabel(client?: RetailClient | null): string {
     return ''
   }
 
-  return [client.Name || client.FullName || getEntityName(client), client.PhoneNumber].filter(Boolean).join(' ')
+  return joinTruthyParts(client.Name || client.FullName || getEntityName(client), client.PhoneNumber || '')
 }
 
 function getEntityValue(entity?: NamedEntity | null): string {
@@ -1200,7 +1330,7 @@ function getEntityValue(entity?: NamedEntity | null): string {
 }
 
 function getEntityName(entity?: NamedEntity | null): string {
-  return [entity?.FirstName, entity?.LastName].filter(Boolean).join(' ') || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
+  return joinTruthyParts(entity?.FirstName || '', entity?.LastName || '') || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
 }
 
 function getDebtValue(debt: ClientInDebt): string {

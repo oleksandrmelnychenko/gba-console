@@ -13,7 +13,6 @@ import {
 } from '@mantine/core'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -41,33 +40,167 @@ type FilterDraft = {
   to: string
 }
 
+type DocumentVerificationState = {
+  filterDraft: FilterDraft
+  activeFilters: FilterDraft
+  storages: WarehouseUkraineStorage[]
+  storagesError: string | null
+  selectedStorageIds: string[]
+  storagesReady: boolean
+  items: DocumentVerificationItem[]
+  totalQty: number
+  error: string | null
+  isLoading: boolean
+  isLoadingMore: boolean
+  pageSize: number
+  hasMore: boolean
+  downloadOpened: boolean
+  downloadDocument: WarehouseUkraineExportDocument | null
+  downloadError: string | null
+  isDownloading: boolean
+}
+
+type DocumentVerificationAction =
+  | { type: 'applyFilters'; filters: FilterDraft }
+  | { type: 'resetFilters'; filters: FilterDraft }
+  | { type: 'setPageSize'; pageSize: number }
+  | { type: 'setSelectedStorageIds'; selectedStorageIds: string[] }
+  | { type: 'storagesLoadStarted' }
+  | { type: 'storagesLoadSucceeded'; storages: WarehouseUkraineStorage[]; selectedStorageIds: string[] }
+  | { type: 'storagesLoadFailed'; error: string }
+  | { type: 'invalidFilters' }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; items: DocumentVerificationItem[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'loadMoreStarted' }
+  | {
+      type: 'loadMoreSucceeded'
+      items: DocumentVerificationItem[]
+      totalQty: number
+      hasMore: boolean
+      requestOffset: number
+    }
+  | { type: 'loadMoreFailed'; error: string }
+  | { type: 'downloadStarted' }
+  | { type: 'downloadSucceeded'; document: WarehouseUkraineExportDocument }
+  | { type: 'downloadFailed'; error: string }
+  | { type: 'downloadClosed' }
+
+function createInitialDocumentVerificationState(initialFilters: FilterDraft): DocumentVerificationState {
+  return {
+    filterDraft: initialFilters,
+    activeFilters: initialFilters,
+    storages: [],
+    storagesError: null,
+    selectedStorageIds: [],
+    storagesReady: false,
+    items: [],
+    totalQty: 0,
+    error: null,
+    isLoading: true,
+    isLoadingMore: false,
+    pageSize: DEFAULT_PAGE_SIZE,
+    hasMore: false,
+    downloadOpened: false,
+    downloadDocument: null,
+    downloadError: null,
+    isDownloading: false,
+  }
+}
+
+function documentVerificationReducer(
+  state: DocumentVerificationState,
+  action: DocumentVerificationAction,
+): DocumentVerificationState {
+  switch (action.type) {
+    case 'applyFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'resetFilters':
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+    case 'setPageSize':
+      return { ...state, pageSize: action.pageSize }
+    case 'setSelectedStorageIds':
+      return { ...state, selectedStorageIds: action.selectedStorageIds }
+    case 'storagesLoadStarted':
+      return { ...state, storagesError: null }
+    case 'storagesLoadSucceeded':
+      return {
+        ...state,
+        storages: action.storages,
+        selectedStorageIds: action.selectedStorageIds,
+        storagesReady: true,
+      }
+    case 'storagesLoadFailed':
+      return { ...state, storages: [], storagesReady: true, storagesError: action.error }
+    case 'invalidFilters':
+      return { ...state, items: [], totalQty: 0, hasMore: false, isLoading: false }
+    case 'loadStarted':
+      return { ...state, isLoading: true, error: null }
+    case 'loadSucceeded':
+      return {
+        ...state,
+        items: action.items,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoading: false,
+      }
+    case 'loadFailed':
+      return {
+        ...state,
+        items: [],
+        totalQty: 0,
+        hasMore: false,
+        error: action.error,
+        isLoading: false,
+      }
+    case 'loadMoreStarted':
+      return { ...state, isLoadingMore: true, error: null }
+    case 'loadMoreSucceeded':
+      return {
+        ...state,
+        items: state.items.length === action.requestOffset ? [...state.items, ...action.items] : state.items,
+        totalQty: action.totalQty,
+        hasMore: action.hasMore,
+        isLoadingMore: false,
+      }
+    case 'loadMoreFailed':
+      return { ...state, error: action.error, isLoadingMore: false }
+    case 'downloadStarted':
+      return {
+        ...state,
+        downloadOpened: true,
+        downloadDocument: null,
+        downloadError: null,
+        isDownloading: true,
+      }
+    case 'downloadSucceeded':
+      return { ...state, downloadDocument: action.document, isDownloading: false }
+    case 'downloadFailed':
+      return { ...state, downloadError: action.error, isDownloading: false }
+    case 'downloadClosed':
+      return {
+        ...state,
+        downloadOpened: false,
+        downloadDocument: null,
+        downloadError: null,
+        isDownloading: false,
+      }
+  }
+}
+
 function useDocumentVerificationModel() {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-1), to: getDateShiftedByDays(0) }),
     [],
   )
-  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
-  const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
-  const [storages, setStorages] = useValueState<WarehouseUkraineStorage[]>([])
-  const [storagesError, setStoragesError] = useValueState<string | null>(null)
-  const [selectedStorageIds, setSelectedStorageIds] = useValueState<string[]>([])
-  const [storagesReady, setStoragesReady] = useValueState(false)
-  const [items, setItems] = useValueState<DocumentVerificationItem[]>([])
-  const [totalQty, setTotalQty] = useValueState(0)
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [downloadOpened, setDownloadOpened] = useValueState(false)
-  const [downloadDocument, setDownloadDocument] = useValueState<WarehouseUkraineExportDocument | null>(null)
-  const [downloadError, setDownloadError] = useValueState<string | null>(null)
-  const [isDownloading, setDownloading] = useValueState(false)
+  const initialState = useMemo(() => createInitialDocumentVerificationState(initialFilters), [initialFilters])
+  const [state, dispatchState] = useReducer(documentVerificationReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
+  const { activeFilters, items, pageSize, selectedStorageIds, storages, storagesReady } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const storageIds = useMemo(() => selectedStorageIds.map(Number).filter(Number.isFinite), [selectedStorageIds])
+  const storageIds = useMemo(() => toFiniteNumbers(selectedStorageIds), [selectedStorageIds])
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${selectedStorageIds.join(',')}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
@@ -80,7 +213,7 @@ function useDocumentVerificationModel() {
     let cancelled = false
 
     async function loadStorages() {
-      setStoragesError(null)
+      dispatchState({ type: 'storagesLoadStarted' })
 
       try {
         const nextStorages = await getDocumentVerificationStorages()
@@ -89,17 +222,20 @@ function useDocumentVerificationModel() {
           return
         }
 
-        setStorages(nextStorages)
-        const defaults = nextStorages
-          .filter((storage) => DEFAULT_STORAGE_NAMES.includes(storage.Name || ''))
-          .map((storage) => String(storage.Id))
-        setSelectedStorageIds(defaults)
-        setStoragesReady(true)
+        const defaults = nextStorages.reduce<string[]>((selectedIds, storage) => {
+          if (DEFAULT_STORAGE_NAMES.includes(storage.Name || '')) {
+            selectedIds.push(String(storage.Id))
+          }
+
+          return selectedIds
+        }, [])
+        dispatchState({ type: 'storagesLoadSucceeded', storages: nextStorages, selectedStorageIds: defaults })
       } catch (loadError) {
         if (!cancelled) {
-          setStorages([])
-          setStoragesReady(true)
-          setStoragesError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склади'))
+          dispatchState({
+            type: 'storagesLoadFailed',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити склади'),
+          })
         }
       }
     }
@@ -109,15 +245,12 @@ function useDocumentVerificationModel() {
     return () => {
       cancelled = true
     }
-  }, [setSelectedStorageIds, setStorages, setStoragesError, setStoragesReady, t])
+  }, [t])
 
   useEffect(() => {
     if (!storagesReady || filterError) {
       if (filterError) {
-        setItems([])
-        setTotalQty(0)
-        setHasMore(false)
-        setLoading(false)
+        dispatchState({ type: 'invalidFilters' })
       }
       return
     }
@@ -125,8 +258,7 @@ function useDocumentVerificationModel() {
     let cancelled = false
 
     async function loadItems() {
-      setLoading(true)
-      setError(null)
+      dispatchState({ type: 'loadStarted' })
 
       try {
         const result = await getDocumentVerification({
@@ -138,20 +270,19 @@ function useDocumentVerificationModel() {
         })
 
         if (!cancelled) {
-          setItems(result.items)
-          setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
+          dispatchState({
+            type: 'loadSucceeded',
+            items: result.items,
+            totalQty: result.totalQty,
+            hasMore: result.items.length < result.totalQty && result.items.length > 0,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setItems([])
-          setTotalQty(0)
-          setHasMore(false)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити звірку'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatchState({
+            type: 'loadFailed',
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити звірку'),
+          })
         }
       }
     }
@@ -166,11 +297,6 @@ function useDocumentVerificationModel() {
     filterError,
     pageSize,
     reloadKey,
-    setError,
-    setHasMore,
-    setItems,
-    setLoading,
-    setTotalQty,
     storageIds,
     storagesReady,
     t,
@@ -179,8 +305,7 @@ function useDocumentVerificationModel() {
   async function loadMoreItems() {
     const requestKey = listRequestKeyRef.current
     const requestOffset = items.length
-    setLoadingMore(true)
-    setError(null)
+    dispatchState({ type: 'loadMoreStarted' })
 
     try {
       const result = await getDocumentVerification({
@@ -192,36 +317,33 @@ function useDocumentVerificationModel() {
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setItems((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
+        dispatchState({
+          type: 'loadMoreSucceeded',
+          items: result.items,
+          totalQty: result.totalQty,
+          hasMore: requestOffset + result.items.length < result.totalQty && result.items.length > 0,
+          requestOffset,
+        })
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити звірку'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
+        dispatchState({
+          type: 'loadMoreFailed',
+          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити звірку'),
+        })
       }
     }
   }
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
-    setDownloadOpened(false)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(false)
-  }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
+    dispatchState({ type: 'downloadClosed' })
+  }, [])
 
   async function exportDocument() {
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
-    setDownloadOpened(true)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(true)
+    dispatchState({ type: 'downloadStarted' })
 
     try {
       const document = await exportDocumentVerification({
@@ -233,27 +355,32 @@ function useDocumentVerificationModel() {
       })
 
       if (downloadRequestRef.current === requestId) {
-        setDownloadDocument(document)
+        dispatchState({ type: 'downloadSucceeded', document })
       }
     } catch (exportError) {
       if (downloadRequestRef.current === requestId) {
-        setDownloadError(exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'))
-      }
-    } finally {
-      if (downloadRequestRef.current === requestId) {
-        setDownloading(false)
+        dispatchState({
+          type: 'downloadFailed',
+          error: exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'),
+        })
       }
     }
   }
 
   function applyFilters(nextFilters: FilterDraft) {
-    setFilterDraft(nextFilters)
-    setActiveFilters(nextFilters)
+    dispatchState({ type: 'applyFilters', filters: nextFilters })
   }
 
   function resetFilters() {
-    setFilterDraft(initialFilters)
-    setActiveFilters(initialFilters)
+    dispatchState({ type: 'resetFilters', filters: initialFilters })
+  }
+
+  function setPageSize(pageSize: number) {
+    dispatchState({ type: 'setPageSize', pageSize })
+  }
+
+  function setSelectedStorageIds(selectedStorageIds: string[]) {
+    dispatchState({ type: 'setSelectedStorageIds', selectedStorageIds })
   }
 
   const storageOptions = useMemo(
@@ -270,10 +397,18 @@ function useDocumentVerificationModel() {
   const columns = useVerificationColumns(itemIndexMap)
 
   return {
-    applyFilters, closeDownload, columns, downloadDocument, downloadError, downloadOpened, error, exportDocument,
-    filterDraft, filterError, hasMore, isDownloading, isLoading, isLoadingMore, items, loadMoreItems, pageSize,
-    reload, resetFilters, selectedStorageIds, setPageSize, setSelectedStorageIds, storageOptions, storagesError,
-    totalQty,
+    ...state,
+    applyFilters,
+    closeDownload,
+    columns,
+    exportDocument,
+    filterError,
+    loadMoreItems,
+    reload,
+    resetFilters,
+    setPageSize,
+    setSelectedStorageIds,
+    storageOptions,
   }
 }
 
@@ -482,6 +617,18 @@ function buildIndexMap(items: DocumentVerificationItem[]): Map<DocumentVerificat
 
     return indexMap
   }, new Map<DocumentVerificationItem, number>())
+}
+
+function toFiniteNumbers(values: string[]): number[] {
+  return values.reduce<number[]>((numbers, value) => {
+    const numberValue = Number(value)
+
+    if (Number.isFinite(numberValue)) {
+      numbers.push(numberValue)
+    }
+
+    return numbers
+  }, [])
 }
 
 function getFilterError(from: string, to: string): string | null {

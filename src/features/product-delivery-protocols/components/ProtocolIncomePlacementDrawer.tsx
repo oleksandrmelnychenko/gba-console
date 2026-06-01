@@ -17,6 +17,7 @@ import type {
 
 type ProtocolIncomePlacementDrawerProps = {
   opened: boolean
+  columnId: string | null
   item: PackingListPackageOrderItem | null
   row: DynamicProductPlacementRow | null
   selectedStorage: IncomeStorage | null
@@ -90,6 +91,49 @@ function placementKey(placement: DynamicProductPlacement): string {
 
 export function ProtocolIncomePlacementDrawer({
   opened,
+  columnId,
+  item,
+  row,
+  selectedStorage,
+  onClose,
+  onApply,
+}: ProtocolIncomePlacementDrawerProps) {
+  const rowKey = getPlacementDrawerKey({ columnId, item, opened, row, selectedStorage, onApply, onClose })
+
+  return (
+    <ProtocolIncomePlacementDrawerContent
+      key={opened ? rowKey : 'closed'}
+      columnId={columnId}
+      item={item}
+      opened={opened}
+      row={row}
+      selectedStorage={selectedStorage}
+      onApply={onApply}
+      onClose={onClose}
+    />
+  )
+}
+
+function getPlacementDrawerKey({ columnId, item, opened, row }: ProtocolIncomePlacementDrawerProps): string {
+  if (!opened) {
+    return 'closed'
+  }
+
+  const keyParts = [
+    row?.NetUid,
+    row?.Id,
+    columnId,
+    row?.DynamicProductPlacementColumnId,
+    row?.PackingListPackageOrderItemId,
+    item?.NetUid,
+    item?.Id,
+  ].filter(Boolean)
+
+  return keyParts.length > 0 ? keyParts.join('|') : 'open'
+}
+
+function ProtocolIncomePlacementDrawerContent({
+  opened,
   item,
   row,
   selectedStorage,
@@ -97,23 +141,11 @@ export function ProtocolIncomePlacementDrawer({
   onApply,
 }: ProtocolIncomePlacementDrawerProps) {
   const { t } = useI18n()
-  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>([])
+  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>(() =>
+    row ? (row.DynamicProductPlacements || []).map((placement) => ({ ...placement })) : [],
+  )
   const [draft, setDraft] = useValueState<PlacementDraftState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
-
-  const rowKey = row?.NetUid || row?.Id || ''
-  const [syncedKey, setSyncedKey] = useValueState<string | number>('')
-
-  if (opened && rowKey !== syncedKey) {
-    setSyncedKey(rowKey)
-    setPlacements(row ? row.DynamicProductPlacements.map((placement) => ({ ...placement })) : [])
-    setDraft(null)
-    setError(null)
-  }
-
-  if (!opened && syncedKey !== '') {
-    setSyncedKey('')
-  }
 
   const rowQty = row?.Qty || 0
   const product: IncomeProduct | null | undefined = item?.SupplyInvoiceOrderItem?.Product

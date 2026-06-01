@@ -7,13 +7,14 @@ import {
   Text,
   TextInput,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
-import { type FormEvent, useEffect } from 'react'
+import { type FormEvent, useEffect, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { useAuth } from '../../auth/useAuth'
 import {
   createPaymentCashflowArticle,
   deletePaymentCashflowArticle,
@@ -27,51 +28,92 @@ type LocationState = {
 }
 
 const ARTICLES_PATH = '/accounting/payment-cashflow-articles'
+const PERMISSION_DELETE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_DelBtn_PKEY'
+const PERMISSION_SAVE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_saveBtn_PKEY'
+
+type ArticleFormState = {
+  article: PaymentCashflowArticle
+  operationName: string
+  error: string | null
+  isLoading: boolean
+}
+
+function articleFormStateReducer(
+  state: ArticleFormState,
+  patch: Partial<ArticleFormState>,
+): ArticleFormState {
+  return {
+    ...state,
+    ...patch,
+  }
+}
+
+function createInitialArticleFormState(isEditMode: boolean): ArticleFormState {
+  return {
+    article: createEmptyArticle(),
+    operationName: '',
+    error: null,
+    isLoading: isEditMode,
+  }
+}
 
 export function PaymentCashflowArticleFormPage() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()
   const routeLocation = useLocation()
   const navigate = useNavigate()
   const locationState = routeLocation.state as LocationState | null
   const returnPath = locationState?.returnPath || ARTICLES_PATH
   const isEditMode = Boolean(id)
-  const [article, setArticle] = useValueState<PaymentCashflowArticle>(() => createEmptyArticle())
-  const [operationName, setOperationName] = useValueState('')
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(isEditMode)
+  const [formState, setFormState] = useReducer(
+    articleFormStateReducer,
+    isEditMode,
+    createInitialArticleFormState,
+  )
+  const { article, operationName, error, isLoading } = formState
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const canDelete = hasPermission(PERMISSION_DELETE_CASHFLOW_ARTICLE)
+  const canSave = hasPermission(PERMISSION_SAVE_CASHFLOW_ARTICLE)
 
   useEffect(() => {
     if (!id) {
-      setArticle(createEmptyArticle())
-      setOperationName('')
-      setLoading(false)
+      setFormState({
+        article: createEmptyArticle(),
+        operationName: '',
+        isLoading: false,
+      })
       return
     }
 
     const controller = new AbortController()
 
     async function loadArticle() {
-      setLoading(true)
-      setError(null)
+      setFormState({
+        error: null,
+        isLoading: true,
+      })
 
       try {
         const nextArticle = await getPaymentCashflowArticle(id as string)
 
         if (!controller.signal.aborted) {
-          setArticle(nextArticle || createEmptyArticle())
-          setOperationName(nextArticle?.OperationName || '')
+          const loadedArticle = nextArticle || createEmptyArticle()
+
+          setFormState({
+            article: loadedArticle,
+            operationName: loadedArticle.OperationName || '',
+            isLoading: false,
+          })
         }
       } catch (loadError) {
-        if (!isAbortError(loadError)) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити статтю руху коштів'))
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false)
+        if (!isAbortError(loadError) && !controller.signal.aborted) {
+          setFormState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити статтю руху коштів'),
+            isLoading: false,
+          })
         }
       }
     }
@@ -79,7 +121,7 @@ export function PaymentCashflowArticleFormPage() {
     void loadArticle()
 
     return () => controller.abort()
-  }, [id, setArticle, setError, setLoading, setOperationName, t])
+  }, [id, t])
 
   if (isEditMode && !id) {
     return <Navigate replace to={ARTICLES_PATH} />
@@ -96,10 +138,15 @@ export function PaymentCashflowArticleFormPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (!canSave) {
+      setFormState({ error: t('Недостатньо прав для збереження') })
+      return
+    }
+
     const trimmedOperationName = operationName.trim()
 
     if (!trimmedOperationName) {
-      setError(t('Вкажіть назву статті руху коштів'))
+      setFormState({ error: t('Вкажіть назву статті руху коштів') })
       return
     }
 
@@ -109,27 +156,34 @@ export function PaymentCashflowArticleFormPage() {
     }
 
     setSaving(true)
-    setError(null)
+    setFormState({ error: null })
 
     try {
       const savedArticle = isEditMode
         ? await updatePaymentCashflowArticle(payload)
         : await createPaymentCashflowArticle(payload)
 
-      setArticle(savedArticle || payload)
+      setFormState({ article: savedArticle || payload })
       notifications.show({
         color: 'green',
         message: isEditMode ? t('Статтю руху коштів оновлено') : t('Статтю руху коштів створено'),
       })
       navigate(returnPath, { replace: true })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти статтю руху коштів'))
+      setFormState({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти статтю руху коштів'),
+      })
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete() {
+    if (!canDelete) {
+      setFormState({ error: t('Недостатньо прав для видалення') })
+      return
+    }
+
     const netId = article.NetUid || id
 
     if (!netId) {
@@ -137,7 +191,7 @@ export function PaymentCashflowArticleFormPage() {
     }
 
     setDeleting(true)
-    setError(null)
+    setFormState({ error: null })
 
     try {
       await deletePaymentCashflowArticle(netId)
@@ -147,7 +201,9 @@ export function PaymentCashflowArticleFormPage() {
       })
       navigate(returnPath, { replace: true })
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити статтю руху коштів'))
+      setFormState({
+        error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити статтю руху коштів'),
+      })
     } finally {
       setDeleting(false)
       setDeleteModalOpened(false)
@@ -176,7 +232,7 @@ export function PaymentCashflowArticleFormPage() {
                 >
                   {t('Назад')}
                 </Button>
-                {isEditMode && (
+                {isEditMode && canDelete && (
                   <Button
                     color="red"
                     disabled={isLoading}
@@ -189,15 +245,17 @@ export function PaymentCashflowArticleFormPage() {
                     {t('Видалити')}
                   </Button>
                 )}
-                <Button
-                  color="violet"
-                  disabled={isLoading}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
+                {canSave && (
+                  <Button
+                    color="violet"
+                    disabled={isLoading}
+                    leftSection={<IconDeviceFloppy size={16} />}
+                    loading={isSaving}
+                    type="submit"
+                  >
+                    {t('Зберегти')}
+                  </Button>
+                )}
               </Group>
             </Group>
 
@@ -208,13 +266,12 @@ export function PaymentCashflowArticleFormPage() {
             )}
 
             <TextInput
-              autoFocus
               disabled={isLoading || isSaving || isDeleting}
               label={t('Назва')}
               placeholder={t('Вкажіть назву')}
               required
               value={operationName}
-              onChange={(event) => setOperationName(event.currentTarget.value)}
+              onChange={(event) => setFormState({ operationName: event.currentTarget.value })}
             />
           </Stack>
         </form>

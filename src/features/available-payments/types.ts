@@ -121,6 +121,7 @@ export type AvailablePaymentsSearchParams = {
   from: string
   limit: number
   offset: number
+  onlyAvailableForPayment?: boolean
   organizationNetId?: string
   to: string
   typePaymentTask: AccountingTypeValue
@@ -199,7 +200,9 @@ export type AvailablePaymentTaskRow = {
 }
 
 export type AvailablePaymentAccountingCashFlow = {
+  AccountingCashFlowHeadItems?: unknown[]
   Collection?: unknown[]
+  Data?: unknown[]
   Items?: unknown[]
   [key: string]: unknown
 }

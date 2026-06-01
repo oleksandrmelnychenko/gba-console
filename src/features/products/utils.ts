@@ -173,3 +173,67 @@ export function getRelatedProductRowColor(product?: Partial<Product> | null): st
 
   return undefined
 }
+
+export function isProductRealtimePayloadForProduct(
+  payload: unknown,
+  product?: Pick<Product, 'Id' | 'NetUid'> | null,
+): boolean {
+  if (!product) {
+    return false
+  }
+
+  const payloadIdentity = readRealtimeProductIdentity(payload)
+  const productNetUid = normalizeIdentity(product.NetUid)
+
+  if (payloadIdentity.netUid && productNetUid) {
+    return payloadIdentity.netUid === productNetUid
+  }
+
+  if (payloadIdentity.id !== undefined && typeof product.Id === 'number') {
+    return payloadIdentity.id === product.Id
+  }
+
+  return !payloadIdentity.netUid && payloadIdentity.id === undefined
+}
+
+function readRealtimeProductIdentity(payload: unknown): { id?: number; netUid?: string } {
+  if (!payload || typeof payload !== 'object') {
+    return {}
+  }
+
+  const source = payload as Record<string, unknown>
+  const nestedProduct = source.Product && typeof source.Product === 'object'
+    ? source.Product as Record<string, unknown>
+    : null
+  const productSource = nestedProduct || source
+
+  return {
+    id: readNumber(productSource.Id) ?? readNumber(source.ProductId),
+    netUid: normalizeIdentity(
+      readString(productSource.NetUid)
+      || readString(productSource.NetUID)
+      || readString(productSource.NetId)
+      || readString(productSource.NetID)
+      || readString(source.ProductNetUid)
+      || readString(source.ProductNetId),
+    ),
+  }
+}
+
+function readNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  return undefined
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined
+}
+
+function normalizeIdentity(value: string | undefined): string | undefined {
+  const normalized = value?.trim().toLowerCase()
+
+  return normalized || undefined
+}

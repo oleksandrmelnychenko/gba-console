@@ -15,8 +15,6 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
   IconArrowsExchange,
@@ -39,6 +37,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -164,6 +164,7 @@ function useProductIncomeDocumentsPageModel() {
   const remainingsRequestRef = useRef(0)
   const capitalizationRequestRef = useRef(0)
   const infoRequestRef = useRef(0)
+  const exportRequestRef = useRef(0)
   const { documents, isLoading, total } = documentsState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
@@ -223,6 +224,7 @@ function useProductIncomeDocumentsPageModel() {
     (document: ProductIncomeDocument, options: { loadCapitalizationDetail: boolean }) => {
       const requestId = infoRequestRef.current + 1
       infoRequestRef.current = requestId
+      const isCurrentInfoRequest = () => infoRequestRef.current === requestId
       setDocumentInfoError(null)
 
       if (!document.NetUid) {
@@ -236,31 +238,29 @@ function useProductIncomeDocumentsPageModel() {
         try {
           const info = await getProductIncomeInfo(netUid)
 
-          if (infoRequestRef.current !== requestId) {
-            return
-          }
+          if (isCurrentInfoRequest()) {
+            const detailedDocument = mergeProductIncomeInfo(document, info)
 
-          const detailedDocument = mergeProductIncomeInfo(document, info)
+            setSelectedDocument((current) =>
+              current && current.NetUid === netUid ? mergeProductIncomeInfo(current, info) : current,
+            )
 
-          setSelectedDocument((current) =>
-            current && current.NetUid === netUid ? mergeProductIncomeInfo(current, info) : current,
-          )
+            if (options.loadCapitalizationDetail) {
+              const capitalizationNetUid = getCapitalizationNetUid(detailedDocument)
 
-          if (options.loadCapitalizationDetail) {
-            const capitalizationNetUid = getCapitalizationNetUid(detailedDocument)
-
-            if (capitalizationNetUid) {
-              loadCapitalization(capitalizationNetUid)
+              if (capitalizationNetUid) {
+                loadCapitalization(capitalizationNetUid)
+              }
             }
           }
         } catch (loadError) {
-          if (infoRequestRef.current === requestId) {
+          if (isCurrentInfoRequest()) {
             setDocumentInfoError(
               loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі документа приходу'),
             )
           }
         } finally {
-          if (infoRequestRef.current === requestId) {
+          if (isCurrentInfoRequest()) {
             setLoadingDocumentInfo(false)
           }
         }
@@ -454,18 +454,37 @@ function useProductIncomeDocumentsPageModel() {
       return
     }
 
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const isDrawerDocument = selectedDocument?.NetUid === document.NetUid
     setExportingNetId(document.NetUid)
-    setError(null)
+    if (isDrawerDocument) {
+      setDocumentInfoError(null)
+    } else {
+      setError(null)
+    }
 
     try {
       const nextDocument = await exportProductIncomeDocument(document.NetUid)
 
-      setDownloadDocument(nextDocument)
-      setDownloadModalOpened(true)
+      if (exportRequestRef.current === requestId) {
+        setDownloadDocument(nextDocument)
+        setDownloadModalOpened(true)
+      }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+      if (exportRequestRef.current === requestId) {
+        const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ')
+
+        if (isDrawerDocument) {
+          setDocumentInfoError(message)
+        } else {
+          setError(message)
+        }
+      }
     } finally {
-      setExportingNetId(null)
+      if (exportRequestRef.current === requestId) {
+        setExportingNetId(null)
+      }
     }
   }
 
@@ -516,6 +535,7 @@ function useProductIncomeDocumentsPageModel() {
     downloadDocument,
     downloadModalOpened,
     error,
+    exportingNetId,
     filterError,
     isLoading,
     isLoadingCapitalization,
@@ -575,6 +595,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     downloadDocument,
     downloadModalOpened,
     error,
+    exportingNetId,
     filterError,
     isLoading,
     isLoadingCapitalization,
@@ -738,6 +759,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
         detailMode={detailMode}
         documentInfoError={documentInfoError}
         document={selectedDocument}
+        exportingNetId={exportingNetId}
         isLoadingCapitalization={isLoadingCapitalization}
         isLoadingDocumentInfo={isLoadingDocumentInfo}
         isLoadingRemainings={isLoadingRemainings}
@@ -846,6 +868,7 @@ function ProductIncomeDocumentDrawer({
   detailMode,
   documentInfoError,
   document,
+  exportingNetId,
   isLoadingCapitalization,
   isLoadingDocumentInfo,
   isLoadingRemainings,
@@ -863,6 +886,7 @@ function ProductIncomeDocumentDrawer({
   detailMode: 'view' | 'remainings'
   documentInfoError: string | null
   document: ProductIncomeDocument | null
+  exportingNetId: string | null
   isLoadingCapitalization: boolean
   isLoadingDocumentInfo: boolean
   isLoadingRemainings: boolean
@@ -911,6 +935,7 @@ function ProductIncomeDocumentDrawer({
               <Button
                 disabled={!document.NetUid}
                 leftSection={<IconDownload size={16} />}
+                loading={exportingNetId === document.NetUid}
                 variant="light"
                 onClick={() => onExport(document)}
               >
@@ -1503,8 +1528,8 @@ function useProductIncomeItemColumns({
         width: 110,
         minWidth: 96,
         align: 'right',
-        accessor: (item) => item.Qty || item.PackingListPackageOrderItem?.Qty,
-        cell: (item) => formatAmount(item.Qty || item.PackingListPackageOrderItem?.Qty),
+        accessor: (item) => item.Qty ?? item.PackingListPackageOrderItem?.Qty,
+        cell: (item) => formatAmount(item.Qty ?? item.PackingListPackageOrderItem?.Qty),
       },
       {
         id: 'comment',
@@ -1527,7 +1552,7 @@ function useProductIncomeItemColumns({
         cell: (item) => (
           <ProductHistoryActionButtons
             canOpenProductMovement={canOpenProductMovement}
-            product={getMovementHistoryProductFromNamedEntity(item.Product)}
+            product={getMovementHistoryProductFromNamedEntity(getIncomeItemProduct(item))}
             onOpenMovementHistory={onOpenMovementHistory}
             onOpenStorageLocationHistory={onOpenStorageLocationHistory}
           />
@@ -1767,6 +1792,10 @@ function getMovementHistoryProductFromNamedEntity(entity?: NamedEntity | null): 
   }
 }
 
+function getIncomeItemProduct(item: ProductIncomeItem): NamedEntity | null | undefined {
+  return item.PackingListPackageOrderItem?.SupplyInvoiceOrderItem?.Product || item.Product
+}
+
 function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
   const saleReturnItem = item.SaleReturnItem
 
@@ -1917,11 +1946,11 @@ function getSourceLink(document: ProductIncomeDocument): string | null {
   }
 
   if (firstItem.PackingListPackageOrderItem) {
-    return null
+    return `/supply-orders/product-placement/${document.NetUid}`
   }
 
   if (firstItem.SupplyOrderUkraineItem) {
-    return null
+    return `/orders/ukraine/${document.NetUid}/product-income`
   }
 
   if (firstItem.ActReconciliationItem?.ActReconciliation?.NetUid) {
@@ -1940,11 +1969,15 @@ function getSourceLink(document: ProductIncomeDocument): string | null {
 }
 
 function getItemProductCode(item: ProductIncomeItem): string | undefined {
-  return item.Product?.VendorCode || item.Product?.Code
+  const product = getIncomeItemProduct(item)
+
+  return product?.VendorCode || product?.Code
 }
 
 function getItemProductName(item: ProductIncomeItem): string | undefined {
-  return item.Product?.NameUA || item.Product?.Name
+  const product = getIncomeItemProduct(item)
+
+  return product?.NameUA || product?.Name
 }
 
 function getItemComment(item: ProductIncomeItem): string | undefined {

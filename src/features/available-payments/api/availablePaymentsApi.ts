@@ -16,16 +16,19 @@ import type {
 export async function getGroupedPaymentTasks(
   params: AvailablePaymentsSearchParams,
 ): Promise<GroupedPaymentTaskWithTotals> {
-  const result = await apiRequest<unknown>('/payments/tasks/grouped/all/filtered', {
-    query: {
-      from: params.from,
-      limit: params.limit,
-      offset: params.offset,
-      organizationNetId: params.organizationNetId,
-      to: params.to,
-      typePaymentTask: params.typePaymentTask,
-    },
-  })
+  const query = {
+    from: params.from,
+    limit: params.limit,
+    offset: params.offset,
+    organizationNetId: params.organizationNetId,
+    to: params.to,
+    typePaymentTask: params.onlyAvailableForPayment ? undefined : params.typePaymentTask,
+  }
+  const endpoint = params.onlyAvailableForPayment
+    ? '/payments/tasks/grouped/all/available/filtered'
+    : '/payments/tasks/grouped/all/filtered'
+
+  const result = await apiRequest<unknown>(endpoint, { query })
 
   return normalizeGroupedPaymentTaskWithTotals(result)
 }

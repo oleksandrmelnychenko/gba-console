@@ -13,7 +13,7 @@ import {
   Title,
 } from '@mantine/core'
 import { IconAlertCircle, IconUpload, IconX } from '@tabler/icons-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import {
@@ -116,7 +116,7 @@ export function PricingPanel({
   const [exportDocument, setExportDocument] = useState<ClientPrintDocument | null>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [isUploadingDocuments, setUploadingDocuments] = useState(false)
-  const [pendingDocuments, setPendingDocuments] = useState<File[]>([])
+  const pendingDocumentsRef = useRef<File[]>([])
   const [documentsError, setDocumentsError] = useState<string | null>(null)
 
   const clientAgreements = useMemo(() => client.ClientAgreements || [], [client.ClientAgreements])
@@ -306,7 +306,7 @@ export function PricingPanel({
   }
 
   function handleAddDocuments(files: File[]) {
-    setPendingDocuments((current) => [...current, ...files])
+    pendingDocumentsRef.current = [...pendingDocumentsRef.current, ...files]
     onChange({
       ...client,
       ClientContractDocuments: [
@@ -327,7 +327,7 @@ export function PricingPanel({
       return
     }
 
-    setPendingDocuments((current) => current.filter((file) => file.name !== document.FileName))
+    pendingDocumentsRef.current = pendingDocumentsRef.current.filter((file) => file.name !== document.FileName)
     onChange({
       ...client,
       ClientContractDocuments: contractDocuments.filter((item) => item !== document),
@@ -343,13 +343,13 @@ export function PricingPanel({
     setDocumentsError(null)
 
     try {
-      const updatedClient = await uploadClientContract(client, pendingDocuments)
+      const updatedClient = await uploadClientContract(client, pendingDocumentsRef.current)
 
       if (updatedClient) {
         onChange(updatedClient)
       }
 
-      setPendingDocuments([])
+      pendingDocumentsRef.current = []
     } catch (uploadError) {
       setDocumentsError(uploadError instanceof Error ? uploadError.message : t('Не вдалося зберегти документи'))
     } finally {

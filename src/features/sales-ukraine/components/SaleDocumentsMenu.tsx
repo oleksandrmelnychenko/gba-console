@@ -117,7 +117,8 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
     return []
   }
 
-  const isPackaging = getLifecycleType(sale) === 1
+  const lifecycleType = getLifecycleType(sale)
+  const isPackaging = lifecycleType === 1 || lifecycleType === 2
   const hasTransporter = Boolean(sale.TransporterId)
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)

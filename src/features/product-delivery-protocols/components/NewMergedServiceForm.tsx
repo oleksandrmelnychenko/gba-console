@@ -150,36 +150,52 @@ export function NewMergedServiceForm({
 
   const organizationOptions = useMemo(
     () =>
-      organizations
-        .filter((organization) => organization.NetUid && organization.Name)
-        .map((organization) => ({ label: organization.Name || '', value: organization.NetUid || '' })),
+      organizations.reduce<Array<{ label: string; value: string }>>((options, organization) => {
+        if (organization.NetUid && organization.Name) {
+          options.push({ label: organization.Name, value: organization.NetUid })
+        }
+
+        return options
+      }, []),
     [organizations],
   )
 
   const agreementOptions = useMemo(() => {
     const agreements = values.supplyOrganization?.SupplyOrganizationAgreements || []
 
-    return agreements
-      .filter((agreement) => agreement.NetUid)
-      .map((agreement) => ({
-        label: `${agreement.Name || ''} (${agreement.Currency?.Code || ''})`,
-        value: agreement.NetUid || '',
-      }))
+    return agreements.reduce<Array<{ label: string; value: string }>>((options, agreement) => {
+      if (agreement.NetUid) {
+        options.push({
+          label: `${agreement.Name || ''} (${agreement.Currency?.Code || ''})`,
+          value: agreement.NetUid,
+        })
+      }
+
+      return options
+    }, [])
   }, [values.supplyOrganization])
 
   const productOptions = useMemo(
     () =>
-      products
-        .filter((product) => product.NetUid && product.Name)
-        .map((product) => ({ label: product.Name || '', value: product.NetUid || '' })),
+      products.reduce<Array<{ label: string; value: string }>>((options, product) => {
+        if (product.NetUid && product.Name) {
+          options.push({ label: product.Name, value: product.NetUid })
+        }
+
+        return options
+      }, []),
     [products],
   )
 
   const userOptions = useMemo(
     () =>
-      users
-        .filter((user) => user.NetUid)
-        .map((user) => ({ label: responsibleName(user) || user.FullName || '', value: user.NetUid || '' })),
+      users.reduce<Array<{ label: string; value: string }>>((options, user) => {
+        if (user.NetUid) {
+          options.push({ label: responsibleName(user) || user.FullName || '', value: user.NetUid })
+        }
+
+        return options
+      }, []),
     [users],
   )
 
@@ -216,6 +232,24 @@ export function NewMergedServiceForm({
 
     if (!values.grossPrice && !values.grossPriceAccounting) {
       setValidationError(t('Заповніть управлінські або бухгалтерські витрати'))
+
+      return
+    }
+
+    if (values.isSupplyInformationTask && !values.supplyInformationTaskUser) {
+      setValidationError(t('Вкажіть відповідального за оплату в межах країни'))
+
+      return
+    }
+
+    if (values.createTask && !values.taskUser) {
+      setValidationError(t('Вкажіть відповідального за платіжну задачу'))
+
+      return
+    }
+
+    if (values.createAccountingTask && !values.accountingTaskUser) {
+      setValidationError(t('Вкажіть відповідального за бухгалтерську платіжну задачу'))
 
       return
     }

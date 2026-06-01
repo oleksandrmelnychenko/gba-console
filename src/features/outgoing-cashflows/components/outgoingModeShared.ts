@@ -1,4 +1,4 @@
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import type {
   ClientAgreement,
   NamedEntity,
@@ -127,9 +127,7 @@ export function defaultRegisterOf(registers: PaymentRegister[]): PaymentRegister
 }
 
 export function toIsoDateTime(dateValue: string, timeValue: string): string {
-  const date = new Date(`${dateValue || formatLocalDate(new Date())}T${timeValue || '00:00'}`)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+  return formatLocalInputDateTime(dateValue, timeValue)
 }
 
 export function toTimeValue(date: Date): string {

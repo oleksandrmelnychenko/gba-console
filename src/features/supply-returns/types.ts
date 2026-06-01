@@ -86,6 +86,12 @@ export type SupplyReturn = EntityFields & {
   SupplyReturnItems?: SupplyReturnItem[]
   TotalNetPrice?: number
   TotalNetWeight?: number
+  TotalRowsQty?: number
+}
+
+export type SupplyReturnsResponse = {
+  items: SupplyReturn[]
+  totalQty: number
 }
 
 export type SupplyReturnsSearchParams = {

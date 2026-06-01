@@ -1,10 +1,20 @@
 import type {
-  ConsumablesOrder,
-  ConsumablesOrderItem,
   NamedEntity,
   OutcomePaymentOrder,
   OutcomePaymentOrderConsumablesOrder,
 } from './types'
+import type {
+  ConsumableProduct,
+  ConsumableProductCategory,
+  ConsumablesOrder,
+  ConsumablesOrderDocument,
+  ConsumablesOrderItem,
+  ConsumablesStorage,
+  PaymentCostMovement,
+  PaymentCostMovementOperation,
+  SupplyOrganization,
+  SupplyOrganizationAgreement,
+} from '../consumable-orders/types'
 
 export const PaymentRegisterTypeValue = {
   Bank: 2,
@@ -15,20 +25,20 @@ export const PaymentRegisterTypeValue = {
 export type PaymentRegisterTypeValue = (typeof PaymentRegisterTypeValue)[keyof typeof PaymentRegisterTypeValue]
 
 export type CompanyCar = NamedEntity & {
+  CarBrand?: string
   LicensePlate?: string
 }
 
 export type CompanyCarFueling = {
   CompanyCar?: CompanyCar | null
-  ConsumableProductOrganization?: NamedEntity | null
+  ConsumableProductOrganization?: SupplyOrganization | null
+  Deleted?: boolean
   FuelAmount?: number
   Id?: number
-  PaymentCostMovementOperation?: {
-    PaymentCostMovement?: {
-      OperationName?: string
-    } | null
-  } | null
+  NetUid?: string
+  PaymentCostMovementOperation?: PaymentCostMovementOperation | null
   PricePerLiter?: number
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   TotalPrice?: number
   TotalPriceWithVat?: number
   VatAmount?: number
@@ -36,7 +46,7 @@ export type CompanyCarFueling = {
 }
 
 export type AdvanceReportConsumablesOrderItem = ConsumablesOrderItem & {
-  ConsumableProductCategory?: NamedEntity | null
+  ConsumableProductCategory?: ConsumableProductCategory | null
   VAT?: number
   VatPercent?: number
 }
@@ -45,10 +55,7 @@ export type AdvanceReportConsumablesOrder = Omit<ConsumablesOrder, 'ConsumablesO
   ConsumablesOrderItems?: AdvanceReportConsumablesOrderItem[]
   IsPayed?: boolean
   OrganizationNumber?: string
-  SupplyOrganizationAgreement?: {
-    Name?: string
-    Organization?: NamedEntity | null
-  } | null
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
 }
 
 export type AdvanceReportOutcomePaymentOrderConsumablesOrder = Omit<
@@ -66,7 +73,9 @@ export type AdvanceReportOrder = Omit<OutcomePaymentOrder, 'OutcomePaymentOrderC
 export type AdvanceReportConsumableRow = {
   agreementName: string
   amount?: number
+  canRemove?: boolean
   category: string
+  documentUrls: string[]
   id: string
   name: string
   organization: string
@@ -82,6 +91,7 @@ export type AdvanceReportConsumableRow = {
 }
 
 export type AdvanceReportFuelRow = {
+  canRemove?: boolean
   companyCar: string
   fuelAmount?: number
   id: string
@@ -94,4 +104,14 @@ export type AdvanceReportFuelRow = {
   vatPercent?: number
 }
 
-export type { ConsumablesOrderItem }
+export type {
+  ConsumableProduct,
+  ConsumableProductCategory,
+  ConsumablesOrderDocument,
+  ConsumablesOrderItem,
+  ConsumablesStorage,
+  PaymentCostMovement,
+  PaymentCostMovementOperation,
+  SupplyOrganization,
+  SupplyOrganizationAgreement,
+}

@@ -33,7 +33,7 @@ export type DeliveryRecipientsPanelProps = {
 }
 
 function sortRecipients(recipients: DeliveryRecipient[]): DeliveryRecipient[] {
-  return [...recipients].sort((a, b) => {
+  return recipients.toSorted((a, b) => {
     if (Boolean(a.Deleted) === Boolean(b.Deleted)) {
       if (a.FullName) {
         return a.FullName.localeCompare(b.FullName || '')

@@ -1,11 +1,15 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  SaleClientDebtTotal,
   SaleConsignmentDocument,
   SaleConsignmentNoteSetting,
   SaleDocumentResult,
+  SalesUkraineClientAgreement,
   SalesUkraineClientOption,
   SalesUkraineFilters,
+  SalesUkraineOrderItem,
   SalesUkraineOrganizationOption,
+  SalesUkraineProduct,
   SalesUkraineSale,
   SalesUkraineTransporter,
   SalesUkraineTransporterType,
@@ -56,6 +60,102 @@ export async function unlockSale(netId: string): Promise<void> {
   await apiRequest<unknown>('/sales/unlock', {
     method: 'PATCH',
     query: { netId },
+  })
+}
+
+export async function getSaleById(netId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get', {
+    query: { netId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/current', {
+    query: { netId: clientAgreementNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise<void> {
+  await apiRequest<unknown>('/orders/items/update', {
+    body: orderItem,
+    method: 'POST',
+  })
+}
+
+export async function deleteOrderItem(orderItemNetId: string): Promise<void> {
+  await apiRequest<unknown>('/orders/items/delete', {
+    method: 'DELETE',
+    query: { orderItemNetId },
+  })
+}
+
+export async function searchSaleProducts(value: string): Promise<SalesUkraineProduct[]> {
+  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+    query: { limit: 20, offset: 0, value: value.trim() },
+  })
+
+  return normalizeArray(result) as SalesUkraineProduct[]
+}
+
+export async function addOrderItem(
+  clientAgreementNetId: string,
+  saleNetId: string,
+  orderItem: SalesUkraineOrderItem,
+): Promise<void> {
+  await apiRequest<unknown>('/orders/items/new', {
+    body: orderItem,
+    method: 'POST',
+    query: { clientAgreementNetId, saleNetId },
+  })
+}
+
+export async function getSaleClientAgreements(clientNetId: string): Promise<SalesUkraineClientAgreement[]> {
+  const result = await apiRequest<unknown>('/agreements/client/all', {
+    query: { netId: clientNetId },
+  })
+
+  return normalizeArray(result) as SalesUkraineClientAgreement[]
+}
+
+export async function getSaleClientDebtTotal(clientNetId: string): Promise<SaleClientDebtTotal | null> {
+  const result = await apiRequest<unknown>('/clients/get/debt/total', {
+    query: { netId: clientNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SaleClientDebtTotal) : null
+}
+
+export async function switchSale(saleNetId: string, clientAgreementNetId: string): Promise<void> {
+  await apiRequest<unknown>('/sales/switch', {
+    method: 'PATCH',
+    query: { clientAgreementNetId, saleNetId },
+  })
+}
+
+export async function getMergedSales(saleNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/merged', {
+    query: { netId: saleNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function getCurrentUnmergedSale(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/current/unmerged', {
+    query: { netId: clientAgreementNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function updateMergedSale(sale: SalesUkraineSale): Promise<void> {
+  await apiRequest<unknown>('/sales/update/merged', {
+    body: sale,
+    method: 'POST',
   })
 }
 
@@ -235,6 +335,8 @@ function normalizeArray(result: unknown): unknown[] {
       'Organisations',
       'Transporters',
       'TransporterTypes',
+      'ClientAgreements',
+      'Agreements',
       'Data',
       'Collection',
     ]) {

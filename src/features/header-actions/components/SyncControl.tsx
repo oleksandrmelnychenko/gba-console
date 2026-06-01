@@ -12,8 +12,9 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconArrowsExchange2 } from '@tabler/icons-react'
-import { useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent, type DataSyncNotification } from '../../../shared/realtime/events'
 import { getSyncHistory, startDailySync, startGbaToOneCSync, startRemnantsSync } from '../api/syncApi'
 import { TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
 import {
@@ -63,6 +64,7 @@ type SyncAction =
   | { type: 'historyStarted' }
   | { type: 'historySucceeded'; history: SyncHistoryItem[] }
   | { type: 'historyFailed'; message: string }
+  | { type: 'syncNotification'; isFinished: boolean; message: string }
   | { type: 'syncStarted' }
   | { type: 'syncSucceeded'; message: string }
   | { type: 'syncFailed'; message: string }
@@ -133,6 +135,12 @@ function syncReducer(state: SyncState, action: SyncAction): SyncState {
         isHistoryLoading: false,
         messages: [action.message, ...state.messages],
       }
+    case 'syncNotification':
+      return {
+        ...state,
+        isSyncing: !action.isFinished,
+        messages: appendSyncMessage(state.messages, action.message),
+      }
     case 'syncStarted':
       return {
         ...state,
@@ -201,6 +209,15 @@ function syncReducer(state: SyncState, action: SyncAction): SyncState {
 export function SyncControl() {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
+  const handleRealtimeSyncNotification = useCallback((notification: DataSyncNotification) => {
+    dispatch({
+      isFinished: Boolean(notification.StopProgressBar || notification.IsError),
+      message: notification.DisplayMessage || '',
+      type: 'syncNotification',
+    })
+  }, [])
+
+  useRealtimeEvent(realtimeEvents.dataSyncNotification, handleRealtimeSyncNotification)
 
   useEffect(() => {
     if (!state.opened || state.activeTab === 'gba-to-1c') {
@@ -489,6 +506,16 @@ export function SyncControl() {
       </AppModal>
     </>
   )
+}
+
+function appendSyncMessage(messages: string[], message: string): string[] {
+  const nextMessage = message.trim()
+
+  if (!nextMessage) {
+    return messages
+  }
+
+  return [nextMessage, ...messages]
 }
 
 function RemnantsSyncSection({

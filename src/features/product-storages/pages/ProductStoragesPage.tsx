@@ -60,6 +60,7 @@ import {
   getAvailableProductsByStorage,
   getProductStorageAvailableConsignments,
   getProductStorageStorages,
+  recordProductStorageWriteOffHistory,
 } from '../api/productStoragesApi'
 import type {
   ProductStorageAvailableConsignment,
@@ -121,12 +122,22 @@ type ReturnConsignmentsState = {
   items: ProductStorageAvailableConsignment[]
 }
 
+type AvailabilityListState = {
+  hasMore: boolean
+  items: ProductStorageAvailability[]
+  total: number
+}
+
 function useProductStoragesPageModel() {
   const { t } = useI18n()
   const { hasPermission, user } = useAuth()
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
-  const [availabilities, setAvailabilities] = useValueState<ProductStorageAvailability[]>([])
+  const [availabilityList, setAvailabilityList] = useValueState<AvailabilityListState>({
+    hasMore: false,
+    items: [],
+    total: 0,
+  })
   const [storages, setStorages] = useValueState<ProductStorageStorage[]>([])
   const [selectedStorageNetId, setSelectedStorageNetId] = useValueState('')
   const [selectedAvailabilities, setSelectedAvailabilities] = useValueState<ProductStorageAvailability[]>([])
@@ -136,7 +147,6 @@ function useProductStoragesPageModel() {
   const [fromDate, setFromDate] = useValueState(() => formatLocalDate(new Date()))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [pageSize, setPageSize] = useValueState(50)
-  const [hasMore, setHasMore] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductStoragesExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
@@ -158,8 +168,11 @@ function useProductStoragesPageModel() {
     items: [],
   })
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const listRequestKey = `${selectedStorageNetId}|${searchValue}|${pageSize}`
+  const listRequestKey = `${selectedStorageNetId}|${fromDate}|${toDate}|${searchValue}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
+  const availabilities = availabilityList.items
+  const hasMore = availabilityList.hasMore
+  const totalAvailabilities = availabilityList.total
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
   const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
@@ -225,11 +238,12 @@ function useProductStoragesPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Завантажено')} {availabilities.length}
+        {totalAvailabilities > availabilities.length ? ` ${t('з')} ${totalAvailabilities}` : ''}
         {selectedAvailabilities.length ? `, ${t('обрано')}: ${selectedAvailabilities.length}` : ''}
         {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [availabilities.length, searchValue, selectedAvailabilities.length, t],
+    [availabilities.length, searchValue, selectedAvailabilities.length, t, totalAvailabilities],
   )
 
   useEffect(() => {
@@ -276,27 +290,9 @@ function useProductStoragesPageModel() {
     listRequestKeyRef.current = listRequestKey
   }, [listRequestKey])
 
-  useEffect(
-    () => () => {
-      setSelectedAvailabilities([])
-      setPreviewRows([])
-      setPreviewOpened(false)
-      setActionModal(null)
-      setStorages([])
-    },
-    [
-      setActionModal,
-      setPreviewOpened,
-      setPreviewRows,
-      setSelectedAvailabilities,
-      setStorages,
-    ],
-  )
-
   useEffect(() => {
     if (!selectedStorageNetId) {
-      setAvailabilities([])
-      setHasMore(false)
+      setAvailabilityList({ hasMore: false, items: [], total: 0 })
       return
     }
 
@@ -307,21 +303,25 @@ function useProductStoragesPageModel() {
       setError(null)
 
       try {
-        const nextAvailabilities = await getAvailableProductsByStorage({
+        const result = await getAvailableProductsByStorage({
+          from: fromDate,
           limit: pageSize,
           offset: 0,
           storageNetId: selectedStorageNetId,
+          to: toDate,
           value: searchValue,
         })
 
         if (!cancelled) {
-          setAvailabilities(nextAvailabilities)
-          setHasMore(nextAvailabilities.length === pageSize)
+          setAvailabilityList({
+            hasMore: result.items.length < result.totalQty && result.items.length > 0,
+            items: result.items,
+            total: result.totalQty,
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setAvailabilities([])
-          setHasMore(false)
+          setAvailabilityList({ hasMore: false, items: [], total: 0 })
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари складу'))
         }
       } finally {
@@ -336,7 +336,18 @@ function useProductStoragesPageModel() {
     return () => {
       cancelled = true
     }
-  }, [pageSize, reloadKey, searchValue, selectedStorageNetId, setAvailabilities, setError, setHasMore, setLoading, t])
+  }, [
+    fromDate,
+    pageSize,
+    reloadKey,
+    searchValue,
+    selectedStorageNetId,
+    setError,
+    setAvailabilityList,
+    setLoading,
+    t,
+    toDate,
+  ])
 
   useEffect(() => {
     if (actionModal?.mode !== 'return' || actionModal.scope !== 'single') {
@@ -429,10 +440,39 @@ function useProductStoragesPageModel() {
   }
 
   function updateSearch(nextValue: string) {
+    if (searchDraft !== nextValue) {
+      closeStorageActions()
+    }
+
     setSearchDraft(nextValue)
   }
 
+  function updateFromDate(nextFromDate: string) {
+    if (fromDate !== nextFromDate) {
+      closeStorageActions()
+    }
+
+    setFromDate(nextFromDate)
+  }
+
+  function updateToDate(nextToDate: string) {
+    if (toDate !== nextToDate) {
+      closeStorageActions()
+    }
+
+    setToDate(nextToDate)
+  }
+
+  function updatePageSize(nextPageSize: number) {
+    if (pageSize !== nextPageSize) {
+      closeStorageActions()
+    }
+
+    setPageSize(nextPageSize)
+  }
+
   function resetFilters() {
+    closeStorageActions()
     setSearchDraft('')
     setFromDate(formatLocalDate(new Date()))
     setToDate(formatLocalDate(new Date()))
@@ -556,6 +596,11 @@ function useProductStoragesPageModel() {
       return
     }
 
+    if (!canOpenAction) {
+      setActionError(t('Недостатньо прав для операції зі складською позицією'))
+      return
+    }
+
     const rows = previewRows.filter(isValidActionRow)
 
     if (rows.length === 0) {
@@ -666,7 +711,7 @@ function useProductStoragesPageModel() {
           },
         })
       } else if (actionModal.mode === 'writeoff') {
-        await createProductStorageWriteOff({
+        const depreciatedOrder = await createProductStorageWriteOff({
           Comment: actionForm.comment.trim(),
           DepreciatedOrderItems: buildWriteOffItems(actionModal, actionForm),
           FromDate: actionForm.fromDate,
@@ -674,6 +719,13 @@ function useProductStoragesPageModel() {
           Organization: fromStorage.Organization || null,
           Storage: fromStorage,
         })
+
+        if (depreciatedOrder) {
+          await recordHistoryUpdate(
+            () => recordProductStorageWriteOffHistory(depreciatedOrder),
+            t('Операцію виконано, але історію руху товару не оновлено'),
+          )
+        }
       } else if (selectedReturnConsignment) {
         const availability = actionModal.rows[0]?.availability
 
@@ -681,7 +733,7 @@ function useProductStoragesPageModel() {
           ClientAgreement: selectedReturnConsignment.ClientAgreement || null,
           Comment: actionForm.comment.trim(),
           FromDate: actionForm.fromDate,
-          IsManagement: actionForm.isManagement,
+          IsManagement: actionForm.isManagement && isAdmin,
           Organization: selectedReturnConsignment.Organization || null,
           Storage: fromStorage,
           Supplier: selectedReturnConsignment.Supplier || null,
@@ -719,18 +771,29 @@ function useProductStoragesPageModel() {
     setError(null)
 
     try {
-      const nextAvailabilities = await getAvailableProductsByStorage({
+      const result = await getAvailableProductsByStorage({
+        from: fromDate,
         limit: pageSize,
         offset: requestOffset,
         storageNetId: selectedStorageNetId,
+        to: toDate,
         value: searchValue,
       })
 
       if (listRequestKeyRef.current === requestKey) {
-        setAvailabilities((currentAvailabilities) =>
-          currentAvailabilities.length === requestOffset ? [...currentAvailabilities, ...nextAvailabilities] : currentAvailabilities,
-        )
-        setHasMore(nextAvailabilities.length === pageSize)
+        setAvailabilityList((currentList) => {
+          if (currentList.items.length !== requestOffset) {
+            return currentList
+          }
+
+          const nextItems = [...currentList.items, ...result.items]
+
+          return {
+            hasMore: nextItems.length < result.totalQty && result.items.length > 0,
+            items: nextItems,
+            total: result.totalQty,
+          }
+        })
       }
     } catch (loadError) {
       if (listRequestKeyRef.current === requestKey) {
@@ -752,7 +815,11 @@ function useProductStoragesPageModel() {
     setError(null)
 
     try {
-      const document = await exportProductStorageAvailability(selectedStorageNetId)
+      const document = await exportProductStorageAvailability({
+        from: fromDate,
+        storageNetId: selectedStorageNetId,
+        to: toDate,
+      })
 
       setDownloadDocument(document)
       setDownloadModalOpened(true)
@@ -801,6 +868,7 @@ function useProductStoragesPageModel() {
     toolbarLeft,
     toStorageOptions,
     canOpenPreview,
+    canOpenAction,
     changeActionMode,
     closeActionModal,
     closeStorageActions,
@@ -814,16 +882,16 @@ function useProductStoragesPageModel() {
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
-    setFromDate,
     setMovementHistoryProduct,
-    setPageSize,
     setPreviewOpened,
     setStorageLocationHistoryProduct,
-    setToDate,
     submitAction,
     toggleAvailability,
+    updateFromDate,
+    updatePageSize,
     updatePreviewQty,
     updateSearch,
+    updateToDate,
   }
 }
 
@@ -872,6 +940,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     toDate,
     toolbarLeft,
     toStorageOptions,
+    canOpenAction,
     canOpenPreview,
     changeActionMode,
     closeActionModal,
@@ -886,16 +955,16 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
-    setFromDate,
     setMovementHistoryProduct,
-    setPageSize,
     setPreviewOpened,
     setStorageLocationHistoryProduct,
-    setToDate,
     submitAction,
     toggleAvailability,
+    updateFromDate,
+    updatePageSize,
     updatePreviewQty,
     updateSearch,
+    updateToDate,
   } = model
 
   return (
@@ -957,14 +1026,14 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               max={toDate || undefined}
               type="date"
               value={fromDate}
-              onChange={(event) => setFromDate(event.currentTarget.value)}
+              onChange={(event) => updateFromDate(event.currentTarget.value)}
             />
             <TextInput
               label={t('До якої дати')}
               min={fromDate || undefined}
               type="date"
               value={toDate}
-              onChange={(event) => setToDate(event.currentTarget.value)}
+              onChange={(event) => updateToDate(event.currentTarget.value)}
             />
             <TextInput
               leftSection={<IconSearch size={16} />}
@@ -998,7 +1067,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                 data={pageSizeOptions}
                 value={String(pageSize)}
                 w={88}
-                onChange={(value) => setPageSize(Number(value || 50))}
+                onChange={(value) => updatePageSize(Number(value || 50))}
               />
               <Button
                 color="gray"
@@ -1036,6 +1105,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       </Card>
 
       <ProductStoragePreviewDrawer
+        canProcess={canOpenAction}
         opened={previewOpened}
         rows={previewRows}
         onClose={() => setPreviewOpened(false)}
@@ -1114,6 +1184,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
 }
 
 function ProductStoragePreviewDrawer({
+  canProcess,
   opened,
   rows,
   onClose,
@@ -1121,6 +1192,7 @@ function ProductStoragePreviewDrawer({
   onRemoveRow,
   onUpdateQty,
 }: {
+  canProcess: boolean
   opened: boolean
   rows: ProductStorageActionRow[]
   onClose: () => void
@@ -1266,6 +1338,11 @@ function ProductStoragePreviewDrawer({
             {t('Кількість має бути більшою за 0 і не перевищувати доступний залишок')}
           </Alert>
         ) : null}
+        {!canProcess ? (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {t('Недостатньо прав для операції зі складською позицією')}
+          </Alert>
+        ) : null}
         <DataTable
           columns={columns}
           data={rows}
@@ -1291,8 +1368,8 @@ function ProductStoragePreviewDrawer({
             <Button color="gray" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button disabled={!rows.length || hasInvalidRows} leftSection={<IconCheck size={16} />} onClick={onProcess}>
-              {t('Process')}
+            <Button disabled={!canProcess || !rows.length || hasInvalidRows} leftSection={<IconCheck size={16} />} onClick={onProcess}>
+              {t('Виконати')}
             </Button>
           </Group>
         </Group>
@@ -1345,7 +1422,7 @@ function ProductStorageActionModal({
   }
 
   const isSingle = modal.scope === 'single'
-  const showManagementSwitch = modal.mode === 'return' || isAdmin
+  const showManagementSwitch = isAdmin
   const showQuantityField = isSingle
   const showPlacementFields = modal.mode === 'transfer' && isSingle && !selectedToStorage?.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
@@ -1356,6 +1433,11 @@ function ProductStorageActionModal({
     label: formatConsignmentOption(consignment),
     value: getConsignmentKey(consignment),
   }))
+  const singleAvailableQty = getQuantity(modal.rows[0]?.availability)
+  const singleMaxQty =
+    modal.mode === 'return'
+      ? getReturnMaxQty(singleAvailableQty, selectedReturnConsignment)
+      : singleAvailableQty
 
   return (
     <AppModal centered opened title={t(getActionTitle(modal))} size="xl" onClose={onClose}>
@@ -1457,6 +1539,9 @@ function ProductStorageActionModal({
                 <Badge color="gray" variant="light">
                   {t('Організація')}: {displayValue(selectedReturnConsignment.Organization?.FullName || selectedReturnConsignment.Organization?.Name)}
                 </Badge>
+                <Badge color="gray" variant="light">
+                  {t('Доступно по партії')}: {formatAmount(selectedReturnConsignment.RemainingQty)}
+                </Badge>
               </Group>
             ) : null}
           </Stack>
@@ -1468,7 +1553,7 @@ function ProductStorageActionModal({
             decimalScale={3}
             disabled={isSubmitting}
             label={t('Кількість')}
-            max={getQuantity(modal.rows[0]?.availability)}
+            max={singleMaxQty}
             min={0.001}
             value={form.qty}
             onChange={(value) => onChangeForm((current) => ({ ...current, qty: toNumberInputValue(value) }))}
@@ -1801,12 +1886,16 @@ function validateAction(
     const row = actionModal.rows[0]
     const qty = Number(form.qty)
     const availableQty = getQuantity(row?.availability)
+    const maxQty =
+      actionModal.mode === 'return'
+        ? getReturnMaxQty(availableQty, context.selectedConsignment)
+        : availableQty
 
     if (!Number.isFinite(qty) || qty <= 0) {
       return 'Кількість має бути більшою за 0'
     }
 
-    if (typeof availableQty === 'number' && qty > availableQty) {
+    if (typeof maxQty === 'number' && qty > maxQty) {
       return 'Кількість не може перевищувати доступний залишок'
     }
   } else if (!actionModal.rows.every(isValidActionRow)) {
@@ -1830,6 +1919,19 @@ function isValidActionRow(row: ProductStorageActionRow): boolean {
   const availableQty = getQuantity(row.availability)
 
   return row.changedQty > 0 && (typeof availableQty !== 'number' || row.changedQty <= availableQty)
+}
+
+function getReturnMaxQty(
+  availableQty: number | undefined,
+  selectedConsignment: ProductStorageAvailableConsignment | null,
+): number | undefined {
+  const remainingQty = selectedConsignment?.RemainingQty
+
+  if (typeof availableQty === 'number' && typeof remainingQty === 'number') {
+    return Math.min(availableQty, remainingQty)
+  }
+
+  return typeof remainingQty === 'number' ? remainingQty : availableQty
 }
 
 function sumActionRows(rows: ProductStorageActionRow[]): number {
@@ -1893,6 +1995,17 @@ function getActionSubmitIcon(mode: ProductStorageActionMode) {
   }
 
   return <IconCheck size={16} />
+}
+
+async function recordHistoryUpdate(record: () => Promise<void>, warningMessage: string): Promise<void> {
+  try {
+    await record()
+  } catch {
+    notifications.show({
+      color: 'yellow',
+      message: warningMessage,
+    })
+  }
 }
 
 function toNumberInputValue(value: number | string): number | '' {

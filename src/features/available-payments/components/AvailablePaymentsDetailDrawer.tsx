@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Alert,
   Anchor,
   Badge,
@@ -19,15 +20,22 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCash, IconDeviceFloppy, IconExternalLink, IconFileUpload, IconInfoCircle } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import {
+  IconAlertCircle,
+  IconCash,
+  IconDeviceFloppy,
+  IconExternalLink,
+  IconFileUpload,
+  IconInfoCircle,
+  IconTrash,
+} from '@tabler/icons-react'
+import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
@@ -50,13 +58,13 @@ import {
   type AvailablePaymentRegister,
   type AvailablePaymentTaskModel,
   type AvailablePaymentTaskRow,
-  type AvailablePaymentsCurrency,
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
   type SupplyPaymentTask,
 } from '../types'
 
 type AvailablePaymentsDetailDrawerProps = {
+  filesByTaskId: Record<string, File[]>
   group: GroupedPaymentTask | null
   markedModels: AvailablePaymentTaskModel[]
   markedTaskIds: string[]
@@ -64,6 +72,7 @@ type AvailablePaymentsDetailDrawerProps = {
   onChanged: () => void
   onClearMarked: () => void
   onClose: () => void
+  onFilesChanged: (taskId: string, files: File[]) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }
 
@@ -90,6 +99,11 @@ type CashFlowState = {
   isLoading: boolean
 }
 
+type CashFlowFilters = {
+  from: string
+  to: string
+}
+
 type DataRecord = Record<string, unknown>
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -98,6 +112,7 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
 export function AvailablePaymentsDetailDrawer({
+  filesByTaskId,
   group,
   markedModels,
   markedTaskIds,
@@ -105,6 +120,7 @@ export function AvailablePaymentsDetailDrawer({
   onChanged,
   onClearMarked,
   onClose,
+  onFilesChanged,
   onToggleMarked,
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
@@ -113,7 +129,7 @@ export function AvailablePaymentsDetailDrawer({
   const [expandedId, setExpandedId] = useValueState<string | null>(null)
   const [activeTabs, setActiveTabs] = useValueState<Record<string, string>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
-  const [filesByTaskId, setFilesByTaskId] = useValueState<Record<string, File[]>>({})
+  const [cashFlowFiltersByTaskId, setCashFlowFiltersByTaskId] = useValueState<Record<string, CashFlowFilters>>({})
   const [outcomeModels, setOutcomeModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [registers, setRegisters] = useValueState<AvailablePaymentRegister[]>([])
   const [movements, setMovements] = useValueState<AvailablePaymentMovement[]>([])
@@ -121,6 +137,9 @@ export function AvailablePaymentsDetailDrawer({
   const [isLoadingDictionaries, setLoadingDictionaries] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
+  const [confirmCloseOutcomeOpen, setConfirmCloseOutcomeOpen] = useValueState(false)
+  const movementSearchRequestRef = useRef(0)
+  const movementSearchTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (outcomeModels.length === 0) {
@@ -164,22 +183,14 @@ export function AvailablePaymentsDetailDrawer({
     }
   }, [outcomeModels, setError, setForm, setLoadingDictionaries, setMovements, setRegisters, t])
 
-  useEffect(() => {
-    if (outcomeModels.length === 0) {
-      return
-    }
-
-    const value = form.movementSearch.trim()
-    const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
+  useEffect(
+    () => () => {
+      if (movementSearchTimeoutRef.current) {
+        window.clearTimeout(movementSearchTimeoutRef.current)
       }
-
-      void searchAvailablePaymentMovements(value).then(setMovements).catch(() => undefined)
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [form.movementSearch, outcomeModels.length, setMovements])
+    },
+    [],
+  )
 
   const selectedOrganization = useMemo(
     () =>
@@ -257,6 +268,63 @@ export function AvailablePaymentsDetailDrawer({
     setForm((current) => ({ ...current, ...patch }))
   }
 
+  function resetMovementSearchState() {
+    movementSearchRequestRef.current += 1
+
+    if (movementSearchTimeoutRef.current) {
+      window.clearTimeout(movementSearchTimeoutRef.current)
+      movementSearchTimeoutRef.current = null
+    }
+  }
+
+  function closeOutcomeForm() {
+    resetMovementSearchState()
+    setOutcomeModels([])
+    setForm(createInitialOutcomeForm())
+    setMovements([])
+    setRegisters([])
+    setLoadingDictionaries(false)
+    setConfirmCloseOutcomeOpen(false)
+  }
+
+  function requestDrawerClose() {
+    if (outcomeModels.length > 0) {
+      setConfirmCloseOutcomeOpen(true)
+      return
+    }
+
+    onClose()
+  }
+
+  function confirmDrawerClose() {
+    closeOutcomeForm()
+    onClose()
+  }
+
+  function handleMovementSearchChange(nextValue: string) {
+    updateForm({ movementSearch: nextValue })
+
+    const value = nextValue.trim()
+    const requestId = movementSearchRequestRef.current + 1
+    movementSearchRequestRef.current = requestId
+
+    if (movementSearchTimeoutRef.current) {
+      window.clearTimeout(movementSearchTimeoutRef.current)
+    }
+
+    movementSearchTimeoutRef.current = window.setTimeout(() => {
+      const request = value ? searchAvailablePaymentMovements(value) : getAvailablePaymentMovements()
+
+      void request
+        .then((nextMovements) => {
+          if (movementSearchRequestRef.current === requestId) {
+            setMovements(nextMovements)
+          }
+        })
+        .catch(() => undefined)
+    }, SEARCH_DEBOUNCE_MS)
+  }
+
   function openOutcomeForm(nextModels: AvailablePaymentTaskModel[]) {
     const payableModels = nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done)
 
@@ -265,16 +333,26 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
+    const groupValidationError = validateOutcomeModelsGroup(payableModels, t)
+
+    if (groupValidationError) {
+      setError(groupValidationError)
+      return
+    }
+
+    if (payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)) {
+      setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
+      return
+    }
+
+    resetMovementSearchState()
     setOutcomeModels(payableModels)
     setForm(createInitialOutcomeForm(payableModels))
     setError(null)
   }
 
-  async function handleCashFlowTab(model: AvailablePaymentTaskModel, tab: string | null) {
-    const nextTab = tab || 'invoice'
-    setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
-
-    if (nextTab !== 'cash-flow' || !model.serviceAgreementNetId || cashFlows[model.id]?.data) {
+  async function loadCashFlow(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
+    if (!model.serviceAgreementNetId) {
       return
     }
 
@@ -285,9 +363,9 @@ export function AvailablePaymentsDetailDrawer({
 
     try {
       const result = await getAvailablePaymentAccountingCashFlow({
-        from: getDateShiftedByDays(-30),
+        from: filters.from,
         netId: model.serviceAgreementNetId,
-        to: formatLocalDate(new Date()),
+        to: filters.to,
         typePaymentTask,
       })
 
@@ -307,10 +385,33 @@ export function AvailablePaymentsDetailDrawer({
     }
   }
 
+  async function handleCashFlowTab(model: AvailablePaymentTaskModel, tab: string | null) {
+    const nextTab = tab || 'invoice'
+    setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
+
+    if (nextTab !== 'cash-flow' || !model.serviceAgreementNetId || cashFlows[model.id]?.data) {
+      return
+    }
+
+    const filters = cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()
+
+    if (!cashFlowFiltersByTaskId[model.id]) {
+      setCashFlowFiltersByTaskId((current) => ({ ...current, [model.id]: filters }))
+    }
+
+    await loadCashFlow(model, filters)
+  }
+
+  function handleCashFlowFiltersChange(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
+    setCashFlowFiltersByTaskId((current) => ({ ...current, [model.id]: filters }))
+    void loadCashFlow(model, filters)
+  }
+
   async function handleMoveToDone(model: AvailablePaymentTaskModel) {
     const localFiles = filesByTaskId[model.id] || []
+    const taskWithDocuments = buildTaskWithLocalDocuments(model.task, localFiles)
 
-    if (localFiles.length === 0 && (model.task.SupplyPaymentTaskDocuments || []).length === 0) {
+    if ((taskWithDocuments.SupplyPaymentTaskDocuments || []).length === 0) {
       setError(t('Додайте хоча б один документ'))
       return
     }
@@ -319,7 +420,7 @@ export function AvailablePaymentsDetailDrawer({
     setError(null)
 
     try {
-      await setAvailablePaymentTaskToActive(model.task, localFiles)
+      await setAvailablePaymentTaskToActive(taskWithDocuments, localFiles)
       notifications.show({ color: 'green', message: t('Платіжну задачу оновлено') })
       onChanged()
     } catch (saveError) {
@@ -336,10 +437,6 @@ export function AvailablePaymentsDetailDrawer({
     if (isOpening && !activeTabs[model.id]) {
       setActiveTabs((current) => ({ ...current, [model.id]: 'invoice' }))
     }
-  }
-
-  function handleFilesChanged(model: AvailablePaymentTaskModel, files: File[]) {
-    setFilesByTaskId((current) => ({ ...current, [model.id]: files }))
   }
 
   function handleRedirectToSource(model: AvailablePaymentTaskModel) {
@@ -368,7 +465,16 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
+    if (outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)) {
+      setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
+      return
+    }
+
     const documents = outcomeModels.flatMap((model) => filesByTaskId[model.id] || [])
+    const modelsWithDocuments = outcomeModels.map((model) => ({
+      ...model,
+      task: buildTaskWithLocalDocuments(model.task, filesByTaskId[model.id] || []),
+    }))
 
     setSaving(true)
     setError(null)
@@ -383,7 +489,7 @@ export function AvailablePaymentsDetailDrawer({
         fromDate: toIsoDateTime(form.date, form.time),
         isAccounting: form.isAccounting,
         isManagementAccounting: form.isManagementAccounting,
-        models: outcomeModels,
+        models: modelsWithDocuments,
         organization: selectedOrganization as AvailablePaymentsOrganization,
         paymentPurpose: form.paymentPurpose.trim(),
         selectedCurrencyRegister: selectedCurrencyRegister as AvailablePaymentCurrencyRegister,
@@ -391,7 +497,7 @@ export function AvailablePaymentsDetailDrawer({
         selectedRegister: selectedRegister as AvailablePaymentRegister,
       })
       notifications.show({ color: 'green', message: t('Видатковий ордер створено') })
-      setOutcomeModels([])
+      closeOutcomeForm()
       onClearMarked()
       onChanged()
     } catch (saveError) {
@@ -402,10 +508,8 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   const title = group ? `${t('Наявні платежі')} - ${formatDate(group.PayToDate)}` : t('Наявні платежі')
-  const markedInDrawer = markedModels.filter((model) => markedTaskIds.includes(model.id))
-
   return (
-    <AppDrawer opened={Boolean(group)} position="right" size="80vw" title={title} onClose={onClose}>
+    <AppDrawer opened={Boolean(group)} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -420,17 +524,19 @@ export function AvailablePaymentsDetailDrawer({
         ) : (
           <AvailablePaymentTaskList
             activeTabs={activeTabs}
+            cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
             cashFlows={cashFlows}
             expandedId={expandedId}
             filesByTaskId={filesByTaskId}
             isSaving={isSaving}
-            markedInDrawer={markedInDrawer}
+            markedModels={markedModels}
             markedTaskIds={markedTaskIds}
             models={models}
             onCashFlowTab={handleCashFlowTab}
+            onCashFlowFiltersChange={handleCashFlowFiltersChange}
             onClearMarked={onClearMarked}
             onCreateOutcome={openOutcomeForm}
-            onFilesChanged={handleFilesChanged}
+            onFilesChanged={onFilesChanged}
             onMoveToDone={handleMoveToDone}
             onRedirectToSource={handleRedirectToSource}
             onToggleExpanded={handleToggleExpanded}
@@ -449,11 +555,31 @@ export function AvailablePaymentsDetailDrawer({
             registers={registers}
             selectedOrganization={selectedOrganization}
             selectedRegister={selectedRegister}
-            onCancel={() => setOutcomeModels([])}
+            onCancel={closeOutcomeForm}
+            onMovementSearchChange={handleMovementSearchChange}
             onSubmit={handleCreateOutcome}
             updateForm={updateForm}
           />
         )}
+
+        <AppModal
+          centered
+          opened={confirmCloseOutcomeOpen}
+          title={t('Є незбережені зміни')}
+          onClose={() => setConfirmCloseOutcomeOpen(false)}
+        >
+          <Stack gap="md">
+            <Text>{t('Якщо закрити вікно, дані видаткового ордера не будуть збережені.')}</Text>
+            <Group justify="flex-end">
+              <Button color="gray" variant="light" onClick={() => setConfirmCloseOutcomeOpen(false)}>
+                {t('Залишитися')}
+              </Button>
+              <Button color="red" onClick={confirmDrawerClose}>
+                {t('Закрити без збереження')}
+              </Button>
+            </Group>
+          </Stack>
+        </AppModal>
       </Stack>
     </AppDrawer>
   )
@@ -461,14 +587,16 @@ export function AvailablePaymentsDetailDrawer({
 
 function AvailablePaymentTaskList({
   activeTabs,
+  cashFlowFiltersByTaskId,
   cashFlows,
   expandedId,
   filesByTaskId,
   isSaving,
-  markedInDrawer,
+  markedModels,
   markedTaskIds,
   models,
   onCashFlowTab,
+  onCashFlowFiltersChange,
   onClearMarked,
   onCreateOutcome,
   onFilesChanged,
@@ -478,17 +606,19 @@ function AvailablePaymentTaskList({
   onToggleMarked,
 }: {
   activeTabs: Record<string, string>
+  cashFlowFiltersByTaskId: Record<string, CashFlowFilters>
   cashFlows: Record<string, CashFlowState>
   expandedId: string | null
   filesByTaskId: Record<string, File[]>
   isSaving: boolean
-  markedInDrawer: AvailablePaymentTaskModel[]
+  markedModels: AvailablePaymentTaskModel[]
   markedTaskIds: string[]
   models: AvailablePaymentTaskModel[]
   onCashFlowTab: (model: AvailablePaymentTaskModel, tab: string | null) => Promise<void>
+  onCashFlowFiltersChange: (model: AvailablePaymentTaskModel, filters: CashFlowFilters) => void
   onClearMarked: () => void
   onCreateOutcome: (models: AvailablePaymentTaskModel[]) => void
-  onFilesChanged: (model: AvailablePaymentTaskModel, files: File[]) => void
+  onFilesChanged: (taskId: string, files: File[]) => void
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
   onToggleExpanded: (model: AvailablePaymentTaskModel) => void
@@ -498,14 +628,14 @@ function AvailablePaymentTaskList({
 
   return (
     <Stack gap="sm">
-      {markedInDrawer.length > 0 && (
-        <Alert color="violet" icon={<IconInfoCircle size={18} />} variant="light">
+      {markedModels.length > 0 && (
+        <Alert color="blue" icon={<IconInfoCircle size={18} />} variant="light">
           <Group justify="space-between" gap="sm">
             <Text size="sm">
-              {t('Вибрано платіжних задач')}: {markedInDrawer.length}
+              {t('Вибрано платіжних задач')}: {markedModels.length}
             </Text>
             <Group gap="xs">
-              <Button size="xs" variant="light" onClick={() => onCreateOutcome(markedInDrawer)}>
+              <Button size="xs" variant="light" onClick={() => onCreateOutcome(markedModels)}>
                 {t('Створити видатковий')}
               </Button>
               <Button color="gray" size="xs" variant="subtle" onClick={onClearMarked}>
@@ -576,14 +706,20 @@ function AvailablePaymentTaskList({
               />
 
               {(activeTabs[model.id] || 'invoice') === 'invoice' && <InvoiceTab model={model} />}
-              {activeTabs[model.id] === 'cash-flow' && <CashFlowTab state={cashFlows[model.id]} />}
+              {activeTabs[model.id] === 'cash-flow' && (
+                <CashFlowTab
+                  filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
+                  state={cashFlows[model.id]}
+                  onFiltersChange={(filters) => onCashFlowFiltersChange(model, filters)}
+                />
+              )}
               {activeTabs[model.id] === 'payment' && (
                 <PaymentTab
                   files={filesByTaskId[model.id] || []}
                   isSaving={isSaving}
                   model={model}
                   onCreateOutcome={() => onCreateOutcome([model])}
-                  onFilesChanged={(files) => onFilesChanged(model, files)}
+                  onFilesChanged={(files) => onFilesChanged(model.id, files)}
                   onMoveToDone={() => void onMoveToDone(model)}
                 />
               )}
@@ -607,6 +743,7 @@ function AvailablePaymentOutcomeForm({
   selectedOrganization,
   selectedRegister,
   onCancel,
+  onMovementSearchChange,
   onSubmit,
   updateForm,
 }: {
@@ -620,6 +757,7 @@ function AvailablePaymentOutcomeForm({
   selectedOrganization: AvailablePaymentsOrganization | null
   selectedRegister: AvailablePaymentRegister | null
   onCancel: () => void
+  onMovementSearchChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   updateForm: (patch: Partial<OutcomeFormState>) => void
 }) {
@@ -743,7 +881,7 @@ function AvailablePaymentOutcomeForm({
                 searchValue={form.movementSearch}
                 value={form.movementValue || null}
                 onChange={(value) => updateForm({ movementValue: value || '' })}
-                onSearchChange={(value) => updateForm({ movementSearch: value })}
+                onSearchChange={onMovementSearchChange}
               />
             </SimpleGrid>
 
@@ -818,35 +956,89 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   return (
     <Stack gap="md">
       <DocumentsList documents={model.documents} />
-      <DataTable
-        columns={dataColumns}
-        data={model.rows}
-        emptyText={t('Дані рахунку відсутні')}
-        getRowId={(row, index) => getInvoiceRowKey(model, row, index)}
-        maxHeight="calc(100vh - 320px)"
-        minWidth={760}
-        tableId="available-payments-invoice-lines"
-      />
+      <Table.ScrollContainer minWidth={760}>
+        <Table withTableBorder withColumnBorders striped>
+          <Table.Thead>
+            <Table.Tr>
+              {columns.map((column) => (
+                <Table.Th key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
+                  {column.header}
+                </Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {model.rows.length === 0 ? (
+              <Table.Tr>
+                <Table.Td colSpan={columns.length}>
+                  <Text c="dimmed" size="sm">
+                    {t('Дані рахунку відсутні')}
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : (
+              model.rows.map((row, rowIndex) => (
+                <Table.Tr key={getInvoiceRowKey(model, row, rowIndex)}>
+                  {columns.map((column) => (
+                    <Table.Td
+                      key={column.key}
+                      style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}
+                    >
+                      <InvoiceTableCell column={column} row={row} />
+                    </Table.Td>
+                  ))}
+                </Table.Tr>
+              ))
+            )}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     </Stack>
   )
 }
 
-function renderCell(column: AvailablePaymentColumn, row: AvailablePaymentTaskRow): string {
+function InvoiceTableCell({ column, row }: { column: AvailablePaymentColumn; row: AvailablePaymentTaskRow }) {
   const value = row[column.key]
 
   if (column.format === 'date') {
-    return formatDate(value as Date | string | undefined)
+    return <>{formatDate(value as Date | string | undefined)}</>
   }
 
   if (column.format === 'price') {
-    return formatAmount(typeof value === 'number' ? value : undefined)
+    return <>{formatAmount(readFiniteNumber(value))}</>
   }
 
-  return displayValue(value)
+  return <>{displayValue(value)}</>
 }
 
-function CashFlowTab({ state }: { state?: CashFlowState }) {
+function CashFlowTab({
+  filters,
+  state,
+  onFiltersChange,
+}: {
+  filters: CashFlowFilters
+  state?: CashFlowState
+  onFiltersChange: (filters: CashFlowFilters) => void
+}) {
   const { t } = useI18n()
+  const controls = (
+    <Group align="end" gap="sm" wrap="wrap">
+      <TextInput
+        label={t('З')}
+        type="date"
+        value={filters.from}
+        w={150}
+        onChange={(event) => onFiltersChange({ ...filters, from: event.currentTarget.value })}
+      />
+      <TextInput
+        label={t('По')}
+        type="date"
+        value={filters.to}
+        w={150}
+        onChange={(event) => onFiltersChange({ ...filters, to: event.currentTarget.value })}
+      />
+    </Group>
+  )
 
   const columns = useMemo<DataTableColumn<DataRecord>[]>(
     () => [
@@ -881,32 +1073,66 @@ function CashFlowTab({ state }: { state?: CashFlowState }) {
 
   if (!state || state.isLoading) {
     return (
-      <Group justify="center" py="md">
-        <Loader size="sm" />
-      </Group>
+      <Stack gap="md">
+        {controls}
+        <Group justify="center" py="md">
+          <Loader size="sm" />
+        </Group>
+      </Stack>
     )
   }
 
   if (state.error) {
     return (
-      <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-        {state.error}
-      </Alert>
+      <Stack gap="md">
+        {controls}
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {state.error}
+        </Alert>
+      </Stack>
     )
   }
 
   const rows = extractCashFlowRows(state.data)
 
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      emptyText={t('Рух коштів відсутній')}
-      getRowId={(row) => getCashFlowRowKey(row)}
-      maxHeight="calc(100vh - 320px)"
-      minWidth={720}
-      tableId="available-payments-cash-flow-movements"
-    />
+    <Stack gap="md">
+      {controls}
+      <Table.ScrollContainer minWidth={720}>
+        <Table withTableBorder withColumnBorders striped>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t('Дата')}</Table.Th>
+              <Table.Th>{t('Номер')}</Table.Th>
+              <Table.Th>{t('Тип')}</Table.Th>
+              <Table.Th style={{ textAlign: 'right' }}>{t('Сума')}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {rows.length === 0 ? (
+              <Table.Tr>
+                <Table.Td colSpan={4}>
+                  <Text c="dimmed" size="sm">
+                    {t('Рух коштів відсутній')}
+                  </Text>
+                </Table.Td>
+              </Table.Tr>
+            ) : (
+              rows.map((row) => (
+                <Table.Tr key={getCashFlowRowKey(row)}>
+                  <Table.Td>{formatDate(readUnknownDate(row, ['FromDate', 'Date', 'Created']))}</Table.Td>
+                  <Table.Td>{displayValue(readUnknown(row, ['Number', 'CustomNumber']))}</Table.Td>
+                  <Table.Td>{displayValue(readUnknown(row, ['Name', 'Type', 'OperationTypeName']))}</Table.Td>
+                  <Table.Td style={{ textAlign: 'right' }}>
+                    {formatAmount(readUnknownNumber(row, ['CurrentValue', 'Amount', 'Total', 'GrossPrice']))}
+                  </Table.Td>
+                </Table.Tr>
+              ))
+            )}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </Stack>
   )
 }
 
@@ -931,15 +1157,21 @@ function PaymentTab({
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <FileButton multiple onChange={(files) => onFilesChanged(files || [])}>
-          {(props) => (
-            <Button {...props} color="gray" leftSection={<IconFileUpload size={16} />} variant="light">
-              {t('Завантажити файли')}
-            </Button>
-          )}
-        </FileButton>
+        {!isDone ? (
+          <FileButton multiple onChange={(nextFiles) => onFilesChanged(mergeLocalFiles(files, nextFiles || []))}>
+            {(props) => (
+              <Button {...props} color="gray" leftSection={<IconFileUpload size={16} />} variant="light">
+                {t('Завантажити файли')}
+              </Button>
+            )}
+          </FileButton>
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('Задачу вже виконано')}
+          </Text>
+        )}
         <Group gap="xs">
-          {!isDone && (
+          {!isDone && !model.task.IsAvailableForPayment && (
             <Button color="green" disabled={isSaving} loading={isSaving} variant="light" onClick={onMoveToDone}>
               {t('Перевести в оплату')}
             </Button>
@@ -960,9 +1192,20 @@ function PaymentTab({
               {t('Нові файли')}
             </Text>
             {files.map((file) => (
-              <Text key={`${file.name}-${file.size}`} size="sm">
-                {file.name}
-              </Text>
+              <Group key={`${file.name}-${file.size}-${file.lastModified}`} gap="xs" justify="space-between" wrap="nowrap">
+                <Text size="sm">{file.name}</Text>
+                <Tooltip label={t('Видалити')}>
+                  <ActionIcon
+                    aria-label={t('Видалити')}
+                    color="red"
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => onFilesChanged(files.filter((entry) => getLocalFileKey(entry) !== getLocalFileKey(file)))}
+                  >
+                    <IconTrash size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
             ))}
           </Stack>
         </>
@@ -1088,6 +1331,39 @@ function getDocumentKey(document: AvailablePaymentDocument): string {
   return String(
     document.NetUid || document.Id || document.FileName || document.DocumentUrl || document.Url || document.Name || 'document',
   )
+}
+
+function mergeLocalFiles(currentFiles: File[], nextFiles: File[]): File[] {
+  const filesByKey = new Map(currentFiles.map((file) => [getLocalFileKey(file), file]))
+
+  nextFiles.forEach((file) => filesByKey.set(getLocalFileKey(file), file))
+
+  return Array.from(filesByKey.values())
+}
+
+function getLocalFileKey(file: File): string {
+  return `${file.name}:${file.size}:${file.lastModified}`
+}
+
+function buildTaskWithLocalDocuments(task: SupplyPaymentTask, files: File[]): SupplyPaymentTask {
+  if (files.length === 0) {
+    return task
+  }
+
+  return {
+    ...task,
+    SupplyPaymentTaskDocuments: [
+      ...(task.SupplyPaymentTaskDocuments || []),
+      ...files.map((file) => ({
+        ContentType: file.type,
+        FileName: file.name,
+      })),
+    ],
+  }
+}
+
+function getTaskDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
+  return (model.task.SupplyPaymentTaskDocuments || []).length + files.length
 }
 
 function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymentTaskRow, rowIndex: number): string {
@@ -1267,6 +1543,45 @@ function validateOutcomeForm({
   return null
 }
 
+function validateOutcomeModelsGroup(
+  models: AvailablePaymentTaskModel[],
+  t: (key: string) => string,
+): string | null {
+  const firstModel = models[0]
+
+  if (!firstModel) {
+    return t('Виберіть платіжні задачі')
+  }
+
+  return models.slice(1).reduce<string | null>((error, model) => {
+    if (error) {
+      return error
+    }
+
+    if (firstModel.organizationNetUid !== model.organizationNetUid) {
+      return t('Можна обрати платіжні задачі тільки одного контрагента')
+    }
+
+    if (firstModel.currencyCode !== model.currencyCode) {
+      return t('Можна обрати платіжні задачі тільки в одній валюті')
+    }
+
+    if (
+      firstModel.serviceAgreementNetId &&
+      model.serviceAgreementNetId &&
+      firstModel.serviceAgreementNetId !== model.serviceAgreementNetId
+    ) {
+      return t('Можна обрати платіжні задачі тільки однієї угоди')
+    }
+
+    if (Boolean(firstModel.task.IsAccounting) !== Boolean(model.task.IsAccounting)) {
+      return t('Можна обрати платіжні задачі тільки одного типу обліку')
+    }
+
+    return null
+  }, null)
+}
+
 function extractCashFlowRows(data: AvailablePaymentAccountingCashFlow | null): DataRecord[] {
   if (!data) {
     return []
@@ -1278,7 +1593,9 @@ function extractCashFlowRows(data: AvailablePaymentAccountingCashFlow | null): D
       ? data.Items
       : Array.isArray(data.Data)
         ? data.Data
-        : []
+        : Array.isArray(data.AccountingCashFlowHeadItems)
+          ? data.AccountingCashFlowHeadItems
+          : []
 
   return collection.map(asRecord).filter((row): row is DataRecord => Boolean(row))
 }
@@ -1298,15 +1615,27 @@ function readUnknown(record: DataRecord, keys: string[]): unknown {
 }
 
 function readUnknownNumber(record: DataRecord, keys: string[]): number | undefined {
-  const value = readUnknown(record, keys)
-
-  return typeof value === 'number' ? value : undefined
+  return readFiniteNumber(readUnknown(record, keys))
 }
 
 function readUnknownDate(record: DataRecord, keys: string[]): Date | string | undefined {
   const value = readUnknown(record, keys)
 
   return value instanceof Date || typeof value === 'string' ? value : undefined
+}
+
+function readFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const normalized = Number(value.replace(/\s/g, '').replace(',', '.'))
+
+    return Number.isFinite(normalized) ? normalized : undefined
+  }
+
+  return undefined
 }
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {
@@ -1317,43 +1646,43 @@ function findUahCurrencyNetUid(
   registers: AvailablePaymentRegister[],
   models: AvailablePaymentTaskModel[],
 ): string {
-  const fromRegisters = registers
-    .flatMap((register) => register.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => currencyRegister.Currency)
-    .find((currency): currency is AvailablePaymentsCurrency => currency?.Code === 'UAH')
-
-  if (fromRegisters?.NetUid) {
-    return fromRegisters.NetUid
+  for (const register of registers) {
+    for (const currencyRegister of register.PaymentCurrencyRegisters || []) {
+      if (currencyRegister.Currency?.Code === 'UAH' && currencyRegister.Currency.NetUid) {
+        return currencyRegister.Currency.NetUid
+      }
+    }
   }
 
-  const fromModels = models
-    .map((model) => model.currency)
-    .find((currency): currency is AvailablePaymentsCurrency => currency?.Code === 'UAH')
+  for (const model of models) {
+    if (model.currency?.Code === 'UAH' && model.currency.NetUid) {
+      return model.currency.NetUid
+    }
+  }
 
-  return fromModels?.NetUid || ''
+  return ''
 }
 
 function toQueryDate(value: string): string {
-  if (!value) {
-    return new Date().toISOString()
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+  return formatLocalInputDateTime(value)
 }
 
 function getDateShiftedByDays(days: number): string {
   const date = new Date()
   date.setDate(date.getDate() + days)
 
-  return date.toDateString()
+  return formatLocalDate(date)
+}
+
+function createDefaultCashFlowFilters(): CashFlowFilters {
+  return {
+    from: getDateShiftedByDays(-30),
+    to: formatLocalDate(new Date()),
+  }
 }
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {
-  const date = new Date(`${dateValue || formatLocalDate(new Date())}T${timeValue || '00:00'}`)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+  return formatLocalInputDateTime(dateValue, timeValue)
 }
 
 function toTimeValue(date: Date): string {

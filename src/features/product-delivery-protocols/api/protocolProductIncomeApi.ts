@@ -1,5 +1,7 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  DynamicProductPlacementColumn,
+  DynamicProductPlacementRow,
   IncomeAuditEntity,
   IncomePackingList,
   IncomeProductIncome,
@@ -27,7 +29,25 @@ function normalizePackingList(result: unknown): IncomePackingList {
       ? (payload.PackingListPackageOrderItems as IncomePackingList['PackingListPackageOrderItems'])
       : [],
     DynamicProductPlacementColumns: Array.isArray(payload.DynamicProductPlacementColumns)
-      ? (payload.DynamicProductPlacementColumns as IncomePackingList['DynamicProductPlacementColumns'])
+      ? (payload.DynamicProductPlacementColumns as DynamicProductPlacementColumn[]).map(normalizeDynamicColumn)
+      : [],
+  }
+}
+
+function normalizeDynamicColumn(column: DynamicProductPlacementColumn): DynamicProductPlacementColumn {
+  return {
+    ...column,
+    DynamicProductPlacementRows: Array.isArray(column.DynamicProductPlacementRows)
+      ? column.DynamicProductPlacementRows.map(normalizeDynamicRow)
+      : [],
+  }
+}
+
+function normalizeDynamicRow(row: DynamicProductPlacementRow): DynamicProductPlacementRow {
+  return {
+    ...row,
+    DynamicProductPlacements: Array.isArray(row.DynamicProductPlacements)
+      ? row.DynamicProductPlacements
       : [],
   }
 }
@@ -106,10 +126,21 @@ export async function createProductIncomeFromPackingListDynamic(
   fromDate: string,
   storageNetId: string,
   packingList: IncomePackingList,
-): Promise<unknown> {
-  return apiRequest<unknown>('/products/incomes/new/packinglist/dynamic', {
+): Promise<IncomePackingList> {
+  const result = await apiRequest<unknown>('/products/incomes/new/packinglist/dynamic', {
     method: 'POST',
     query: { fromDate, storageNetId },
+    body: packingList,
+  })
+
+  return normalizePackingList(result)
+}
+
+export async function recordProductIncomeFromPackingListDynamicHistory(
+  packingList: IncomePackingList,
+): Promise<void> {
+  await apiRequest<unknown>('/history/order/item/new/packinglist/dynamic', {
+    method: 'POST',
     body: packingList,
   })
 }

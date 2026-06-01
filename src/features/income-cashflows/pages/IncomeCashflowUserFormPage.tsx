@@ -60,6 +60,11 @@ type FormState = {
   vatRate: number
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 const INCOME_CASHFLOWS_PATH = '/accounting/income-cashflows'
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -634,31 +639,61 @@ function matchesRegister(register: PaymentRegister, organization: Organization |
   return getEntityValue(register.Organization) === getEntityValue(organization) || register.OrganizationId === organization.Id
 }
 
-function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
-      label: getEntityName(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+function toEntityOptions<T extends NamedEntity>(entities: T[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const entity of entities) {
+    const value = getEntityValue(entity)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: getEntityName(entity) || value,
+      value,
+    })
+  }
+
+  return options
 }
 
-function toCurrencyOptions(register?: PaymentRegister | null) {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const value = getEntityValue(currency)
+function toCurrencyOptions(register?: PaymentRegister | null): SelectOption[] {
+  const options: SelectOption[] = []
 
-      return {
-        label: currency?.Code || currency?.Name || value,
-        value,
-      }
+  for (const currencyRegister of register?.PaymentCurrencyRegisters || []) {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currency)
+
+    if (!value) {
+      continue
+    }
+
+    options.push({
+      label: currency?.Code || currency?.Name || value,
+      value,
     })
-    .filter((option) => option.value)
+  }
+
+  return options
 }
 
 function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  const labels: string[] = []
+  const seenLabels = new Set<string>()
+
+  for (const entity of entities) {
+    const label = getEntityName(entity)
+
+    if (!label || seenLabels.has(label)) {
+      continue
+    }
+
+    seenLabels.add(label)
+    labels.push(label)
+  }
+
+  return labels
 }
 
 function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {
@@ -684,7 +719,19 @@ function getEntityValue(entity?: NamedEntity | null): string {
 }
 
 function getEntityName(entity?: NamedEntity | null): string {
-  return [entity?.FirstName, entity?.LastName].filter(Boolean).join(' ') || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
+  return joinTruthyParts([entity?.FirstName, entity?.LastName]) || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code || entity?.Number || ''
+}
+
+function joinTruthyParts(parts: Array<string | null | undefined>, separator = ' '): string {
+  const labels: string[] = []
+
+  for (const part of parts) {
+    if (part) {
+      labels.push(part)
+    }
+  }
+
+  return labels.join(separator)
 }
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {

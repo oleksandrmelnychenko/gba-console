@@ -56,6 +56,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   addOrUpdateProductWriteOffRule,
@@ -103,6 +104,7 @@ import {
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
   getProductTitle,
+  isProductRealtimePayloadForProduct,
 } from '../utils'
 
 export type ProductDetailPanel = 'audit' | 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
@@ -321,6 +323,13 @@ export function ProductDetailPage() {
 
     reload()
   }, [])
+  const handleRealtimeProductUpdate = useCallback((payload: unknown) => {
+    if (isProductRealtimePayloadForProduct(payload, product || { NetUid: netId })) {
+      reload()
+    }
+  }, [netId, product])
+
+  useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
   if (!netId) {
     return <Navigate to="/products" replace />
@@ -2208,7 +2217,7 @@ function InfoBlock({ label, value }: { label: string; value?: number | string | 
 }
 
 function sortSpecificationsByCreatedDesc(specifications: ProductSpecification[]): ProductSpecification[] {
-  return [...specifications].sort((first, second) => {
+  return specifications.toSorted((first, second) => {
     const firstTime = first.Created ? new Date(first.Created).getTime() : 0
     const secondTime = second.Created ? new Date(second.Created).getTime() : 0
 

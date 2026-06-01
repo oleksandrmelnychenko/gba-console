@@ -38,6 +38,22 @@ export type PaymentMovementOperation = EntityFields & {
   PaymentMovement?: PaymentMovement | null
 }
 
+export type AssignedIncomePaymentOrder = EntityFields & {
+  Amount?: number
+  Colleague?: NamedEntity | null
+  Currency?: Currency | null
+  FromDate?: string
+  Number?: string
+  PaymentRegister?: PaymentRegister | null
+}
+
+export type AssignedPaymentOrder = EntityFields & {
+  AssignedIncomePaymentOrder?: AssignedIncomePaymentOrder | null
+  AssignedOutcomePaymentOrder?: OutcomePaymentOrder | null
+  RootIncomePaymentOrder?: AssignedIncomePaymentOrder | null
+  RootOutcomePaymentOrder?: OutcomePaymentOrder | null
+}
+
 export type ClientAgreement = EntityFields & {
   Client?: NamedEntity | null
 }
@@ -88,11 +104,12 @@ export type OutcomePaymentOrder = EntityFields & {
   Number?: string
   OperationTypeName?: string
   Organization?: Organization | null
+  AssignedPaymentOrders?: AssignedPaymentOrder[]
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentPurpose?: string
-  RootAssignedPaymentOrder?: unknown
+  RootAssignedPaymentOrder?: AssignedPaymentOrder | null
   TotalRowsQty?: number
   User?: NamedEntity | null
 }
@@ -109,6 +126,7 @@ export type OutgoingCashflowRow = {
   currency?: string
   differenceAmount?: number
   fromDate?: string
+  hasDocumentStructure?: boolean
   id: string
   isAccounting?: boolean
   isCanceled?: boolean

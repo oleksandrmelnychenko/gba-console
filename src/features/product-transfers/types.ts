@@ -88,8 +88,14 @@ export type ProductTransfer = EntityFields & {
   ProductTransferItems?: ProductTransferItem[]
   Responsible?: ProductTransferUser | null
   ResponsibleId?: number
+  TotalRowsQty?: number
   ToStorage?: ProductTransferStorage | null
   ToStorageId?: number
+}
+
+export type ProductTransfersResponse = {
+  items: ProductTransfer[]
+  totalQty: number
 }
 
 export type ProductTransfersSearchParams = {

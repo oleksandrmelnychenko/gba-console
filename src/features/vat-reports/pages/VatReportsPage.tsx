@@ -53,9 +53,6 @@ export function VatReportsPage() {
 
   useEffect(() => {
     let isActive = true
-    setLoading(true)
-    setError(null)
-    setHasMore(false)
 
     async function loadReports() {
       try {
@@ -89,6 +86,17 @@ export function VatReportsPage() {
     }
   }, [fromDate, reloadKey, setError, setHasMore, setLoading, setReports, t, toDate])
 
+  function prepareReportsLoad() {
+    setLoading(true)
+    setError(null)
+    setHasMore(false)
+  }
+
+  function refreshReports() {
+    prepareReportsLoad()
+    reload()
+  }
+
   async function loadMore() {
     setLoadingMore(true)
     setError(null)
@@ -111,33 +119,64 @@ export function VatReportsPage() {
   }
 
   function resetFilters() {
-    setFromDate(shiftDate(-7))
-    setToDate(formatLocalDate(new Date()))
+    const nextFromDate = shiftDate(-7)
+    const nextToDate = formatLocalDate(new Date())
+
+    if (nextFromDate === fromDate && nextToDate === toDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setFromDate(nextFromDate)
+    setToDate(nextToDate)
+  }
+
+  function updateFromDate(value: string) {
+    if (value === fromDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setFromDate(value)
+  }
+
+  function updateToDate(value: string) {
+    if (value === toDate) {
+      return
+    }
+
+    prepareReportsLoad()
+    setToDate(value)
   }
 
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              onChange={(event) => setFromDate(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
-            />
-            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} style={{ flex: '0 0 auto' }} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={36} style={{ flex: '0 0 auto' }} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
+          <Group justify="space-between" wrap="wrap">
+            <div>
+              <Text fw={700} size="xl">
+                {t('VAT')}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+                  <IconRestore size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={refreshReports}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Group>
+
+          <Group align="end" gap="sm">
+            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => updateFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => updateToDate(event.currentTarget.value)} />
           </Group>
 
           {error && (
@@ -230,6 +269,15 @@ function useVatReportColumns(): DataTableColumn<VatReport>[] {
         align: 'right',
         accessor: (report) => report.VatAmountEU,
         cell: (report) => formatMoney(report.VatAmountEU),
+      },
+      {
+        id: 'amountPln',
+        header: t('Сума в PLN (ПДВ)'),
+        width: 150,
+        minWidth: 130,
+        align: 'right',
+        accessor: (report) => report.VatAmountPL,
+        cell: (report) => formatMoney(report.VatAmountPL),
       },
     ],
     [t],
