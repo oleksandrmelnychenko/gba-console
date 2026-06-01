@@ -5,6 +5,7 @@ import {
   Button,
   Divider,
   Group,
+  Pagination,
   Select,
   SimpleGrid,
   Stack,
@@ -14,7 +15,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -31,6 +32,7 @@ import {
 import type {
   AdvancedReportRow,
   AdvancedReportsResponse,
+  AdvancedReportsSearchParams,
   Currency,
   NamedEntity,
   OutcomePaymentOrder,
@@ -38,8 +40,8 @@ import type {
   PaymentRegister,
 } from '../types'
 
-const DEFAULT_LIMIT = 100
-const DEFAULT_OFFSET = 0
+const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const DEFAULT_PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 350
 
 const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
@@ -79,14 +81,34 @@ export function AdvancedReportsPage() {
   const [currencyNetId, setCurrencyNetId] = useValueState('')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AdvancedReportRow | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
-  const requestRef = useRef(0)
+
+  const offset = (page - 1) * pageSize
+  const totalRows = getTotalRows(reports.Collection)
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
+
+  const activeFilters = useMemo<AdvancedReportsSearchParams>(
+    () => ({
+      currencyNetId,
+      from: fromDate,
+      limit: pageSize,
+      offset,
+      paymentMovementNetId,
+      registerNetId: paymentRegisterNetId,
+      to: toDate,
+      value: normalizedSearchValue,
+    }),
+    [currencyNetId, fromDate, normalizedSearchValue, offset, pageSize, paymentMovementNetId, paymentRegisterNetId, toDate],
+  )
 
   const loadLookups = useCallback(async () => {
     setLoadingLookups(true)
@@ -108,61 +130,45 @@ export function AdvancedReportsPage() {
     }
   }, [setCurrencies, setError, setLoadingLookups, setPaymentMovements, setPaymentRegisters, t])
 
-  const loadReports = useCallback(async () => {
-    const requestId = requestRef.current + 1
-    requestRef.current = requestId
-    setLoading(true)
-    setError(null)
-
-    try {
-      const nextReports = await getAdvancedReports({
-        currencyNetId,
-        from: fromDate,
-        limit: DEFAULT_LIMIT,
-        offset: DEFAULT_OFFSET,
-        paymentMovementNetId,
-        registerNetId: paymentRegisterNetId,
-        to: toDate,
-        value: normalizedSearchValue,
-      })
-
-      if (requestRef.current === requestId) {
-        setReports(nextReports)
-      }
-    } catch (loadError) {
-      if (requestRef.current === requestId) {
-        setReports({
-          Collection: [],
-          NegativeDifferenceAmount: 0,
-          PositiveDifferenceAmount: 0,
-        })
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
-      }
-    } finally {
-      if (requestRef.current === requestId) {
-        setLoading(false)
-      }
-    }
-  }, [
-    currencyNetId,
-    fromDate,
-    normalizedSearchValue,
-    paymentMovementNetId,
-    paymentRegisterNetId,
-    setError,
-    setLoading,
-    setReports,
-    t,
-    toDate,
-  ])
-
   useEffect(() => {
     void loadLookups()
   }, [loadLookups])
 
   useEffect(() => {
+    let cancelled = false
+
+    async function loadReports() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const nextReports = await getAdvancedReports(activeFilters)
+
+        if (!cancelled) {
+          setReports(nextReports)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setReports({
+            Collection: [],
+            NegativeDifferenceAmount: 0,
+            PositiveDifferenceAmount: 0,
+          })
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
     void loadReports()
-  }, [loadReports])
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeFilters, reloadKey, setError, setLoading, setReports, t])
 
   const openAdvanceReport = useCallback(
     (row: AdvancedReportRow) => {
@@ -189,28 +195,85 @@ export function AdvancedReportsPage() {
   const columns = useAdvancedReportColumns({ onEdit: openAdvanceReport, onOpen: setSelectedRow })
   const isTableBusy = isLoading || isSearchSettling
 
+  const changeFromDate = useCallback(
+    (value: string) => {
+      setPage(1)
+      setFromDate(value)
+    },
+    [setFromDate, setPage],
+  )
+
+  const changeToDate = useCallback(
+    (value: string) => {
+      setPage(1)
+      setToDate(value)
+    },
+    [setPage, setToDate],
+  )
+
+  const changeSearchValue = useCallback(
+    (value: string) => {
+      setPage(1)
+      setSearchValue(value)
+    },
+    [setPage, setSearchValue],
+  )
+
+  const changeCurrencyNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setCurrencyNetId(value)
+    },
+    [setCurrencyNetId, setPage],
+  )
+
+  const changePaymentRegisterNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setPaymentRegisterNetId(value)
+    },
+    [setPage, setPaymentRegisterNetId],
+  )
+
+  const changePaymentMovementNetId = useCallback(
+    (value: string) => {
+      setPage(1)
+      setPaymentMovementNetId(value)
+    },
+    [setPage, setPaymentMovementNetId],
+  )
+
+  const changePageSize = useCallback(
+    (value: string | null) => {
+      setPage(1)
+      setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+    },
+    [setPage, setPageSize],
+  )
+
   const resetFilters = useCallback(() => {
+    setPage(1)
     setFromDate(shiftDate(-7))
     setToDate(formatLocalDate(new Date()))
     setSearchValue('')
     setCurrencyNetId('')
     setPaymentRegisterNetId('')
     setPaymentMovementNetId('')
-  }, [setCurrencyNetId, setFromDate, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
+  }, [setCurrencyNetId, setFromDate, setPage, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
 
   return (
     <Stack gap="md">
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
+          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, організація, отримувач або коментар')}
             value={searchValue}
             w={340}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            onChange={(event) => changeSearchValue(event.currentTarget.value)}
           />
         </Group>
 
@@ -229,7 +292,7 @@ export function AdvancedReportsPage() {
               variant="light"
               onClick={() => {
                 void loadLookups()
-                void loadReports()
+                reload()
               }}
             >
               <IconRefresh size={18} />
@@ -247,7 +310,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={currencyNetId || null}
           w={210}
-          onChange={(value) => setCurrencyNetId(value || '')}
+          onChange={(value) => changeCurrencyNetId(value || '')}
         />
         <Select
           clearable
@@ -257,7 +320,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={260}
-          onChange={(value) => setPaymentRegisterNetId(value || '')}
+          onChange={(value) => changePaymentRegisterNetId(value || '')}
         />
         <Select
           clearable
@@ -267,7 +330,7 @@ export function AdvancedReportsPage() {
           placeholder={t('Усі')}
           value={paymentMovementNetId || null}
           w={300}
-          onChange={(value) => setPaymentMovementNetId(value || '')}
+          onChange={(value) => changePaymentMovementNetId(value || '')}
         />
       </Group>
 
@@ -277,19 +340,32 @@ export function AdvancedReportsPage() {
         </Alert>
       )}
 
-      <Group gap="xs">
-        <Badge color="blue" variant="light">
-          {t('Завантажено')}: {reports.Collection.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Рядків')}: {rows.length}
-        </Badge>
-        <Badge color="green" variant="light">
-          {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
-        </Badge>
-        <Badge color="red" variant="light">
-          {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
-        </Badge>
+      <Group gap="xs" justify="space-between">
+        <Group gap="xs">
+          <Badge color="blue" variant="light">
+            {t('Завантажено')}: {reports.Collection.length}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Рядків')}: {rows.length}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Записів')}: {totalRows || reports.Collection.length}
+          </Badge>
+          <Badge color="green" variant="light">
+            {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
+          </Badge>
+          <Badge color="red" variant="light">
+            {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
+          </Badge>
+        </Group>
+        <Select
+          aria-label={t('Кількість рядків')}
+          data={PAGE_SIZE_OPTIONS}
+          size="xs"
+          value={String(pageSize)}
+          w={88}
+          onChange={changePageSize}
+        />
       </Group>
 
       <DataTable
@@ -305,6 +381,12 @@ export function AdvancedReportsPage() {
         tableId="advanced-reports"
         onRowClick={handleRowClick}
       />
+
+      {totalPages > 1 && (
+        <Group justify="flex-end">
+          <Pagination total={totalPages} value={page} onChange={setPage} />
+        </Group>
+      )}
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </Stack>
@@ -576,6 +658,12 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <Text size="sm">{value}</Text>
     </Stack>
   )
+}
+
+function getTotalRows(orders: OutcomePaymentOrder[]): number {
+  const total = orders[0]?.TotalRowsQty
+
+  return typeof total === 'number' && Number.isFinite(total) ? total : orders.length
 }
 
 function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportRow[] {

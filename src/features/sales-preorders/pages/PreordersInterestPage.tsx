@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Group, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Button, Center, Group, Stack, Text, Title, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -8,7 +8,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { getPreorders } from '../api/salesPreordersApi'
 import type { PreOrder } from '../types'
 
-const PREORDERS_LIMIT = 30
+const PREORDERS_PAGE_SIZE = 30
 
 const PREORDERS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
@@ -62,24 +62,33 @@ function formatCreated(value: string | null | undefined): { date: string; time: 
 export function PreordersInterestPage() {
   const { t } = useI18n()
   const [preOrders, setPreOrders] = useValueState<PreOrder[]>([])
+  const [offset, setOffset] = useValueState(0)
   const [isLoading, setLoading] = useValueState(true)
+  const [isLoadingMore, setLoadingMore] = useValueState(false)
+  const [hasMore, setHasMore] = useValueState(false)
   const [reloadToken, setReloadToken] = useValueState(0)
 
   useEffect(() => {
     let cancelled = false
 
     const load = async () => {
-      setLoading(true)
+      if (offset === 0) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
 
       try {
-        const result = await getPreorders({ limit: PREORDERS_LIMIT, offset: 0 })
+        const result = await getPreorders({ limit: PREORDERS_PAGE_SIZE, offset })
 
         if (!cancelled) {
-          setPreOrders(result)
+          setPreOrders((previous) => (offset === 0 ? result : [...previous, ...result]))
+          setHasMore(result.length === PREORDERS_PAGE_SIZE)
         }
       } finally {
         if (!cancelled) {
           setLoading(false)
+          setLoadingMore(false)
         }
       }
     }
@@ -89,7 +98,16 @@ export function PreordersInterestPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadToken, setLoading, setPreOrders])
+  }, [offset, reloadToken, setHasMore, setLoading, setLoadingMore, setPreOrders])
+
+  const refresh = () => {
+    setOffset(0)
+    setReloadToken((token) => token + 1)
+  }
+
+  const loadMore = () => {
+    setOffset((current) => current + PREORDERS_PAGE_SIZE)
+  }
 
   const columns = useMemo<DataTableColumn<PreOrder>[]>(
     () => [
@@ -151,13 +169,22 @@ export function PreordersInterestPage() {
     [t],
   )
 
+  const toolbarLeft = useMemo(
+    () => (
+      <Text size="xs" c="dimmed">
+        {t('Показано')} {preOrders.length}
+      </Text>
+    ),
+    [preOrders.length, t],
+  )
+
   return (
     <Stack gap="lg">
       <Group justify="space-between" align="center">
         <Title order={3}>{t('Передзамовлення')}</Title>
         <Group gap="sm" align="center">
           <Badge color="gray" variant="light">
-            {isLoading ? t('Завантаження') : `${t('Записів')}: ${preOrders.length}`}
+            {isLoading ? t('Завантаження') : `${t('Показано')}: ${preOrders.length}`}
           </Badge>
           <Tooltip label={t('Оновити')}>
             <ActionIcon
@@ -166,7 +193,7 @@ export function PreordersInterestPage() {
               loading={isLoading}
               size="lg"
               variant="subtle"
-              onClick={() => setReloadToken((token) => token + 1)}
+              onClick={refresh}
             >
               <IconRefresh size={18} />
             </ActionIcon>
@@ -183,7 +210,21 @@ export function PreordersInterestPage() {
         isLoading={isLoading}
         layoutVersion="sales-preorders-table-1"
         tableId="sales-preorders"
+        toolbarLeft={toolbarLeft}
       />
+
+      {hasMore && (
+        <Center>
+          <Button
+            color="gray"
+            loading={isLoadingMore}
+            variant="light"
+            onClick={loadMore}
+          >
+            {t('Завантажити ще')}
+          </Button>
+        </Center>
+      )}
     </Stack>
   )
 }
