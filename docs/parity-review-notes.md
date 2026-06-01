@@ -152,3 +152,51 @@ faithful gap — all are edges + design decisions for review.
   for the picked entity). Adversarial verify caught a wrapper-shape bug (endpoint returns
   `ClientSubClient` links, not flat clients) — fixed by projecting `.SubClient`.
 
+---
+
+## 5. Sales-ukraine: SignalR live updates + sale-state audit (2026-06-01)
+
+### SignalR — DONE (commit `efd6dc8`, verified)
+The sales-ukraine list subscribes to the realtime `saleAdded` / `saleUpdated` hub events and does a
+debounced (800ms) `reload()` of the current page. Because the list is server-paginated, a full-page
+refetch is the correct equivalent of the legacy `GetAll()`-on-SaleUpdated (a client-side `unshift`
+would desync pagination/totals); the server filter keeps Poland `'P'` sales out. Adversarial verify
+of the wiring passed (stable listener, no leak/re-subscribe, timer cleanup, drawers undisturbed).
+
+### Sale-state audit ("перевір всі стейти") — enum coverage COMPLETE, but labels/gating diverge
+Every legacy lifecycle value (0,1,2,3,4,5,100,101,102) and payment value (0,1,2,3) is handled with no
+fallthrough/crash. The divergences below are **pre-existing** (from the original SalesAndInvoices
+migration, not the SignalR change) and are wording/behaviour judgment calls — listed for review.
+
+**(HIGH) Lifecycle status LABELS differ from legacy.** Legacy `SaleLifeCycleStatusConvertor` labels
+the sale by its DOCUMENT stage; the console uses process-status names:
+
+| value | legacy label | console label |
+| --- | --- | --- |
+| New (0) | Рахунок | Новий |
+| Packaging (1) | Накладна | Пакування |
+| Packaged (2) | Накладна *(same as Packaging)* | Запаковано |
+| Shipping (3) | Відправлено | Доставка |
+| Received (4) | Отримано | Отримано |
+| Await (5) | Очікування | Очікує |
+| OrderClosed (100) | Закриті рахунки | Закритий |
+| TransporterChanged (101) | Редаговані перевізники | Змінено перевізника |
+| InvoiceChanged (102) | Редаговані накладні | Змінено рахунок |
+
+If parity is wanted this is a mechanical `STATUS_LABELS` edit. **Decision needed: align to legacy, or
+keep the console wording?**
+
+**Action-gating divergences vs legacy `sale.item.tsx`:**
+- (HIGH) `showTtn` is `TransporterId && lifecycle===1` — legacy shows TTN/invoice/shipment for BOTH
+  Packaging(1) AND Packaged(2) (both map to "Накладна"). So a Packaged sale loses its TTN/print
+  actions in the console. (The dropped `IsSalesView` guard is moot — always true in this grid.)
+- (HIGH) `Відвантажити` (ship → sets lifecycle 2) has no legacy pivot-row equivalent (legacy ships via
+  a separate flow). Likely an intentional console feature — **confirm keep vs remove.**
+- (MEDIUM) Legacy hides the whole print/TTN block for `IsVatSale && !IsAcceptedToPacking && !isAdmin`;
+  the console always shows it (needs the current user's GBA/Administrator role).
+- (MEDIUM) Legacy prefixes the status label with `(ПДВ) ` for VAT sales; the console drops it (it shows
+  a separate ПДВ badge instead).
+- (LOW) payment-status cell only colours some values; `lifecycleStatusFromNumber` ignores All=6.
+
+**Decision needed (see questions):** which of these to align to legacy.
+
