@@ -75,6 +75,13 @@ export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise
   })
 }
 
+export async function deleteOrderItem(orderItemNetId: string): Promise<void> {
+  await apiRequest<unknown>('/orders/items/delete', {
+    method: 'DELETE',
+    query: { orderItemNetId },
+  })
+}
+
 export async function updateSale(sale: SalesUkraineSale): Promise<void> {
   await apiRequest<unknown>('/sales/update', {
     body: sale,

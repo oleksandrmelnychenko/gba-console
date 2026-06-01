@@ -1,6 +1,6 @@
 import { ActionIcon, Alert, Badge, Button, Card, Group, Loader, NumberInput, Stack, Tabs, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPencil } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconTrash } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -8,7 +8,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { getSaleById, updateOrderItem } from '../api/salesUkraineApi'
+import { deleteOrderItem, getSaleById, updateOrderItem } from '../api/salesUkraineApi'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -38,6 +38,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
   const [editingItem, setEditingItem] = useValueState<SalesUkraineOrderItem | null>(null)
+  const [deletingItem, setDeletingItem] = useValueState<SalesUkraineOrderItem | null>(null)
+  const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -80,7 +82,26 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isEditable = !sale.IsLocked
-  const itemColumns = useItemColumns({ canEdit: isEditable, onEditQty: setEditingItem })
+  const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem })
+
+  async function confirmDelete() {
+    if (!deletingItem?.NetUid) {
+      return
+    }
+
+    setDeleting(true)
+
+    try {
+      await deleteOrderItem(deletingItem.NetUid)
+      notifications.show({ color: 'green', message: t('Товар видалено') })
+      setDeletingItem(null)
+      reload()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <Stack gap="md">
@@ -172,15 +193,41 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           reload()
         }}
       />
+
+      <AppModal
+        centered
+        opened={Boolean(deletingItem)}
+        size="sm"
+        title={t('Видалити товар')}
+        onClose={() => (isDeleting ? undefined : setDeletingItem(null))}
+      >
+        {deletingItem && (
+          <Stack gap="md">
+            <Text>
+              {t('Видалити товар')} «{displayValue(deletingItem.Product?.NameUA || deletingItem.Product?.Name)}»?
+            </Text>
+            <Group justify="flex-end">
+              <Button color="gray" disabled={isDeleting} variant="subtle" onClick={() => setDeletingItem(null)}>
+                {t('Скасувати')}
+              </Button>
+              <Button color="red" loading={isDeleting} onClick={confirmDelete}>
+                {t('Видалити')}
+              </Button>
+            </Group>
+          </Stack>
+        )}
+      </AppModal>
     </Stack>
   )
 }
 
 function useItemColumns({
   canEdit,
+  onDelete,
   onEditQty,
 }: {
   canEdit: boolean
+  onDelete: (item: SalesUkraineOrderItem) => void
   onEditQty: (item: SalesUkraineOrderItem) => void
 }): DataTableColumn<SalesUkraineOrderItem>[] {
   const { t } = useI18n()
@@ -239,9 +286,9 @@ function useItemColumns({
     {
       id: 'actions',
       header: '',
-      width: 56,
-      minWidth: 56,
-      maxWidth: 56,
+      width: 92,
+      minWidth: 92,
+      maxWidth: 92,
       align: 'center',
       enableHiding: false,
       enableReorder: false,
@@ -249,11 +296,18 @@ function useItemColumns({
       enableSorting: false,
       cell: (item) =>
         canEdit ? (
-          <Tooltip label={t('Змінити кількість')}>
-            <ActionIcon aria-label={t('Змінити кількість')} color="gray" variant="subtle" onClick={() => onEditQty(item)}>
-              <IconPencil size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Group gap={2} justify="center" wrap="nowrap">
+            <Tooltip label={t('Змінити кількість')}>
+              <ActionIcon aria-label={t('Змінити кількість')} color="gray" variant="subtle" onClick={() => onEditQty(item)}>
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onDelete(item)}>
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         ) : null,
     },
   ]
