@@ -1486,7 +1486,7 @@ function ProductStorageActionModal({
   const isSingle = modal.scope === 'single'
   const showManagementSwitch = isAdmin
   const showQuantityField = isSingle
-  const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage.ForDefective
+  const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage?.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
     ...option,
     label: t(option.label),

@@ -362,7 +362,7 @@ function useSpecificationModel(netId: string | undefined) {
     setProtocolState((current) => ({
       ...current,
       selectedInvoiceNetId: invoice.NetUid || null,
-      selectedPackListNetId: invoice.PackingLists[0].NetUid || null,
+      selectedPackListNetId: invoice.PackingLists?.[0]?.NetUid || null,
     }))
   }
 
