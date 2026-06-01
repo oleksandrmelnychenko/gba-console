@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
+/** Brand orange used for every "create new" call-to-action lifted into the header. */
+export const CREATE_ACTION_COLOR = '#E8782E'
+
 type PageHeaderActionsContextValue = {
   container: HTMLElement | null
   setContainer: (element: HTMLElement | null) => void
