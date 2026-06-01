@@ -55,7 +55,6 @@ until each endpoint below is extended.
 | Screen | Endpoint | Note |
 | --- | --- | --- |
 | Кошик переміщення в UA | `/sales/all/filtered/pl-uk` | from/to/value only; whole grouped set |
-| Кошик — рекомендації | `/supplies/ukraine/order/cart/items/recommendations` | **PARITY ALERT: no such server route exists** (see below) |
 
 ### P5 — sales
 | Screen | Endpoint | Note |
@@ -80,11 +79,12 @@ until each endpoint below is extended.
 | Шляхові листи авто | `/consumables/company/cars/roadlists/all/filtered` | companyCar/from/to; no Total |
 | Оплати ІМ | `/sales/payment/images/get/filtered` | filtered, whole list, no Total |
 
-## ⚠️ Parity alert (not pagination)
-`basket-supply-ukraine-order` calls `GET /supplies/ukraine/order/cart/items/recommendations`, but no
-matching route/action exists in gba-server (`SupplyOrderUkraineCartItemsSegments` defines only the
-file upload/preview routes). The recommendations call cannot succeed server-side — needs a backend
-route or a frontend correction.
+## Resolved (audit false positive)
+`basket-supply-ukraine-order` → `GET /supplies/ukraine/order/cart/items/recommendations` is **valid**:
+the route is served by **gba-ecommerce-api** (`SupplyOrderUkraineCartItemsSegments.GET_RECOMMENDATIONS
+= "recommendations"`), not gba-server — the audit only checked gba-server. The console faithfully
+migrates the legacy `GET_ALL_RECOMMENDATIONS_API`. No fix needed. (Basket recommendations feature
+deferred for later review per request.)
 
 Once each backend endpoint above returns `limit`/`offset`/`Total`, wire the standard console
 Load-more / page-size pattern (as done for the 3 frontend-fix screens).
