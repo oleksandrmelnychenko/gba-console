@@ -102,3 +102,44 @@ limit 20). Legacy pre-loaded the first 10 with an empty query. Kept the ≥2-cha
 the **console-wide search idiom** (the sibling `SalesReturnClientPage` create flow does the same).
 Revisit if you want the pre-populated list.
 
+---
+
+## 4. Backlog re-verified — A2 & A3 are essentially already migrated (corrects §2a, 2026-06-01)
+
+Deep legacy-vs-console diff (run `wf_24fef1b7-5fc`) showed the coverage audit **overstated** both
+A2 and A3. The actionable functionality is already present; only LOW/medium edges remain, and each
+carries a share-vs-duplicate design decision — **left for review, not built**.
+
+### A2 — sale audit screen — already migrated (under a different feature)
+The full legacy `SaleStaticticAuditView` is faithfully reimplemented in
+**`features/clients/components/sales/SalesPanel.tsx`** (`AuditTimeline` + `LifeCycleRow` +
+`AuditOrderItem`): Logistics lifecycle timeline (`SaleExchangeRates` + `LifeCycleLine`), shifted-items
+viz (`Order.OrderItems[].ShiftStatuses`), and **both** per-item print buttons (invoice/A-form via
+`/sales/get/document/history`; act-for-editing/C-form via `/sales/get/shifted/hisotry/document`).
+Backed by `getSaleStatisticBySaleId` → `GET /sales/get/shifted`
+(`SalesController.GetSaleByNetIdWithShiftedItemsAsync`). Separately, the document downloads are
+ALSO in `sales-ukraine/components/SaleDocumentsMenu.tsx`. Remainders:
+- **(low/medium) No audit entry-point on the `sales-ukraine` sale row** (the legacy statistic icon).
+  The timeline is reachable per-client (clients sales tab) but not from the sales dashboard row.
+  Building it = reuse the clients `AuditTimeline` → **decision: move it + the SaleStatistic api/types
+  to `shared/ui`, or leave it (audit already reachable per-client).** No backend work; data exists.
+- **(low) `ConfirmProcessing` action** — dead code in BOTH legacy (button gated behind a rarely-set
+  `PanelModel.SelectNetUId`) and console (`confirmSaleActForEditing` wrapper exists in
+  `clients/api/clientSalesApi.ts` but is never called). Endpoint exists
+  (`protocol/act/invoice/set/edit/act/for/editing`). Recommend leave — matches legacy's dead state.
+
+### A3 — offer client-step — already migrated
+`NewOfferModal` faithfully covers offer creation: client search (`/clients/payers/search/all`),
+client **agreements** (`/agreements/client/all?netId=` — the audit's "missing agreements" claim was
+WRONG), product step (`/products/search/vendorcode`), submit to `/sales/offers/new` with the
+identical `ClientShoppingCart` shape, and the generated public-link result. The legacy client-step's
+sales-register/debt UI is shared-component chrome, not part of offer creation (correctly omitted).
+Remainder:
+- **(low) Sub-client / trade-point selection** — legacy `ClientDataCarousel` can raise the offer
+  against a sub-client or trade-point (reloading that entity's agreements). `NewOfferModal` lists only
+  top-level payers. Data available (clients feature wraps `getClientSubClients` etc.). **Decision:
+  build if offers-against-sub-clients is wanted; else leave.**
+
+**Net:** the migration is more complete than §2a implied. No remaining item is a clean must-build
+faithful gap — all are edges + design decisions for review.
+
