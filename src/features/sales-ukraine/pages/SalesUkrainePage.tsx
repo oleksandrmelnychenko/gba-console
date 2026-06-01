@@ -768,12 +768,19 @@ function useSalesUkraineColumns({
       },
       {
         id: 'amountEur',
-        header: t('Екв. EUR'),
+        header: t('Екв.'),
         width: 124,
         minWidth: 112,
         align: 'right',
-        accessor: (sale) => getNumber(sale.TotalAmount),
-        cell: (sale) => formatAmount(getNumber(sale.TotalAmount)),
+        accessor: (sale) => getSecondaryAmount(sale),
+        cell: (sale) => (
+          <>
+            <Text>{formatAmount(getSecondaryAmount(sale))}</Text>
+            <Text size="xs" c="dimmed">
+              {getSecondaryAmountCode(sale)}
+            </Text>
+          </>
+        ),
       },
       {
         id: 'vat',
@@ -1155,6 +1162,18 @@ function getRetailPaymentSuffix(sale: SalesUkraineSale): string {
 
 function getSaleCurrencyCode(sale: SalesUkraineSale): string {
   return sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+}
+
+function isNonVatEurAgreement(sale: SalesUkraineSale): boolean {
+  return !sale.ClientAgreement?.Agreement?.WithVATAccounting && getSaleCurrencyCode(sale) === 'EUR'
+}
+
+function getSecondaryAmount(sale: SalesUkraineSale): number | null {
+  return isNonVatEurAgreement(sale) ? getNumber(sale.TotalAmountEurToUah) : getNumber(sale.TotalAmount)
+}
+
+function getSecondaryAmountCode(sale: SalesUkraineSale): string {
+  return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
 }
 
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {

@@ -20,12 +20,14 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowsJoin,
+  IconCopy,
   IconFileInvoice,
   IconPencil,
   IconPlus,
   IconSearch,
   IconTrash,
   IconTruck,
+  IconUserShare,
 } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -41,6 +43,7 @@ import {
   getSaleClientAgreements,
   getSaleClientDebtTotal,
   searchSaleProducts,
+  searchSalesUkraineClients,
   switchSale,
   updateOrderItem,
   updateSaleFromData,
@@ -50,6 +53,7 @@ import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import type {
   SaleClientDebtTotal,
   SalesUkraineClientAgreement,
+  SalesUkraineClientOption,
   SalesUkraineOrderItem,
   SalesUkraineProduct,
   SalesUkraineSale,
@@ -90,6 +94,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isConvertOpen, setConvertOpen] = useValueState(false)
   const [isConverting, setConverting] = useValueState(false)
   const [isMergedOpen, setMergedOpen] = useValueState(false)
+  const [isReassignOpen, setReassignOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -175,6 +180,35 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     }
   }
 
+  async function copySaleData() {
+    const header = [
+      '#',
+      t('Код Виробника'),
+      t('Назва товару'),
+      t('К-сть'),
+      t('Ціна'),
+      t('Сума'),
+    ].join('\t')
+
+    const rows = orderItems.map((item, index) => {
+      return [
+        index + 1,
+        item.Product?.VendorCode || item.Product?.Articul || '',
+        item.Product?.NameUA || item.Product?.Name || '',
+        getNumber(item.Qty) ?? '',
+        getNumber(item.PricePerItem) ?? '',
+        getNumber(item.TotalAmount) ?? getNumber(item.TotalAmountLocal) ?? '',
+      ].join('\t')
+    })
+
+    try {
+      await navigator.clipboard.writeText([header, ...rows].join('\n'))
+      notifications.show({ color: 'green', message: t('Дані скопійовано') })
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося скопіювати') })
+    }
+  }
+
   const canConvert = isEditable && sale.BaseLifeCycleStatus?.SaleLifeCycleType === 0
 
   return (
@@ -227,6 +261,19 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         {Array.isArray(sale.InputSaleMerges) && sale.InputSaleMerges.length > 0 && (
           <Button leftSection={<IconArrowsJoin size={16} />} variant="light" onClick={() => setMergedOpen(true)}>
             {t("Об'єднання")}
+          </Button>
+        )}
+        <Button
+          disabled={orderItems.length === 0}
+          leftSection={<IconCopy size={16} />}
+          variant="light"
+          onClick={copySaleData}
+        >
+          {t('Копіювати')}
+        </Button>
+        {isEditable && (
+          <Button leftSection={<IconUserShare size={16} />} variant="light" onClick={() => setReassignOpen(true)}>
+            {t('Переназначити')}
           </Button>
         )}
         {sale.Transporter && (
@@ -308,6 +355,16 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         saleNetId={isMergedOpen ? sale.NetUid ?? null : null}
         onChanged={reload}
         onClose={() => setMergedOpen(false)}
+      />
+
+      <ReassignSaleModal
+        opened={isReassignOpen}
+        sale={sale}
+        onClose={() => setReassignOpen(false)}
+        onReassigned={() => {
+          setReassignOpen(false)
+          reload()
+        }}
       />
 
       <AppModal
@@ -693,6 +750,177 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
         </Button>
       </Group>
     </Stack>
+  )
+}
+
+function ReassignSaleModal({
+  opened,
+  sale,
+  onClose,
+  onReassigned,
+}: {
+  onClose: () => void
+  onReassigned: () => void
+  opened: boolean
+  sale: SalesUkraineSale
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={opened} size="md" title={t('Переназначити')} onClose={onClose}>
+      {opened && <ReassignSaleForm sale={sale} onCancel={onClose} onReassigned={onReassigned} />}
+    </AppModal>
+  )
+}
+
+function ReassignSaleForm({
+  sale,
+  onCancel,
+  onReassigned,
+}: {
+  onCancel: () => void
+  onReassigned: () => void
+  sale: SalesUkraineSale
+}) {
+  const { t } = useI18n()
+  const [query, setQuery] = useState('')
+  const [clients, setClients] = useState<SalesUkraineClientOption[]>([])
+  const [selectedClient, setSelectedClient] = useState<string | null>(null)
+  const [agreements, setAgreements] = useState<SalesUkraineClientAgreement[]>([])
+  const [selectedAgreement, setSelectedAgreement] = useState<string | null>(null)
+  const [isReassigning, setReassigning] = useState(false)
+
+  useEffect(() => {
+    const value = query.trim()
+
+    if (value.length < 2) {
+      return
+    }
+
+    let cancelled = false
+    const handle = setTimeout(async () => {
+      try {
+        const next = await searchSalesUkraineClients(value)
+
+        if (!cancelled) {
+          setClients(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setClients([])
+        }
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [query])
+
+  useEffect(() => {
+    const clientNetUid = clients.find((client) => String(client.NetUid ?? client.Id ?? '') === selectedClient)?.NetUid
+    let cancelled = false
+
+    async function load(id: string | null) {
+      if (!id) {
+        if (!cancelled) {
+          setAgreements([])
+          setSelectedAgreement(null)
+        }
+
+        return
+      }
+
+      try {
+        const next = await getSaleClientAgreements(id)
+
+        if (!cancelled) {
+          setAgreements(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setAgreements([])
+        }
+      }
+    }
+
+    void load(selectedClient ? clientNetUid ?? null : null)
+
+    return () => {
+      cancelled = true
+    }
+  }, [clients, selectedClient])
+
+  const clientOptions = clients.map((client) => ({
+    label: getClientOptionName(client),
+    value: String(client.NetUid ?? client.Id ?? ''),
+  }))
+
+  const agreementOptions = agreements
+    .filter((item) => item.NetUid)
+    .map((item) => ({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' }))
+
+  async function reassign() {
+    if (!sale.NetUid || !selectedAgreement) {
+      return
+    }
+
+    setReassigning(true)
+
+    try {
+      await switchSale(sale.NetUid, selectedAgreement)
+      notifications.show({ color: 'green', message: t('Продаж переназначено') })
+      onReassigned()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося переназначити продаж') })
+    } finally {
+      setReassigning(false)
+    }
+  }
+
+  return (
+    <Stack gap="md">
+      <Select
+        searchable
+        clearable
+        data={clientOptions}
+        label={t('Клієнт')}
+        nothingFoundMessage={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+        placeholder={t('Пошук клієнта')}
+        searchValue={query}
+        value={selectedClient}
+        onChange={setSelectedClient}
+        onSearchChange={setQuery}
+      />
+      <Select
+        searchable
+        data={agreementOptions}
+        disabled={!selectedClient}
+        label={t('Договір')}
+        placeholder={t('Оберіть договір')}
+        value={selectedAgreement}
+        onChange={setSelectedAgreement}
+      />
+      <Group justify="flex-end">
+        <Button color="gray" disabled={isReassigning} variant="subtle" onClick={onCancel}>
+          {t('Скасувати')}
+        </Button>
+        <Button disabled={!selectedAgreement} loading={isReassigning} onClick={reassign}>
+          {t('Переназначити')}
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
+function getClientOptionName(client: SalesUkraineClientOption): string {
+  return (
+    client.FullName?.trim()
+    || [client.LastName, client.FirstName, client.MiddleName].filter(Boolean).join(' ').trim()
+    || client.Name?.trim()
+    || client.NetUid
+    || ''
   )
 }
 
