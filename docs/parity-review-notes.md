@@ -225,15 +225,18 @@ true in this grid, no regression). eslint 0 / tsc 0.
   current rows instead of wiping the grid / showing an error). User-triggered reloads behave as before.
 - `OrderWillNotBeShipped_Btn_PKEY` permission mapping **verified** correct; no change.
 
-### Residual items intentionally NOT changed (low / cosmetic — for review)
-- **NotPaid label wording:** legacy locale is `Неоплаченно` (a misspelling + no space); the console keeps
-  the correct `Не оплачено`. Kept the correct spelling rather than replicate the legacy typo.
-- **Lifecycle `All`(6):** a filter-only sentinel that never stamps a real sale row, so no row-label
-  handling added (would render a meaningless badge). Documented as filter-only.
-- **Order-source row icon:** legacy shows a small Shop/Offer/Invoice indicator driven by
-  `Order.OrderSource`; the console does not surface OrderSource in the grid. Low-value display
-  decoration — build later if wanted.
+### Residual low/cosmetic items — now DONE (per request to align all)
+- **NotPaid label — DONE.** Aligned to the legacy locale `Неоплаченно` (matching `SalePaymentStatusNotPaid`
+  exactly, including the legacy spelling). Paid/PartiallyPaid already matched.
+- **Lifecycle `All`(6) — DONE.** `lifecycleStatusFromNumber` now has an explicit `case 6 → 'All'` instead
+  of falling through to the raw number (still filter-only; never stamps a real sale row).
+- **Order-source row icon — DONE.** The Number column now leads with a source indicator driven by
+  `Order.OrderSource` (Shop=0 → store icon «Інтернет-магазин», Offer=2 → tag «Оферта», Local=1 →
+  invoice icon «Накладна» at the Packaging/Packaged stage else receipt «Рахунок»), mirroring the legacy
+  `sale.item.tsx` data-icon (Shop/Offer/Invoice/Score).
+
+### Residual item intentionally kept as-is (faithful)
 - **Realtime relevance gating:** the console reloads on any sale event (debounced) rather than parsing
-  the payload to check it matches the active filter/page. Faithful enough (legacy also reloaded broadly;
-  the server filter scopes the refetch). Optimize only if event churn becomes a concern.
+  the payload to check it matches the active filter/page. Faithful (legacy also reloaded broadly; the
+  server filter scopes the refetch). Optimize only if event churn becomes a concern.
 

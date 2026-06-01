@@ -21,18 +21,22 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
+  IconBuildingStore,
   IconDots,
   IconExternalLink,
   IconEye,
+  IconFileInvoice,
   IconHistory,
   IconLockOpen,
   IconPencil,
   IconPlus,
   IconPrinter,
   IconReceipt,
+  IconReceipt2,
   IconRefresh,
   IconRestore,
   IconSearch,
+  IconTag,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -145,7 +149,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  0: 'Не оплачено',
+  0: 'Неоплаченно',
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
@@ -768,6 +772,7 @@ function useSalesUkraineColumns({
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid,
         cell: (sale) => (
           <Group gap={5} wrap="wrap">
+            <SaleSourceIcon sale={sale} />
             <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
             {sale.IsVatSale && (
               <Badge color="blue" size="xs" variant="light">
@@ -1237,6 +1242,30 @@ function getSaleStatusKey(sale: SalesUkraineSale): string {
   return String(status || sale.BaseLifeCycleStatus?.Name || '')
 }
 
+function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+  const source = sale.Order?.OrderSource
+  const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+  const isInvoiceStage = lifeCycleType === 1 || lifeCycleType === 2
+
+  const indicator =
+    source === 0
+      ? { icon: <IconBuildingStore size={14} />, label: t('Інтернет-магазин') }
+      : source === 2
+        ? { icon: <IconTag size={14} />, label: t('Оферта') }
+        : isInvoiceStage
+          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
+          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
+
+  return (
+    <Tooltip label={indicator.label}>
+      <Box c="gray.6" style={{ display: 'inline-flex' }}>
+        {indicator.icon}
+      </Box>
+    </Tooltip>
+  )
+}
+
 function getSaleStatusLabel(sale: SalesUkraineSale): string {
   const statusKey = getSaleStatusKey(sale)
   const label = translate(STATUS_LABELS[statusKey] || sale.BaseLifeCycleStatus?.Name || displayValue(statusKey))
@@ -1324,6 +1353,8 @@ function lifecycleStatusFromNumber(status: number): string {
       return 'Received'
     case 5:
       return 'Await'
+    case 6:
+      return 'All'
     case 100:
       return 'OrderClosed'
     case 101:
