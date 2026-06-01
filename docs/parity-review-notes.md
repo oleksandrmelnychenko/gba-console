@@ -348,3 +348,28 @@ leak; debounce + silent non-destructive reload intact). **Known trade-off:** an 
 whole point was to stop reloading on every event); broaden the gate later if inbound-into-filter
 parity is ever wanted.
 
+
+---
+
+## 8. Products / customs / consumables parity audit (2026-06-01)
+
+Read-only audit of 8 non-WIP screens → fixes in commit `0eafa3f` (tsc 0 / eslint 0; verified):
+- **transporters (HIGH):** Archive/«Усі» filters were wired to `/transporters/all/type/hidden`
+  (backend `GetAllByTransporterTypeNetId` = active-only) then force-marked Deleted, so Archive showed
+  active rows + «Усі» showed everything as «Архів». Now a single `/transporters/all/type` fetch
+  (backend `GetAllByTransporterTypeNetIdDeleted` = active+deleted) split client-side by `Deleted`,
+  matching ClientResourcesPage + the gba-server repo. (Two cross-talk verifier comments wrongly called
+  this a regression — dismissed against the backend SQL.)
+- **vat-reports (HIGH):** Type column was inverted — fixed to Sale→«Інвойс», SupplyInvoice→«Фактура»;
+  + index column + empty-money 0,00.
+- **act-reconciliations:** single-income «Причина» now on the wire (request parity — the server ignores
+  it on the single path in both legacy and console, so functionally a no-op but byte-matches legacy);
+  placement fields required; rows OrderByDescending. (Storage-column-from-sorted side-effect is inert.)
+- **product-groups:** create-flow omits the empty-GUID `netId` param; no forced `IsActive`.
+- **product-specification-codes:** unsaved-changes confirm on close.
+- **tax-free-carriers:** passport dates default to today on create (edit preserves stored dates —
+  better than legacy's reset-to-today quirk); hide Add-passport while an unsaved passport exists.
+- **consumable-products:** supply-service category label.
+
+Recorded (intentional/judgment, not changed): the date-boundary serialization (console date-only
+filters work app-wide); act-recon bulk-process Preview panel (large); plus the usual uk-UA/PLN.
