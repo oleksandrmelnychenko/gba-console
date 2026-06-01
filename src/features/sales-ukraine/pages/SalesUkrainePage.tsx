@@ -33,7 +33,6 @@ import {
   IconRefresh,
   IconRestore,
   IconSearch,
-  IconTruckDelivery,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -47,6 +46,7 @@ import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } fr
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
+import { UserRoleType } from '../../../shared/auth/types'
 import {
   getSalesUkraine,
   getSalesUkraineOrganizations,
@@ -60,7 +60,6 @@ import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
-import { SaleShipModal } from '../components/SaleShipModal'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
   SALES_UKRAINE_UNLOCK_PERMISSION,
@@ -134,15 +133,15 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  Await: 'Очікує',
-  InvoiceChanged: 'Змінено рахунок',
-  New: 'Новий',
-  OrderClosed: 'Закритий',
-  Packaged: 'Запаковано',
-  Packaging: 'Пакування',
+  Await: 'Очікування',
+  InvoiceChanged: 'Редаговані накладні',
+  New: 'Рахунок',
+  OrderClosed: 'Закриті рахунки',
+  Packaged: 'Накладна',
+  Packaging: 'Накладна',
   Received: 'Отримано',
-  Shipping: 'Доставка',
-  TransporterChanged: 'Змінено перевізника',
+  Shipping: 'Відправлено',
+  TransporterChanged: 'Редаговані перевізники',
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -159,7 +158,9 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SalesUkrainePage() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
+  const { hasPermission, user } = useAuth()
+  const isAdmin =
+    user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
   const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
@@ -191,7 +192,6 @@ export function SalesUkrainePage() {
   const [isConfirming, setConfirming] = useValueState(false)
   const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
-  const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
@@ -295,13 +295,13 @@ export function SalesUkrainePage() {
     canEditSale,
     canUnlock,
     canWillNotShip,
+    isAdmin,
     onOpenAudit: openAudit,
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
     onOpenEditor: setEditorSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
-    onShip: setShipSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
   })
@@ -651,15 +651,6 @@ export function SalesUkrainePage() {
         }}
       />
 
-      <SaleShipModal
-        sale={shipSale}
-        onClose={() => setShipSale(null)}
-        onSaved={() => {
-          setShipSale(null)
-          reload()
-        }}
-      />
-
       <ConsignmentNoteSettingsDrawer
         opened={Boolean(consignmentSale)}
         sale={consignmentSale}
@@ -716,26 +707,26 @@ function useSalesUkraineColumns({
   canEditSale,
   canUnlock,
   canWillNotShip,
+  isAdmin,
   onOpenAudit,
   onOpenConsignment,
   onOpenDetails,
   onOpenDiscount,
   onOpenEditor,
   onOpenSale,
-  onShip,
   onUnlock,
   onWillNotShip,
 }: {
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
+  isAdmin: boolean
   onOpenAudit: (sale: SalesUkraineSale) => void
   onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
-  onShip: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
 }) {
@@ -968,9 +959,10 @@ function useSalesUkraineColumns({
         enableResizing: false,
         enableSorting: false,
         cell: (sale) => {
-          const isPackaging = sale.BaseLifeCycleStatus?.SaleLifeCycleType === 1
-          const showShip = isPackaging
-          const showTtn = Boolean(sale.TransporterId) && isPackaging
+          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+          const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
+          const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+          const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
           const showUnlock = canUnlock && Boolean(sale.IsLocked)
           const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
@@ -983,7 +975,7 @@ function useSalesUkraineColumns({
                     <IconEye size={18} />
                   </ActionIcon>
                 </Tooltip>
-                <SaleDocumentsMenu sale={sale} />
+                {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
                 <Menu position="bottom-end" shadow="md" withinPortal>
                   <Menu.Target>
                     <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
@@ -996,11 +988,6 @@ function useSalesUkraineColumns({
                         {t('Відкрити продаж')}
                       </Menu.Item>
                     )}
-                    {showShip && (
-                        <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onShip(sale)}>
-                          {t('Відвантажити')}
-                        </Menu.Item>
-                      )}
                       {showTtn && (
                         <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                           {t('Друк ТТН')}
@@ -1036,13 +1023,13 @@ function useSalesUkraineColumns({
       canEditSale,
       canUnlock,
       canWillNotShip,
+      isAdmin,
       onOpenAudit,
       onOpenConsignment,
       onOpenDetails,
       onOpenDiscount,
       onOpenEditor,
       onOpenSale,
-      onShip,
       onUnlock,
       onWillNotShip,
       t,
@@ -1235,8 +1222,9 @@ function getSaleStatusKey(sale: SalesUkraineSale): string {
 
 function getSaleStatusLabel(sale: SalesUkraineSale): string {
   const statusKey = getSaleStatusKey(sale)
+  const label = translate(STATUS_LABELS[statusKey] || sale.BaseLifeCycleStatus?.Name || displayValue(statusKey))
 
-  return translate(STATUS_LABELS[statusKey] || sale.BaseLifeCycleStatus?.Name || displayValue(statusKey))
+  return sale.IsVatSale ? `(${translate('ПДВ')}) ${label}` : label
 }
 
 function getPaymentStatusLabel(sale: SalesUkraineSale): string {
