@@ -839,14 +839,26 @@
   background: var(--mantine-color-gray-2);
 }
 
-.console-subnav-module.is-active {
-  background: var(--mantine-color-violet-1);
-  color: var(--mantine-color-violet-9);
+.console-subnav-module {
+  position: relative;
 }
 
+.console-subnav-module.is-active,
 .console-subnav-module.is-active:hover {
-  background: var(--mantine-color-violet-1);
-  color: var(--mantine-color-violet-9);
+  background: transparent;
+  color: var(--mantine-color-violet-7);
+}
+
+.console-subnav-module.is-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mantine-color-violet-6);
+  transform: translateX(-50%);
 }
 
 .console-subnav-item-icon {
