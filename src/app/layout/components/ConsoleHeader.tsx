@@ -6,6 +6,7 @@ import { HeaderActionBar } from '../../../features/header-actions/components/Hea
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { PageHeaderActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleNav } from './ConsoleNav'
 
 export function ConsoleHeader() {
@@ -55,6 +56,7 @@ export function ConsoleHeader() {
               </Group>
             </>
           )}
+          <PageHeaderActionsSlot className="console-header-page-actions" />
         </Group>
 
         <Group gap="xs" wrap="nowrap" className="console-header-actions">

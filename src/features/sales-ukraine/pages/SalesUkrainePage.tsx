@@ -43,6 +43,7 @@ import {
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -595,14 +596,11 @@ export function SalesUkrainePage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+      <PageHeaderActions>
+        <Button color="violet" size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
           {t('Новий продаж')}
         </Button>
-        <Badge color="gray" variant="light">
-          {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || sales.length}`}
-        </Badge>
-      </Group>
+      </PageHeaderActions>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
