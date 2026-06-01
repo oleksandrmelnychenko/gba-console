@@ -35,8 +35,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid'
-import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid'
+import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
+import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid/types'
 import {
   getSupplierOrganizationCashFlow,
   getSupplyOrganization,

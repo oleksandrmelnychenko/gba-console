@@ -33,8 +33,8 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRed
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid'
-import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid'
+import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
+import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid/types'
 import {
   exportAccountingCashFlowDocument,
   getAccountingCashFlow,
@@ -813,8 +813,8 @@ function SaleReturnOverviewPanel({ saleReturn }: { saleReturn: AccountingCashFlo
           </Text>
         ) : (
           <Stack gap="xs">
-            {items.map((saleReturnItem, index) => (
-              <SaleReturnOverviewItem key={index} saleReturnItem={saleReturnItem} />
+            {items.map((saleReturnItem) => (
+              <SaleReturnOverviewItem key={getSaleReturnItemKey(saleReturnItem)} saleReturnItem={saleReturnItem} />
             ))}
           </Stack>
         )}
@@ -1005,6 +1005,38 @@ function getSaleReturnItemCurrency(saleReturnItem: AccountingCashFlowSaleReturnI
   return stringValue(currency?.Code)
 }
 
+function getSaleReturnItemKey(saleReturnItem: AccountingCashFlowSaleReturnItem): string {
+  const itemRecord = toRecord(saleReturnItem)
+  const orderItemRecord = toRecord(saleReturnItem.OrderItem)
+  const productRecord = toRecord(saleReturnItem.OrderItem?.Product)
+  const saleRecord = toRecord(saleReturnItem.OrderItem?.Order?.Sale)
+  const saleNumberRecord = toRecord(saleRecord?.SaleNumber)
+
+  const stableId = [
+    itemRecord?.Id,
+    itemRecord?.NetUid,
+    orderItemRecord?.Id,
+    orderItemRecord?.NetUid,
+  ]
+    .map(keyValue)
+    .find(Boolean)
+
+  if (stableId) {
+    return stableId
+  }
+
+  return JSON.stringify({
+    amountLocal: saleReturnItem.AmountLocal,
+    productName: productRecord?.Name,
+    qty: saleReturnItem.Qty,
+    saleNumber: saleNumberRecord?.Value,
+    status: saleReturnItem.SaleReturnItemStatus,
+    storageName: saleReturnItem.Storage?.Name,
+    vatAmountLocal: saleReturnItem.VatAmountLocal,
+    vendorCode: productRecord?.VendorCode,
+  })
+}
+
 function getSaleReturnItemStatusLabel(status: number | string | undefined, t: (key: string) => string): string {
   if (typeof status === 'number') {
     const labelKey = SALE_RETURN_ITEM_STATUS_LABELS[status]
@@ -1134,6 +1166,14 @@ function stringValue(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
+function keyValue(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  return typeof value === 'string' ? value : ''
+}
+
 function numberValue(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
@@ -1157,4 +1197,3 @@ function isEmptyValue(value: unknown): boolean {
 function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? value as Record<string, unknown> : null
 }
-
