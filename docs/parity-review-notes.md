@@ -143,3 +143,12 @@ Remainder:
 **Net:** the migration is more complete than §2a implied. No remaining item is a clean must-build
 faithful gap — all are edges + design decisions for review.
 
+### Resolved (built on request)
+- **A2 entry-point — BUILT** (commit `5826f5c`). Extracted the audit timeline to `src/shared/sale-audit`
+  and added an "Історія редагувань" audit drawer to the sales-ukraine sale row. The `ConfirmProcessing`
+  action remains intentionally unbuilt (dead code in both legacy and console).
+- **A3 sub-client/trade-point — BUILT** (commit `9ac7903`). `NewOfferModal` now loads the selected
+  client's sub-clients and lets you raise the offer against a sub-client/trade-point (agreements reload
+  for the picked entity). Adversarial verify caught a wrapper-shape bug (endpoint returns
+  `ClientSubClient` links, not flat clients) — fixed by projecting `.SubClient`.
+
