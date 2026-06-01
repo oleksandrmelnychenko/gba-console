@@ -268,10 +268,18 @@ Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 
 - **sales-preorders tab:** renamed «Передзамовлення» → «Зацікавленість» (legacy Interest), commit `745548c`.
 
 ### Remaining — still open (low / large / for review)
-- **sales-online-shop (LARGE) — the row ACTIONS, not the Edge row-type icon:** the screen is read-only
-  and reproduces none of the legacy SalesPivot row actions (unlock / accept-to-packing / print
-  PZ·invoice·shipment·TTN / discount / edit). Decide if the online-shop list should gain those actions
-  (would reuse the sales-ukraine action components). The shop row-type Edge icon is done (above).
+- **sales-online-shop row ACTIONS — BUILT (commit `e832b7c`).** Ported the full legacy SalesPivot row
+  action surface into the online-shop list, reusing the sales-ukraine components/handlers (no
+  duplication) with identical gating + permission keys: Details, SaleDocumentsMenu (gated by
+  `hidePrintBlock`), Open editor, Print TTN, Will-not-ship/accept-to-packing, Unlock, Історія редагувань,
+  one-time discount (New/Packaging), clickable transporter. `SalesOnlineShopSale` was extended with the
+  action-required backend fields; the sales-ukraine components are bridged via one localized
+  `asUkraineSale` (`as unknown as SalesUkraineSale`) boundary cast — justified because it's the identical
+  `/sales` backend entity (the two features keep parallel type definitions; the cast also masks a handful
+  of drawer-read fields not added to the narrower online-shop type — functionally safe, present in the
+  JSON at runtime). Existing online-shop features (Edge icon, retail line, MisplacedSaleId, red-unpaid,
+  realtime, filters, details) preserved. Adversarially verified (ok=true). A future cleanup could unify
+  both features on one shared sale type to drop the cast.
 - **sales-charts:** by-client mount-time empty fetch (minor); client/manager search sources
   (payers/managers vs legacy charts dropdowns) — "confirm with product".
 - **sales-debtors day labels:** «Борг через N днів» (console interpolates the count — more informative)
