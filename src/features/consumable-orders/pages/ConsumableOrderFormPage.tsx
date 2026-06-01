@@ -13,7 +13,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   Textarea,
   TextInput,
@@ -37,6 +36,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   calculateConsumableOrder,
   createConsumableOrder,
@@ -585,6 +586,126 @@ export function ConsumableOrderFormPage() {
   const costMovementOptions = useMemo(() => toEntityOptions(costMovements, (item) => item?.OperationName || ''), [costMovements])
   const documentRows = order.ConsumablesOrderDocuments || []
 
+  const itemColumns = useMemo<DataTableColumn<ConsumablesOrderItem>[]>(
+    () => [
+      {
+        id: 'article',
+        header: t('Артикул'),
+        minWidth: 120,
+        accessor: (row) => row.ConsumableProduct?.VendorCode,
+        cell: (row) => displayValue(row.ConsumableProduct?.VendorCode),
+      },
+      {
+        id: 'name',
+        header: t('Назва'),
+        minWidth: 220,
+        accessor: (row) => row.ConsumableProduct?.Name,
+        cell: (row) => (
+          <Group gap="xs">
+            <Text size="sm">{displayValue(row.ConsumableProduct?.Name)}</Text>
+            {row.Deleted && (
+              <Badge color="red" size="xs" variant="light">
+                {t('Буде видалено')}
+              </Badge>
+            )}
+          </Group>
+        ),
+      },
+      {
+        id: 'category',
+        header: t('Категорія'),
+        minWidth: 160,
+        accessor: (row) => row.ConsumableProductCategory?.Name || row.ConsumableProduct?.ConsumableProductCategory?.Name,
+        cell: (row) => displayValue(row.ConsumableProductCategory?.Name || row.ConsumableProduct?.ConsumableProductCategory?.Name),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        minWidth: 110,
+        accessor: (row) => row.Qty,
+        cell: (row) => `${formatAmount(row.Qty)} ${row.ConsumableProduct?.MeasureUnit?.Name || ''}`,
+      },
+      {
+        id: 'price',
+        header: t('Ціна'),
+        minWidth: 110,
+        accessor: (row) => row.PricePerItem,
+        cell: (row) => formatMoney(row.PricePerItem),
+      },
+      {
+        id: 'sum',
+        header: t('Сума'),
+        minWidth: 110,
+        accessor: (row) => row.TotalPrice,
+        cell: (row) => formatMoney(row.TotalPrice),
+      },
+      {
+        id: 'vatPercent',
+        header: t('ПДВ %'),
+        minWidth: 90,
+        accessor: (row) => row.VatPercent,
+        cell: (row) => formatAmount(row.VatPercent),
+      },
+      {
+        id: 'vat',
+        header: t('ПДВ'),
+        minWidth: 110,
+        accessor: (row) => row.VAT,
+        cell: (row) => formatMoney(row.VAT),
+      },
+      {
+        id: 'total',
+        header: t('Разом'),
+        minWidth: 110,
+        accessor: (row) => row.TotalPriceWithVAT,
+        cell: (row) => formatMoney(row.TotalPriceWithVAT),
+      },
+      {
+        id: 'actions',
+        header: '',
+        minWidth: 96,
+        align: 'right',
+        enableSorting: false,
+        accessor: () => '',
+        cell: (row) => {
+          const index = activeItems.indexOf(row)
+
+          return (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              {!row.Deleted && (
+                <Tooltip label={t('Редагувати')}>
+                  <ActionIcon
+                    aria-label={t('Редагувати')}
+                    disabled={isPaid || isSaving}
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => openEditItemEditor(row, index)}
+                  >
+                    <IconPencil size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              <Tooltip label={row.Deleted ? t('Відновити') : t('Видалити')}>
+                <ActionIcon
+                  aria-label={row.Deleted ? t('Відновити') : t('Видалити')}
+                  color={row.Deleted ? 'green' : 'red'}
+                  disabled={isPaid || isSaving}
+                  size="sm"
+                  variant="subtle"
+                  onClick={() => void toggleItemDeleted(row, index)}
+                >
+                  {row.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          )
+        },
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeItems, isPaid, isSaving, t],
+  )
+
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
@@ -751,87 +872,19 @@ export function ConsumableOrderFormPage() {
             </Button>
           </Group>
 
-          <Table.ScrollContainer minWidth={980}>
-            <Table highlightOnHover verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('Артикул')}</Table.Th>
-                  <Table.Th>{t('Назва')}</Table.Th>
-                  <Table.Th>{t('Категорія')}</Table.Th>
-                  <Table.Th>{t('Кількість')}</Table.Th>
-                  <Table.Th>{t('Ціна')}</Table.Th>
-                  <Table.Th>{t('Сума')}</Table.Th>
-                  <Table.Th>{t('ПДВ %')}</Table.Th>
-                  <Table.Th>{t('ПДВ')}</Table.Th>
-                  <Table.Th>{t('Разом')}</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {activeItems.length > 0 ? (
-                  activeItems.map((item, index) => (
-                    <Table.Tr key={getItemKey(item, index)} opacity={item.Deleted ? 0.45 : 1}>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
-                      <Table.Td>
-                        <Group gap="xs">
-                          <Text size="sm">{displayValue(item.ConsumableProduct?.Name)}</Text>
-                          {item.Deleted && (
-                            <Badge color="red" size="xs" variant="light">
-                              {t('Буде видалено')}
-                            </Badge>
-                          )}
-                        </Group>
-                      </Table.Td>
-                      <Table.Td>{displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)}</Table.Td>
-                      <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
-                      <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPrice)}</Table.Td>
-                      <Table.Td>{formatAmount(item.VatPercent)}</Table.Td>
-                      <Table.Td>{formatMoney(item.VAT)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
-                      <Table.Td>
-                        <Group gap={4} justify="flex-end" wrap="nowrap">
-                          {!item.Deleted && (
-                            <Tooltip label={t('Редагувати')}>
-                              <ActionIcon
-                                aria-label={t('Редагувати')}
-                                disabled={isPaid || isSaving}
-                                size="sm"
-                                variant="subtle"
-                                onClick={() => openEditItemEditor(item, index)}
-                              >
-                                <IconPencil size={16} />
-                              </ActionIcon>
-                            </Tooltip>
-                          )}
-                          <Tooltip label={item.Deleted ? t('Відновити') : t('Видалити')}>
-                            <ActionIcon
-                              aria-label={item.Deleted ? t('Відновити') : t('Видалити')}
-                              color={item.Deleted ? 'green' : 'red'}
-                              disabled={isPaid || isSaving}
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => void toggleItemDeleted(item, index)}
-                            >
-                              {item.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-                            </ActionIcon>
-                          </Tooltip>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))
-                ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={10}>
-                      <Text c="dimmed" ta="center">
-                        {t('Позицій немає')}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+          <DataTable
+            columns={itemColumns}
+            data={activeItems}
+            emptyText={t('Позицій немає')}
+            getRowId={(item, index) => getItemKey(item, index)}
+            isLoading={isLoading}
+            layoutVersion="consumable-order-items-1"
+            loadingText={t('Завантаження позицій')}
+            maxHeight="calc(100vh - 320px)"
+            minWidth={980}
+            rowClassName={(item) => (item.Deleted ? 'data-table-row-deleted' : undefined)}
+            tableId="consumable-order-items"
+          />
 
           <Divider />
 

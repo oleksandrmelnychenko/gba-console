@@ -13,7 +13,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
   Textarea,
@@ -27,6 +26,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
@@ -791,6 +792,18 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
   const columns = model.columns
 
+  const dataColumns = useMemo<DataTableColumn<AvailablePaymentTaskRow>[]>(
+    () =>
+      columns.map((column) => ({
+        id: column.key,
+        header: column.header,
+        align: column.align === 'right' ? 'right' : 'left',
+        accessor: (row) => row[column.key],
+        cell: (row) => renderCell(column, row),
+      })),
+    [columns],
+  )
+
   if (columns.length === 0) {
     return (
       <Stack gap="md">
@@ -805,43 +818,15 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
   return (
     <Stack gap="md">
       <DocumentsList documents={model.documents} />
-      <Table.ScrollContainer minWidth={760}>
-        <Table withTableBorder withColumnBorders striped>
-          <Table.Thead>
-            <Table.Tr>
-              {columns.map((column) => (
-                <Table.Th key={column.key} style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}>
-                  {column.header}
-                </Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {model.rows.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={columns.length}>
-                  <Text c="dimmed" size="sm">
-                    {t('Дані рахунку відсутні')}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              model.rows.map((row, rowIndex) => (
-                <Table.Tr key={getInvoiceRowKey(model, row, rowIndex)}>
-                  {columns.map((column) => (
-                    <Table.Td
-                      key={column.key}
-                      style={{ textAlign: column.align === 'right' ? 'right' : 'left' }}
-                    >
-                      {renderCell(column, row)}
-                    </Table.Td>
-                  ))}
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <DataTable
+        columns={dataColumns}
+        data={model.rows}
+        emptyText={t('Дані рахунку відсутні')}
+        getRowId={(row, index) => getInvoiceRowKey(model, row, index)}
+        maxHeight="calc(100vh - 320px)"
+        minWidth={760}
+        tableId="available-payments-invoice-lines"
+      />
     </Stack>
   )
 }
@@ -863,6 +848,37 @@ function renderCell(column: AvailablePaymentColumn, row: AvailablePaymentTaskRow
 function CashFlowTab({ state }: { state?: CashFlowState }) {
   const { t } = useI18n()
 
+  const columns = useMemo<DataTableColumn<DataRecord>[]>(
+    () => [
+      {
+        id: 'date',
+        header: t('Дата'),
+        accessor: (row) => readUnknownDate(row, ['FromDate', 'Date', 'Created']),
+        cell: (row) => formatDate(readUnknownDate(row, ['FromDate', 'Date', 'Created'])),
+      },
+      {
+        id: 'number',
+        header: t('Номер'),
+        accessor: (row) => readUnknown(row, ['Number', 'CustomNumber']),
+        cell: (row) => displayValue(readUnknown(row, ['Number', 'CustomNumber'])),
+      },
+      {
+        id: 'type',
+        header: t('Тип'),
+        accessor: (row) => readUnknown(row, ['Type', 'OperationTypeName']),
+        cell: (row) => displayValue(readUnknown(row, ['Type', 'OperationTypeName'])),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        align: 'right',
+        accessor: (row) => readUnknownNumber(row, ['Amount', 'Total']),
+        cell: (row) => formatAmount(readUnknownNumber(row, ['Amount', 'Total'])),
+      },
+    ],
+    [t],
+  )
+
   if (!state || state.isLoading) {
     return (
       <Group justify="center" py="md">
@@ -882,38 +898,15 @@ function CashFlowTab({ state }: { state?: CashFlowState }) {
   const rows = extractCashFlowRows(state.data)
 
   return (
-    <Table.ScrollContainer minWidth={720}>
-      <Table withTableBorder withColumnBorders striped>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Дата')}</Table.Th>
-            <Table.Th>{t('Номер')}</Table.Th>
-            <Table.Th>{t('Тип')}</Table.Th>
-            <Table.Th style={{ textAlign: 'right' }}>{t('Сума')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.length === 0 ? (
-            <Table.Tr>
-              <Table.Td colSpan={4}>
-                <Text c="dimmed" size="sm">
-                  {t('Рух коштів відсутній')}
-                </Text>
-              </Table.Td>
-            </Table.Tr>
-          ) : (
-            rows.map((row) => (
-              <Table.Tr key={getCashFlowRowKey(row)}>
-                <Table.Td>{formatDate(readUnknownDate(row, ['FromDate', 'Date', 'Created']))}</Table.Td>
-                <Table.Td>{displayValue(readUnknown(row, ['Number', 'CustomNumber']))}</Table.Td>
-                <Table.Td>{displayValue(readUnknown(row, ['Type', 'OperationTypeName']))}</Table.Td>
-                <Table.Td style={{ textAlign: 'right' }}>{formatAmount(readUnknownNumber(row, ['Amount', 'Total']))}</Table.Td>
-              </Table.Tr>
-            ))
-          )}
-        </Table.Tbody>
-      </Table>
-    </Table.ScrollContainer>
+    <DataTable
+      columns={columns}
+      data={rows}
+      emptyText={t('Рух коштів відсутній')}
+      getRowId={(row) => getCashFlowRowKey(row)}
+      maxHeight="calc(100vh - 320px)"
+      minWidth={720}
+      tableId="available-payments-cash-flow-movements"
+    />
   )
 }
 

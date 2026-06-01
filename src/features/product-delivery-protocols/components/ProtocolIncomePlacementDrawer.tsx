@@ -1,9 +1,11 @@
-import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementRow,
@@ -131,6 +133,35 @@ export function ProtocolIncomePlacementDrawer({
   const placedQty = sumQty(placements)
   const canAddPlacements = rowQty > placedQty
 
+  const placementColumns = useMemo<DataTableColumn<DynamicProductPlacement>[]>(() => [
+    { id: 'index', header: '#', width: 60, accessor: (_row) => null, cell: (_row) => placements.indexOf(_row) + 1 },
+    { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (placement) => placement.StorageNumber, cell: (placement) => placement.StorageNumber },
+    { id: 'row', header: t('Ряд'), minWidth: 120, accessor: (placement) => placement.RowNumber, cell: (placement) => placement.RowNumber },
+    { id: 'cell', header: t('Полиця'), minWidth: 120, accessor: (placement) => placement.CellNumber, cell: (placement) => placement.CellNumber },
+    { id: 'qty', header: t('К-сть'), minWidth: 100, accessor: (placement) => placement.Qty, cell: (placement) => placement.Qty },
+    {
+      id: 'actions',
+      header: '',
+      width: 60,
+      align: 'center',
+      accessor: (_row) => null,
+      cell: (placement) =>
+        !placement.IsApplied ? (
+          <ActionIcon
+            aria-label={t('Видалити')}
+            color="red"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              removePlacement(placement)
+            }}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        ) : null,
+    },
+  ], [placements, t])
+
   function openDraft(placement: DynamicProductPlacement | null) {
     const excludedQty = placement ? sumQtyExcept(placements, placement) : placedQty
     const defaultQty = placement?.Qty || Math.max(rowQty - excludedQty, 0)
@@ -236,48 +267,17 @@ export function ProtocolIncomePlacementDrawer({
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
         </Text>
 
-        <Table withTableBorder withColumnBorders>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>#</Table.Th>
-              <Table.Th>{t('Склад')}</Table.Th>
-              <Table.Th>{t('Ряд')}</Table.Th>
-              <Table.Th>{t('Полиця')}</Table.Th>
-              <Table.Th>{t('К-сть')}</Table.Th>
-              <Table.Th />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {placements.map((placement, index) => (
-              <Table.Tr
-                key={placementKey(placement)}
-                style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
-                onClick={() => !placement.IsApplied && openDraft(placement)}
-              >
-                <Table.Td>{index + 1}</Table.Td>
-                <Table.Td>{placement.StorageNumber}</Table.Td>
-                <Table.Td>{placement.RowNumber}</Table.Td>
-                <Table.Td>{placement.CellNumber}</Table.Td>
-                <Table.Td>{placement.Qty}</Table.Td>
-                <Table.Td>
-                  {!placement.IsApplied && (
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      variant="subtle"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        removePlacement(placement)
-                      }}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  )}
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+        <DataTable
+          columns={placementColumns}
+          data={placements}
+          emptyText={t('Немає розміщень')}
+          getRowId={(placement) => placementKey(placement)}
+          maxHeight="calc(100vh - 320px)"
+          minWidth={560}
+          rowClassName={(placement) => (placement.IsApplied ? 'placement-row-applied' : undefined)}
+          tableId="protocol-income-placements"
+          onRowClick={(placement) => !placement.IsApplied && openDraft(placement)}
+        />
 
         {!draft && (
           <Group>

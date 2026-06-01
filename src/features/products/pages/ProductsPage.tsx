@@ -46,7 +46,7 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
-import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -71,6 +71,8 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
@@ -2799,110 +2801,74 @@ function ProductInlineMovementsTab({
 function ProductIncomeMovementsTable({ rows }: { rows: ProductIncomeMovement[] }) {
   const { t } = useI18n()
 
+  const columns = useMemo<DataTableColumn<ProductIncomeMovement>[]>(() => [
+    { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
+    { id: 'supplier', header: t('Постачальник'), accessor: (row) => row.SupplierName, cell: (row) => displayValue(row.SupplierName) },
+    { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+    { id: 'incomeDate', header: t('Дата приходу'), accessor: (row) => row.IncomeToStorageDate, cell: (row) => formatInlineDateTime(row.IncomeToStorageDate) },
+    { id: 'incomeNumber', header: t('Номер приходу'), accessor: (row) => row.IncomeToStorageNumber, cell: (row) => displayValue(row.IncomeToStorageNumber) },
+    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.IncomeInvoiceNumber, cell: (row) => displayValue(row.IncomeInvoiceNumber) },
+    { id: 'invoiceDate', header: t('Дата інвойсу'), accessor: (row) => row.IncomeInvoiceDate, cell: (row) => formatInlineDateTime(row.IncomeInvoiceDate) },
+    { id: 'currency', header: t('Валюта'), accessor: (row) => row.Currency, cell: (row) => displayValue(row.Currency) },
+    { id: 'exchangeRate', header: t('Курс'), align: 'right', accessor: (row) => row.ExchangeRate, cell: (row) => formatAmount(row.ExchangeRate) },
+    { id: 'unitPriceLocal', header: t('Ціна UAH'), align: 'right', accessor: (row) => row.UnitPriceLocal, cell: (row) => formatPrice(row.UnitPriceLocal) },
+    { id: 'netPrice', header: t('Net'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => formatPrice(row.NetPrice) },
+    { id: 'totalNetPrice', header: t('Total Net'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => formatPrice(row.TotalNetPrice) },
+    { id: 'grossPrice', header: t('Gross'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => formatPrice(row.GrossPrice) },
+    { id: 'accountingGrossPrice', header: t('Бух. Gross'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => formatPrice(row.AccountingGrossPrice) },
+    { id: 'managementEurUnitPrice', header: t('Упр. EUR'), align: 'right', accessor: (row) => row.ManagementEurUnitPrice, cell: (row) => formatPrice(row.ManagementEurUnitPrice) },
+    { id: 'accountingEurUnitPrice', header: t('Бух. EUR'), align: 'right', accessor: (row) => row.AccountingEurUnitPrice, cell: (row) => formatPrice(row.AccountingEurUnitPrice) },
+    { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => formatAmount(row.Weight) },
+    { id: 'incomeQty', header: t('Прихід'), align: 'right', accessor: (row) => row.IncomeQty, cell: (row) => formatAmount(row.IncomeQty) },
+    { id: 'remainingQty', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => formatAmount(row.RemainingQty) },
+    { id: 'fromInvoiceNumber', header: t('З інвойсу'), accessor: (row) => row.FromInvoiceNumber, cell: (row) => displayValue(row.FromInvoiceNumber) },
+    { id: 'fromInvoiceDate', header: t('Дата з інвойсу'), accessor: (row) => row.FromInvoiceDate, cell: (row) => formatInlineDateTime(row.FromInvoiceDate) },
+    { id: 'returnPrice', header: t('Ціна повернення'), align: 'right', accessor: (row) => row.ReturnPrice, cell: (row) => formatPrice(row.ReturnPrice) },
+    { id: 'priceDifference', header: t('Різниця'), align: 'right', accessor: (row) => row.PriceDifference, cell: (row) => formatPrice(row.PriceDifference) },
+  ], [t])
+
   return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={1960}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Склад')}</Table.Th>
-            <Table.Th>{t('Постачальник')}</Table.Th>
-            <Table.Th>{t('Організація')}</Table.Th>
-            <Table.Th>{t('Дата приходу')}</Table.Th>
-            <Table.Th>{t('Номер приходу')}</Table.Th>
-            <Table.Th>{t('Інвойс')}</Table.Th>
-            <Table.Th>{t('Дата інвойсу')}</Table.Th>
-            <Table.Th>{t('Валюта')}</Table.Th>
-            <Table.Th ta="right">{t('Курс')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна UAH')}</Table.Th>
-            <Table.Th ta="right">{t('Net')}</Table.Th>
-            <Table.Th ta="right">{t('Total Net')}</Table.Th>
-            <Table.Th ta="right">{t('Gross')}</Table.Th>
-            <Table.Th ta="right">{t('Бух. Gross')}</Table.Th>
-            <Table.Th ta="right">{t('Упр. EUR')}</Table.Th>
-            <Table.Th ta="right">{t('Бух. EUR')}</Table.Th>
-            <Table.Th ta="right">{t('Вага')}</Table.Th>
-            <Table.Th ta="right">{t('Прихід')}</Table.Th>
-            <Table.Th ta="right">{t('Залишок')}</Table.Th>
-            <Table.Th>{t('З інвойсу')}</Table.Th>
-            <Table.Th>{t('Дата з інвойсу')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна повернення')}</Table.Th>
-            <Table.Th ta="right">{t('Різниця')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row, index) => (
-            <Table.Tr key={getIncomeMovementRowKey(row, index)}>
-              <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-              <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
-              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.IncomeToStorageDate)}</Table.Td>
-              <Table.Td>{displayValue(row.IncomeToStorageNumber)}</Table.Td>
-              <Table.Td>{displayValue(row.IncomeInvoiceNumber)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.IncomeInvoiceDate)}</Table.Td>
-              <Table.Td>{displayValue(row.Currency)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.ExchangeRate)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.UnitPriceLocal)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.ManagementEurUnitPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.AccountingEurUnitPrice)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.IncomeQty)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
-              <Table.Td>{displayValue(row.FromInvoiceNumber)}</Table.Td>
-              <Table.Td>{formatInlineDateTime(row.FromInvoiceDate)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.ReturnPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.PriceDifference)}</Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <DataTable
+      columns={columns}
+      data={rows}
+      getRowId={(row, index) => getIncomeMovementRowKey(row, index)}
+      maxHeight="calc(100vh - 320px)"
+      minWidth={1960}
+      tableId="product-inline-income-movements"
+    />
   )
 }
 
 function ProductOutcomeMovementsTable({ rows }: { rows: ProductOutcomeMovement[] }) {
   const { t } = useI18n()
 
-  return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={1280}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Дата')}</Table.Th>
-            <Table.Th>{t('Тип документа')}</Table.Th>
-            <Table.Th>{t('Склад')}</Table.Th>
-            <Table.Th>{t('Організація')}</Table.Th>
-            <Table.Th>{t('Номер')}</Table.Th>
-            <Table.Th>{t('Клієнт')}</Table.Th>
-            <Table.Th>{t('Відповідальний')}</Table.Th>
-            <Table.Th ta="right">{t('Ціна')}</Table.Th>
-            <Table.Th ta="right">{t('Кількість')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row, index) => {
-            const editedClassName = row.HasUpdateDataCarrier ? 'product-inline-table-cell-edited' : undefined
+  const columns = useMemo<DataTableColumn<ProductOutcomeMovement>[]>(() => {
+    const editedCell = (row: ProductOutcomeMovement, value: ReactNode): ReactNode =>
+      row.HasUpdateDataCarrier ? <span className="product-inline-table-cell-edited">{value}</span> : value
 
-            return (
-              <Table.Tr className={row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined} key={getOutcomeMovementRowKey(row, index)}>
-                <Table.Td className={editedClassName}>{formatInlineDateTime(row.FromDate)}</Table.Td>
-                <Table.Td className={editedClassName}>{displayValue(row.DocumentTypeName)}</Table.Td>
-                <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-                <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-                <Table.Td className={editedClassName}>{displayValue(row.DocumentNumber)}</Table.Td>
-                <Table.Td>{displayValue(row.ClientName)}</Table.Td>
-                <Table.Td>{displayValue(row.ResponsibleName)}</Table.Td>
-                <Table.Td ta="right">{formatPrice(row.Price)}</Table.Td>
-                <Table.Td ta="right">{formatAmount(row.Qty)}</Table.Td>
-              </Table.Tr>
-            )
-          })}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+    return [
+      { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => editedCell(row, formatInlineDateTime(row.FromDate)) },
+      { id: 'documentType', header: t('Тип документа'), accessor: (row) => row.DocumentTypeName, cell: (row) => editedCell(row, displayValue(row.DocumentTypeName)) },
+      { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
+      { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+      { id: 'number', header: t('Номер'), accessor: (row) => row.DocumentNumber, cell: (row) => editedCell(row, displayValue(row.DocumentNumber)) },
+      { id: 'client', header: t('Клієнт'), accessor: (row) => row.ClientName, cell: (row) => displayValue(row.ClientName) },
+      { id: 'responsible', header: t('Відповідальний'), accessor: (row) => row.ResponsibleName, cell: (row) => displayValue(row.ResponsibleName) },
+      { id: 'price', header: t('Ціна'), align: 'right', accessor: (row) => row.Price, cell: (row) => formatPrice(row.Price) },
+      { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => row.Qty, cell: (row) => formatAmount(row.Qty) },
+    ]
+  }, [t])
+
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      getRowId={(row, index) => getOutcomeMovementRowKey(row, index)}
+      maxHeight="calc(100vh - 320px)"
+      minWidth={1280}
+      rowClassName={(row) => (row.HasUpdateDataCarrier ? 'product-inline-table-row-edited' : undefined)}
+      tableId="product-inline-outcome-movements"
+    />
   )
 }
 

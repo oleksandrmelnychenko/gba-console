@@ -7,7 +7,6 @@ import {
   Card,
   Group,
   Stack,
-  Table,
   Text,
   TextInput,
   Tooltip,
@@ -21,10 +20,12 @@ import {
   IconSearch,
   IconUpload,
 } from '@tabler/icons-react'
-import { type ChangeEvent, useMemo } from 'react'
+import { type ChangeEvent, type ReactNode, useMemo } from 'react'
 import { readSheet } from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { SpreadsheetCellValue, SpreadsheetSheet } from '../types'
 import {
   buildDateFileSuffix,
@@ -228,6 +229,12 @@ function TotalsBar({ totals }: { totals: Record<string, number> }) {
   )
 }
 
+type SpreadsheetPreviewRow = {
+  key: string
+  cells: SpreadsheetCellValue[]
+  isTotals: boolean
+}
+
 function SpreadsheetTable({
   columns,
   rows,
@@ -238,36 +245,60 @@ function SpreadsheetTable({
   totals: Record<string, number>
 }) {
   const { t } = useI18n()
+  const hasTotals = Object.keys(totals).length > 0
+
+  const previewColumns = useMemo<DataTableColumn<SpreadsheetPreviewRow>[]>(
+    () =>
+      columns.map((column, columnIndex) => {
+        const header = column || `C${columnIndex + 1}`
+
+        return {
+          id: `c${columnIndex}`,
+          header,
+          minWidth: 140,
+          accessor: (row) => row.cells[columnIndex],
+          cell: (row): ReactNode => {
+            if (row.isTotals) {
+              return (
+                <Text component="span" fw={600}>
+                  {columnIndex === 0 ? t('Разом') : displayValue(totals[column])}
+                </Text>
+              )
+            }
+
+            return displayValue(row.cells[columnIndex])
+          },
+        }
+      }),
+    [columns, t, totals],
+  )
+
+  const previewData = useMemo<SpreadsheetPreviewRow[]>(() => {
+    const dataRows: SpreadsheetPreviewRow[] = rows.slice(0, 500).map((row, index) => ({
+      key: `${getSpreadsheetRowKey(row)}-${index}`,
+      cells: row,
+      isTotals: false,
+    }))
+
+    if (hasTotals) {
+      dataRows.push({ key: '__totals__', cells: [], isTotals: true })
+    }
+
+    return dataRows
+  }, [hasTotals, rows])
 
   return (
-    <Box style={{ maxHeight: 640, overflow: 'auto' }}>
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            {columns.map((column, index) => (
-              <Table.Th key={`${column}-${index}`}>{column || `C${index + 1}`}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.slice(0, 500).map((row) => (
-            <Table.Tr key={getSpreadsheetRowKey(row)}>
-              {columns.map((column, columnIndex) => (
-                <Table.Td key={`${column}-${columnIndex}`}>{displayValue(row[columnIndex])}</Table.Td>
-              ))}
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-        {Object.keys(totals).length ? (
-          <Table.Tfoot>
-            <Table.Tr>
-              {columns.map((column, index) => (
-                <Table.Th key={`${column}-${index}`}>{index === 0 ? t('Разом') : displayValue(totals[column])}</Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Tfoot>
-        ) : null}
-      </Table>
+    <Box>
+      <DataTable
+        columns={previewColumns}
+        data={previewData}
+        emptyText={t('Немає рядків для перегляду')}
+        getRowId={(row) => row.key}
+        layoutVersion={`reports-sale-spreadsheet:${columns.join('|')}`}
+        maxHeight="calc(100vh - 320px)"
+        minWidth={Math.max(640, columns.length * 160)}
+        tableId="reports-sale-spreadsheet"
+      />
       {rows.length > 500 ? (
         <Text c="dimmed" size="xs" mt="xs">
           {t('Показано перші 500 рядків. CSV export містить усі відфільтровані рядки.')}

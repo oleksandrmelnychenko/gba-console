@@ -1,9 +1,11 @@
-import { Alert, Button, Group, NumberInput, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type {
   PackingListPackageOrderItem,
   ProductSpecificationEntity,
@@ -49,6 +51,12 @@ export function ProductSpecificationEditDrawer({
   const [previousProductKey, setPreviousProductKey] = useValueState(getProductKey(product))
   const currentProductKey = getProductKey(product)
   const history = useMemo(() => buildSpecificationHistory(product), [product])
+  const historyColumns = useMemo<DataTableColumn<ProductSpecificationEntity>[]>(() => [
+    { id: 'specificationCode', header: t('Митний код'), accessor: (row) => row.SpecificationCode, cell: (row) => row.SpecificationCode || '-' },
+    { id: 'dutyPercent', header: t('% Мита'), accessor: (row) => row.DutyPercent ?? 0, cell: (row) => row.DutyPercent ?? 0 },
+    { id: 'user', header: t('Користувач'), accessor: (row) => getUserName(row), cell: (row) => getUserName(row) },
+    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDate(row.Created) },
+  ], [t])
 
   if (currentProductKey !== previousProductKey) {
     setPreviousProductKey(currentProductKey)
@@ -145,32 +153,16 @@ export function ProductSpecificationEditDrawer({
 
           <Stack gap="xs">
             <Text fw={700}>{t('Історія митних кодів')}</Text>
-            {history.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                {t('Немає даних')}
-              </Text>
-            ) : (
-              <Table striped withTableBorder withColumnBorders>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>{t('Митний код')}</Table.Th>
-                    <Table.Th>{t('% Мита')}</Table.Th>
-                    <Table.Th>{t('Користувач')}</Table.Th>
-                    <Table.Th>{t('Дата')}</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {history.map((specification, index) => (
-                    <Table.Tr key={specification.NetUid || specification.Id || index}>
-                      <Table.Td>{specification.SpecificationCode || '-'}</Table.Td>
-                      <Table.Td>{specification.DutyPercent ?? 0}</Table.Td>
-                      <Table.Td>{getUserName(specification)}</Table.Td>
-                      <Table.Td>{formatDate(specification.Created)}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            )}
+            <DataTable
+              columns={historyColumns}
+              data={history}
+              emptyText={t('Немає даних')}
+              getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+              layoutVersion="product-specification-history-1"
+              maxHeight="calc(100vh - 320px)"
+              minWidth={480}
+              tableId="product-specification-history"
+            />
           </Stack>
         </Stack>
       )}

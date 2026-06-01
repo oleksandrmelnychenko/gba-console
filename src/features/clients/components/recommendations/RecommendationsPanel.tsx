@@ -10,16 +10,17 @@ import {
   SegmentedControl,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   ThemeIcon,
   Title,
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconLayoutGrid, IconList, IconPhoto } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { DataTable } from '../../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../../shared/ui/data-table/types'
 import {
   getMostPurchasedProductsByClientId,
   getProductById,
@@ -176,6 +177,14 @@ function RecommendationsList({
 }) {
   const { t } = useI18n()
 
+  const recommendationColumns = useMemo<DataTableColumn<RecommendationProduct>[]>(() => [
+    { id: 'vendorCode', header: t('Артикул'), minWidth: 140, accessor: (row) => row.VendorCode, cell: (row) => displayValue(row.VendorCode) },
+    { id: 'name', header: t('Назва'), minWidth: 220, accessor: (row) => row.Name, cell: (row) => displayValue(row.Name) },
+    { id: 'mainOriginalNumber', header: t('Оригінальний номер'), minWidth: 180, accessor: (row) => row.MainOriginalNumber, cell: (row) => displayValue(row.MainOriginalNumber) },
+    { id: 'size', header: t('Розмір'), minWidth: 120, accessor: (row) => row.Size, cell: (row) => displayValue(row.Size) },
+    { id: 'description', header: t('Опис'), minWidth: 240, accessor: (row) => row.Description, cell: (row) => displayValue(row.Description) },
+  ], [t])
+
   if (products.length === 0) {
     return (
       <Text c="dimmed" py="xl" ta="center">
@@ -186,28 +195,16 @@ function RecommendationsList({
 
   if (isGrid) {
     return (
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Артикул')}</Table.Th>
-            <Table.Th>{t('Назва')}</Table.Th>
-            <Table.Th>{t('Оригінальний номер')}</Table.Th>
-            <Table.Th>{t('Розмір')}</Table.Th>
-            <Table.Th>{t('Опис')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {products.map((product, index) => (
-            <Table.Tr key={getProductKey(product, index)}>
-              <Table.Td>{displayValue(product.VendorCode)}</Table.Td>
-              <Table.Td>{displayValue(product.Name)}</Table.Td>
-              <Table.Td>{displayValue(product.MainOriginalNumber)}</Table.Td>
-              <Table.Td>{displayValue(product.Size)}</Table.Td>
-              <Table.Td>{displayValue(product.Description)}</Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+      <DataTable
+        columns={recommendationColumns}
+        data={products}
+        emptyText={t('Рекомендацій не знайдено')}
+        getRowId={(row, index) => getProductKey(row, index)}
+        maxHeight="calc(100vh - 320px)"
+        minWidth={900}
+        tableId="client-recommendations-grid"
+        layoutVersion="client-recommendations-1"
+      />
     )
   }
 

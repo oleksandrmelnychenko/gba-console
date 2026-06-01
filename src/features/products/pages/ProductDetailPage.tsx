@@ -1512,63 +1512,43 @@ function ProductConsignmentRemainingsPanel({ product }: { product: Product }) {
     }
   }, [productNetUid, t])
 
+  const remainingsColumns = useMemo<DataTableColumn<ProductConsignmentRemaining>[]>(() => [
+    { id: 'storage', header: t('Склад'), accessor: (row) => row.StorageName, cell: (row) => displayValue(row.StorageName) },
+    { id: 'supplier', header: t('Постачальник'), accessor: (row) => row.SupplierName, cell: (row) => displayValue(row.SupplierName) },
+    { id: 'date', header: t('Дата'), accessor: (row) => row.FromDate, cell: (row) => formatDate(row.FromDate) },
+    { id: 'invoice', header: t('Інвойс'), accessor: (row) => row.InvoiceNumber, cell: (row) => displayValue(row.InvoiceNumber) },
+    { id: 'income', header: t('Прихід'), accessor: (row) => row.ProductIncomeNumber, cell: (row) => displayValue(row.ProductIncomeNumber) },
+    { id: 'remaining', header: t('Залишок'), align: 'right', accessor: (row) => row.RemainingQty, cell: (row) => formatAmount(row.RemainingQty) },
+    { id: 'netPrice', header: t('Нетто'), align: 'right', accessor: (row) => row.NetPrice, cell: (row) => formatPrice(row.NetPrice) },
+    { id: 'totalNetPrice', header: t('Загальна нетто'), align: 'right', accessor: (row) => row.TotalNetPrice, cell: (row) => formatPrice(row.TotalNetPrice) },
+    { id: 'grossPrice', header: t('Брутто'), align: 'right', accessor: (row) => row.GrossPrice, cell: (row) => formatPrice(row.GrossPrice) },
+    { id: 'accountingGrossPrice', header: t('Облікова брутто'), align: 'right', accessor: (row) => row.AccountingGrossPrice, cell: (row) => formatPrice(row.AccountingGrossPrice) },
+    { id: 'currency', header: t('Валюта'), accessor: (row) => row.CurrencyName, cell: (row) => displayValue(row.CurrencyName) },
+    { id: 'organization', header: t('Організація'), accessor: (row) => row.OrganizationName, cell: (row) => displayValue(row.OrganizationName) },
+    { id: 'weight', header: t('Вага'), align: 'right', accessor: (row) => row.Weight, cell: (row) => formatAmount(row.Weight) },
+  ], [t])
+
   if (missingNetUidError) {
     return <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">{missingNetUidError}</Alert>
-  }
-
-  if (isLoading) {
-    return <LoadingState label={t('Завантаження залишків')} />
   }
 
   if (error) {
     return <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>
   }
 
-  if (rows.length === 0) {
-    return <Text c="dimmed" size="sm">{t('Залишків по партіям не знайдено')}</Text>
-  }
-
   return (
-    <ScrollArea>
-      <Table striped highlightOnHover withTableBorder miw={1480}>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>{t('Склад')}</Table.Th>
-            <Table.Th>{t('Постачальник')}</Table.Th>
-            <Table.Th>{t('Дата')}</Table.Th>
-            <Table.Th>{t('Інвойс')}</Table.Th>
-            <Table.Th>{t('Прихід')}</Table.Th>
-            <Table.Th ta="right">{t('Залишок')}</Table.Th>
-            <Table.Th ta="right">{t('Нетто')}</Table.Th>
-            <Table.Th ta="right">{t('Загальна нетто')}</Table.Th>
-            <Table.Th ta="right">{t('Брутто')}</Table.Th>
-            <Table.Th ta="right">{t('Облікова брутто')}</Table.Th>
-            <Table.Th>{t('Валюта')}</Table.Th>
-            <Table.Th>{t('Організація')}</Table.Th>
-            <Table.Th ta="right">{t('Вага')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {rows.map((row, index) => (
-            <Table.Tr key={`${row.NetUid || row.Id || row.InvoiceNumber || index}`}>
-              <Table.Td>{displayValue(row.StorageName)}</Table.Td>
-              <Table.Td>{displayValue(row.SupplierName)}</Table.Td>
-              <Table.Td>{formatDate(row.FromDate)}</Table.Td>
-              <Table.Td>{displayValue(row.InvoiceNumber)}</Table.Td>
-              <Table.Td>{displayValue(row.ProductIncomeNumber)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.RemainingQty)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.NetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.TotalNetPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.GrossPrice)}</Table.Td>
-              <Table.Td ta="right">{formatPrice(row.AccountingGrossPrice)}</Table.Td>
-              <Table.Td>{displayValue(row.CurrencyName)}</Table.Td>
-              <Table.Td>{displayValue(row.OrganizationName)}</Table.Td>
-              <Table.Td ta="right">{formatAmount(row.Weight)}</Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
-    </ScrollArea>
+    <DataTable
+      columns={remainingsColumns}
+      data={rows}
+      emptyText={t('Залишків по партіям не знайдено')}
+      getRowId={(row, index) => String(row.NetUid || row.Id || row.InvoiceNumber || index)}
+      isLoading={isLoading}
+      layoutVersion="product-consignment-remainings-1"
+      loadingText={t('Завантаження залишків')}
+      maxHeight="calc(100vh - 320px)"
+      minWidth={1480}
+      tableId="product-consignment-remainings"
+    />
   )
 }
 
@@ -1588,6 +1568,16 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   const total = rows[0]?.TotalRowsQty
   const canMoveBack = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : rows.length === pageSize
+
+  const storageHistoryColumns = useMemo<DataTableColumn<ProductStorageLocationHistory>[]>(() => [
+    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDateTime(row.Created) },
+    { id: 'product', header: t('Товар'), accessor: (row) => row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name, cell: (row) => displayValue(row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name) },
+    { id: 'storage', header: t('Склад'), accessor: (row) => row.Storage?.Name, cell: (row) => displayValue(row.Storage?.Name) },
+    { id: 'placement', header: t('Місце'), accessor: (row) => row.Placement, cell: (row) => displayValue(row.Placement) },
+    { id: 'status', header: t('Статус'), accessor: (row) => row.StorageLocationType, cell: (row) => formatStorageLocationType(row.StorageLocationType, t) },
+    { id: 'qty', header: t('Кількість'), align: 'right', accessor: (row) => formatStorageLocationQty(row), cell: (row) => formatStorageLocationQty(row) },
+    { id: 'responsible', header: t('Відповідальний'), accessor: (row) => [row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '), cell: (row) => displayValue([row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' ')) },
+  ], [t])
 
   useEffect(() => {
     if (filterError || !productNetUid) {
@@ -1649,39 +1639,19 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
         </Group>
       </Group>
       {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
-      {isLoading ? (
-        <LoadingState label={t('Завантаження історії')} />
-      ) : rows.length === 0 && !activeError ? (
-        <Text c="dimmed" size="sm">{t('Історію місця зберігання не знайдено')}</Text>
-      ) : !activeError ? (
-        <ScrollArea>
-          <Table striped highlightOnHover withTableBorder miw={980}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Дата')}</Table.Th>
-                <Table.Th>{t('Товар')}</Table.Th>
-                <Table.Th>{t('Склад')}</Table.Th>
-                <Table.Th>{t('Місце')}</Table.Th>
-                <Table.Th>{t('Статус')}</Table.Th>
-                <Table.Th ta="right">{t('Кількість')}</Table.Th>
-                <Table.Th>{t('Відповідальний')}</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {rows.map((row, index) => (
-                <Table.Tr key={`${row.NetUid || row.Id || index}`}>
-                  <Table.Td>{formatDateTime(row.Created)}</Table.Td>
-                  <Table.Td>{displayValue(row.Product?.VendorCode || row.Product?.NameUA || row.Product?.Name)}</Table.Td>
-                  <Table.Td>{displayValue(row.Storage?.Name)}</Table.Td>
-                  <Table.Td>{displayValue(row.Placement)}</Table.Td>
-                  <Table.Td>{formatStorageLocationType(row.StorageLocationType, t)}</Table.Td>
-                  <Table.Td ta="right">{formatStorageLocationQty(row)}</Table.Td>
-                  <Table.Td>{displayValue([row.User?.FirstName, row.User?.LastName].filter(Boolean).join(' '))}</Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea>
+      {!activeError ? (
+        <DataTable
+          columns={storageHistoryColumns}
+          data={rows}
+          emptyText={t('Історію місця зберігання не знайдено')}
+          getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+          isLoading={isLoading}
+          layoutVersion="product-storage-history-1"
+          loadingText={t('Завантаження історії')}
+          maxHeight="calc(100vh - 320px)"
+          minWidth={980}
+          tableId="product-storage-history"
+        />
       ) : null}
     </Stack>
   )
@@ -2117,6 +2087,33 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     }
   }
 
+  const writeOffColumns = useMemo<DataTableColumn<ProductWriteOffRule>[]>(() => [
+    { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDate(row.Created) },
+    { id: 'locale', header: t('Регіон'), accessor: (row) => row.RuleLocale, cell: (row) => formatRuleLocale(row.RuleLocale) },
+    { id: 'rule', header: t('Правило'), accessor: (row) => row.RuleType, cell: (row) => formatRuleType(row.RuleType) },
+    { id: 'source', header: t('Джерело'), accessor: (row) => row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup), cell: (row) => displayValue(row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup)) },
+    {
+      id: 'actions',
+      header: '',
+      width: 64,
+      accessor: () => null,
+      cell: (row) => (
+        <Tooltip label={t('Видалити')}>
+          <ActionIcon
+            aria-label={t('Видалити')}
+            color="red"
+            disabled={!row.NetUid || Boolean(removingNetUid)}
+            loading={removingNetUid === row.NetUid}
+            variant="subtle"
+            onClick={() => removeRule(row)}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Tooltip>
+      ),
+    },
+  ], [removingNetUid, removeRule, t])
+
   return (
     <Stack gap="md">
       <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -2143,46 +2140,18 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         </Button>
       </Group>
       {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
-      {isLoading ? (
-        <LoadingState label={t('Завантаження правил списання')} />
-      ) : rows.length === 0 && !activeError ? (
-        <Text c="dimmed" size="sm">{t('Правил списання не знайдено')}</Text>
-      ) : !activeError ? (
-        <Table striped highlightOnHover withTableBorder>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t('Дата')}</Table.Th>
-              <Table.Th>{t('Регіон')}</Table.Th>
-              <Table.Th>{t('Правило')}</Table.Th>
-              <Table.Th>{t('Джерело')}</Table.Th>
-              <Table.Th w={64} />
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows.map((row, index) => (
-              <Table.Tr key={`${row.NetUid || row.Id || index}`}>
-                <Table.Td>{formatDate(row.Created)}</Table.Td>
-                <Table.Td>{formatRuleLocale(row.RuleLocale)}</Table.Td>
-                <Table.Td>{formatRuleType(row.RuleType)}</Table.Td>
-                <Table.Td>{displayValue(row.Product?.VendorCode || getProductGroupLabel(row.ProductGroup))}</Table.Td>
-                <Table.Td>
-                  <Tooltip label={t('Видалити')}>
-                    <ActionIcon
-                      aria-label={t('Видалити')}
-                      color="red"
-                      disabled={!row.NetUid || Boolean(removingNetUid)}
-                      loading={removingNetUid === row.NetUid}
-                      variant="subtle"
-                      onClick={() => removeRule(row)}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+      {!activeError ? (
+        <DataTable
+          columns={writeOffColumns}
+          data={rows}
+          emptyText={t('Правил списання не знайдено')}
+          getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+          isLoading={isLoading}
+          layoutVersion="product-writeoff-rules-1"
+          loadingText={t('Завантаження правил списання')}
+          maxHeight="calc(100vh - 320px)"
+          tableId="product-writeoff-rules"
+        />
       ) : null}
     </Stack>
   )

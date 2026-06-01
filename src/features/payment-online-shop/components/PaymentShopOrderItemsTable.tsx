@@ -1,6 +1,8 @@
 import { Table, Text } from '@mantine/core'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type { PaymentShopOrderItem, PaymentShopSale } from '../types'
 
 export type PaymentShopOrderItemsTableProps = {
@@ -19,46 +21,47 @@ export function PaymentShopOrderItemsTable({
   const { t } = useI18n()
   const totals = useMemo(() => computeTotals(orders, sale), [orders, sale])
 
+  const columns = useMemo<DataTableColumn<PaymentShopOrderItem>[]>(() => [
+    { id: 'productName', header: t('Назва товару'), minWidth: 240, accessor: (row) => formatProductName(row), cell: (row) => formatProductName(row) },
+    { id: 'amount', header: currencyCode, minWidth: 120, accessor: (row) => row.TotalAmount, cell: (row) => formatPrice(row.TotalAmount) },
+    { id: 'amountLocal', header: localCurrencyCode, minWidth: 120, accessor: (row) => row.TotalAmountLocal, cell: (row) => formatPrice(row.TotalAmountLocal) },
+    { id: 'vat', header: t('ПДВ'), minWidth: 110, accessor: (row) => row.TotalVat, cell: (row) => ((row.TotalVat || 0) > 0 ? formatPrice(row.TotalVat) : '') },
+    { id: 'qty', header: t('К-сть'), minWidth: 90, accessor: (row) => row.Qty, cell: (row) => displayValue(row.Qty) },
+  ], [currencyCode, localCurrencyCode, t])
+
   return (
-    <Table withTableBorder withColumnBorders striped highlightOnHover>
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>{t('Назва товару')}</Table.Th>
-          <Table.Th>{currencyCode}</Table.Th>
-          <Table.Th>{localCurrencyCode}</Table.Th>
-          <Table.Th>{t('ПДВ')}</Table.Th>
-          <Table.Th>{t('К-сть')}</Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      <Table.Tbody>
-        {orders.map((item, index) => (
-          <Table.Tr key={item.NetUid || item.Id || index}>
-            <Table.Td>{formatProductName(item)}</Table.Td>
-            <Table.Td>{formatPrice(item.TotalAmount)}</Table.Td>
-            <Table.Td>{formatPrice(item.TotalAmountLocal)}</Table.Td>
-            <Table.Td>{(item.TotalVat || 0) > 0 ? formatPrice(item.TotalVat) : ''}</Table.Td>
-            <Table.Td>{displayValue(item.Qty)}</Table.Td>
-          </Table.Tr>
-        ))}
-        {orders.length > 1 && (
-          <Table.Tr>
-            <Table.Td />
-            <Table.Td>
-              <Text fw={700}>{formatPrice(totals.totalAmount)}</Text>
-            </Table.Td>
-            <Table.Td>
-              <Text fw={700}>{formatPrice(totals.totalAmountLocal)}</Text>
-            </Table.Td>
-            <Table.Td>
-              <Text fw={700}>{totals.totalVat > 0 ? formatPrice(totals.totalVat) : ''}</Text>
-            </Table.Td>
-            <Table.Td>
-              <Text fw={700}>{totals.totalQty}</Text>
-            </Table.Td>
-          </Table.Tr>
-        )}
-      </Table.Tbody>
-    </Table>
+    <>
+      <DataTable
+        columns={columns}
+        data={orders}
+        emptyText={t('Товарів не знайдено')}
+        getRowId={(row, index) => String(row.NetUid || row.Id || index)}
+        maxHeight="calc(100vh - 320px)"
+        minWidth={660}
+        tableId="payment-shop-order-items"
+      />
+      {orders.length > 1 && (
+        <Table withTableBorder withColumnBorders>
+          <Table.Tbody>
+            <Table.Tr>
+              <Table.Td style={{ minWidth: 240 }} />
+              <Table.Td style={{ minWidth: 120 }}>
+                <Text fw={700}>{formatPrice(totals.totalAmount)}</Text>
+              </Table.Td>
+              <Table.Td style={{ minWidth: 120 }}>
+                <Text fw={700}>{formatPrice(totals.totalAmountLocal)}</Text>
+              </Table.Td>
+              <Table.Td style={{ minWidth: 110 }}>
+                <Text fw={700}>{totals.totalVat > 0 ? formatPrice(totals.totalVat) : ''}</Text>
+              </Table.Td>
+              <Table.Td style={{ minWidth: 90 }}>
+                <Text fw={700}>{totals.totalQty}</Text>
+              </Table.Td>
+            </Table.Tr>
+          </Table.Tbody>
+        </Table>
+      )}
+    </>
   )
 }
 

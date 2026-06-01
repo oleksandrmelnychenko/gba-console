@@ -9,7 +9,6 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
 } from '@mantine/core'
@@ -17,6 +16,8 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -108,6 +109,13 @@ export function ConsumableOrderPayPage() {
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []), [selectedRegister])
   const movementOptions = useMemo(() => toEntityOptions(paymentMovements, (movement) => movement?.OperationName || ''), [paymentMovements])
   const items = order?.ConsumablesOrderItems?.filter((item) => !item.Deleted) || []
+  const itemColumns = useMemo<DataTableColumn<ConsumablesOrderItem>[]>(() => [
+    { id: 'vendorCode', header: t('Артикул'), minWidth: 140, accessor: (row) => row.ConsumableProduct?.VendorCode, cell: (row) => displayValue(row.ConsumableProduct?.VendorCode) },
+    { id: 'name', header: t('Назва'), minWidth: 240, accessor: (row) => row.ConsumableProduct?.Name || row.ConsumableProductCategory?.Name, cell: (row) => displayValue(row.ConsumableProduct?.Name || row.ConsumableProductCategory?.Name) },
+    { id: 'qty', header: t('Кількість'), minWidth: 140, accessor: (row) => row.Qty, cell: (row) => `${formatAmount(row.Qty)} ${row.ConsumableProduct?.MeasureUnit?.Name || ''}` },
+    { id: 'price', header: t('Ціна'), minWidth: 120, accessor: (row) => row.PricePerItem, cell: (row) => formatMoney(row.PricePerItem) },
+    { id: 'total', header: t('Разом'), minWidth: 120, accessor: (row) => row.TotalPriceWithVAT, cell: (row) => formatMoney(row.TotalPriceWithVAT) },
+  ], [t])
 
   useEffect(() => {
     if (!id) {
@@ -428,40 +436,18 @@ export function ConsumableOrderPayPage() {
             </Badge>
           </Group>
 
-          <Table.ScrollContainer minWidth={820}>
-            <Table highlightOnHover verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('Артикул')}</Table.Th>
-                  <Table.Th>{t('Назва')}</Table.Th>
-                  <Table.Th>{t('Кількість')}</Table.Th>
-                  <Table.Th>{t('Ціна')}</Table.Th>
-                  <Table.Th>{t('Разом')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {items.length > 0 ? (
-                  items.map((item, index) => (
-                    <Table.Tr key={getItemKey(item, index)}>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)}</Table.Td>
-                      <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
-                      <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
-                    </Table.Tr>
-                  ))
-                ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={5}>
-                      <Text c="dimmed" ta="center">
-                        {t('Позицій немає')}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+          <DataTable
+            columns={itemColumns}
+            data={items}
+            emptyText={t('Позицій немає')}
+            getRowId={(item, index) => getItemKey(item, index)}
+            isLoading={isLoading}
+            layoutVersion="consumable-order-pay-items-1"
+            loadingText={t('Завантаження')}
+            maxHeight="calc(100vh - 320px)"
+            minWidth={820}
+            tableId="consumable-order-pay-items"
+          />
         </Stack>
       </Card>
     </Stack>

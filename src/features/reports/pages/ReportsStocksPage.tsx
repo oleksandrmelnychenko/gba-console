@@ -12,12 +12,13 @@ import {
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   IconAlertCircle,
   IconDownload,
@@ -48,6 +49,7 @@ import type {
   ReportMeasurementGroup,
   ReportRequestBody,
   ReportResult,
+  ReportResultRow,
   ReportSelection,
 } from '../types'
 import {
@@ -490,39 +492,54 @@ function GroupingEditor({ groups, options, title, onAdd, onRemove, resolveItem }
   )
 }
 
+const TOTALS_ROW_FLAG = '__reportTotalsRow'
+
+type ReportPreviewRow = ReportResultRow & { [TOTALS_ROW_FLAG]?: boolean }
+
 function ReportPreview({ result }: { result: ReportResult }) {
   const { t } = useI18n()
 
+  const columns = useMemo<DataTableColumn<ReportPreviewRow>[]>(
+    () =>
+      result.table.columns.map((column, columnIndex) => ({
+        id: `${columnIndex}:${column}`,
+        header: column,
+        minWidth: 140,
+        accessor: (row) => row[column],
+        cell: (row) =>
+          row[TOTALS_ROW_FLAG] ? (
+            <Text component="span" fw={700}>
+              {columnIndex === 0 ? t('Разом') : displayValue(result.totals[column])}
+            </Text>
+          ) : (
+            displayValue(row[column])
+          ),
+      })),
+    [result.table.columns, result.totals, t],
+  )
+
+  const data = useMemo<ReportPreviewRow[]>(() => {
+    const rows: ReportPreviewRow[] = result.table.rows.slice(0, 100)
+
+    if (Object.keys(result.totals).length) {
+      return [...rows, { [TOTALS_ROW_FLAG]: true }]
+    }
+
+    return rows
+  }, [result.table.rows, result.totals])
+
   return (
-    <Box style={{ overflowX: 'auto' }}>
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            {result.table.columns.map((column) => (
-              <Table.Th key={column}>{column}</Table.Th>
-            ))}
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {result.table.rows.slice(0, 100).map((row, rowIndex) => (
-            <Table.Tr key={rowIndex}>
-              {result.table.columns.map((column) => (
-                <Table.Td key={column}>{displayValue(row[column])}</Table.Td>
-              ))}
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-        {Object.keys(result.totals).length ? (
-          <Table.Tfoot>
-            <Table.Tr>
-              {result.table.columns.map((column, index) => (
-                <Table.Th key={column}>{index === 0 ? t('Разом') : displayValue(result.totals[column])}</Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Tfoot>
-        ) : null}
-      </Table>
-    </Box>
+    <DataTable
+      columns={columns}
+      data={data}
+      emptyText={t('Даних ще немає')}
+      getRowId={(row, index) => (row[TOTALS_ROW_FLAG] ? 'totals' : String(index))}
+      maxHeight="calc(100vh - 320px)"
+      minWidth={Math.max(960, result.table.columns.length * 160)}
+      rowClassName={(row) => (row[TOTALS_ROW_FLAG] ? 'report-stocks-totals-row' : undefined)}
+      tableId="reports-stocks-preview"
+      layoutVersion="reports-stocks-preview-1"
+    />
   )
 }
 
