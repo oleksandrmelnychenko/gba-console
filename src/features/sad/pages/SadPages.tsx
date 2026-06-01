@@ -38,6 +38,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode }
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -2085,7 +2086,7 @@ function DownloadDocumentsModal({
             justify="space-between"
             rightSection={<IconDownload size={16} />}
             variant="light"
-            onClick={() => link.url && window.open(link.url, '_blank')}
+            onClick={() => link.url && window.open(getDocumentHref(link.url), '_blank', 'noopener,noreferrer')}
           >
             {link.label}
           </Button>

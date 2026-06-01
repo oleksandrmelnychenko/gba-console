@@ -829,7 +829,14 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   )
 
   const confirmRemoveColumn = useCallback(() => {
-    if (!columnToRemove || !packingList || isDirty || isSaving || columnHasAppliedPlacements(columnToRemove)) {
+    if (
+      !columnToRemove
+      || !packingList
+      || isPlacementLocked(invoice, packingList)
+      || isDirty
+      || isSaving
+      || columnHasAppliedPlacements(columnToRemove)
+    ) {
       return
     }
 
@@ -842,11 +849,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     } else {
       setPackingList(nextPackingList)
     }
-  }, [columnToRemove, isDirty, isSaving, packingList, persistPackingList, setColumnToRemove, setPackingList])
+  }, [columnToRemove, invoice, isDirty, isSaving, packingList, persistPackingList, setColumnToRemove, setPackingList])
 
   const handleMoveRemnants = useCallback(
     (column: DynamicProductPlacementColumn) => {
-      if (isSaving) {
+      if (isSaving || isPlacementLocked(invoice, packingList)) {
         return
       }
 
@@ -911,11 +918,11 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
       setDirty(true)
     },
-    [isDirty, isSaving, setDirty, setPackingList, t],
+    [invoice, isDirty, isSaving, packingList, setDirty, setPackingList, t],
   )
 
   const handleCalculateVat = useCallback(async () => {
-    if (!packingList || !invoice || isSaving) {
+    if (!packingList || !invoice || isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
 
@@ -1461,7 +1468,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
       model.packingList?.DynamicProductPlacementColumns || []
     ).map((column) => {
       const key = columnKey(column)
-      const canDelete = !columnHasAppliedPlacements(column)
+      const canDelete = !isPlaced && !columnHasAppliedPlacements(column)
 
       return {
         id: `dynamic-${key}`,
@@ -1476,7 +1483,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
                 <ActionIcon
                   aria-label={t('Перемістити залишки')}
                   color="gray"
-                  disabled={model.isDirty || model.isSaving}
+                  disabled={isPlaced || model.isDirty || model.isSaving}
                   size="sm"
                   variant="subtle"
                   onClick={() => model.handleMoveRemnants(column)}
@@ -1489,7 +1496,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
                   <ActionIcon
                     aria-label={t('Видалити')}
                     color="red"
-                    disabled={model.isDirty || model.isSaving}
+                    disabled={isPlaced || model.isDirty || model.isSaving}
                     size="sm"
                     variant="subtle"
                     onClick={() => model.setColumnToRemove(column)}
@@ -1684,14 +1691,14 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
               />
             )}
             <TextInput
-              disabled={model.isDirty || model.isSaving}
+              disabled={isPlaced || model.isDirty || model.isSaving}
               label={t('Від якої дати')}
               type="date"
               value={model.fromDate}
               onChange={(event) => model.setFromDate(event.currentTarget.value)}
             />
             <NumberInput
-              disabled={model.isDirty || model.isSaving}
+              disabled={isPlaced || model.isDirty || model.isSaving}
               label={t('Відсоток ПДВ')}
               min={0}
               suffix="%"
@@ -1703,7 +1710,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
         </Group>
 
         <Group gap="sm" mt="md" wrap="wrap">
-          <Button disabled={model.isDirty || model.isSaving} variant="light" onClick={() => void model.handleCalculateVat()}>
+          <Button disabled={isPlaced || model.isDirty || model.isSaving} variant="light" onClick={() => void model.handleCalculateVat()}>
             {t('Розрахувати ПДВ')}
           </Button>
           {!isPlaced && hasItemsNotReadyToPlace && (

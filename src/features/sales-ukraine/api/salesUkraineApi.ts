@@ -10,6 +10,7 @@ import type {
   SalesUkraineOrderItem,
   SalesUkraineOrganizationOption,
   SalesUkraineProduct,
+  SalesUkraineRetailPaymentStatus,
   SalesUkraineSale,
   SalesUkraineTransporter,
   SalesUkraineTransporterType,
@@ -136,6 +137,14 @@ export async function getSaleClientDebtTotal(clientNetId: string): Promise<SaleC
   })
 
   return result && typeof result === 'object' ? (result as SaleClientDebtTotal) : null
+}
+
+export async function getRetailPaymentStatusBySaleId(saleId: number): Promise<SalesUkraineRetailPaymentStatus | null> {
+  const result = await apiRequest<unknown>('/retail/clients/paid/amount', {
+    query: { saleId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineRetailPaymentStatus) : null
 }
 
 export async function switchSale(saleNetId: string, clientAgreementNetId: string): Promise<void> {

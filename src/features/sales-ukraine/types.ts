@@ -158,6 +158,13 @@ export type SalesUkraineRetailClient = SalesUkraineEntity & {
   PhoneNumber?: string
 }
 
+export type SalesUkraineRetailPaymentStatus = SalesUkraineEntity & {
+  Amount?: number
+  AmountToPay?: number
+  PaidAmount?: number
+  RetailPaymentStatusType?: number | string
+}
+
 export type SalesUkraineStatus = SalesUkraineEntity & {
   Name?: string
   SaleLifeCycleType?: number | string

@@ -53,6 +53,7 @@ import {
 } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -1893,7 +1894,7 @@ function ProductDocumentDownloadModal({
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL ? (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
@@ -1901,7 +1902,7 @@ function ProductDocumentDownloadModal({
               </Anchor>
             ) : null}
             {document.PdfDocumentURL ? (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

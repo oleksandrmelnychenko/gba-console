@@ -651,7 +651,7 @@ function InvoiceUploadModal({
         />
         <FileInput
           clearable
-          accept=".xls,.xlsx,.csv"
+          accept=".xls,.xlsx"
           disabled={isSaving}
           label={t('Файл')}
           value={form.file}
@@ -726,7 +726,7 @@ function PackListUploadModal({
         />
         <FileInput
           clearable
-          accept=".xls,.xlsx,.csv"
+          accept=".xls,.xlsx"
           disabled={isSaving}
           label={t('Файл')}
           value={form.file}

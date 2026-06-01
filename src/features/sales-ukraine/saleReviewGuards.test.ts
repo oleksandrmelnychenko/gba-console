@@ -15,11 +15,10 @@ describe('getSaleReviewIssues', () => {
     ).toEqual([])
   })
 
-  it('requires delivery data for non-self-checkout sales', () => {
+  it('requires recipient data for non-self-checkout sales but does not block on missing address', () => {
     expect(getSaleReviewIssues({ Transporter: { Id: 2 } } as SalesUkraineSale)).toEqual([
       'recipient',
       'recipientPhone',
-      'deliveryAddress',
     ])
   })
 
@@ -37,5 +36,41 @@ describe('getSaleReviewIssues', () => {
         IsCashOnDelivery: true,
       }),
     ).toEqual(['transporter', 'cashOnDeliveryAmount', 'ownTtnNumber'])
+  })
+
+  it('requires loaded retail payment status for retail-client sales', () => {
+    const sale: SalesUkraineSale = {
+      RetailClient: { Id: 11 },
+      Transporter: { CssClass: 'self_checkout_item_class', Id: 3 },
+    }
+
+    expect(getSaleReviewIssues(sale)).toEqual(['retailPaymentStatus'])
+    expect(getSaleReviewIssues(sale, { isRetailPaymentLoading: true, retailPaymentStatus: { Amount: 100, Id: 1 } })).toEqual([
+      'retailPaymentStatus',
+    ])
+  })
+
+  it('blocks retail-client sales when payment status amount is not positive', () => {
+    expect(
+      getSaleReviewIssues(
+        {
+          RetailClient: { Id: 11 },
+          Transporter: { CssClass: 'self_checkout_item_class', Id: 3 },
+        },
+        { retailPaymentStatus: { Amount: 0, Id: 5 } },
+      ),
+    ).toEqual(['retailPaymentAmount'])
+  })
+
+  it('allows retail-client sales when payment status amount is positive', () => {
+    expect(
+      getSaleReviewIssues(
+        {
+          RetailClient: { Id: 11 },
+          Transporter: { CssClass: 'self_checkout_item_class', Id: 3 },
+        },
+        { retailPaymentStatus: { Amount: 100, Id: 5 } },
+      ),
+    ).toEqual([])
   })
 })

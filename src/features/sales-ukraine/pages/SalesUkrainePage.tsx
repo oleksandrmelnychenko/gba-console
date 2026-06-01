@@ -59,6 +59,7 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
+import { getStatusTypeKey, isStatusType } from '../saleStatus'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleModal } from '../components/NewSaleModal'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
@@ -1444,23 +1445,22 @@ function getSaleStatusLabel(sale: SalesUkraineSale): string {
 }
 
 function getPaymentStatusLabel(sale: SalesUkraineSale): string {
-  const status = sale.BaseSalePaymentStatus?.SalePaymentStatusType
-  const key = typeof status === 'undefined' || status === null ? '' : String(status)
+  const key = getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
 }
 
 function isUnpaidSale(sale: SalesUkraineSale): boolean {
-  return sale.BaseSalePaymentStatus?.SalePaymentStatusType === 0
+  return isStatusType(sale.BaseSalePaymentStatus?.SalePaymentStatusType, 0)
 }
 
 function getPaymentStatusColor(sale: SalesUkraineSale): string | undefined {
-  switch (sale.BaseSalePaymentStatus?.SalePaymentStatusType) {
-    case 0:
+  switch (getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)) {
+    case '0':
       return 'red'
-    case 1:
+    case '1':
       return 'green'
-    case 3:
+    case '3':
       return 'orange'
     default:
       return undefined

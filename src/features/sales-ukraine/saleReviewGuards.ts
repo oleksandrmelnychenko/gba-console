@@ -1,17 +1,23 @@
-import type { SalesUkraineSale } from './types'
+import type { SalesUkraineRetailPaymentStatus, SalesUkraineSale } from './types'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
 
 export type SaleReviewIssueCode =
   | 'cashOnDeliveryAmount'
-  | 'deliveryAddress'
   | 'ownTtnNumber'
   | 'recipient'
   | 'recipientPhone'
+  | 'retailPaymentAmount'
+  | 'retailPaymentStatus'
   | 'transporter'
 
-export function getSaleReviewIssues(sale: SalesUkraineSale): SaleReviewIssueCode[] {
+export type SaleReviewContext = {
+  isRetailPaymentLoading?: boolean
+  retailPaymentStatus?: SalesUkraineRetailPaymentStatus | null
+}
+
+export function getSaleReviewIssues(sale: SalesUkraineSale, context: SaleReviewContext = {}): SaleReviewIssueCode[] {
   const issues: SaleReviewIssueCode[] = []
   const transporter = sale.Transporter
 
@@ -30,11 +36,6 @@ export function getSaleReviewIssues(sale: SalesUkraineSale): SaleReviewIssueCode
       issues.push('recipientPhone')
     }
 
-    const address = sale.DeliveryRecipientAddress
-
-    if (!hasEntityIdentity(address) && !hasText(address?.Value) && !hasText(address?.City) && !hasText(address?.Department)) {
-      issues.push('deliveryAddress')
-    }
   }
 
   if (sale.IsCashOnDelivery && !isPositiveNumber(sale.CashOnDeliveryAmount)) {
@@ -43,6 +44,16 @@ export function getSaleReviewIssues(sale: SalesUkraineSale): SaleReviewIssueCode
 
   if (sale.CustomersOwnTtn && !hasText(sale.CustomersOwnTtn.Number)) {
     issues.push('ownTtnNumber')
+  }
+
+  if (sale.RetailClient) {
+    const retailPaymentStatus = context.retailPaymentStatus
+
+    if (context.isRetailPaymentLoading || !hasEntityIdentity(retailPaymentStatus)) {
+      issues.push('retailPaymentStatus')
+    } else if (!isPositiveNumber(retailPaymentStatus?.Amount)) {
+      issues.push('retailPaymentAmount')
+    }
   }
 
   return issues

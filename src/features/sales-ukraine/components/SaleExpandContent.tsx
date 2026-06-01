@@ -2,6 +2,7 @@ import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
+import { isStatusType } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -23,7 +24,7 @@ export function SaleExpandContent({
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const isNew = sale.BaseLifeCycleStatus?.SaleLifeCycleType === NEW_LIFECYCLE_TYPE
+  const isNew = isStatusType(sale.BaseLifeCycleStatus?.SaleLifeCycleType, NEW_LIFECYCLE_TYPE)
   const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
 

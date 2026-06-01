@@ -1170,23 +1170,22 @@ function getSaleStatusLabel(sale: SalesOnlineShopSale): string {
 }
 
 function getPaymentStatusLabel(sale: SalesOnlineShopSale): string {
-  const status = sale.BaseSalePaymentStatus?.SalePaymentStatusType
-  const key = typeof status === 'undefined' || status === null ? '' : String(status)
+  const key = getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
 }
 
 function isUnpaidSale(sale: SalesOnlineShopSale): boolean {
-  return sale.BaseSalePaymentStatus?.SalePaymentStatusType === 0
+  return isStatusType(sale.BaseSalePaymentStatus?.SalePaymentStatusType, 0)
 }
 
 function getPaymentStatusColor(sale: SalesOnlineShopSale): string | undefined {
-  switch (sale.BaseSalePaymentStatus?.SalePaymentStatusType) {
-    case 0:
+  switch (getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)) {
+    case '0':
       return 'red'
-    case 1:
+    case '1':
       return 'green'
-    case 3:
+    case '3':
       return 'orange'
     default:
       return undefined
@@ -1208,7 +1207,15 @@ function getSaleCurrencyCode(sale: SalesOnlineShopSale): string {
 function isNewOrPackagingStatus(sale: SalesOnlineShopSale): boolean {
   const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-  return status === 0 || status === 1
+  return isStatusType(status, 0) || isStatusType(status, 1)
+}
+
+function getStatusTypeKey(value: number | string | null | undefined): string {
+  return value === null || typeof value === 'undefined' ? '' : String(value)
+}
+
+function isStatusType(value: number | string | null | undefined, expected: number): boolean {
+  return getStatusTypeKey(value) === String(expected)
 }
 
 function getOrderItemCount(sale: SalesOnlineShopSale): number {

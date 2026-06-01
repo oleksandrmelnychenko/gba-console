@@ -169,7 +169,7 @@ export function UploadProductSpecificationModal({
 
         <FileInput
           clearable
-          accept=".xls,.xlsx,.csv"
+          accept=".xls,.xlsx"
           disabled={isLoading}
           label={t('Завантажити')}
           leftSection={<IconFileSpreadsheet size={16} />}

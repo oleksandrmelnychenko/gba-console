@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { getSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
+import { isStatusType } from '../saleStatus'
 import {
   OrderItemShiftStatusType,
   type SalesUkraineOrderItem,
@@ -39,7 +40,7 @@ export function SaleEditDrawer({
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
-  const isNew = sale?.BaseLifeCycleStatus?.SaleLifeCycleType === 0
+  const isNew = isStatusType(sale?.BaseLifeCycleStatus?.SaleLifeCycleType, 0)
   const title = isNew ? t('Акт редагування рахунку') : t('Акт редагування накладної')
 
   return (

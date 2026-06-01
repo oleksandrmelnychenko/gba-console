@@ -44,6 +44,7 @@ import {
   getSaleById,
   getSaleClientAgreements,
   getSaleClientDebtTotal,
+  getRetailPaymentStatusBySaleId,
   searchSaleProducts,
   searchSalesUkraineClients,
   switchSale,
@@ -51,6 +52,7 @@ import {
   updateSaleFromData,
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
+import { isStatusType } from '../saleStatus'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import type {
@@ -59,11 +61,23 @@ import type {
   SalesUkraineClientOption,
   SalesUkraineOrderItem,
   SalesUkraineProduct,
+  SalesUkraineRetailPaymentStatus,
   SalesUkraineSale,
 } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+const EMPTY_RETAIL_PAYMENT_STATE: RetailPaymentState = {
+  error: null,
+  key: '',
+  status: null,
+}
+
+type RetailPaymentState = {
+  error: string | null
+  key: string
+  status: SalesUkraineRetailPaymentStatus | null
+}
 
 export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
   const { t } = useI18n()
@@ -87,6 +101,8 @@ export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale:
 function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const { t } = useI18n()
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
+  const [retailPaymentState, setRetailPaymentState] =
+    useValueState<RetailPaymentState>(EMPTY_RETAIL_PAYMENT_STATE)
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
   const [editingItem, setEditingItem] = useValueState<SalesUkraineOrderItem | null>(null)
@@ -138,10 +154,57 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     }
   }, [initialSale.NetUid, reloadKey, setError, setLoading, setSale, t])
 
+  const retailSaleId = typeof sale.Id === 'number' && sale.Id > 0 ? sale.Id : null
+  const retailClientKey = getEntityKey(sale.RetailClient)
+  const retailPaymentKey = retailSaleId && retailClientKey ? `${retailSaleId}:${retailClientKey}:${reloadKey}` : ''
+  const isRetailPaymentLoading = Boolean(retailPaymentKey && retailPaymentState.key !== retailPaymentKey)
+  const retailPaymentStatus = retailPaymentState.status
+  const retailPaymentError = retailPaymentState.error
+
+  useEffect(() => {
+    let cancelled = false
+    const commit = (nextState: RetailPaymentState) => {
+      if (!cancelled) {
+        setRetailPaymentState(nextState)
+      }
+    }
+
+    if (!retailSaleId || !retailClientKey || !retailPaymentKey) {
+      commit(EMPTY_RETAIL_PAYMENT_STATE)
+      return
+    }
+
+    async function loadRetailPaymentStatus(saleId: number) {
+      try {
+        const next = await getRetailPaymentStatusBySaleId(saleId)
+
+        commit({ error: null, key: retailPaymentKey, status: next })
+      } catch (loadError) {
+        commit({
+          error: loadError instanceof Error ? loadError.message : t('Не вдалося перевірити оплату'),
+          key: retailPaymentKey,
+          status: null,
+        })
+      }
+    }
+
+    void loadRetailPaymentStatus(retailSaleId)
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    retailClientKey,
+    retailPaymentKey,
+    retailSaleId,
+    setRetailPaymentState,
+    t,
+  ])
+
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isEditable = !sale.IsLocked
   const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem })
-  const reviewIssues = getSaleReviewIssues(sale)
+  const reviewIssues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
 
   async function confirmDelete() {
     if (!deletingItem?.NetUid) {
@@ -163,7 +226,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   }
 
   async function convertToInvoice() {
-    const issues = getSaleReviewIssues(sale)
+    const issues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
 
     if (issues.length > 0) {
       notifications.show({ color: 'orange', message: t('Заповніть обов’язкові дані продажу') })
@@ -231,7 +294,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     }
   }
 
-  const canConvert = isEditable && sale.BaseLifeCycleStatus?.SaleLifeCycleType === 0
+  const canConvert = isEditable && isStatusType(sale.BaseLifeCycleStatus?.SaleLifeCycleType, 0)
 
   return (
     <Stack gap="md">
@@ -409,6 +472,16 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
               </Stack>
             </Alert>
           )}
+          {isRetailPaymentLoading && (
+            <Text c="dimmed" size="sm">
+              {t('Перевіряємо оплату інтернет-магазину')}
+            </Text>
+          )}
+          {retailPaymentError && (
+            <Text c="red" size="sm">
+              {retailPaymentError}
+            </Text>
+          )}
           <Group justify="flex-end">
             <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConvertOpen(false)}>
               {t('Скасувати')}
@@ -455,15 +528,21 @@ function getReviewIssueLabel(issue: SaleReviewIssueCode, t: (message: string) =>
       return t('Оберіть отримувача товару')
     case 'recipientPhone':
       return t('Вкажіть мобільний телефон отримувача')
-    case 'deliveryAddress':
-      return t('Вкажіть адресу доставки')
     case 'cashOnDeliveryAmount':
       return t('Вкажіть суму накладеного платежу')
     case 'ownTtnNumber':
       return t('Вкажіть номер власної ТТН')
+    case 'retailPaymentStatus':
+      return t('Не вдалося перевірити оплату інтернет-магазину')
+    case 'retailPaymentAmount':
+      return t('Продаж інтернет-магазину не оплачений')
     default:
       return t('Заповніть обов’язкові дані продажу')
   }
+}
+
+function getEntityKey(entity: { Id?: number; NetUid?: string } | null | undefined): string {
+  return String(entity?.NetUid || entity?.Id || '')
 }
 
 function useItemColumns({
