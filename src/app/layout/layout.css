@@ -840,6 +840,10 @@
   color: var(--mantine-color-violet-7);
 }
 
+.console-subnav-item:hover {
+  color: var(--mantine-color-orange-light-color);
+}
+
 .console-subnav-module.is-active,
 .console-subnav-module.is-active:hover {
   background: transparent;
@@ -876,6 +880,7 @@
 }
 
 .console-subnav-indicator-item {
+  bottom: -6px;
   background: var(--mantine-color-orange-6);
 }
 
