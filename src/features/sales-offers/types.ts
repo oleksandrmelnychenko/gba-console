@@ -73,9 +73,16 @@ export type ClientShoppingCart = OfferEntity & {
 export type OffersClientOption = OfferEntity & {
   FirstName?: string
   FullName?: string
+  IsSubClient?: boolean
+  IsTradePoint?: boolean
   LastName?: string
   MiddleName?: string
   Name?: string
+}
+
+export type OfferSubClientLink = OfferEntity & {
+  RootClient?: OffersClientOption
+  SubClient?: OffersClientOption
 }
 
 export type OffersProduct = OfferEntity & {

@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
   createOffer,
+  getOfferSubClients,
   getOffersClientAgreements,
   getPublicOfferLink,
   searchOffersClients,
@@ -14,6 +15,7 @@ import {
 import type {
   ClientShoppingCart,
   OfferClientAgreement,
+  OfferSubClientLink,
   OffersClientOption,
   OffersNewLine,
   OffersProduct,
@@ -101,6 +103,9 @@ function NewOfferForm({
   const [clientQuery, setClientQuery] = useState('')
   const [clientOptions, setClientOptions] = useState<OffersClientOption[]>([])
   const [clientNetId, setClientNetId] = useState<string | null>(null)
+  const [subClients, setSubClients] = useState<OfferSubClientLink[]>([])
+  const [subClientNetId, setSubClientNetId] = useState<string | null>(null)
+  const [isLoadingSubClients, setLoadingSubClients] = useState(false)
   const [agreements, setAgreements] = useState<OfferClientAgreement[]>([])
   const [agreementNetId, setAgreementNetId] = useState<string | null>(null)
   const [isLoadingAgreements, setLoadingAgreements] = useState(false)
@@ -145,6 +150,42 @@ function NewOfferForm({
     let cancelled = false
 
     async function load(id: string) {
+      setLoadingSubClients(true)
+
+      try {
+        const next = await getOfferSubClients(id)
+
+        if (!cancelled) {
+          setSubClients(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setSubClients([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSubClients(false)
+        }
+      }
+    }
+
+    void load(clientNetId)
+
+    return () => {
+      cancelled = true
+    }
+  }, [clientNetId])
+
+  useEffect(() => {
+    const effectiveClientNetId = subClientNetId ?? clientNetId
+
+    if (!effectiveClientNetId) {
+      return
+    }
+
+    let cancelled = false
+
+    async function load(id: string) {
       setLoadingAgreements(true)
 
       try {
@@ -164,12 +205,12 @@ function NewOfferForm({
       }
     }
 
-    void load(clientNetId)
+    void load(effectiveClientNetId)
 
     return () => {
       cancelled = true
     }
-  }, [clientNetId])
+  }, [clientNetId, subClientNetId])
 
   useEffect(() => {
     const value = productQuery.trim()
@@ -202,6 +243,10 @@ function NewOfferForm({
   const clientData = clientOptions
     .filter((client) => client.NetUid)
     .map((client) => ({ label: getClientLabel(client), value: client.NetUid ?? '' }))
+  const subClientData = subClients
+    .map((link) => link.SubClient)
+    .filter((sub): sub is OffersClientOption => Boolean(sub?.NetUid) && Boolean(sub?.IsSubClient || sub?.IsTradePoint))
+    .map((sub) => ({ label: getClientLabel(sub), value: sub.NetUid ?? '' }))
   const agreementData = agreements
     .filter((item) => item.NetUid)
     .map((item) => ({ label: item.Agreement?.Name ?? item.NetUid ?? '', value: item.NetUid ?? '' }))
@@ -284,11 +329,30 @@ function NewOfferForm({
         value={clientNetId}
         onChange={(value) => {
           setClientNetId(value)
+          setSubClientNetId(null)
+          setSubClients([])
           setAgreementNetId(null)
           setAgreements([])
         }}
         onSearchChange={setClientQuery}
       />
+
+      {subClientData.length > 0 && (
+        <Select
+          clearable
+          searchable
+          data={subClientData}
+          disabled={isLoadingSubClients}
+          label={t('Суб-клієнт')}
+          placeholder={t('Без суб-клієнта')}
+          value={subClientNetId}
+          onChange={(value) => {
+            setSubClientNetId(value)
+            setAgreementNetId(null)
+            setAgreements([])
+          }}
+        />
+      )}
 
       <Select
         searchable

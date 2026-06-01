@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ClientShoppingCart,
   OfferClientAgreement,
+  OfferSubClientLink,
   OffersClientOption,
   OffersFilters,
   OffersProduct,
@@ -57,6 +58,14 @@ export async function searchOffersClients(value: string): Promise<OffersClientOp
   })
 
   return normalizeArray(result) as OffersClientOption[]
+}
+
+export async function getOfferSubClients(clientNetId: string): Promise<OfferSubClientLink[]> {
+  const result = await apiRequest<unknown>('/clients/all/clientsubclients/client', {
+    query: { netId: clientNetId },
+  })
+
+  return normalizeArray(result) as OfferSubClientLink[]
 }
 
 export async function getOffersClientAgreements(clientNetId: string): Promise<OfferClientAgreement[]> {
