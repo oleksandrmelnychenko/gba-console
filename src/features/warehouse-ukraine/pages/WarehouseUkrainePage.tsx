@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Tabs, Text } from '@mantine/core'
+import { Badge, Box, Group, Stack } from '@mantine/core'
 import {
   IconChecklist,
   IconEdit,
@@ -121,19 +121,26 @@ export function WarehouseUkrainePage() {
     return tabs.filter((tab) => hasPermission(tab.permissionKey))
   }, [hasPermission, tabs])
 
-  const defaultTab = visibleTabs[0]?.value
+  const defaultTab = visibleTabs[0]?.value ?? ''
+  const [activeTab, setActiveTab] = useValueState(defaultTab)
+  const activeTabItem = visibleTabs.find((tab) => tab.value === activeTab) ?? visibleTabs[0]
 
   return (
     <Stack gap="md">
-      <Text fw={700} size="xl">
-        {t('Склад Україна')}
-      </Text>
+      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        {visibleTabs.map((tab) => {
+          const isActive = tab.value === activeTabItem?.value
 
-      <Tabs defaultValue={defaultTab} keepMounted={false}>
-        <Tabs.List>
-          {visibleTabs.map((tab) => (
-            <Tabs.Tab key={tab.value} value={tab.value} leftSection={tab.icon}>
-              <Group gap={6}>
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              className={`pill-tab${isActive ? ' is-active' : ''}`}
+              aria-pressed={isActive}
+              onClick={() => setActiveTab(tab.value)}
+            >
+              <Group gap={6} wrap="nowrap" align="center">
+                {tab.icon}
                 {tab.label}
                 {tab.showBadge && editingTotal > 0 && (
                   <Badge color="violet" size="sm" variant="light">
@@ -141,16 +148,12 @@ export function WarehouseUkrainePage() {
                   </Badge>
                 )}
               </Group>
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
+            </button>
+          )
+        })}
+      </div>
 
-        {visibleTabs.map((tab) => (
-          <Tabs.Panel key={tab.value} value={tab.value} pt="md">
-            {tab.render()}
-          </Tabs.Panel>
-        ))}
-      </Tabs>
+      {activeTabItem && <Box>{activeTabItem.render()}</Box>}
     </Stack>
   )
 }

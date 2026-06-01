@@ -22,13 +22,13 @@ import {
   IconDeviceFloppy,
   IconFile,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconTrash,
   IconUpload,
   IconX,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -774,7 +774,7 @@ function AgreementDrawer({
                   {document.DocumentURL && (
                     <Tooltip label={t('Excel')}>
                       <ActionIcon component="a" href={document.DocumentURL} target="_blank" rel="noreferrer" aria-label={t('Excel')} size="sm" variant="subtle">
-                        <IconFileTypeXls size={16} />
+                        <ExcelIcon size={16} />
                       </ActionIcon>
                     </Tooltip>
                   )}

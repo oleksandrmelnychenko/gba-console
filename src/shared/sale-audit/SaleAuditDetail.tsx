@@ -4,9 +4,9 @@ import {
   IconArrowsExchange,
   IconFileInvoice,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconReportAnalytics,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../ui/ExcelIcon'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
@@ -182,7 +182,7 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
               {printDocument.DocumentURL && (
                 <Anchor className="document-link" href={printDocument.DocumentURL} rel="noreferrer" target="_blank">
                   <span className="document-link-badge document-link-badge-excel">
-                    <IconFileTypeXls size={22} stroke={1.8} />
+                    <ExcelIcon size={22} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

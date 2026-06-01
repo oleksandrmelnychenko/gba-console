@@ -35,7 +35,6 @@ import {
   IconDownload,
   IconEdit,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconFileDescription,
   IconHistory,
   IconPackage,
@@ -48,6 +47,7 @@ import {
   IconTrash,
   IconUpload,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -2882,7 +2882,7 @@ function ProductMovementDownloadModal({
             {document.DocumentURL ? (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

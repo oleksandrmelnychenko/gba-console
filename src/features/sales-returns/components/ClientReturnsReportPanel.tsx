@@ -1,5 +1,6 @@
 import { Anchor, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
-import { IconFileTypePdf, IconFileTypeXls, IconReportAnalytics } from '@tabler/icons-react'
+import { IconFileTypePdf, IconReportAnalytics } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -184,7 +185,7 @@ export function ClientReturnsReportPanel({ opened, onClose }: ClientReturnsRepor
         {reportDocument ? (
           <Group gap="md">
             <ReportDownloadLink
-              icon={<IconFileTypeXls size={16} />}
+              icon={<ExcelIcon size={16} />}
               label={t('Excel')}
               url={reportDocument.DocumentURL || reportDocument.XlsxDocument}
             />

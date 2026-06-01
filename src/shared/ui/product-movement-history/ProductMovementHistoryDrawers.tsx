@@ -18,11 +18,11 @@ import {
   IconChevronRight,
   IconDownload,
   IconFileTypePdf,
-  IconFileTypeXls,
   IconMinus,
   IconPlus,
   IconRefresh,
 } from '@tabler/icons-react'
+import { ExcelIcon } from '../ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
@@ -1276,7 +1276,7 @@ function ProductDocumentDownloadModal({
             {document.DocumentURL ? (
               <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>

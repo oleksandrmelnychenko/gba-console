@@ -1,5 +1,6 @@
 import { Anchor, Group, Stack, Text } from '@mantine/core'
-import { IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-react'
+import { IconFileTypePdf } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { ClientProductMovementDocumentResult } from '../types'
@@ -27,7 +28,7 @@ export function DownloadDocumentModal({
             {excelUrl && (
               <Anchor href={excelUrl} target="_blank" rel="noopener noreferrer">
                 <Group gap="xs">
-                  <IconFileTypeXls size={20} />
+                  <ExcelIcon size={20} />
                   <Text>{t('Excel документ')}</Text>
                 </Group>
               </Anchor>

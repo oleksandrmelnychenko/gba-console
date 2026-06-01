@@ -1,5 +1,6 @@
 import { Anchor, Stack, Text } from '@mantine/core'
-import { IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-react'
+import { IconFileTypePdf } from '@tabler/icons-react'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { DebtorsDocumentResult } from '../types'
@@ -21,7 +22,7 @@ export function DownloadDocumentModal({ document, onClose, opened }: DownloadDoc
             {document.excelUrl && (
               <Anchor href={document.excelUrl} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <IconFileTypeXls size={22} stroke={1.8} />
+                  <ExcelIcon size={22} />
                 </span>
                 <span>{t('Excel')}</span>
               </Anchor>
