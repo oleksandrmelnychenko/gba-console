@@ -8,7 +8,6 @@ import {
   Card,
   Divider,
   Group,
-  Loader,
   Menu,
   MultiSelect,
   Pagination,
@@ -24,14 +23,11 @@ import {
   IconAlertTriangle,
   IconArrowsLeftRight,
   IconBrandEdge,
-  IconChevronDown,
-  IconChevronUp,
   IconDots,
   IconExternalLink,
   IconEye,
   IconFileInvoice,
   IconHistory,
-  IconLock,
   IconLockOpen,
   IconPencil,
   IconPlus,
@@ -43,7 +39,7 @@ import {
   IconSearch,
   IconTag,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -85,7 +81,6 @@ import type {
   SalesUkraineStatusFilter,
   SalesUkraineUserFilter,
 } from '../types'
-import './salesUkraine.css'
 
 type FilterDraft = {
   clientId: string
@@ -107,6 +102,14 @@ type ConfirmState = {
 
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100', '500']
 const DEFAULT_PAGE_SIZE = 20
+
+const SALES_UKRAINE_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['date', 'number', 'client'],
+    right: ['actions'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 const SALES_UKRAINE_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -332,7 +335,7 @@ export function SalesUkrainePage() {
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
 
-  const saleHandlers: SaleRowHandlers = {
+  const columns = useSalesUkraineColumns({
     canEditSale,
     canUnlock,
     canWillNotShip,
@@ -346,7 +349,7 @@ export function SalesUkrainePage() {
     onOpenSale: setSelectedSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
-  }
+  })
 
   const renderSaleExpandContent = useCallback(
     (sale: SalesUkraineSale) => (
@@ -804,165 +807,127 @@ function useSalesUkraineColumns({
   onOpenSale: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
-}
-
-function SaleRowActions({ sale, handlers }: { sale: SalesUkraineSale; handlers: SaleRowHandlers }) {
+}) {
   const { t } = useI18n()
-  const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
-  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !handlers.isAdmin
-  const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-  const showWillNotShip = handlers.canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
-  const showUnlock = handlers.canUnlock && Boolean(sale.IsLocked)
-  const showEdit = handlers.canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
 
-  return (
-    <Box onClick={(event) => event.stopPropagation()}>
-      <Group gap={2} justify="flex-end" wrap="nowrap">
-        <Tooltip label={t('Деталі')}>
-          <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => handlers.onOpenSale(sale)}>
-            <IconEye size={18} />
-          </ActionIcon>
-        </Tooltip>
-        {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
-        <Menu position="bottom-end" shadow="md" withinPortal>
-          <Menu.Target>
-            <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
-              <IconDots size={18} />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {showEdit && (
-              <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => handlers.onOpenEditor(sale)}>
-                {t('Відкрити продаж')}
-              </Menu.Item>
-            )}
-            {showTtn && (
-              <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => handlers.onOpenConsignment(sale)}>
-                {t('Друк ТТН')}
-              </Menu.Item>
-            )}
-            {showWillNotShip && (
-              <Menu.Item
-                color="orange"
-                disabled={!sale.ChangedToInvoice}
-                leftSection={<IconAlertTriangle size={16} />}
-                onClick={() => handlers.onWillNotShip(sale)}
-              >
-                {t('Не буде відвантажено')}
-              </Menu.Item>
-            )}
-            {showUnlock && (
-              <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => handlers.onUnlock(sale)}>
-                {t('Розблокувати')}
-              </Menu.Item>
-            )}
-            <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => handlers.onOpenAudit(sale)}>
-              {t('Історія редагувань')}
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </Group>
-    </Box>
-  )
-}
-
-function SaleListRow({ sale, handlers }: { sale: SalesUkraineSale; handlers: SaleRowHandlers }) {
-  const { t } = useI18n()
-  const [expanded, setExpanded] = useState(false)
-  const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const unpaid = isUnpaidSale(sale)
-  const date = getSaleDate(sale)
-  const showEdit = handlers.canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
-  const discount = getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount)
-
-  return (
-    <Box className="sale-row">
-      <Group
-        gap="sm"
-        wrap="nowrap"
-        align="flex-start"
-        className="sale-row-main"
-        onClick={() => handlers.onOpenSale(sale)}
-      >
-        <Group gap={4} wrap="nowrap" align="center" style={{ flex: '0 0 auto' }} onClick={(event) => event.stopPropagation()}>
-          {showEdit ? (
-            <Tooltip label={t('Відкрити продаж')}>
-              <ActionIcon aria-label={t('Відкрити продаж')} color="gray" variant="subtle" onClick={() => handlers.onOpenEditor(sale)}>
-                <IconExternalLink size={18} />
-              </ActionIcon>
-            </Tooltip>
-          ) : (
-            <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => handlers.onOpenSale(sale)}>
-              <IconEye size={18} />
-            </ActionIcon>
-          )}
-          {orderItems.length > 0 && (
-            <ActionIcon aria-label={t('Позиції')} color="gray" variant="subtle" onClick={() => setExpanded((value) => !value)}>
-              {expanded ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-            </ActionIcon>
-          )}
-        </Group>
-
-        <Stack gap={2} style={{ flex: '1 1 auto', minWidth: 0 }}>
-          <Group gap={6} wrap="wrap" align="center">
+  return useMemo<DataTableColumn<SalesUkraineSale>[]>(
+    () => [
+      {
+        id: 'date',
+        header: t('Дата'),
+        width: 150,
+        minWidth: 132,
+        accessor: (sale) => getSaleTime(sale),
+        cell: (sale) => (
+          <>
+            <Text fw={600}>{displayValue(formatDate(getSaleDate(sale)))}</Text>
+            <Text size="xs" c="dimmed">
+              {displayValue(formatTime(getSaleDate(sale)))}
+            </Text>
+          </>
+        ),
+      },
+      {
+        id: 'number',
+        header: t('Номер'),
+        width: 184,
+        minWidth: 150,
+        accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid,
+        cell: (sale) => (
+          <Group gap={5} wrap="wrap">
             <SaleSourceIcon sale={sale} />
-            <Text fw={700}>{displayValue(sale.SaleNumber?.Value)}</Text>
-            <Text fw={600} lineClamp={1}>{displayValue(getSaleClientName(sale))}</Text>
-            {sale.IsVatSale && <Badge color="violet" size="xs" variant="light">{t('ПДВ')}</Badge>}
-            {sale.IsDevelopment && <Badge color="grape" size="xs" variant="light">{t('Протокол')}</Badge>}
+            <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
+            {sale.IsVatSale && (
+              <Badge color="blue" size="xs" variant="light">
+                {t('ПДВ')}
+              </Badge>
+            )}
+            {sale.IsDevelopment && (
+              <Badge color="grape" size="xs" variant="light">
+                {t('Протокол')}
+              </Badge>
+            )}
             {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
-              <Tooltip label={t('Рахунок редаговано')}><IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)' }} /></Tooltip>
+              <Tooltip label={t('Рахунок редаговано')}>
+                <IconPencil size={14} style={{ color: 'var(--mantine-color-orange-6)' }} />
+              </Tooltip>
             )}
             {sale.IsPrinted && (
-              <Tooltip label={t('Документи надруковано')}><IconPrinter size={14} style={{ color: 'var(--mantine-color-gray-5)' }} /></Tooltip>
+              <Tooltip label={t('Документи надруковано')}>
+                <IconPrinter size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
+              </Tooltip>
             )}
           </Group>
-          <Group gap={8} wrap="wrap">
-            <Text size="xs" c="dimmed">{displayValue(formatDate(date))} {displayValue(formatTime(date))}</Text>
-            <Text size="xs" c="dimmed">· {displayValue(getSaleUserName(sale))}</Text>
-            {sale.ClientAgreement?.Agreement?.Name && (
-              <Text size="xs" c="dimmed">· {displayValue(sale.ClientAgreement.Agreement.Name)}</Text>
-            )}
-            {isNewOrPackagingStatus(sale) && (
-              <Anchor component="button" type="button" size="xs" onClick={(event) => { event.stopPropagation(); handlers.onOpenDiscount(sale) }}>
-                {discount ? `${t('Знижка')} ${amountFormatter.format(discount)} %` : t('Знижка')}
-              </Anchor>
-            )}
-          </Group>
-        </Stack>
+        ),
+      },
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        width: 300,
+        minWidth: 220,
+        accessor: getSaleClientName,
+        cell: (sale) => (
+          <>
+            <Text fw={600}>{displayValue(getSaleClientName(sale))}</Text>
+            <Text size="xs" c="dimmed">
+              {displayValue(sale.ClientAgreement?.Agreement?.Name)}
+            </Text>
+          </>
+        ),
+      },
+      {
+        id: 'status',
+        header: t('Статус'),
+        width: 150,
+        minWidth: 132,
+        accessor: getSaleStatusKey,
+        cell: (sale) => (
+          <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} variant="light">
+            {getSaleStatusLabel(sale)}
+          </Badge>
+        ),
+      },
+      {
+        id: 'payment',
+        header: t('Оплата'),
+        width: 132,
+        minWidth: 116,
+        accessor: getPaymentStatusLabel,
+        cell: (sale) => {
+          const color = getPaymentStatusColor(sale)
 
-        <Group gap="lg" wrap="nowrap" align="center" style={{ flex: '0 0 auto' }}>
-          <div className="sale-row-amount">
-            <Text fw={700} c={unpaid ? 'red' : undefined}>{formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}</Text>
-            <Text size="xs" c={unpaid ? 'red' : 'dimmed'}>{displayValue(getSaleCurrencyCode(sale))}</Text>
-          </div>
-          <div className="sale-row-amount">
-            <Text>{formatAmount(getSecondaryAmount(sale))}</Text>
-            <Text size="xs" c="dimmed">{getSecondaryAmountCode(sale)}</Text>
-          </div>
-          <div className="sale-row-amount">
-            <Text>{formatAmount(getNumber(sale.Order?.TotalVat))}</Text>
-            <Text size="xs" c="dimmed">{t('ПДВ')}</Text>
-          </div>
-          <div className="sale-row-amount">
-            <Text>{displayValue(getOrderItemCount(sale))}</Text>
-            <Text size="xs" c="dimmed">{t('поз.')}</Text>
-          </div>
-          {sale.IsLocked && (
-            <Tooltip label={t('Заблоковано')}><IconLock size={16} style={{ color: 'var(--mantine-color-gray-5)' }} /></Tooltip>
-          )}
-          <SaleRowActions sale={sale} handlers={handlers} />
-          <Stack gap={0} align="flex-end" style={{ minWidth: 96 }}>
-            <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} variant="light">
-              {getSaleStatusLabel(sale)}
-            </Badge>
-            <Text size="xs" c={getPaymentStatusColor(sale) || 'dimmed'} fw={getPaymentStatusColor(sale) ? 600 : undefined}>
+          return (
+            <Text c={color} fw={color ? 600 : undefined}>
               {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
             </Text>
-          </Stack>
-        </Group>
-      </Group>
+          )
+        },
+      },
+      {
+        id: 'responsible',
+        header: t('Менеджер'),
+        width: 170,
+        minWidth: 140,
+        accessor: getSaleUserName,
+        cell: (sale) => displayValue(getSaleUserName(sale)),
+      },
+      {
+        id: 'organization',
+        header: t('Організація'),
+        width: 180,
+        minWidth: 150,
+        accessor: (sale) => sale.ClientAgreement?.Agreement?.Organization?.Name,
+        cell: (sale) => displayValue(sale.ClientAgreement?.Agreement?.Organization?.Name),
+      },
+      {
+        id: 'amountLocal',
+        header: t('Сума'),
+        width: 132,
+        minWidth: 116,
+        align: 'right',
+        accessor: (sale) => getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount),
+        cell: (sale) => {
+          const unpaid = isUnpaidSale(sale)
 
           return (
             <>
@@ -1244,7 +1209,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           </Badge>
         )}
         {sale.IsVatSale && (
-          <Badge color="violet" variant="light">
+          <Badge color="blue" variant="light">
             {t('ПДВ')}
           </Badge>
         )}
@@ -1332,6 +1297,10 @@ function getTotalRows(sales: SalesUkraineSale[]): number {
 
 function getSaleDate(sale: SalesUkraineSale): Date | null {
   return parseDate(sale.ChangedToInvoice || sale.Updated || sale.Created || sale.FromDate)
+}
+
+function getSaleTime(sale: SalesUkraineSale): number {
+  return getSaleDate(sale)?.getTime() || 0
 }
 
 function getSaleClientName(sale: SalesUkraineSale): string {

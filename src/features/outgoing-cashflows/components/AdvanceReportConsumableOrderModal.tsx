@@ -597,7 +597,7 @@ export function AdvanceReportConsumableOrderModal({
       return
     }
 
-    if (hasConsumableOrderDraft(form, order, documentFiles, initialFormRef.current)) {
+    if (initialFormRef.current && hasConsumableOrderDraft(form, order, documentFiles, initialFormRef.current)) {
       setConfirmCloseOpen(true)
       return
     }

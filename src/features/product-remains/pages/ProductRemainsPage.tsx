@@ -22,6 +22,7 @@ import {
   IconChevronDown,
   IconDownload,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconRefresh,
   IconRestore,
   IconSearch,
@@ -882,7 +883,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
+                    <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>

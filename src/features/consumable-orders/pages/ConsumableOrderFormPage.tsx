@@ -14,6 +14,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   Textarea,
   TextInput,
@@ -635,126 +636,6 @@ export function ConsumableOrderFormPage() {
   const costMovementOptions = useMemo(() => toEntityOptions(costMovements, (item) => item?.OperationName || ''), [costMovements])
   const documentRows = order.ConsumablesOrderDocuments || []
 
-  const itemColumns = useMemo<DataTableColumn<ConsumablesOrderItem>[]>(
-    () => [
-      {
-        id: 'article',
-        header: t('Артикул'),
-        minWidth: 120,
-        accessor: (row) => row.ConsumableProduct?.VendorCode,
-        cell: (row) => displayValue(row.ConsumableProduct?.VendorCode),
-      },
-      {
-        id: 'name',
-        header: t('Назва'),
-        minWidth: 220,
-        accessor: (row) => row.ConsumableProduct?.Name,
-        cell: (row) => (
-          <Group gap="xs">
-            <Text size="sm">{displayValue(row.ConsumableProduct?.Name)}</Text>
-            {row.Deleted && (
-              <Badge color="red" size="xs" variant="light">
-                {t('Буде видалено')}
-              </Badge>
-            )}
-          </Group>
-        ),
-      },
-      {
-        id: 'category',
-        header: t('Категорія'),
-        minWidth: 160,
-        accessor: (row) => row.ConsumableProductCategory?.Name || row.ConsumableProduct?.ConsumableProductCategory?.Name,
-        cell: (row) => displayValue(row.ConsumableProductCategory?.Name || row.ConsumableProduct?.ConsumableProductCategory?.Name),
-      },
-      {
-        id: 'qty',
-        header: t('Кількість'),
-        minWidth: 110,
-        accessor: (row) => row.Qty,
-        cell: (row) => `${formatAmount(row.Qty)} ${row.ConsumableProduct?.MeasureUnit?.Name || ''}`,
-      },
-      {
-        id: 'price',
-        header: t('Ціна'),
-        minWidth: 110,
-        accessor: (row) => row.PricePerItem,
-        cell: (row) => formatMoney(row.PricePerItem),
-      },
-      {
-        id: 'sum',
-        header: t('Сума'),
-        minWidth: 110,
-        accessor: (row) => row.TotalPrice,
-        cell: (row) => formatMoney(row.TotalPrice),
-      },
-      {
-        id: 'vatPercent',
-        header: t('ПДВ %'),
-        minWidth: 90,
-        accessor: (row) => row.VatPercent,
-        cell: (row) => formatAmount(row.VatPercent),
-      },
-      {
-        id: 'vat',
-        header: t('ПДВ'),
-        minWidth: 110,
-        accessor: (row) => row.VAT,
-        cell: (row) => formatMoney(row.VAT),
-      },
-      {
-        id: 'total',
-        header: t('Разом'),
-        minWidth: 110,
-        accessor: (row) => row.TotalPriceWithVAT,
-        cell: (row) => formatMoney(row.TotalPriceWithVAT),
-      },
-      {
-        id: 'actions',
-        header: '',
-        minWidth: 96,
-        align: 'right',
-        enableSorting: false,
-        accessor: () => '',
-        cell: (row) => {
-          const index = activeItems.indexOf(row)
-
-          return (
-            <Group gap={4} justify="flex-end" wrap="nowrap">
-              {!row.Deleted && (
-                <Tooltip label={t('Редагувати')}>
-                  <ActionIcon
-                    aria-label={t('Редагувати')}
-                    disabled={isPaid || isSaving}
-                    size="sm"
-                    variant="subtle"
-                    onClick={() => openEditItemEditor(row, index)}
-                  >
-                    <IconPencil size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              )}
-              <Tooltip label={row.Deleted ? t('Відновити') : t('Видалити')}>
-                <ActionIcon
-                  aria-label={row.Deleted ? t('Відновити') : t('Видалити')}
-                  color={row.Deleted ? 'green' : 'red'}
-                  disabled={isPaid || isSaving}
-                  size="sm"
-                  variant="subtle"
-                  onClick={() => void toggleItemDeleted(row, index)}
-                >
-                  {row.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          )
-        },
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeItems, isPaid, isSaving, t],
-  )
-
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
@@ -1012,7 +893,7 @@ export function ConsumableOrderFormPage() {
             <Badge color="gray" variant="light">
               {t('ПДВ')}: {formatMoney(totals.vat)}
             </Badge>
-            <Badge color="violet" variant="light">
+            <Badge color="blue" variant="light">
               {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
             </Badge>
           </Group>

@@ -30,13 +30,13 @@ import {
   IconDownload,
   IconEye,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconHistory,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
@@ -1215,7 +1215,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                   className="document-link"
                 >
                   <span className="document-link-badge document-link-badge-excel">
-                    <ExcelIcon size={22} />
+                    <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
                   <span>{t('Excel документ')}</span>
                 </Anchor>
@@ -1486,7 +1486,7 @@ function ProductStorageActionModal({
   const isSingle = modal.scope === 'single'
   const showManagementSwitch = isAdmin
   const showQuantityField = isSingle
-  const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage.ForDefective
+  const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage?.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
     ...option,
     label: t(option.label),

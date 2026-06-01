@@ -1,11 +1,9 @@
-import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Button, Checkbox, Group, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { IconTrash } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementRow,
@@ -164,35 +162,6 @@ function ProtocolIncomePlacementDrawerContent({
 
   const placedQty = sumQty(placements)
   const canAddPlacements = rowQty > placedQty
-
-  const placementColumns = useMemo<DataTableColumn<DynamicProductPlacement>[]>(() => [
-    { id: 'index', header: '#', width: 60, accessor: (_row) => null, cell: (_row) => placements.indexOf(_row) + 1 },
-    { id: 'storage', header: t('Склад'), minWidth: 120, accessor: (placement) => placement.StorageNumber, cell: (placement) => placement.StorageNumber },
-    { id: 'row', header: t('Ряд'), minWidth: 120, accessor: (placement) => placement.RowNumber, cell: (placement) => placement.RowNumber },
-    { id: 'cell', header: t('Полиця'), minWidth: 120, accessor: (placement) => placement.CellNumber, cell: (placement) => placement.CellNumber },
-    { id: 'qty', header: t('К-сть'), minWidth: 100, accessor: (placement) => placement.Qty, cell: (placement) => placement.Qty },
-    {
-      id: 'actions',
-      header: '',
-      width: 60,
-      align: 'center',
-      accessor: (_row) => null,
-      cell: (placement) =>
-        !placement.IsApplied ? (
-          <ActionIcon
-            aria-label={t('Видалити')}
-            color="red"
-            variant="subtle"
-            onClick={(event) => {
-              event.stopPropagation()
-              removePlacement(placement)
-            }}
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        ) : null,
-    },
-  ], [placements, t])
 
   function openDraft(placement: DynamicProductPlacement | null) {
     const excludedQty = placement ? sumQtyExcept(placements, placement) : placedQty
