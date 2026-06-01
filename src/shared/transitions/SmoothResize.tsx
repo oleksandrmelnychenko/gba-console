@@ -48,7 +48,11 @@ function useElementHeight(element: HTMLElement | null): number | null {
     return () => observer.disconnect()
   }, [element])
   const getSnapshot = useCallback(() => {
-    return element ? element.getBoundingClientRect().height : null
+    // Use the layout height (offsetHeight), not getBoundingClientRect().height:
+    // the latter is affected by the modal's pop-in transform: scale(), which would
+    // lock the container at a too-small height (clipping the last rows) because the
+    // ResizeObserver never re-fires when only the transform settles.
+    return element ? element.offsetHeight : null
   }, [element])
 
   return useSyncExternalStore(subscribe, getSnapshot, () => null)
