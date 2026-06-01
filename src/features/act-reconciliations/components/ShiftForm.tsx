@@ -26,12 +26,14 @@ const EMPTY_PLACEMENT: PlacementValues = {
 export function ShiftForm({
   isSubmitting,
   maxAvailableQty,
+  submitDisabled = false,
   storages,
   storagesLoading,
   onSubmit,
 }: {
   isSubmitting: boolean
   maxAvailableQty?: number
+  submitDisabled?: boolean
   storages: ReconciliationStorageOption[]
   storagesLoading: boolean
   onSubmit: (values: ShiftFormValues) => void
@@ -63,7 +65,8 @@ export function ShiftForm({
     Boolean(toStorageNetId) &&
     !qtyError &&
     placementComplete &&
-    !isSubmitting
+    !isSubmitting &&
+    !submitDisabled
 
   function handleSubmit() {
     if (!canSubmit) {

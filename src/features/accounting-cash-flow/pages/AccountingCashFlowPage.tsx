@@ -33,6 +33,7 @@ import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRed
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridLeadColumn } from '../../../shared/ui/cash-flow-grid/types'
 import {
@@ -907,7 +908,7 @@ function DownloadDocumentModal({
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
@@ -915,7 +916,7 @@ function DownloadDocumentModal({
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

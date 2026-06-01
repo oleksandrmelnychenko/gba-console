@@ -1,10 +1,17 @@
-import { Alert, Tabs } from '@mantine/core'
+import { Alert, NumberInput, Table, Tabs, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import {
+  getActionQuantityLimit,
+  getDefaultActionQuantity,
+  resolveActionToOperationQty,
+  validateActionQuantity,
+  type ActionQuantityValidationReason,
+} from '../actReconciliationActionQuantity'
 import {
   createProductIncomeFromItem,
   createProductIncomeFromItems,
@@ -39,6 +46,7 @@ export function ActReconciliationActionsModal({
   const [storagesError, setStoragesError] = useValueState<string | null>(null)
   const [isSubmitting, setSubmitting] = useValueState(false)
   const [submitError, setSubmitError] = useValueState<string | null>(null)
+  const [quantityDrafts, setQuantityDrafts] = useValueState<Record<string, string>>({})
 
   useEffect(() => {
     if (!opened) {
@@ -77,6 +85,19 @@ export function ActReconciliationActionsModal({
 
   const singleItem = target?.mode === 'single' ? target.item : null
   const maxAvailableQty = singleItem?.QtyDifference
+  const previewState = useMemo(
+    () => (target?.mode === 'multi' ? getQuantityPreviewState(target.items, quantityDrafts) : null),
+    [quantityDrafts, target],
+  )
+
+  useEffect(() => {
+    if (!opened || target?.mode !== 'multi') {
+      setQuantityDrafts({})
+      return
+    }
+
+    setQuantityDrafts(buildInitialQuantityDrafts(target.items))
+  }, [opened, setQuantityDrafts, target])
 
   async function runSubmit(action: () => Promise<void>) {
     setSubmitting(true)
@@ -123,6 +144,10 @@ export function ActReconciliationActionsModal({
       return
     }
 
+    if (previewState && !previewState.canSubmit) {
+      return
+    }
+
     void runSubmit(() =>
       createProductIncomeFromItems(
         {
@@ -130,7 +155,11 @@ export function ActReconciliationActionsModal({
           fromDate: values.fromDate,
           storageNetId: values.storageNetId,
         },
-        target.items.map((item) => ({ ...item, Reason: values.reason, ToOperationQty: item.QtyDifference })),
+        target.items.map((item, index) => ({
+          ...item,
+          Reason: values.reason,
+          ToOperationQty: resolveActionToOperationQty(item, quantityDrafts[getItemKey(item, index)]),
+        })),
       ),
     )
   }
@@ -159,6 +188,10 @@ export function ActReconciliationActionsModal({
       return
     }
 
+    if (previewState && !previewState.canSubmit) {
+      return
+    }
+
     void runSubmit(() =>
       createProductTransferFromItems(
         {
@@ -168,7 +201,11 @@ export function ActReconciliationActionsModal({
           organizationNetId,
           toStorageNetId: values.toStorageNetId,
         },
-        target.items.map((item) => ({ ...item, Reason: values.reason, ToOperationQty: item.QtyDifference })),
+        target.items.map((item, index) => ({
+          ...item,
+          Reason: values.reason,
+          ToOperationQty: resolveActionToOperationQty(item, quantityDrafts[getItemKey(item, index)]),
+        })),
       ),
     )
   }
@@ -180,6 +217,17 @@ export function ActReconciliationActionsModal({
           {submitError || storagesError}
         </Alert>
       )}
+      {target?.mode === 'multi' && (
+        <ActionQuantityPreview
+          disabled={isSubmitting}
+          items={target.items}
+          quantityDrafts={quantityDrafts}
+          validationByKey={previewState?.validationByKey || {}}
+          onQuantityChange={(item, value) =>
+            setQuantityDrafts((current) => ({ ...current, [getItemKey(item, target.items.indexOf(item))]: value }))
+          }
+        />
+      )}
       <Tabs defaultValue="placement" keepMounted={false}>
         <Tabs.List mb="md">
           <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>
@@ -189,6 +237,7 @@ export function ActReconciliationActionsModal({
           <ProductPlacementForm
             isSubmitting={isSubmitting}
             maxAvailableQty={maxAvailableQty}
+            submitDisabled={previewState ? !previewState.canSubmit : false}
             storages={storages}
             storagesLoading={storagesLoading}
             onSubmit={handlePlacementSubmit}
@@ -198,6 +247,7 @@ export function ActReconciliationActionsModal({
           <ShiftForm
             isSubmitting={isSubmitting}
             maxAvailableQty={maxAvailableQty}
+            submitDisabled={previewState ? !previewState.canSubmit : false}
             storages={storages}
             storagesLoading={storagesLoading}
             onSubmit={handleShiftSubmit}
@@ -208,10 +258,146 @@ export function ActReconciliationActionsModal({
   )
 }
 
+function ActionQuantityPreview({
+  disabled,
+  items,
+  quantityDrafts,
+  validationByKey,
+  onQuantityChange,
+}: {
+  disabled: boolean
+  items: ActReconciliationItem[]
+  quantityDrafts: Record<string, string>
+  validationByKey: Record<string, ActionQuantityValidationReason | null>
+  onQuantityChange: (item: ActReconciliationItem, value: string) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      <Text fw={600} mb="xs" size="sm">
+        {t('Кількість до операції')}
+      </Text>
+      <Table.ScrollContainer mah={260} mb="md" minWidth={640}>
+        <Table highlightOnHover verticalSpacing="xs">
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={52}>#</Table.Th>
+              <Table.Th>{t('Код товару')}</Table.Th>
+              <Table.Th>{t('Назва товару')}</Table.Th>
+              <Table.Th ta="right" w={110}>
+                {t('Різниця')}
+              </Table.Th>
+              <Table.Th w={150}>{t('К-сть')}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {items.map((item, index) => {
+              const itemKey = getItemKey(item, index)
+              const limit = getActionQuantityLimit(item)
+              const validationReason = validationByKey[itemKey]
+              const isEditable = limit !== undefined && limit > 0
+
+              return (
+                <Table.Tr key={itemKey}>
+                  <Table.Td>{index + 1}</Table.Td>
+                  <Table.Td>
+                    <Text fw={600} size="sm">
+                      {displayValue(item.Product?.VendorCode)}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <Text lineClamp={2} size="sm">
+                      {displayValue(item.Product?.NameUA || item.Product?.Name)}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td ta="right">
+                    <Text c={item.NegativeDifference ? 'red' : 'teal'} fw={600} size="sm">
+                      {item.NegativeDifference ? '-' : '+'} {displayValue(limit)}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>
+                    <NumberInput
+                      allowNegative={false}
+                      clampBehavior="none"
+                      disabled={disabled || !isEditable}
+                      error={validationReason ? getQuantityError(validationReason, limit, t) : null}
+                      hideControls
+                      max={limit}
+                      min={1}
+                      size="xs"
+                      value={quantityDrafts[itemKey] ?? ''}
+                      onChange={(value) => onQuantityChange(item, String(value))}
+                    />
+                  </Table.Td>
+                </Table.Tr>
+              )
+            })}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </>
+  )
+}
+
 function getModalTitle(target: ActionTarget | null, t: (key: string) => string): string {
   if (target?.mode === 'single') {
     return target.item.Product?.VendorCode || t('Дія')
   }
 
   return t('Обробити')
+}
+
+function buildInitialQuantityDrafts(items: ActReconciliationItem[]): Record<string, string> {
+  return items.reduce<Record<string, string>>((drafts, item, index) => {
+    const defaultQty = getDefaultActionQuantity(item)
+
+    drafts[getItemKey(item, index)] = defaultQty === undefined ? '' : String(defaultQty)
+
+    return drafts
+  }, {})
+}
+
+function getQuantityPreviewState(items: ActReconciliationItem[], quantityDrafts: Record<string, string>) {
+  return items.reduce(
+    (state, item) => {
+      const itemKey = getItemKey(item, state.index)
+      const validation = validateActionQuantity(quantityDrafts[itemKey], getActionQuantityLimit(item))
+
+      state.validationByKey[itemKey] = validation.reason
+      state.canSubmit = state.canSubmit && validation.isValid
+      state.index += 1
+
+      return state
+    },
+    {
+      canSubmit: items.length > 0,
+      index: 0,
+      validationByKey: {} as Record<string, ActionQuantityValidationReason | null>,
+    },
+  )
+}
+
+function getQuantityError(
+  reason: ActionQuantityValidationReason,
+  limit: number | undefined,
+  t: (key: string) => string,
+): string {
+  if (reason === 'overLimit') {
+    return `${t('Максимальна кількість')}: ${limit ?? '-'}`
+  }
+
+  return reason === 'invalidLimit' ? t('Немає доступної кількості') : t('Вкажіть кількість')
+}
+
+function getItemKey(item: ActReconciliationItem, index: number): string {
+  return String(item.NetUid || item.Id || item.Product?.NetUid || `item-${index}`)
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  return String(value)
 }

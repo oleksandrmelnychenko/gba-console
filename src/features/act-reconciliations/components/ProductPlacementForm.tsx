@@ -25,12 +25,14 @@ const EMPTY_PLACEMENT: PlacementValues = {
 export function ProductPlacementForm({
   isSubmitting,
   maxAvailableQty,
+  submitDisabled = false,
   storages,
   storagesLoading,
   onSubmit,
 }: {
   isSubmitting: boolean
   maxAvailableQty?: number
+  submitDisabled?: boolean
   storages: ReconciliationStorageOption[]
   storagesLoading: boolean
   onSubmit: (values: ProductPlacementFormValues) => void
@@ -56,7 +58,7 @@ export function ProductPlacementForm({
     !showPlacement ||
     (Boolean(placement.storageNumber) && Boolean(placement.rowNumber) && Boolean(placement.cellNumber))
   const canSubmit =
-    Boolean(fromDate) && Boolean(storageNetId) && !qtyError && placementComplete && !isSubmitting
+    Boolean(fromDate) && Boolean(storageNetId) && !qtyError && placementComplete && !isSubmitting && !submitDisabled
 
   function handleSubmit() {
     if (!canSubmit) {

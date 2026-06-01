@@ -35,6 +35,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -773,14 +774,14 @@ function AgreementDrawer({
                 <Group gap={4} wrap="nowrap">
                   {document.DocumentURL && (
                     <Tooltip label={t('Excel')}>
-                      <ActionIcon component="a" href={document.DocumentURL} target="_blank" rel="noreferrer" aria-label={t('Excel')} size="sm" variant="subtle">
+                      <ActionIcon component="a" href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" aria-label={t('Excel')} size="sm" variant="subtle">
                         <IconFileTypeXls size={16} />
                       </ActionIcon>
                     </Tooltip>
                   )}
                   {document.PdfDocumentURL && (
                     <Tooltip label={t('PDF')}>
-                      <ActionIcon component="a" href={document.PdfDocumentURL} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
+                      <ActionIcon component="a" href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
                         <IconFileTypePdf size={16} />
                       </ActionIcon>
                     </Tooltip>

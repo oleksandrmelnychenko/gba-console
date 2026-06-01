@@ -1,6 +1,7 @@
 import { Alert, Anchor, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconFileTypePdf, IconFileTypeXls } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { WarehouseUkraineExportDocument } from '../types'
 
@@ -35,7 +36,7 @@ export function DownloadDocumentModal({
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
@@ -43,7 +44,7 @@ export function DownloadDocumentModal({
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

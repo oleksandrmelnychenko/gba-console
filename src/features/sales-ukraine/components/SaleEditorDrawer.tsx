@@ -19,6 +19,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconAlertTriangle,
   IconArrowsJoin,
   IconCopy,
   IconFileInvoice,
@@ -49,6 +50,7 @@ import {
   updateOrderItem,
   updateSaleFromData,
 } from '../api/salesUkraineApi'
+import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import type {
@@ -139,6 +141,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isEditable = !sale.IsLocked
   const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem })
+  const reviewIssues = getSaleReviewIssues(sale)
 
   async function confirmDelete() {
     if (!deletingItem?.NetUid) {
@@ -160,6 +163,14 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   }
 
   async function convertToInvoice() {
+    const issues = getSaleReviewIssues(sale)
+
+    if (issues.length > 0) {
+      notifications.show({ color: 'orange', message: t('Заповніть обов’язкові дані продажу') })
+
+      return
+    }
+
     setConverting(true)
 
     const payload: SalesUkraineSale = {
@@ -287,7 +298,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
             {t('Переназначити')}
           </Button>
         )}
-        {sale.Transporter && (
+        {(sale.Transporter || isEditable) && (
           <Button leftSection={<IconTruck size={16} />} variant="light" onClick={() => setDetailsOpen(true)}>
             {t('Доставка')}
           </Button>
@@ -387,11 +398,22 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       >
         <Stack gap="md">
           <Text>{t('Перетворити продаж на рахунок?')}</Text>
+          {reviewIssues.length > 0 && (
+            <Alert color="orange" icon={<IconAlertTriangle size={18} />} variant="light">
+              <Stack gap={4}>
+                {reviewIssues.map((issue) => (
+                  <Text key={issue} size="sm">
+                    {getReviewIssueLabel(issue, t)}
+                  </Text>
+                ))}
+              </Stack>
+            </Alert>
+          )}
           <Group justify="flex-end">
             <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConvertOpen(false)}>
               {t('Скасувати')}
             </Button>
-            <Button color="teal" loading={isConverting} onClick={convertToInvoice}>
+            <Button color="teal" disabled={reviewIssues.length > 0} loading={isConverting} onClick={convertToInvoice}>
               {t('Зробити рахунок')}
             </Button>
           </Group>
@@ -423,6 +445,25 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       </AppModal>
     </Stack>
   )
+}
+
+function getReviewIssueLabel(issue: SaleReviewIssueCode, t: (message: string) => string): string {
+  switch (issue) {
+    case 'transporter':
+      return t('Оберіть перевізника')
+    case 'recipient':
+      return t('Оберіть отримувача товару')
+    case 'recipientPhone':
+      return t('Вкажіть мобільний телефон отримувача')
+    case 'deliveryAddress':
+      return t('Вкажіть адресу доставки')
+    case 'cashOnDeliveryAmount':
+      return t('Вкажіть суму накладеного платежу')
+    case 'ownTtnNumber':
+      return t('Вкажіть номер власної ТТН')
+    default:
+      return t('Заповніть обов’язкові дані продажу')
+  }
 }
 
 function useItemColumns({

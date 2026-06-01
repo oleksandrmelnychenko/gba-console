@@ -1424,10 +1424,6 @@ function isTaxFreeReadOnly(taxFree: TaxFree, packList?: TaxFreePackList | null):
   return Boolean(packList?.IsSent || (taxFree.TaxFreeStatus ?? 0) >= TaxFreeStatusValue.Printed)
 }
 
-function isTaxFreePrintable(taxFree: TaxFree): boolean {
-  return taxFree.TaxFreeStatus === TaxFreeStatusValue.Formed || taxFree.TaxFreeStatus === TaxFreeStatusValue.Printed
-}
-
 function isTaxFreeGroupPrintable(taxFree: TaxFree): boolean {
   return taxFree.TaxFreeStatus !== TaxFreeStatusValue.NotFormed
 }

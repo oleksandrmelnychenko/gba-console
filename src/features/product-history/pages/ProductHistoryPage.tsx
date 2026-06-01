@@ -32,6 +32,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
@@ -467,7 +468,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
               {downloadDocument.DocumentURL && (
-                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-excel">
                     <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
@@ -475,7 +476,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
                 </Anchor>
               )}
               {downloadDocument.PdfDocumentURL && (
-                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>

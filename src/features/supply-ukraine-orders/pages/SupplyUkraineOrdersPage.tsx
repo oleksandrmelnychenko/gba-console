@@ -40,6 +40,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -1242,12 +1243,12 @@ function DownloadDocumentModal({
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <Group>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <Group gap={6}><IconFileTypeXls size={16} /> XLS</Group>
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <Group gap={6}><IconFileTypePdf size={16} /> PDF</Group>
               </Anchor>
             )}

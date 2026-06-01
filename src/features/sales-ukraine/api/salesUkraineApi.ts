@@ -79,6 +79,15 @@ export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<
   return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
 }
 
+export async function createSale(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/new', {
+    body: sale,
+    method: 'POST',
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
 export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise<void> {
   await apiRequest<unknown>('/orders/items/update', {
     body: orderItem,

@@ -85,6 +85,8 @@ export type OutcomePaymentOrder = EntityFields & {
   FromDate?: string
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean
+  Number?: string
+  CustomNumber?: string
   Organization?: NamedEntity | null
   AssignedPaymentOrders?: AssignedPaymentOrder[]
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
