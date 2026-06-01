@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { CartReserveOrderItem, ShoppingCartReserveItem } from '../types'
 import {
@@ -37,7 +38,8 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
   const daysRemaining = getDaysRemaining(cart.ValidUntil)
   const clientName = getCartClientName(cart)
   const orderItems = cart.OrderItems || []
-  const columns = useCartItemColumns(localCurrencyCode)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const columns = useCartItemColumns(localCurrencyCode, setProductCardNetId)
 
   return (
     <Card withBorder radius="md" padding="md">
@@ -92,6 +94,7 @@ export function CartReserveCard({ cart, index, isExpanded, onOpenClient, onToggl
           />
         )}
       </Stack>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Card>
   )
 }
@@ -112,7 +115,7 @@ function getDaysColor(daysRemaining: number | null): string {
   return 'green'
 }
 
-function useCartItemColumns(localCurrencyCode: string) {
+function useCartItemColumns(localCurrencyCode: string, onOpenProductCard: (productNetId: string) => void) {
   return useMemo<DataTableColumn<CartReserveOrderItem>[]>(
     () => [
       {
@@ -121,7 +124,26 @@ function useCartItemColumns(localCurrencyCode: string) {
         width: 150,
         minWidth: 120,
         accessor: (item) => item.Product?.VendorCode || '',
-        cell: (item) => <Text fw={600}>{item.Product?.VendorCode || '—'}</Text>,
+        cell: (item) => {
+          const netId = item.Product?.NetUid
+          const code = item.Product?.VendorCode || '—'
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={600}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {code}
+            </Anchor>
+          ) : (
+            <Text fw={600}>{code}</Text>
+          )
+        },
       },
       {
         id: 'name',
@@ -131,7 +153,21 @@ function useCartItemColumns(localCurrencyCode: string) {
         accessor: (item) => item.Product?.Name || '',
         cell: (item) => (
           <Stack gap={0}>
-            <Text size="sm">{item.Product?.Name || '—'}</Text>
+            {item.Product?.NetUid ? (
+              <Anchor
+                component="button"
+                size="sm"
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenProductCard(item.Product?.NetUid as string)
+                }}
+              >
+                {item.Product?.Name || '—'}
+              </Anchor>
+            ) : (
+              <Text size="sm">{item.Product?.Name || '—'}</Text>
+            )}
             {item.Comment ? (
               <Tooltip label={item.Comment} position="top" multiline maw={320}>
                 <Text size="xs" c="dimmed" lineClamp={1}>
@@ -209,6 +245,6 @@ function useCartItemColumns(localCurrencyCode: string) {
         ),
       },
     ],
-    [localCurrencyCode],
+    [localCurrencyCode, onOpenProductCard],
   )
 }

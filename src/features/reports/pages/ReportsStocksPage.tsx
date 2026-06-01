@@ -36,6 +36,7 @@ import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createStockReport,
   getReportClientTypes,
@@ -507,12 +508,12 @@ export function ReportsStocksPage() {
       <AppModal centered opened={downloadModalOpened} title={t('Експорт звіту')} onClose={() => setDownloadModalOpened(false)}>
         <Stack>
           {result?.document.DocumentURL ? (
-            <Anchor href={result.document.DocumentURL} target="_blank" rel="noreferrer">
+            <Anchor href={getDocumentHref(result.document.DocumentURL)} target="_blank" rel="noreferrer">
               <Group gap="xs"><IconFileTypeXls size={18} /> XLSX</Group>
             </Anchor>
           ) : null}
           {result?.document.PdfDocumentURL ? (
-            <Anchor href={result.document.PdfDocumentURL} target="_blank" rel="noreferrer">
+            <Anchor href={getDocumentHref(result.document.PdfDocumentURL)} target="_blank" rel="noreferrer">
               <Group gap="xs"><IconFileTypePdf size={18} /> PDF</Group>
             </Anchor>
           ) : null}

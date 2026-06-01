@@ -3,6 +3,7 @@ import { IconExternalLink, IconFileTypePdf } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import type { AccountingCashFlowHeadItem } from '../types'
@@ -51,7 +52,7 @@ function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
             {detail.documents.map((document) => (
               <Anchor
                 key={document.url}
-                href={document.url}
+                href={getDocumentHref(document.url)}
                 target="_blank"
                 rel="noreferrer"
                 className="document-link"

@@ -804,7 +804,7 @@ function ProductPlacementImportModal({
           />
           <FileInput
             clearable
-            accept=".xls,.xlsx,.csv"
+            accept=".xlsx"
             label={t('Файл')}
             leftSection={<IconUpload size={16} />}
             placeholder={t('Оберіть файл')}

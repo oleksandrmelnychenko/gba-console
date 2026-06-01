@@ -607,3 +607,23 @@ ShopImageGallery (by VendorCode) + code/name/orig-number/group, availability (UA
 plus an «Відкрити» link to `/products?netId=`. Wired into `SaleExpandContent`: the product code + name are
 now clickable Anchors (stopPropagation) that open the card (legacy `OnOpenProductCart`). tsc/eslint clean
 on the changed files.
+
+---
+
+## 17. Closing sweep — Allegro/Poland + residual gaps (run `wf_05615fc8`, 2026-06-02)
+
+8-agent closing sweep:
+- **Allegro: confirmed ABSENT** (0 references) — nothing to remove (was never migrated).
+- **«Продажі Польща» / Poland-Sales screens: ABSENT** — never built. The remaining ~19 Poland refs are
+  **legitimate region logic** (user region selector `'pl'`, product stock-in-Poland, exchange-rate culture,
+  client default region `PL007`, payment-account PLN-skip, cash-flow link guard) — KEPT (removing them
+  breaks working features). `navigationUtils` already filters out Poland-carrier nav labels. The few
+  "remnants" (getSalePzDocument, available-payments Poland-order guards) live in active user-WIP — left alone.
+- **Residual sales parity gaps: 0** — 4 critics (collapsed row / sub-row / editor+docs / sibling tabs) +
+  adversarial verification found NO real, buildable, non-WIP gap beyond §9–§16. The sales ecosystem
+  migration is closed.
+
+### Product card — extension sites
+8 more surfaces could open `ProductCardModal` (all low/medium polish). Wired **cart-reserve**
+(`CartReserveCard` — clickable VendorCode + Name). Remaining (opt-in): sales-preorders, sales-returns
+editor, client-product-movement, sales-offers, resales (3 grids), product-placements, supply-ukraine-orders.

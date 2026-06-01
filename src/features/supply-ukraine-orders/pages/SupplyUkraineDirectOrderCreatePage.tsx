@@ -392,7 +392,7 @@ export function SupplyUkraineDirectOrderCreatePage() {
                 <Text fw={600}>{t('Імпорт')}</Text>
                 <FileInput
                   clearable
-                  accept=".xls,.xlsx,.csv"
+                  accept=".xls,.xlsx"
                   disabled={isSaving}
                   label={t('Файл')}
                   leftSection={<IconFileSpreadsheet size={16} />}
