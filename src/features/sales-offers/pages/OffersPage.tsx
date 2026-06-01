@@ -1,10 +1,11 @@
-import { Alert, Button, Group, Loader, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getOffers, getPublicOfferLink, processOffer, restartOfferValidity } from '../api/salesOffersApi'
 import { NewOfferModal } from '../components/NewOfferModal'
@@ -163,12 +164,11 @@ export function OffersPage() {
 
   return (
     <Stack gap="md" p="md">
-      <Group justify="space-between">
-        <Title order={3}>{t('Оферти')}</Title>
-        <Button leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
           {t('Створити оферту')}
         </Button>
-      </Group>
+      </PageHeaderActions>
 
       <Group align="flex-end" gap="sm">
         <TextInput

@@ -2,6 +2,7 @@ import { Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../i18n/useI18n'
+import { usePageBreadcrumb } from './page-header-actions/PageHeaderActions'
 
 const SALES_DASHBOARD_TABS: Array<{ label: string; value: string }> = [
   { label: 'Продажі', value: '/sales/ukraine/all' },
@@ -19,7 +20,10 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const active = SALES_DASHBOARD_TABS.find((tab) => tab.value === pathname)?.value ?? null
+  const activeTab = SALES_DASHBOARD_TABS.find((tab) => tab.value === pathname) ?? null
+  const active = activeTab?.value ?? null
+
+  usePageBreadcrumb(activeTab ? t(activeTab.label) : null)
 
   return (
     <Stack gap="md">
