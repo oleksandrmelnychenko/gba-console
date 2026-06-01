@@ -373,3 +373,37 @@ Read-only audit of 8 non-WIP screens → fixes in commit `0eafa3f` (tsc 0 / esli
 
 Recorded (intentional/judgment, not changed): the date-boundary serialization (console date-only
 filters work app-wide); act-recon bulk-process Preview panel (large); plus the usual uk-UA/PLN.
+
+---
+
+## 9. Накладні + Рахунки — deep extraction vs console (run `wf_73353e85`, 2026-06-01)
+
+Exhaustive extraction of the sale **Видаткова Накладна** + **Рахунок на оплату** ecosystem:
+**85 items — 58 present · 9 partial · 13 missing.** The console has most of it; the actionable
+sales-ukraine gaps:
+
+### Missing (sales-ukraine relevant)
+- **Invoice button uses the wrong endpoint.** Legacy «друк видаткової накладної» = `GET /sales/get/document?netId=&isFromStorages=` and toggles `IsPrinted` + re-saves the sale. Console `getSaleInvoiceDocument` calls `/sales/get/last/document` (the LAST/most-recent-revision form) and has no `isFromStorages` / no `IsPrinted` side-effect. If the two endpoints differ, the printed накладна can differ.
+- **Рахунок bundles a накладна that the console drops.** `/sales/get/payment/document` can return `InvoiceDocumentURL`/`PdfInvoiceDocumentURL` (a second «Видаткова накладна») alongside the рахунок — revealed when `IsAcceptedToPacking` OR the user is GBA/Administrator/FinanceDirector/Accountant. Console `extractDocumentResult` only reads `DocumentURL`/`PdfDocumentURL`, so the bundled накладна + the role gate are dropped.
+- **VAT convert-to-invoice path missing.** Confirming a VAT sale legacy hits `POST /sales/update/get/payment/document` (persists + returns the рахунок inline). Console `SaleEditorDrawer.convertToInvoice` ALWAYS uses the non-VAT `POST /sales/update/file` (IsPrintedPaymentInvoice=true), never branching on `IsVatSale` — so the рахунок isn't auto-generated at VAT confirmation.
+- **Current Act-protocol-edit document.** `/sales/get/shifted/document?netId=&IsPrintedActProtocolEdit=` (+ the `IsPrintedActProtocolEdit` flag toggle). Console only has the per-history-edit «C» form (`/sales/get/shifted/hisotry/document`), not the current-state one.
+- **Cannot CREATE an invoice edit (Акт редагування).** Legacy `edit.sale.view.tsx` shifts order-item qty bill↔store (`/orders/items/shift/current`), which CREATES `HistoryInvoiceEdit` entries. Console is **read/print-only** for invoice history — there is no console flow to edit an issued накладна.
+- **`ConfirmProcessing` approve** (set/edit/act/for/editing) — the per-sale approve button from the legacy audit timeline is not in the console audit drawer.
+
+### Belongs to warehouse-ukraine (verify there, not a sales-ukraine gap)
+Invoice register (`/sales/get/register/invoice` + `/document`), shipment create/modal exports
+(`/sales/shipments/document/create|/export`), act-for-editing get/qty/set
+(`/protocol/act/invoice/get|set/edit/act/for/editing`), and the warehouse `isFromStorages` print flow.
+
+### Partial
+PZ doc (`/sales/get/document/pz`) — wired but dead/unreachable (Poland-only, ok for UA); DownloadDocuments
+modal renders one doc only (no multi-doc for the bundled рахунок+накладна); discount/percent gating uses
+lifecycle 0||1 but legacy treats Packaged(2) as Packaging too; `IsInvoice` not written on fetch.
+
+### Row EXPANDER — MISSING (separate from documents)
+The legacy sales rows had an **inline expander** (`SaleExpandItem`): expand a row → order-items list
+(per-item discount) + transport services (Poland) + inline document download/TTN print. The console
+`DataTable` has **no expandable-row support** and the grid has no inline expander. Order items are only
+visible by opening the full `SaleEditorDrawer`; the eye-drawer (`SaleDetailsDrawer`) shows the
+carrier/delivery change-history, not the order items. → genuine parity gap; needs DataTable
+expandable-row support + a SaleExpandContent (order items + transport services).
