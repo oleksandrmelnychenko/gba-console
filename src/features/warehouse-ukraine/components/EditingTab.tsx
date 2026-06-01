@@ -1,4 +1,4 @@
-import { Badge, Group, Stack, Tabs, Text } from '@mantine/core'
+import { Badge, Box, Group, Stack, Text } from '@mantine/core'
 import { useEffect, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -20,6 +20,7 @@ export function EditingTab() {
   const [actQty, setActQty] = useValueState(0)
   const [carrierQty, setCarrierQty] = useValueState(0)
   const [countsReloadKey, reloadCounts] = useReducer((key: number) => key + 1, 0)
+  const [activeTab, setActiveTab] = useValueState(ACT_TAB)
 
   useEffect(() => {
     let cancelled = false
@@ -53,27 +54,37 @@ export function EditingTab() {
         {t('Протокол актів редагування накладних')}
       </Text>
 
-      <Tabs defaultValue={ACT_TAB} keepMounted={false}>
-        <Tabs.List>
-          <Tabs.Tab value={ACT_TAB}>
-            <Group gap={6}>
-              {t('Акт редагування накладної')}
-              <Badge color="violet" size="sm" variant="light">
-                {actQty}
-              </Badge>
-            </Group>
-          </Tabs.Tab>
-          <Tabs.Tab value={CARRIER_TAB}>
-            <Group gap={6}>
-              {t('Редаговані перевізники')}
-              <Badge color="violet" size="sm" variant="light">
-                {carrierQty}
-              </Badge>
-            </Group>
-          </Tabs.Tab>
-        </Tabs.List>
+      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        <button
+          type="button"
+          className={`pill-tab${activeTab === ACT_TAB ? ' is-active' : ''}`}
+          aria-pressed={activeTab === ACT_TAB}
+          onClick={() => setActiveTab(ACT_TAB)}
+        >
+          <Group gap={6} wrap="nowrap" align="center">
+            {t('Акт редагування накладної')}
+            <Badge color="violet" size="sm" variant="light">
+              {actQty}
+            </Badge>
+          </Group>
+        </button>
+        <button
+          type="button"
+          className={`pill-tab${activeTab === CARRIER_TAB ? ' is-active' : ''}`}
+          aria-pressed={activeTab === CARRIER_TAB}
+          onClick={() => setActiveTab(CARRIER_TAB)}
+        >
+          <Group gap={6} wrap="nowrap" align="center">
+            {t('Редаговані перевізники')}
+            <Badge color="violet" size="sm" variant="light">
+              {carrierQty}
+            </Badge>
+          </Group>
+        </button>
+      </div>
 
-        <Tabs.Panel value={ACT_TAB} pt="md">
+      <Box>
+        {activeTab === ACT_TAB ? (
           <EditingList
             kind="act"
             layoutVersion="warehouse-ukraine-editing-act-1"
@@ -82,8 +93,7 @@ export function EditingTab() {
             tableId="warehouse-ukraine-editing-act"
             onProcessed={reloadCounts}
           />
-        </Tabs.Panel>
-        <Tabs.Panel value={CARRIER_TAB} pt="md">
+        ) : (
           <EditingList
             kind="carrier"
             layoutVersion="warehouse-ukraine-editing-carrier-1"
@@ -92,8 +102,8 @@ export function EditingTab() {
             tableId="warehouse-ukraine-editing-carrier"
             onProcessed={reloadCounts}
           />
-        </Tabs.Panel>
-      </Tabs>
+        )}
+      </Box>
     </Stack>
   )
 }

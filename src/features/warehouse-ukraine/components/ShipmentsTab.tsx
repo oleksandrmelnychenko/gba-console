@@ -8,8 +8,8 @@ import {
   Divider,
   Group,
   Select,
+  Box,
   Stack,
-  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -631,23 +631,40 @@ export function ShipmentsTab() {
   const [activeTab, setActiveTab] = useState<string | null>(SHIPMENTS_TAB_ALL)
 
   return (
-    <Tabs value={activeTab} keepMounted={false} onChange={(value) => setActiveTab(value || SHIPMENTS_TAB_ALL)}>
-      <Tabs.List>
-        <Tabs.Tab value={SHIPMENTS_TAB_ALL} leftSection={<IconFileText size={16} />}>
-          {t('Усі')}
-        </Tabs.Tab>
-        <Tabs.Tab value={SHIPMENTS_TAB_AUTO} leftSection={<IconTruckDelivery size={16} />}>
-          {t('Підбір')}
-        </Tabs.Tab>
-      </Tabs.List>
+    <Stack gap="md">
+      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        <button
+          type="button"
+          className={`pill-tab${activeTab === SHIPMENTS_TAB_ALL ? ' is-active' : ''}`}
+          aria-pressed={activeTab === SHIPMENTS_TAB_ALL}
+          onClick={() => setActiveTab(SHIPMENTS_TAB_ALL)}
+        >
+          <Group gap={6} wrap="nowrap" align="center">
+            <IconFileText size={16} />
+            {t('Усі')}
+          </Group>
+        </button>
+        <button
+          type="button"
+          className={`pill-tab${activeTab === SHIPMENTS_TAB_AUTO ? ' is-active' : ''}`}
+          aria-pressed={activeTab === SHIPMENTS_TAB_AUTO}
+          onClick={() => setActiveTab(SHIPMENTS_TAB_AUTO)}
+        >
+          <Group gap={6} wrap="nowrap" align="center">
+            <IconTruckDelivery size={16} />
+            {t('Підбір')}
+          </Group>
+        </button>
+      </div>
 
-      <Tabs.Panel value={SHIPMENTS_TAB_ALL} pt="md">
-        <AllShipmentsPanel onCreate={() => setActiveTab(SHIPMENTS_TAB_AUTO)} />
-      </Tabs.Panel>
-      <Tabs.Panel value={SHIPMENTS_TAB_AUTO} pt="md">
-        <AutoShipmentsPanel />
-      </Tabs.Panel>
-    </Tabs>
+      <Box>
+        {activeTab === SHIPMENTS_TAB_AUTO ? (
+          <AutoShipmentsPanel />
+        ) : (
+          <AllShipmentsPanel onCreate={() => setActiveTab(SHIPMENTS_TAB_AUTO)} />
+        )}
+      </Box>
+    </Stack>
   )
 }
 
