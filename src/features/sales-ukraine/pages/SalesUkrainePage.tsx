@@ -26,6 +26,7 @@ import {
   IconEye,
   IconLockOpen,
   IconPencil,
+  IconPlus,
   IconPrinter,
   IconReceipt,
   IconRefresh,
@@ -51,6 +52,7 @@ import {
   updateSale,
 } from '../api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
+import { NewSaleModal } from '../components/NewSaleModal'
 import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
@@ -184,6 +186,7 @@ export function SalesUkrainePage() {
   const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [isNewSaleOpen, setNewSaleOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -418,7 +421,10 @@ export function SalesUkrainePage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="flex-end" align="center">
+      <Group justify="space-between" align="center">
+        <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+          {t('Новий продаж')}
+        </Button>
         <Badge color="gray" variant="light">
           {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || sales.length}`}
         </Badge>
@@ -576,6 +582,15 @@ export function SalesUkrainePage() {
       />
 
       <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
+
+      <NewSaleModal
+        opened={isNewSaleOpen}
+        onClose={() => setNewSaleOpen(false)}
+        onCreated={(sale) => {
+          setNewSaleOpen(false)
+          setEditorSale(sale)
+        }}
+      />
 
       <AppModal
         centered

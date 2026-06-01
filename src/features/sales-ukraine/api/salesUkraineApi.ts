@@ -71,6 +71,14 @@ export async function getSaleById(netId: string): Promise<SalesUkraineSale | nul
   return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
 }
 
+export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/current', {
+    query: { netId: clientAgreementNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
 export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise<void> {
   await apiRequest<unknown>('/orders/items/update', {
     body: orderItem,
