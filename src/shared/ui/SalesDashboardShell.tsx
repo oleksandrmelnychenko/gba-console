@@ -1,10 +1,13 @@
 import { Stack } from '@mantine/core'
-import type { ReactNode } from 'react'
+import { IconTruckReturn } from '@tabler/icons-react'
+import type { ComponentType, ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../i18n/useI18n'
 import { usePageBreadcrumb } from './page-header-actions/PageHeaderActions'
 
-const SALES_DASHBOARD_TABS: Array<{ label: string; value: string }> = [
+type SalesTab = { label: string; value: string; icon?: ComponentType<{ size?: number; stroke?: number; className?: string }> }
+
+const SALES_DASHBOARD_TABS: SalesTab[] = [
   { label: 'Продажі', value: '/sales/ukraine/all' },
   { label: 'Оферти', value: '/sales/ukraine/offers' },
   { label: 'Резерв кошика', value: '/sales/ukraine/cart-reserve' },
@@ -14,6 +17,7 @@ const SALES_DASHBOARD_TABS: Array<{ label: string; value: string }> = [
   { label: 'Рух товару клієнта', value: '/sales/ukraine/client-product-movement' },
   { label: 'Прогноз', value: '/sales/ukraine/prediction' },
   { label: 'Графіки', value: '/sales/charts' },
+  { label: 'Перепродажі', value: '/resales', icon: IconTruckReturn },
 ]
 
 export function SalesDashboardShell({ children }: { children: ReactNode }) {
@@ -30,6 +34,7 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
       <div className="pill-tabs" style={{ width: 'fit-content', margin: '0 auto' }}>
         {SALES_DASHBOARD_TABS.map((tab) => {
           const isActive = active === tab.value
+          const Icon = tab.icon
 
           return (
             <button
@@ -43,6 +48,7 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
                 }
               }}
             >
+              {Icon && <Icon size={16} stroke={1.7} className="pill-tab-icon" />}
               {t(tab.label)}
             </button>
           )

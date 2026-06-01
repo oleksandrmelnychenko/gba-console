@@ -409,6 +409,9 @@
 }
 
 .pill-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 30px;
   padding: 0 14px;
   border: 0;
@@ -424,6 +427,10 @@
   transition:
     background-color 160ms var(--tx-ease-spring),
     color 160ms var(--tx-ease-spring);
+}
+
+.pill-tab-icon {
+  flex: 0 0 auto;
 }
 
 .pill-tab:hover {

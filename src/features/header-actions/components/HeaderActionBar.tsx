@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Tooltip } from '@mantine/core'
-import { IconBasket, IconTruckReturn } from '@tabler/icons-react'
+import { IconBasket } from '@tabler/icons-react'
 import type { ComponentType } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -20,14 +20,10 @@ export function HeaderActionBar() {
   const { t } = useI18n()
   const isPrivilegedRole =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
-  const canOpenResales = hasPermission('HEADER_ReSalesPage_BTN') || isPrivilegedRole
   const canOpenSync = hasPermission('HEADER_SyncButton_BTN') || isPrivilegedRole
 
   return (
     <Group gap={4} wrap="nowrap" className="console-header-tool-actions">
-      {canOpenResales && (
-        <HeaderActionButton icon={IconTruckReturn} label="Resales" onClick={() => navigate('/resales')} />
-      )}
       {canOpenSync && <SyncControl />}
       <ProductWriteOffRulesControl />
       <HeaderActionButton icon={IconBasket} label={t('Кошик')} onClick={() => navigate('/basket-supply-ukraine-order')} />

@@ -286,7 +286,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/basket-supply-ukraine-order', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/basket-supply-ukraine-order/*', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/recommendations', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
-  { path: '/resales', element: lazyRoute(<ResalesPage />) },
+  { path: '/resales', element: <SalesDashboardShell>{lazyRoute(<ResalesPage />)}</SalesDashboardShell> },
   { path: '/resales/new', element: lazyRoute(<NewResalePage />) },
   { path: '/resales/:id', element: lazyRoute(<ResalePage />) },
   { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
