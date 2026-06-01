@@ -853,10 +853,6 @@
   color: var(--mantine-color-violet-7);
 }
 
-.console-subnav-item {
-  color: var(--mantine-color-orange-light-color);
-}
-
 .console-subnav-item:hover {
   color: var(--mantine-color-orange-light-color);
 }

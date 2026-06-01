@@ -597,7 +597,7 @@ export function SalesUkrainePage() {
   return (
     <Stack gap="lg">
       <PageHeaderActions>
-        <Button color="violet" size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+        <Button color="orange" size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
           {t('Новий продаж')}
         </Button>
       </PageHeaderActions>
