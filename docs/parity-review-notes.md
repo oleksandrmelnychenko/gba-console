@@ -280,6 +280,44 @@ Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 
   JSON at runtime). Existing online-shop features (Edge icon, retail line, MisplacedSaleId, red-unpaid,
   realtime, filters, details) preserved. Adversarially verified (ok=true). A future cleanup could unify
   both features on one shared sale type to drop the cast.
+
+---
+
+## 7. Accounting + clients/org parity audits (2026-06-01)
+
+Extended the deep parity audit beyond sales. Two read-only audits → triaged → applied the clear
+faithful fixes (per-screen verified, tsc 0 / eslint 0), recorded the intentional/judgment/large items.
+
+### Accounting (8 screens, run `wf_198862fd`) — fixes in commit `dfedfe5`
+Applied: income-cashflows FromDate-desc sort + reset-from=today-7 + empty money → `0,00`;
+accounting-cash-flow «На логістичний шлях» supply-order link enabled; payment-accounts register-type
+labels + empty money; advance-payments empty money + titles/date; advanced-reports PayedTo marker;
+currency-convertors exchange-rate precision (2 fixed decimals) + rate-row date.
+- **⚠ PLN HIGH = FALSE POSITIVE — NOT changed.** The audit flagged the console dropping PLN
+  (currency-convertors `CURRENCY_ORDER=[EUR,USD]`, payment-accounts `SKIPPED_CURRENCY_CODE=PLN`) as a
+  HIGH bug. This is an **intentional console decision** (you reverted my earlier PLN change). PLN was
+  NOT re-added anywhere.
+- **Money format kept uk-UA, not legacy dot.** The fix agents initially switched money to legacy
+  `toFixed(2)` (dot, no grouping); I reverted that to the console-wide `Intl uk-UA` grouping
+  (`1 234,50`) for consistency with the sales screens — adopting only the legacy *intent* (always show
+  `0,00`, never «—»). The legacy non-localized dot-format is a deliberate console-localization divergence.
+- Skipped (recorded): income detail-drawer extra fields; cash-flow per-type drill-in document panels +
+  Poland `/orders/poland/all/edit` link (route not yet registered); payment-accounts filter-cookie
+  persistence; advanced-reports Document-Structure action; date-serialization toDateString-vs-ISO
+  (console uses ISO app-wide; backend accepts). All medium/large or convention.
+
+### Clients/org (5 screens, run `wf_8ac8e34c`) — fixes in commit `fa53c81`
+Applied: supplier-organizations Currency/Organization columns join ALL agreements (was first-only);
+organisation-services status labels (`Не завершено`/`Оплачено частково`); online-shop-seo add-warehouse
+storage list → `/storages/get/all`.
+- Recorded (intentional/judgment, NOT changed): organization-clients ≥1-agreement validation +
+  agreement auto-persist (console behaviour, arguably better); uk-UA money grouping (console convention);
+  organisation-services hardcoded-per-collection service label + IsPayed status branch + the 2 extra
+  service collections; assorted LOW money/label items.
+
+**Note on WIP:** during these fixes the user was actively editing other features (available-payments,
+consumable-orders, outgoing-cashflows, product-delivery-protocols, supply-ukraine-orders) — only
+explicit non-WIP paths were committed.
 - **sales-charts:** by-client mount-time empty fetch (minor); client/manager search sources
   (payers/managers vs legacy charts dropdowns) — "confirm with product".
 - **sales-debtors day labels:** «Борг через N днів» (console interpolates the count — more informative)
