@@ -1,18 +1,14 @@
 import { ActionIcon, AppShell, Badge, Box, Group, Title, Text, Tooltip } from '@mantine/core'
-import { IconBell, IconChevronRight, IconLayoutSidebar, IconLogout } from '@tabler/icons-react'
+import { IconBell, IconChevronRight, IconLogout } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ConsoleNav } from './ConsoleNav'
 
-type ConsoleHeaderProps = {
-  navOpened: boolean
-  onToggleNav: () => void
-}
-
-export function ConsoleHeader({ navOpened, onToggleNav }: ConsoleHeaderProps) {
+export function ConsoleHeader() {
   const { logout, session, user } = useAuth()
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -29,20 +25,6 @@ export function ConsoleHeader({ navOpened, onToggleNav }: ConsoleHeaderProps) {
     <AppShell.Header className="console-header">
       <Group className="console-header-main" h={60} px="md" justify="space-between" wrap="nowrap">
         <Group gap="xs" wrap="nowrap" className="console-header-brand">
-          <Tooltip label={navOpened ? t('Сховати меню') : t('Показати меню')} withArrow>
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="md"
-              aria-label={t('Меню')}
-              aria-pressed={navOpened}
-              onClick={onToggleNav}
-              className="console-nav-toggle tx-icon-swap"
-              data-flipped={navOpened}
-            >
-              <IconLayoutSidebar size={20} stroke={1.7} />
-            </ActionIcon>
-          </Tooltip>
           <button type="button" className="console-brand-button" onClick={() => navigate('/dashboard')}>
             <img className="console-brand-logo" src={gbaLogo} alt="GBA" />
             <Box className="console-header-title">
@@ -96,6 +78,7 @@ export function ConsoleHeader({ navOpened, onToggleNav }: ConsoleHeaderProps) {
           </ActionIcon>
         </Group>
       </Group>
+      <ConsoleNav />
     </AppShell.Header>
   )
 }
