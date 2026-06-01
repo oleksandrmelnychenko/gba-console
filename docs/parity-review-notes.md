@@ -235,6 +235,52 @@ true in this grid, no regression). eslint 0 / tsc 0.
   invoice icon «Накладна» at the Packaging/Packaged stage else receipt «Рахунок»), mirroring the legacy
   `sale.item.tsx` data-icon (Shop/Offer/Invoice/Score).
 
+## 6. Sibling sales-dashboard tabs — parity audit + fixes (2026-06-01)
+
+Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 11 MEDIUM, 20 LOW.
+**21 actionable (HIGH + small faithful) fixes applied + per-tab adversarially verified, commit
+`a75a1e1`** (tsc 0 / eslint 0):
+- **sales-online-shop:** legacy lifecycle labels + `Неоплаченно`; SignalR live updates (gated like
+  sales-ukraine); MisplacedSaleId «Часткова продажа» red indicator.
+- **client-product-movement (CRITICAL):** multi-org filter now sent as repeated `organizationId` keys
+  (was comma-joined → silently ignored); spec-code header «Митний код»; qty header «штук».
+- **sales-offers:** «partial» reason badge red (not orange); reason status over ALL items; «дн.»/«На
+  договір» labels; per-line not-processed gating.
+- **sales-charts:** Top N-X header «Код Виробника»; by-client legend; zero/empty-money + empty
+  by-manager grid handling.
+- **sales-debtors:** drop empty `typeCurrency`. **shopping-cart-reserve:** per-item comment cell.
+  **sales-preorders:** page title. **sales-prediction:** empty-state.
+
+### Remaining — functional/feature gaps (not built; can build on request)
+- **sales-online-shop:** payment red-unpaid emphasis + retail (ПО)/(ЧО) full/partial badge (medium);
+  the read-only screen reproduces none of the legacy SalesPivot row actions (unlock / accept-to-packing
+  / print PZ·invoice·shipment·TTN / discount / edit) — LARGE.
+- **client-product-movement:** client picker is payer-scoped (`/clients/payers/search/all`); legacy
+  uses the full Client search (`/search/by/query`), so non-payer clients with movements are unreachable.
+- **sales-offers:** per-line single-item reason entry (legacy `OnOpenOrderItemReason` opens the reason
+  drawer scoped to one order item) — medium.
+- **sales-prediction:** dynamic chart legend naming the selected client/product + month horizon, and a
+  Y-axis label («Сума продажу в євро») — medium.
+- **sales-charts:** by-client mount-time empty fetch (minor).
+
+### Remaining — judgment calls (need a decision)
+- **sales-debtors client column:** legacy binds the `Supplier` key → «Постачальник» for the client
+  column (looks like a legacy bug); the console shows the correct «Клієнт». Match legacy or keep correct?
+- **sales-debtors day labels:** «Борг через N днів» (console interpolates the count, more informative)
+  vs legacy static per-option phrases. Keep or match legacy?
+- **sales-preorders tab:** legacy dashboard tab is `Interest` = «Зацікавленість»; the console tab is
+  «Передзамовлення» (different concept). Align the tab label?
+- **sales-prediction product name:** console renders `NameUA || Name` (the idiom used by all sibling
+  screens) vs legacy `Name` only. Keep the console idiom?
+- **sales-charts search sources:** client/manager search uses payers/managers endpoints vs the legacy
+  charts dropdowns — flagged "confirm with product".
+
+### Remaining — Poland (deferred)
+- **sales-offers public link:** legacy `getOfferUrl` switches the ecommerce host UA/Poland by locale;
+  the console hardcodes the UA host. Poland is deferred.
+
+---
+
 ### Realtime relevance gating — DONE (commit follows)
 The realtime listeners now **parse the payload** (`resolveRealtimeSale` = `payload.Sale ?? payload`,
 matching the legacy `SaleStatistic` wire shape) and gate the reload:
