@@ -433,3 +433,39 @@ expandable-row support + a SaleExpandContent (order items + transport services).
 - **`ConfirmProcessing` approve — already present** in `warehouse-ukraine` (`approveEditingAct` →
   `/protocol/act/invoice/set/edit/act/for/editing`, EditingList approval queue). The per-sale audit-timeline
   duplicate entry point remains optional (low value, the warehouse queue is the primary).
+
+---
+
+## 10. Big functional parity audit — 8 domains, adversarially verified (run `wf_460cf529`, 2026-06-01)
+
+Deep **functional** (not screen-level) legacy↔console diff across all non-WIP domains: sales-core,
+sales-siblings, sales-analytics, clients, online-shop, products-customs, accounting, customs-warehouse.
+21 agents; every High/Medium finding got an adversarial verifier against the legacy source.
+
+**Result: the migration is in excellent shape.** Of ~13 High/Medium claims, **12 were REFUTED** with
+concrete legacy evidence (mostly sales-vs-warehouse surface conflations or references to commented-out
+legacy code), confirming the §1–§9 work closed the real gaps. Clients / sales-analytics / accounting:
+**zero** findings. Notable refutations (kept here so they are not re-raised):
+- *Invoice endpoint missing `isFromStorages`* — FALSE. Legacy segregates two endpoints: the sales
+  dashboard uses `/sales/get/last/document` (NO `isFromStorages`), the warehouse uses
+  `/sales/get/document?...&isFromStorages=true`. Console reproduces BOTH (`getSaleInvoiceDocument` vs
+  `warehouse-ukraine/salesApi`). Adding the param would be a regression.
+- *Act-protocol-edit missing `IsPrintedActProtocolEdit` toggle* — FALSE. That toggle lives only in the
+  legacy **warehouse** view (already mirrored in `warehouse-ukraine/salesApi`); the sales `get/shifted/document`
+  call is netId-only in legacy too.
+- *`IsPrinted` write-on-print missing* — FALSE. The legacy sales-pivot write is **commented out**; the real
+  `IsPrinted` write is warehouse-only.
+- *sales-offers date filter should be ISO* — FALSE. Legacy `offers.pivot` sends `?from=${DateFromValue.toDateString()}` — console's `toDateString()` is faithful.
+- *warehouse OrdersTab missing CarryOut/GetUp/ActReconciliationNew* — these are the **§1b documented
+  not-migrated** placement actions (the underlying console action isn't built), not a regression.
+
+### ✅ Built — discount editing now fully faithful (this commit)
+The one CONFIRMED gap: the collapsed sales-row discount column let the user open the **sale-level**
+discount modal (which overwrites **every** item's `OneTimeDiscount`) even when items had **differing
+positive** per-item discounts — legacy showed a non-clickable average there and routed per-item editing
+to the expander. Reproduced the legacy 3-branch logic on the collapsed row (`SalesUkrainePage` discount
+cell): **(1)** uniform non-zero → clickable, opens sale-level modal (all items); **(2)** all-positive but
+differing → **non-clickable average** (no clobber); **(3)** mixed → clickable «Знижка» for New, hidden for
+Packaging. And made `SaleDiscountModal` accept an optional `orderItem` so the **expander's per-item**
+discount click updates **only that item** (matching legacy `sale.discount.modal` `OnSave`: per-item when an
+`OrderItem` is passed, all-items otherwise). tsc 0 / eslint 0.

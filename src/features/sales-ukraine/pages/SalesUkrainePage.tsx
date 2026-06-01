@@ -197,7 +197,10 @@ export function SalesUkrainePage() {
   const [clientOptions, setClientOptions] = useValueState<SalesUkraineClientOption[]>([])
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
-  const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
+  const [discountTarget, setDiscountTarget] = useValueState<{
+    orderItem?: SalesUkraineOrderItem
+    sale: SalesUkraineSale
+  } | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
@@ -342,7 +345,7 @@ export function SalesUkrainePage() {
     onOpenDetails: setDetailsSale,
     onOpenEditor: setEditorSale,
     onOpenEditShift: setEditShiftSale,
-    onOpenDiscount: setDiscountSale,
+    onOpenDiscount: (sale: SalesUkraineSale) => setDiscountTarget({ sale }),
     onOpenSale: setSelectedSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
@@ -350,9 +353,12 @@ export function SalesUkrainePage() {
 
   const renderSaleExpandContent = useCallback(
     (sale: SalesUkraineSale) => (
-      <SaleExpandContent sale={sale} onOpenItemDiscount={(targetSale) => setDiscountSale(targetSale)} />
+      <SaleExpandContent
+        sale={sale}
+        onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
+      />
     ),
-    [setDiscountSale],
+    [setDiscountTarget],
   )
 
   useEffect(() => {
@@ -694,10 +700,11 @@ export function SalesUkrainePage() {
       </AppDrawer>
 
       <SaleDiscountModal
-        sale={discountSale}
-        onClose={() => setDiscountSale(null)}
+        orderItem={discountTarget?.orderItem}
+        sale={discountTarget?.sale ?? null}
+        onClose={() => setDiscountTarget(null)}
         onSaved={() => {
-          setDiscountSale(null)
+          setDiscountTarget(null)
           reload()
         }}
       />
@@ -967,24 +974,57 @@ function useSalesUkraineColumns({
         align: 'right',
         accessor: (sale) => getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount),
         cell: (sale) => {
-          const discount = getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount)
-          const text = discount ? `${amountFormatter.format(discount)} %` : '—'
+          const items = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+          const firstDiscount = getNumber(items[0]?.OneTimeDiscount)
+          const text = firstDiscount ? `${amountFormatter.format(firstDiscount)} %` : '—'
 
-          if (!isNewOrPackagingStatus(sale)) {
+          if (!isNewOrPackagingStatus(sale) || items.length === 0) {
             return text
+          }
+
+          const discounts = items.map((item) => getNumber(item.OneTimeDiscount) ?? 0)
+          const hasUniformDiscount = discounts[0] !== 0 && discounts.every((value) => value === discounts[0])
+          const allPositive = discounts.every((value) => value > 0)
+
+          if (hasUniformDiscount) {
+            return (
+              <Anchor
+                component="button"
+                fw={600}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenDiscount(sale)
+                }}
+              >
+                {`${amountFormatter.format(discounts[0])} %`}
+              </Anchor>
+            )
+          }
+
+          if (allPositive) {
+            const average = Math.round((discounts.reduce((sum, value) => sum + value, 0) / discounts.length) * 100) / 100
+
+            return <Text span>{`${amountFormatter.format(average)} %`}</Text>
+          }
+
+          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+
+          if (lifeCycleType === 1 || lifeCycleType === 2) {
+            return '—'
           }
 
           return (
             <Anchor
               component="button"
-              fw={discount ? 600 : 400}
+              fw={400}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenDiscount(sale)
               }}
             >
-              {discount ? text : t('Знижка')}
+              {t('Знижка')}
             </Anchor>
           )
         },

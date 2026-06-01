@@ -1,45 +1,59 @@
-import { Alert, Button, Group, NumberInput, Stack, Textarea } from '@mantine/core'
+import { Alert, Button, Group, NumberInput, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { updateSaleDiscount } from '../api/salesUkraineApi'
-import type { SalesUkraineSale } from '../types'
+import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
 
 const NEW_LIFECYCLE_TYPE = 0
 
 export function SaleDiscountModal({
   sale,
+  orderItem,
   onClose,
   onSaved,
 }: {
   onClose: () => void
   onSaved: () => void
+  orderItem?: SalesUkraineOrderItem | null
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
 
   return (
     <AppModal centered opened={Boolean(sale)} size="sm" title={t('Знижка')} onClose={onClose}>
-      {sale && <SaleDiscountForm key={sale.NetUid || sale.Id} sale={sale} onCancel={onClose} onSaved={onSaved} />}
+      {sale && (
+        <SaleDiscountForm
+          key={`${sale.NetUid || sale.Id}-${orderItem?.NetUid || orderItem?.Id || 'sale'}`}
+          orderItem={orderItem ?? null}
+          sale={sale}
+          onCancel={onClose}
+          onSaved={onSaved}
+        />
+      )}
     </AppModal>
   )
 }
 
 function SaleDiscountForm({
   sale,
+  orderItem,
   onCancel,
   onSaved,
 }: {
   onCancel: () => void
   onSaved: () => void
+  orderItem: SalesUkraineOrderItem | null
   sale: SalesUkraineSale
 }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isReadOnly = sale.BaseLifeCycleStatus?.SaleLifeCycleType !== NEW_LIFECYCLE_TYPE
-  const [amount, setAmount] = useState<number | string>(getInitialDiscount(sale))
-  const [comment, setComment] = useState(sale.OneTimeDiscountComment || orderItems[0]?.OneTimeDiscountComment || '')
+  const [amount, setAmount] = useState<number | string>(getInitialDiscount(sale, orderItem))
+  const [comment, setComment] = useState(
+    orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || orderItems[0]?.OneTimeDiscountComment || '',
+  )
   const [isSaving, setSaving] = useState(false)
 
   const numericAmount = typeof amount === 'number' ? amount : Number(String(amount).replace(',', '.'))
@@ -60,20 +74,37 @@ function SaleDiscountForm({
 
     setSaving(true)
 
-    const payload: SalesUkraineSale = {
-      ...sale,
-      OneTimeDiscountComment: comment,
-      Order: sale.Order
-        ? {
-            ...sale.Order,
-            OrderItems: orderItems.map((item) => ({
-              ...item,
-              OneTimeDiscount: numericAmount,
-              OneTimeDiscountComment: comment,
-            })),
-          }
-        : sale.Order,
-    }
+    const matchItem = (item: SalesUkraineOrderItem) =>
+      Boolean(orderItem) &&
+      ((orderItem?.NetUid && item.NetUid === orderItem.NetUid) ||
+        (typeof orderItem?.Id === 'number' && item.Id === orderItem.Id))
+
+    const payload: SalesUkraineSale = orderItem
+      ? {
+          ...sale,
+          Order: sale.Order
+            ? {
+                ...sale.Order,
+                OrderItems: orderItems.map((item) =>
+                  matchItem(item) ? { ...item, OneTimeDiscount: numericAmount, OneTimeDiscountComment: comment } : item,
+                ),
+              }
+            : sale.Order,
+        }
+      : {
+          ...sale,
+          OneTimeDiscountComment: comment,
+          Order: sale.Order
+            ? {
+                ...sale.Order,
+                OrderItems: orderItems.map((item) => ({
+                  ...item,
+                  OneTimeDiscount: numericAmount,
+                  OneTimeDiscountComment: comment,
+                })),
+              }
+            : sale.Order,
+        }
 
     try {
       await updateSaleDiscount(payload)
@@ -88,6 +119,11 @@ function SaleDiscountForm({
 
   return (
     <Stack gap="md">
+      {orderItem && (
+        <Text size="sm" fw={600}>
+          {orderItem.Product?.NameUA || orderItem.Product?.Name || orderItem.Product?.VendorCode || ''}
+        </Text>
+      )}
       {isReadOnly && (
         <Alert color="gray" variant="light">
           {t('Знижку можна змінити лише для нового продажу')}
@@ -124,9 +160,8 @@ function SaleDiscountForm({
   )
 }
 
-function getInitialDiscount(sale: SalesUkraineSale): number | string {
-  const firstItem = sale.Order?.OrderItems?.[0]
-  const discount = firstItem?.OneTimeDiscount
+function getInitialDiscount(sale: SalesUkraineSale, orderItem: SalesUkraineOrderItem | null): number | string {
+  const discount = orderItem ? orderItem.OneTimeDiscount : sale.Order?.OrderItems?.[0]?.OneTimeDiscount
 
   return typeof discount === 'number' && discount !== 0 ? discount : ''
 }
