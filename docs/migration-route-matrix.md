@@ -169,7 +169,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 102 | P5 sales-reports | sales | `/sales/allegro/new` | `AddProductToAllegroView` | todo | old line 263 |
 | 103 | P5 sales-reports | sales | `/sales/allegro` | `AllegroDashboard` | todo | old line 264 |
 | 104 | P5 sales-reports | sales | `/sales/ukraine/all/returns/new` | `ClientReturnsPivot` | ui | returns list/create slice wired with search, paging, drawer, export, cancel, sale-item selection, validation |
-| 105 | P5 sales-reports | sales | `/sales/ukraine/all` | `SalesManagerDashboard` | todo | old line 266 |
+| 105 | P5 sales-reports | sales | `/sales/ukraine/all` | `SalesManagerDashboard` | ui | SalesAndInvoices tab fully migrated (feature `sales-ukraine`): grid + filters (date/status/manager/org/client/search) + paginated `/sales/all/filtered`; faithful row actions (documents incl. A/B/C history, discount, ship, will-not-ship, unlock, transporter panel, TTN); SaleMasterView editor (open/edit qty/add/remove/switch agreement/delivery/convert/merges) + new-sale via current cart. Other 8 dashboard tabs (Offers/Debtors/Interest/Returns/ClientProductMovement/Prediction/Charts) deferred |
 | 106 | P5 sales-reports | sales | `/sales/poland/all` | `SalesManagerDashboard` | deferred | skipped: Poland-specific route |
 | 107 | P5 sales-reports | sales-online-shop | `/sales-online-shop` | `SalesManagerDashboard` | ui | read-only list/detail slice wired to `/sales/all/filtered` with online-shop flags |
 | 108 | P5 sales-reports | sales | `/sales/return/client` | `SalesReturnClient` | ui | direct client return creation wired with organization/storage/client/agreement/product/batch selection |
