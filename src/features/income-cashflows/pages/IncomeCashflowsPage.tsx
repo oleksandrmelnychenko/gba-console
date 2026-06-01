@@ -816,7 +816,7 @@ function ReassignIncomeClientModal({
                 label: [agreement?.Name || agreement?.Number, agreement?.Currency?.Code || agreement?.Currency?.Name]
                   .filter(Boolean)
                   .join(' '),
-                value: String(agreement?.NetUid || agreement?.Id || ''),
+                value: String(clientAgreement.NetUid || clientAgreement.Id || ''),
               }
             })
             .filter((option) => option.value),
