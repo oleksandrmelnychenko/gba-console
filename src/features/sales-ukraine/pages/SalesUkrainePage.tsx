@@ -21,7 +21,7 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
-  IconBuildingStore,
+  IconBrandEdge,
   IconDots,
   IconExternalLink,
   IconEye,
@@ -1292,7 +1292,7 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
 
   const indicator =
     source === 0
-      ? { icon: <IconBuildingStore size={14} />, label: t('Інтернет-магазин') }
+      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
       : source === 2
         ? { icon: <IconTag size={14} />, label: t('Оферта') }
         : isInvoiceStage

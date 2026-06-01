@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { IconAlertCircle, IconEye, IconInfoCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconBrandEdge, IconEye, IconInfoCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -437,7 +437,16 @@ function useSalesOnlineShopColumns(onOpenSale: (sale: SalesOnlineShopSale) => vo
         width: 150,
         minWidth: 132,
         accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid,
-        cell: (sale) => <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>,
+        cell: (sale) => (
+          <Group gap={5} wrap="nowrap">
+            <Tooltip label={t('Інтернет-магазин')}>
+              <Box c="gray.6" style={{ display: 'inline-flex' }}>
+                <IconBrandEdge size={14} />
+              </Box>
+            </Tooltip>
+            <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
+          </Group>
+        ),
       },
       {
         id: 'client',
