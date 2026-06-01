@@ -52,7 +52,7 @@ export function getNotProcessedCount(offer: ClientShoppingCart): number {
 }
 
 export function getItemNotProcessed(item: OfferOrderItem): number {
-  return Math.max(0, (item.Qty ?? 0) - (item.OrderedQty ?? 0))
+  return (item.Qty ?? 0) - (item.OrderedQty ?? 0)
 }
 
 export function getDaysToEnd(validUntil: Date | string | null | undefined): number {
@@ -72,9 +72,9 @@ export function getDaysToEnd(validUntil: Date | string | null | undefined): numb
 }
 
 export function getReasonStatus(offer: ClientShoppingCart): OfferReasonStatus {
-  const items = (offer.OrderItems ?? []).filter((item) => getItemNotProcessed(item) > 0)
+  const items = offer.OrderItems ?? []
 
-  if (offer.Comment || (items.length > 0 && items.every((item) => !!item.Comment))) {
+  if (offer.Comment || items.every((item) => !!item.Comment)) {
     return 'all'
   }
 

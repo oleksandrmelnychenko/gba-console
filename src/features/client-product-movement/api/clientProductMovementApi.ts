@@ -14,7 +14,7 @@ function buildMovementQuery(filters: ClientProductMovementFilters) {
     from: filters.from,
     limit: filters.limit,
     offset: filters.offset,
-    organizationId: filters.organizationId.length ? filters.organizationId.join(',') : undefined,
+    organizationId: filters.organizationId.length ? filters.organizationId : undefined,
     to: filters.to,
   }
 }

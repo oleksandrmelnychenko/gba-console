@@ -42,8 +42,8 @@ export function OfferCard({
   const currencyCode = offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'
   const daysToEnd = getDaysToEnd(offer.ValidUntil)
   const reasonStatus = getReasonStatus(offer)
-  const showNotProcessed = offer.IsOfferProcessed === true && notProcessedCount > 0
-  const canOpenReason = status === OFFER_PROCESSING_STATUS.FullyProcessed && notProcessedCount > 0
+  const showNotProcessed = offer.IsOfferProcessed === true && notProcessedCount !== 0
+  const canOpenReason = status === OFFER_PROCESSING_STATUS.FullyProcessed && notProcessedCount !== 0
 
   return (
     <Card padding="sm" radius="md" withBorder>
@@ -71,7 +71,9 @@ export function OfferCard({
             </Text>
             <Text c="dimmed" size="sm">
               {offer.CreatedBy?.LastName ?? ''}
-              {offer.ClientAgreement?.Agreement?.Name ? ` : ${offer.ClientAgreement.Agreement.Name}` : ''}
+              {offer.ClientAgreement?.Agreement?.Name
+                ? ` : ${t('На договір')} ${offer.ClientAgreement.Agreement.Name}`
+                : ''}
             </Text>
           </Stack>
         </Group>
@@ -85,7 +87,7 @@ export function OfferCard({
 
           {status === OFFER_PROCESSING_STATUS.PartiallyProcessed && (
             <Badge color="yellow" variant="light">
-              {daysToEnd} {t('дн.')} ({formatDate(offer.ValidUntil)})
+              {daysToEnd} {dayUnitLabel(daysToEnd, t)} ({formatDate(offer.ValidUntil)})
             </Badge>
           )}
 
@@ -128,7 +130,12 @@ export function OfferCard({
       <Collapse expanded={expanded}>
         <Stack gap="xs" mt="sm">
           {(offer.OrderItems ?? []).map((item) => (
-            <OfferLine key={item.NetUid} currencyCode={currencyCode} item={item} />
+            <OfferLine
+              key={item.NetUid}
+              currencyCode={currencyCode}
+              isOfferProcessed={offer.IsOfferProcessed === true}
+              item={item}
+            />
           ))}
         </Stack>
       </Collapse>
@@ -136,7 +143,15 @@ export function OfferCard({
   )
 }
 
-function OfferLine({ currencyCode, item }: { currencyCode: string; item: OfferOrderItem }) {
+function OfferLine({
+  currencyCode,
+  isOfferProcessed,
+  item,
+}: {
+  currencyCode: string
+  isOfferProcessed: boolean
+  item: OfferOrderItem
+}) {
   const { t } = useI18n()
   const notProcessed = getItemNotProcessed(item)
 
@@ -169,7 +184,7 @@ function OfferLine({ currencyCode, item }: { currencyCode: string; item: OfferOr
       </Stack>
 
       <Box>
-        {notProcessed > 0 && (
+        {isOfferProcessed && notProcessed > 0 && (
           <Badge color="orange" variant="light">
             {t('Неопрацьовано')}: {notProcessed}
           </Badge>
@@ -196,7 +211,7 @@ function ReasonBadge({ status }: { status: 'all' | 'none' | 'partial' }) {
 
   if (status === 'partial') {
     return (
-      <Badge color="orange" variant="light">
+      <Badge color="red" variant="light">
         {t('Причину вказано частково')}
       </Badge>
     )
@@ -207,6 +222,18 @@ function ReasonBadge({ status }: { status: 'all' | 'none' | 'partial' }) {
       {t('Причину не вказано')}
     </Badge>
   )
+}
+
+function dayUnitLabel(days: number, t: (key: string) => string): string {
+  if (days === 1) {
+    return t('День').toLowerCase()
+  }
+
+  if (days >= 5 || days === 0) {
+    return t('Днів').toLowerCase()
+  }
+
+  return t('Дні').toLowerCase()
 }
 
 function statusLabel(status: number, t: (key: string) => string): string {

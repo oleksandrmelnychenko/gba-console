@@ -1,4 +1,4 @@
-import { Alert, Card, Group, Select, Stack, TextInput } from '@mantine/core'
+import { Alert, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -185,18 +185,24 @@ export function ManagerSalesByTopView() {
           </Alert>
         )}
 
-        <DataTable
-          columns={columns}
-          data={rows}
-          emptyText={t('Дані відсутні')}
-          getRowId={(row) => row.rowId}
-          isLoading={isLoading}
-          layoutVersion="sales-charts-managertop-1"
-          loadingText={t('Завантаження даних')}
-          maxHeight="calc(100vh - 360px)"
-          minWidth={720}
-          tableId="sales-charts-managertop"
-        />
+        {columnKeys.length > 0 ? (
+          <DataTable
+            columns={columns}
+            data={rows}
+            emptyText={t('Дані відсутні')}
+            getRowId={(row) => row.rowId}
+            isLoading={isLoading}
+            layoutVersion="sales-charts-managertop-1"
+            loadingText={t('Завантаження даних')}
+            maxHeight="calc(100vh - 360px)"
+            minWidth={720}
+            tableId="sales-charts-managertop"
+          />
+        ) : (
+          <Text c="dimmed" size="sm">
+            {isLoading ? t('Завантаження даних') : t('Дані відсутні')}
+          </Text>
+        )}
       </Stack>
     </Card>
   )

@@ -281,6 +281,12 @@ export function SalesPredictionPage() {
         </Grid.Col>
       </Grid>
 
+      {!clientNetId && !productNetId && (
+        <Text c="dimmed" size="sm">
+          {t('Для відображення прогнозу виберіть у відповідному полі')}
+        </Text>
+      )}
+
       {clientNetId && <SalesPredictionChart data={byClient} title={t('Прогноз по клієнту')} />}
 
       {productNetId && <SalesPredictionChart data={byProduct} title={t('Прогноз по товару')} />}

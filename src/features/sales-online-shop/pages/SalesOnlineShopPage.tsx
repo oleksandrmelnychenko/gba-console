@@ -14,12 +14,13 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { IconAlertCircle, IconEye, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { IconAlertCircle, IconEye, IconInfoCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSalesOnlineShop } from '../api/salesOnlineShopApi'
@@ -79,22 +80,22 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  0: 'Не оплачено',
+  0: 'Неоплаченно',
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  Await: 'Очікує',
-  InvoiceChanged: 'Змінено рахунок',
-  New: 'Новий',
-  OrderClosed: 'Закритий',
-  Packaged: 'Запаковано',
-  Packaging: 'Пакування',
+  Await: 'Очікування',
+  InvoiceChanged: 'Редаговані накладні',
+  New: 'Рахунок',
+  OrderClosed: 'Закриті рахунки',
+  Packaged: 'Накладна',
+  Packaging: 'Накладна',
   Received: 'Отримано',
-  Shipping: 'Доставка',
-  TransporterChanged: 'Змінено перевізника',
+  Shipping: 'Відправлено',
+  TransporterChanged: 'Редаговані перевізники',
 }
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -124,6 +125,9 @@ export function SalesOnlineShopPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const realtimeReloadRef = useRef<number | null>(null)
+  const backgroundReloadRef = useRef(false)
+  const salesRef = useRef<SalesOnlineShopSale[]>(sales)
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(sales)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
@@ -141,6 +145,60 @@ export function SalesOnlineShopPage() {
   )
 
   const columns = useSalesOnlineShopColumns(setSelectedSale)
+
+  useEffect(() => {
+    salesRef.current = sales
+  }, [sales])
+
+  const scheduleRealtimeReload = useCallback(() => {
+    if (realtimeReloadRef.current !== null) {
+      window.clearTimeout(realtimeReloadRef.current)
+    }
+
+    realtimeReloadRef.current = window.setTimeout(() => {
+      realtimeReloadRef.current = null
+      backgroundReloadRef.current = true
+      reload()
+    }, 800)
+  }, [reload])
+
+  useEffect(
+    () => () => {
+      if (realtimeReloadRef.current !== null) {
+        window.clearTimeout(realtimeReloadRef.current)
+      }
+    },
+    [],
+  )
+
+  const handleRealtimeSaleAdded = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const number = sale?.SaleNumber?.Value
+
+      if (typeof number === 'string' && number.trim().startsWith('P')) {
+        return
+      }
+
+      scheduleRealtimeReload()
+    },
+    [scheduleRealtimeReload],
+  )
+
+  const handleRealtimeSaleUpdated = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const netId = sale?.NetUid
+
+      if (!netId || salesRef.current.some((current) => current.NetUid === netId)) {
+        scheduleRealtimeReload()
+      }
+    },
+    [scheduleRealtimeReload],
+  )
+
+  useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
+  useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
 
   const toolbarLeft = useMemo(
     () => (
@@ -188,22 +246,31 @@ export function SalesOnlineShopPage() {
     let cancelled = false
 
     async function loadSales() {
-      setLoading(true)
-      setError(null)
+      const isBackgroundReload = backgroundReloadRef.current
+      backgroundReloadRef.current = false
+
+      if (!isBackgroundReload) {
+        setLoading(true)
+        setError(null)
+      }
 
       try {
         const nextSales = await getSalesOnlineShop(activeFilters)
 
         if (!cancelled) {
           setSales(nextSales)
+
+          if (isBackgroundReload) {
+            setError(null)
+          }
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setSales([])
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продажі інтернет-магазину'))
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setLoading(false)
         }
       }
@@ -381,9 +448,18 @@ function useSalesOnlineShopColumns(onOpenSale: (sale: SalesOnlineShopSale) => vo
         cell: (sale) => (
           <>
             <Text fw={600}>{displayValue(getSaleClientName(sale))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(getRetailClientLine(sale))}
-            </Text>
+            <Group gap={4} wrap="nowrap">
+              <Text size="xs" c="dimmed">
+                {displayValue(getRetailClientLine(sale))}
+              </Text>
+              {sale.MisplacedSaleId && (
+                <Tooltip label={t('Часткова продажа')}>
+                  <Box c="red" style={{ display: 'inline-flex' }}>
+                    <IconInfoCircle size={14} />
+                  </Box>
+                </Tooltip>
+              )}
+            </Group>
           </>
         ),
       },
@@ -545,6 +621,11 @@ function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
             {t('Заблоковано')}
           </Badge>
         )}
+        {sale.MisplacedSaleId && (
+          <Badge color="red" leftSection={<IconInfoCircle size={12} />} variant="light">
+            {t('Часткова продажа')}
+          </Badge>
+        )}
       </Group>
 
       <DetailRows
@@ -668,6 +749,17 @@ function getSaleStatusKey(sale: SalesOnlineShopSale): string {
   }
 
   return String(status || sale.BaseLifeCycleStatus?.Name || '')
+}
+
+function resolveRealtimeSale(payload: unknown): { NetUid?: string; SaleNumber?: { Value?: string } } | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const record = payload as { Sale?: unknown }
+  const sale = record.Sale && typeof record.Sale === 'object' ? record.Sale : payload
+
+  return sale as { NetUid?: string; SaleNumber?: { Value?: string } }
 }
 
 function getSaleStatusLabel(sale: SalesOnlineShopSale): string {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconChevronDown, IconChevronUp } from '@tabler/icons-react'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -129,7 +129,18 @@ function useCartItemColumns(localCurrencyCode: string) {
         width: 280,
         minWidth: 200,
         accessor: (item) => item.Product?.Name || '',
-        cell: (item) => item.Product?.Name || '—',
+        cell: (item) => (
+          <Stack gap={0}>
+            <Text size="sm">{item.Product?.Name || '—'}</Text>
+            {item.Comment ? (
+              <Tooltip label={item.Comment} position="top" multiline maw={320}>
+                <Text size="xs" c="dimmed" lineClamp={1}>
+                  {item.Comment}
+                </Text>
+              </Tooltip>
+            ) : null}
+          </Stack>
+        ),
       },
       {
         id: 'originalNumber',

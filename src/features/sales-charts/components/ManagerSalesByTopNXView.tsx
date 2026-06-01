@@ -76,7 +76,7 @@ export function ManagerSalesByTopNXView() {
           </Text>
         ),
         enableSorting: false,
-        header: t('Артикул'),
+        header: t('Код Виробника'),
         id: 'label',
         minWidth: 220,
       },

@@ -181,7 +181,7 @@ export function PreordersInterestPage() {
   return (
     <Stack gap="lg">
       <Group justify="space-between" align="center">
-        <Title order={3}>{t('Передзамовлення')}</Title>
+        <Title order={3}>{t('Зацікавленість про товар на Україні')}</Title>
         <Group gap="sm" align="center">
           <Badge color="gray" variant="light">
             {isLoading ? t('Завантаження') : `${t('Показано')}: ${preOrders.length}`}

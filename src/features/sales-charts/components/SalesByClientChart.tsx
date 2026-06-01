@@ -171,7 +171,7 @@ export function SalesByClientChart() {
             data={points}
             dataKey="name"
             h={300}
-            series={[{ color: 'violet.6', label: t('Сума продажів в євро'), name: 'amount' }]}
+            series={[{ color: 'violet.6', label: t('Сума продажу в євро'), name: 'amount' }]}
             xAxisProps={{ tickFormatter: periodFormatter }}
           />
         )}

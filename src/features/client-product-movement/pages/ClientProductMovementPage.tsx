@@ -58,6 +58,11 @@ type MovementRow = {
   document: ClientProductMovementDocument
 }
 
+type SelectOption = {
+  label: string
+  value: string
+}
+
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 const DEFAULT_PAGE_SIZE = 20
 
@@ -256,18 +261,12 @@ export function ClientProductMovementPage() {
   }
 
   const organizationOptions = useMemo(
-    () =>
-      organizations
-        .filter((organization) => typeof organization.Id === 'number' && organization.Name)
-        .map((organization) => ({ label: organization.Name || '', value: String(organization.Id) })),
+    () => toOrganizationSelectOptions(organizations),
     [organizations],
   )
 
   const clientSelectData = useMemo(
-    () =>
-      clientOptions
-        .map((client) => ({ label: getClientOptionLabel(client), value: String(client.NetUid ?? client.Id ?? '') }))
-        .filter((option) => option.value),
+    () => toClientSelectOptions(clientOptions),
     [clientOptions],
   )
 
@@ -564,7 +563,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
       },
       {
         id: 'specificationCode',
-        header: t('Код специфікації'),
+        header: t('Митний код'),
         width: 200,
         minWidth: 140,
         accessor: (item) => item.ProductSpecificationCode,
@@ -589,7 +588,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
       },
       {
         id: 'qty',
-        header: t('К-сть'),
+        header: t('штук'),
         width: 110,
         minWidth: 90,
         align: 'right',
@@ -645,15 +644,54 @@ function applyDefaultOrganizations(
     return draft
   }
 
-  const ids = organizations
-    .filter((organization) => typeof organization.Id === 'number')
-    .map((organization) => String(organization.Id))
+  const ids = getOrganizationIds(organizations)
 
   if (ids.length === 0) {
     return draft
   }
 
   return { ...draft, organizationIds: ids }
+}
+
+function toOrganizationSelectOptions(organizations: ClientProductMovementOrganizationOption[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const organization of organizations) {
+    if (typeof organization.Id === 'number' && organization.Name) {
+      options.push({ label: organization.Name || '', value: String(organization.Id) })
+    }
+  }
+
+  return options
+}
+
+function toClientSelectOptions(clients: ClientProductMovementClientOption[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const client of clients) {
+    const option = {
+      label: getClientOptionLabel(client),
+      value: String(client.NetUid ?? client.Id ?? ''),
+    }
+
+    if (option.value) {
+      options.push(option)
+    }
+  }
+
+  return options
+}
+
+function getOrganizationIds(organizations: ClientProductMovementOrganizationOption[]): string[] {
+  const ids: string[] = []
+
+  for (const organization of organizations) {
+    if (typeof organization.Id === 'number') {
+      ids.push(String(organization.Id))
+    }
+  }
+
+  return ids
 }
 
 function getClientOptionLabel(client: ClientProductMovementClientOption): string {

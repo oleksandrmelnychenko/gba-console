@@ -16,7 +16,7 @@ export async function getFilteredDebtors(filters: DebtorsFilters): Promise<Clien
       offset: filters.offset,
       organizationNetId: filters.organizationNetId || undefined,
       typeAgreement: filters.typeAgreement,
-      typeCurrency: filters.typeCurrency,
+      typeCurrency: filters.typeCurrency || undefined,
       userNetId: filters.userNetId || undefined,
     },
   })
@@ -31,7 +31,7 @@ export async function exportDebtorsDocument(
     query: {
       organizationNetId: filters.organizationNetId || undefined,
       typeAgreement: filters.typeAgreement,
-      typeCurrency: filters.typeCurrency,
+      typeCurrency: filters.typeCurrency || undefined,
       userNetId: filters.userNetId || undefined,
     },
   })
