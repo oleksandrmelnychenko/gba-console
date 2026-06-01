@@ -28,9 +28,9 @@ These legacy gates have **no console counterpart because the underlying action/e
 
 | Legacy key | Where (legacy) | Why not migrated |
 | --- | --- | --- |
-| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | console placement editor has no "ActReconciliation new" action |
-| `PlacementHeader_…_CarryOut` (Провести / full-placement) | placement.header.view.tsx | console has no CarryOut/FullPlaced action |
-| `PlacementHeader_…_GetUp` (Підняти) | placement.header.view.tsx | console has no GetUp action |
+| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | opens the full `NewActReconciliationView` sub-form (reconciliation creation) — larger piece, still deferred |
+| ~~`PlacementHeader_…_CarryOut` (Провести / full-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
+| ~~`PlacementHeader_…_GetUp` (Оприходувати / partial-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
 | `Sales_Ukraine_all_Change_Products_Btn_PKEY` | shared product carousel | console renders product description read-only; editing goes through the full edit panel gated by `Product_Entire_Assortment_EditBtn_PKEY` instead |
 
 ### 1c. Audit-tooling note (not a product issue)
@@ -469,3 +469,26 @@ differing → **non-clickable average** (no clobber); **(3)** mixed → clickabl
 Packaging. And made `SaleDiscountModal` accept an optional `orderItem` so the **expander's per-item**
 discount click updates **only that item** (matching legacy `sale.discount.modal` `OnSave`: per-item when an
 `OrderItem` is passed, all-items otherwise). tsc 0 / eslint 0.
+
+---
+
+## 11. Placement-header actions CarryOut + GetUp — BUILT (2026-06-01)
+
+Closed two §1b not-migrated features on the warehouse placement editor
+(`WarehouseUkraineOrderPlacementsPage`, warehouse-ukraine — non-WIP):
+
+- **«Провести» (CarryOut)** — gated by `PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY`,
+  shown only when `!order.IsPlaced`. Confirm modal → `createProductIncomeFromDynamicPlacements` →
+  `POST /products/incomes/new/supply/ukraine/dynamic?fromDate=&storageNetId=` with the supply order body
+  carrying **`IsPlaced: true`** (full placement → creates the product income, order becomes placed). Reloads.
+- **«Оприходувати» (GetUp)** — gated by `PlacementHeader_GetUp_ordersUkrainePlacement_PKEY`. Same endpoint,
+  same confirm modal, but **`IsPlaced: false`** (partial placement — order stays open for further placements).
+
+Faithful to legacy `placement.header.view.tsx` / `supply.ukraine.placement.view.tsx`
+(`NewProductIncome(isFullPlaced)` → `createUkraineProductIncomeFomDynamicPlacementsAction`): same single
+endpoint, the only difference is the `IsPlaced` flag, each behind an "AreYouSureToDoAction" confirm.
+Added a «Дата оприходування» date input (legacy header `DateFromValue`, defaults to today) feeding
+`fromDate`, and the selected storage feeding `storageNetId`. tsc 0 / eslint 0.
+
+**Still deferred:** `ActReconciliationNew` (opens the full `NewActReconciliationView` reconciliation
+creation sub-form — a larger build, left for when the act-reconciliation creation flow is migrated).

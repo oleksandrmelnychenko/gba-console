@@ -1,15 +1,17 @@
-import { ActionIcon, Alert, Button, Card, Group, NumberInput, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
+  createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
   getSupplyOrderUkraineById,
   updateSupplyOrderUkraine,
@@ -28,6 +30,8 @@ import type {
 } from '../placementsTypes'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_ordersUkrainePlacement_PKEY'
+const PLACEMENT_CARRY_OUT_PERMISSION = 'PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY'
+const PLACEMENT_GET_UP_PERMISSION = 'PlacementHeader_GetUp_ordersUkrainePlacement_PKEY'
 
 function columnKey(column: DynamicProductPlacementColumn): string {
   return column.NetUid || String(column.Id || '')
@@ -145,6 +149,9 @@ function useOrderPlacementsModel() {
   const [columnModalOpen, setColumnModalOpen] = useValueState(false)
   const [columnToRemove, setColumnToRemove] = useValueState<DynamicProductPlacementColumn | null>(null)
   const [drawer, setDrawer] = useValueState<DrawerState | null>(null)
+  const [incomeDate, setIncomeDate] = useValueState(() => formatLocalDate(new Date()))
+  const [confirmPlacement, setConfirmPlacement] = useValueState<{ isFullPlaced: boolean } | null>(null)
+  const [isPlacing, setPlacing] = useValueState(false)
 
   useEffect(() => {
     if (!id) {
@@ -419,14 +426,41 @@ function useOrderPlacementsModel() {
     }
   }, [order, persistOrder])
 
+  const placeOrder = useCallback(
+    async (isFullPlaced: boolean) => {
+      const storageNetId = selectedStorageId
+
+      if (!order || !storageNetId) {
+        notifications.show({ color: 'red', message: t('Оберіть склад') })
+
+        return
+      }
+
+      setPlacing(true)
+
+      try {
+        await createProductIncomeFromDynamicPlacements({ ...order, IsPlaced: isFullPlaced }, incomeDate, storageNetId)
+        notifications.show({ color: 'green', message: t('Оприходування виконано') })
+        setConfirmPlacement(null)
+        reloadFromServer()
+      } catch {
+        notifications.show({ color: 'red', message: t('Не вдалося виконати оприходування') })
+      } finally {
+        setPlacing(false)
+      }
+    },
+    [incomeDate, order, reloadFromServer, selectedStorageId, setConfirmPlacement, setPlacing, t],
+  )
+
   const totalProductsCount = order ? order.SupplyOrderUkraineItems.length : 0
   const totalNetWeight = order?.TotalNetWeight || 0
 
   return {
-    columnModalOpen, columnToRemove, confirmRemoveColumn, drawer, error, gridRows, handleAddColumn, handleApplyPlacements,
-    handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, isDirty, isLoading, isSaving, navigate,
-    order, reloadFromServer, selectedStorage, selectedStorageId, setColumnModalOpen, setColumnToRemove, setDrawer,
-    setSelectedStorageId, storages, totalNetWeight, totalProductsCount,
+    columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, drawer, error, gridRows, handleAddColumn,
+    handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
+    isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
+    setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setSelectedStorageId, storages,
+    totalNetWeight, totalProductsCount,
   }
 }
 
@@ -435,6 +469,8 @@ export function WarehouseUkraineOrderPlacementsPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canEditPlacement = hasPermission(PLACEMENT_ADD_CANCEL_SAVE_PERMISSION)
+  const canCarryOut = hasPermission(PLACEMENT_CARRY_OUT_PERMISSION)
+  const canGetUp = hasPermission(PLACEMENT_GET_UP_PERMISSION)
 
   const columns = useMemo<DataTableColumn<PlacementGridRow>[]>(() => {
     const fixedColumns: DataTableColumn<PlacementGridRow>[] = [
@@ -604,7 +640,16 @@ export function WarehouseUkraineOrderPlacementsPage() {
               </Button>
             )}
           </Group>
-          <Group gap="sm">
+          <Group gap="sm" align="end">
+            {!model.order?.IsPlaced && (canCarryOut || canGetUp) && (
+              <TextInput
+                label={t('Дата оприходування')}
+                type="date"
+                value={model.incomeDate}
+                w={170}
+                onChange={(event) => model.setIncomeDate(event.currentTarget.value)}
+              />
+            )}
             {model.isDirty && (
               <Text c="orange" size="sm">
                 {t('Є незбережені зміни')}
@@ -618,6 +663,25 @@ export function WarehouseUkraineOrderPlacementsPage() {
             {canEditPlacement && (
               <Button disabled={!model.isDirty} loading={model.isSaving} onClick={model.handleSave}>
                 {t('Зберегти')}
+              </Button>
+            )}
+            {!model.order?.IsPlaced && canCarryOut && (
+              <Button
+                color="teal"
+                disabled={model.isPlacing}
+                onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
+              >
+                {t('Провести')}
+              </Button>
+            )}
+            {!model.order?.IsPlaced && canGetUp && (
+              <Button
+                color="blue"
+                disabled={model.isPlacing}
+                variant="light"
+                onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
+              >
+                {t('Оприходувати')}
               </Button>
             )}
           </Group>
@@ -683,6 +747,32 @@ export function WarehouseUkraineOrderPlacementsPage() {
             {t('Видалити')}
           </Button>
         </Group>
+      </AppModal>
+
+      <AppModal
+        opened={Boolean(model.confirmPlacement)}
+        title={t('Ви впевнені?')}
+        onClose={() => (model.isPlacing ? undefined : model.setConfirmPlacement(null))}
+      >
+        <Stack gap="md">
+          <Text>
+            {model.confirmPlacement?.isFullPlaced
+              ? t('Провести замовлення повністю?')
+              : t('Оприходувати замовлення?')}
+          </Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={model.isPlacing} variant="light" onClick={() => model.setConfirmPlacement(null)}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color="teal"
+              loading={model.isPlacing}
+              onClick={() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}
+            >
+              {t('Підтвердити')}
+            </Button>
+          </Group>
+        </Stack>
       </AppModal>
     </Stack>
   )

@@ -32,6 +32,18 @@ export async function updateSupplyOrderUkraine(order: PlacementSupplyOrder): Pro
   return normalizeOrder(result)
 }
 
+export async function createProductIncomeFromDynamicPlacements(
+  order: PlacementSupplyOrder,
+  fromDate: string,
+  storageNetId: string,
+): Promise<void> {
+  await apiRequest<unknown>('/products/incomes/new/supply/ukraine/dynamic', {
+    method: 'POST',
+    query: { fromDate, storageNetId },
+    body: order,
+  })
+}
+
 export async function getNonDefectiveStorages(): Promise<PlacementStorage[]> {
   const result = await apiRequest<unknown>('/storages/all/nondefective')
 
