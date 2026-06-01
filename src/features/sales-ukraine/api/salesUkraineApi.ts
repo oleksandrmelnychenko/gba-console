@@ -59,6 +59,14 @@ export async function unlockSale(netId: string): Promise<void> {
   })
 }
 
+export async function getSaleById(netId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get', {
+    query: { netId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
 export async function updateSale(sale: SalesUkraineSale): Promise<void> {
   await apiRequest<unknown>('/sales/update', {
     body: sale,

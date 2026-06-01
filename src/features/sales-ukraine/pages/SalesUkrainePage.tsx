@@ -22,6 +22,7 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconDots,
+  IconExternalLink,
   IconEye,
   IconLockOpen,
   IconPencil,
@@ -50,6 +51,7 @@ import {
   updateSale,
 } from '../api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
+import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
@@ -181,6 +183,7 @@ export function SalesUkrainePage() {
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [shipSale, setShipSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
+  const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const offset = (page - 1) * pageSize
@@ -207,6 +210,7 @@ export function SalesUkrainePage() {
     canWillNotShip,
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
+    onOpenEditor: setEditorSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
     onShip: setShipSale,
@@ -571,6 +575,8 @@ export function SalesUkrainePage() {
         onClose={() => setConsignmentSale(null)}
       />
 
+      <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
+
       <AppModal
         centered
         opened={Boolean(confirmState)}
@@ -602,6 +608,7 @@ function useSalesUkraineColumns({
   onOpenConsignment,
   onOpenDetails,
   onOpenDiscount,
+  onOpenEditor,
   onOpenSale,
   onShip,
   onUnlock,
@@ -612,6 +619,7 @@ function useSalesUkraineColumns({
   onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
+  onOpenEditor: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onShip: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
@@ -844,7 +852,6 @@ function useSalesUkraineColumns({
           const showTtn = Boolean(sale.TransporterId) && isPackaging
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
           const showUnlock = canUnlock && Boolean(sale.IsLocked)
-          const hasMenu = showShip || showTtn || showWillNotShip || showUnlock
 
           return (
             <Box onClick={(event) => event.stopPropagation()}>
@@ -855,15 +862,17 @@ function useSalesUkraineColumns({
                   </ActionIcon>
                 </Tooltip>
                 <SaleDocumentsMenu sale={sale} />
-                {hasMenu && (
-                  <Menu position="bottom-end" shadow="md" withinPortal>
-                    <Menu.Target>
-                      <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
-                        <IconDots size={18} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown>
-                      {showShip && (
+                <Menu position="bottom-end" shadow="md" withinPortal>
+                  <Menu.Target>
+                    <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
+                      <IconDots size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+                      {t('Відкрити продаж')}
+                    </Menu.Item>
+                    {showShip && (
                         <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onShip(sale)}>
                           {t('Відвантажити')}
                         </Menu.Item>
@@ -888,16 +897,27 @@ function useSalesUkraineColumns({
                           {t('Розблокувати')}
                         </Menu.Item>
                       )}
-                    </Menu.Dropdown>
-                  </Menu>
-                )}
+                  </Menu.Dropdown>
+                </Menu>
               </Group>
             </Box>
           )
         },
       },
     ],
-    [canUnlock, canWillNotShip, onOpenConsignment, onOpenDetails, onOpenDiscount, onOpenSale, onShip, onUnlock, onWillNotShip, t],
+    [
+      canUnlock,
+      canWillNotShip,
+      onOpenConsignment,
+      onOpenDetails,
+      onOpenDiscount,
+      onOpenEditor,
+      onOpenSale,
+      onShip,
+      onUnlock,
+      onWillNotShip,
+      t,
+    ],
   )
 }
 
