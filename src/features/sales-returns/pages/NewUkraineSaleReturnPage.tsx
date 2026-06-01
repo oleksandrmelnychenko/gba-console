@@ -816,6 +816,13 @@ function useReturnsColumns({
         width: 100,
       },
       {
+        id: 'regionCode',
+        header: t('Код регіону'),
+        accessor: (saleReturn) => saleReturn.Client?.RegionCode?.Value,
+        cell: (saleReturn) => displayValue(saleReturn.Client?.RegionCode?.Value),
+        width: 120,
+      },
+      {
         id: 'client',
         header: t('Клієнт'),
         accessor: (saleReturn) => saleReturn.Client?.FullName,
@@ -835,6 +842,13 @@ function useReturnsColumns({
         accessor: (saleReturn) => saleReturn.Storage?.Name,
         cell: (saleReturn) => displayValue(saleReturn.Storage?.Name),
         width: 160,
+      },
+      {
+        id: 'agreement',
+        header: t('Договір'),
+        accessor: (saleReturn) => saleReturn.ClientAgreement?.Agreement?.Name,
+        cell: (saleReturn) => displayValue(saleReturn.ClientAgreement?.Agreement?.Name),
+        width: 180,
       },
       {
         id: 'sales',
