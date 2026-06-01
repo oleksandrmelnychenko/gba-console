@@ -108,8 +108,20 @@
   width: 100%;
 }
 
-.data-table-header-button:disabled {
+.data-table-header-button {
   cursor: default;
+}
+
+.data-table-header-button[data-sortable='true'] {
+  cursor: pointer;
+}
+
+.data-table-header-button[data-reorderable='true'] {
+  cursor: grab;
+}
+
+.data-table-header-button[data-reorderable='true']:active {
+  cursor: grabbing;
 }
 
 .data-table-header-label {
@@ -133,15 +145,12 @@
   flex: 0 0 auto;
 }
 
-.data-table-drag-handle,
 .data-table-column-menu {
   color: var(--mantine-color-gray-5);
   opacity: 0;
 }
 
-.data-table-th:hover .data-table-drag-handle,
 .data-table-th:hover .data-table-column-menu,
-.data-table-drag-handle:focus-visible,
 .data-table-column-menu:focus-visible {
   opacity: 1;
 }

@@ -4,7 +4,6 @@ import {
   Group,
   Menu,
   Table,
-  Tooltip,
   UnstyledButton,
 } from '@mantine/core'
 import {
@@ -12,7 +11,6 @@ import {
   IconChevronUp,
   IconDotsVertical,
   IconEyeOff,
-  IconGripVertical,
   IconPinned,
   IconPinnedFilled,
   IconPinnedOff,
@@ -83,24 +81,13 @@ export function DataTableHeaderCell<TData>({
       }}
     >
       <Group className="data-table-header-inner" gap={6} wrap="nowrap" justify="flex-start">
-        {canReorder ? (
-          <Tooltip label={labels.dragColumn} withArrow>
-            <ActionIcon
-              {...attributes}
-              {...listeners}
-              aria-label={labels.dragColumn}
-              className="data-table-drag-handle"
-              size="xs"
-              variant="subtle"
-            >
-              <IconGripVertical size={14} stroke={1.8} />
-            </ActionIcon>
-          </Tooltip>
-        ) : null}
-
         <UnstyledButton
+          {...(canReorder ? attributes : {})}
+          {...(canReorder ? listeners : {})}
           className="data-table-header-button"
-          disabled={!canSort}
+          data-reorderable={canReorder ? 'true' : undefined}
+          data-sortable={canSort ? 'true' : undefined}
+          title={canReorder ? labels.dragColumn : undefined}
           onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
         >
           <span className="data-table-header-label">
