@@ -5,6 +5,7 @@ import {
   Button,
   Divider,
   Group,
+  Menu,
   Pagination,
   Select,
   SimpleGrid,
@@ -14,7 +15,16 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconDotsVertical,
+  IconEdit,
+  IconEye,
+  IconHierarchy2,
+  IconRefresh,
+  IconSearch,
+  IconX,
+} from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -33,6 +43,8 @@ import type {
   AdvancedReportRow,
   AdvancedReportsResponse,
   AdvancedReportsSearchParams,
+  AssignedIncomePaymentOrder,
+  AssignedPaymentOrder,
   Currency,
   NamedEntity,
   OutcomePaymentOrder,
@@ -49,7 +61,7 @@ const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['edit', 'actions'],
+    right: ['operations'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -87,6 +99,7 @@ export function AdvancedReportsPage() {
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AdvancedReportRow | null>(null)
+  const [structureRow, setStructureRow] = useValueState<AdvancedReportRow | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
@@ -244,7 +257,11 @@ export function AdvancedReportsPage() {
   )
 
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
-  const columns = useAdvancedReportColumns({ onEdit: openAdvanceReport, onOpen: setSelectedRow })
+  const columns = useAdvancedReportColumns({
+    onEdit: openAdvanceReport,
+    onOpen: setSelectedRow,
+    onOpenDocumentStructure: setStructureRow,
+  })
   const isTableBusy = isLoading || isSearchSettling
 
   const changeFromDate = useCallback(
@@ -447,6 +464,7 @@ export function AdvancedReportsPage() {
       )}
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <AdvancedReportDocumentStructureDrawer row={structureRow} onClose={() => setStructureRow(null)} />
     </Stack>
   )
 }
@@ -454,9 +472,11 @@ export function AdvancedReportsPage() {
 function useAdvancedReportColumns({
   onEdit,
   onOpen,
+  onOpenDocumentStructure,
 }: {
   onEdit: (row: AdvancedReportRow) => void
   onOpen: (row: AdvancedReportRow) => void
+  onOpenDocumentStructure: (row: AdvancedReportRow) => void
 }): DataTableColumn<AdvancedReportRow>[] {
   const { t } = useI18n()
 
@@ -560,36 +580,7 @@ function useAdvancedReportColumns({
         cell: (row) => displayValue(row.comment),
       },
       {
-        id: 'edit',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) =>
-          row.isUnderReport ? (
-            <Tooltip label={t('Редагувати звіт')}>
-              <ActionIcon
-                aria-label={t('Редагувати звіт')}
-                color="violet"
-                disabled={!row.order.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(row)
-                }}
-              >
-                <IconEdit size={16} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null,
-      },
-      {
-        id: 'actions',
+        id: 'operations',
         header: '',
         width: 62,
         minWidth: 58,
@@ -599,24 +590,43 @@ function useAdvancedReportColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <IconEye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Menu position="bottom-end" shadow="md" width={230} withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                aria-label={t('Операції')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <IconDotsVertical size={16} />
+              </ActionIcon>
+            </Menu.Target>
+
+            <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+              <Menu.Item leftSection={<IconEye size={16} />} onClick={() => onOpen(row)}>
+                {t('Деталі видаткового ордера')}
+              </Menu.Item>
+              <Menu.Item
+                disabled={!row.isUnderReport || !row.order.NetUid}
+                leftSection={<IconEdit size={16} />}
+                onClick={() => onEdit(row)}
+              >
+                {t('Авансовий звіт')}
+              </Menu.Item>
+              <Menu.Item
+                disabled={!row.hasDocumentStructure}
+                leftSection={<IconHierarchy2 size={16} />}
+                onClick={() => onOpenDocumentStructure(row)}
+              >
+                {row.hasDocumentStructure ? t('Структура документів') : t('Структура документів відсутня')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         ),
       },
     ],
-    [onEdit, onOpen, t],
+    [onEdit, onOpen, onOpenDocumentStructure, t],
   )
 }
 
@@ -707,6 +717,117 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
   )
 }
 
+function AdvancedReportDocumentStructureDrawer({
+  onClose,
+  row,
+}: {
+  onClose: () => void
+  row: AdvancedReportRow | null
+}) {
+  const { t } = useI18n()
+  const assignedOrders = row?.order.AssignedPaymentOrders || []
+  const rootAssignedOrder = row?.order.RootAssignedPaymentOrder || null
+
+  return (
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
+      {row && (
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
+            <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
+            <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber || row.number)} />
+          </SimpleGrid>
+
+          <Divider />
+
+          <Stack gap="sm">
+            {rootAssignedOrder && !rootAssignedOrder.Deleted && (
+              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} title={t('Кореневий документ')} />
+            )}
+
+            {assignedOrders.filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted).length > 0 ? (
+              assignedOrders
+                .filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted)
+                .map((assignedPaymentOrder, index) => (
+                  <AssignedPaymentOrderBlock
+                    key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
+                    assignedPaymentOrder={assignedPaymentOrder}
+                    title={`${t('Пов’язаний документ')} ${index + 1}`}
+                  />
+                ))
+            ) : !rootAssignedOrder || rootAssignedOrder.Deleted ? (
+              <Text c="dimmed" size="sm">
+                {t('Структура документів відсутня')}
+              </Text>
+            ) : null}
+          </Stack>
+        </Stack>
+      )}
+    </AppDrawer>
+  )
+}
+
+function AssignedPaymentOrderBlock({
+  assignedPaymentOrder,
+  title,
+}: {
+  assignedPaymentOrder: AssignedPaymentOrder
+  title: string
+}) {
+  const { t } = useI18n()
+  const assignedOutcome = assignedPaymentOrder.AssignedOutcomePaymentOrder || assignedPaymentOrder.RootOutcomePaymentOrder
+  const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
+
+  return (
+    <Stack gap="xs">
+      <Group gap="xs">
+        <IconHierarchy2 size={16} />
+        <Text fw={700}>{title}</Text>
+      </Group>
+      {assignedOutcome && <AssignedOutcomeOrderView order={assignedOutcome} />}
+      {assignedIncome && <AssignedIncomeOrderView order={assignedIncome} />}
+      {!assignedOutcome && !assignedIncome && (
+        <Text c="dimmed" size="sm">
+          {t('Пов’язаний документ не завантажено')}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
+function AssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
+      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
+      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} value={displayValue(order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name)} />
+      <DetailItem label={t('Отримувач')} value={displayValue(getPayedTo(order))} />
+    </SimpleGrid>
+  )
+}
+
+function AssignedIncomeOrderView({ order }: { order: AssignedIncomePaymentOrder }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Документ')} value={getIncomePaymentOrderTypeLabel(order, t)} />
+      <DetailItem label={t('Номер')} value={displayValue(order.Number)} />
+      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Сума')} value={formatMoney(order.Amount)} />
+      <DetailItem label={t('Валюта')} value={displayValue(order.Currency?.Code || order.Currency?.Name)} />
+      <DetailItem label={t('Платник')} value={displayValue(getEntityName(order.Colleague))} />
+    </SimpleGrid>
+  )
+}
+
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <Stack gap={2}>
@@ -747,6 +868,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
     differenceAmount: order.DifferenceAmount,
     fromDate: order.FromDate,
+    hasDocumentStructure: hasDocumentStructure(order),
     id: String(order.NetUid || order.Id || index),
     isUnderReport: order.IsUnderReport,
     number: order.AdvanceNumber,
@@ -792,6 +914,45 @@ function getConsumableProductOrganizationNames(
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.LastName || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code
+}
+
+function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
+  return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
+    Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
+}
+
+function getAssignedPaymentOrderKey(assignedPaymentOrder: AssignedPaymentOrder, index: number): string {
+  return String(
+    assignedPaymentOrder.NetUid ||
+      assignedPaymentOrder.Id ||
+      assignedPaymentOrder.AssignedOutcomePaymentOrder?.NetUid ||
+      assignedPaymentOrder.AssignedIncomePaymentOrder?.NetUid ||
+      `assigned-${index}`,
+  )
+}
+
+function getOutcomePaymentOrderTypeLabel(order: OutcomePaymentOrder, t: (value: string) => string): string {
+  return getPaymentRegisterTypeLabel(order.PaymentCurrencyRegister?.PaymentRegister?.Type, t, 'outcome')
+}
+
+function getIncomePaymentOrderTypeLabel(order: AssignedIncomePaymentOrder, t: (value: string) => string): string {
+  return getPaymentRegisterTypeLabel(order.PaymentRegister?.Type, t, 'income')
+}
+
+function getPaymentRegisterTypeLabel(
+  type: number | undefined,
+  t: (value: string) => string,
+  direction: 'income' | 'outcome',
+): string {
+  if (type === 0) {
+    return direction === 'income' ? t('Прибутковий касовий ордер') : t('Видатковий касовий ордер')
+  }
+
+  if (type === 1) {
+    return direction === 'income' ? t('Прибутковий банківський ордер') : t('Видатковий банківський ордер')
+  }
+
+  return direction === 'income' ? t('Прибутковий ордер') : t('Видатковий ордер')
 }
 
 function unique(values: string[]): string[] {

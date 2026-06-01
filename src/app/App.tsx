@@ -36,7 +36,7 @@ export function App() {
             {consoleRoutes.map((route) => (
               <Route key={route.path} path={route.path} element={route.element} />
             ))}
-            <Route path="*" element={<ModulePage />} />
+            <Route path="*" element={<ModulePage fallback />} />
           </Route>
         </Route>
       </Routes>

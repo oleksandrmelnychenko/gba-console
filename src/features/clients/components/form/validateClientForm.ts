@@ -49,3 +49,15 @@ export function validateClientForm(client: Client, role: ClientFormRole, tooMany
 
   return errors
 }
+
+export function validateRegionCodeSubmitState(
+  isLoadingRegionCode: boolean,
+  regionCodeError: string | undefined,
+  loadingMessage: string,
+): string | undefined {
+  if (isLoadingRegionCode) {
+    return loadingMessage
+  }
+
+  return regionCodeError
+}

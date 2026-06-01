@@ -41,6 +41,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import type {
@@ -937,7 +938,7 @@ function ClientDocumentModal({
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <ExcelIcon size={22} />
                 </span>
@@ -945,7 +946,7 @@ function ClientDocumentModal({
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

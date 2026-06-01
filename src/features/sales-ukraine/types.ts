@@ -123,6 +123,7 @@ export type SalesUkraineDeliveryRecipient = SalesUkraineEntity & {
 export type SalesUkraineDeliveryRecipientAddress = SalesUkraineEntity & {
   City?: string
   Department?: string
+  Value?: string
 }
 
 export type SalesUkraineCustomersOwnTtn = SalesUkraineEntity & {
@@ -216,6 +217,7 @@ export type SalesUkraineOrder = SalesUkraineEntity & {
 }
 
 export type SalesUkraineTransporter = SalesUkraineEntity & {
+  CssClass?: string
   ImageUrl?: string
   Name?: string
   Title?: string

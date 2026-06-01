@@ -38,6 +38,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
+import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
@@ -107,6 +109,10 @@ type CashFlowFilters = {
   to: string
 }
 
+type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
+  source: AccountingCashFlowHeadItem
+}
+
 type DataRecord = Record<string, unknown>
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -133,6 +139,7 @@ export function AvailablePaymentsDetailDrawer({
   const [activeTabs, setActiveTabs] = useValueState<Record<string, string>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
   const [cashFlowFiltersByTaskId, setCashFlowFiltersByTaskId] = useValueState<Record<string, CashFlowFilters>>({})
+  const [selectedCashFlowItem, setSelectedCashFlowItem] = useValueState<AccountingCashFlowHeadItem | null>(null)
   const [outcomeModels, setOutcomeModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [registers, setRegisters] = useValueState<AvailablePaymentRegister[]>([])
   const [movements, setMovements] = useValueState<AvailablePaymentMovement[]>([])
@@ -301,6 +308,7 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
+    setSelectedCashFlowItem(null)
     onClose()
   }
 
@@ -310,6 +318,7 @@ export function AvailablePaymentsDetailDrawer({
     }
 
     closeOutcomeForm()
+    setSelectedCashFlowItem(null)
     onClose()
   }
 
@@ -442,6 +451,7 @@ export function AvailablePaymentsDetailDrawer({
 
   function handleCashFlowFiltersChange(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
     setCashFlowFiltersByTaskId((current) => ({ ...current, [model.id]: filters }))
+    setSelectedCashFlowItem(null)
     void loadCashFlow(model, filters)
   }
 
@@ -582,6 +592,7 @@ export function AvailablePaymentsDetailDrawer({
             models={models}
             onCashFlowTab={handleCashFlowTab}
             onCashFlowFiltersChange={handleCashFlowFiltersChange}
+            onCashFlowRowClick={(item) => setSelectedCashFlowItem(item)}
             onClearMarked={onClearMarked}
             onCreateOutcome={openOutcomeForm}
             onFilesChanged={onFilesChanged}
@@ -632,6 +643,11 @@ export function AvailablePaymentsDetailDrawer({
             </Group>
           </Stack>
         </AppModal>
+
+        <AvailablePaymentCashFlowDetailDrawer
+          item={selectedCashFlowItem}
+          onClose={() => setSelectedCashFlowItem(null)}
+        />
       </Stack>
     </AppDrawer>
   )
@@ -649,6 +665,7 @@ function AvailablePaymentTaskList({
   models,
   onCashFlowTab,
   onCashFlowFiltersChange,
+  onCashFlowRowClick,
   onClearMarked,
   onCreateOutcome,
   onFilesChanged,
@@ -668,6 +685,7 @@ function AvailablePaymentTaskList({
   models: AvailablePaymentTaskModel[]
   onCashFlowTab: (model: AvailablePaymentTaskModel, tab: string | null) => Promise<void>
   onCashFlowFiltersChange: (model: AvailablePaymentTaskModel, filters: CashFlowFilters) => void
+  onCashFlowRowClick: (item: AccountingCashFlowHeadItem) => void
   onClearMarked: () => void
   onCreateOutcome: (models: AvailablePaymentTaskModel[]) => void
   onFilesChanged: (taskId: string, files: File[]) => void
@@ -764,6 +782,7 @@ function AvailablePaymentTaskList({
                   filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
                   state={cashFlows[model.id]}
                   onFiltersChange={(filters) => onCashFlowFiltersChange(model, filters)}
+                  onRowClick={onCashFlowRowClick}
                 />
               )}
               {activeTabs[model.id] === 'payment' && (
@@ -1074,10 +1093,12 @@ function CashFlowTab({
   filters,
   state,
   onFiltersChange,
+  onRowClick,
 }: {
   filters: CashFlowFilters
   state?: CashFlowState
   onFiltersChange: (filters: CashFlowFilters) => void
+  onRowClick: (item: AccountingCashFlowHeadItem) => void
 }) {
   const { t } = useI18n()
   const filterError = getDateRangeError(filters.from, filters.to)
@@ -1147,18 +1168,69 @@ function CashFlowTab({
         maxHeight={360}
         emptyText={t('Рух коштів відсутній')}
         getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
+        onRowClick={(item) => onRowClick(item.source)}
       />
     </Stack>
   )
 }
 
-const CASH_FLOW_TAB_LEAD_COLUMNS: CashFlowGridLeadColumn<CashFlowGridItem>[] = [
+function AvailablePaymentCashFlowDetailDrawer({
+  item,
+  onClose,
+}: {
+  item: AccountingCashFlowHeadItem | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppDrawer
+      opened={Boolean(item)}
+      padding="lg"
+      position="right"
+      size="min(980px, 100vw)"
+      title={item?.Name || t('Деталі руху коштів')}
+      onClose={onClose}
+    >
+      {item && (
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="sm">
+            <CashFlowDetailValue label={t('Дата')} value={formatDateTime(item.FromDate)} />
+            <CashFlowDetailValue label={t('Документ')} value={displayValue(item.Name)} />
+            <CashFlowDetailValue label={t('Номер')} value={displayValue(item.Number)} />
+            <CashFlowDetailValue label={t('Організація')} value={displayValue(item.OrganizationName)} />
+            <CashFlowDetailValue label={t('Операція')} value={item.IsCreditValue ? t('Кредит') : t('Дебет')} />
+            <CashFlowDetailValue label={t('Сума')} value={formatAmount(item.CurrentValue)} />
+            <CashFlowDetailValue label={t('Поточний баланс')} value={formatAmount(item.CurrentBalance)} />
+          </SimpleGrid>
+
+          <CashFlowDetailContent item={item} />
+        </Stack>
+      )}
+    </AppDrawer>
+  )
+}
+
+function CashFlowDetailValue({ label, value }: { label: string; value: string }) {
+  return (
+    <Stack gap={2}>
+      <Text size="xs" c="dimmed">
+        {label}
+      </Text>
+      <Text size="sm" fw={600} lineClamp={2}>
+        {value || '-'}
+      </Text>
+    </Stack>
+  )
+}
+
+const CASH_FLOW_TAB_LEAD_COLUMNS: CashFlowGridLeadColumn<AvailablePaymentCashFlowGridItem>[] = [
   { id: 'name', isLabel: true, header: 'Назва', cell: (item) => displayValue(item.Name) },
   { id: 'date', header: 'Дата', width: 150, cell: (item) => formatDate(item.FromDate) },
   { id: 'number', header: 'Номер', width: 130, cell: (item) => displayValue(item.Number) },
 ]
 
-function toCashFlowGridItem(row: DataRecord): CashFlowGridItem {
+function toCashFlowGridItem(row: DataRecord): AvailablePaymentCashFlowGridItem {
   return {
     CurrentBalance: readUnknownNumber(row, ['CurrentBalance']),
     CurrentValue: readUnknownNumber(row, ['CurrentValue', 'Amount', 'Total', 'GrossPrice']),
@@ -1167,6 +1239,8 @@ function toCashFlowGridItem(row: DataRecord): CashFlowGridItem {
     Name: stringOrUndefined(readUnknown(row, ['Name', 'Type', 'OperationTypeName'])),
     Number: stringOrUndefined(readUnknown(row, ['Number', 'CustomNumber'])),
     OrganizationName: stringOrUndefined(readUnknown(row, ['OrganizationName'])),
+    Type: readUnknownNumber(row, ['Type']),
+    source: row as AccountingCashFlowHeadItem,
   }
 }
 

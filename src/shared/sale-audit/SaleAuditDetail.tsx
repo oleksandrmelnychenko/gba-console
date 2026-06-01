@@ -10,6 +10,7 @@ import { ExcelIcon } from '../ui/ExcelIcon'
 import { useRef } from 'react'
 import { useValueState } from '../hooks/useValueState'
 import { useI18n } from '../i18n/useI18n'
+import { getDocumentHref } from '../url/getDocumentHref'
 import { AppModal } from '../ui/AppModal'
 import { getShiftedSaleDocument, getShiftedSaleHistoryDocument } from './saleAuditApi'
 import {
@@ -180,7 +181,7 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
           ) : printDocument?.DocumentURL || printDocument?.PdfDocumentURL ? (
             <>
               {printDocument.DocumentURL && (
-                <Anchor className="document-link" href={printDocument.DocumentURL} rel="noreferrer" target="_blank">
+                <Anchor className="document-link" href={getDocumentHref(printDocument.DocumentURL)} rel="noreferrer" target="_blank">
                   <span className="document-link-badge document-link-badge-excel">
                     <ExcelIcon size={22} />
                   </span>
@@ -188,7 +189,7 @@ export function SaleAuditDetail({ error, isLoading, statistic }: SaleAuditDetail
                 </Anchor>
               )}
               {printDocument.PdfDocumentURL && (
-                <Anchor className="document-link" href={printDocument.PdfDocumentURL} rel="noreferrer" target="_blank">
+                <Anchor className="document-link" href={getDocumentHref(printDocument.PdfDocumentURL)} rel="noreferrer" target="_blank">
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>

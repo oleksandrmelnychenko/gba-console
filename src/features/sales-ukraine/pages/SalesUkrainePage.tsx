@@ -171,6 +171,7 @@ export function SalesUkrainePage() {
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
   const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
+  const canCreateSale = canEditSale
   const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
   const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
   const today = useMemo(() => formatLocalDate(new Date()), [])
@@ -596,11 +597,18 @@ export function SalesUkrainePage() {
 
   return (
     <Stack gap="lg">
-      <PageHeaderActions>
-        <Button color="orange" size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
-          {t('Новий продаж')}
-        </Button>
-      </PageHeaderActions>
+      <Group justify="space-between" align="center">
+        {canCreateSale ? (
+          <Button color="violet" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
+            {t('Новий продаж')}
+          </Button>
+        ) : (
+          <Box />
+        )}
+        <Badge color="gray" variant="light">
+          {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || sales.length}`}
+        </Badge>
+      </Group>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -763,7 +771,7 @@ export function SalesUkrainePage() {
       </AppDrawer>
 
       <NewSaleModal
-        opened={isNewSaleOpen}
+        opened={canCreateSale && isNewSaleOpen}
         onClose={() => setNewSaleOpen(false)}
         onCreated={(sale) => {
           setNewSaleOpen(false)

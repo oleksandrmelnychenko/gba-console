@@ -40,6 +40,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -238,6 +240,12 @@ export function SupplyUkraineOrdersPage() {
   const canOpenDirectSpecifications = hasPermission(PERMISSION_DIRECT_SPECIFICATIONS)
   const canOpenDirectLogistics = hasPermission(PERMISSION_DIRECT_LOGISTICS)
   const canOpenDirectProductIncome = hasPermission(PERMISSION_DIRECT_PRODUCT_INCOME)
+  const reloadFromRealtime = useCallback(() => {
+    reload()
+  }, [])
+
+  useRealtimeEvent(realtimeEvents.supplyOrderAdded, reloadFromRealtime)
+  useRealtimeEvent(realtimeEvents.supplyOrderNotification, reloadFromRealtime)
 
   useEffect(() => {
     let cancelled = false
@@ -1225,12 +1233,12 @@ function DownloadDocumentModal({
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <Group>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
-                <Group gap={6}><ExcelIcon size={16} /> XLS</Group>
+              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
+                <Group gap={6}><IconFileTypeXls size={16} /> XLS</Group>
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <Group gap={6}><IconFileTypePdf size={16} /> PDF</Group>
               </Anchor>
             )}

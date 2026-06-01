@@ -22,6 +22,22 @@ export function formatLocalDate(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+export function formatDateInputForQuery(value: string): string {
+  const trimmedValue = value.trim()
+
+  if (!trimmedValue) {
+    return ''
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return isValidDateInputValue(trimmedValue) ? trimmedValue : value
+  }
+
+  const date = new Date(trimmedValue)
+
+  return Number.isNaN(date.getTime()) ? value : formatDateForQuery(date)
+}
+
 export function formatLocalDateTime(date: Date): string {
   const datePart = formatLocalDate(date)
   const hours = String(date.getHours()).padStart(2, '0')
@@ -89,4 +105,15 @@ function serializeQueryValue(value: QueryValue): string | undefined {
   }
 
   return String(value)
+}
+
+function isValidDateInputValue(value: string): boolean {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+
+  return (
+    date.getFullYear() === year
+    && date.getMonth() === month - 1
+    && date.getDate() === day
+  )
 }

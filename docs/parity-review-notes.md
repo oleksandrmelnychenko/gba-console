@@ -570,3 +570,40 @@ real gaps were a cluster of visual indicators + client identity + sub-row detail
 - **Region code on row**, **retail-client phone+name click → online shop**, **org select-all checkbox**
   (Mantine MultiSelect has none), **Ctrl+Insert new-sale shortcut**, **TTN button id attr** — all low/
   cosmetic, left as-is.
+
+---
+
+## 15. Sibling-tabs exhaustive element audit (run `wf_401a7766`, 2026-06-01)
+
+123-agent element-by-element audit of the 6 sibling dashboard tabs (Оферти, Резерв кошика, Боржники,
+Зацікавленість, Повернення, Рух товару клієнта), content + chrome each. **0 high, 2 medium, 12 low
+confirmed**; most claims refuted — the tabs are faithful (present counts 23–59 per facet vs 0–4 gaps).
+
+### ✅ Built
+- **Повернення — returns grid: added «Код регіону» (`Client.RegionCode.Value`) + «Договір»
+  (`ClientAgreement.Agreement.Name`) columns** at their legacy positions (after currency / after storage).
+  Legacy `all.client.returns.view` had 13 cols incl. these two sortable lookups; console had 10.
+- **Оферти — «Не опрацьовано клієнтом» badge** on the offer card for `OfferProcessingStatus===NotProcessed`
+  (legacy offer.item.tsx:82-86) — previously only conveyed via the status-dot tooltip.
+
+### Intentional / acceptable divergences (NOT changed)
+- **Резерв кошика days-remaining**: console shows a colored semantic Badge + «Залишилось днів» label vs
+  legacy bare number — a deliberate improvement (§5). Minor ±1-day boundary diff (`Math.trunc(ms)` vs
+  dayjs `.diff('day')`) — negligible.
+- **Рух товару / Боржники / Повернення**: «Експорт» (+IconDownload) vs legacy «Load» label; download-doc
+  modal title «Документи» vs «LoadingSales»; returns delete/print folded into the actions menu; new-return
+  uses a flat DataTable+checkbox vs legacy accordion — all acceptable console-pattern ports, no data loss.
+- **Org MultiSelect select-all**: Mantine MultiSelect has no built-in select-all toggle — left as-is.
+- **Ctrl+Insert / qty autofocus / page-header label**: minor UX, not ported.
+
+---
+
+## 16. Картка товару — clickable product in the sub-row (2026-06-01)
+
+The §14 medium gap (legacy clickable product code/name → product card) is closed. New reusable
+`features/products/components/ProductCardModal` fetches `getProductByNetId` and shows a compact card:
+ShopImageGallery (by VendorCode) + code/name/orig-number/group, availability (UA / в дорозі / ПДВ /
+перепродаж / браковані), prices (local + EUR), measure unit / weight / size / volume, description, notes,
+plus an «Відкрити» link to `/products?netId=`. Wired into `SaleExpandContent`: the product code + name are
+now clickable Anchors (stopPropagation) that open the card (legacy `OnOpenProductCart`). tsc/eslint clean
+on the changed files.

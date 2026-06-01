@@ -33,6 +33,7 @@ import type {
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
@@ -398,7 +399,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
     <AppModal centered opened={Boolean(document)} title={t('Документ')} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL && (
-          <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <ExcelIcon size={22} />
               <span>{t('Завантажити Excel')}</span>
@@ -406,7 +407,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
           </Anchor>
         )}
         {document?.PdfDocumentURL && (
-          <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <IconFileTypePdf size={22} stroke={1.8} />
               <span>{t('Завантажити PDF')}</span>

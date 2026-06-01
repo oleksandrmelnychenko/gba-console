@@ -4,8 +4,10 @@ import { IconSearch } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { getCurrentSaleCart, getSaleClientAgreements, searchSalesUkraineClients } from '../api/salesUkraineApi'
+import { createSale, getCurrentSaleCart, getSaleClientAgreements, searchSalesUkraineClients } from '../api/salesUkraineApi'
 import type { SalesUkraineClientAgreement, SalesUkraineClientOption, SalesUkraineSale } from '../types'
+
+const LOCAL_ORDER_SOURCE = 1
 
 export function NewSaleModal({
   opened,
@@ -112,10 +114,12 @@ function NewSaleForm({ onCancel, onCreated }: { onCancel: () => void; onCreated:
     setCreating(true)
 
     try {
-      const sale = await getCurrentSaleCart(agreementNetId)
+      const existingSale = await getCurrentSaleCart(agreementNetId)
+      const selectedAgreement = agreements.find((item) => item.NetUid === agreementNetId)
+      const sale = existingSale || (selectedAgreement ? await createSale(buildNewSalePayload(selectedAgreement)) : null)
 
       if (sale) {
-        notifications.show({ color: 'green', message: t('Продаж відкрито') })
+        notifications.show({ color: 'green', message: existingSale ? t('Продаж відкрито') : t('Продаж створено') })
         onCreated(sale)
       } else {
         notifications.show({ color: 'orange', message: t('Не вдалося відкрити продаж') })
@@ -173,6 +177,19 @@ function NewSaleForm({ onCancel, onCreated }: { onCancel: () => void; onCreated:
       </Group>
     </Stack>
   )
+}
+
+function buildNewSalePayload(
+  agreement: SalesUkraineClientAgreement,
+): SalesUkraineSale {
+  return {
+    ClientAgreement: agreement,
+    IsVatSale: Boolean(agreement?.Agreement?.WithVATAccounting),
+    Order: {
+      OrderItems: [],
+      OrderSource: LOCAL_ORDER_SOURCE,
+    },
+  }
 }
 
 function getClientLabel(client: SalesUkraineClientOption): string {

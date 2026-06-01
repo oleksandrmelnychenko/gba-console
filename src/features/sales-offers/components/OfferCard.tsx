@@ -81,6 +81,11 @@ export function OfferCard({
         </Group>
 
         <Group align="center" gap="xs" wrap="nowrap">
+          {status === OFFER_PROCESSING_STATUS.NotProcessed && (
+            <Badge color="red" variant="light">
+              {t('Не опрацьовано клієнтом')}
+            </Badge>
+          )}
           {showNotProcessed && (
             <Badge color="orange" variant="light">
               {t('Неопрацьовано')}: {notProcessedCount}

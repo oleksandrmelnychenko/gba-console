@@ -9,6 +9,7 @@ import {
   Checkbox,
   Divider,
   Group,
+  Loader,
   Select,
   SimpleGrid,
   Stack,
@@ -16,11 +17,11 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useDebouncedValue } from '@mantine/hooks'
+import { AppModal } from '../../../shared/ui/AppModal'
 import {
   IconAlertCircle,
+  IconDeviceFloppy,
   IconDownload,
   IconFileTypePdf,
   IconPlus,
@@ -29,21 +30,35 @@ import {
   IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { type FormEvent, useMemo } from 'react'
+import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { createStockReport } from '../api/reportsApi'
+import {
+  createStockReport,
+  getReportClientTypes,
+  getReportOrganizations,
+  getReportPricings,
+  getReportProductGroups,
+  getReportProductTop,
+  getReportRegions,
+  searchReportClients,
+  searchReportProducts,
+  searchReportUsers,
+  searchSaleReturnReportDocuments,
+  searchSalesReportDocuments,
+} from '../api/reportsApi'
 import {
   REPORT_FILTER_CONDITIONS,
   REPORT_FILTER_FIELD_GROUPS,
+  REPORT_FILTER_FIELD_TYPES,
   createDefaultMeasurementGroups,
   flattenCheckedMeasurements,
   flattenGroupingOptions,
   getReportFieldLabel,
 } from '../data/reportOptions'
 import type {
+  ReportEntity,
   ReportFilterField,
   ReportGroupingItem,
   ReportMeasurementGroup,
@@ -51,16 +66,21 @@ import type {
   ReportResult,
   ReportResultRow,
   ReportSelection,
+  ReportSelectedValue,
+  ReportTemplate,
 } from '../types'
 import {
   buildCsv,
   buildDateFileSuffix,
   displayValue,
   downloadTextFile,
+  getEntityDisplayName,
   formatDate,
 } from '../utils'
 
 const STORAGE_KEY = 'app_configs_reports_template'
+const LOOKUP_SEARCH_DEBOUNCE_MS = 300
+const LOOKUP_SEARCH_LIMIT = 30
 
 const defaultCondition = REPORT_FILTER_CONDITIONS[0]
 
@@ -93,7 +113,7 @@ export function ReportsStocksPage() {
   const [isLoading, setLoading] = useValueState(false)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [templateName, setTemplateName] = useValueState('')
-  const [templates, setTemplates] = useValueState<ReportRequestBody[]>([])
+  const [templates, setTemplates] = useValueState<ReportTemplate[]>([])
   const groupingOptions = useMemo(() => flattenGroupingOptions(), [])
   const groupingSelectData = groupingOptions.map((item) => ({
     label: `${item.group}: ${getReportFieldLabel(item.key)}`,
@@ -130,6 +150,10 @@ export function ReportsStocksPage() {
   )
   const checkedMeasurements = reportBody.sorted.Measurements.length
   const canSubmit = !filterError && checkedMeasurements > 0
+
+  useEffect(() => {
+    setTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)))
+  }, [setTemplates])
 
   async function submitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -181,21 +205,38 @@ export function ReportsStocksPage() {
       { Name: normalizedName, Data: reportBody },
     ]
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextTemplates))
-    setTemplates(nextTemplates.map((template) => template.Data))
+    persistTemplates(nextTemplates)
   }
 
   function loadTemplates() {
-    setTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)).map((template) => template.Data))
+    setTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)))
   }
 
-  function applyTemplate(template: ReportRequestBody) {
-    setFrom(template.from || today)
-    setTo(template.to || today)
-    setRowGroups(template.sorted?.Row || [])
-    setColGroups(template.sorted?.Col || [])
-    setSelections(template.selections?.length ? template.selections : [createEmptySelection()])
-    setMeasurements(applyTemplateMeasurements(createDefaultMeasurementGroups(), template.sorted?.Measurements || []))
+  function persistTemplates(nextTemplates: ReportTemplate[]) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextTemplates))
+    setTemplates(nextTemplates)
+  }
+
+  function updateTemplate(name: string) {
+    const nextTemplates = parseTemplates(localStorage.getItem(STORAGE_KEY)).map((template) =>
+      template.Name === name ? { ...template, Data: reportBody } : template,
+    )
+
+    persistTemplates(nextTemplates)
+  }
+
+  function deleteTemplate(name: string) {
+    persistTemplates(parseTemplates(localStorage.getItem(STORAGE_KEY)).filter((template) => template.Name !== name))
+  }
+
+  function applyTemplate(template: ReportTemplate) {
+    setTemplateName(template.Name)
+    setFrom(template.Data.from || today)
+    setTo(template.Data.to || today)
+    setRowGroups(template.Data.sorted?.Row || [])
+    setColGroups(template.Data.sorted?.Col || [])
+    setSelections(template.Data.selections?.length ? template.Data.selections : [createEmptySelection()])
+    setMeasurements(applyTemplateMeasurements(createDefaultMeasurementGroups(), template.Data.sorted?.Measurements || []))
   }
 
   function exportPreviewCsv() {
@@ -317,7 +358,7 @@ export function ReportsStocksPage() {
 
               <Stack gap="xs">
                 {selections.map((selection, index) => (
-                  <Group key={index} gap="xs" align="end" wrap="wrap">
+                  <Group key={getSelectionRenderKey(selection, index)} gap="xs" align="end" wrap="wrap">
                     <Checkbox
                       checked={selection.IsChecked}
                       onChange={() => updateSelection(selections, index, setSelections, { IsChecked: !selection.IsChecked })}
@@ -350,12 +391,12 @@ export function ReportsStocksPage() {
                         updateSelection(selections, index, setSelections, { FilterCondition: condition })
                       }}
                     />
-                    <TextInput
+                    <SelectionValuePicker
+                      from={from}
                       label={index === 0 ? t('Значення') : undefined}
-                      placeholder={t('ID, назва або код')}
-                      value={selection.Values.map((value) => value.Name).join(', ')}
-                      w={260}
-                      onChange={(event) => updateSelectionValue(selections, index, event.currentTarget.value, setSelections)}
+                      selection={selection}
+                      to={to}
+                      onChange={(values) => updateSelection(selections, index, setSelections, { Values: values })}
                     />
                     <Tooltip label={t('Видалити')}>
                       <ActionIcon
@@ -385,12 +426,45 @@ export function ReportsStocksPage() {
               <Button leftSection={<IconRefresh size={16} />} variant="subtle" color="gray" onClick={loadTemplates}>
                 {t('Показати шаблони')}
               </Button>
-              {templates.map((template, index) => (
-                <Button key={index} size="xs" variant="default" onClick={() => applyTemplate(template)}>
-                  {formatDate(template.from)} - {formatDate(template.to)}
-                </Button>
-              ))}
             </Group>
+            {templates.length ? (
+              <Stack gap={6}>
+                {templates.map((template) => (
+                  <Group key={template.Name} gap={6} wrap="nowrap">
+                    <Button
+                      leftSection={<IconRestore size={16} />}
+                      size="xs"
+                      variant="default"
+                      onClick={() => applyTemplate(template)}
+                    >
+                      {template.Name} ({formatDate(template.Data.from)} - {formatDate(template.Data.to)})
+                    </Button>
+                    <Tooltip label={t('Оновити')}>
+                      <ActionIcon
+                        aria-label={t('Оновити')}
+                        color="blue"
+                        size="sm"
+                        variant="subtle"
+                        onClick={() => updateTemplate(template.Name)}
+                      >
+                        <IconDeviceFloppy size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        size="sm"
+                        variant="subtle"
+                        onClick={() => deleteTemplate(template.Name)}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                ))}
+              </Stack>
+            ) : null}
           </Stack>
         </form>
       </Card>
@@ -444,6 +518,196 @@ export function ReportsStocksPage() {
           {!result?.document.DocumentURL && !result?.document.PdfDocumentURL ? <Text c="dimmed">{t('Файл не повернувся з API')}</Text> : null}
         </Stack>
       </AppModal>
+    </Stack>
+  )
+}
+
+type SelectionValuePickerProps = {
+  from: string
+  label?: string
+  selection: ReportSelection
+  to: string
+  onChange: (values: ReportSelectedValue[]) => void
+}
+
+function SelectionValuePicker({ from, label, selection, to, onChange }: SelectionValuePickerProps) {
+  const { t } = useI18n()
+  const [search, setSearch] = useValueState('')
+  const [manualValue, setManualValue] = useValueState('')
+  const [options, setOptions] = useValueState<ReportEntity[]>([])
+  const [isLoading, setLoading] = useValueState(false)
+  const [debouncedSearch] = useDebouncedValue(search, LOOKUP_SEARCH_DEBOUNCE_MS)
+  const lookupMode = getSelectionLookupMode(selection.SelectedField.Type)
+  const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
+  const minSearchLength = getSelectionLookupMinLength(selection.SelectedField.Type)
+  const selectOptions = useMemo(
+    () =>
+      mergeReportEntities([...selection.Values.map((value) => value.Data), ...options]).map((entity, index) => ({
+        label: getEntityDisplayName(entity),
+        value: getReportEntityKey(entity, String(index)),
+      })),
+    [options, selection.Values],
+  )
+
+  useEffect(() => {
+    if (!selection.SelectedField.Name || lookupMode === 'manual') {
+      setOptions([])
+      setLoading(false)
+
+      return
+    }
+
+    if (lookupMode === 'search' && normalizedSearch.length < minSearchLength) {
+      setOptions([])
+      setLoading(false)
+
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOptions() {
+      setLoading(true)
+
+      try {
+        const nextOptions = await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to)
+
+        if (!cancelled) {
+          setOptions(nextOptions)
+        }
+      } catch {
+        if (!cancelled) {
+          setOptions([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadOptions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    from,
+    lookupMode,
+    minSearchLength,
+    normalizedSearch,
+    selection.SelectedField.Name,
+    selection.SelectedField.Type,
+    setLoading,
+    setOptions,
+    to,
+  ])
+
+  function addEntity(entity: ReportEntity) {
+    const key = getReportEntityKey(entity, getEntityDisplayName(entity))
+
+    if (selection.Values.some((value) => getReportEntityKey(value.Data, value.Name) === key)) {
+      return
+    }
+
+    onChange([...selection.Values, createSelectedValue(entity)])
+  }
+
+  function addManualValue() {
+    const value = manualValue.trim()
+
+    if (!value) {
+      return
+    }
+
+    addEntity({ Name: value, Value: value })
+    setManualValue('')
+  }
+
+  function removeValue(valueIndex: number) {
+    onChange(selection.Values.filter((_, index) => index !== valueIndex))
+  }
+
+  if (!selection.SelectedField.Name) {
+    return (
+      <TextInput
+        disabled
+        label={label}
+        placeholder={t('Спочатку оберіть поле')}
+        value=""
+        w={320}
+      />
+    )
+  }
+
+  return (
+    <Stack gap={4} w={320}>
+      {lookupMode === 'manual' ? (
+        <Group align="end" gap={6} wrap="nowrap">
+          <TextInput
+            label={label}
+            placeholder={t('Значення')}
+            value={manualValue}
+            onChange={(event) => setManualValue(event.currentTarget.value)}
+          />
+          <Button size="sm" type="button" variant="light" onClick={addManualValue}>
+            {t('Додати')}
+          </Button>
+        </Group>
+      ) : (
+        <Select
+          clearable
+          searchable
+          data={selectOptions}
+          label={label}
+          nothingFoundMessage={
+            lookupMode === 'search' && normalizedSearch.length < minSearchLength
+              ? t('Введіть мінімум 2 символи')
+              : t('Нічого не знайдено')
+          }
+          placeholder={t('Пошук значення')}
+          rightSection={isLoading ? <Loader size="xs" /> : null}
+          searchValue={search}
+          value={null}
+          onChange={(value) => {
+            const entity = value
+              ? mergeReportEntities([...selection.Values.map((selectedValue) => selectedValue.Data), ...options])
+                  .find((option, index) => getReportEntityKey(option, String(index)) === value)
+              : undefined
+
+            if (entity) {
+              addEntity(entity)
+              setSearch('')
+            }
+          }}
+          onSearchChange={setSearch}
+        />
+      )}
+      {selection.Values.length ? (
+        <Group gap={4}>
+          {selection.Values.map((value, valueIndex) => (
+            <Badge
+              key={`${getReportEntityKey(value.Data, value.Name)}-${valueIndex}`}
+              color="blue"
+              radius="sm"
+              rightSection={(
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="blue"
+                  size="xs"
+                  variant="transparent"
+                  onClick={() => removeValue(valueIndex)}
+                >
+                  <IconTrash size={12} />
+                </ActionIcon>
+              )}
+              variant="light"
+            >
+              {value.Name}
+            </Badge>
+          ))}
+        </Group>
+      ) : null}
     </Stack>
   )
 }
@@ -529,17 +793,35 @@ function ReportPreview({ result }: { result: ReportResult }) {
   }, [result.table.rows, result.totals])
 
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      emptyText={t('Даних ще немає')}
-      getRowId={(row, index) => (row[TOTALS_ROW_FLAG] ? 'totals' : String(index))}
-      maxHeight="calc(100vh - 320px)"
-      minWidth={Math.max(960, result.table.columns.length * 160)}
-      rowClassName={(row) => (row[TOTALS_ROW_FLAG] ? 'report-stocks-totals-row' : undefined)}
-      tableId="reports-stocks-preview"
-      layoutVersion="reports-stocks-preview-1"
-    />
+    <Box style={{ overflowX: 'auto' }}>
+      <Table striped highlightOnHover withTableBorder withColumnBorders>
+        <Table.Thead>
+          <Table.Tr>
+            {result.table.columns.map((column) => (
+              <Table.Th key={column}>{column}</Table.Th>
+            ))}
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {result.table.rows.slice(0, 100).map((row, rowIndex) => (
+            <Table.Tr key={getResultRowKey(result.table.columns, row, rowIndex)}>
+              {result.table.columns.map((column) => (
+                <Table.Td key={column}>{displayValue(row[column])}</Table.Td>
+              ))}
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+        {Object.keys(result.totals).length ? (
+          <Table.Tfoot>
+            <Table.Tr>
+              {result.table.columns.map((column, index) => (
+                <Table.Th key={column}>{index === 0 ? t('Разом') : displayValue(result.totals[column])}</Table.Th>
+              ))}
+            </Table.Tr>
+          </Table.Tfoot>
+        ) : null}
+      </Table>
+    </Box>
   )
 }
 
@@ -620,28 +902,6 @@ function updateSelection(
   setter(selections.map((selection, itemIndex) => (itemIndex === index ? { ...selection, ...patch } : selection)))
 }
 
-function updateSelectionValue(
-  selections: ReportSelection[],
-  index: number,
-  value: string,
-  setter: (value: ReportSelection[]) => void,
-) {
-  const values = value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => ({
-      Name: item,
-      Value: 0,
-      Data: {
-        Name: item,
-        Value: item,
-      },
-    }))
-
-  updateSelection(selections, index, setter, { Values: values })
-}
-
 function parseTemplates(raw: string | null): Array<{ Data: ReportRequestBody; Name: string }> {
   if (!raw) {
     return []
@@ -660,6 +920,146 @@ function parseTemplates(raw: string | null): Array<{ Data: ReportRequestBody; Na
   }
 
   return []
+}
+
+function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'static' {
+  switch (fieldType) {
+    case REPORT_FILTER_FIELD_TYPES.organization:
+    case REPORT_FILTER_FIELD_TYPES.customer:
+    case REPORT_FILTER_FIELD_TYPES.customerRegion:
+    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
+    case REPORT_FILTER_FIELD_TYPES.customerPriceType:
+    case REPORT_FILTER_FIELD_TYPES.productTop:
+      return 'static'
+    case REPORT_FILTER_FIELD_TYPES.productArticle:
+    case REPORT_FILTER_FIELD_TYPES.productGroup:
+    case REPORT_FILTER_FIELD_TYPES.customerName:
+    case REPORT_FILTER_FIELD_TYPES.customerManager:
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
+    case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
+      return 'search'
+    default:
+      return 'manual'
+  }
+}
+
+function getSelectionLookupMinLength(fieldType: number): number {
+  return fieldType === REPORT_FILTER_FIELD_TYPES.productGroup ? 0 : 2
+}
+
+async function loadSelectionLookupOptions(
+  fieldType: number,
+  value: string,
+  from: string,
+  to: string,
+): Promise<ReportEntity[]> {
+  switch (fieldType) {
+    case REPORT_FILTER_FIELD_TYPES.organization:
+      return getReportOrganizations()
+    case REPORT_FILTER_FIELD_TYPES.customer:
+      return getReportClientTypes()
+    case REPORT_FILTER_FIELD_TYPES.customerRegion:
+    case REPORT_FILTER_FIELD_TYPES.customerRegionCode:
+      return getReportRegions()
+    case REPORT_FILTER_FIELD_TYPES.customerPriceType:
+      return getReportPricings()
+    case REPORT_FILTER_FIELD_TYPES.productTop:
+      return getReportProductTop()
+    case REPORT_FILTER_FIELD_TYPES.productGroup:
+      return getReportProductGroups(value)
+    case REPORT_FILTER_FIELD_TYPES.productArticle:
+      return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
+    case REPORT_FILTER_FIELD_TYPES.customerName:
+      return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
+    case REPORT_FILTER_FIELD_TYPES.customerManager:
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:
+      return searchReportUsers({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
+    case REPORT_FILTER_FIELD_TYPES.saleDocumentNumberDate:
+      return searchSalesReportDocuments({
+        from,
+        limit: LOOKUP_SEARCH_LIMIT,
+        offset: 0,
+        organisationIds: [],
+        status: '',
+        to,
+        type: 'All',
+        value,
+      })
+    case REPORT_FILTER_FIELD_TYPES.saleReturnDocument:
+      return searchSaleReturnReportDocuments({ from, limit: LOOKUP_SEARCH_LIMIT, offset: 0, to, value })
+    default:
+      return []
+  }
+}
+
+function mergeReportEntities(entities: ReportEntity[]): ReportEntity[] {
+  const seen = new Set<string>()
+  const result: ReportEntity[] = []
+
+  for (const entity of entities) {
+    const key = getReportEntityKey(entity, getEntityDisplayName(entity))
+
+    if (!seen.has(key)) {
+      seen.add(key)
+      result.push(entity)
+    }
+  }
+
+  return result
+}
+
+function createSelectedValue(entity: ReportEntity): ReportSelectedValue {
+  return {
+    Data: entity,
+    Name: getEntityDisplayName(entity),
+    Value: getReportEntityNumericValue(entity),
+  }
+}
+
+function getReportEntityKey(entity: ReportEntity, fallback = ''): string {
+  return [
+    entity.NetUid,
+    entity.Id,
+    entity.Code,
+    entity.Value,
+    entity.Name,
+    entity.FullName,
+    fallback,
+  ].filter((value) => value !== undefined && value !== null && value !== '').join(':')
+}
+
+function getReportEntityNumericValue(entity: ReportEntity): number {
+  if (typeof entity.Value === 'number') {
+    return entity.Value
+  }
+
+  if (typeof entity.Id === 'number') {
+    return entity.Id
+  }
+
+  return 0
+}
+
+function getSelectionRenderKey(selection: ReportSelection, index: number): string {
+  const values = selection.Values.map((value) => getReportEntityKey(value.Data, value.Name)).join('|')
+
+  return [
+    selection.SelectedField.ParentType,
+    selection.SelectedField.Name,
+    selection.SelectedField.Type,
+    selection.FilterCondition.Type,
+    values,
+    index,
+  ].filter((value) => value !== undefined && value !== null && value !== '').join(':')
+}
+
+function getResultRowKey(columns: string[], row: ReportResult['table']['rows'][number], index: number): string {
+  const values = columns.map((column) => displayValue(row[column])).join('|')
+
+  return values ? `${values}:${index}` : `row-${index}`
 }
 
 function applyTemplateMeasurements(

@@ -22,6 +22,7 @@ export type PaymentMovement = EntityFields & {
 
 export type PaymentRegister = EntityFields & {
   Name?: string
+  Type?: number
 }
 
 export type PaymentCurrencyRegister = EntityFields & {
@@ -31,6 +32,22 @@ export type PaymentCurrencyRegister = EntityFields & {
 
 export type PaymentMovementOperation = EntityFields & {
   PaymentMovement?: PaymentMovement | null
+}
+
+export type AssignedIncomePaymentOrder = EntityFields & {
+  Amount?: number
+  Colleague?: NamedEntity | null
+  Currency?: Currency | null
+  FromDate?: string
+  Number?: string
+  PaymentRegister?: PaymentRegister | null
+}
+
+export type AssignedPaymentOrder = EntityFields & {
+  AssignedIncomePaymentOrder?: AssignedIncomePaymentOrder | null
+  AssignedOutcomePaymentOrder?: OutcomePaymentOrder | null
+  RootIncomePaymentOrder?: AssignedIncomePaymentOrder | null
+  RootOutcomePaymentOrder?: OutcomePaymentOrder | null
 }
 
 export type ConsumableProduct = EntityFields & {
@@ -68,11 +85,14 @@ export type OutcomePaymentOrder = EntityFields & {
   FromDate?: string
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean
+  Number?: string
+  CustomNumber?: string
   Organization?: NamedEntity | null
+  AssignedPaymentOrders?: AssignedPaymentOrder[]
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
-  RootAssignedPaymentOrder?: unknown
+  RootAssignedPaymentOrder?: AssignedPaymentOrder | null
   TotalRowsQty?: number
   User?: NamedEntity | null
 }
@@ -89,6 +109,7 @@ export type AdvancedReportRow = {
   currency?: string
   differenceAmount?: number
   fromDate?: string
+  hasDocumentStructure?: boolean
   id: string
   isUnderReport?: boolean
   number?: string

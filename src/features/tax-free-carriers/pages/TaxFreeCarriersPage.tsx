@@ -27,6 +27,7 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -360,7 +361,7 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
         ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
           <>
             {downloadDocument.DocumentURL && (
-              <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(downloadDocument.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <ExcelIcon size={22} />
                 </span>
@@ -368,7 +369,7 @@ function CarriersDownloadModal({ model }: { model: ReturnType<typeof useTaxFreeC
               </Anchor>
             )}
             {downloadDocument.PdfDocumentURL && (
-              <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={getDocumentHref(downloadDocument.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

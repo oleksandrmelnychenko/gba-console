@@ -42,7 +42,7 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
 export async function updateProtocolStatus(netId: string): Promise<ProtocolDetail | null> {
   const result = await apiRequest<unknown>('/delivery/product/protocol/update/status', {
     method: 'POST',
-    body: { netId },
+    query: { netId },
   })
 
   return normalizeProtocol(result)
@@ -187,7 +187,7 @@ export async function calculateMergedServiceExtraCharge(
 export async function removeMergedService(serviceNetId: string): Promise<ProtocolDetail | null> {
   const result = await apiRequest<unknown>('/supplies/services/merged/remove/before/calculated/gross/price', {
     method: 'POST',
-    body: { netId: serviceNetId },
+    query: { netId: serviceNetId },
   })
 
   return normalizeProtocol(result)
