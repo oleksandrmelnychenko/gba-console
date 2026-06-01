@@ -1,4 +1,4 @@
-import { Alert, Button, Checkbox, FileInput, Group, Stack, Textarea, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, FileInput, Group, Image, Stack, Text, Textarea, TextInput } from '@mantine/core'
 import { IconAlertCircle, IconDeviceFloppy, IconPhoto } from '@tabler/icons-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -59,6 +59,10 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
     onSubmit({ image, permission: nextPermission })
   }
 
+  function toSecureImageUrl(url: string): string {
+    return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
+  }
+
   return (
     <AppModal centered opened={opened} title={permission ? t('Редагування') : t('Створення')} onClose={onClose}>
       <form onSubmit={handleSubmit}>
@@ -107,6 +111,14 @@ export function RolePermissionModal({ isSaving, node, opened, permission, onClos
               label={t('Видалити')}
               onChange={(event) => setDeleted(event.currentTarget.checked)}
             />
+          ) : null}
+          {permission?.ImageUrl && !image ? (
+            <Stack gap={4}>
+              <Text c="dimmed" size="xs">
+                {t('Поточне зображення')}
+              </Text>
+              <Image alt="" fit="contain" h={80} radius="sm" src={toSecureImageUrl(permission.ImageUrl)} w="auto" />
+            </Stack>
           ) : null}
           <FileInput
             accept="image/*"
