@@ -40,7 +40,7 @@ export function DownloadDocumentModal({
                 <span className="document-link-badge document-link-badge-excel">
                   <ExcelIcon size={22} />
                 </span>
-                <span>{t('Excel')}</span>
+                <span>{t('Завантажити Excel')}</span>
               </Anchor>
             )}
             {document.PdfDocumentURL && (
@@ -48,7 +48,7 @@ export function DownloadDocumentModal({
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>
-                <span>{t('Pdf')}</span>
+                <span>{t('Завантажити PDF')}</span>
               </Anchor>
             )}
           </>

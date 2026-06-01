@@ -378,7 +378,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
           <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <ExcelIcon size={22} />
-              <span>{t('Excel')}</span>
+              <span>{t('Завантажити Excel')}</span>
             </Group>
           </Anchor>
         )}
@@ -386,7 +386,7 @@ function DocumentModal({ document, onClose }: { document: AccountingCashFlowDocu
           <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <IconFileTypePdf size={22} stroke={1.8} />
-              <span>{t('PDF')}</span>
+              <span>{t('Завантажити PDF')}</span>
             </Group>
           </Anchor>
         )}
