@@ -217,3 +217,23 @@ Per your decision to align everything to legacy:
 Adversarial verify confirmed faithful (labels exact, gating conditions exact, `IsSalesView` is always
 true in this grid, no regression). eslint 0 / tsc 0.
 
+### Residual state items dotted (commit follows §5)
+- **Unpaid emphasis — DONE.** The «Сума» amount block now renders red for unpaid sales
+  (`SalePaymentStatusType === 0`), matching the legacy `not_paid` price highlight.
+- **Realtime reload polish — DONE.** Realtime-triggered reloads are now *silent* (no loading-spinner
+  flash, header badge stays) and *non-destructive* (a transient background-fetch failure keeps the
+  current rows instead of wiping the grid / showing an error). User-triggered reloads behave as before.
+- `OrderWillNotBeShipped_Btn_PKEY` permission mapping **verified** correct; no change.
+
+### Residual items intentionally NOT changed (low / cosmetic — for review)
+- **NotPaid label wording:** legacy locale is `Неоплаченно` (a misspelling + no space); the console keeps
+  the correct `Не оплачено`. Kept the correct spelling rather than replicate the legacy typo.
+- **Lifecycle `All`(6):** a filter-only sentinel that never stamps a real sale row, so no row-label
+  handling added (would render a meaningless badge). Documented as filter-only.
+- **Order-source row icon:** legacy shows a small Shop/Offer/Invoice indicator driven by
+  `Order.OrderSource`; the console does not surface OrderSource in the grid. Low-value display
+  decoration — build later if wanted.
+- **Realtime relevance gating:** the console reloads on any sale event (debounced) rather than parsing
+  the payload to check it matches the active filter/page. Faithful enough (legacy also reloaded broadly;
+  the server filter scopes the refetch). Optimize only if event churn becomes a concern.
+

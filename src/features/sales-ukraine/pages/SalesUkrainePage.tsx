@@ -267,6 +267,7 @@ export function SalesUkrainePage() {
   }
 
   const realtimeReloadRef = useRef<number | null>(null)
+  const backgroundReloadRef = useRef(false)
 
   const scheduleRealtimeReload = useCallback(() => {
     if (realtimeReloadRef.current !== null) {
@@ -275,6 +276,7 @@ export function SalesUkrainePage() {
 
     realtimeReloadRef.current = window.setTimeout(() => {
       realtimeReloadRef.current = null
+      backgroundReloadRef.current = true
       reload()
     }, 800)
   }, [reload])
@@ -362,22 +364,31 @@ export function SalesUkrainePage() {
     let cancelled = false
 
     async function loadSales() {
-      setLoading(true)
-      setError(null)
+      const isBackgroundReload = backgroundReloadRef.current
+      backgroundReloadRef.current = false
+
+      if (!isBackgroundReload) {
+        setLoading(true)
+        setError(null)
+      }
 
       try {
         const next = await getSalesUkraine(activeFilters)
 
         if (!cancelled) {
           setSales(next)
+
+          if (isBackgroundReload) {
+            setError(null)
+          }
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setSales([])
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продажі'))
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && !isBackgroundReload) {
           setLoading(false)
         }
       }
@@ -847,14 +858,20 @@ function useSalesUkraineColumns({
         minWidth: 116,
         align: 'right',
         accessor: (sale) => getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount),
-        cell: (sale) => (
-          <>
-            <Text fw={600}>{formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(getSaleCurrencyCode(sale))}
-            </Text>
-          </>
-        ),
+        cell: (sale) => {
+          const unpaid = isUnpaidSale(sale)
+
+          return (
+            <>
+              <Text c={unpaid ? 'red' : undefined} fw={600}>
+                {formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}
+              </Text>
+              <Text c={unpaid ? 'red' : 'dimmed'} size="xs">
+                {displayValue(getSaleCurrencyCode(sale))}
+              </Text>
+            </>
+          )
+        },
       },
       {
         id: 'amountEur',
@@ -1232,6 +1249,10 @@ function getPaymentStatusLabel(sale: SalesUkraineSale): string {
   const key = typeof status === 'undefined' || status === null ? '' : String(status)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
+}
+
+function isUnpaidSale(sale: SalesUkraineSale): boolean {
+  return sale.BaseSalePaymentStatus?.SalePaymentStatusType === 0
 }
 
 function getPaymentStatusColor(sale: SalesUkraineSale): string | undefined {
