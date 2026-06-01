@@ -1,8 +1,10 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  SaleClientDebtTotal,
   SaleConsignmentDocument,
   SaleConsignmentNoteSetting,
   SaleDocumentResult,
+  SalesUkraineClientAgreement,
   SalesUkraineClientOption,
   SalesUkraineFilters,
   SalesUkraineOrderItem,
@@ -99,6 +101,29 @@ export async function addOrderItem(
   await apiRequest<unknown>('/orders/items/new', {
     body: orderItem,
     method: 'POST',
+    query: { clientAgreementNetId, saleNetId },
+  })
+}
+
+export async function getSaleClientAgreements(clientNetId: string): Promise<SalesUkraineClientAgreement[]> {
+  const result = await apiRequest<unknown>('/agreements/client/all', {
+    query: { netId: clientNetId },
+  })
+
+  return normalizeArray(result) as SalesUkraineClientAgreement[]
+}
+
+export async function getSaleClientDebtTotal(clientNetId: string): Promise<SaleClientDebtTotal | null> {
+  const result = await apiRequest<unknown>('/clients/get/debt/total', {
+    query: { netId: clientNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SaleClientDebtTotal) : null
+}
+
+export async function switchSale(saleNetId: string, clientAgreementNetId: string): Promise<void> {
+  await apiRequest<unknown>('/sales/switch', {
+    method: 'PATCH',
     query: { clientAgreementNetId, saleNetId },
   })
 }
@@ -279,6 +304,8 @@ function normalizeArray(result: unknown): unknown[] {
       'Organisations',
       'Transporters',
       'TransporterTypes',
+      'ClientAgreements',
+      'Agreements',
       'Data',
       'Collection',
     ]) {

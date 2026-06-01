@@ -8,6 +8,7 @@ import {
   Loader,
   NumberInput,
   ScrollArea,
+  Select,
   Stack,
   Tabs,
   Text,
@@ -24,8 +25,23 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { addOrderItem, deleteOrderItem, getSaleById, searchSaleProducts, updateOrderItem } from '../api/salesUkraineApi'
-import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../types'
+import {
+  addOrderItem,
+  deleteOrderItem,
+  getSaleById,
+  getSaleClientAgreements,
+  getSaleClientDebtTotal,
+  searchSaleProducts,
+  switchSale,
+  updateOrderItem,
+} from '../api/salesUkraineApi'
+import type {
+  SaleClientDebtTotal,
+  SalesUkraineClientAgreement,
+  SalesUkraineOrderItem,
+  SalesUkraineProduct,
+  SalesUkraineSale,
+} from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
@@ -197,15 +213,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         </Tabs.Panel>
 
         <Tabs.Panel value="client" pt="md">
-          <Stack gap={6}>
-            <DetailRow label={t('Клієнт')} value={getClientName(sale)} />
-            <DetailRow label={t('Договір')} value={sale.ClientAgreement?.Agreement?.Name} />
-            <DetailRow label={t('Організація')} value={sale.ClientAgreement?.Agreement?.Organization?.Name} />
-            <DetailRow label={t('Валюта')} value={sale.ClientAgreement?.Agreement?.Currency?.Code} />
-            <DetailRow label={t('Менеджер')} value={getUserName(sale)} />
-            <DetailRow label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title} />
-            <DetailRow label={t('Коментар')} value={sale.Comment} />
-          </Stack>
+          <ClientTab canEdit={isEditable} sale={sale} onSwitched={reload} />
         </Tabs.Panel>
       </Tabs>
 
@@ -582,6 +590,107 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
         </Button>
         <Button disabled={!isValid} loading={isSaving} onClick={add}>
           {t('Додати')}
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
+function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched: () => void; sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+  const clientNetUid = sale.ClientAgreement?.Client?.NetUid
+  const currentAgreementNetUid = sale.ClientAgreement?.NetUid || ''
+  const [agreements, setAgreements] = useValueState<SalesUkraineClientAgreement[]>([])
+  const [debt, setDebt] = useValueState<SaleClientDebtTotal | null>(null)
+  const [selectedAgreement, setSelectedAgreement] = useValueState(currentAgreementNetUid)
+  const [isSwitching, setSwitching] = useValueState(false)
+
+  useEffect(() => {
+    if (!clientNetUid) {
+      return
+    }
+
+    let cancelled = false
+
+    async function load(id: string) {
+      try {
+        const [nextAgreements, nextDebt] = await Promise.all([getSaleClientAgreements(id), getSaleClientDebtTotal(id)])
+
+        if (!cancelled) {
+          setAgreements(nextAgreements)
+          setDebt(nextDebt)
+        }
+      } catch {
+        if (!cancelled) {
+          setAgreements([])
+          setDebt(null)
+        }
+      }
+    }
+
+    void load(clientNetUid)
+
+    return () => {
+      cancelled = true
+    }
+  }, [clientNetUid, setAgreements, setDebt])
+
+  const agreementOptions = agreements
+    .filter((item) => item.NetUid)
+    .map((item) => ({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' }))
+
+  async function switchAgreement() {
+    if (!sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {
+      return
+    }
+
+    setSwitching(true)
+
+    try {
+      await switchSale(sale.NetUid, selectedAgreement)
+      notifications.show({ color: 'green', message: t('Договір змінено') })
+      onSwitched()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося змінити договір') })
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  return (
+    <Stack gap="md">
+      <Stack gap={6}>
+        <DetailRow label={t('Клієнт')} value={getClientName(sale)} />
+        <DetailRow label={t('Організація')} value={sale.ClientAgreement?.Agreement?.Organization?.Name} />
+        <DetailRow label={t('Валюта')} value={sale.ClientAgreement?.Agreement?.Currency?.Code} />
+        <DetailRow label={t('Менеджер')} value={getUserName(sale)} />
+        <DetailRow label={t('Перевізник')} value={sale.Transporter?.Name || sale.Transporter?.Title} />
+        <DetailRow label={t('Коментар')} value={sale.Comment} />
+        {debt && (
+          <>
+            <DetailRow label={t('Борг (локальна)')} value={formatAmount(getNumber(debt.TotalLocal))} />
+            <DetailRow label={t('Борг (EUR)')} value={formatAmount(getNumber(debt.TotalEuro))} />
+          </>
+        )}
+      </Stack>
+
+      <Group align="end" gap="sm" wrap="nowrap">
+        <Select
+          disabled={!canEdit}
+          searchable
+          data={agreementOptions}
+          label={t('Договір')}
+          style={{ flex: 1 }}
+          value={selectedAgreement || null}
+          onChange={(value) => setSelectedAgreement(value || '')}
+        />
+        <Button
+          disabled={!canEdit || !selectedAgreement || selectedAgreement === currentAgreementNetUid}
+          loading={isSwitching}
+          variant="light"
+          onClick={switchAgreement}
+        >
+          {t('Змінити договір')}
         </Button>
       </Group>
     </Stack>

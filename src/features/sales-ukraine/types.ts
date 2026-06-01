@@ -77,6 +77,11 @@ export type SaleConsignmentDocument = {
   PdfDocumentURL?: string
 }
 
+export type SaleClientDebtTotal = {
+  TotalEuro?: number
+  TotalLocal?: number
+}
+
 export type SalesUkraineAgreement = SalesUkraineEntity & {
   Currency?: SalesUkraineCurrency
   Name?: string
