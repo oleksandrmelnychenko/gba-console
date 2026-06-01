@@ -17,7 +17,7 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconFileInvoice, IconPencil, IconPlus, IconSearch, IconTrash, IconTruck } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -34,7 +34,9 @@ import {
   searchSaleProducts,
   switchSale,
   updateOrderItem,
+  updateSaleFromData,
 } from '../api/salesUkraineApi'
+import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import type {
   SaleClientDebtTotal,
   SalesUkraineClientAgreement,
@@ -73,6 +75,9 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [deletingItem, setDeletingItem] = useValueState<SalesUkraineOrderItem | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [isAddOpen, setAddOpen] = useValueState(false)
+  const [isDetailsOpen, setDetailsOpen] = useValueState(false)
+  const [isConvertOpen, setConvertOpen] = useValueState(false)
+  const [isConverting, setConverting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -136,6 +141,30 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     }
   }
 
+  async function convertToInvoice() {
+    setConverting(true)
+
+    const payload: SalesUkraineSale = {
+      ...sale,
+      BaseLifeCycleStatus: { ...sale.BaseLifeCycleStatus, SaleLifeCycleType: 1 },
+      BaseSalePaymentStatus: { ...sale.BaseSalePaymentStatus, SalePaymentStatusType: 0 },
+      IsPrintedPaymentInvoice: true,
+    }
+
+    try {
+      await updateSaleFromData(payload, null)
+      notifications.show({ color: 'green', message: t('Рахунок створено') })
+      setConvertOpen(false)
+      reload()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+    } finally {
+      setConverting(false)
+    }
+  }
+
+  const canConvert = isEditable && sale.BaseLifeCycleStatus?.SaleLifeCycleType === 0
+
   return (
     <Stack gap="md">
       {error && (
@@ -181,6 +210,19 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           </Stack>
         </Group>
       </Card>
+
+      <Group justify="flex-end" gap="sm">
+        {sale.Transporter && (
+          <Button leftSection={<IconTruck size={16} />} variant="light" onClick={() => setDetailsOpen(true)}>
+            {t('Доставка')}
+          </Button>
+        )}
+        {canConvert && (
+          <Button color="teal" leftSection={<IconFileInvoice size={16} />} onClick={() => setConvertOpen(true)}>
+            {t('Зробити рахунок')}
+          </Button>
+        )}
+      </Group>
 
       <Tabs defaultValue="products">
         <Tabs.List>
@@ -235,6 +277,35 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           reload()
         }}
       />
+
+      <SaleDetailsDrawer
+        sale={isDetailsOpen ? sale : null}
+        onClose={() => setDetailsOpen(false)}
+        onSaved={() => {
+          setDetailsOpen(false)
+          reload()
+        }}
+      />
+
+      <AppModal
+        centered
+        opened={isConvertOpen}
+        size="sm"
+        title={t('Зробити рахунок')}
+        onClose={() => (isConverting ? undefined : setConvertOpen(false))}
+      >
+        <Stack gap="md">
+          <Text>{t('Перетворити продаж на рахунок?')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConvertOpen(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="teal" loading={isConverting} onClick={convertToInvoice}>
+              {t('Зробити рахунок')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
 
       <AppModal
         centered
