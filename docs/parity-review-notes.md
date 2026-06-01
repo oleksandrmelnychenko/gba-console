@@ -595,3 +595,15 @@ confirmed**; most claims refuted — the tabs are faithful (present counts 23–
   uses a flat DataTable+checkbox vs legacy accordion — all acceptable console-pattern ports, no data loss.
 - **Org MultiSelect select-all**: Mantine MultiSelect has no built-in select-all toggle — left as-is.
 - **Ctrl+Insert / qty autofocus / page-header label**: minor UX, not ported.
+
+---
+
+## 16. Картка товару — clickable product in the sub-row (2026-06-01)
+
+The §14 medium gap (legacy clickable product code/name → product card) is closed. New reusable
+`features/products/components/ProductCardModal` fetches `getProductByNetId` and shows a compact card:
+ShopImageGallery (by VendorCode) + code/name/orig-number/group, availability (UA / в дорозі / ПДВ /
+перепродаж / браковані), prices (local + EUR), measure unit / weight / size / volume, description, notes,
+plus an «Відкрити» link to `/products?netId=`. Wired into `SaleExpandContent`: the product code + name are
+now clickable Anchors (stopPropagation) that open the card (legacy `OnOpenProductCart`). tsc/eslint clean
+on the changed files.

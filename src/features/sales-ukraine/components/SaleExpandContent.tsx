@@ -1,5 +1,7 @@
 import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -18,6 +20,7 @@ export function SaleExpandContent({
   onOpenItemDiscount: (sale: SalesUkraineSale, orderItem: SalesUkraineOrderItem) => void
 }) {
   const { t } = useI18n()
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const isNew = sale.BaseLifeCycleStatus?.SaleLifeCycleType === NEW_LIFECYCLE_TYPE
@@ -35,19 +38,23 @@ export function SaleExpandContent({
   }
 
   return (
-    <Stack className="sale-expand-content" gap={0} px="md" py="sm">
-      {orderItems.map((orderItem, index) => (
-        <SaleExpandContentItem
-          key={String(orderItem.NetUid || orderItem.Id || index)}
-          isNew={isNew}
-          isVatSale={isVatSale}
-          hasUniformDiscount={hasUniformDiscount}
-          localCurrencyCode={localCurrencyCode}
-          orderItem={orderItem}
-          onOpenItemDiscount={() => onOpenItemDiscount(sale, orderItem)}
-        />
-      ))}
-    </Stack>
+    <>
+      <Stack className="sale-expand-content" gap={0} px="md" py="sm">
+        {orderItems.map((orderItem, index) => (
+          <SaleExpandContentItem
+            key={String(orderItem.NetUid || orderItem.Id || index)}
+            isNew={isNew}
+            isVatSale={isVatSale}
+            hasUniformDiscount={hasUniformDiscount}
+            localCurrencyCode={localCurrencyCode}
+            orderItem={orderItem}
+            onOpenItemDiscount={() => onOpenItemDiscount(sale, orderItem)}
+            onOpenProductCard={setProductCardNetId}
+          />
+        ))}
+      </Stack>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+    </>
   )
 }
 
@@ -56,6 +63,7 @@ function SaleExpandContentItem({
   isNew,
   isVatSale,
   localCurrencyCode,
+  onOpenProductCard,
   orderItem,
   onOpenItemDiscount,
 }: {
@@ -63,12 +71,20 @@ function SaleExpandContentItem({
   isNew: boolean
   isVatSale: boolean
   localCurrencyCode: string
+  onOpenProductCard: (productNetId: string) => void
   orderItem: SalesUkraineOrderItem
   onOpenItemDiscount: () => void
 }) {
   const { t } = useI18n()
   const discount = getNumber(orderItem.OneTimeDiscount)
   const hasDiscount = typeof discount === 'number' && discount !== 0
+  const productNetId = orderItem.Product?.NetUid
+  const openProductCard = productNetId
+    ? (event: { stopPropagation: () => void }) => {
+        event.stopPropagation()
+        onOpenProductCard(productNetId)
+      }
+    : undefined
 
   const responsible = getResponsible(orderItem.User)
   const specificationCode = orderItem.AssignedSpecification?.SpecificationCode
@@ -97,8 +113,21 @@ function SaleExpandContentItem({
     >
       <Box style={{ minWidth: 0 }}>
         <Group gap={6} wrap="wrap">
-          <Text fw={600}>{displayValue(getOrderItemProductCode(orderItem))}</Text>
-          <Text>{displayValue(getOrderItemProductName(orderItem))}</Text>
+          {openProductCard ? (
+            <>
+              <Anchor component="button" fw={600} type="button" onClick={openProductCard}>
+                {displayValue(getOrderItemProductCode(orderItem))}
+              </Anchor>
+              <Anchor component="button" type="button" onClick={openProductCard}>
+                {displayValue(getOrderItemProductName(orderItem))}
+              </Anchor>
+            </>
+          ) : (
+            <>
+              <Text fw={600}>{displayValue(getOrderItemProductCode(orderItem))}</Text>
+              <Text>{displayValue(getOrderItemProductName(orderItem))}</Text>
+            </>
+          )}
           {orderItem.Product?.MainOriginalNumber && (
             <Text c="dimmed">{orderItem.Product.MainOriginalNumber}</Text>
           )}
