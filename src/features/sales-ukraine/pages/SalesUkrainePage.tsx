@@ -646,7 +646,7 @@ function useSalesUkraineColumns({
           <Group gap={5} wrap="wrap">
             <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
             {sale.IsVatSale && (
-              <Badge color="blue" size="xs" variant="light">
+              <Badge color="violet" size="xs" variant="light">
                 {t('ПДВ')}
               </Badge>
             )}
@@ -948,7 +948,7 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
           </Badge>
         )}
         {sale.IsVatSale && (
-          <Badge color="blue" variant="light">
+          <Badge color="violet" variant="light">
             {t('ПДВ')}
           </Badge>
         )}
