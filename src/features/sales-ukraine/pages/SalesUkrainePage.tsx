@@ -58,7 +58,11 @@ import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
 import { SaleShipModal } from '../components/SaleShipModal'
-import { SALES_UKRAINE_UNLOCK_PERMISSION, SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION } from '../permissions'
+import {
+  SALES_UKRAINE_EDIT_PERMISSION,
+  SALES_UKRAINE_UNLOCK_PERMISSION,
+  SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
+} from '../permissions'
 import type {
   SalesUkraineClientOption,
   SalesUkraineFilters,
@@ -153,6 +157,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 export function SalesUkrainePage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
+  const canEditSale = hasPermission(SALES_UKRAINE_EDIT_PERMISSION)
   const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
   const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
   const today = useMemo(() => formatLocalDate(new Date()), [])
@@ -209,6 +214,7 @@ export function SalesUkrainePage() {
   )
 
   const columns = useSalesUkraineColumns({
+    canEditSale,
     canUnlock,
     canWillNotShip,
     onOpenConsignment: setConsignmentSale,
@@ -618,6 +624,7 @@ export function SalesUkrainePage() {
 }
 
 function useSalesUkraineColumns({
+  canEditSale,
   canUnlock,
   canWillNotShip,
   onOpenConsignment,
@@ -629,6 +636,7 @@ function useSalesUkraineColumns({
   onUnlock,
   onWillNotShip,
 }: {
+  canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
   onOpenConsignment: (sale: SalesUkraineSale) => void
@@ -874,6 +882,7 @@ function useSalesUkraineColumns({
           const showTtn = Boolean(sale.TransporterId) && isPackaging
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
           const showUnlock = canUnlock && Boolean(sale.IsLocked)
+          const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
 
           return (
             <Box onClick={(event) => event.stopPropagation()}>
@@ -891,9 +900,11 @@ function useSalesUkraineColumns({
                     </ActionIcon>
                   </Menu.Target>
                   <Menu.Dropdown>
-                    <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
-                      {t('Відкрити продаж')}
-                    </Menu.Item>
+                    {showEdit && (
+                      <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+                        {t('Відкрити продаж')}
+                      </Menu.Item>
+                    )}
                     {showShip && (
                         <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onShip(sale)}>
                           {t('Відвантажити')}
@@ -928,6 +939,7 @@ function useSalesUkraineColumns({
       },
     ],
     [
+      canEditSale,
       canUnlock,
       canWillNotShip,
       onOpenConsignment,
