@@ -282,6 +282,10 @@ export function getSaleInvoiceHistoryDocument(netId: string, historyNetId: strin
   return fetchSaleDocument('/sales/get/document/history', { historyNetId, netId })
 }
 
+export function getSaleActProtocolEditDocument(netId: string): Promise<SaleDocumentResult> {
+  return fetchSaleDocument('/sales/get/shifted/document', { netId })
+}
+
 export function getSaleActForEditingHistoryDocument(netId: string, historyNetId: string): Promise<SaleDocumentResult> {
   return fetchSaleDocument('/sales/get/shifted/hisotry/document', { historyNetId, netId })
 }
@@ -292,21 +296,32 @@ export function getSaleShipmentListHistoryDocument(netId: string, historyNetId: 
 
 function extractDocumentResult(result: unknown): SaleDocumentResult {
   if (typeof result === 'string') {
-    return { excelUrl: toSecureUrl(result.trim() || null), pdfUrl: null }
+    return {
+      excelUrl: toSecureUrl(result.trim() || null),
+      pdfUrl: null,
+      invoiceExcelUrl: null,
+      invoicePdfUrl: null,
+      isAcceptedToPacking: false,
+    }
   }
 
   if (result && typeof result === 'object') {
     const record = result as Record<string, unknown>
     const excel = record.DocumentURL ?? record.DocumentUrl ?? record.Url ?? record.url
     const pdf = record.PdfDocumentURL ?? record.PdfDocumentUrl
+    const invoiceExcel = record.InvoiceDocumentURL ?? record.InvoiceDocumentUrl
+    const invoicePdf = record.PdfInvoiceDocumentURL ?? record.PdfInvoiceDocumentUrl
 
     return {
       excelUrl: typeof excel === 'string' ? toSecureUrl(excel.trim() || null) : null,
       pdfUrl: typeof pdf === 'string' ? toSecureUrl(pdf.trim() || null) : null,
+      invoiceExcelUrl: typeof invoiceExcel === 'string' ? toSecureUrl(invoiceExcel.trim() || null) : null,
+      invoicePdfUrl: typeof invoicePdf === 'string' ? toSecureUrl(invoicePdf.trim() || null) : null,
+      isAcceptedToPacking: record.IsAcceptedToPacking === true,
     }
   }
 
-  return { excelUrl: null, pdfUrl: null }
+  return { excelUrl: null, pdfUrl: null, invoiceExcelUrl: null, invoicePdfUrl: null, isAcceptedToPacking: false }
 }
 
 function toSecureUrl(url: string | null): string | null {

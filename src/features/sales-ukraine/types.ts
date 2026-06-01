@@ -257,4 +257,7 @@ export type SalesUkraineClientOption = SalesUkraineEntity & {
 export type SaleDocumentResult = {
   excelUrl: string | null
   pdfUrl: string | null
+  invoiceExcelUrl: string | null
+  invoicePdfUrl: string | null
+  isAcceptedToPacking: boolean
 }

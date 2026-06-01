@@ -63,6 +63,7 @@ import { NewSaleModal } from '../components/NewSaleModal'
 import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
+import { SaleExpandContent } from '../components/SaleExpandContent'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
@@ -342,6 +343,13 @@ export function SalesUkrainePage() {
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
   })
+
+  const renderSaleExpandContent = useCallback(
+    (sale: SalesUkraineSale) => (
+      <SaleExpandContent sale={sale} onOpenItemDiscount={(targetSale) => setDiscountSale(targetSale)} />
+    ),
+    [setDiscountSale],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -658,6 +666,8 @@ export function SalesUkrainePage() {
             tableId="sales-ukraine"
             toolbarLeft={toolbarLeft}
             toolbarRight={toolbarRight}
+            getRowCanExpand={(sale) => getOrderItemCount(sale) > 0}
+            renderExpandedRow={renderSaleExpandContent}
             onRowClick={setSelectedSale}
           />
 
