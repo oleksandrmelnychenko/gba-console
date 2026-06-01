@@ -265,8 +265,8 @@ type ProductFileUploadForm = ProductFileUploadColumnForm & {
 
 export function ProductsPage() {
   const { t } = useI18n()
-  const searchModeOptions = PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))
-  const sortModeOptions = PRODUCT_SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))
+  const searchModeOptions = useMemo(() => PRODUCT_SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
+  const sortModeOptions = useMemo(() => PRODUCT_SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value })), [t])
   const [urlSearchParams, setUrlSearchParams] = useSearchParams()
   const routeProductNetId = urlSearchParams.get('netId')?.trim() || ''
   const [topProducts, setTopProducts] = useValueState<Product[]>([])
@@ -297,8 +297,10 @@ export function ProductsPage() {
   const routeProductRequestRef = useRef(0)
   const loadedIdsRef = useRef<Set<string>>(new Set())
   const hasMoreRef = useRef(true)
+  const selectedProductRef = useRef<Product | null>(selectedProduct)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
   const productForView = detailState.product || selectedProduct
+  selectedProductRef.current = selectedProduct
   const canMoveBack = topProducts.length > 0
   const canMoveForward = bottomProducts.length > 0
 
@@ -393,10 +395,6 @@ export function ProductsPage() {
       setError(null)
 
       try {
-        if (requestId !== searchRequestRef.current) {
-          return
-        }
-
         const nextProducts = await getProducts({
           limit,
           offset,
@@ -617,7 +615,7 @@ export function ProductsPage() {
 
         if (requestId === detailRequestRef.current) {
           dispatchDetail({
-            product: nextProduct || selectedProduct,
+            product: nextProduct || selectedProductRef.current,
             reservation: nextReservationResult.value,
             reservationError: nextReservationResult.error,
             type: 'success',
@@ -627,7 +625,7 @@ export function ProductsPage() {
         if (requestId === detailRequestRef.current) {
           dispatchDetail({
             error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'),
-            product: selectedProduct,
+            product: selectedProductRef.current,
             type: 'error',
           })
         }
@@ -637,7 +635,6 @@ export function ProductsPage() {
     void loadProductDetails()
   }, [
     detailReloadKey,
-    selectedProduct,
     selectedProductNetUid,
     t,
   ])
@@ -785,7 +782,7 @@ export function ProductsPage() {
     setCarouselMode('selection')
     setSearchDraft('')
 
-    if (bottomProducts.length <= 6) {
+    if (bottomProducts.length - 1 <= 6) {
       loadMoreProducts()
     }
   }
