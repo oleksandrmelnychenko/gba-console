@@ -251,29 +251,34 @@ Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 
 - **sales-debtors:** drop empty `typeCurrency`. **shopping-cart-reserve:** per-item comment cell.
   **sales-preorders:** page title. **sales-prediction:** empty-state.
 
-### Remaining — functional/feature gaps (not built; can build on request)
-- **sales-online-shop:** payment red-unpaid emphasis + retail (ПО)/(ЧО) full/partial badge (medium);
-  the read-only screen reproduces none of the legacy SalesPivot row actions (unlock / accept-to-packing
-  / print PZ·invoice·shipment·TTN / discount / edit) — LARGE.
-- **client-product-movement:** client picker is payer-scoped (`/clients/payers/search/all`); legacy
-  uses the full Client search (`/search/by/query`), so non-payer clients with movements are unreachable.
-- **sales-offers:** per-line single-item reason entry (legacy `OnOpenOrderItemReason` opens the reason
-  drawer scoped to one order item) — medium.
-- **sales-prediction:** dynamic chart legend naming the selected client/product + month horizon, and a
-  Y-axis label («Сума продажу в євро») — medium.
-- **sales-charts:** by-client mount-time empty fetch (minor).
+### Feature gaps — BUILT (commit `745548c`, per-feature verified, tsc 0 / eslint 0)
+- **sales-online-shop:** red unpaid-amount emphasis + payment-status colour-by-type + retail (ПО)/(ЧО)
+  full/partial suffix (mirrors sales-ukraine / legacy `sale.item.status`).
+- **client-product-movement:** client picker switched to the full Client search (`/search/by/query`,
+  filter on RegionCode.Value / FullName / USREOU) — non-payer clients with movements now selectable.
+- **sales-offers:** per-line single-item reason entry — the not-processed line badge opens the existing
+  reason drawer scoped to that one order item (legacy `OnOpenOrderItemReason`).
+- **sales-prediction:** dynamic by-client/by-product legend naming the entity + month horizon + Y-axis
+  «Сума продажу в євро» label.
 
-### Remaining — judgment calls (need a decision)
-- **sales-debtors client column:** legacy binds the `Supplier` key → «Постачальник» for the client
-  column (looks like a legacy bug); the console shows the correct «Клієнт». Match legacy or keep correct?
-- **sales-debtors day labels:** «Борг через N днів» (console interpolates the count, more informative)
-  vs legacy static per-option phrases. Keep or match legacy?
-- **sales-preorders tab:** legacy dashboard tab is `Interest` = «Зацікавленість»; the console tab is
-  «Передзамовлення» (different concept). Align the tab label?
-- **sales-prediction product name:** console renders `NameUA || Name` (the idiom used by all sibling
-  screens) vs legacy `Name` only. Keep the console idiom?
-- **sales-charts search sources:** client/manager search uses payers/managers endpoints vs the legacy
-  charts dropdowns — flagged "confirm with product".
+### Judgment calls — DECIDED
+- **sales-debtors client column:** keep correct «Клієнт» (legacy used the `Supplier` key → «Постачальник»,
+  a legacy bug — NOT replicated).
+- **sales-preorders tab:** renamed «Передзамовлення» → «Зацікавленість» (legacy Interest), commit `745548c`.
+
+### Remaining — still open (low / large / for review)
+- **sales-online-shop (LARGE):** the screen is read-only and reproduces none of the legacy SalesPivot
+  row actions (unlock / accept-to-packing / print PZ·invoice·shipment·TTN / discount / edit). Decide if
+  the online-shop list should gain those actions.
+- **sales-charts:** by-client mount-time empty fetch (minor); client/manager search sources
+  (payers/managers vs legacy charts dropdowns) — "confirm with product".
+- **sales-debtors day labels:** «Борг через N днів» (console interpolates the count — more informative)
+  vs legacy static per-option phrases — kept the console version (enhancement).
+- **sales-prediction product name:** console renders `NameUA || Name` (the sibling-wide idiom) vs legacy
+  `Name` only — kept the console idiom.
+- **Latent (shared):** payment `SalePaymentStatusType` strict `=== 0` comparison on a `number|string`
+  type (sales-ukraine + sales-online-shop in lock-step). Harden both with `getNumber()` only if the API
+  ever sends the status as a string.
 
 ### Remaining — Poland (deferred)
 - **sales-offers public link:** legacy `getOfferUrl` switches the ecommerce host UA/Poland by locale;
