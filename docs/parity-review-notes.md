@@ -83,3 +83,22 @@ counterpart. **Totals: 77 migrated · 46 user-WIP (you're actively building) · 
   `/edit/:id/*` sub-routes). Build only when Poland is un-deferred.
 - **Allegro** (managers/allegro) — **do-not-touch** per directive. Not migrated, not audited.
 
+---
+
+## 3. Built — Client returns dashboard tab + report panel (A1, 2026-06-01)
+
+Closed backlog item **A1**: added the **"Повернення"** tab to `SalesDashboardShell` (legacy
+position 6, between Передзамовлення and Рух товару клієнта), wrapped `/sales/return/client` in the
+dashboard shell, and built **`ClientReturnsReportPanel`** (`sales-returns/components/`) — a faithful
+port of the legacy `ClientReturnsReportPanel`: From/To (default today), searchable Client select,
+"Тільки мої клієнти" (resets client) ↔ client-select (clears onlyMy), Grouped/Detail type, Generate
+→ existing `exportSaleReturnsReport` (`/sales/returns/document/export`) → Excel/PDF download links.
+Adversarially verified (parity / Mantine / regression) — fixed one medium issue (state now resets on
+close so each open is fresh, like legacy's remount-on-open).
+
+**Known intentional divergence (low):** the report's Client dropdown does **not** pre-populate the
+first N clients on open — it requires ≥2 typed characters before searching (`/search/by/query`,
+limit 20). Legacy pre-loaded the first 10 with an empty query. Kept the ≥2-char gate because it is
+the **console-wide search idiom** (the sibling `SalesReturnClientPage` create flow does the same).
+Revisit if you want the pre-populated list.
+

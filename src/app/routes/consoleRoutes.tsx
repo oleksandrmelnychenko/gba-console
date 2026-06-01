@@ -291,7 +291,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/resales/:id', element: lazyRoute(<ResalePage />) },
   { path: '/reports/stocks', element: lazyRoute(<ReportsStocksPage />) },
   { path: '/reports/sale', element: lazyRoute(<ReportsSalePage />) },
-  { path: '/sales/return/client', element: lazyRoute(<SalesReturnClientPage />) },
+  { path: '/sales/return/client', element: <SalesDashboardShell>{lazyRoute(<SalesReturnClientPage />)}</SalesDashboardShell> },
   { path: '/sales/ukraine/all', element: <SalesDashboardShell>{lazyRoute(<SalesUkrainePage />)}</SalesDashboardShell> },
   { path: '/sales/ukraine/debtors', element: <SalesDashboardShell>{lazyRoute(<SalesDebtorsPage />)}</SalesDashboardShell> },
   { path: '/sales/ukraine/interest', element: <SalesDashboardShell>{lazyRoute(<SalesPreordersInterestPage />)}</SalesDashboardShell> },
