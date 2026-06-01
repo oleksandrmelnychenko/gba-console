@@ -1,10 +1,10 @@
 .cfg-grid {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--mantine-color-gray-3);
+  border: 1px solid var(--mantine-color-gray-2);
   border-radius: var(--mantine-radius-md);
   overflow: hidden;
-  background: var(--mantine-color-body);
+  background: var(--mantine-color-white);
   font-size: 13px;
 }
 
@@ -21,24 +21,39 @@
 }
 
 .cfg-top {
-  border-bottom: 1px solid var(--mantine-color-gray-3);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .cfg-bottom {
-  border-top: 1px solid var(--mantine-color-gray-3);
+  border-top: 1px solid var(--mantine-color-gray-2);
 }
 
 .cfg-scroll {
   overflow-y: auto;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.cfg-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.cfg-scroll::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+}
+
+.cfg-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .cfg-data-row {
   width: 100%;
   border: 0;
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   padding: 0;
-  background: transparent;
+  background: var(--mantine-color-white);
   color: inherit;
   cursor: pointer;
   font: inherit;
@@ -46,21 +61,22 @@
   transition: background-color 80ms ease;
 }
 
-.cfg-data-row:last-child {
-  border-bottom: none;
-}
-
-.cfg-data-row:hover {
+.cfg-data-row:nth-child(even) {
   background: var(--mantine-color-gray-0);
 }
 
-.cfg-data-row:focus-visible {
-  outline: 2px solid var(--mantine-color-blue-5);
-  outline-offset: -2px;
+.cfg-data-row:hover {
+  background: var(--mantine-color-gray-1);
 }
 
-.cfg-data-row.cfg-active {
+.cfg-data-row.cfg-active,
+.cfg-data-row.cfg-active:hover {
   background: var(--mantine-color-violet-0);
+}
+
+.cfg-data-row:focus-visible {
+  outline: 2px solid var(--mantine-color-violet-6);
+  outline-offset: -2px;
 }
 
 .cfg-data-row.cfg-debit {
@@ -76,7 +92,7 @@
   flex-direction: column;
   justify-content: center;
   flex: 0 0 auto;
-  padding: 6px 10px;
+  padding: 6px 8px;
   min-width: 0;
   overflow: hidden;
 }
@@ -112,13 +128,17 @@
 
 .cfg-sub {
   font-size: 11px;
-  font-weight: 400;
-  color: var(--mantine-color-dimmed);
+  font-weight: 600;
+  color: var(--mantine-color-gray-7);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   line-height: 1.1;
 }
 
 .cfg-sub-note {
   font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
   color: var(--mantine-color-gray-5);
 }
 
@@ -131,7 +151,8 @@
 }
 
 .cfg-state {
-  padding: 28px 16px;
+  padding: 22px 14px;
   text-align: center;
-  color: var(--mantine-color-dimmed);
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
 }
