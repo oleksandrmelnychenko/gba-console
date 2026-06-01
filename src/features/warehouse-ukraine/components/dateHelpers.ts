@@ -1,4 +1,4 @@
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 
 export function getDateShiftedByDays(days: number): string {
   const date = new Date()
@@ -22,17 +22,7 @@ export function toDateString(value: string): string {
 }
 
 export function toIsoString(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toISOString()
+  return formatDateInputForQuery(value)
 }
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })

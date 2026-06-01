@@ -12,7 +12,7 @@ import {
 } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -502,13 +502,7 @@ function getFilterError(from: string, to: string): string | null {
 }
 
 function toIsoString(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? value : date.toISOString()
+  return formatDateInputForQuery(value)
 }
 
 function getDateTime(value: unknown): number {

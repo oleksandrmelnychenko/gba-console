@@ -38,7 +38,7 @@ import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
-import { validateClientForm } from '../components/form/validateClientForm'
+import { validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
 const CLIENT_TYPE_BUYER = 0
@@ -115,6 +115,7 @@ export function ClientNewPage() {
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
   const pendingDocumentsRef = useRef<File[]>([])
+  const regionCodeRequestRef = useRef(0)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
@@ -307,17 +308,31 @@ export function ClientNewPage() {
 
   async function verifyRegionCode(value: string) {
     const regionNetUid = draft.Region?.NetUid
+    const requestId = regionCodeRequestRef.current + 1
+    regionCodeRequestRef.current = requestId
 
     if (!regionNetUid || !value) {
       setRegionCodeError(undefined)
+      setLoadingRegionCode(false)
       return
     }
 
+    setLoadingRegionCode(true)
+    setRegionCodeError(undefined)
+
     try {
       const isAvailable = await checkRegionCodeAvailability(regionNetUid, value)
-      setRegionCodeError(isAvailable ? undefined : t('Код по регіону вже використовується'))
+      if (regionCodeRequestRef.current === requestId) {
+        setRegionCodeError(isAvailable ? undefined : t('Код по регіону вже використовується'))
+      }
     } catch {
-      setRegionCodeError(undefined)
+      if (regionCodeRequestRef.current === requestId) {
+        setRegionCodeError(undefined)
+      }
+    } finally {
+      if (regionCodeRequestRef.current === requestId) {
+        setLoadingRegionCode(false)
+      }
     }
   }
 
@@ -430,6 +445,17 @@ export function ClientNewPage() {
 
     if (Object.keys(validationErrors).length > 0) {
       setError(t('Перевірте правильність заповнення форми'))
+      return
+    }
+
+    const regionCodeSubmitError = validateRegionCodeSubmitState(
+      isLoadingRegionCode,
+      regionCodeError,
+      t('Дочекайтеся перевірки коду регіону'),
+    )
+
+    if (regionCodeSubmitError) {
+      setError(regionCodeSubmitError)
       return
     }
 
@@ -583,7 +609,7 @@ export function ClientNewPage() {
                 <Button
                   type="submit"
                   color="violet"
-                  disabled={!isPricingValid}
+                  disabled={!isPricingValid || isLoadingRegionCode || Boolean(regionCodeError)}
                   leftSection={<IconCheck size={16} />}
                   loading={isSaving}
                 >

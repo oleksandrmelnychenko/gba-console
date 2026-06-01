@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { formatDateInputForQuery } from '../../../shared/date/dateTime'
 import type {
   AddPaymentImagePayload,
   EditPaymentImagePayload,
@@ -9,8 +10,8 @@ import type {
 export async function getPaymentShopItems(filters: PaymentShopFilters): Promise<PaymentShopItem[]> {
   const result = await apiRequest<unknown>('/sales/payment/images/get/filtered', {
     query: {
-      saleDateFrom: filters.saleDateFrom ? new Date(filters.saleDateFrom).toISOString() : '',
-      saleDateTo: filters.saleDateTo ? new Date(filters.saleDateTo).toISOString() : '',
+      saleDateFrom: formatDateInputForQuery(filters.saleDateFrom),
+      saleDateTo: formatDateInputForQuery(filters.saleDateTo),
       saleNumber: filters.saleNumber,
       phoneNumber: filters.phoneNumber,
     },

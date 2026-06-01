@@ -36,7 +36,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
@@ -171,10 +171,10 @@ export function AllSadsPage() {
 
     try {
       const rows = await getSads({
-        from: new Date(filters.from).toISOString(),
+        from: formatDateInputForQuery(filters.from),
         limit: pageSize,
         offset,
-        to: new Date(filters.to).toISOString(),
+        to: formatDateInputForQuery(filters.to),
       })
 
       setSads((currentRows) => offset === 0 ? rows : [...currentRows, ...rows])

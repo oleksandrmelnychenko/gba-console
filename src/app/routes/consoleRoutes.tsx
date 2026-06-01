@@ -300,7 +300,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/sales/ukraine/offers', element: <SalesDashboardShell>{lazyRoute(<OffersPage />)}</SalesDashboardShell> },
   { path: '/sales/ukraine/prediction', element: <SalesDashboardShell>{lazyRoute(<SalesPredictionPage />)}</SalesDashboardShell> },
   { path: '/sales/charts', element: <SalesDashboardShell>{lazyRoute(<SalesChartsPage />)}</SalesDashboardShell> },
-  { path: '/sales/ukraine/all/returns/new', element: lazyRoute(<NewUkraineSaleReturnPage />) },
+  { path: '/sales/ukraine/all/returns/new', element: <SalesDashboardShell>{lazyRoute(<NewUkraineSaleReturnPage />)}</SalesDashboardShell> },
   { path: '/sales', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/service/organisations', element: lazyRoute(<OrganisationServicesPage />) },
   { path: '/supply', element: <ModulePage module="Постачання" /> },

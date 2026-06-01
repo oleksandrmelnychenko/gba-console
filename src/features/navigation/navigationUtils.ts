@@ -43,7 +43,7 @@ export function getModuleKey(module: NavigationModule): string {
 }
 
 export function getNavigationNodePath(node: NavigationNode): string {
-  return normalizePath(node.Route || '/dashboard')
+  return normalizeNavigationTarget(node.Route || '/dashboard')
 }
 
 export function findNavigationMatch(modules: NavigationModule[], pathname: string): NavigationMatch | null {
@@ -75,6 +75,17 @@ export function isNavigationNodeActive(node: NavigationNode, pathname: string): 
   }
 
   return true
+}
+
+export function isNavigationNodeRouteTarget(node: NavigationNode, pathname: string): boolean {
+  const routeSegments = splitPath(node.Route)
+  const currentSegments = splitPath(pathname)
+
+  return (
+    routeSegments.length > 0 &&
+    routeSegments.length === currentSegments.length &&
+    routeSegments.every((segment, index) => segment === currentSegments[index])
+  )
 }
 
 function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNode | null {
@@ -113,14 +124,40 @@ function hasRemovedNavigationLabel(label: string | undefined): boolean {
   return Boolean(label && removedNavigationLabelPatterns.some((pattern) => pattern.test(label)))
 }
 
+function normalizeNavigationTarget(path: string): string {
+  const { pathname, suffix } = splitRouteTarget(path)
+
+  return `${normalizePath(pathname)}${suffix}`
+}
+
 function normalizePath(path: string): string {
-  const pathOnly = path.split('?')[0].split('#')[0]
-  const withSlash = pathOnly.startsWith('/') ? pathOnly : `/${pathOnly}`
+  const { pathname } = splitRouteTarget(path)
+  const withSlash = pathname.startsWith('/') ? pathname : `/${pathname}`
   const trimmed = withSlash.replace(/\/+$/, '')
 
   return trimmed || '/'
 }
 
-function splitPath(path: string): string[] {
+function splitRouteTarget(path: string): { pathname: string; suffix: string } {
+  const queryIndex = path.indexOf('?')
+  const hashIndex = path.indexOf('#')
+  const suffixIndex =
+    queryIndex === -1 ? hashIndex : hashIndex === -1 ? queryIndex : Math.min(queryIndex, hashIndex)
+
+  if (suffixIndex === -1) {
+    return { pathname: path, suffix: '' }
+  }
+
+  return {
+    pathname: path.slice(0, suffixIndex),
+    suffix: path.slice(suffixIndex),
+  }
+}
+
+function splitPath(path?: string): string[] {
+  if (!path) {
+    return []
+  }
+
   return normalizePath(path).split('/').filter(Boolean)
 }

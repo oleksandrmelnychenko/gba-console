@@ -1,8 +1,9 @@
 import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -121,6 +122,12 @@ function useOrdersTabModel() {
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const orderIndexMap = useMemo(() => buildIndexMap(orders), [orders])
+  const reloadFromRealtime = useCallback(() => {
+    reload()
+  }, [])
+
+  useRealtimeEvent(realtimeEvents.supplyOrderAdded, reloadFromRealtime)
+  useRealtimeEvent(realtimeEvents.supplyOrderNotification, reloadFromRealtime)
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey

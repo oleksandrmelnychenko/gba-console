@@ -5,6 +5,7 @@ import {
   Button,
   Divider,
   Group,
+  Menu,
   Pagination,
   Select,
   SimpleGrid,
@@ -14,7 +15,16 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconDotsVertical,
+  IconEdit,
+  IconEye,
+  IconHierarchy2,
+  IconRefresh,
+  IconSearch,
+  IconX,
+} from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -33,6 +43,8 @@ import type {
   AdvancedReportRow,
   AdvancedReportsResponse,
   AdvancedReportsSearchParams,
+  AssignedIncomePaymentOrder,
+  AssignedPaymentOrder,
   Currency,
   NamedEntity,
   OutcomePaymentOrder,
@@ -49,7 +61,7 @@ const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number'],
-    right: ['edit', 'actions'],
+    right: ['operations'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -87,6 +99,7 @@ export function AdvancedReportsPage() {
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AdvancedReportRow | null>(null)
+  const [structureRow, setStructureRow] = useValueState<AdvancedReportRow | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
@@ -244,7 +257,11 @@ export function AdvancedReportsPage() {
   )
 
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
-  const columns = useAdvancedReportColumns({ onEdit: openAdvanceReport, onOpen: setSelectedRow })
+  const columns = useAdvancedReportColumns({
+    onEdit: openAdvanceReport,
+    onOpen: setSelectedRow,
+    onOpenDocumentStructure: setStructureRow,
+  })
   const isTableBusy = isLoading || isSearchSettling
 
   const changeFromDate = useCallback(
@@ -447,6 +464,7 @@ export function AdvancedReportsPage() {
       )}
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <AdvancedReportDocumentStructureDrawer row={structureRow} onClose={() => setStructureRow(null)} />
     </Stack>
   )
 }
@@ -454,9 +472,11 @@ export function AdvancedReportsPage() {
 function useAdvancedReportColumns({
   onEdit,
   onOpen,
+  onOpenDocumentStructure,
 }: {
   onEdit: (row: AdvancedReportRow) => void
   onOpen: (row: AdvancedReportRow) => void
+  onOpenDocumentStructure: (row: AdvancedReportRow) => void
 }): DataTableColumn<AdvancedReportRow>[] {
   const { t } = useI18n()
 
@@ -560,36 +580,7 @@ function useAdvancedReportColumns({
         cell: (row) => displayValue(row.comment),
       },
       {
-        id: 'edit',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) =>
-          row.isUnderReport ? (
-            <Tooltip label={t('Редагувати звіт')}>
-              <ActionIcon
-                aria-label={t('Редагувати звіт')}
-                color="violet"
-                disabled={!row.order.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(row)
-                }}
-              >
-                <IconEdit size={16} />
-              </ActionIcon>
-            </Tooltip>
-          ) : null,
-      },
-      {
-        id: 'actions',
+        id: 'operations',
         header: '',
         width: 62,
         minWidth: 58,
@@ -599,24 +590,43 @@ function useAdvancedReportColumns({
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <IconEye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Menu position="bottom-end" shadow="md" width={230} withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                aria-label={t('Операції')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <IconDotsVertical size={16} />
+              </ActionIcon>
+            </Menu.Target>
+
+            <Menu.Dropdown onClick={(event) => event.stopPropagation()}>
+              <Menu.Item leftSection={<IconEye size={16} />} onClick={() => onOpen(row)}>
+                {t('Деталі видаткового ордера')}
+              </Menu.Item>
+              <Menu.Item
+                disabled={!row.isUnderReport || !row.order.NetUid}
+                leftSection={<IconEdit size={16} />}
+                onClick={() => onEdit(row)}
+              >
+                {t('Авансовий звіт')}
+              </Menu.Item>
+              <Menu.Item
+                disabled={!row.hasDocumentStructure}
+                leftSection={<IconHierarchy2 size={16} />}
+                onClick={() => onOpenDocumentStructure(row)}
+              >
+                {row.hasDocumentStructure ? t('Структура документів') : t('Структура документів відсутня')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         ),
       },
     ],
-    [onEdit, onOpen, t],
+    [onEdit, onOpen, onOpenDocumentStructure, t],
   )
 }
 
@@ -747,6 +757,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     currency: order.PaymentCurrencyRegister?.Currency?.Code || order.PaymentCurrencyRegister?.Currency?.Name,
     differenceAmount: order.DifferenceAmount,
     fromDate: order.FromDate,
+    hasDocumentStructure: hasDocumentStructure(order),
     id: String(order.NetUid || order.Id || index),
     isUnderReport: order.IsUnderReport,
     number: order.AdvanceNumber,

@@ -56,6 +56,7 @@ import {
   getProductIncomeInfo,
   getProductIncomeRemainings,
 } from '../api/productIncomeDocumentsApi'
+import { getProductIncomeDocumentSourceLink } from '../productIncomeDocumentSourceLink'
 import type {
   NamedEntity,
   ProductIncomeDocument,
@@ -919,7 +920,7 @@ function ProductIncomeDocumentDrawer({
 }) {
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
-  const sourceLink = document ? getSourceLink(document) : null
+  const sourceLink = document ? getProductIncomeDocumentSourceLink(document) : null
   const overviewKind = document ? getOverviewKind(document) : 'document'
   const deferredOverviewNote = document ? getDeferredOverviewNote(document, t) : null
 
@@ -1961,37 +1962,6 @@ function getDocumentAmount(document: ProductIncomeDocument): number | undefined 
   }
 
   return undefined
-}
-
-function getSourceLink(document: ProductIncomeDocument): string | null {
-  const items = document.ProductIncomeItems || []
-  const firstItem = items[0]
-
-  if (!document.NetUid || !firstItem) {
-    return null
-  }
-
-  if (firstItem.PackingListPackageOrderItem) {
-    return `/supply-orders/product-placement/${document.NetUid}`
-  }
-
-  if (firstItem.SupplyOrderUkraineItem) {
-    return `/orders/ukraine/${document.NetUid}/product-income`
-  }
-
-  if (firstItem.ActReconciliationItem?.ActReconciliation?.NetUid) {
-    return null
-  }
-
-  if (firstItem.ProductCapitalizationItem?.ProductCapitalization?.NetUid) {
-    return '/products/capitalization'
-  }
-
-  if (items.some((item) => item.SaleReturnItem !== null && typeof item.SaleReturnItem !== 'undefined')) {
-    return '/sales/return/client'
-  }
-
-  return null
 }
 
 function getItemProductCode(item: ProductIncomeItem): string | undefined {

@@ -340,8 +340,8 @@ export function EditTaxFreePackListPage() {
     const selectedTaxFrees = (packList?.TaxFrees || [])
       .filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
 
-    if (selectedTaxFrees.some((taxFree) => !isTaxFreePrintable(taxFree))) {
-      notifications.show({ color: 'yellow', message: t('Обрані Tax Free мають бути сформовані або надруковані') })
+    if (selectedTaxFrees.some((taxFree) => !isTaxFreeGroupPrintable(taxFree))) {
+      notifications.show({ color: 'yellow', message: t('Обрані Tax Free не мають бути у статусі Не сформовано') })
       return
     }
 
@@ -386,7 +386,7 @@ export function EditTaxFreePackListPage() {
     toggleSource,
   })
   const selectedTaxFrees = (packList?.TaxFrees || []).filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
-  const hasNonPrintableSelectedTaxFrees = selectedTaxFrees.some((taxFree) => !isTaxFreePrintable(taxFree))
+  const hasNonPrintableSelectedTaxFrees = selectedTaxFrees.some((taxFree) => !isTaxFreeGroupPrintable(taxFree))
 
   return (
     <Stack gap="md">
@@ -1426,6 +1426,10 @@ function isTaxFreeReadOnly(taxFree: TaxFree, packList?: TaxFreePackList | null):
 
 function isTaxFreePrintable(taxFree: TaxFree): boolean {
   return taxFree.TaxFreeStatus === TaxFreeStatusValue.Formed || taxFree.TaxFreeStatus === TaxFreeStatusValue.Printed
+}
+
+function isTaxFreeGroupPrintable(taxFree: TaxFree): boolean {
+  return taxFree.TaxFreeStatus !== TaxFreeStatusValue.NotFormed
 }
 
 function getTaxFreeId(taxFree: TaxFree, index: number): string {
