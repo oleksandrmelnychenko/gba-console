@@ -231,9 +231,10 @@ true in this grid, no regression). eslint 0 / tsc 0.
 - **Lifecycle `All`(6) — DONE.** `lifecycleStatusFromNumber` now has an explicit `case 6 → 'All'` instead
   of falling through to the raw number (still filter-only; never stamps a real sale row).
 - **Order-source row icon — DONE.** The Number column now leads with a source indicator driven by
-  `Order.OrderSource` (Shop=0 → store icon «Інтернет-магазин», Offer=2 → tag «Оферта», Local=1 →
-  invoice icon «Накладна» at the Packaging/Packaged stage else receipt «Рахунок»), mirroring the legacy
-  `sale.item.tsx` data-icon (Shop/Offer/Invoice/Score).
+  `Order.OrderSource` (Shop=0 → **Microsoft Edge logo** `IconBrandEdge` «Інтернет-магазин» — matching
+  the legacy `.data_shop__icon` → `\ea2d` Microsoft_Edge_logo glyph; Offer=2 → tag «Оферта», Local=1 →
+  invoice «Накладна» at the Packaging/Packaged stage else receipt «Рахунок»). The `sales-online-shop`
+  list also leads its Number column with the Edge source icon (commit `6fb6b7b`).
 
 ## 6. Sibling sales-dashboard tabs — parity audit + fixes (2026-06-01)
 
@@ -267,9 +268,10 @@ Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 
 - **sales-preorders tab:** renamed «Передзамовлення» → «Зацікавленість» (legacy Interest), commit `745548c`.
 
 ### Remaining — still open (low / large / for review)
-- **sales-online-shop (LARGE):** the screen is read-only and reproduces none of the legacy SalesPivot
-  row actions (unlock / accept-to-packing / print PZ·invoice·shipment·TTN / discount / edit). Decide if
-  the online-shop list should gain those actions.
+- **sales-online-shop (LARGE) — the row ACTIONS, not the Edge row-type icon:** the screen is read-only
+  and reproduces none of the legacy SalesPivot row actions (unlock / accept-to-packing / print
+  PZ·invoice·shipment·TTN / discount / edit). Decide if the online-shop list should gain those actions
+  (would reuse the sales-ukraine action components). The shop row-type Edge icon is done (above).
 - **sales-charts:** by-client mount-time empty fetch (minor); client/manager search sources
   (payers/managers vs legacy charts dropdowns) — "confirm with product".
 - **sales-debtors day labels:** «Борг через N днів» (console interpolates the count — more informative)
