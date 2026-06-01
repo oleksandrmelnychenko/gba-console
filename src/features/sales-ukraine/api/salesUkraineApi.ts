@@ -5,6 +5,7 @@ import type {
   SaleDocumentResult,
   SalesUkraineClientOption,
   SalesUkraineFilters,
+  SalesUkraineOrderItem,
   SalesUkraineOrganizationOption,
   SalesUkraineSale,
   SalesUkraineTransporter,
@@ -65,6 +66,13 @@ export async function getSaleById(netId: string): Promise<SalesUkraineSale | nul
   })
 
   return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise<void> {
+  await apiRequest<unknown>('/orders/items/update', {
+    body: orderItem,
+    method: 'POST',
+  })
 }
 
 export async function updateSale(sale: SalesUkraineSale): Promise<void> {

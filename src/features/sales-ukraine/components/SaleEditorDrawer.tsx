@@ -1,12 +1,14 @@
-import { Alert, Badge, Card, Group, Loader, Stack, Tabs, Text } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { ActionIcon, Alert, Badge, Button, Card, Group, Loader, NumberInput, Stack, Tabs, Text, Tooltip } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { IconAlertCircle, IconPencil } from '@tabler/icons-react'
+import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { getSaleById } from '../api/salesUkraineApi'
+import { getSaleById, updateOrderItem } from '../api/salesUkraineApi'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -35,6 +37,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [sale, setSale] = useValueState<SalesUkraineSale>(initialSale)
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
+  const [editingItem, setEditingItem] = useValueState<SalesUkraineOrderItem | null>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -72,10 +76,11 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     return () => {
       cancelled = true
     }
-  }, [initialSale.NetUid, setError, setLoading, setSale, t])
+  }, [initialSale.NetUid, reloadKey, setError, setLoading, setSale, t])
 
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const itemColumns = useItemColumns()
+  const isEditable = !sale.IsLocked
+  const itemColumns = useItemColumns({ canEdit: isEditable, onEditQty: setEditingItem })
 
   return (
     <Stack gap="md">
@@ -158,11 +163,26 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           </Stack>
         </Tabs.Panel>
       </Tabs>
+
+      <OrderItemQtyModal
+        item={editingItem}
+        onClose={() => setEditingItem(null)}
+        onSaved={() => {
+          setEditingItem(null)
+          reload()
+        }}
+      />
     </Stack>
   )
 }
 
-function useItemColumns(): DataTableColumn<SalesUkraineOrderItem>[] {
+function useItemColumns({
+  canEdit,
+  onEditQty,
+}: {
+  canEdit: boolean
+  onEditQty: (item: SalesUkraineOrderItem) => void
+}): DataTableColumn<SalesUkraineOrderItem>[] {
   const { t } = useI18n()
 
   return [
@@ -216,7 +236,105 @@ function useItemColumns(): DataTableColumn<SalesUkraineOrderItem>[] {
       accessor: (item) => getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount),
       cell: (item) => formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)),
     },
+    {
+      id: 'actions',
+      header: '',
+      width: 56,
+      minWidth: 56,
+      maxWidth: 56,
+      align: 'center',
+      enableHiding: false,
+      enableReorder: false,
+      enableResizing: false,
+      enableSorting: false,
+      cell: (item) =>
+        canEdit ? (
+          <Tooltip label={t('Змінити кількість')}>
+            <ActionIcon aria-label={t('Змінити кількість')} color="gray" variant="subtle" onClick={() => onEditQty(item)}>
+              <IconPencil size={16} />
+            </ActionIcon>
+          </Tooltip>
+        ) : null,
+    },
   ]
+}
+
+function OrderItemQtyModal({
+  item,
+  onClose,
+  onSaved,
+}: {
+  item: SalesUkraineOrderItem | null
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={Boolean(item)} size="sm" title={t('Змінити кількість')} onClose={onClose}>
+      {item && <OrderItemQtyForm key={item.NetUid || item.Id} item={item} onCancel={onClose} onSaved={onSaved} />}
+    </AppModal>
+  )
+}
+
+function OrderItemQtyForm({
+  item,
+  onCancel,
+  onSaved,
+}: {
+  item: SalesUkraineOrderItem
+  onCancel: () => void
+  onSaved: () => void
+}) {
+  const { t } = useI18n()
+  const [qty, setQty] = useState<number | string>(getNumber(item.Qty) ?? '')
+  const [isSaving, setSaving] = useState(false)
+  const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
+  const isValid = Number.isFinite(numericQty) && numericQty > 0
+
+  async function save() {
+    if (!isValid) {
+      notifications.show({ color: 'red', message: t('Вкажіть коректну кількість') })
+
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      await updateOrderItem({ ...item, Qty: numericQty })
+      notifications.show({ color: 'green', message: t('Кількість оновлено') })
+      onSaved()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Stack gap="md">
+      <Text size="sm" fw={600}>
+        {displayValue(item.Product?.NameUA || item.Product?.Name)}
+      </Text>
+      <NumberInput
+        allowNegative={false}
+        decimalScale={2}
+        label={t('Кількість')}
+        min={0}
+        value={qty}
+        onChange={setQty}
+      />
+      <Group justify="flex-end">
+        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+          {t('Скасувати')}
+        </Button>
+        <Button disabled={!isValid} loading={isSaving} onClick={save}>
+          {t('Зберегти')}
+        </Button>
+      </Group>
+    </Stack>
+  )
 }
 
 function DetailRow({ label, value }: { label: string; value: unknown }) {
