@@ -26,6 +26,7 @@ import {
   IconFileInvoice,
   IconFileSpreadsheet,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconListDetails,
   IconPackageImport,
   IconReceipt,
@@ -34,7 +35,6 @@ import {
   IconRoute,
   IconTrash,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
@@ -505,16 +505,35 @@ export function SupplyUkraineOrdersPage() {
 
   return (
     <Stack gap="lg">
+      <Group align="flex-start" justify="space-between">
+        <Stack gap={2}>
+          <Text fw={700} size="xl">{t('Замовлення постачання в Україну')}</Text>
+          <Text c="dimmed" size="sm">
+            {t('Показано')} {rows.length} {t('з')} {totalQty}
+          </Text>
+        </Stack>
+        <Group gap="xs" justify="flex-end">
+          {canCreateToUkraine && (
+            <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>
+              {t('Поставка в Україну')}
+            </Button>
+          )}
+          {canCreateDirect && (
+            <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new')}>
+              {t('Замовлення Україна')}
+            </Button>
+          )}
+          {canPrint && (
+            <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={downloadPrintDocument}>
+              {t('Завантажити')}
+            </Button>
+          )}
+        </Group>
+      </Group>
+
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              label={t('Постачальник')}
-              placeholder={t('Назва постачальника')}
-              value={filterDraft.supplier}
-              onChange={(event) => updateFilterDraft({ supplier: event.currentTarget.value })}
-              style={{ flex: '1 1 auto', minWidth: 180 }}
-            />
+          <Group align="flex-end" gap="sm" wrap="wrap">
             <TextInput
               label={t('Від')}
               type="date"
@@ -526,6 +545,12 @@ export function SupplyUkraineOrdersPage() {
               type="date"
               value={filterDraft.to}
               onChange={(event) => updateFilterDraft({ to: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Постачальник')}
+              placeholder={t('Назва постачальника')}
+              value={filterDraft.supplier}
+              onChange={(event) => updateFilterDraft({ supplier: event.currentTarget.value })}
             />
             <Select
               clearable
@@ -559,21 +584,6 @@ export function SupplyUkraineOrdersPage() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
-            {canCreateToUkraine && (
-              <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>
-                {t('Поставка в Україну')}
-              </Button>
-            )}
-            {canCreateDirect && (
-              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new')}>
-                {t('Замовлення Україна')}
-              </Button>
-            )}
-            {canPrint && (
-              <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={downloadPrintDocument}>
-                {t('Завантажити')}
-              </Button>
-            )}
           </Group>
 
           {currenciesState.error && (

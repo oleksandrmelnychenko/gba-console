@@ -22,13 +22,13 @@ import {
   IconDeviceFloppy,
   IconFile,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconPlus,
   IconRefresh,
   IconTrash,
   IconUpload,
   IconX,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'

@@ -13,6 +13,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   TextInput,
   Tooltip,
@@ -24,6 +25,7 @@ import {
   IconDeviceFloppy,
   IconDownload,
   IconFileTypePdf,
+  IconFileTypeXls,
   IconPlus,
   IconPrinter,
   IconRefresh,
@@ -64,7 +66,6 @@ import type {
   ReportMeasurementGroup,
   ReportRequestBody,
   ReportResult,
-  ReportResultRow,
   ReportSelection,
   ReportSelectedValue,
   ReportTemplate,
@@ -253,7 +254,7 @@ export function ReportsStocksPage() {
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="center">
-        <Badge color={isLoading ? 'violet' : 'gray'} variant="light">
+        <Badge color={isLoading ? 'blue' : 'gray'} variant="light">
           {isLoading ? t('Формується') : `${t('Показників')}: ${checkedMeasurements}`}
         </Badge>
       </Group>
@@ -507,7 +508,7 @@ export function ReportsStocksPage() {
         <Stack>
           {result?.document.DocumentURL ? (
             <Anchor href={result.document.DocumentURL} target="_blank" rel="noreferrer">
-              <Group gap="xs"><ExcelIcon size={18} /> XLSX</Group>
+              <Group gap="xs"><IconFileTypeXls size={18} /> XLSX</Group>
             </Anchor>
           ) : null}
           {result?.document.PdfDocumentURL ? (
@@ -756,41 +757,8 @@ function GroupingEditor({ groups, options, title, onAdd, onRemove, resolveItem }
   )
 }
 
-const TOTALS_ROW_FLAG = '__reportTotalsRow'
-
-type ReportPreviewRow = ReportResultRow & { [TOTALS_ROW_FLAG]?: boolean }
-
 function ReportPreview({ result }: { result: ReportResult }) {
   const { t } = useI18n()
-
-  const columns = useMemo<DataTableColumn<ReportPreviewRow>[]>(
-    () =>
-      result.table.columns.map((column, columnIndex) => ({
-        id: `${columnIndex}:${column}`,
-        header: column,
-        minWidth: 140,
-        accessor: (row) => row[column],
-        cell: (row) =>
-          row[TOTALS_ROW_FLAG] ? (
-            <Text component="span" fw={700}>
-              {columnIndex === 0 ? t('Разом') : displayValue(result.totals[column])}
-            </Text>
-          ) : (
-            displayValue(row[column])
-          ),
-      })),
-    [result.table.columns, result.totals, t],
-  )
-
-  const data = useMemo<ReportPreviewRow[]>(() => {
-    const rows: ReportPreviewRow[] = result.table.rows.slice(0, 100)
-
-    if (Object.keys(result.totals).length) {
-      return [...rows, { [TOTALS_ROW_FLAG]: true }]
-    }
-
-    return rows
-  }, [result.table.rows, result.totals])
 
   return (
     <Box style={{ overflowX: 'auto' }}>
