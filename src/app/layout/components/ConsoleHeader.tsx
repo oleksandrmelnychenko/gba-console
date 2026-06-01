@@ -5,6 +5,7 @@ import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
+import { BlurTextSwap } from '../../../shared/transitions/BlurTextSwap'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PageHeaderActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleNav } from './ConsoleNav'
@@ -39,18 +40,14 @@ export function ConsoleHeader() {
               <Box className="console-header-divider" aria-hidden="true" />
               <Group gap={4} wrap="nowrap" className="console-header-crumbs">
                 {selectedModule && (
-                  <Text className="console-header-crumb-module" size="sm">
-                    {selectedModule.Module}
-                  </Text>
+                  <BlurTextSwap className="console-header-crumb-module" text={selectedModule.Module} />
                 )}
                 {selectedModule && selectedNode && (
                   <IconChevronRight size={14} stroke={1.8} className="console-header-crumb-sep" />
                 )}
                 {selectedNode && (
                   <Tooltip label={selectedNode.Module} withArrow openDelay={400} disabled={selectedNode.Module.length < 40}>
-                    <Text className="console-header-crumb-page tx-text-swap" key={selectedNode.NetUid || selectedNode.Id} size="sm" fw={600}>
-                      {selectedNode.Module}
-                    </Text>
+                    <BlurTextSwap className="console-header-crumb-page" text={selectedNode.Module} />
                   </Tooltip>
                 )}
               </Group>

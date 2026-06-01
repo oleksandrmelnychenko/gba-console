@@ -118,6 +118,7 @@
 
 .console-header-crumb-module {
   color: var(--mantine-color-gray-6);
+  font-size: var(--mantine-font-size-sm);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -127,6 +128,8 @@
 
 .console-header-crumb-page {
   color: var(--mantine-color-gray-9);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
