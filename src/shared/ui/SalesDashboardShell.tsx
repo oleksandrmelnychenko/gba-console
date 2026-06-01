@@ -1,4 +1,4 @@
-import { Stack, Tabs } from '@mantine/core'
+import { Stack } from '@mantine/core'
 import type { ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../i18n/useI18n'
@@ -23,23 +23,27 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <Stack gap="md">
-      <Tabs
-        value={active}
-        variant="outline"
-        onChange={(value) => {
-          if (value && value !== pathname) {
-            navigate(value)
-          }
-        }}
-      >
-        <Tabs.List>
-          {SALES_DASHBOARD_TABS.map((tab) => (
-            <Tabs.Tab key={tab.value} value={tab.value}>
+      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+        {SALES_DASHBOARD_TABS.map((tab) => {
+          const isActive = active === tab.value
+
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              className={`pill-tab${isActive ? ' is-active' : ''}`}
+              aria-pressed={isActive}
+              onClick={() => {
+                if (tab.value !== pathname) {
+                  navigate(tab.value)
+                }
+              }}
+            >
               {t(tab.label)}
-            </Tabs.Tab>
-          ))}
-        </Tabs.List>
-      </Tabs>
+            </button>
+          )
+        })}
+      </div>
       {children}
     </Stack>
   )
