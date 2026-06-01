@@ -1,0 +1,85 @@
+# Parity review notes — «штуки» to review later
+
+Running log of parity nuances, deliberate divergences, deferred items, and not-migrated
+screens surfaced while migrating the legacy GBA client into this console. Nothing here is a
+blocker; these are items to look at together and decide on. Newest sections appended over time.
+
+---
+
+## 1. Permission-gate parity (audited 2026-06-01, branch `clients/full-migration`)
+
+Full audit of all **158 legacy `<PermissionCheck permissionKey=>` gate sites (81 files)** vs the
+console. Result: near-full parity already in place. 3 real gaps closed in commit `1958ced`
+(sales-ukraine "Відкрити продаж", warehouse placement Add/Cancel/Save, warehouse strict tab
+hiding). The items below are the ones worth a second look.
+
+### 1a. Behavioural nuance — «Відкрити продаж» now fully gated
+- **What:** the sales-ukraine row action «Відкрити продаж» is now gated behind
+  `UkraineAllActOfEdit_Change_PKEY` (matching legacy `sale.statictic.item.tsx:181`, which gates the
+  edit-open action with this key + the `InputSaleMerges.length === 0` guard).
+- **Consequence:** a non-privileged user **without** this key can no longer open the sale drawer at
+  all — not even read-only. This is faithful to legacy (legacy gated the same edit-open action).
+- **To decide:** if we want a separate read-only "view sale" entry for users without edit rights,
+  that is a **product decision beyond parity** — legacy does not have one. Left as legacy for now.
+
+### 1b. Not-migrated permission gates (console element/feature does not exist yet)
+These legacy gates have **no console counterpart because the underlying action/element is not built**
+— they are NOT gate bugs. Add the gate when/if the feature is built.
+
+| Legacy key | Where (legacy) | Why not migrated |
+| --- | --- | --- |
+| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | console placement editor has no "ActReconciliation new" action |
+| `PlacementHeader_…_CarryOut` (Провести / full-placement) | placement.header.view.tsx | console has no CarryOut/FullPlaced action |
+| `PlacementHeader_…_GetUp` (Підняти) | placement.header.view.tsx | console has no GetUp action |
+| `Sales_Ukraine_all_Change_Products_Btn_PKEY` | shared product carousel | console renders product description read-only; editing goes through the full edit panel gated by `Product_Entire_Assortment_EditBtn_PKEY` instead |
+
+### 1c. Audit-tooling note (not a product issue)
+The Workflow `args` blocklist did not reach the script in the permission run (logged "0 WIP files
+blocked"); fixes still landed only in non-WIP files. Inline data arrays in workflow scripts rather
+than relying on `args` until that is understood.
+
+---
+
+## 2. Coverage map — legacy screens vs console (audited 2026-06-01)
+
+Read-only coverage audit (run `wf_1e850bd2-309`) of every legacy GBA screen mapped to its console
+counterpart. **Totals: 77 migrated · 46 user-WIP (you're actively building) · 3 partial ·
+10 not-migrated · 2 do-not-touch (Allegro).**
+
+| Legacy area | migrated | your WIP | partial | not-migrated | do-not-touch |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Accounting (accouting/*) | 16 | 6 | 0 | 1 | 1 |
+| Analytics: supply + supply.ukraine | 4 | 10 | 0 | 6 | 0 |
+| Analytics: SAD + Tax Free + Act Reconciliations | 7 | 12 | 0 | 0 | 0 |
+| Clients (all/edit/new/online.shop/resources/shared) | 16 | 12 | 0 | 0 | 0 |
+| Products (+ groups) | 4 | 5 | 0 | 0 | 0 |
+| Managers (sale/offer/resale/allegro/dashboard) | 13 | 1 | 3 | 2 | 1 |
+| Online shop SEO + Organization clients | 13 | 0 | 0 | 0 | 0 |
+| Misc (agreements/countries/incoterms/dashboard/consignment) | 4 | 0 | 0 | 1 | 0 |
+
+### 2a. Actionable backlog — genuinely missing, **decide whether to build**
+
+| # | Screen | Status | What's missing in console | Recommendation |
+| --- | --- | --- | --- | --- |
+| A1 | **Client returns** (dashboard/client.returns.pivot) | partial | Pages exist (`SalesReturnClientPage` `/sales/return/client`, `NewUkraineSaleReturnPage`), but **no "Returns" tab in `SalesDashboardShell`** (not reachable from the dashboard as in legacy) and **no `ClientReturnsReportPanel`** report. `sales-returns` is NOT in your WIP. | Add the Returns dashboard tab + the report panel → faithful to legacy. Safe (no WIP collision). |
+| A2 | **New-sale wizard** audit screen (`sale.statictic.audit.view.tsx`) | partial | Console folds creation into `NewSaleModal` + `SaleEditorDrawer` (these DO have reassign + merged sales). Missing: the legacy **SaleStaticticAuditView** ("act for editing"/statistics audit screen) reached from the Clients step. | Decide if the audit screen is still needed; if yes, port it. |
+| A3 | **New-offer wizard** client-step (`offer.master.view.tsx`) | partial | Console collapses the legacy 2-step master view into a single `NewOfferModal`. Full client-step parity (sub-client / trade-point selection + agreements) and the keyboard-state UX are not reproduced 1:1. | Decide: keep the simplified modal, or rebuild the faithful client step. |
+
+### 2b. Dead / disabled in legacy — **likely intentionally dropped** (verify, probably no action)
+
+| Screen | Why it looks intentional |
+| --- | --- |
+| **Payment Register Transfers** (payment.registers/transfers/*) | Not wired to any route in legacy `route.config.ts`; inter-account moves are folded into income/outgoing cashflow flows. |
+| **Orders pivot** (dashboard/orders.pivot) | DEAD code — not imported by `sales.manager.dashboard.tsx`, not referenced anywhere in the legacy client. |
+| **Debts pivot** (dashboard/debts.pivot + top-clients-debt / top-debts-managers charts) | DEAD code — not imported by the active dashboard. The active "Debtors" tab is `DebtorsView`, not this pivot. NB: the two debt charts were **not** ported into `sales-charts` — port only if you want them. |
+| **Financial Dashboard** (dashboard/DashboardPage.tsx: totals cards, EnterpriseBalance pie, PaymentRegisterChart, Invoices/Factures + StatementOfFunds panels) | The **entire render body is commented out** in the legacy client (JSX comment ~lines 69–134) → already disabled in old client. Console `/dashboard` is the migration-status landing page. Likely dropped on purpose; confirm. |
+
+### 2c. Deferred — Poland + Allegro (per standing directives)
+
+- **Poland supply orders (6 screens)** — entirely missing, but **Poland surfaces are deferred** per
+  earlier directive. The Ukraine analogues exist (mostly WIP). Screens: Poland orders list
+  (`/orders/poland/all`), new-order wizard (`/orders/poland/all/new`), order editor / logistics path
+  (`/orders/poland/all/edit/:id`), supply-invoices, specifications grid, product-income (the
+  `/edit/:id/*` sub-routes). Build only when Poland is un-deferred.
+- **Allegro** (managers/allegro) — **do-not-touch** per directive. Not migrated, not audited.
+
