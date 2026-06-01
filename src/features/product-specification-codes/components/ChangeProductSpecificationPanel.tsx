@@ -1,7 +1,8 @@
-import { Alert, Button, Divider, Group, NumberInput, Radio, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, Divider, Group, NumberInput, Radio, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle, IconCheck } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useAuth } from '../../auth/useAuth'
@@ -33,8 +34,10 @@ export function ChangeProductSpecificationPanel({
   const { hasPermission } = useAuth()
   const canChange = hasPermission(CHANGE_PERMISSION)
   const [form, setForm] = useValueState<ChangeForm>(() => buildForm(productSpecification))
+  const [initialForm, setInitialForm] = useValueState<ChangeForm>(() => buildForm(productSpecification))
   const [error, setError] = useValueState<string | null>(null)
   const [isSubmitting, setSubmitting] = useValueState(false)
+  const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const [previousNetUid, setPreviousNetUid] = useValueState(productSpecification?.NetUid)
 
   const currentNetUid = productSpecification?.NetUid
@@ -42,8 +45,30 @@ export function ChangeProductSpecificationPanel({
   if (currentNetUid !== previousNetUid) {
     setPreviousNetUid(currentNetUid)
     setForm(buildForm(productSpecification))
+    setInitialForm(buildForm(productSpecification))
     setError(null)
     setSubmitting(false)
+    setConfirmCloseOpen(false)
+  }
+
+  const isDirty = !areFormsEqual(form, initialForm)
+
+  function requestClose() {
+    if (isSubmitting) {
+      return
+    }
+
+    if (isDirty) {
+      setConfirmCloseOpen(true)
+      return
+    }
+
+    onClose()
+  }
+
+  function confirmClose() {
+    setConfirmCloseOpen(false)
+    onClose()
   }
 
   async function submit() {
@@ -92,7 +117,7 @@ export function ChangeProductSpecificationPanel({
       position="right"
       size="32rem"
       title={`${t('Зміна митного коду для')} ${vendorCode}`.trim()}
-      onClose={onClose}
+      onClose={requestClose}
     >
       {productSpecification && (
         <Stack gap="md">
@@ -163,7 +188,7 @@ export function ChangeProductSpecificationPanel({
           <Divider />
 
           <Group justify="flex-end">
-            <Button color="gray" disabled={isSubmitting} variant="light" onClick={onClose}>
+            <Button color="gray" disabled={isSubmitting} variant="light" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
             {canChange && (
@@ -174,7 +199,36 @@ export function ChangeProductSpecificationPanel({
           </Group>
         </Stack>
       )}
+
+      <AppModal
+        centered
+        opened={confirmCloseOpen}
+        title={t('Є незбережені зміни')}
+        onClose={() => setConfirmCloseOpen(false)}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити вікно, зміни митного коду не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={confirmClose}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </AppDrawer>
+  )
+}
+
+function areFormsEqual(left: ChangeForm, right: ChangeForm): boolean {
+  return (
+    left.changeMode === right.changeMode &&
+    left.customs === right.customs &&
+    left.customsValue === right.customsValue &&
+    left.specificationCode === right.specificationCode &&
+    left.vat === right.vat
   )
 }
 

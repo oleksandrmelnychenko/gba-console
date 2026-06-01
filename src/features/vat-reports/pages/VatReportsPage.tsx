@@ -49,7 +49,8 @@ export function VatReportsPage() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const columns = useVatReportColumns()
+  const indexMap = useMemo(() => buildIndexMap(reports), [reports])
+  const columns = useVatReportColumns(indexMap)
 
   useEffect(() => {
     let isActive = true
@@ -215,7 +216,7 @@ export function VatReportsPage() {
   )
 }
 
-function useVatReportColumns(): DataTableColumn<VatReport>[] {
+function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<VatReport>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<VatReport>[]>(
@@ -226,8 +227,8 @@ function useVatReportColumns(): DataTableColumn<VatReport>[] {
         width: 64,
         minWidth: 56,
         align: 'right',
-        accessor: () => 0,
-        cell: () => '',
+        accessor: (report) => indexMap.get(report) || 0,
+        cell: (report) => indexMap.get(report) || '',
       },
       {
         id: 'fromDate',
@@ -280,8 +281,16 @@ function useVatReportColumns(): DataTableColumn<VatReport>[] {
         cell: (report) => formatMoney(report.VatAmountPL),
       },
     ],
-    [t],
+    [indexMap, t],
   )
+}
+
+function buildIndexMap(reports: VatReport[]): Map<VatReport, number> {
+  return reports.reduce((indexMap, report, index) => {
+    indexMap.set(report, index + 1)
+
+    return indexMap
+  }, new Map<VatReport, number>())
 }
 
 function getReportNumber(report: VatReport): string | undefined {
@@ -289,7 +298,7 @@ function getReportNumber(report: VatReport): string | undefined {
 }
 
 function getReportType(report: VatReport, t: (value: string) => string): string {
-  return report.Sale ? t('Фактура') : t('Інвойс')
+  return report.Sale ? t('Інвойс') : t('Фактура')
 }
 
 function shiftDate(days: number): string {
@@ -314,7 +323,7 @@ function formatPercent(value?: number): string {
 }
 
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }
 
 function displayValue(value?: string | null): string {

@@ -17,16 +17,6 @@ export async function getTransportersByType(transporterTypeNetId: string): Promi
   return normalizeTransporters(result)
 }
 
-export async function getArchivedTransportersByType(transporterTypeNetId: string): Promise<Transporter[]> {
-  const result = await apiRequest<unknown>('/transporters/all/type/hidden', {
-    query: {
-      netId: transporterTypeNetId,
-    },
-  })
-
-  return normalizeTransporters(result)
-}
-
 export async function archiveTransporter(netId: string): Promise<void> {
   await apiRequest<unknown>('/transporters/delete', {
     query: {

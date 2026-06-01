@@ -146,12 +146,14 @@ export function TaxFreeCarrierPassportDrawer({
 }
 
 function toDraft(passport: TaxFreeCarrierPassport | null): PassportDraft {
+  const today = toDateInputValue(new Date())
+
   return {
     city: passport?.City || '',
     houseNumber: passport?.HouseNumber || '',
-    passportCloseDate: toDateInputValue(passport?.PassportCloseDate),
+    passportCloseDate: passport ? toDateInputValue(passport.PassportCloseDate) : today,
     passportIssuedBy: passport?.PassportIssuedBy || '',
-    passportIssuedDate: toDateInputValue(passport?.PassportIssuedDate),
+    passportIssuedDate: passport ? toDateInputValue(passport.PassportIssuedDate) : today,
     passportNumber: passport?.PassportNumber || '',
     passportSeria: passport?.PassportSeria || '',
     street: passport?.Street || '',
