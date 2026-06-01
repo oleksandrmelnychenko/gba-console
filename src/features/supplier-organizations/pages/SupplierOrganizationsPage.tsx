@@ -262,8 +262,8 @@ function useSupplierOrganizationColumns({
         header: t('Організація'),
         width: 180,
         minWidth: 150,
-        accessor: (organization) => getPrimaryAgreement(organization)?.Organization?.Name,
-        cell: (organization) => displayValue(getPrimaryAgreement(organization)?.Organization?.Name),
+        accessor: (organization) => getAgreementOrganizations(organization),
+        cell: (organization) => displayValue(getAgreementOrganizations(organization)),
       },
       {
         id: 'tin',
@@ -294,8 +294,8 @@ function useSupplierOrganizationColumns({
         header: t('Валюта'),
         width: 110,
         minWidth: 90,
-        accessor: (organization) => getPrimaryAgreement(organization)?.Currency?.Code,
-        cell: (organization) => displayValue(getPrimaryAgreement(organization)?.Currency?.Code || getPrimaryAgreement(organization)?.Currency?.Name),
+        accessor: (organization) => getAgreementCurrencies(organization),
+        cell: (organization) => displayValue(getAgreementCurrencies(organization)),
       },
       {
         id: 'balance',
@@ -484,8 +484,18 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
   )
 }
 
-function getPrimaryAgreement(organization: SupplyOrganization) {
-  return organization.SupplyOrganizationAgreements?.[0] || null
+function getAgreementOrganizations(organization: SupplyOrganization): string {
+  return (organization.SupplyOrganizationAgreements || [])
+    .map((agreement) => agreement.Organization?.Name)
+    .filter(Boolean)
+    .join(' ')
+}
+
+function getAgreementCurrencies(organization: SupplyOrganization): string {
+  return (organization.SupplyOrganizationAgreements || [])
+    .map((agreement) => agreement.Currency?.Code)
+    .filter(Boolean)
+    .join(' ')
 }
 
 function readStoredSearch(): string {

@@ -121,7 +121,7 @@ export async function getEcommerceStorages(): Promise<OnlineShopStorage[]> {
 }
 
 export async function getAllOnlineShopStorages(): Promise<OnlineShopStorage[]> {
-  const result = await apiRequest<unknown>('/storages/all')
+  const result = await apiRequest<unknown>('/storages/get/all')
 
   return normalizeCollection<OnlineShopStorage>(result)
 }

@@ -646,7 +646,7 @@ function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (va
   }
 
   if (status === 0) {
-    return t('Не виконано')
+    return t('Не завершено')
   }
 
   if (status === 1) {
@@ -654,7 +654,7 @@ function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (va
   }
 
   if (status === 2) {
-    return t('Частково оплачено')
+    return t('Оплачено частково')
   }
 
   return t('Немає статусу')
