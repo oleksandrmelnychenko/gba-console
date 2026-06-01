@@ -40,6 +40,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
@@ -264,6 +265,31 @@ export function SalesUkrainePage() {
     setAuditError(null)
     setAuditLoading(false)
   }
+
+  const realtimeReloadRef = useRef<number | null>(null)
+
+  const scheduleRealtimeReload = useCallback(() => {
+    if (realtimeReloadRef.current !== null) {
+      window.clearTimeout(realtimeReloadRef.current)
+    }
+
+    realtimeReloadRef.current = window.setTimeout(() => {
+      realtimeReloadRef.current = null
+      reload()
+    }, 800)
+  }, [reload])
+
+  useEffect(
+    () => () => {
+      if (realtimeReloadRef.current !== null) {
+        window.clearTimeout(realtimeReloadRef.current)
+      }
+    },
+    [],
+  )
+
+  useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeReload)
+  useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeReload)
 
   const columns = useSalesUkraineColumns({
     canEditSale,
