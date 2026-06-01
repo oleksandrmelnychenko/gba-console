@@ -142,7 +142,7 @@
 .tx-blur-swap {
   position: relative;
   display: inline-block;
-  vertical-align: bottom;
+  vertical-align: middle;
 }
 
 .tx-blur-swap-layer {

@@ -110,6 +110,18 @@
   display: none;
 }
 
+/* Compact, evenly-centred create buttons in the header */
+.console-header-page-actions .mantine-Button-root {
+  height: 30px;
+  min-height: 30px;
+  padding-inline: 13px;
+  font-size: 13px;
+}
+
+.console-header-page-actions .mantine-Button-label {
+  font-weight: 600;
+}
+
 .console-header-crumbs {
   min-width: 0;
   max-width: 100%;
