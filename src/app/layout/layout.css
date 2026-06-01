@@ -789,6 +789,7 @@
 .console-subnav-row {
   display: flex;
   align-items: center;
+  justify-content: safe center;
   gap: 4px;
   padding: 5px 12px;
   overflow-x: auto;
@@ -808,7 +809,8 @@
 }
 
 .console-subnav-modules {
-  border-bottom: 1px solid var(--mantine-color-gray-1);
+  background: var(--mantine-color-gray-1);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 
 .console-subnav-pill {
@@ -833,13 +835,18 @@
 }
 
 .console-subnav-pill:hover {
-  color: #5b21b6;
-  background: var(--mantine-color-gray-1);
+  color: var(--mantine-color-violet-7);
+  background: var(--mantine-color-gray-2);
 }
 
 .console-subnav-module.is-active {
-  background: #5b21b6;
-  color: #ffffff;
+  background: var(--mantine-color-violet-1);
+  color: var(--mantine-color-violet-9);
+}
+
+.console-subnav-module.is-active:hover {
+  background: var(--mantine-color-violet-1);
+  color: var(--mantine-color-violet-9);
 }
 
 .console-subnav-item-icon {
@@ -848,7 +855,12 @@
 
 .console-subnav-item.is-active {
   background: var(--mantine-color-violet-0);
-  color: #5b21b6;
+  color: var(--mantine-color-violet-7);
+}
+
+.console-subnav-item.is-active:hover {
+  background: var(--mantine-color-violet-0);
+  color: var(--mantine-color-violet-7);
 }
 
 .console-subnav-state {
