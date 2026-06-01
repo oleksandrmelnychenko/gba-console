@@ -5,8 +5,8 @@
 .console-frame {
   background: #ffffff;
   min-height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 8px);
-  margin: 8px 0 0 8px;
-  padding: 18px 20px;
+  margin: 8px 0 0 0;
+  padding: 9px 10px 18px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
   overflow-x: hidden;
