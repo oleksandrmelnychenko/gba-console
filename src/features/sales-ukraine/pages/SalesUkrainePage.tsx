@@ -272,6 +272,11 @@ export function SalesUkrainePage() {
 
   const realtimeReloadRef = useRef<number | null>(null)
   const backgroundReloadRef = useRef(false)
+  const salesRef = useRef<SalesUkraineSale[]>(sales)
+
+  useEffect(() => {
+    salesRef.current = sales
+  }, [sales])
 
   const scheduleRealtimeReload = useCallback(() => {
     if (realtimeReloadRef.current !== null) {
@@ -294,8 +299,34 @@ export function SalesUkrainePage() {
     [],
   )
 
-  useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeReload)
-  useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeReload)
+  const handleRealtimeSaleAdded = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const number = sale?.SaleNumber?.Value
+
+      if (typeof number === 'string' && number.trim().startsWith('P')) {
+        return
+      }
+
+      scheduleRealtimeReload()
+    },
+    [scheduleRealtimeReload],
+  )
+
+  const handleRealtimeSaleUpdated = useCallback(
+    (payload: unknown) => {
+      const sale = resolveRealtimeSale(payload)
+      const netId = sale?.NetUid
+
+      if (!netId || salesRef.current.some((current) => current.NetUid === netId)) {
+        scheduleRealtimeReload()
+      }
+    },
+    [scheduleRealtimeReload],
+  )
+
+  useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
+  useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
 
   const columns = useSalesUkraineColumns({
     canEditSale,
@@ -1240,6 +1271,17 @@ function getSaleStatusKey(sale: SalesUkraineSale): string {
   }
 
   return String(status || sale.BaseLifeCycleStatus?.Name || '')
+}
+
+function resolveRealtimeSale(payload: unknown): { NetUid?: string; SaleNumber?: { Value?: string } } | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const record = payload as { Sale?: unknown }
+  const sale = record.Sale && typeof record.Sale === 'object' ? record.Sale : payload
+
+  return sale as { NetUid?: string; SaleNumber?: { Value?: string } }
 }
 
 function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {

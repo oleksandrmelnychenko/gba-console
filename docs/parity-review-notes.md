@@ -235,8 +235,17 @@ true in this grid, no regression). eslint 0 / tsc 0.
   invoice icon «Накладна» at the Packaging/Packaged stage else receipt «Рахунок»), mirroring the legacy
   `sale.item.tsx` data-icon (Shop/Offer/Invoice/Score).
 
-### Residual item intentionally kept as-is (faithful)
-- **Realtime relevance gating:** the console reloads on any sale event (debounced) rather than parsing
-  the payload to check it matches the active filter/page. Faithful (legacy also reloaded broadly; the
-  server filter scopes the refetch). Optimize only if event churn becomes a concern.
+### Realtime relevance gating — DONE (commit follows)
+The realtime listeners now **parse the payload** (`resolveRealtimeSale` = `payload.Sale ?? payload`,
+matching the legacy `SaleStatistic` wire shape) and gate the reload:
+- **saleUpdated** → debounced reload only when the updated sale's `NetUid` is in the currently-visible
+  page (`salesRef.current`), or when the payload can't be identified (safe fallback). No more reloading
+  for off-screen sales the user isn't looking at.
+- **saleAdded** → skip Poland `'P'` sales (the legacy gate; the server already excludes them from the UA
+  list), otherwise debounced reload.
+Adversarially verified faithful + React-correct (stable listeners, no stale closure / re-subscribe /
+leak; debounce + silent non-destructive reload intact). **Known trade-off:** an update that moves an
+*off-screen* sale *into* the active filter isn't reflected until a manual refresh — intentional (the
+whole point was to stop reloading on every event); broaden the gate later if inbound-into-filter
+parity is ever wanted.
 
