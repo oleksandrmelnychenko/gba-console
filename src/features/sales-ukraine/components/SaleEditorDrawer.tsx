@@ -1,6 +1,22 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, Loader, NumberInput, Stack, Tabs, Text, Tooltip } from '@mantine/core'
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Loader,
+  NumberInput,
+  ScrollArea,
+  Stack,
+  Tabs,
+  Text,
+  TextInput,
+  Tooltip,
+  UnstyledButton,
+} from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconPencil, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconPlus, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -8,8 +24,8 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import { deleteOrderItem, getSaleById, updateOrderItem } from '../api/salesUkraineApi'
-import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
+import { addOrderItem, deleteOrderItem, getSaleById, searchSaleProducts, updateOrderItem } from '../api/salesUkraineApi'
+import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
@@ -40,6 +56,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [editingItem, setEditingItem] = useValueState<SalesUkraineOrderItem | null>(null)
   const [deletingItem, setDeletingItem] = useValueState<SalesUkraineOrderItem | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
+  const [isAddOpen, setAddOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -158,6 +175,13 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         </Tabs.List>
 
         <Tabs.Panel value="products" pt="md">
+          {isEditable && (
+            <Group justify="flex-end" mb="sm">
+              <Button leftSection={<IconPlus size={16} />} variant="light" onClick={() => setAddOpen(true)}>
+                {t('Додати товар')}
+              </Button>
+            </Group>
+          )}
           <DataTable
             columns={itemColumns}
             data={orderItems}
@@ -184,6 +208,16 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           </Stack>
         </Tabs.Panel>
       </Tabs>
+
+      <AddProductModal
+        opened={isAddOpen}
+        sale={sale}
+        onAdded={() => {
+          setAddOpen(false)
+          reload()
+        }}
+        onClose={() => setAddOpen(false)}
+      />
 
       <OrderItemQtyModal
         item={editingItem}
@@ -385,6 +419,169 @@ function OrderItemQtyForm({
         </Button>
         <Button disabled={!isValid} loading={isSaving} onClick={save}>
           {t('Зберегти')}
+        </Button>
+      </Group>
+    </Stack>
+  )
+}
+
+function AddProductModal({
+  opened,
+  sale,
+  onClose,
+  onAdded,
+}: {
+  onAdded: () => void
+  onClose: () => void
+  opened: boolean
+  sale: SalesUkraineSale
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={opened} size="lg" title={t('Додати товар')} onClose={onClose}>
+      {opened && <AddProductForm sale={sale} onAdded={onAdded} onCancel={onClose} />}
+    </AppModal>
+  )
+}
+
+function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCancel: () => void; sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<SalesUkraineProduct[]>([])
+  const [isSearching, setSearching] = useState(false)
+  const [selected, setSelected] = useState<SalesUkraineProduct | null>(null)
+  const [qty, setQty] = useState<number | string>(1)
+  const [isSaving, setSaving] = useState(false)
+
+  const numericQty = typeof qty === 'number' ? qty : Number(String(qty).replace(',', '.'))
+  const isValid = Boolean(selected) && Number.isFinite(numericQty) && numericQty > 0
+
+  useEffect(() => {
+    const value = query.trim()
+
+    if (value.length < 2) {
+      return
+    }
+
+    let cancelled = false
+    const handle = setTimeout(async () => {
+      setSearching(true)
+
+      try {
+        const next = await searchSaleProducts(value)
+
+        if (!cancelled) {
+          setResults(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setResults([])
+        }
+      } finally {
+        if (!cancelled) {
+          setSearching(false)
+        }
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [query])
+
+  async function add() {
+    const agreementNetUid = sale.ClientAgreement?.NetUid
+    const saleNetUid = sale.NetUid
+
+    if (!isValid || !selected || !agreementNetUid || !saleNetUid) {
+      return
+    }
+
+    setSaving(true)
+
+    const existing = (Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []).find(
+      (item) => item.Product?.NetUid === selected.NetUid,
+    )
+
+    try {
+      if (existing) {
+        await updateOrderItem({ ...existing, Qty: (getNumber(existing.Qty) || 0) + numericQty })
+      } else {
+        await addOrderItem(agreementNetUid, saleNetUid, { Product: selected, Qty: numericQty })
+      }
+
+      notifications.show({ color: 'green', message: t('Товар додано') })
+      onAdded()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Stack gap="md">
+      <TextInput
+        autoFocus
+        label={t('Пошук по товару')}
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Код Виробника')}
+        rightSection={isSearching ? <Loader size="xs" /> : null}
+        value={query}
+        onChange={(event) => setQuery(event.currentTarget.value)}
+      />
+
+      <ScrollArea.Autosize mah={320}>
+        <Stack gap={4}>
+          {results.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+            </Text>
+          ) : (
+            results.map((product, index) => {
+              const isActive = selected?.NetUid === product.NetUid
+
+              return (
+                <UnstyledButton
+                  key={product.NetUid || product.Id || index}
+                  p="xs"
+                  style={{
+                    backgroundColor: isActive ? 'var(--mantine-color-violet-light)' : undefined,
+                    borderRadius: 6,
+                  }}
+                  onClick={() => setSelected(product)}
+                >
+                  <Text fw={600} size="sm">
+                    {displayValue(product.VendorCode || product.Articul)}
+                  </Text>
+                  <Text c="dimmed" size="xs">
+                    {displayValue(product.NameUA || product.Name)}
+                  </Text>
+                </UnstyledButton>
+              )
+            })
+          )}
+        </Stack>
+      </ScrollArea.Autosize>
+
+      <NumberInput
+        allowNegative={false}
+        decimalScale={2}
+        disabled={!selected}
+        label={t('Кількість')}
+        min={0}
+        value={qty}
+        onChange={setQty}
+      />
+
+      <Group justify="flex-end">
+        <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
+          {t('Скасувати')}
+        </Button>
+        <Button disabled={!isValid} loading={isSaving} onClick={add}>
+          {t('Додати')}
         </Button>
       </Group>
     </Stack>

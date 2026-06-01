@@ -7,6 +7,7 @@ import type {
   SalesUkraineFilters,
   SalesUkraineOrderItem,
   SalesUkraineOrganizationOption,
+  SalesUkraineProduct,
   SalesUkraineSale,
   SalesUkraineTransporter,
   SalesUkraineTransporterType,
@@ -79,6 +80,26 @@ export async function deleteOrderItem(orderItemNetId: string): Promise<void> {
   await apiRequest<unknown>('/orders/items/delete', {
     method: 'DELETE',
     query: { orderItemNetId },
+  })
+}
+
+export async function searchSaleProducts(value: string): Promise<SalesUkraineProduct[]> {
+  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+    query: { limit: 20, offset: 0, value: value.trim() },
+  })
+
+  return normalizeArray(result) as SalesUkraineProduct[]
+}
+
+export async function addOrderItem(
+  clientAgreementNetId: string,
+  saleNetId: string,
+  orderItem: SalesUkraineOrderItem,
+): Promise<void> {
+  await apiRequest<unknown>('/orders/items/new', {
+    body: orderItem,
+    method: 'POST',
+    query: { clientAgreementNetId, saleNetId },
   })
 }
 
