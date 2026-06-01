@@ -134,14 +134,6 @@ export function NewEcommerceClientsPage() {
     ],
     [t],
   )
-  const tableToolbarLeft = useMemo(
-    () => (
-      <Text c="dimmed" size="xs">
-        {isLoading ? t('Завантаження') : `${t('Записів')}: ${clients.length}`}
-      </Text>
-    ),
-    [clients.length, isLoading, t],
-  )
 
   function openClient(client: Client) {
     if (!client.NetUid) {
@@ -178,7 +170,6 @@ export function NewEcommerceClientsPage() {
             loadingText={t('Завантаження клієнтів')}
             minWidth={1280}
             tableId="new-ecommerce-clients"
-            toolbarLeft={tableToolbarLeft}
             onRowClick={openClient}
           />
         </Stack>

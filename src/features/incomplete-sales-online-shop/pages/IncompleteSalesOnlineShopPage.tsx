@@ -335,7 +335,7 @@ function IncompleteSalesOnlineShopPageView({
 
   return (
     <Stack gap="lg">
-      <IncompleteSalesHeader isLoading={isLoading} salesCount={sales.length} onReload={reloadSales} />
+      <IncompleteSalesHeader onReload={reloadSales} />
 
       <IncompleteSalesTableCard
         columns={columns}
@@ -369,29 +369,16 @@ function IncompleteSalesOnlineShopPageView({
   )
 }
 
-function IncompleteSalesHeader({
-  isLoading,
-  salesCount,
-  onReload,
-}: {
-  isLoading: boolean
-  salesCount: number
-  onReload: () => void
-}) {
+function IncompleteSalesHeader({ onReload }: { onReload: () => void }) {
   const { t } = useI18n()
 
   return (
     <Group justify="flex-end" align="center">
-      <Group gap="xs">
-        <Badge color="gray" variant="light">
-          {isLoading ? t('Завантаження') : `${t('Записів')}: ${salesCount}`}
-        </Badge>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon variant="light" color="gray" aria-label={t('Оновити')} onClick={onReload}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+      <Tooltip label={t('Оновити')}>
+        <ActionIcon variant="light" color="gray" aria-label={t('Оновити')} onClick={onReload}>
+          <IconRefresh size={18} />
+        </ActionIcon>
+      </Tooltip>
     </Group>
   )
 }

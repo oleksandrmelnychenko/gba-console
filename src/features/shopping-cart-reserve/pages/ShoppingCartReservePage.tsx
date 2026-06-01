@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import { ActionIcon, Alert, Badge, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate } from 'react-router-dom'
@@ -71,9 +71,6 @@ export function ShoppingCartReservePage() {
     <Stack gap="lg">
       <Group justify="flex-end" align="center">
         <Group gap="xs">
-          <Badge color="gray" variant="light">
-            {isLoading ? t('Завантаження') : `${t('Записів')}: ${carts.length}`}
-          </Badge>
           <Tooltip label={t('Оновити')}>
             <ActionIcon variant="light" color="gray" aria-label={t('Оновити')} onClick={() => reload()}>
               <IconRefresh size={18} />

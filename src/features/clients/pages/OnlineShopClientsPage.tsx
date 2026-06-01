@@ -59,13 +59,13 @@ export function OnlineShopClientsPage() {
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
   const clientColumns = useRetailClientColumns()
   const tableToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Записів')}: {clients.length}
-        {normalizedSearchValue ? `, ${t('пошук')}: ${normalizedSearchValue}` : ''}
-      </Text>
-    ),
-    [clients.length, normalizedSearchValue, t],
+    () =>
+      normalizedSearchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {normalizedSearchValue}
+        </Text>
+      ) : null,
+    [normalizedSearchValue, t],
   )
 
   useEffect(() => {

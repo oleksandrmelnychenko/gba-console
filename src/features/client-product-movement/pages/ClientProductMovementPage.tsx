@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Box,
   Button,
   Card,
@@ -317,15 +316,6 @@ export function ClientProductMovementPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Text fw={600} size="lg">
-          {t('Рух товару клієнта')}
-        </Text>
-        <Badge color="gray" variant="light">
-          {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || documents.length}`}
-        </Badge>
-      </Group>
-
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">

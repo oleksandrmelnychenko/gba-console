@@ -423,9 +423,6 @@ export function AdvancedReportsPage() {
           <Badge color="gray" variant="light">
             {t('Рядків')}: {rows.length}
           </Badge>
-          <Badge color="gray" variant="light">
-            {t('Записів')}: {totalRows || reports.Collection.length}
-          </Badge>
           <Badge color="green" variant="light">
             {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
           </Badge>

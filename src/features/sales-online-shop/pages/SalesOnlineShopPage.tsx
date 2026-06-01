@@ -480,12 +480,6 @@ export function SalesOnlineShopPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="flex-end" align="center">
-        <Badge color="gray" variant="light">
-          {isLoading ? t('Завантаження') : `${t('Записів')}: ${totalRows || sales.length}`}
-        </Badge>
-      </Group>
-
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
