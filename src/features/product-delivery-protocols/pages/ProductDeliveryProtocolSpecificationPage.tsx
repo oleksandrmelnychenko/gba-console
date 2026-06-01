@@ -1044,6 +1044,30 @@ export function ProductDeliveryProtocolSpecificationPage() {
         </Stack>
       ) : null}
 
+      <ProductDeliveryProtocolSpecificationModals
+        canSaveSpecification={canSaveSpecification}
+        invoices={invoices}
+        model={model}
+      />
+    </Stack>
+  )
+}
+
+type SpecificationModel = ReturnType<typeof useSpecificationModel>
+
+function ProductDeliveryProtocolSpecificationModals({
+  canSaveSpecification,
+  invoices,
+  model,
+}: {
+  canSaveSpecification: boolean
+  invoices: SpecificationSupplyInvoice[]
+  model: SpecificationModel
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
       <UploadProductSpecificationModal
         isLoading={model.isUploading}
         opened={model.isUploadOpen}
@@ -1134,7 +1158,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
+    </>
   )
 }
 
