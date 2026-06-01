@@ -46,6 +46,7 @@ import {
   ProductStorageLocationHistoryDrawer,
   type MovementHistoryProduct,
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
@@ -636,7 +637,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     <Stack gap="lg">
       <Group justify="flex-end" align="end">
         <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            disabled={isLoading}
+            loading={isLoading}
+            size={38}
+            variant="light"
+            onClick={() => reload()}
+          >
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
@@ -794,7 +803,12 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
               {downloadDocument.DocumentURL && (
-                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-excel">
                     <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
@@ -802,7 +816,12 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                 </Anchor>
               )}
               {downloadDocument.PdfDocumentURL && (
-                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>
@@ -941,7 +960,12 @@ function ProductIncomeDocumentDrawer({
               >
                 {t('Експорт')}
               </Button>
-              <Button disabled={!document.NetUid} variant="filled" onClick={() => onLoadRemainings(document)}>
+              <Button
+                disabled={!document.NetUid || isLoadingRemainings}
+                loading={isLoadingRemainings}
+                variant="filled"
+                onClick={() => onLoadRemainings(document)}
+              >
                 {t('Залишки по партіям')}
               </Button>
             </Group>
@@ -1793,7 +1817,9 @@ function getMovementHistoryProductFromNamedEntity(entity?: NamedEntity | null): 
 }
 
 function getIncomeItemProduct(item: ProductIncomeItem): NamedEntity | null | undefined {
-  return item.PackingListPackageOrderItem?.SupplyInvoiceOrderItem?.Product || item.Product
+  return item.PackingListPackageOrderItem?.SupplyInvoiceOrderItem?.Product
+    || item.SaleReturnItem?.OrderItem?.Product
+    || item.Product
 }
 
 function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {

@@ -164,6 +164,10 @@ export type ProductIncomeDocumentsResponse = {
 export type ProductIncomeDocumentsExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+  URL?: string
+  XlsxDocument?: string
+  PdfDocument?: string
+  url?: string
 }
 
 export type ProductIncomeInfo = EntityFields & {

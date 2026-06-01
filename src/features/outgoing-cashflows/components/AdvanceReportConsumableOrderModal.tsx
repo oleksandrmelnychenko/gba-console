@@ -117,11 +117,15 @@ export function AdvanceReportConsumableOrderModal({
   const [isCalculating, setCalculating] = useValueState(false)
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const calcSeq = useRef(0)
-  const initialFormRef = useRef<FormState>(createEmptyForm())
+  const initialFormRef = useRef<FormState | null>(null)
   const supplierSearchSeq = useRef(0)
   const storageSearchSeq = useRef(0)
   const productSearchSeq = useRef(0)
   const costMovementSearchSeq = useRef(0)
+
+  if (initialFormRef.current === null) {
+    initialFormRef.current = createEmptyForm()
+  }
 
   const selectedSupplier = useMemo(
     () => suppliers.find((supplier) => getEntityValue(supplier) === form.selectedSupplierValue) || null,
@@ -144,7 +148,14 @@ export function AdvanceReportConsumableOrderModal({
   )
   const activeItems = useMemo(() => order.ConsumablesOrderItems || [], [order.ConsumablesOrderItems])
   const visibleItemRows = useMemo(
-    () => activeItems.map((item, index) => ({ index, item })).filter(({ item }) => !item.Deleted),
+    () =>
+      activeItems.reduce<Array<{ index: number; item: AdvanceReportConsumablesOrderItem }>>((rows, item, index) => {
+        if (!item.Deleted) {
+          rows.push({ index, item })
+        }
+
+        return rows
+      }, []),
     [activeItems],
   )
   const visibleItems = useMemo(() => visibleItemRows.map(({ item }) => item), [visibleItemRows])
@@ -156,19 +167,17 @@ export function AdvanceReportConsumableOrderModal({
     () => toEntityOptions(costMovements, (item) => item?.OperationName || ''),
     [costMovements],
   )
+  const isBusy = isLoading || isCalculating
 
-  useEffect(() => {
+  const invalidatePendingRequests = useCallback(() => {
+    calcSeq.current += 1
     supplierSearchSeq.current += 1
     storageSearchSeq.current += 1
     productSearchSeq.current += 1
     costMovementSearchSeq.current += 1
+  }, [])
 
-    if (!opened) {
-      return undefined
-    }
-
-    let cancelled = false
-
+  const resetModalState = useCallback(() => {
     setOrder(createEmptyOrder())
     const nextForm = createEmptyForm()
     initialFormRef.current = nextForm
@@ -177,9 +186,33 @@ export function AdvanceReportConsumableOrderModal({
     setItemEditor(createClosedItemEditor())
     setDocumentFiles([])
     setConfirmCloseOpen(false)
+    setCalculating(false)
     setProductOptions([])
     setCostMovements([])
     setLoading(true)
+  }, [
+    setCalculating,
+    setConfirmCloseOpen,
+    setCostMovements,
+    setDocumentFiles,
+    setError,
+    setForm,
+    setItemEditor,
+    setLoading,
+    setOrder,
+    setProductOptions,
+  ])
+
+  useEffect(() => {
+    invalidatePendingRequests()
+
+    if (!opened) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    resetModalState()
 
     async function loadSuppliers() {
       try {
@@ -202,23 +235,15 @@ export function AdvanceReportConsumableOrderModal({
     void loadSuppliers()
 
     return () => {
-      supplierSearchSeq.current += 1
-      storageSearchSeq.current += 1
-      productSearchSeq.current += 1
-      costMovementSearchSeq.current += 1
+      invalidatePendingRequests()
       cancelled = true
     }
   }, [
+    invalidatePendingRequests,
     opened,
-    setConfirmCloseOpen,
-    setCostMovements,
-    setDocumentFiles,
+    resetModalState,
     setError,
-    setForm,
-    setItemEditor,
     setLoading,
-    setOrder,
-    setProductOptions,
     setSuppliers,
     t,
   ])
@@ -360,11 +385,9 @@ export function AdvanceReportConsumableOrderModal({
       try {
         const calculated = await calculateAdvanceReportConsumableOrder(normalizedOrder)
 
-        if (calcSeq.current !== seq) {
-          return
+        if (calcSeq.current === seq) {
+          setOrder(calculated ? normalizeOrderTotals(calculated) : normalizedOrder)
         }
-
-        setOrder(calculated ? normalizeOrderTotals(calculated) : normalizedOrder)
       } catch {
         if (calcSeq.current === seq) {
           setOrder(normalizedOrder)
@@ -410,6 +433,10 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function openNewItemEditor() {
+    if (isBusy) {
+      return
+    }
+
     setProductOptions([])
     setCostMovements([])
     setItemEditor({
@@ -421,6 +448,10 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function openEditItemEditor(item: AdvanceReportConsumablesOrderItem, index: number) {
+    if (isBusy) {
+      return
+    }
+
     setProductOptions(item.ConsumableProduct ? [item.ConsumableProduct] : [])
     setCostMovements(item.PaymentCostMovementOperation?.PaymentCostMovement ? [item.PaymentCostMovementOperation.PaymentCostMovement] : [])
     setItemEditor({
@@ -436,10 +467,18 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function closeItemEditor() {
+    if (isBusy) {
+      return
+    }
+
     setItemEditor(createClosedItemEditor())
   }
 
   async function saveEditorItem() {
+    if (isBusy) {
+      return
+    }
+
     const validationError = validateItem(itemEditor.item, t)
 
     if (validationError) {
@@ -464,6 +503,10 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   async function removeItem(index: number) {
+    if (isBusy) {
+      return
+    }
+
     await recalculateOrder({
       ...order,
       ConsumablesOrderItems: activeItems.filter((_, currentIndex) => currentIndex !== index),
@@ -520,6 +563,17 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function submitOrder() {
+    if (isBusy) {
+      return
+    }
+
+    const formDateError = validateFormDates(form, t)
+
+    if (formDateError) {
+      setError(formDateError)
+      return
+    }
+
     const payload = buildOrderPayload({
       form,
       order,
@@ -539,6 +593,10 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function requestClose() {
+    if (isBusy) {
+      return
+    }
+
     if (hasConsumableOrderDraft(form, order, documentFiles, initialFormRef.current)) {
       setConfirmCloseOpen(true)
       return
@@ -548,6 +606,10 @@ export function AdvanceReportConsumableOrderModal({
   }
 
   function confirmClose() {
+    if (isBusy) {
+      return
+    }
+
     setConfirmCloseOpen(false)
     onClose()
   }
@@ -584,7 +646,7 @@ export function AdvanceReportConsumableOrderModal({
         <SimpleGrid cols={{ base: 1, md: 3 }}>
           <Autocomplete
             data={supplierOptions}
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Постачальник послуг')}
             placeholder={t('Почніть вводити назву')}
             value={form.supplierSearch}
@@ -593,7 +655,7 @@ export function AdvanceReportConsumableOrderModal({
           />
           <Select
             data={agreementOptions}
-            disabled={!selectedSupplier || isLoading}
+            disabled={!selectedSupplier || isBusy}
             label={t('Договір')}
             placeholder={t('Оберіть договір')}
             searchable
@@ -602,20 +664,20 @@ export function AdvanceReportConsumableOrderModal({
           />
           <TextInput disabled label={t('Організація')} value={getEntityLabel(outcomeOrder.Organization)} />
           <TextInput
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Номер накладної')}
             value={form.invoiceNumber}
             onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
           />
           <TextInput
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Дата входу')}
             type="date"
             value={form.invoiceDate}
             onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
           />
           <TextInput
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Час')}
             type="time"
             value={form.invoiceTime}
@@ -623,7 +685,7 @@ export function AdvanceReportConsumableOrderModal({
           />
           <Autocomplete
             data={storageOptions}
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Склад')}
             placeholder={t('Почніть вводити склад')}
             value={form.storageSearch}
@@ -632,7 +694,7 @@ export function AdvanceReportConsumableOrderModal({
           />
           <Textarea
             autosize
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Коментар')}
             minRows={1}
             value={form.comment}
@@ -640,7 +702,7 @@ export function AdvanceReportConsumableOrderModal({
           />
           <FileInput
             clearable
-            disabled={isLoading}
+            disabled={isBusy}
             label={t('Документи')}
             multiple
             placeholder={t('Завантажити файли')}
@@ -658,7 +720,7 @@ export function AdvanceReportConsumableOrderModal({
                   <ActionIcon
                     aria-label={t('Видалити')}
                     color="red"
-                    disabled={isLoading}
+                    disabled={isBusy}
                     size="sm"
                     variant="subtle"
                     onClick={() => removeDocumentFile(file)}
@@ -680,7 +742,7 @@ export function AdvanceReportConsumableOrderModal({
               {visibleItems.length}
             </Badge>
           </Group>
-          <Button disabled={isCalculating} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
+          <Button disabled={isBusy} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
             {t('Додати')}
           </Button>
         </Group>
@@ -723,7 +785,7 @@ export function AdvanceReportConsumableOrderModal({
                         <Tooltip label={t('Редагувати')}>
                           <ActionIcon
                             aria-label={t('Редагувати')}
-                            disabled={isCalculating}
+                            disabled={isBusy}
                             size="sm"
                             variant="subtle"
                             onClick={() => openEditItemEditor(item, index)}
@@ -735,7 +797,7 @@ export function AdvanceReportConsumableOrderModal({
                           <ActionIcon
                             aria-label={t('Видалити')}
                             color="red"
-                            disabled={isCalculating}
+                            disabled={isBusy}
                             size="sm"
                             variant="subtle"
                             onClick={() => void removeItem(index)}
@@ -773,10 +835,10 @@ export function AdvanceReportConsumableOrderModal({
             </Badge>
           </Group>
           <Group justify="flex-end">
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={requestClose}>
+            <Button color="gray" disabled={isBusy} leftSection={<IconX size={16} />} variant="light" onClick={requestClose}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconDeviceFloppy size={16} />} loading={isCalculating} onClick={submitOrder}>
+            <Button disabled={isBusy} leftSection={<IconDeviceFloppy size={16} />} loading={isCalculating} onClick={submitOrder}>
               {t('Додати')}
             </Button>
           </Group>
@@ -799,16 +861,30 @@ export function AdvanceReportConsumableOrderModal({
             <SimpleGrid cols={{ base: 1, md: 2 }}>
               <Autocomplete
                 data={productAutocompleteOptions}
+                disabled={isBusy}
                 label={t('Назва товару / послуги')}
                 value={itemEditor.productSearch}
-                onChange={(value) => setItemEditor((current) => ({ ...current, productSearch: value }))}
+                onChange={(value) => {
+                  setItemEditor((current) => ({
+                    ...current,
+                    item: clearEditorProduct(current.item),
+                    productSearch: value,
+                  }))
+                }}
                 onOptionSubmit={handleProductSubmit}
               />
               <Autocomplete
                 data={productAutocompleteOptions}
+                disabled={isBusy}
                 label={t('Артикул')}
                 value={itemEditor.articleSearch}
-                onChange={(value) => setItemEditor((current) => ({ ...current, articleSearch: value }))}
+                onChange={(value) => {
+                  setItemEditor((current) => ({
+                    ...current,
+                    articleSearch: value,
+                    item: clearEditorProduct(current.item),
+                  }))
+                }}
                 onOptionSubmit={handleProductSubmit}
               />
               <TextInput
@@ -818,14 +894,25 @@ export function AdvanceReportConsumableOrderModal({
               />
               <Autocomplete
                 data={costMovementOptions}
+                disabled={isBusy}
                 label={t('Стаття витрат')}
                 value={itemEditor.costMovementSearch}
-                onChange={(value) => setItemEditor((current) => ({ ...current, costMovementSearch: value }))}
+                onChange={(value) => {
+                  setItemEditor((current) => ({
+                    ...current,
+                    costMovementSearch: value,
+                    item: {
+                      ...current.item,
+                      PaymentCostMovementOperation: null,
+                    },
+                  }))
+                }}
                 onOptionSubmit={handleCostMovementSubmit}
               />
               <NumberInput
                 allowNegative={false}
                 decimalScale={3}
+                disabled={isBusy}
                 label={t('Кількість')}
                 min={0}
                 rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
@@ -835,6 +922,7 @@ export function AdvanceReportConsumableOrderModal({
               <NumberInput
                 allowNegative={false}
                 decimalScale={3}
+                disabled={isBusy}
                 label={t('Ціна за одиницю')}
                 min={0}
                 value={itemEditor.item.PricePerItem || 0}
@@ -843,6 +931,7 @@ export function AdvanceReportConsumableOrderModal({
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
+                disabled={isBusy}
                 label={`${t('ПДВ')} %`}
                 min={0}
                 value={itemEditor.item.VatPercent || 0}
@@ -851,6 +940,7 @@ export function AdvanceReportConsumableOrderModal({
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
+                disabled={isBusy}
                 label={t('Разом з ПДВ')}
                 min={0}
                 value={itemEditor.item.TotalPriceWithVAT || 0}
@@ -859,10 +949,10 @@ export function AdvanceReportConsumableOrderModal({
             </SimpleGrid>
 
             <Group justify="flex-end">
-              <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
+              <Button color="gray" disabled={isBusy} leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
+              <Button disabled={isBusy} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -873,15 +963,19 @@ export function AdvanceReportConsumableOrderModal({
           centered
           opened={confirmCloseOpen}
           title={t('Є незбережені зміни')}
-          onClose={() => setConfirmCloseOpen(false)}
+          onClose={() => {
+            if (!isBusy) {
+              setConfirmCloseOpen(false)
+            }
+          }}
         >
           <Stack gap="md">
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
             <Group justify="flex-end">
-              <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+              <Button color="gray" disabled={isBusy} variant="light" onClick={() => setConfirmCloseOpen(false)}>
                 {t('Залишитися')}
               </Button>
-              <Button color="red" onClick={confirmClose}>
+              <Button color="red" disabled={isBusy} onClick={confirmClose}>
                 {t('Закрити без збереження')}
               </Button>
             </Group>
@@ -1046,6 +1140,18 @@ function validateOrderPayload(
   return null
 }
 
+function validateFormDates(form: FormState, t: (value: string) => string): string | null {
+  if (!isValidDateInput(form.invoiceDate)) {
+    return t('Вкажіть дату входу')
+  }
+
+  if (!isValidTimeInput(form.invoiceTime)) {
+    return t('Вкажіть час накладної')
+  }
+
+  return null
+}
+
 function validateItem(item: AdvanceReportConsumablesOrderItem, t: (value: string) => string): string | null {
   if (!item.ConsumableProduct) {
     return t('Оберіть товар або послугу')
@@ -1164,38 +1270,58 @@ function toEntityOptions<T extends EntityOptionSource>(
   entities: T[],
   labelGetter: (entity: T) => string = (entity) => getEntityLabel(entity),
 ) {
-  return entities
-    .map((entity) => ({
-      label: labelGetter(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+  return entities.reduce<Array<{ label: string; value: string }>>((options, entity) => {
+    const value = getEntityValue(entity)
+
+    if (!value) {
+      return options
+    }
+
+    options.push({
+      label: labelGetter(entity) || value,
+      value,
+    })
+
+    return options
+  }, [])
 }
 
 function toProductOptions(products: ConsumableProduct[]) {
-  return products
-    .map((product) => {
-      const label = [product.VendorCode, product.Name].filter(Boolean).join(' - ')
+  return products.reduce<Array<{ label: string; value: string }>>((options, product) => {
+    const value = getEntityValue(product)
 
-      return {
-        label: label || getEntityValue(product),
-        value: getEntityValue(product),
-      }
+    if (!value) {
+      return options
+    }
+
+    const label = [product.VendorCode, product.Name].filter(Boolean).join(' - ')
+
+    options.push({
+      label: label || value,
+      value,
     })
-    .filter((option) => option.value)
+
+    return options
+  }, [])
 }
 
 function toAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
-  return agreements
-    .map((agreement) => {
-      const parts = [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name].filter(Boolean)
+  return agreements.reduce<Array<{ label: string; value: string }>>((options, agreement) => {
+    const value = getEntityValue(agreement)
 
-      return {
-        label: parts.join(' / ') || getEntityValue(agreement),
-        value: getEntityValue(agreement),
-      }
+    if (!value) {
+      return options
+    }
+
+    const parts = [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name].filter(Boolean)
+
+    options.push({
+      label: parts.join(' / ') || value,
+      value,
     })
-    .filter((option) => option.value)
+
+    return options
+  }, [])
 }
 
 function includeEntity<T extends EntityOptionSource>(entities: T[], entity: T | null): T[] {
@@ -1228,6 +1354,14 @@ function cloneOrderItem(item: AdvanceReportConsumablesOrderItem): AdvanceReportC
   }
 }
 
+function clearEditorProduct(item: AdvanceReportConsumablesOrderItem): AdvanceReportConsumablesOrderItem {
+  return {
+    ...item,
+    ConsumableProduct: null,
+    ConsumableProductCategory: null,
+  }
+}
+
 function getEntityValue(entity?: EntityOptionSource | null): string {
   return String(entity?.NetUid || entity?.Id || '')
 }
@@ -1246,6 +1380,20 @@ function createLocalId(): string {
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {
   return formatLocalInputDateTime(dateValue, timeValue)
+}
+
+function isValidDateInput(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+}
+
+function isValidTimeInput(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
 function toTimeValue(date: Date): string {

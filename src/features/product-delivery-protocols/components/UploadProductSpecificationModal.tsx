@@ -48,10 +48,18 @@ export function UploadProductSpecificationModal({
   const [validationError, setValidationError] = useState<string | null>(null)
 
   function setField(key: keyof FormDraft, value: number | string) {
+    if (isLoading) {
+      return
+    }
+
     setForm((current) => ({ ...current, [key]: toPositiveNumber(value) }))
   }
 
   function closeModal() {
+    if (isLoading) {
+      return
+    }
+
     setForm(EMPTY_FORM)
     setFile(null)
     setValidationError(null)
@@ -59,6 +67,10 @@ export function UploadProductSpecificationModal({
   }
 
   function submitForm() {
+    if (isLoading) {
+      return
+    }
+
     const parseConfiguration = toParseConfiguration(form)
 
     if (!file || !parseConfiguration) {
@@ -163,14 +175,18 @@ export function UploadProductSpecificationModal({
           leftSection={<IconFileSpreadsheet size={16} />}
           placeholder={t('Оберіть файл')}
           value={file}
-          onChange={setFile}
+          onChange={(nextFile) => {
+            if (!isLoading) {
+              setFile(nextFile)
+            }
+          }}
         />
 
         <Group justify="flex-end">
           <Button disabled={isLoading} variant="subtle" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isLoading} onClick={submitForm}>
+          <Button disabled={isLoading} leftSection={<IconUpload size={16} />} loading={isLoading} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
         </Group>

@@ -101,6 +101,7 @@ export function IncomeCashflowsPage() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
+  const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
 
@@ -152,6 +153,20 @@ export function IncomeCashflowsPage() {
   }, [setCurrencies, setError, setLoadingLookups, setOrganizations, setPaymentRegisters, setSelectedOrganizationIds, t])
 
   const loadIncomeOrders = useCallback(async (offset: number, append: boolean) => {
+    if (filterError) {
+      requestRef.current += 1
+
+      if (!append) {
+        setIncomeOrders([])
+      }
+
+      setError(null)
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+
     const requestId = requestRef.current + 1
     requestRef.current = requestId
 
@@ -194,6 +209,7 @@ export function IncomeCashflowsPage() {
     }
   }, [
     currencyNetId,
+    filterError,
     fromDate,
     normalizedSearchValue,
     paymentRegisterNetId,
@@ -373,6 +389,12 @@ export function IncomeCashflowsPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -1081,8 +1103,8 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 }
 
 function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCashflowRow[] {
-  return [...incomeOrders]
-    .sort((left, right) => (right.FromDate || '').localeCompare(left.FromDate || ''))
+  return incomeOrders
+    .toSorted((left, right) => (right.FromDate || '').localeCompare(left.FromDate || ''))
     .map((income, index) => ({
       amount: income.Amount,
       comment: income.Comment,
@@ -1211,6 +1233,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

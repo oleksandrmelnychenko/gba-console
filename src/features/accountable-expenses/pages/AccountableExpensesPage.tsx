@@ -63,9 +63,18 @@ export function AccountableExpensesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AccountableExpenseRow | null>(null)
+  const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
 
   const loadOrders = useCallback(async () => {
+    if (filterError) {
+      requestRef.current += 1
+      setError(null)
+      setLoading(false)
+      setOrders([])
+      return
+    }
+
     const requestId = requestRef.current + 1
     requestRef.current = requestId
     setLoading(true)
@@ -89,7 +98,7 @@ export function AccountableExpensesPage() {
         setLoading(false)
       }
     }
-  }, [fromDate, searchValue, setError, setLoading, setOrders, t, toDate])
+  }, [filterError, fromDate, searchValue, setError, setLoading, setOrders, t, toDate])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -140,6 +149,12 @@ export function AccountableExpensesPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -405,6 +420,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

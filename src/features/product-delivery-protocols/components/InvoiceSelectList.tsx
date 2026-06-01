@@ -4,10 +4,12 @@ import type { SupplyInvoice } from '../detailTypes'
 import { formatDateTime } from './protocolDetailHelpers'
 
 export function InvoiceSelectList({
+  disabled = false,
   invoices,
   selected,
   onToggle,
 }: {
+  disabled?: boolean
   invoices: SupplyInvoice[]
   onToggle: (invoice: SupplyInvoice) => void
   selected: Record<string, boolean>
@@ -31,7 +33,7 @@ export function InvoiceSelectList({
         return (
           <Card key={netUid} withBorder padding="sm" radius="sm">
             <Group align="flex-start" gap="sm" wrap="nowrap">
-              <Checkbox checked={Boolean(selected[netUid])} onChange={() => onToggle(invoice)} />
+              <Checkbox disabled={disabled} checked={Boolean(selected[netUid])} onChange={() => onToggle(invoice)} />
               <Stack gap={2} style={{ flex: 1 }}>
                 <Text size="sm" fw={600}>
                   {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || '-'}

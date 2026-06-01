@@ -144,4 +144,8 @@ export type ProductRemainSupplierSearchParams = {
 export type ProductRemainsExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+  URL?: string
+  XlsxDocument?: string
+  PdfDocument?: string
+  url?: string
 }

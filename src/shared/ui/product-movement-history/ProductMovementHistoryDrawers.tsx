@@ -27,6 +27,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
 import { useI18n } from '../../i18n/useI18n'
+import { upgradeHttpToHttps } from '../../url/upgradeHttpToHttps'
 import { AppDrawer } from '../AppDrawer'
 import { AppModal } from '../AppModal'
 import { DataTable } from '../data-table/DataTable'
@@ -129,6 +130,10 @@ type ProductStorageLocationHistory = EntityFields & {
 type ProductMovementExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+  URL?: string
+  XlsxDocument?: string
+  PdfDocument?: string
+  url?: string
 }
 
 type ProductMovementExportState = {
@@ -612,6 +617,7 @@ function ProductStorageLocationHistoryDrawerContent({
   const productNetUid = product?.NetUid?.trim() || ''
   const [drawerState, dispatchDrawerState] = useReducer(storageLocationDrawerReducer, undefined, createStorageLocationDrawerState)
   const { dateFrom, dateTo, error, isLoading, loadedProductNetUid, page, pageSize, rows } = drawerState
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const columns = useStorageLocationHistoryColumns()
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії місця зберігання')
@@ -661,7 +667,7 @@ function ProductStorageLocationHistoryDrawerContent({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, opened, page, pageSize, productNetUid, t])
+  }, [dateFrom, dateTo, filterError, opened, page, pageSize, productNetUid, reloadKey, t])
 
   return (
     <AppDrawer opened={opened && Boolean(product)} position="right" size="min(1180px, 98vw)" title={title} onClose={onClose}>
@@ -695,6 +701,15 @@ function ProductStorageLocationHistoryDrawerContent({
             }}
           />
           <Group gap="xs">
+            <Button
+              disabled={Boolean(filterError || missingNetUidError)}
+              leftSection={<IconRefresh size={18} />}
+              loading={isLoading}
+              variant="light"
+              onClick={() => reload()}
+            >
+              {t('Оновити')}
+            </Button>
             <ActionIcon
               aria-label={t('Попередня сторінка')}
               color="gray"
@@ -1274,7 +1289,7 @@ function ProductDocumentDownloadModal({
         {document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL ? (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
                   <IconFileTypeXls size={22} stroke={1.8} />
                 </span>
@@ -1282,7 +1297,7 @@ function ProductDocumentDownloadModal({
               </Anchor>
             ) : null}
             {document.PdfDocumentURL ? (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>
@@ -1970,9 +1985,17 @@ function normalizeExportDocument(result: unknown): ProductMovementExportDocument
   const payload = result as Record<string, unknown>
 
   return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+    DocumentURL:
+      readString(payload.DocumentURL)
+      || readString(payload.XlsxDocument)
+      || readString(payload.URL)
+      || readString(payload.url),
+    PdfDocumentURL: readString(payload.PdfDocumentURL) || readString(payload.PdfDocument),
   }
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }
 
 function getProductTitle(product: MovementHistoryProduct): string {

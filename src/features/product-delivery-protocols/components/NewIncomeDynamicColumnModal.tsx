@@ -5,38 +5,48 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 
 type NewIncomeDynamicColumnModalProps = {
+  disabled?: boolean
   opened: boolean
   onClose: () => void
   onAdd: (fromDate: string) => void
 }
 
-export function NewIncomeDynamicColumnModal({ opened, onClose, onAdd }: NewIncomeDynamicColumnModalProps) {
+export function NewIncomeDynamicColumnModal({
+  disabled = false,
+  opened,
+  onClose,
+  onAdd,
+}: NewIncomeDynamicColumnModalProps) {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState<string>(() => formatLocalDate(new Date()))
-  const [syncedOpened, setSyncedOpened] = useValueState(false)
-
-  if (opened !== syncedOpened) {
-    setSyncedOpened(opened)
-
-    if (opened) {
-      setFromDate(formatLocalDate(new Date()))
-    }
-  }
 
   return (
-    <AppModal opened={opened} title={t('Додати нову колонку')} onClose={onClose}>
+    <AppModal
+      opened={opened}
+      title={t('Додати нову колонку')}
+      onClose={() => {
+        if (!disabled) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         <TextInput
+          disabled={disabled}
           label={t('Від якої дати')}
           type="date"
           value={fromDate}
-          onChange={(event) => setFromDate(event.currentTarget.value)}
+          onChange={(event) => {
+            if (!disabled) {
+              setFromDate(event.currentTarget.value)
+            }
+          }}
         />
         <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={onClose}>
+          <Button color="gray" disabled={disabled} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button disabled={!fromDate} onClick={() => onAdd(fromDate)}>
+          <Button disabled={disabled || !fromDate} onClick={() => onAdd(fromDate)}>
             {t('Додати')}
           </Button>
         </Group>

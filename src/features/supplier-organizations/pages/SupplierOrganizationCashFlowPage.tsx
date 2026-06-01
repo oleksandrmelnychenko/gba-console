@@ -105,6 +105,7 @@ export function SupplierOrganizationCashFlowPage() {
   const [isExporting, setExporting] = useValueState(false)
   const organizationRequestRef = useRef(0)
   const cashFlowRequestRef = useRef(0)
+  const filterError = getDateRangeError(fromDate, toDate)
 
   const loadOrganization = useCallback(async () => {
     if (!id) {
@@ -144,6 +145,14 @@ export function SupplierOrganizationCashFlowPage() {
       return
     }
 
+    if (filterError) {
+      cashFlowRequestRef.current += 1
+      setCashFlow(null)
+      setError(null)
+      setLoadingCashFlow(false)
+      return
+    }
+
     const requestId = cashFlowRequestRef.current + 1
     cashFlowRequestRef.current = requestId
     setLoadingCashFlow(true)
@@ -169,14 +178,14 @@ export function SupplierOrganizationCashFlowPage() {
         setLoadingCashFlow(false)
       }
     }
-  }, [fromDate, netId, setCashFlow, setError, setLoadingCashFlow, t, toDate, typePaymentTask])
+  }, [filterError, fromDate, netId, setCashFlow, setError, setLoadingCashFlow, t, toDate, typePaymentTask])
 
   useEffect(() => {
     void loadCashFlow()
   }, [loadCashFlow])
 
   async function exportDocument() {
-    if (!netId) {
+    if (!netId || filterError) {
       return
     }
 
@@ -240,7 +249,15 @@ export function SupplierOrganizationCashFlowPage() {
         </Group>
         <Group gap="xs">
           <Tooltip label={t('Друк')}>
-            <ActionIcon aria-label={t('Друк')} color="gray" loading={isExporting} size={38} variant="light" onClick={exportDocument}>
+            <ActionIcon
+              aria-label={t('Друк')}
+              color="gray"
+              disabled={Boolean(filterError)}
+              loading={isExporting}
+              size={38}
+              variant="light"
+              onClick={exportDocument}
+            >
               <IconDownload size={18} />
             </ActionIcon>
           </Tooltip>
@@ -265,6 +282,12 @@ export function SupplierOrganizationCashFlowPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -409,6 +432,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

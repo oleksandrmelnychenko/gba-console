@@ -79,12 +79,12 @@ function completePlacementsToRowQty(
   ]
 }
 
-function placementKey(placement: DynamicProductPlacement): string {
-  return String(
-    placement.NetUid
-      || placement.Id
-      || `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}`,
-  )
+function placementKey(placement: DynamicProductPlacement, index: number): string {
+  if (placement.NetUid || placement.Id) {
+    return String(placement.NetUid || placement.Id)
+  }
+
+  return `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}-${index}`
 }
 
 export function ProtocolIncomePlacementDrawer({
@@ -282,7 +282,7 @@ function ProtocolIncomePlacementDrawerContent({
           <Table.Tbody>
             {placements.map((placement, index) => (
               <Table.Tr
-                key={placementKey(placement)}
+                key={placementKey(placement, index)}
                 style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
                 onClick={() => !placement.IsApplied && openDraft(placement)}
               >

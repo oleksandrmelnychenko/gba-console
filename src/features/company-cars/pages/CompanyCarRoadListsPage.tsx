@@ -54,6 +54,7 @@ type CompanyCarRoadListsAction =
   | { type: 'append-road-list'; roadList: CompanyCarRoadList }
   | { type: 'delete-road-list'; netUid: string }
   | { type: 'failed'; error: string }
+  | { type: 'invalid-filter' }
   | { type: 'missing-company-car' }
   | { type: 'set-error'; error: string | null }
   | { type: 'start-loading' }
@@ -81,12 +82,18 @@ export function CompanyCarRoadListsPage() {
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(fromDate, toDate)
 
   const columns = useRoadListColumns(setDeleteTarget)
 
   useEffect(() => {
     if (!id) {
       dispatchLoadState({ type: 'missing-company-car' })
+      return
+    }
+
+    if (filterError) {
+      dispatchLoadState({ type: 'invalid-filter' })
       return
     }
 
@@ -116,7 +123,7 @@ export function CompanyCarRoadListsPage() {
       })
 
     return () => controller.abort()
-  }, [fromDate, id, reloadKey, t, toDate])
+  }, [filterError, fromDate, id, reloadKey, t, toDate])
 
   const handleCreated = useCallback(
     (roadList: CompanyCarRoadList) => {
@@ -204,6 +211,12 @@ export function CompanyCarRoadListsPage() {
             </Alert>
           )}
 
+          {filterError && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError}
+            </Alert>
+          )}
+
           <Group gap="xs">
             <Badge color="blue" variant="light">
               {t('Шляхових листів')}: {roadLists.length}
@@ -262,6 +275,13 @@ function roadListsReducer(
       return {
         ...state,
         error: action.error,
+        isLoading: false,
+        roadLists: [],
+      }
+    case 'invalid-filter':
+      return {
+        ...state,
+        error: null,
         isLoading: false,
         roadLists: [],
       }
@@ -452,6 +472,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function toLegacyDateString(value: string): string {

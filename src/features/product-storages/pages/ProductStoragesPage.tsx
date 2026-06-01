@@ -38,7 +38,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -51,6 +51,7 @@ import {
   ProductStorageLocationHistoryDrawer,
   type MovementHistoryProduct,
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import {
   createProductStorageSupplyReturn,
@@ -169,7 +170,11 @@ function useProductStoragesPageModel() {
   })
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const listRequestKey = `${selectedStorageNetId}|${fromDate}|${toDate}|${searchValue}|${pageSize}`
+  const exportScopeKey = `${selectedStorageNetId}|${fromDate}|${toDate}`
   const listRequestKeyRef = useRef(listRequestKey)
+  const exportScopeKeyRef = useRef(exportScopeKey)
+  const exportRequestRef = useRef(0)
+  const filterError = getDateRangeError(fromDate, toDate)
   const availabilities = availabilityList.items
   const hasMore = availabilityList.hasMore
   const totalAvailabilities = availabilityList.total
@@ -230,9 +235,13 @@ function useProductStoragesPageModel() {
     () => storages.find((storage) => storage.NetUid === effectiveToStorageNetUid) || null,
     [effectiveToStorageNetUid, storages],
   )
+  const availableReturnConsignments = useMemo(
+    () => returnConsignmentsState.items.filter(hasReturnConsignmentItemId),
+    [returnConsignmentsState.items],
+  )
   const selectedReturnConsignment = useMemo(
-    () => returnConsignmentsState.items.find((consignment) => getConsignmentKey(consignment) === actionForm.consignmentId) || null,
-    [actionForm.consignmentId, returnConsignmentsState.items],
+    () => availableReturnConsignments.find((consignment) => getConsignmentKey(consignment) === actionForm.consignmentId) || null,
+    [actionForm.consignmentId, availableReturnConsignments],
   )
   const toolbarLeft = useMemo(
     () => (
@@ -291,16 +300,51 @@ function useProductStoragesPageModel() {
   }, [listRequestKey])
 
   useEffect(() => {
-    if (!selectedStorageNetId) {
+    exportScopeKeyRef.current = exportScopeKey
+  }, [exportScopeKey])
+
+  const resetAvailabilityLoad = useCallback(() => {
+    setAvailabilityList({ hasMore: false, items: [], total: 0 })
+    setLoading(false)
+    setLoadingMore(false)
+  }, [setAvailabilityList, setLoading, setLoadingMore])
+
+  const startAvailabilityLoad = useCallback(() => {
+    setLoading(true)
+    setError(null)
+  }, [setError, setLoading])
+
+  const completeAvailabilityLoad = useCallback(
+    (result: { items: ProductStorageAvailability[]; totalQty: number }) => {
+      setAvailabilityList({
+        hasMore: result.items.length < result.totalQty && result.items.length > 0,
+        items: result.items,
+        total: result.totalQty,
+      })
+      setLoading(false)
+    },
+    [setAvailabilityList, setLoading],
+  )
+
+  const failAvailabilityLoad = useCallback(
+    (loadError: unknown) => {
       setAvailabilityList({ hasMore: false, items: [], total: 0 })
+      setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари складу'))
+      setLoading(false)
+    },
+    [setError, setAvailabilityList, setLoading, t],
+  )
+
+  useEffect(() => {
+    if (!selectedStorageNetId || filterError) {
+      resetAvailabilityLoad()
       return
     }
 
     let cancelled = false
 
     async function loadAvailabilities() {
-      setLoading(true)
-      setError(null)
+      startAvailabilityLoad()
 
       try {
         const result = await getAvailableProductsByStorage({
@@ -313,20 +357,11 @@ function useProductStoragesPageModel() {
         })
 
         if (!cancelled) {
-          setAvailabilityList({
-            hasMore: result.items.length < result.totalQty && result.items.length > 0,
-            items: result.items,
-            total: result.totalQty,
-          })
+          completeAvailabilityLoad(result)
         }
       } catch (loadError) {
         if (!cancelled) {
-          setAvailabilityList({ hasMore: false, items: [], total: 0 })
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари складу'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          failAvailabilityLoad(loadError)
         }
       }
     }
@@ -338,14 +373,15 @@ function useProductStoragesPageModel() {
     }
   }, [
     fromDate,
+    filterError,
     pageSize,
     reloadKey,
+    completeAvailabilityLoad,
+    failAvailabilityLoad,
+    resetAvailabilityLoad,
     searchValue,
     selectedStorageNetId,
-    setError,
-    setAvailabilityList,
-    setLoading,
-    t,
+    startAvailabilityLoad,
     toDate,
   ])
 
@@ -394,16 +430,15 @@ function useProductStoragesPageModel() {
             items: nextConsignments,
           })
           setActionForm((currentForm) => {
-            if (
-              currentForm.consignmentId &&
-              nextConsignments.some((consignment) => getConsignmentKey(consignment) === currentForm.consignmentId)
-            ) {
+            const nextAvailableConsignments = nextConsignments.filter(hasReturnConsignmentItemId)
+
+            if (currentForm.consignmentId && nextAvailableConsignments.some((consignment) => getConsignmentKey(consignment) === currentForm.consignmentId)) {
               return currentForm
             }
 
             return {
               ...currentForm,
-              consignmentId: getConsignmentKey(nextConsignments[0]) || '',
+              consignmentId: getConsignmentKey(nextAvailableConsignments[0]) || '',
             }
           })
         }
@@ -527,6 +562,11 @@ function useProductStoragesPageModel() {
 
   function openPreview() {
     if (!canOpenPreview) {
+      return
+    }
+
+    if (filterError) {
+      setActionError(t(filterError))
       return
     }
 
@@ -659,7 +699,7 @@ function useProductStoragesPageModel() {
   }
 
   async function submitAction() {
-    if (!actionModal) {
+    if (!actionModal || isActionSubmitting) {
       return
     }
 
@@ -761,7 +801,7 @@ function useProductStoragesPageModel() {
   }
 
   async function loadMore() {
-    if (!selectedStorageNetId || isLoadingMore) {
+    if (!selectedStorageNetId || filterError || isLoadingMore) {
       return
     }
 
@@ -807,9 +847,15 @@ function useProductStoragesPageModel() {
   }
 
   async function handleExport() {
-    if (!selectedStorageNetId) {
+    if (!selectedStorageNetId || filterError || isExporting) {
       return
     }
+
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const requestKey = exportScopeKeyRef.current
+    const isLatestExport = () => exportRequestRef.current === requestId
+    const isCurrentExport = () => isLatestExport() && exportScopeKeyRef.current === requestKey
 
     setExporting(true)
     setError(null)
@@ -821,12 +867,18 @@ function useProductStoragesPageModel() {
         to: toDate,
       })
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
+      if (isCurrentExport()) {
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      }
     } catch (exportError) {
-      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт складу'))
+      if (isCurrentExport()) {
+        setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт складу'))
+      }
     } finally {
-      setExporting(false)
+      if (isLatestExport()) {
+        setExporting(false)
+      }
     }
   }
 
@@ -841,6 +893,7 @@ function useProductStoragesPageModel() {
     downloadModalOpened,
     effectiveToStorageNetUid,
     error,
+    filterError,
     fromDate,
     hasMore,
     isActionSubmitting,
@@ -853,7 +906,7 @@ function useProductStoragesPageModel() {
     pageSize,
     previewOpened,
     previewRows,
-    returnConsignments: returnConsignmentsState.items,
+    returnConsignments: availableReturnConsignments,
     returnConsignmentsError: returnConsignmentsState.error,
     searchDraft,
     selectedAvailabilities,
@@ -914,6 +967,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     downloadModalOpened,
     effectiveToStorageNetUid,
     error,
+    filterError,
     fromDate,
     hasMore,
     isActionSubmitting,
@@ -972,7 +1026,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
       <Group justify="flex-end" align="end">
         <Group gap="xs">
           {canOpenPreview && selectedAvailabilities.length > 0 ? (
-            <Button leftSection={<IconEye size={16} />} variant="light" onClick={openPreview}>
+            <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="light" onClick={openPreview}>
               {t('Preview')} ({selectedAvailabilities.length})
             </Button>
           ) : null}
@@ -980,7 +1034,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             <ActionIcon
               aria-label={t('Експорт')}
               color="gray"
-              disabled={!selectedStorageNetId}
+              disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
               loading={isExporting}
               size={38}
               variant="light"
@@ -1050,9 +1104,9 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             </Tooltip>
           </Group>
 
-          {(error || (!isLoadingStorages && storageOptions.length === 0)) && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error || t('Складів не знайдено')}
+          {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
+            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError ? t(filterError) : error || t('Складів не знайдено')}
             </Alert>
           )}
 
@@ -1071,7 +1125,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               />
               <Button
                 color="gray"
-                disabled={!hasMore || isLoading || isLoadingMore}
+                disabled={Boolean(filterError) || !hasMore || isLoading || isLoadingMore}
                 loading={isLoadingMore}
                 variant="light"
                 onClick={loadMore}
@@ -1086,9 +1140,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             data={availabilities}
             defaultLayout={PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Товарів на складі не знайдено')}
-            getRowId={(availability, index) =>
-              String(availability.NetUid || `${getProductCode(availability)}-${getStorageName(availability)}-${index}`)
-            }
+            getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
             isLoading={isLoading || isLoadingStorages}
             layoutVersion="product-storages-table-2"
             loadingText={t('Завантаження товарів складу')}
@@ -1156,7 +1208,12 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
               {downloadDocument.DocumentURL && (
-                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-excel">
                     <IconFileTypeXls size={22} stroke={1.8} />
                   </span>
@@ -1164,7 +1221,12 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
                 </Anchor>
               )}
               {downloadDocument.PdfDocumentURL && (
-                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>
@@ -1424,7 +1486,7 @@ function ProductStorageActionModal({
   const isSingle = modal.scope === 'single'
   const showManagementSwitch = isAdmin
   const showQuantityField = isSingle
-  const showPlacementFields = modal.mode === 'transfer' && isSingle && !selectedToStorage?.ForDefective
+  const showPlacementFields = modal.mode === 'transfer' && isSingle && Boolean(selectedToStorage) && !selectedToStorage.ForDefective
   const modeOptions = getActionModeOptions(modal.scope).map((option) => ({
     ...option,
     label: t(option.label),
@@ -1438,9 +1500,20 @@ function ProductStorageActionModal({
     modal.mode === 'return'
       ? getReturnMaxQty(singleAvailableQty, selectedReturnConsignment)
       : singleAvailableQty
+  const displayedQty = isSingle ? Number(form.qty) : sumActionRows(modal.rows)
 
   return (
-    <AppModal centered opened title={t(getActionTitle(modal))} size="xl" onClose={onClose}>
+    <AppModal
+      centered
+      opened
+      title={t(getActionTitle(modal))}
+      size="xl"
+      onClose={() => {
+        if (!isSubmitting) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         <SegmentedControl
           data={modeOptions}
@@ -1454,7 +1527,7 @@ function ProductStorageActionModal({
             {t('Позицій')}: {modal.rows.length}
           </Badge>
           <Badge color="gray" variant="light">
-            {t('Кількість')}: {formatAmount(sumActionRows(modal.rows))}
+            {t('Кількість')}: {formatAmount(Number.isFinite(displayedQty) ? displayedQty : 0)}
           </Badge>
           <Badge color="gray" variant="light">
             {t('Склад')}: {displayValue(fromStorage?.Name)}
@@ -1589,7 +1662,7 @@ function ProductStorageActionModal({
           <Button color="gray" disabled={isSubmitting} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={getActionSubmitIcon(modal.mode)} loading={isSubmitting} onClick={onSubmit}>
+          <Button disabled={isSubmitting} leftSection={getActionSubmitIcon(modal.mode)} loading={isSubmitting} onClick={onSubmit}>
             {t(getActionSubmitLabel(modal.mode))}
           </Button>
         </Group>
@@ -1829,6 +1902,18 @@ function createActionForm(qty?: number): ProductStorageActionForm {
   }
 }
 
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
+}
+
 function createActionRows(availabilities: ProductStorageAvailability[]): ProductStorageActionRow[] {
   return availabilities.map((availability) => ({
     availability,
@@ -1882,6 +1967,10 @@ function validateAction(
     return 'Вкажіть дату операції'
   }
 
+  if (!isValidDateInputValue(form.fromDate)) {
+    return 'Вкажіть коректну дату операції'
+  }
+
   if (actionModal.scope === 'single') {
     const row = actionModal.rows[0]
     const qty = Number(form.qty)
@@ -1908,8 +1997,14 @@ function validateAction(
     }
   }
 
-  if (actionModal.mode === 'return' && !context.selectedConsignment) {
-    return 'Оберіть прихід для повернення'
+  if (actionModal.mode === 'return') {
+    if (!context.selectedConsignment) {
+      return 'Оберіть прихід для повернення'
+    }
+
+    if (!context.selectedConsignment.ConsignmentItemId) {
+      return 'Обрана партія не має ConsignmentItemId'
+    }
   }
 
   return null
@@ -1919,6 +2014,16 @@ function isValidActionRow(row: ProductStorageActionRow): boolean {
   const availableQty = getQuantity(row.availability)
 
   return row.changedQty > 0 && (typeof availableQty !== 'number' || row.changedQty <= availableQty)
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function getReturnMaxQty(
@@ -2176,6 +2281,10 @@ function getConsignmentKey(consignment?: ProductStorageAvailableConsignment): st
   }
 
   return String(consignment.ConsignmentItemId || `${consignment.ProductIncomeNumber || ''}:${consignment.FromDate || ''}`)
+}
+
+function hasReturnConsignmentItemId(consignment: ProductStorageAvailableConsignment): boolean {
+  return Boolean(consignment.ConsignmentItemId)
 }
 
 function formatConsignmentOption(consignment: ProductStorageAvailableConsignment): string {

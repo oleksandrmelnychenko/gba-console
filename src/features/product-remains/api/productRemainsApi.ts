@@ -200,9 +200,17 @@ function normalizeExportDocument(result: unknown): ProductRemainsExportDocument 
   const payload = result as Record<string, unknown>
 
   return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+    DocumentURL:
+      readString(payload.DocumentURL)
+      || readString(payload.XlsxDocument)
+      || readString(payload.URL)
+      || readString(payload.url),
+    PdfDocumentURL: readString(payload.PdfDocumentURL) || readString(payload.PdfDocument),
   }
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }
 
 function normalizeArray(result: unknown): unknown[] {

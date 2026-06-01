@@ -26,21 +26,46 @@ const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+type AdvancePaymentsLoadState = {
+  error: string | null
+  isLoading: boolean
+  payments: AdvancePayment[]
+}
+
+type AdvancePaymentsLoadAction =
+  | { type: 'failed'; error: string }
+  | { type: 'invalid-filter' }
+  | { type: 'loaded'; payments: AdvancePayment[] }
+  | { type: 'start-loading' }
+
+const INITIAL_ADVANCE_PAYMENTS_LOAD_STATE: AdvancePaymentsLoadState = {
+  error: null,
+  isLoading: true,
+  payments: [],
+}
 
 export function AdvancePaymentsPage() {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState(() => shiftMonth(-1))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
-  const [payments, setPayments] = useValueState<AdvancePayment[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [loadState, dispatchLoadState] = useReducer(advancePaymentsLoadReducer, INITIAL_ADVANCE_PAYMENTS_LOAD_STATE)
+  const { error, isLoading, payments } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(fromDate, toDate)
   const columns = useAdvancePaymentColumns()
 
   useEffect(() => {
     let isActive = true
-    setLoading(true)
-    setError(null)
+
+    if (filterError) {
+      dispatchLoadState({ type: 'invalid-filter' })
+
+      return () => {
+        isActive = false
+      }
+    }
+
+    dispatchLoadState({ type: 'start-loading' })
 
     async function loadPayments() {
       try {
@@ -50,16 +75,14 @@ export function AdvancePaymentsPage() {
         })
 
         if (isActive) {
-          setPayments(nextPayments)
+          dispatchLoadState({ payments: nextPayments, type: 'loaded' })
         }
       } catch (loadError) {
         if (isActive) {
-          setPayments([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові платежі'))
-        }
-      } finally {
-        if (isActive) {
-          setLoading(false)
+          dispatchLoadState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові платежі'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -69,7 +92,7 @@ export function AdvancePaymentsPage() {
     return () => {
       isActive = false
     }
-  }, [fromDate, reloadKey, setError, setLoading, setPayments, t, toDate])
+  }, [filterError, fromDate, reloadKey, t, toDate])
 
   function resetFilters() {
     setFromDate(shiftMonth(-1))
@@ -109,6 +132,12 @@ export function AdvancePaymentsPage() {
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
+            </Alert>
+          )}
+
+          {filterError && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError}
             </Alert>
           )}
 
@@ -215,6 +244,52 @@ function shiftMonth(months: number): string {
   date.setMonth(date.getMonth() + months)
 
   return formatLocalDate(date)
+}
+
+function advancePaymentsLoadReducer(
+  state: AdvancePaymentsLoadState,
+  action: AdvancePaymentsLoadAction,
+): AdvancePaymentsLoadState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        error: action.error,
+        isLoading: false,
+        payments: [],
+      }
+    case 'invalid-filter':
+      return {
+        error: null,
+        isLoading: false,
+        payments: [],
+      }
+    case 'loaded':
+      return {
+        error: null,
+        isLoading: false,
+        payments: action.payments,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    default:
+      return state
+  }
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function getUserName(user?: User | null): string | undefined {

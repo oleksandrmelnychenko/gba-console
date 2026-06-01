@@ -12,7 +12,7 @@ import {
   TextInput,
 } from '@mantine/core'
 import { IconAlertCircle, IconDeviceFloppy, IconX } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -87,6 +87,7 @@ export function AdvanceReportFuelModal({
   const supplierSearchSeq = useRef(0)
   const companyCarSearchSeq = useRef(0)
   const costMovementSearchSeq = useRef(0)
+  const submitSeq = useRef(0)
 
   const selectedSupplier = useMemo(
     () => suppliers.find((supplier) => getEntityValue(supplier) === form.selectedSupplierValue) || null,
@@ -129,10 +130,25 @@ export function AdvanceReportFuelModal({
     [form.fuelAmount, form.pricePerLiter, form.totalPriceWithVat, form.vatAmount, form.vatPercent],
   )
 
-  useEffect(() => {
+  const invalidatePendingRequests = useCallback(() => {
+    submitSeq.current += 1
     supplierSearchSeq.current += 1
     companyCarSearchSeq.current += 1
     costMovementSearchSeq.current += 1
+  }, [])
+
+  const resetModalState = useCallback(() => {
+    setForm(createEmptyForm())
+    setCompanyCars([])
+    setCostMovements([])
+    setError(null)
+    setConfirmCloseOpen(false)
+    setSaving(false)
+    setLoading(true)
+  }, [setCompanyCars, setConfirmCloseOpen, setCostMovements, setError, setForm, setLoading, setSaving])
+
+  useEffect(() => {
+    invalidatePendingRequests()
 
     if (!opened) {
       return undefined
@@ -140,12 +156,7 @@ export function AdvanceReportFuelModal({
 
     let cancelled = false
 
-    setForm(createEmptyForm())
-    setCompanyCars([])
-    setCostMovements([])
-    setError(null)
-    setConfirmCloseOpen(false)
-    setLoading(true)
+    resetModalState()
 
     async function loadSuppliers() {
       try {
@@ -168,12 +179,10 @@ export function AdvanceReportFuelModal({
     void loadSuppliers()
 
     return () => {
-      supplierSearchSeq.current += 1
-      companyCarSearchSeq.current += 1
-      costMovementSearchSeq.current += 1
+      invalidatePendingRequests()
       cancelled = true
     }
-  }, [opened, setCompanyCars, setConfirmCloseOpen, setCostMovements, setError, setForm, setLoading, setSuppliers, t])
+  }, [invalidatePendingRequests, opened, resetModalState, setError, setLoading, setSuppliers, t])
 
   useEffect(() => {
     if (!opened) {
@@ -304,6 +313,10 @@ export function AdvanceReportFuelModal({
   }
 
   async function submitFueling() {
+    if (isSaving) {
+      return
+    }
+
     const payload = buildFuelingPayload({
       form,
       previewFueling,
@@ -320,13 +333,21 @@ export function AdvanceReportFuelModal({
     }
 
     setSaving(true)
+    const requestId = submitSeq.current + 1
+    submitSeq.current = requestId
+    const isCurrentSubmit = () => submitSeq.current === requestId
 
     try {
       const calculated = await calculateAdvanceReportCompanyCarFueling(payload).catch(() => null)
-      onAdd(calculated ? { ...payload, ...calculated } : payload)
-      onClose()
+
+      if (isCurrentSubmit()) {
+        onAdd(calculated ? { ...payload, ...calculated } : payload)
+        onClose()
+      }
     } finally {
-      setSaving(false)
+      if (isCurrentSubmit()) {
+        setSaving(false)
+      }
     }
   }
 
@@ -344,6 +365,10 @@ export function AdvanceReportFuelModal({
   }
 
   function confirmClose() {
+    if (isSaving) {
+      return
+    }
+
     setConfirmCloseOpen(false)
     onClose()
   }
@@ -469,15 +494,19 @@ export function AdvanceReportFuelModal({
           centered
           opened={confirmCloseOpen}
           title={t('Є незбережені зміни')}
-          onClose={() => setConfirmCloseOpen(false)}
+          onClose={() => {
+            if (!isSaving) {
+              setConfirmCloseOpen(false)
+            }
+          }}
         >
           <Stack gap="md">
             <Text>{t('Якщо закрити форму, введені дані не будуть додані до авансового звіту.')}</Text>
             <Group justify="flex-end">
-              <Button color="gray" variant="light" onClick={() => setConfirmCloseOpen(false)}>
+              <Button color="gray" disabled={isSaving} variant="light" onClick={() => setConfirmCloseOpen(false)}>
                 {t('Залишитися')}
               </Button>
-              <Button color="red" onClick={confirmClose}>
+              <Button color="red" disabled={isSaving} onClick={confirmClose}>
                 {t('Закрити без збереження')}
               </Button>
             </Group>
@@ -643,34 +672,56 @@ function toEntityOptions<T extends EntityOptionSource>(
   entities: T[],
   labelGetter: (entity: T) => string = (entity) => getEntityLabel(entity),
 ) {
-  return entities
-    .map((entity) => ({
-      label: labelGetter(entity) || getEntityValue(entity),
-      value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+  return entities.reduce<Array<{ label: string; value: string }>>((options, entity) => {
+    const value = getEntityValue(entity)
+
+    if (!value) {
+      return options
+    }
+
+    options.push({
+      label: labelGetter(entity) || value,
+      value,
+    })
+
+    return options
+  }, [])
 }
 
 function toCompanyCarOptions(companyCars: CompanyCar[]) {
-  return companyCars
-    .map((companyCar) => ({
-      label: getCompanyCarLabel(companyCar) || getEntityValue(companyCar),
-      value: getEntityValue(companyCar),
-    }))
-    .filter((option) => option.value)
+  return companyCars.reduce<Array<{ label: string; value: string }>>((options, companyCar) => {
+    const value = getEntityValue(companyCar)
+
+    if (!value) {
+      return options
+    }
+
+    options.push({
+      label: getCompanyCarLabel(companyCar) || value,
+      value,
+    })
+
+    return options
+  }, [])
 }
 
 function toAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
-  return agreements
-    .map((agreement) => {
-      const parts = [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name].filter(Boolean)
+  return agreements.reduce<Array<{ label: string; value: string }>>((options, agreement) => {
+    const value = getEntityValue(agreement)
 
-      return {
-        label: parts.join(' / ') || getEntityValue(agreement),
-        value: getEntityValue(agreement),
-      }
+    if (!value) {
+      return options
+    }
+
+    const parts = [agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name, agreement.Organization?.Name].filter(Boolean)
+
+    options.push({
+      label: parts.join(' / ') || value,
+      value,
     })
-    .filter((option) => option.value)
+
+    return options
+  }, [])
 }
 
 function includeEntity<T extends EntityOptionSource>(entities: T[], entity: T | null): T[] {

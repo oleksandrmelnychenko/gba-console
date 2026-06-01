@@ -29,6 +29,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
   getSupplyOrganizations,
@@ -124,6 +125,10 @@ export function SupplierOrganizationsPage() {
   }
 
   async function exportList() {
+    if (isExporting) {
+      return
+    }
+
     setExporting(true)
     setError(null)
 
@@ -172,7 +177,15 @@ export function SupplierOrganizationsPage() {
             </Button>
           </PermissionGate>
           <Tooltip label={t('Друк')}>
-            <ActionIcon aria-label={t('Друк')} color="gray" loading={isExporting} size={38} variant="light" onClick={exportList}>
+            <ActionIcon
+              aria-label={t('Друк')}
+              color="gray"
+              disabled={isExporting}
+              loading={isExporting}
+              size={38}
+              variant="light"
+              onClick={exportList}
+            >
               <IconDownload size={18} />
             </ActionIcon>
           </Tooltip>
@@ -463,7 +476,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
     <AppModal centered opened={Boolean(document)} title={t('Документ')} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL && (
-          <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <IconFileTypeXls size={22} stroke={1.8} />
               <span>{t('Excel')}</span>
@@ -471,7 +484,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
           </Anchor>
         )}
         {document?.PdfDocumentURL && (
-          <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <IconFileTypePdf size={22} stroke={1.8} />
               <span>{t('PDF')}</span>
@@ -485,17 +498,11 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
 }
 
 function getAgreementOrganizations(organization: SupplyOrganization): string {
-  return (organization.SupplyOrganizationAgreements || [])
-    .map((agreement) => agreement.Organization?.Name)
-    .filter(Boolean)
-    .join(' ')
+  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Organization?.Name || []).join(' ')
 }
 
 function getAgreementCurrencies(organization: SupplyOrganization): string {
-  return (organization.SupplyOrganizationAgreements || [])
-    .map((agreement) => agreement.Currency?.Code)
-    .filter(Boolean)
-    .join(' ')
+  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Currency?.Code || []).join(' ')
 }
 
 function readStoredSearch(): string {

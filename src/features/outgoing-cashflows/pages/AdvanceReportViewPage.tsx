@@ -16,6 +16,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   calculateAdvanceReportOrder,
   getAdvanceReportOrder,
@@ -73,6 +74,7 @@ function useAdvanceReportViewModel() {
   const navigate = useNavigate()
   const [viewState, setViewState] = useValueState<AdvanceReportViewState>(INITIAL_ADVANCE_REPORT_VIEW_STATE)
   const [isSaving, setSaving] = useValueState(false)
+  const [isRecalculating, setRecalculating] = useValueState(false)
   const [isConsumableModalOpen, setConsumableModalOpen] = useValueState(false)
   const [isFuelModalOpen, setFuelModalOpen] = useValueState(false)
   const [createIncomeAutomatically, setCreateIncomeAutomatically] = useValueState(false)
@@ -137,28 +139,37 @@ function useAdvanceReportViewModel() {
   const totals = useMemo(() => calculateTotals(order), [order])
   const orderAmount = order?.Amount || 0
   const reportTotal = totals.total
-  const canAppendRows = Boolean(order && (!isDone || (order.DifferenceAmount || 0) < 0))
+  const isBusy = isSaving || isRecalculating
+  const canAppendRows = Boolean(order && !isBusy && (!isDone || (order.DifferenceAmount || 0) < 0))
   const hasUnsavedRows = useMemo(() => Boolean(order && hasNewRows(order)), [order])
   const hasPendingConsumableFiles = hasFilesByOrderKey(consumableDocumentFilesByOrderKey)
   const hasPendingChanges = hasLocalChanges || hasUnsavedRows || hasPendingConsumableFiles
-  const canSave = Boolean(order && hasAnyRows(order) && (!isDone || hasUnsavedRows))
+  const canSave = Boolean(order && !isBusy && hasAnyRows(order) && (!isDone || hasUnsavedRows))
   const currencyCode = order?.PaymentCurrencyRegister?.Currency?.Code || order?.PaymentCurrencyRegister?.Currency?.Name
   const headerTitle = useMemo(() => buildHeaderTitle(order, t), [order, t])
   const reportTitle = useMemo(() => buildReportTitle(order, t), [order, t])
 
   const goBack = useCallback(() => {
+    if (isBusy) {
+      return
+    }
+
     if (hasPendingChanges) {
       setConfirmLeaveOpen(true)
       return
     }
 
     navigate(OUTGOING_CASHFLOW_ROUTE)
-  }, [hasPendingChanges, navigate, setConfirmLeaveOpen])
+  }, [hasPendingChanges, isBusy, navigate, setConfirmLeaveOpen])
 
   const confirmLeave = useCallback(() => {
+    if (isBusy) {
+      return
+    }
+
     setConfirmLeaveOpen(false)
     navigate(OUTGOING_CASHFLOW_ROUTE)
-  }, [navigate, setConfirmLeaveOpen])
+  }, [isBusy, navigate, setConfirmLeaveOpen])
 
   useEffect(() => {
     if (!hasPendingChanges) {
@@ -182,6 +193,7 @@ function useAdvanceReportViewModel() {
       const requestId = recalculateRef.current + 1
       recalculateRef.current = requestId
       setViewState((current) => ({ ...current, error: null }))
+      setRecalculating(true)
 
       try {
         const calculated = await calculateAdvanceReportOrder(nextOrder)
@@ -196,14 +208,18 @@ function useAdvanceReportViewModel() {
             error: calculateError instanceof Error ? calculateError.message : t('Не вдалося перерахувати суму'),
           }))
         }
+      } finally {
+        if (recalculateRef.current === requestId) {
+          setRecalculating(false)
+        }
       }
     },
-    [setViewState, t],
+    [setRecalculating, setViewState, t],
   )
 
   const removeConsumableRow = useCallback(
     (row: AdvanceReportConsumableRow) => {
-      if (!order) {
+      if (!order || isBusy) {
         return
       }
 
@@ -216,12 +232,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [order, recalculate, setViewState],
+    [isBusy, order, recalculate, setViewState],
   )
 
   const removeFuelRow = useCallback(
     (row: AdvanceReportFuelRow) => {
-      if (!order) {
+      if (!order || isBusy) {
         return
       }
 
@@ -233,12 +249,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [order, recalculate, setViewState],
+    [isBusy, order, recalculate, setViewState],
   )
 
   const addConsumableOrder = useCallback(
     (consumablesOrder: AdvanceReportConsumablesOrder, documentFiles: File[]) => {
-      if (!order) {
+      if (!order || isBusy) {
         return
       }
 
@@ -270,12 +286,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [order, recalculate, setViewState],
+    [isBusy, order, recalculate, setViewState],
   )
 
   const addFueling = useCallback(
     (fueling: CompanyCarFueling) => {
-      if (!order) {
+      if (!order || isBusy) {
         return
       }
 
@@ -298,12 +314,12 @@ function useAdvanceReportViewModel() {
       }))
       void recalculate(nextOrder)
     },
-    [order, recalculate, setViewState],
+    [isBusy, order, recalculate, setViewState],
   )
 
   const save = useCallback(
     async (auto: boolean) => {
-      if (!order) {
+      if (!order || isBusy) {
         return
       }
 
@@ -347,6 +363,7 @@ function useAdvanceReportViewModel() {
     },
     [
       consumableDocumentFilesByOrderKey,
+      isBusy,
       navigate,
       order,
       setSaving,
@@ -356,7 +373,7 @@ function useAdvanceReportViewModel() {
   )
 
   const settleDifference = useCallback(async () => {
-    if (!order) {
+    if (!order || isBusy) {
       return
     }
 
@@ -383,6 +400,7 @@ function useAdvanceReportViewModel() {
     }
   }, [
     consumableDocumentFilesByOrderKey,
+    isBusy,
     navigate,
     order,
     setSaving,
@@ -407,6 +425,8 @@ function useAdvanceReportViewModel() {
     isDone,
     isFuelModalOpen,
     isLoading,
+    isBusy,
+    isRecalculating,
     isSaving,
     order,
     orderAmount,
@@ -414,8 +434,16 @@ function useAdvanceReportViewModel() {
     reportTotal,
     totals,
     goBack,
-    openConsumableModal: () => setConsumableModalOpen(true),
-    openFuelModal: () => setFuelModalOpen(true),
+    openConsumableModal: () => {
+      if (!isBusy) {
+        setConsumableModalOpen(true)
+      }
+    },
+    openFuelModal: () => {
+      if (!isBusy) {
+        setFuelModalOpen(true)
+      }
+    },
     removeConsumableRow,
     removeFuelRow,
     save,
@@ -434,16 +462,16 @@ export function AdvanceReportViewPage() {
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="light" onClick={model.goBack}>
+        <Button color="gray" disabled={model.isBusy} leftSection={<IconArrowLeft size={16} />} variant="light" onClick={model.goBack}>
           {t('Назад')}
         </Button>
         <Group gap="xs" justify="flex-end">
           {!model.isDone && (
             <>
-              <Button leftSection={<IconReceipt2 size={16} />} variant="light" onClick={model.openConsumableModal}>
+              <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={16} />} variant="light" onClick={model.openConsumableModal}>
                 {t('Додати товар / послугу')}
               </Button>
-              <Button leftSection={<IconGasStation size={16} />} variant="light" onClick={model.openFuelModal}>
+              <Button disabled={model.isBusy} leftSection={<IconGasStation size={16} />} variant="light" onClick={model.openFuelModal}>
                 {t('Додати пальне')}
               </Button>
             </>
@@ -452,7 +480,7 @@ export function AdvanceReportViewPage() {
             <Button
               color="violet"
               leftSection={<IconDeviceFloppy size={16} />}
-              loading={model.isSaving}
+              loading={model.isSaving || model.isRecalculating}
               onClick={() => model.save(model.createIncomeAutomatically)}
             >
               {t('Зберегти')}
@@ -481,13 +509,21 @@ export function AdvanceReportViewPage() {
             opened={model.isConsumableModalOpen}
             outcomeOrder={model.order}
             onAdd={model.addConsumableOrder}
-            onClose={() => model.setConsumableModalOpen(false)}
+            onClose={() => {
+              if (!model.isBusy) {
+                model.setConsumableModalOpen(false)
+              }
+            }}
           />
           <AdvanceReportFuelModal
             opened={model.isFuelModalOpen}
             outcomeOrder={model.order}
             onAdd={model.addFueling}
-            onClose={() => model.setFuelModalOpen(false)}
+            onClose={() => {
+              if (!model.isBusy) {
+                model.setFuelModalOpen(false)
+              }
+            }}
           />
         </>
       )}
@@ -496,15 +532,19 @@ export function AdvanceReportViewPage() {
         centered
         opened={model.confirmLeaveOpen}
         title={t('Є незбережені зміни')}
-        onClose={() => model.setConfirmLeaveOpen(false)}
+        onClose={() => {
+          if (!model.isBusy) {
+            model.setConfirmLeaveOpen(false)
+          }
+        }}
       >
         <Stack gap="md">
           <Text>{t('Якщо вийти зі сторінки, додані рядки, видалення і прикріплені файли не будуть збережені.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={() => model.setConfirmLeaveOpen(false)}>
+            <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setConfirmLeaveOpen(false)}>
               {t('Залишитися')}
             </Button>
-            <Button color="red" onClick={model.confirmLeave}>
+            <Button color="red" disabled={model.isBusy} onClick={model.confirmLeave}>
               {t('Вийти без збереження')}
             </Button>
           </Group>
@@ -551,7 +591,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
               {t('Товари')} / {t('Послуги')}
             </Text>
             <AdvanceReportProductsGrid
-              canRemove
+              canRemove={!model.isBusy}
               rows={model.consumableRows}
               onRemove={model.removeConsumableRow}
             />
@@ -563,7 +603,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
         <Card withBorder padding="md" radius="md">
           <Stack gap="sm">
             <Text fw={700}>{t('Пальне')}</Text>
-            <AdvanceReportFuelGrid canRemove rows={model.fuelRows} onRemove={model.removeFuelRow} />
+            <AdvanceReportFuelGrid canRemove={!model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
           </Stack>
         </Card>
       )}
@@ -607,6 +647,7 @@ function IncomeMessage({ model }: { model: ReturnType<typeof useAdvanceReportVie
     <Group align="center" gap="sm" wrap="wrap">
       <Checkbox
         checked={model.createIncomeAutomatically}
+        disabled={model.isBusy}
         label={t('Створити автоматично')}
         onChange={(event) => model.setCreateIncomeAutomatically(event.currentTarget.checked)}
       />
@@ -635,15 +676,22 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
         <Badge color="red" variant="light">
           {t('Борг колеги')}: {formatMoney(difference)}
         </Badge>
-        <Button color="green" size="xs" variant="light" onClick={model.settleDifference}>
+        <Button
+          color="green"
+          disabled={model.isBusy}
+          loading={model.isSaving || model.isRecalculating}
+          size="xs"
+          variant="light"
+          onClick={model.settleDifference}
+        >
           {t('Оплатив')}
         </Button>
         {model.canAppendRows && (
           <>
-            <Button leftSection={<IconReceipt2 size={14} />} size="xs" variant="light" onClick={model.openConsumableModal}>
+            <Button disabled={model.isBusy} leftSection={<IconReceipt2 size={14} />} size="xs" variant="light" onClick={model.openConsumableModal}>
               {t('Прикріпити накладну')}
             </Button>
-            <Button leftSection={<IconGasStation size={14} />} size="xs" variant="light" onClick={model.openFuelModal}>
+            <Button disabled={model.isBusy} leftSection={<IconGasStation size={14} />} size="xs" variant="light" onClick={model.openFuelModal}>
               {t('Додати пальне')}
             </Button>
           </>
@@ -657,7 +705,14 @@ function DifferenceMessage({ model }: { model: ReturnType<typeof useAdvanceRepor
       <Badge color="green" variant="light">
         {t('Винні колезі')}: {formatMoney(difference)}
       </Badge>
-      <Button color="violet" size="xs" variant="light" onClick={model.settleDifference}>
+      <Button
+        color="violet"
+        disabled={model.isBusy}
+        loading={model.isSaving || model.isRecalculating}
+        size="xs"
+        variant="light"
+        onClick={model.settleDifference}
+      >
         {t('Погасити борг')}
       </Button>
     </Group>
@@ -732,7 +787,7 @@ function getConsumablesOrderDocumentUrls(
       document.url
 
     if (url) {
-      urls.push(url)
+      urls.push(upgradeHttpToHttps(url))
     }
 
     return urls

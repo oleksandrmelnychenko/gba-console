@@ -416,8 +416,7 @@ function buildServiceName(
 
 function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEur: boolean): SpecificationRow {
   const product = item.SupplyInvoiceOrderItem?.Product
-  const specifications = product?.ProductSpecifications || []
-  const lastSpecification: ProductSpecificationEntity | undefined = specifications[specifications.length - 1]
+  const lastSpecification = getLastSpecification(product?.ProductSpecifications || [])
   const services = item.PackingListPackageOrderItemSupplyServices || []
   const serviceValues: Record<string, number> = {}
 
@@ -463,6 +462,37 @@ function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEu
     vatValue: lastSpecification?.VATValue || 0,
     vendorCode: product?.VendorCode || '',
   }
+}
+
+function getLastSpecification(specifications: ProductSpecificationEntity[]): ProductSpecificationEntity | null {
+  return specifications.reduce<ProductSpecificationEntity | null>((latest, current) => {
+    if (!latest) {
+      return current
+    }
+
+    const currentTime = getDateTime(current.Created)
+    const latestTime = getDateTime(latest.Created)
+
+    if (currentTime > latestTime) {
+      return current
+    }
+
+    if (currentTime === latestTime && (current.Id || 0) > (latest.Id || 0)) {
+      return current
+    }
+
+    return latest
+  }, null)
+}
+
+function getDateTime(value?: Date | string): number {
+  if (!value) {
+    return 0
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
 
 function roundTo(value: number, factor: number): number {

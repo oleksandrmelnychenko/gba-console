@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -39,21 +39,58 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+type VatReportsLoadState = {
+  error: string | null
+  hasMore: boolean
+  isLoading: boolean
+  isLoadingMore: boolean
+  reports: VatReport[]
+}
+
+type VatReportsLoadAction =
+  | { type: 'failed'; error: string }
+  | { type: 'invalid-filter' }
+  | { type: 'loaded'; reports: VatReport[] }
+  | { type: 'load-more-failed'; error: string }
+  | { type: 'load-more-loaded'; reports: VatReport[] }
+  | { type: 'load-more-start' }
+  | { type: 'start-loading' }
+
+const INITIAL_VAT_REPORTS_LOAD_STATE: VatReportsLoadState = {
+  error: null,
+  hasMore: false,
+  isLoading: true,
+  isLoadingMore: false,
+  reports: [],
+}
+
 export function VatReportsPage() {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
-  const [reports, setReports] = useValueState<VatReport[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
-  const [hasMore, setHasMore] = useValueState(false)
+  const [loadState, dispatchLoadState] = useReducer(vatReportsLoadReducer, INITIAL_VAT_REPORTS_LOAD_STATE)
+  const { error, hasMore, isLoading, isLoadingMore, reports } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(fromDate, toDate)
+  const requestRef = useRef(0)
   const indexMap = useMemo(() => buildIndexMap(reports), [reports])
   const columns = useVatReportColumns(indexMap)
 
   useEffect(() => {
     let isActive = true
+
+    if (filterError) {
+      requestRef.current += 1
+      dispatchLoadState({ type: 'invalid-filter' })
+
+      return () => {
+        isActive = false
+      }
+    }
+
+    const requestId = requestRef.current + 1
+    requestRef.current = requestId
+    dispatchLoadState({ type: 'start-loading' })
 
     async function loadReports() {
       try {
@@ -64,18 +101,15 @@ export function VatReportsPage() {
           to: toDate,
         })
 
-        if (isActive) {
-          setReports(nextReports)
-          setHasMore(nextReports.length >= DEFAULT_LIMIT)
+        if (isActive && requestRef.current === requestId) {
+          dispatchLoadState({ reports: nextReports, type: 'loaded' })
         }
       } catch (loadError) {
-        if (isActive) {
-          setReports([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити VAT'))
-        }
-      } finally {
-        if (isActive) {
-          setLoading(false)
+        if (isActive && requestRef.current === requestId) {
+          dispatchLoadState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити VAT'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -85,12 +119,11 @@ export function VatReportsPage() {
     return () => {
       isActive = false
     }
-  }, [fromDate, reloadKey, setError, setHasMore, setLoading, setReports, t, toDate])
+  }, [filterError, fromDate, reloadKey, t, toDate])
 
   function prepareReportsLoad() {
-    setLoading(true)
-    setError(null)
-    setHasMore(false)
+    requestRef.current += 1
+    dispatchLoadState({ type: 'start-loading' })
   }
 
   function refreshReports() {
@@ -99,8 +132,14 @@ export function VatReportsPage() {
   }
 
   async function loadMore() {
-    setLoadingMore(true)
-    setError(null)
+    if (filterError) {
+      dispatchLoadState({ type: 'invalid-filter' })
+      return
+    }
+
+    dispatchLoadState({ type: 'load-more-start' })
+    const requestId = requestRef.current + 1
+    requestRef.current = requestId
 
     try {
       const nextReports = await getVatReports({
@@ -110,12 +149,16 @@ export function VatReportsPage() {
         to: toDate,
       })
 
-      setReports((current) => [...current, ...nextReports])
-      setHasMore(nextReports.length >= DEFAULT_LIMIT)
+      if (requestRef.current === requestId) {
+        dispatchLoadState({ reports: nextReports, type: 'load-more-loaded' })
+      }
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні записи'))
-    } finally {
-      setLoadingMore(false)
+      if (requestRef.current === requestId) {
+        dispatchLoadState({
+          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні записи'),
+          type: 'load-more-failed',
+        })
+      }
     }
   }
 
@@ -186,6 +229,12 @@ export function VatReportsPage() {
             </Alert>
           )}
 
+          {filterError && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError}
+            </Alert>
+          )}
+
           <Badge color="blue" variant="light" w="fit-content">
             {t('Завантажено')}: {reports.length}
           </Badge>
@@ -205,7 +254,7 @@ export function VatReportsPage() {
 
           {hasMore && (
             <Group justify="center">
-              <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMore}>
+              <Button color="gray" disabled={Boolean(filterError)} loading={isLoadingMore} variant="light" onClick={loadMore}>
                 {t('Завантажити ще')}
               </Button>
             </Group>
@@ -293,6 +342,65 @@ function buildIndexMap(reports: VatReport[]): Map<VatReport, number> {
   }, new Map<VatReport, number>())
 }
 
+function vatReportsLoadReducer(state: VatReportsLoadState, action: VatReportsLoadAction): VatReportsLoadState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        error: action.error,
+        hasMore: false,
+        isLoading: false,
+        isLoadingMore: false,
+        reports: [],
+      }
+    case 'invalid-filter':
+      return {
+        error: null,
+        hasMore: false,
+        isLoading: false,
+        isLoadingMore: false,
+        reports: [],
+      }
+    case 'loaded':
+      return {
+        error: null,
+        hasMore: action.reports.length >= DEFAULT_LIMIT,
+        isLoading: false,
+        isLoadingMore: false,
+        reports: action.reports,
+      }
+    case 'load-more-failed':
+      return {
+        ...state,
+        error: action.error,
+        isLoadingMore: false,
+      }
+    case 'load-more-loaded':
+      return {
+        ...state,
+        error: null,
+        hasMore: action.reports.length >= DEFAULT_LIMIT,
+        isLoadingMore: false,
+        reports: [...state.reports, ...action.reports],
+      }
+    case 'load-more-start':
+      return {
+        ...state,
+        error: null,
+        isLoadingMore: true,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        hasMore: false,
+        isLoading: true,
+        isLoadingMore: false,
+      }
+    default:
+      return state
+  }
+}
+
 function getReportNumber(report: VatReport): string | undefined {
   return report.Sale?.SaleNumber?.Value || report.Sale?.Number || report.SupplyInvoice?.Number
 }
@@ -306,6 +414,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

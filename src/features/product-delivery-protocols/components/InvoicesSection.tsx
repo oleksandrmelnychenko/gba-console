@@ -26,6 +26,7 @@ import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import { getApprovedInvoices, getSupplyInvoiceWithSpendings } from '../api/protocolDetailApi'
 import type {
@@ -82,6 +83,10 @@ function InvoiceViewCard({
   const [expensesOpened, setExpensesOpened] = useValueState(false)
 
   function toggleDeleted(document: SupplyDocument, index: number) {
+    if (isSaving) {
+      return
+    }
+
     const key = getDocumentKey(document, index)
 
     setDeliveryDocuments((items) =>
@@ -92,11 +97,19 @@ function InvoiceViewCard({
   }
 
   async function handleSaveDocuments() {
-    await onSaveDocuments({ ...invoice, SupplyInvoiceDeliveryDocuments: deliveryDocuments }, files)
-    setFiles([])
+    try {
+      await onSaveDocuments({ ...invoice, SupplyInvoiceDeliveryDocuments: deliveryDocuments }, files)
+      setFiles([])
+    } catch {
+      // Parent already shows the concrete API error; keep the draft open.
+    }
   }
 
   function handleChangeFiles(nextFiles: File[] | null) {
+    if (isSaving) {
+      return
+    }
+
     const nextFileList = nextFiles || []
 
     setFiles(nextFileList)
@@ -115,6 +128,7 @@ function InvoiceViewCard({
         <Group justify="flex-end" gap="sm">
           <Button
             color="gray"
+            disabled={isSaving}
             leftSection={<IconListDetails size={16} />}
             size="xs"
             variant="light"
@@ -125,6 +139,7 @@ function InvoiceViewCard({
           {canEdit && (
             <Button
               color="violet"
+              disabled={isSaving}
               leftSection={<IconDeviceFloppy size={16} />}
               loading={isSaving}
               size="xs"
@@ -161,7 +176,7 @@ function InvoiceViewCard({
                 >
                   {document.DocumentUrl ? (
                     <Anchor
-                      href={document.DocumentUrl}
+                      href={upgradeHttpToHttps(document.DocumentUrl)}
                       rel="noreferrer"
                       target="_blank"
                       td={document.Deleted ? 'line-through' : undefined}
@@ -184,6 +199,7 @@ function InvoiceViewCard({
                         <ActionIcon
                           aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
                           color={document.Deleted ? 'gray' : 'red'}
+                          disabled={isSaving}
                           size="sm"
                           variant="light"
                           onClick={() => toggleDeleted(document, index)}
@@ -208,6 +224,7 @@ function InvoiceViewCard({
               leftSection={<IconUpload size={16} />}
               label={t('Додати документи доставки')}
               multiple
+              disabled={isSaving}
               value={files}
               onChange={handleChangeFiles}
             />
@@ -422,16 +439,33 @@ function AssignInvoicesDrawer({
   }, [opened, protocol, setError, setInvoices, setLoading, setSelected, t])
 
   function toggle(invoice: SupplyInvoice) {
+    if (isSaving) {
+      return
+    }
+
     const netUid = invoice.NetUid || ''
     setSelected((records) => ({ ...records, [netUid]: !records[netUid] }))
   }
 
   function handleAssign() {
+    if (isSaving) {
+      return
+    }
+
     onAssign(invoices.filter((invoice) => invoice.NetUid && selected[invoice.NetUid]))
   }
 
   return (
-    <AppDrawer opened={opened} size="md" title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="md"
+      title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -439,7 +473,7 @@ function AssignInvoicesDrawer({
           </Alert>
         )}
         <Group justify="flex-end">
-          <Button color="violet" disabled={isLoading} loading={isSaving} onClick={handleAssign}>
+          <Button color="violet" disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -448,7 +482,7 @@ function AssignInvoicesDrawer({
             {t('Завантаження')}
           </Text>
         ) : (
-          <InvoiceSelectList invoices={invoices} selected={selected} onToggle={toggle} />
+          <InvoiceSelectList disabled={isSaving} invoices={invoices} selected={selected} onToggle={toggle} />
         )}
       </Stack>
     </AppDrawer>
@@ -477,8 +511,12 @@ export function InvoicesSection({
   const canManageInvoices = canEdit && hasPermission(MANAGE_INVOICES_PERMISSION)
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
-    await onAssignInvoices(selectedInvoices)
-    setDrawerOpened(false)
+    try {
+      await onAssignInvoices(selectedInvoices)
+      setDrawerOpened(false)
+    } catch {
+      // Parent reports the API error; keep selection open for retry.
+    }
   }
 
   return (
@@ -486,7 +524,7 @@ export function InvoicesSection({
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Інвойси')}</Text>
         {canManageInvoices && (
-          <Button color="violet" variant="light" onClick={() => setDrawerOpened(true)}>
+          <Button color="violet" disabled={isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
             {t('Управління інвойсами')}
           </Button>
         )}
@@ -515,7 +553,11 @@ export function InvoicesSection({
         opened={drawerOpened}
         protocol={protocol}
         onAssign={handleAssign}
-        onClose={() => setDrawerOpened(false)}
+        onClose={() => {
+          if (!isAssigning) {
+            setDrawerOpened(false)
+          }
+        }}
       />
     </Stack>
   )

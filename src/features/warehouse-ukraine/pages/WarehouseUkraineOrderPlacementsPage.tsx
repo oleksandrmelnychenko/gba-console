@@ -195,10 +195,15 @@ function useOrderPlacementsModel() {
   }, [id, reloadKey, setDirty, setError, setLoading, setOrder, setSelectedStorageId, setStorages, t])
 
   const gridRows = useMemo(() => (order ? buildGridRows(order) : []), [order])
+  const isBusy = isSaving || isPlacing
 
   const reloadFromServer = useCallback(() => {
+    if (isBusy) {
+      return
+    }
+
     setReloadKey((key) => key + 1)
-  }, [setReloadKey])
+  }, [isBusy, setReloadKey])
 
   const selectedStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === selectedStorageId) || null,
@@ -207,6 +212,10 @@ function useOrderPlacementsModel() {
 
   const persistOrder = useCallback(
     async (nextOrder: PlacementSupplyOrder, markClean: boolean) => {
+      if (isBusy) {
+        return
+      }
+
       setSaving(true)
       setError(null)
 
@@ -223,7 +232,7 @@ function useOrderPlacementsModel() {
         setSaving(false)
       }
     },
-    [setDirty, setError, setOrder, setSaving, t],
+    [isBusy, setDirty, setError, setOrder, setSaving, t],
   )
 
   const applyColumnRowQty = useCallback(
@@ -264,6 +273,10 @@ function useOrderPlacementsModel() {
 
   const handleCellChange = useCallback(
     (gridRow: PlacementGridRow, columnId: string, value: number) => {
+      if (isBusy || order?.IsPlaced) {
+        return
+      }
+
       const { item } = gridRow
       const qtyToSet = Math.trunc(value)
       const itemQty = item.Qty || 0
@@ -292,11 +305,15 @@ function useOrderPlacementsModel() {
 
       applyColumnRowQty(columnId, item, qtyToSet, normalizePlacementsForQty(placements, qtyToSet))
     },
-    [applyColumnRowQty, t],
+    [applyColumnRowQty, isBusy, order?.IsPlaced, t],
   )
 
   const handleOpenPlacements = useCallback(
     (gridRow: PlacementGridRow, columnId: string, row: DynamicProductPlacementRow) => {
+      if (isBusy || order?.IsPlaced) {
+        return
+      }
+
       if (!row.Qty) {
         notifications.show({ color: 'red', message: t('Неможливо розмісти нульову кількість') })
         return
@@ -304,28 +321,37 @@ function useOrderPlacementsModel() {
 
       setDrawer({ item: gridRow.item, row, columnId })
     },
-    [setDrawer, t],
+    [isBusy, order?.IsPlaced, setDrawer, t],
   )
 
   const handleApplyPlacements = useCallback(
     (placements: DynamicProductPlacement[]) => {
-      if (!drawer) {
+      if (!drawer || isBusy || order?.IsPlaced) {
         return
       }
 
       applyColumnRowQty(drawer.columnId, drawer.item, sumPlacements(placements), placements)
       setDrawer(null)
     },
-    [applyColumnRowQty, drawer, setDrawer],
+    [applyColumnRowQty, drawer, isBusy, order?.IsPlaced, setDrawer],
   )
 
   const handleAddColumn = useCallback(
     (fromDate: string) => {
-      setColumnModalOpen(false)
+      if (isBusy) {
+        return
+      }
+
+      if (!isValidDateInputValue(fromDate)) {
+        notifications.show({ color: 'yellow', message: t('Вкажіть коректну дату') })
+        return
+      }
 
       if (!order) {
         return
       }
+
+      setColumnModalOpen(false)
 
       const nextColumn: DynamicProductPlacementColumn = {
         FromDate: fromDate,
@@ -338,11 +364,11 @@ function useOrderPlacementsModel() {
         true,
       )
     },
-    [order, persistOrder, setColumnModalOpen],
+    [isBusy, order, persistOrder, setColumnModalOpen, t],
   )
 
   const confirmRemoveColumn = useCallback(() => {
-    if (!columnToRemove || !order) {
+    if (!columnToRemove || !order || isBusy) {
       return
     }
 
@@ -355,10 +381,14 @@ function useOrderPlacementsModel() {
     } else {
       setOrder(nextOrder)
     }
-  }, [columnToRemove, order, persistOrder, setColumnToRemove, setOrder])
+  }, [columnToRemove, isBusy, order, persistOrder, setColumnToRemove, setOrder])
 
   const handleMoveRemnants = useCallback(
     (column: DynamicProductPlacementColumn) => {
+      if (isBusy || order?.IsPlaced) {
+        return
+      }
+
       if (isDirty) {
         notifications.show({ color: 'red', message: t('Збережіть зміни перед переміщенням залишків') })
         return
@@ -417,22 +447,36 @@ function useOrderPlacementsModel() {
 
       setDirty(true)
     },
-    [isDirty, setDirty, setOrder, t],
+    [isBusy, isDirty, order?.IsPlaced, setDirty, setOrder, t],
   )
 
   const handleSave = useCallback(() => {
-    if (order) {
+    if (order && isDirty && !isBusy) {
       void persistOrder(order, true)
     }
-  }, [order, persistOrder])
+  }, [isBusy, isDirty, order, persistOrder])
 
   const placeOrder = useCallback(
     async (isFullPlaced: boolean) => {
       const storageNetId = selectedStorageId
 
+      if (isBusy) {
+        return
+      }
+
       if (!order || !storageNetId) {
         notifications.show({ color: 'red', message: t('Оберіть склад') })
 
+        return
+      }
+
+      if (isDirty) {
+        notifications.show({ color: 'red', message: t('Збережіть зміни перед оприходуванням') })
+        return
+      }
+
+      if (!isValidDateInputValue(incomeDate)) {
+        notifications.show({ color: 'yellow', message: t('Вкажіть коректну дату оприходування') })
         return
       }
 
@@ -442,14 +486,14 @@ function useOrderPlacementsModel() {
         await createProductIncomeFromDynamicPlacements({ ...order, IsPlaced: isFullPlaced }, incomeDate, storageNetId)
         notifications.show({ color: 'green', message: t('Оприходування виконано') })
         setConfirmPlacement(null)
-        reloadFromServer()
+        setReloadKey((key) => key + 1)
       } catch {
         notifications.show({ color: 'red', message: t('Не вдалося виконати оприходування') })
       } finally {
         setPlacing(false)
       }
     },
-    [incomeDate, order, reloadFromServer, selectedStorageId, setConfirmPlacement, setPlacing, t],
+    [incomeDate, isBusy, isDirty, order, selectedStorageId, setConfirmPlacement, setPlacing, setReloadKey, t],
   )
 
   const totalProductsCount = order ? order.SupplyOrderUkraineItems.length : 0
@@ -458,7 +502,7 @@ function useOrderPlacementsModel() {
   return {
     columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, drawer, error, gridRows, handleAddColumn,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
-    isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
+    isBusy, isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setSelectedStorageId, storages,
     totalNetWeight, totalProductsCount,
   }
@@ -609,6 +653,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
       <Group justify="space-between" align="center">
         <Button
           color="gray"
+          disabled={model.isBusy}
           leftSection={<IconArrowLeft size={16} />}
           variant="subtle"
           onClick={() => model.navigate('/warehouse/ukraine')}
@@ -629,13 +674,14 @@ export function WarehouseUkraineOrderPlacementsPage() {
               <Select
                 data={model.storages.map((storage) => ({ value: storage.NetUid || '', label: storage.Name || '' }))}
                 label={t('Склад')}
+                disabled={model.isBusy}
                 value={model.selectedStorageId}
                 w={240}
                 onChange={(value) => model.setSelectedStorageId(value)}
               />
             )}
             {canEditPlacement && !model.order?.IsPlaced && (
-              <Button variant="light" onClick={() => model.setColumnModalOpen(true)}>
+              <Button disabled={model.isBusy} variant="light" onClick={() => model.setColumnModalOpen(true)}>
                 {t('Додати колонку')}
               </Button>
             )}
@@ -644,6 +690,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
             {!model.order?.IsPlaced && (canCarryOut || canGetUp) && (
               <TextInput
                 label={t('Дата оприходування')}
+                disabled={model.isBusy || model.isDirty}
                 type="date"
                 value={model.incomeDate}
                 w={170}
@@ -656,19 +703,19 @@ export function WarehouseUkraineOrderPlacementsPage() {
               </Text>
             )}
             {canEditPlacement && model.isDirty && (
-              <Button color="gray" variant="light" onClick={model.reloadFromServer}>
+              <Button color="gray" disabled={model.isBusy} variant="light" onClick={model.reloadFromServer}>
                 {t('Скасувати')}
               </Button>
             )}
             {canEditPlacement && (
-              <Button disabled={!model.isDirty} loading={model.isSaving} onClick={model.handleSave}>
+              <Button disabled={!model.isDirty || model.isBusy} loading={model.isSaving} onClick={model.handleSave}>
                 {t('Зберегти')}
               </Button>
             )}
             {!model.order?.IsPlaced && canCarryOut && (
               <Button
                 color="teal"
-                disabled={model.isPlacing}
+                disabled={model.isBusy || model.isDirty}
                 onClick={() => model.setConfirmPlacement({ isFullPlaced: true })}
               >
                 {t('Провести')}
@@ -677,7 +724,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
             {!model.order?.IsPlaced && canGetUp && (
               <Button
                 color="blue"
-                disabled={model.isPlacing}
+                disabled={model.isBusy || model.isDirty}
                 variant="light"
                 onClick={() => model.setConfirmPlacement({ isFullPlaced: false })}
               >
@@ -720,12 +767,15 @@ export function WarehouseUkraineOrderPlacementsPage() {
       </Card>
 
       <NewDynamicColumnModal
+        key={model.columnModalOpen ? 'warehouse-column-open' : 'warehouse-column-closed'}
+        disabled={model.isBusy}
         opened={model.columnModalOpen}
         onAdd={model.handleAddColumn}
         onClose={() => model.setColumnModalOpen(false)}
       />
 
       <PlacementEditDrawer
+        key={getDrawerKey(model.drawer)}
         item={model.drawer?.item || null}
         opened={Boolean(model.drawer)}
         row={model.drawer?.row || null}
@@ -737,13 +787,17 @@ export function WarehouseUkraineOrderPlacementsPage() {
       <AppModal
         opened={Boolean(model.columnToRemove)}
         title={t('Ви впевнені, що хочете видалити?')}
-        onClose={() => model.setColumnToRemove(null)}
+        onClose={() => {
+          if (!model.isBusy) {
+            model.setColumnToRemove(null)
+          }
+        }}
       >
         <Group justify="flex-end">
-          <Button color="gray" variant="light" onClick={() => model.setColumnToRemove(null)}>
+          <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setColumnToRemove(null)}>
             {t('Скасувати')}
           </Button>
-          <Button color="red" onClick={model.confirmRemoveColumn}>
+          <Button color="red" disabled={model.isBusy} loading={model.isSaving} onClick={model.confirmRemoveColumn}>
             {t('Видалити')}
           </Button>
         </Group>
@@ -752,7 +806,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
       <AppModal
         opened={Boolean(model.confirmPlacement)}
         title={t('Ви впевнені?')}
-        onClose={() => (model.isPlacing ? undefined : model.setConfirmPlacement(null))}
+        onClose={() => (model.isBusy ? undefined : model.setConfirmPlacement(null))}
       >
         <Stack gap="md">
           <Text>
@@ -761,11 +815,12 @@ export function WarehouseUkraineOrderPlacementsPage() {
               : t('Оприходувати замовлення?')}
           </Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={model.isPlacing} variant="light" onClick={() => model.setConfirmPlacement(null)}>
+            <Button color="gray" disabled={model.isBusy} variant="light" onClick={() => model.setConfirmPlacement(null)}>
               {t('Скасувати')}
             </Button>
             <Button
               color="teal"
+              disabled={model.isBusy}
               loading={model.isPlacing}
               onClick={() => model.placeOrder(Boolean(model.confirmPlacement?.isFullPlaced))}
             >
@@ -776,4 +831,22 @@ export function WarehouseUkraineOrderPlacementsPage() {
       </AppModal>
     </Stack>
   )
+}
+
+function getDrawerKey(drawer: DrawerState | null): string {
+  if (!drawer) {
+    return 'closed'
+  }
+
+  return `${drawer.columnId}-${drawer.item.NetUid || drawer.item.Id || 'item'}-${drawer.row.NetUid || drawer.row.Id || 'row'}`
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }

@@ -1,6 +1,7 @@
 import { ActionIcon, Anchor, Alert, Badge, Button, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconEdit, IconTrash } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../detailTypes'
 import { LabelValueRow } from './LabelValueRow'
@@ -19,7 +20,7 @@ function DocumentLink({ document }: { document: SupplyDocument }) {
   }
 
   return (
-    <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
+    <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
       {document.FileName || document.DocumentUrl}
     </Anchor>
   )
@@ -77,12 +78,14 @@ function PaymentTaskBlock({
 export function MergedServiceViewCard({
   service,
   canEdit,
+  isSaving,
   onAssignInvoices,
   onCalculate,
   onEdit,
   onRemove,
 }: {
   canEdit: boolean
+  isSaving?: boolean
   onAssignInvoices: () => void
   onCalculate: () => void
   onEdit: () => void
@@ -105,25 +108,25 @@ export function MergedServiceViewCard({
         {hasActions && (
           <Group justify="flex-end" gap="xs">
             {invoiceCount > 0 && canCalculate && (
-              <Button size="xs" variant="light" onClick={onCalculate}>
+              <Button disabled={isSaving} size="xs" variant="light" onClick={onCalculate}>
                 {t('Розрахувати')}
               </Button>
             )}
             {canAssignInvoices && (
-              <Button size="xs" variant="light" onClick={onAssignInvoices}>
+              <Button disabled={isSaving} size="xs" variant="light" onClick={onAssignInvoices}>
                 {t('Додати')} {t('Інвойси')}
               </Button>
             )}
             {canUpdate && (
               <Tooltip label={t('Редагувати')}>
-                <ActionIcon color="gray" variant="subtle" onClick={onEdit}>
+                <ActionIcon color="gray" disabled={isSaving} variant="subtle" onClick={onEdit}>
                   <IconEdit size={18} />
                 </ActionIcon>
               </Tooltip>
             )}
             {canRemove && (
               <Tooltip label={t('Видалити')}>
-                <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+                <ActionIcon color="red" disabled={isSaving} variant="subtle" onClick={onRemove}>
                   <IconTrash size={18} />
                 </ActionIcon>
               </Tooltip>

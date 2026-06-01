@@ -17,9 +17,5 @@ export function resolveProductCapitalizationSelection(
 
   const exactMatch = searchedProducts.find((product) => product.VendorCode?.trim().toLocaleLowerCase() === normalizedQuery)
 
-  if (exactMatch) {
-    return exactMatch
-  }
-
-  return searchedProducts.length === 1 ? searchedProducts[0] : null
+  return exactMatch || null
 }

@@ -26,10 +26,15 @@ export type AvailablePaymentsCurrency = EntityFields & {
 
 export type AvailablePaymentDocument = EntityFields & {
   ContentType?: string
+  DocumentURL?: string
   DocumentUrl?: string
   FileName?: string
   Name?: string
+  PdfDocumentURL?: string
+  PdfDocumentUrl?: string
+  URL?: string
   Url?: string
+  url?: string
 }
 
 export type AvailablePaymentRegister = EntityFields & {

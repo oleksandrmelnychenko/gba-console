@@ -67,6 +67,10 @@ export type ProductStoragesSearchParams = {
 export type ProductStoragesExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+  URL?: string
+  XlsxDocument?: string
+  PdfDocument?: string
+  url?: string
 }
 
 export type ProductStorageClient = {

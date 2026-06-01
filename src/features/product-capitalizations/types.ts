@@ -68,6 +68,10 @@ export type ProductCapitalizationsResponse = {
 export type ProductCapitalizationsExportDocument = {
   DocumentURL?: string
   PdfDocumentURL?: string
+  URL?: string
+  XlsxDocument?: string
+  PdfDocument?: string
+  url?: string
 }
 
 export type ProductCapitalizationSearchProduct = EntityFields & {

@@ -77,12 +77,12 @@ function completePlacementsToRowQty(
   ]
 }
 
-function placementKey(placement: DynamicProductPlacement): string {
-  return String(
-    placement.NetUid
-      || placement.Id
-      || `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}`,
-  )
+function placementKey(placement: DynamicProductPlacement, index: number): string {
+  if (placement.NetUid || placement.Id) {
+    return String(placement.NetUid || placement.Id)
+  }
+
+  return `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}-${index}`
 }
 
 export function PlacementEditDrawer({
@@ -94,23 +94,11 @@ export function PlacementEditDrawer({
   onApply,
 }: PlacementEditDrawerProps) {
   const { t } = useI18n()
-  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>([])
+  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>(() =>
+    row ? row.DynamicProductPlacements.map((placement) => ({ ...placement })) : [],
+  )
   const [draft, setDraft] = useValueState<PlacementDraftState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
-
-  const rowKey = row?.NetUid || row?.Id || ''
-  const [syncedKey, setSyncedKey] = useValueState<string | number>('')
-
-  if (opened && rowKey !== syncedKey) {
-    setSyncedKey(rowKey)
-    setPlacements(row ? row.DynamicProductPlacements.map((placement) => ({ ...placement })) : [])
-    setDraft(null)
-    setError(null)
-  }
-
-  if (!opened && syncedKey !== '') {
-    setSyncedKey('')
-  }
 
   const rowQty = row?.Qty || 0
   const product = item?.Product
@@ -249,7 +237,7 @@ export function PlacementEditDrawer({
           <Table.Tbody>
             {placements.map((placement, index) => (
               <Table.Tr
-                key={placementKey(placement)}
+                key={placementKey(placement, index)}
                 style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
                 onClick={() => !placement.IsApplied && openDraft(placement)}
               >

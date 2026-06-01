@@ -14,6 +14,7 @@ import {
 import { IconArrowBackUp, IconFileTypePdf, IconFileTypeXls, IconTrash, IconUpload } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { SupplyOrganization } from '../detailTypes'
 import type { DeliveryDocumentDraft } from '../specificationTypes'
 
@@ -89,7 +90,17 @@ export function UploadDeliveryDocumentsModal({
   const canSelectSupplier = Boolean(onChangeSupplyOrganization && onChangeSupplyOrganizationAgreement)
 
   return (
-    <AppModal centered opened={opened} size="lg" title={t('Завантаження документів доставки')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={opened}
+      size="lg"
+      title={t('Завантаження документів доставки')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         {canSelectSupplier && (
           <Group grow align="flex-end">
@@ -147,6 +158,7 @@ export function UploadDeliveryDocumentsModal({
                   <ActionIcon
                     aria-label={t('Видалити')}
                     color="red"
+                    disabled={isSaving}
                     variant="subtle"
                     onClick={() => onRemoveNewDocument(document)}
                   >
@@ -167,7 +179,7 @@ export function UploadDeliveryDocumentsModal({
               <Group key={document.id} justify="space-between" wrap="nowrap">
                 <Group gap={6} wrap="nowrap">
                   {document.documentUrl ? (
-                    <Anchor href={document.documentUrl} target="_blank" rel="noreferrer">
+                    <Anchor href={upgradeHttpToHttps(document.documentUrl)} target="_blank" rel="noreferrer">
                       <Group gap={4} wrap="nowrap">
                         {document.contentType === 'xls' || document.contentType === 'xlsx' ? (
                           <IconFileTypeXls size={18} />
@@ -189,6 +201,7 @@ export function UploadDeliveryDocumentsModal({
                   <ActionIcon
                     aria-label={document.deleted ? t('Відновити') : t('Видалити')}
                     color={document.deleted ? 'gray' : 'red'}
+                    disabled={isSaving}
                     variant="subtle"
                     onClick={() => onRemoveExistingDocument(document)}
                   >
@@ -203,14 +216,14 @@ export function UploadDeliveryDocumentsModal({
         <Divider />
 
         <Group justify="flex-end">
-          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => files && onAddFiles(files)}>
+          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => !isSaving && files && onAddFiles(files)}>
             {(props) => (
-              <Button disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light" {...props}>
+              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light">
                 {t('Завантажити')}
               </Button>
             )}
           </FileButton>
-          <Button loading={isSaving} onClick={onSave}>
+          <Button disabled={isSaving} loading={isSaving} onClick={onSave}>
             {t('Зберегти')}
           </Button>
         </Group>

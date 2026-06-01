@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Autocomplete,
   Badge,
   Button,
@@ -31,12 +32,13 @@ import {
   IconUpload,
   IconX,
 } from '@tabler/icons-react'
-import { type FormEvent, useCallback, useEffect, useMemo } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   calculateConsumableOrder,
   createConsumableOrder,
@@ -133,6 +135,8 @@ export function ConsumableOrderFormPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
   const [isCalculating, setCalculating] = useValueState(false)
+  const recalculateRequestRef = useRef(0)
+  const searchRequestRef = useRef<Record<string, number>>({})
 
   const selectedSupplier = useMemo(
     () => suppliers.find((supplier) => getEntityValue(supplier) === form.selectedSupplierValue) || null,
@@ -158,7 +162,9 @@ export function ConsumableOrderFormPage() {
   const visibleItems = useMemo(() => activeItems.filter((item) => !item.Deleted), [activeItems])
   const totals = useMemo(() => calculateLocalTotals(visibleItems), [visibleItems])
   const isPaid = Boolean(order.IsPayed)
-  const canSave = !isLoading && !isSaving && !isCalculating
+  const isFormLocked = isLoading || isSaving || isCalculating
+  const isMutationLocked = isSaving || isCalculating
+  const canSave = !isFormLocked
 
   useEffect(() => {
     let cancelled = false
@@ -215,13 +221,17 @@ export function ConsumableOrderFormPage() {
 
   useEffect(() => {
     const value = form.supplierSearch.trim()
+    const requestId = (searchRequestRef.current.supplier || 0) + 1
+    searchRequestRef.current.supplier = requestId
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
       void searchSupplyOrganizations(value).then((nextSuppliers) => {
-        setSuppliers((current) => includeEntity(nextSuppliers, current.find((item) => getEntityValue(item) === form.selectedSupplierValue) || null))
+        if (searchRequestRef.current.supplier === requestId) {
+          setSuppliers((current) => includeEntity(nextSuppliers, current.find((item) => getEntityValue(item) === form.selectedSupplierValue) || null))
+        }
       }).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
@@ -230,13 +240,17 @@ export function ConsumableOrderFormPage() {
 
   useEffect(() => {
     const value = form.storageSearch.trim()
+    const requestId = (searchRequestRef.current.storage || 0) + 1
+    searchRequestRef.current.storage = requestId
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
       void searchConsumableStorages(value).then((nextStorages) => {
-        setStorages((current) => includeEntity(nextStorages, current.find((item) => getEntityValue(item) === form.selectedStorageValue) || null))
+        if (searchRequestRef.current.storage === requestId) {
+          setStorages((current) => includeEntity(nextStorages, current.find((item) => getEntityValue(item) === form.selectedStorageValue) || null))
+        }
       }).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
@@ -249,13 +263,17 @@ export function ConsumableOrderFormPage() {
     }
 
     const value = itemEditor.productSearch.trim()
+    const requestId = (searchRequestRef.current.productName || 0) + 1
+    searchRequestRef.current.productName = requestId
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
       void searchConsumableProductCategories(value).then((categories) => {
-        setProductOptions(flattenConsumableProducts(categories))
+        if (searchRequestRef.current.productName === requestId) {
+          setProductOptions(flattenConsumableProducts(categories))
+        }
       }).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
@@ -268,12 +286,18 @@ export function ConsumableOrderFormPage() {
     }
 
     const value = itemEditor.articleSearch.trim()
+    const requestId = (searchRequestRef.current.productArticle || 0) + 1
+    searchRequestRef.current.productArticle = requestId
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchConsumableProductsByVendorCode(value).then(setProductOptions).catch(() => undefined)
+      void searchConsumableProductsByVendorCode(value).then((nextProducts) => {
+        if (searchRequestRef.current.productArticle === requestId) {
+          setProductOptions(nextProducts)
+        }
+      }).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
@@ -285,12 +309,18 @@ export function ConsumableOrderFormPage() {
     }
 
     const value = itemEditor.costMovementSearch.trim()
+    const requestId = (searchRequestRef.current.costMovement || 0) + 1
+    searchRequestRef.current.costMovement = requestId
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         return
       }
 
-      void searchPaymentCostMovements(value).then(setCostMovements).catch(() => undefined)
+      void searchPaymentCostMovements(value).then((nextMovements) => {
+        if (searchRequestRef.current.costMovement === requestId) {
+          setCostMovements(nextMovements)
+        }
+      }).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
@@ -298,16 +328,24 @@ export function ConsumableOrderFormPage() {
 
   const recalculateOrder = useCallback(
     async (nextOrder: ConsumablesOrder) => {
+      const requestId = recalculateRequestRef.current + 1
+      recalculateRequestRef.current = requestId
       setCalculating(true)
 
       try {
         const calculation = await calculateConsumableOrder(nextOrder)
         const calculatedOrder = calculation.Collection[0]
-        setOrder(calculatedOrder ? normalizeOrderForForm(calculatedOrder) : nextOrder)
+        if (recalculateRequestRef.current === requestId) {
+          setOrder(calculatedOrder ? normalizeOrderForForm(calculatedOrder) : nextOrder)
+        }
       } catch {
-        setOrder(nextOrder)
+        if (recalculateRequestRef.current === requestId) {
+          setOrder(nextOrder)
+        }
       } finally {
-        setCalculating(false)
+        if (recalculateRequestRef.current === requestId) {
+          setCalculating(false)
+        }
       }
     },
     [setCalculating, setOrder],
@@ -318,7 +356,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function handleCancel() {
-    if (isSaving) {
+    if (isMutationLocked) {
       return
     }
 
@@ -376,7 +414,7 @@ export function ConsumableOrderFormPage() {
       const documents = current.ConsumablesOrderDocuments || []
 
       if (!document.Id && document.NetUid) {
-        setNewDocuments((files) => files.filter((file) => file.name !== document.FileName))
+        setNewDocuments((files) => removeFirstMatchingFile(files, document))
 
         return {
           ...current,
@@ -387,14 +425,14 @@ export function ConsumableOrderFormPage() {
       return {
         ...current,
         ConsumablesOrderDocuments: documents.map((item) =>
-          getDocumentKey(item) === getDocumentKey(document) ? { ...item, Deleted: !item.Deleted } : item,
+          isSameDocument(item, document) ? { ...item, Deleted: !item.Deleted } : item,
         ),
       }
     })
   }
 
   function openNewItemEditor() {
-    if (isPaid) {
+    if (isPaid || isMutationLocked) {
       return
     }
 
@@ -409,7 +447,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function openEditItemEditor(item: ConsumablesOrderItem, index: number) {
-    if (isPaid || item.Deleted) {
+    if (isPaid || item.Deleted || isMutationLocked) {
       return
     }
 
@@ -428,10 +466,18 @@ export function ConsumableOrderFormPage() {
   }
 
   function closeItemEditor() {
+    if (isMutationLocked) {
+      return
+    }
+
     setItemEditor(createClosedItemEditor())
   }
 
   async function saveEditorItem() {
+    if (isMutationLocked) {
+      return
+    }
+
     const validationError = validateItem(itemEditor.item, t)
 
     if (validationError) {
@@ -458,6 +504,10 @@ export function ConsumableOrderFormPage() {
   }
 
   async function toggleItemDeleted(item: ConsumablesOrderItem, index: number) {
+    if (isMutationLocked) {
+      return
+    }
+
     const nextItems = toggleDeletedItemAtIndex(activeItems, index)
 
     const nextOrder = {
@@ -528,6 +578,17 @@ export function ConsumableOrderFormPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    if (isMutationLocked) {
+      return
+    }
+
+    const formDateError = validateFormDates(form, t)
+
+    if (formDateError) {
+      setError(formDateError)
+      return
+    }
 
     const payload = buildOrderPayload({
       form,
@@ -622,7 +683,7 @@ export function ConsumableOrderFormPage() {
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <Autocomplete
                 data={supplierOptions}
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Постачальник послуг')}
                 placeholder={t('Почніть вводити назву')}
                 value={form.supplierSearch}
@@ -631,7 +692,7 @@ export function ConsumableOrderFormPage() {
               />
               <Select
                 data={agreementOptions}
-                disabled={!selectedSupplier || isLoading || isSaving}
+                disabled={!selectedSupplier || isFormLocked}
                 label={t('Договір')}
                 placeholder={t('Оберіть договір')}
                 searchable
@@ -644,20 +705,20 @@ export function ConsumableOrderFormPage() {
                 value={getEntityLabel(selectedAgreement?.Organization) || ''}
               />
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Номер накладної')}
                 value={form.invoiceNumber}
                 onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
               />
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Дата входу')}
                 type="date"
                 value={form.invoiceDate}
                 onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
               />
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Час')}
                 type="time"
                 value={form.invoiceTime}
@@ -665,7 +726,7 @@ export function ConsumableOrderFormPage() {
               />
               <Autocomplete
                 data={storageOptions}
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Склад')}
                 placeholder={t('Почніть вводити склад')}
                 value={form.storageSearch}
@@ -674,7 +735,7 @@ export function ConsumableOrderFormPage() {
               />
               <FileInput
                 clearable
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Файли')}
                 leftSection={<IconUpload size={16} />}
                 multiple
@@ -683,7 +744,7 @@ export function ConsumableOrderFormPage() {
               />
               <Textarea
                 autosize
-                disabled={isLoading || isSaving}
+                disabled={isFormLocked}
                 label={t('Коментар')}
                 minRows={1}
                 value={form.comment}
@@ -693,7 +754,7 @@ export function ConsumableOrderFormPage() {
 
             <Checkbox
               checked={form.paymentTaskEnabled}
-              disabled={isLoading || isSaving || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
+              disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
               label={t('Новий платіжний протокол')}
               onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
             />
@@ -701,7 +762,7 @@ export function ConsumableOrderFormPage() {
             {form.paymentTaskEnabled && (
               <SimpleGrid cols={{ base: 1, md: 3 }}>
                 <TextInput
-                  disabled={isLoading || isSaving}
+                  disabled={isFormLocked}
                   label={t('Сплатити до')}
                   type="date"
                   value={form.paymentTaskPayToDate}
@@ -709,14 +770,14 @@ export function ConsumableOrderFormPage() {
                 />
                 <Select
                   data={responsibleOptions}
-                  disabled={isLoading || isSaving}
+                  disabled={isFormLocked}
                   label={t('Відповідальний')}
                   searchable
                   value={form.responsibleUserValue || null}
                   onChange={(value) => updateForm({ responsibleUserValue: value || '' })}
                 />
                 <TextInput
-                  disabled={isLoading || isSaving}
+                  disabled={isFormLocked}
                   label={t('Коментар до платежу')}
                   value={form.paymentTaskComment}
                   onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
@@ -736,7 +797,7 @@ export function ConsumableOrderFormPage() {
                 {visibleItems.length}
               </Badge>
             </Group>
-            <Button disabled={isPaid || isLoading || isSaving} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
+            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
               {t('Додати')}
             </Button>
           </Group>
@@ -785,7 +846,7 @@ export function ConsumableOrderFormPage() {
                             <Tooltip label={t('Редагувати')}>
                               <ActionIcon
                                 aria-label={t('Редагувати')}
-                                disabled={isPaid || isSaving}
+                                disabled={isPaid || isMutationLocked}
                                 size="sm"
                                 variant="subtle"
                                 onClick={() => openEditItemEditor(item, index)}
@@ -798,7 +859,7 @@ export function ConsumableOrderFormPage() {
                             <ActionIcon
                               aria-label={item.Deleted ? t('Відновити') : t('Видалити')}
                               color={item.Deleted ? 'green' : 'red'}
-                              disabled={isPaid || isSaving}
+                              disabled={isPaid || isMutationLocked}
                               size="sm"
                               variant="subtle"
                               onClick={() => void toggleItemDeleted(item, index)}
@@ -843,25 +904,35 @@ export function ConsumableOrderFormPage() {
         <Card withBorder radius="md" shadow="sm">
           <Stack gap="sm">
             <Text fw={700}>{t('Документи')}</Text>
-            {documentRows.map((document) => (
-              <Group key={getDocumentKey(document)} justify="space-between" opacity={document.Deleted ? 0.45 : 1}>
-                <div>
-                  <Text size="sm">{displayValue(document.FileName || document.Name)}</Text>
-                  <Text c="dimmed" size="xs">
-                    {document.ContentType || t('Файл')}
-                  </Text>
-                </div>
-                <ActionIcon
-                  aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
-                  color={document.Deleted ? 'green' : 'red'}
-                  disabled={isSaving}
-                  variant="subtle"
-                  onClick={() => toggleDocumentDeleted(document)}
-                >
-                  {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-                </ActionIcon>
-              </Group>
-            ))}
+            {documentRows.map((document, index) => {
+              const documentUrl = getDocumentUrl(document)
+
+              return (
+                <Group key={getDocumentKey(document, index)} justify="space-between" opacity={document.Deleted ? 0.45 : 1}>
+                  <div>
+                    {documentUrl && !document.Deleted ? (
+                      <Anchor href={upgradeHttpToHttps(documentUrl)} rel="noreferrer" size="sm" target="_blank">
+                        {displayValue(document.FileName || document.Name)}
+                      </Anchor>
+                    ) : (
+                      <Text size="sm">{displayValue(document.FileName || document.Name)}</Text>
+                    )}
+                    <Text c="dimmed" size="xs">
+                      {document.ContentType || t('Файл')}
+                    </Text>
+                  </div>
+                  <ActionIcon
+                    aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
+                    color={document.Deleted ? 'green' : 'red'}
+                    disabled={isMutationLocked}
+                    variant="subtle"
+                    onClick={() => toggleDocumentDeleted(document)}
+                  >
+                    {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+                  </ActionIcon>
+                </Group>
+              )
+            })}
           </Stack>
         </Card>
       )}
@@ -877,16 +948,30 @@ export function ConsumableOrderFormPage() {
           <SimpleGrid cols={{ base: 1, md: 2 }}>
             <Autocomplete
               data={productAutocompleteOptions}
+              disabled={isMutationLocked}
               label={t('Назва товару / послуги')}
               value={itemEditor.productSearch}
-              onChange={(value) => setItemEditor((current) => ({ ...current, productSearch: value }))}
+              onChange={(value) => {
+                setItemEditor((current) => ({
+                  ...current,
+                  item: clearEditorProduct(current.item),
+                  productSearch: value,
+                }))
+              }}
               onOptionSubmit={handleProductSubmit}
             />
             <Autocomplete
               data={productAutocompleteOptions}
+              disabled={isMutationLocked}
               label={t('Артикул')}
               value={itemEditor.articleSearch}
-              onChange={(value) => setItemEditor((current) => ({ ...current, articleSearch: value }))}
+              onChange={(value) => {
+                setItemEditor((current) => ({
+                  ...current,
+                  articleSearch: value,
+                  item: clearEditorProduct(current.item),
+                }))
+              }}
               onOptionSubmit={handleProductSubmit}
             />
             <TextInput
@@ -896,14 +981,25 @@ export function ConsumableOrderFormPage() {
             />
             <Autocomplete
               data={costMovementOptions}
+              disabled={isMutationLocked}
               label={t('Стаття витрат')}
               value={itemEditor.costMovementSearch}
-              onChange={(value) => setItemEditor((current) => ({ ...current, costMovementSearch: value }))}
+              onChange={(value) => {
+                setItemEditor((current) => ({
+                  ...current,
+                  costMovementSearch: value,
+                  item: {
+                    ...current.item,
+                    PaymentCostMovementOperation: null,
+                  },
+                }))
+              }}
               onOptionSubmit={handleCostMovementSubmit}
             />
             <NumberInput
               allowNegative={false}
               decimalScale={3}
+              disabled={isMutationLocked}
               label={t('Кількість')}
               min={0}
               rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
@@ -913,6 +1009,7 @@ export function ConsumableOrderFormPage() {
             <NumberInput
               allowNegative={false}
               decimalScale={3}
+              disabled={isMutationLocked}
               label={t('Ціна за одиницю')}
               min={0}
               value={itemEditor.item.PricePerItem || 0}
@@ -921,6 +1018,7 @@ export function ConsumableOrderFormPage() {
             <NumberInput
               allowNegative={false}
               decimalScale={2}
+              disabled={isMutationLocked}
               label={`${t('ПДВ')} %`}
               min={0}
               value={itemEditor.item.VatPercent || 0}
@@ -929,6 +1027,7 @@ export function ConsumableOrderFormPage() {
             <NumberInput
               allowNegative={false}
               decimalScale={2}
+              disabled={isMutationLocked}
               label={t('Разом з ПДВ')}
               min={0}
               value={itemEditor.item.TotalPriceWithVAT || 0}
@@ -937,10 +1036,10 @@ export function ConsumableOrderFormPage() {
           </SimpleGrid>
 
           <Group justify="flex-end">
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
+            <Button color="gray" disabled={isMutationLocked} leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
+            <Button disabled={isMutationLocked} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -1118,6 +1217,22 @@ function validateOrderPayload(order: ConsumablesOrder, t: (value: string) => str
 
   if (order.SupplyPaymentTask && !order.SupplyPaymentTask.User) {
     return t('Оберіть відповідального за платіжний протокол')
+  }
+
+  return null
+}
+
+function validateFormDates(form: FormState, t: (value: string) => string): string | null {
+  if (!isValidDateInput(form.invoiceDate)) {
+    return t('Вкажіть дату входу')
+  }
+
+  if (!isValidTimeInput(form.invoiceTime)) {
+    return t('Вкажіть час накладної')
+  }
+
+  if (form.paymentTaskEnabled && !isValidDateInput(form.paymentTaskPayToDate)) {
+    return t('Вкажіть дату оплати')
   }
 
   return null
@@ -1348,6 +1463,14 @@ function cloneOrderItem(item: ConsumablesOrderItem): ConsumablesOrderItem {
   }
 }
 
+function clearEditorProduct(item: ConsumablesOrderItem): ConsumablesOrderItem {
+  return {
+    ...item,
+    ConsumableProduct: null,
+    ConsumableProductCategory: null,
+  }
+}
+
 function getEntityValue(entity?: NamedEntity | null): string {
   return String(entity?.NetUid || entity?.Id || '')
 }
@@ -1360,12 +1483,78 @@ function getItemKey(item: ConsumablesOrderItem, index: number): string {
   return String(item.NetUid || item.Id || `${item.ConsumableProduct?.NetUid || item.ConsumableProduct?.Id || 'item'}-${index}`)
 }
 
-function getDocumentKey(document: ConsumablesOrderDocument): string {
-  return String(document.NetUid || document.Id || document.FileName || document.Name || createLocalId())
+function isSameDocument(first: ConsumablesOrderDocument, second: ConsumablesOrderDocument): boolean {
+  if (first.NetUid && second.NetUid) {
+    return first.NetUid === second.NetUid
+  }
+
+  if (first.Id && second.Id) {
+    return first.Id === second.Id
+  }
+
+  const firstKey = getDocumentFallbackKey(first)
+
+  return Boolean(firstKey && firstKey === getDocumentFallbackKey(second))
+}
+
+function getDocumentKey(document: ConsumablesOrderDocument, index: number): string {
+  return String(document.NetUid || document.Id || getDocumentFallbackKey(document) || `document-${index}`)
+}
+
+function getDocumentFallbackKey(document: ConsumablesOrderDocument): string {
+  return [
+    getDocumentUrl(document),
+    document.FileName || document.Name,
+    document.ContentType,
+  ].filter(Boolean).join(':')
+}
+
+function getDocumentUrl(document: ConsumablesOrderDocument): string | undefined {
+  return (
+    document.DocumentUrl ||
+    document.DocumentURL ||
+    document.PdfDocumentURL ||
+    document.PdfDocumentUrl ||
+    document.URL ||
+    document.Url ||
+    document.url
+  )
 }
 
 function createLocalId(): string {
   return `local-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`
+}
+
+function removeFirstMatchingFile(files: File[], document: ConsumablesOrderDocument): File[] {
+  let removed = false
+
+  return files.filter((file) => {
+    const isMatch =
+      !removed &&
+      file.name === document.FileName &&
+      (!document.ContentType || file.type === document.ContentType)
+
+    if (isMatch) {
+      removed = true
+      return false
+    }
+
+    return true
+  })
+}
+
+function isValidDateInput(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+}
+
+function isValidTimeInput(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {
