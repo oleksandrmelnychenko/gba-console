@@ -50,6 +50,9 @@
 .console-header {
   background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  overflow: hidden;
 }
 
 .mantine-Drawer-content {
