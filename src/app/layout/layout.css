@@ -865,13 +865,9 @@
   flex: 0 0 auto;
 }
 
-.console-subnav-item.is-active {
-  background: var(--mantine-color-violet-0);
-  color: var(--mantine-color-violet-7);
-}
-
+.console-subnav-item.is-active,
 .console-subnav-item.is-active:hover {
-  background: var(--mantine-color-violet-0);
+  background: transparent;
   color: var(--mantine-color-violet-7);
 }
 
