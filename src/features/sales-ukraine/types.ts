@@ -187,8 +187,12 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   PricePerItem?: number
   Product?: SalesUkraineProduct
   Qty?: number
+  OverLordQty?: number
   TotalAmount?: number
   TotalAmountLocal?: number
+  TotalAmountEurToUah?: number
+  TotalVat?: number
+  AssignedSpecification?: { SpecificationCode?: string }
   ShiftStatuses?: SalesUkraineOrderItemShiftStatus[]
   User?: SalesUkraineUser
 }

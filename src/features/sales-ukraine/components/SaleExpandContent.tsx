@@ -1,6 +1,6 @@
 import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
+import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -8,6 +8,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 const NEW_LIFECYCLE_TYPE = 0
+const BASE_CURRENCY_CODE = 'EUR'
 
 export function SaleExpandContent({
   sale,
@@ -20,6 +21,7 @@ export function SaleExpandContent({
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const isNew = sale.BaseLifeCycleStatus?.SaleLifeCycleType === NEW_LIFECYCLE_TYPE
+  const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
 
   if (!orderItems.length) {
@@ -38,6 +40,7 @@ export function SaleExpandContent({
         <SaleExpandContentItem
           key={String(orderItem.NetUid || orderItem.Id || index)}
           isNew={isNew}
+          isVatSale={isVatSale}
           hasUniformDiscount={hasUniformDiscount}
           localCurrencyCode={localCurrencyCode}
           orderItem={orderItem}
@@ -51,12 +54,14 @@ export function SaleExpandContent({
 function SaleExpandContentItem({
   hasUniformDiscount,
   isNew,
+  isVatSale,
   localCurrencyCode,
   orderItem,
   onOpenItemDiscount,
 }: {
   hasUniformDiscount: boolean
   isNew: boolean
+  isVatSale: boolean
   localCurrencyCode: string
   orderItem: SalesUkraineOrderItem
   onOpenItemDiscount: () => void
@@ -64,6 +69,17 @@ function SaleExpandContentItem({
   const { t } = useI18n()
   const discount = getNumber(orderItem.OneTimeDiscount)
   const hasDiscount = typeof discount === 'number' && discount !== 0
+
+  const responsible = getResponsible(orderItem.User)
+  const specificationCode = orderItem.AssignedSpecification?.SpecificationCode
+  const created = formatDateTime(orderItem.Created)
+
+  const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
+  const secondAmount = useEurToUah ? getNumber(orderItem.TotalAmountEurToUah) : getNumber(orderItem.TotalAmount)
+  const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
+  const overLordQty = getNumber(orderItem.OverLordQty)
+  const qty = getNumber(orderItem.Qty)
+  const qtyText = overLordQty ? `${displayValue(qty)} / ${overLordQty}` : displayValue(qty)
 
   return (
     <Group
@@ -82,16 +98,30 @@ function SaleExpandContentItem({
             <Text c="dimmed">{orderItem.Product.MainOriginalNumber}</Text>
           )}
         </Group>
+        <Group gap={10} wrap="wrap" mt={2}>
+          {created && (
+            <Text c="dimmed" size="xs">
+              {t('Від')} {created}
+            </Text>
+          )}
+          {responsible && (
+            <Text c="dimmed" size="xs">
+              {responsible}
+            </Text>
+          )}
+          {specificationCode && (
+            <Text c="dimmed" size="xs">
+              {t('Митний код')}: {specificationCode}
+            </Text>
+          )}
+        </Group>
       </Box>
 
       <Group align="flex-start" gap="lg" wrap="nowrap">
-        <ValueBlock label={t('Ціна')} value={formatAmount(getNumber(orderItem.PricePerItem))} suffix={localCurrencyCode} />
-        <ValueBlock
-          label={t('Сума')}
-          value={formatAmount(getNumber(orderItem.TotalAmountLocal) ?? getNumber(orderItem.TotalAmount))}
-          suffix={localCurrencyCode}
-        />
-        <ValueBlock label={t('Count')} value={displayValue(getNumber(orderItem.Qty))} />
+        <ValueBlock label={localCurrencyCode || t('Сума')} value={formatAmount(getNumber(orderItem.TotalAmountLocal))} />
+        <ValueBlock label={secondCode} value={formatAmount(secondAmount)} />
+        {isVatSale && <ValueBlock label={t('ПДВ')} value={formatAmount(getNumber(orderItem.TotalVat))} />}
+        <ValueBlock label={t('Count')} value={qtyText} />
 
         <Box style={{ minWidth: 72, textAlign: 'right' }}>
           <Text size="xs" c="dimmed" tt="uppercase">
@@ -118,18 +148,13 @@ function SaleExpandContentItem({
   )
 }
 
-function ValueBlock({ label, suffix, value }: { label: string; suffix?: string; value: string }) {
+function ValueBlock({ label, value }: { label: string; value: string }) {
   return (
     <Box style={{ minWidth: 96, textAlign: 'right' }}>
       <Text size="xs" c="dimmed" tt="uppercase">
         {label}
       </Text>
       <Text fw={600}>{value}</Text>
-      {suffix ? (
-        <Text size="xs" c="dimmed">
-          {suffix}
-        </Text>
-      ) : null}
     </Box>
   )
 }
@@ -156,8 +181,31 @@ function getOrderItemProductCode(item: SalesUkraineOrderItem): string {
   return item.Product?.VendorCode || item.Product?.Articul || item.Product?.MainOriginalNumber || ''
 }
 
+function getResponsible(user?: SalesUkraineUser | null): string {
+  return user?.LastName?.trim() || user?.FullName?.trim() || [user?.LastName, user?.FirstName].filter(Boolean).join(' ').trim() || ''
+}
+
 function formatAmount(value: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : displayValue(value)
+}
+
+function formatDateTime(value?: Date | string): string {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' ? value : ''
+  }
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day}.${month}.${date.getFullYear()} ${hours}:${minutes}`
 }
 
 function getNumber(value: unknown): number | null {
