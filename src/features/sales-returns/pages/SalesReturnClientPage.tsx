@@ -16,6 +16,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -493,6 +494,11 @@ export function SalesReturnClientPage() {
 
   return (
     <Box p="lg">
+      <PageHeaderActions>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
+          {t('Створити повернення')}
+        </Button>
+      </PageHeaderActions>
       <Stack gap="md">
         <Group justify="flex-end" align="flex-start">
           <Button
@@ -501,9 +507,6 @@ export function SalesReturnClientPage() {
             onClick={() => setReportOpened(true)}
           >
             {t('Сформувати звіт')}
-          </Button>
-          <Button leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
-            {t('Створити повернення')}
           </Button>
         </Group>
       </Stack>

@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button, Center, Group, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -180,8 +180,7 @@ export function PreordersInterestPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Title order={3}>{t('Зацікавленість про товар на Україні')}</Title>
+      <Group justify="flex-end" align="center">
         <Group gap="sm" align="center">
           <Badge color="gray" variant="light">
             {isLoading ? t('Завантаження') : `${t('Показано')}: ${preOrders.length}`}

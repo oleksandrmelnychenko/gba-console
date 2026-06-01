@@ -1,4 +1,4 @@
-import { Stack, Tabs, Title } from '@mantine/core'
+import { Stack, Tabs } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ManagerSalesByTopNXView } from '../components/ManagerSalesByTopNXView'
 import { ManagerSalesByTopView } from '../components/ManagerSalesByTopView'
@@ -9,8 +9,6 @@ export function SalesChartsPage() {
 
   return (
     <Stack gap="lg">
-      <Title order={3}>{t('Графіки продажів')}</Title>
-
       <Tabs defaultValue="topNX" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="topNX">Top N-X</Tabs.Tab>
