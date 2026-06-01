@@ -864,10 +864,19 @@
   flex: 0 0 auto;
 }
 
+.console-subnav-items {
+  position: relative;
+  overflow: visible;
+}
+
 .console-subnav-item.is-active,
 .console-subnav-item.is-active:hover {
-  background: var(--mantine-color-orange-light);
+  background: transparent;
   color: var(--mantine-color-orange-light-color);
+}
+
+.console-subnav-indicator-item {
+  background: var(--mantine-color-orange-6);
 }
 
 .console-subnav-state {

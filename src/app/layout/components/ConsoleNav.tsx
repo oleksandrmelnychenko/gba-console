@@ -10,37 +10,33 @@ export function ConsoleNav() {
   const navigate = useNavigate()
   const { t } = useI18n()
   const modulesRowRef = useRef<HTMLDivElement>(null)
+  const itemsRowRef = useRef<HTMLDivElement>(null)
   const [indicatorLeft, setIndicatorLeft] = useState<number | null>(null)
+  const [itemIndicatorLeft, setItemIndicatorLeft] = useState<number | null>(null)
 
   const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
   const activeNodeKey = selectedNode ? selectedNode.NetUid || String(selectedNode.Id) : null
   const items = selectedModule?.Children ?? []
 
-  // Position the sliding dot under the active module's centre (it transitions
-  // its `left` so it slides along the border when the active module changes).
+  // Position each row's sliding dot under its active pill's centre (transitions
+  // its `left` so the dot slides along the border when the active pill changes).
   useLayoutEffect(() => {
-    function positionIndicator() {
-      const row = modulesRowRef.current
+    function centreOfActive(row: HTMLDivElement | null, selector: string): number | null {
+      const active = row?.querySelector<HTMLElement>(selector)
 
-      if (!row) {
-        return
-      }
-
-      const active = row.querySelector<HTMLElement>('.console-subnav-module.is-active')
-
-      if (!active) {
-        setIndicatorLeft(null)
-        return
-      }
-
-      setIndicatorLeft(active.offsetLeft + active.offsetWidth / 2)
+      return active ? active.offsetLeft + active.offsetWidth / 2 : null
     }
 
-    positionIndicator()
-    window.addEventListener('resize', positionIndicator)
+    function positionIndicators() {
+      setIndicatorLeft(centreOfActive(modulesRowRef.current, '.console-subnav-module.is-active'))
+      setItemIndicatorLeft(centreOfActive(itemsRowRef.current, '.console-subnav-item.is-active'))
+    }
 
-    return () => window.removeEventListener('resize', positionIndicator)
-  }, [activeModuleKey, modules])
+    positionIndicators()
+    window.addEventListener('resize', positionIndicators)
+
+    return () => window.removeEventListener('resize', positionIndicators)
+  }, [activeModuleKey, activeNodeKey, modules, items])
 
   if (isLoading) {
     return <div className="console-subnav console-subnav-state">{t('Меню завантажується')}</div>
@@ -93,7 +89,7 @@ export function ConsoleNav() {
       </div>
 
       {items.length > 0 && (
-        <div className="console-subnav-row console-subnav-items">
+        <div ref={itemsRowRef} className="console-subnav-row console-subnav-items">
           {items.map((node) => {
             const Icon = getNodeIcon({ Module: node.Module, Route: node.Route })
             const key = node.NetUid || String(node.Id)
@@ -112,6 +108,11 @@ export function ConsoleNav() {
               </button>
             )
           })}
+          <span
+            className="console-subnav-indicator console-subnav-indicator-item"
+            aria-hidden="true"
+            style={{ left: itemIndicatorLeft ?? 0, opacity: itemIndicatorLeft == null ? 0 : 1 }}
+          />
         </div>
       )}
     </nav>
