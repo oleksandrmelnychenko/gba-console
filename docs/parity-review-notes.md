@@ -200,3 +200,20 @@ keep the console wording?**
 
 **Decision needed (see questions):** which of these to align to legacy.
 
+### Sale-state alignment — DONE (commits `59de282` + `331fd34`, verified faithful)
+Per your decision to align everything to legacy:
+- Lifecycle `STATUS_LABELS` now match `SaleLifeCycleStatusConvertor` + UA locale exactly (Рахунок /
+  Накладна / Накладна / Відправлено / Отримано / Очікування / Закриті рахунки / Редаговані перевізники /
+  Редаговані накладні).
+- `(ПДВ) ` prefix added to the status label for VAT sales (the separate ПДВ badge kept — legacy also
+  had a distinct VAT element).
+- TTN / invoice / shipment-list now show for Packaging(1) **and** Packaged(2) (grid + `SaleDocumentsMenu`).
+- The whole print/TTN block is hidden for `IsVatSale && !IsAcceptedToPacking && !isAdmin`
+  (admin = Administrator/GBA from auth) — the legacy stripped branch. Status label still shows;
+  «Не буде відвантажено» stays independent.
+- The «Відвантажити» row action (lifecycle 1→2) was **removed** (no legacy pivot equivalent) and the
+  orphaned `SaleShipModal` deleted. Shipping happens via the legacy flow / accept-to-packing
+  («Не буде відвантажено»).
+Adversarial verify confirmed faithful (labels exact, gating conditions exact, `IsSalesView` is always
+true in this grid, no regression). eslint 0 / tsc 0.
+
