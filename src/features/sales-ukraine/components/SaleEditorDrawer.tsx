@@ -46,6 +46,7 @@ import type {
 } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function SaleEditorDrawer({ sale, onClose }: { onClose: () => void; sale: SalesUkraineSale | null }) {
   const { t } = useI18n()
@@ -146,8 +147,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     const payload: SalesUkraineSale = {
       ...sale,
-      BaseLifeCycleStatus: { ...sale.BaseLifeCycleStatus, SaleLifeCycleType: 1 },
-      BaseSalePaymentStatus: { ...sale.BaseSalePaymentStatus, SalePaymentStatusType: 0 },
+      BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
+      BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
       IsPrintedPaymentInvoice: true,
     }
 
@@ -588,7 +589,13 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
       if (existing) {
         await updateOrderItem({ ...existing, Qty: (getNumber(existing.Qty) || 0) + numericQty })
       } else {
-        await addOrderItem(agreementNetUid, saleNetUid, { Product: selected, Qty: numericQty })
+        await addOrderItem(agreementNetUid, saleNetUid, {
+          Deleted: false,
+          Id: 0,
+          NetUid: EMPTY_GUID,
+          Product: selected,
+          Qty: numericQty,
+        })
       }
 
       notifications.show({ color: 'green', message: t('Товар додано') })
