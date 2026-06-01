@@ -131,10 +131,10 @@ const STATUS_OPTIONS: Array<{ label: string; value: SalesUkraineStatusFilter }> 
 const STATUS_COLORS: Record<string, string> = {
   Await: 'yellow',
   InvoiceChanged: 'blue',
-  New: 'green',
+  New: 'violet', // Рахунок
   OrderClosed: 'gray',
-  Packaged: 'violet',
-  Packaging: 'orange',
+  Packaged: 'green', // Накладна
+  Packaging: 'green', // Накладна
   Received: 'teal',
   Shipping: 'cyan',
   TransporterChanged: 'indigo',
