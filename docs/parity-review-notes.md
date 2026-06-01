@@ -538,3 +538,35 @@ To finish, add to `WarehouseUkraineOrderPlacementsPage`:
    `<Button variant="light" onClick={() => model.setUnorderedOpen(true)}>{t('Інший товар / більша кількість')}</Button>`
 4. render: `<PlacementUnorderedProductsDrawer order={model.order} opened={model.unorderedOpen}
    onClose={() => model.setUnorderedOpen(false)} onSaved={(updated) => { model.setOrder(updated); model.setUnorderedOpen(false) }} />`
+
+---
+
+## 14. Sales-tab exhaustive element audit + row/sub-row parity (run `wf_edeed1a3`, 2026-06-01)
+
+73-agent element-by-element audit of the «Продажі» row + expander (every button/icon/checkbox/badge/
+click/conditional). **0 high, 10 medium, 11 low confirmed**; ~55 claims refuted — notably the **row
+selection checkbox IS present** (8/8 refuted), the **накладна/print buttons ARE present** (12/13
+refuted), amounts/debt and action-icons all present. So the tab was in better shape than feared; the
+real gaps were a cluster of visual indicators + client identity + sub-row detail.
+
+### ✅ Built this commit (sales-ukraine — row + SaleExpandContent)
+- **«Знак оклику» — will-not-ship red `!`** on the row when `IsVatSale && !IsAcceptedToPacking`
+  (legacy sale.item.tsx:121-164). Clickable (→ onWillNotShip) when `ChangedToInvoice && canWillNotShip`,
+  dimmed (opacity .4) otherwise, tooltip «Замовлення не буде відвантажено». The *action* was already in
+  the menu; this restores the at-a-glance indicator.
+- **Temporary-client `!` prefix** (`IsTemporaryClient`) + **Root/sub-client hierarchical name**
+  («RootClient (sub-client)») with tooltip, on the client column (legacy sale.item.client.name.tsx).
+  Added `IsTemporaryClient`/`RootClient` to `SalesUkraineClient`.
+- **Expander sub-row**: item **Comment**, per-item **discount updater** (`DiscountUpdatedBy.LastName`),
+  and **qty-overflow tint** (red-1 bg when `Qty !== OverLordQty`) (legacy sale.expand.row.tsx:14-20 /
+  sale.expand.content.item.tsx). Added `DiscountUpdatedBy`/`Comment` to `SalesUkraineOrderItem`.
+
+### Deferred / divergent (not built — reason)
+- **Product code/name/orig clickable → product card** (medium): the console has no product-card modal
+  feature at all — a cross-cutting feature, out of scope for this row pass.
+- **SaleDateView as a separate modal** (divergent): console folds ShipmentDate→Packaged editing into
+  `SaleDetailsDrawer` edit mode — acceptable.
+- **Inline lock icon on row** (divergent): console keeps unlock in the actions menu — acceptable.
+- **Region code on row**, **retail-client phone+name click → online shop**, **org select-all checkbox**
+  (Mantine MultiSelect has none), **Ctrl+Insert new-sale shortcut**, **TTN button id attr** — all low/
+  cosmetic, left as-is.

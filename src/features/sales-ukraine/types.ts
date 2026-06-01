@@ -95,6 +95,7 @@ export type SalesUkraineClient = SalesUkraineEntity & {
   FirstName?: string
   FullName?: string
   IsSubClient?: boolean
+  IsTemporaryClient?: boolean
   IsTradePoint?: boolean
   LastName?: string
   MiddleName?: string
@@ -102,6 +103,12 @@ export type SalesUkraineClient = SalesUkraineEntity & {
   Name?: string
   PhoneNumber?: string
   RegionCode?: { Value?: string }
+  RootClient?: {
+    FirstName?: string
+    FullName?: string
+    LastName?: string
+    RegionCode?: { Value?: string }
+  }
 }
 
 export type SalesUkraineTransporterType = SalesUkraineEntity & {
@@ -193,6 +200,8 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   TotalAmountEurToUah?: number
   TotalVat?: number
   AssignedSpecification?: { SpecificationCode?: string }
+  DiscountUpdatedBy?: SalesUkraineUser
+  Comment?: string
   ShiftStatuses?: SalesUkraineOrderItemShiftStatus[]
   User?: SalesUkraineUser
 }

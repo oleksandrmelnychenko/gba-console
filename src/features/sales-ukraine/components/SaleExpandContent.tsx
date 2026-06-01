@@ -80,6 +80,9 @@ function SaleExpandContentItem({
   const overLordQty = getNumber(orderItem.OverLordQty)
   const qty = getNumber(orderItem.Qty)
   const qtyText = overLordQty ? `${displayValue(qty)} / ${overLordQty}` : displayValue(qty)
+  const hasQtyOverflow = typeof overLordQty === 'number' && overLordQty !== 0 && qty !== overLordQty
+  const comment = orderItem.Comment?.trim()
+  const discountUpdater = getResponsible(orderItem.DiscountUpdatedBy)
 
   return (
     <Group
@@ -87,7 +90,9 @@ function SaleExpandContentItem({
       className="sale-expand-content-item"
       gap="md"
       justify="space-between"
+      px="xs"
       py={8}
+      style={hasQtyOverflow ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 6 } : undefined}
       wrap="nowrap"
     >
       <Box style={{ minWidth: 0 }}>
@@ -115,6 +120,11 @@ function SaleExpandContentItem({
             </Text>
           )}
         </Group>
+        {comment && (
+          <Text c="dimmed" fs="italic" mt={2} size="xs">
+            {comment}
+          </Text>
+        )}
       </Box>
 
       <Group align="flex-start" gap="lg" wrap="nowrap">
@@ -141,6 +151,11 @@ function SaleExpandContentItem({
             </Anchor>
           ) : (
             <Text>{hasDiscount ? `${amountFormatter.format(discount)} %` : '—'}</Text>
+          )}
+          {hasDiscount && discountUpdater && (
+            <Text c="dimmed" size="xs">
+              {discountUpdater}
+            </Text>
           )}
         </Box>
       </Group>

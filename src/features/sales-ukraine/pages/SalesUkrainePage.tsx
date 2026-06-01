@@ -836,6 +836,30 @@ function useSalesUkraineColumns({
         cell: (sale) => (
           <Group gap={5} wrap="wrap">
             <SaleSourceIcon sale={sale} />
+            {Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && (
+              <Tooltip label={t('Замовлення не буде відвантажено')}>
+                <Text
+                  span
+                  c="red"
+                  fw={700}
+                  style={{
+                    cursor: sale.ChangedToInvoice && canWillNotShip ? 'pointer' : 'default',
+                    fontSize: 18,
+                    lineHeight: 1,
+                    opacity: sale.ChangedToInvoice ? 1 : 0.4,
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation()
+
+                    if (sale.ChangedToInvoice && canWillNotShip) {
+                      onWillNotShip(sale)
+                    }
+                  }}
+                >
+                  !
+                </Text>
+              </Tooltip>
+            )}
             <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
             {sale.IsVatSale && (
               <Badge color="blue" size="xs" variant="light">
@@ -865,15 +889,29 @@ function useSalesUkraineColumns({
         header: t('Клієнт'),
         width: 300,
         minWidth: 220,
-        accessor: getSaleClientName,
-        cell: (sale) => (
-          <>
-            <Text fw={600}>{displayValue(getSaleClientName(sale))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(sale.ClientAgreement?.Agreement?.Name)}
-            </Text>
-          </>
-        ),
+        accessor: getSaleClientDisplayName,
+        cell: (sale) => {
+          const client = sale.ClientAgreement?.Client
+          const displayName = getSaleClientDisplayName(sale)
+
+          return (
+            <>
+              <Tooltip label={displayName} disabled={!displayName} multiline maw={360}>
+                <Text fw={600}>
+                  {client?.IsTemporaryClient && (
+                    <Text span c="red" fw={700}>
+                      !{' '}
+                    </Text>
+                  )}
+                  {displayValue(displayName)}
+                </Text>
+              </Tooltip>
+              <Text size="xs" c="dimmed">
+                {displayValue(sale.ClientAgreement?.Agreement?.Name)}
+              </Text>
+            </>
+          )
+        },
       },
       {
         id: 'status',
@@ -1312,6 +1350,19 @@ function getSaleClientName(sale: SalesUkraineSale): string {
     || client?.MobileNumber?.trim()
     || ''
   )
+}
+
+function getSaleClientDisplayName(sale: SalesUkraineSale): string {
+  const baseName = getSaleClientName(sale)
+  const root = sale.ClientAgreement?.Client?.RootClient
+
+  if (!root) {
+    return baseName
+  }
+
+  const rootName = root.FullName?.trim() || [root.LastName, root.FirstName].filter(Boolean).join(' ').trim()
+
+  return rootName ? `${rootName} (${baseName})` : baseName
 }
 
 function getClientOptionLabel(client: SalesUkraineClientOption): string {
