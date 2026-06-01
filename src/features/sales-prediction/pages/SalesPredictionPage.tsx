@@ -43,10 +43,12 @@ export function SalesPredictionPage() {
   const [clientQuery, setClientQuery] = useValueState('')
   const [clientOptions, setClientOptions] = useValueState<SalesPredictionClientOption[]>([])
   const [clientNetId, setClientNetId] = useValueState<string | null>(null)
+  const [clientFullName, setClientFullName] = useValueState('')
 
   const [productQuery, setProductQuery] = useValueState('')
   const [productOptions, setProductOptions] = useValueState<SalesPredictionProductOption[]>([])
   const [productNetId, setProductNetId] = useValueState<string | null>(null)
+  const [productVendorCode, setProductVendorCode] = useValueState('')
 
   const [byClient, setByClient] = useValueState<SalesPredictionChartPoint[]>([])
   const [byProduct, setByProduct] = useValueState<SalesPredictionChartPoint[]>([])
@@ -246,9 +248,16 @@ export function SalesPredictionPage() {
               setClientNetId(value)
 
               if (!value) {
+                setClientFullName('')
                 setByClient([])
                 setCombined([])
+
+                return
               }
+
+              const selected = clientOptions.find((client) => client.NetUid === value)
+
+              setClientFullName(selected ? getClientLabel(selected) : '')
             }}
             onSearchChange={setClientQuery}
           />
@@ -272,9 +281,16 @@ export function SalesPredictionPage() {
               setProductNetId(value)
 
               if (!value) {
+                setProductVendorCode('')
                 setByProduct([])
                 setCombined([])
+
+                return
               }
+
+              const selected = productOptions.find((product) => product.NetUid === value)
+
+              setProductVendorCode(selected?.VendorCode?.trim() || selected?.NetUid || '')
             }}
             onSearchChange={setProductQuery}
           />
@@ -287,14 +303,38 @@ export function SalesPredictionPage() {
         </Text>
       )}
 
-      {clientNetId && <SalesPredictionChart data={byClient} title={t('Прогноз по клієнту')} />}
+      {clientNetId && (
+        <SalesPredictionChart
+          data={byClient}
+          title={t('Прогноз продажів по клієнту: {customer} на {monthCount} місяців', {
+            customer: clientFullName,
+            monthCount: byClient.length,
+          })}
+        />
+      )}
 
-      {productNetId && <SalesPredictionChart data={byProduct} title={t('Прогноз по товару')} />}
+      {productNetId && (
+        <SalesPredictionChart
+          data={byProduct}
+          title={t('Прогноз продажів по продукту: {product} на {monthCount} місяців', {
+            monthCount: byProduct.length,
+            product: productVendorCode,
+          })}
+        />
+      )}
 
       {clientNetId && productNetId && (
         <SalesPredictionChart
           data={combined}
-          title={isLoadingCombined ? t('Завантаження') : t('Прогноз по клієнту та товару')}
+          title={
+            isLoadingCombined
+              ? t('Завантаження')
+              : t('Прогноз продажів по клієнту: {customer} та по продукту: {product} на {monthCount} місяців', {
+                  customer: clientFullName,
+                  monthCount: combined.length,
+                  product: productVendorCode,
+                })
+          }
         />
       )}
     </Stack>

@@ -24,6 +24,7 @@ export function OfferCard({
   offer,
   onCopyLink,
   onDelete,
+  onOpenItemReason,
   onOpenReason,
   onRestart,
   onToggle,
@@ -32,6 +33,7 @@ export function OfferCard({
   offer: ClientShoppingCart
   onCopyLink: (offer: ClientShoppingCart) => void
   onDelete: (offer: ClientShoppingCart) => void
+  onOpenItemReason: (offer: ClientShoppingCart, item: OfferOrderItem) => void
   onOpenReason: (offer: ClientShoppingCart) => void
   onRestart: (offer: ClientShoppingCart) => void
   onToggle: (offer: ClientShoppingCart) => void
@@ -135,6 +137,7 @@ export function OfferCard({
               currencyCode={currencyCode}
               isOfferProcessed={offer.IsOfferProcessed === true}
               item={item}
+              onOpenReason={() => onOpenItemReason(offer, item)}
             />
           ))}
         </Stack>
@@ -147,13 +150,16 @@ function OfferLine({
   currencyCode,
   isOfferProcessed,
   item,
+  onOpenReason,
 }: {
   currencyCode: string
   isOfferProcessed: boolean
   item: OfferOrderItem
+  onOpenReason: () => void
 }) {
   const { t } = useI18n()
   const notProcessed = getItemNotProcessed(item)
+  const canOpenReason = isOfferProcessed && notProcessed > 0
 
   return (
     <Box
@@ -184,8 +190,8 @@ function OfferLine({
       </Stack>
 
       <Box>
-        {isOfferProcessed && notProcessed > 0 && (
-          <Badge color="orange" variant="light">
+        {canOpenReason && (
+          <Badge color="orange" style={{ cursor: 'pointer' }} variant="light" onClick={onOpenReason}>
             {t('Неопрацьовано')}: {notProcessed}
           </Badge>
         )}

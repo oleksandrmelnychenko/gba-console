@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type {
   ClientProductMovementClientOption,
   ClientProductMovementDocument,
@@ -6,6 +7,10 @@ import type {
   ClientProductMovementFilters,
   ClientProductMovementOrganizationOption,
 } from '../types'
+
+const CLIENT_SEARCH_LIMIT = 50
+const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
+const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 function buildMovementQuery(filters: ClientProductMovementFilters) {
   return {
@@ -48,15 +53,24 @@ export async function getClientProductMovementOrganizations(): Promise<ClientPro
 export async function searchClientProductMovementClients(
   value: string,
 ): Promise<ClientProductMovementClientOption[]> {
-  const result = await apiRequest<unknown>('/clients/payers/search/all', {
+  const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      limit: 50,
-      offset: 0,
-      value: value.trim(),
+      filter: buildClientSearchFilter(value),
     },
   })
 
   return normalizeArray(result) as ClientProductMovementClientOption[]
+}
+
+function buildClientSearchFilter(value: string): string {
+  return buildServerSearchFilter({
+    filterEntityType: CLIENT_FILTER_ENTITY_TYPE_CLIENT,
+    filterSql: CLIENT_SEARCH_SQL,
+    limit: CLIENT_SEARCH_LIMIT,
+    offset: 0,
+    table: 'Client',
+    value: value.trim(),
+  })
 }
 
 function extractDocumentResult(result: unknown): ClientProductMovementDocumentResult {

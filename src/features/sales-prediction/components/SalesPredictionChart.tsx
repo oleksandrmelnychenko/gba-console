@@ -23,6 +23,7 @@ export function SalesPredictionChart({ data, title }: { data: SalesPredictionCha
             dataKey="month"
             h={300}
             series={[{ color: 'violet.6', label: t('Сума продажів, EUR'), name: 'amount' }]}
+            yAxisLabel={t('Сума продажу в євро')}
           />
         )}
       </Stack>

@@ -485,7 +485,15 @@ function useSalesOnlineShopColumns(onOpenSale: (sale: SalesOnlineShopSale) => vo
         width: 128,
         minWidth: 116,
         accessor: getPaymentStatusLabel,
-        cell: (sale) => displayValue(getPaymentStatusLabel(sale)),
+        cell: (sale) => {
+          const color = getPaymentStatusColor(sale)
+
+          return (
+            <Text c={color} fw={color ? 600 : undefined}>
+              {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
+            </Text>
+          )
+        },
       },
       {
         id: 'responsible',
@@ -502,7 +510,11 @@ function useSalesOnlineShopColumns(onOpenSale: (sale: SalesOnlineShopSale) => vo
         minWidth: 116,
         align: 'right',
         accessor: (sale) => getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount),
-        cell: (sale) => formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)),
+        cell: (sale) => (
+          <Text c={isUnpaidSale(sale) ? 'red' : undefined} fw={600}>
+            {formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}
+          </Text>
+        ),
       },
       {
         id: 'currency',
@@ -773,6 +785,31 @@ function getPaymentStatusLabel(sale: SalesOnlineShopSale): string {
   const key = typeof status === 'undefined' || status === null ? '' : String(status)
 
   return translate(PAYMENT_STATUS_LABELS[key] || sale.BaseSalePaymentStatus?.Name || '')
+}
+
+function isUnpaidSale(sale: SalesOnlineShopSale): boolean {
+  return sale.BaseSalePaymentStatus?.SalePaymentStatusType === 0
+}
+
+function getPaymentStatusColor(sale: SalesOnlineShopSale): string | undefined {
+  switch (sale.BaseSalePaymentStatus?.SalePaymentStatusType) {
+    case 0:
+      return 'red'
+    case 1:
+      return 'green'
+    case 3:
+      return 'orange'
+    default:
+      return undefined
+  }
+}
+
+function getRetailPaymentSuffix(sale: SalesOnlineShopSale): string {
+  if (!sale.RetailClient) {
+    return ''
+  }
+
+  return sale.IsFullPayment ? ' (ПО)' : ' (ЧО)'
 }
 
 function getSaleCurrencyCode(sale: SalesOnlineShopSale): string {

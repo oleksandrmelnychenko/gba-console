@@ -8,7 +8,7 @@ const SALES_DASHBOARD_TABS: Array<{ label: string; value: string }> = [
   { label: 'Оферти', value: '/sales/ukraine/offers' },
   { label: 'Резерв кошика', value: '/sales/ukraine/cart-reserve' },
   { label: 'Боржники', value: '/sales/ukraine/debtors' },
-  { label: 'Передзамовлення', value: '/sales/ukraine/interest' },
+  { label: 'Зацікавленість', value: '/sales/ukraine/interest' },
   { label: 'Повернення', value: '/sales/return/client' },
   { label: 'Рух товару клієнта', value: '/sales/ukraine/client-product-movement' },
   { label: 'Прогноз', value: '/sales/ukraine/prediction' },

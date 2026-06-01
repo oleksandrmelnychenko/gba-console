@@ -10,7 +10,7 @@ import { getOffers, getPublicOfferLink, processOffer, restartOfferValidity } fro
 import { NewOfferModal } from '../components/NewOfferModal'
 import { OfferCard } from '../components/OfferCard'
 import { OfferReasonDrawer } from '../components/OfferReasonDrawer'
-import type { ClientShoppingCart, OffersFilters } from '../types'
+import type { ClientShoppingCart, OfferOrderItem, OffersFilters } from '../types'
 
 type FilterDraft = {
   from: string
@@ -96,6 +96,11 @@ export function OffersPage() {
 
   function openReason(offer: ClientShoppingCart) {
     setReasonOffer(offer)
+    setReasonOpen(true)
+  }
+
+  function openItemReason(offer: ClientShoppingCart, item: OfferOrderItem) {
+    setReasonOffer({ Id: offer.Id, NetUid: offer.NetUid, Number: offer.Number, OrderItems: [item] })
     setReasonOpen(true)
   }
 
@@ -202,6 +207,7 @@ export function OffersPage() {
               offer={offer}
               onCopyLink={copyLink}
               onDelete={requestDelete}
+              onOpenItemReason={openItemReason}
               onOpenReason={openReason}
               onRestart={restart}
               onToggle={toggle}
