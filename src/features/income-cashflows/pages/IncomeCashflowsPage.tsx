@@ -72,11 +72,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   timeStyle: 'short',
 })
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
-
 type SelectOption = {
   label: string
   value: string
@@ -221,7 +216,7 @@ export function IncomeCashflowsPage() {
   }, [loadIncomeOrders])
 
   const resetFilters = useCallback(() => {
-    setFromDate(shiftDate(-1))
+    setFromDate(shiftDate(-7))
     setToDate(formatLocalDate(new Date()))
     setSearchValue('')
     setCurrencyNetId('')
@@ -1086,25 +1081,27 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 }
 
 function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCashflowRow[] {
-  return incomeOrders.map((income, index) => ({
-    amount: income.Amount,
-    comment: income.Comment,
-    currency: income.Currency?.Code || income.Currency?.Name,
-    fromDate: income.FromDate,
-    id: String(income.NetUid || income.Id || index),
-    income,
-    isAccounting: income.IsAccounting,
-    isCanceled: income.IsCanceled,
-    isManagementAccounting: income.IsManagementAccounting,
-    number: income.Number,
-    operationType: income.OperationTypeName,
-    organization: getEntityName(income.Organization),
-    payer: getIncomePayerName(income),
-    paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
-    paymentRegister: income.PaymentRegister?.Name,
-    responsible: getEntityName(income.User),
-    rootAssigned: Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length),
-  }))
+  return [...incomeOrders]
+    .sort((left, right) => (right.FromDate || '').localeCompare(left.FromDate || ''))
+    .map((income, index) => ({
+      amount: income.Amount,
+      comment: income.Comment,
+      currency: income.Currency?.Code || income.Currency?.Name,
+      fromDate: income.FromDate,
+      id: String(income.NetUid || income.Id || index),
+      income,
+      isAccounting: income.IsAccounting,
+      isCanceled: income.IsCanceled,
+      isManagementAccounting: income.IsManagementAccounting,
+      number: income.Number,
+      operationType: income.OperationTypeName,
+      organization: getEntityName(income.Organization),
+      payer: getIncomePayerName(income),
+      paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
+      paymentRegister: income.PaymentRegister?.Name,
+      responsible: getEntityName(income.User),
+      rootAssigned: Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length),
+    }))
 }
 
 function getIncomePayerName(income: IncomePaymentOrder): string | undefined {
@@ -1230,8 +1227,15 @@ function formatDateTime(value?: string): string {
   return dateTimeFormatter.format(date)
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
+
+  return moneyFormatter.format(amount)
 }
 
 function displayValue(value?: string | number | null): string {

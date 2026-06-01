@@ -575,7 +575,7 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
       )}
       {row.rootAssigned && (
         <Badge color="gray" size="xs" variant="light">
-          {t('Призначено')}
+          {t('Підзвіт')}
         </Badge>
       )}
       {Boolean(row.differenceAmount) && (

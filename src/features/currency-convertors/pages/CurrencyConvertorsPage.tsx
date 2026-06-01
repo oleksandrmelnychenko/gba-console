@@ -537,7 +537,7 @@ function computeShowAddButton(rates: CurrencyTraderExchangeRate[]): boolean {
     return true
   }
 
-  const today = formatLocalDate(new Date())
+  const todayDayOfMonth = new Date().getDate()
 
   return !rates.some((rate) => {
     if (!rate.FromDate) {
@@ -546,7 +546,7 @@ function computeShowAddButton(rates: CurrencyTraderExchangeRate[]): boolean {
 
     const date = new Date(rate.FromDate)
 
-    return !Number.isNaN(date.getTime()) && formatLocalDate(date) === today
+    return !Number.isNaN(date.getTime()) && date.getDate() === todayDayOfMonth
   })
 }
 

@@ -26,15 +26,6 @@ const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-})
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
 
 export function AdvancePaymentsPage() {
   const { t } = useI18n()
@@ -92,7 +83,7 @@ export function AdvancePaymentsPage() {
           <Group justify="space-between" wrap="wrap">
             <div>
               <Text fw={700} size="xl">
-                {t('Авансові платежі')}
+                {t('Зарахування авансу')}
               </Text>
             </div>
 
@@ -111,8 +102,8 @@ export function AdvancePaymentsPage() {
           </Group>
 
           <Group align="end" gap="sm">
-            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+            <TextInput label={t('Від якої дати')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До якої дати')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
           </Group>
 
           {error && (
@@ -129,7 +120,7 @@ export function AdvancePaymentsPage() {
             columns={columns}
             data={payments}
             defaultLayout={ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Авансових платежів за період не знайдено')}
+            emptyText={t('Немає даних за вибраний період')}
             getRowId={(payment, index) => String(payment.NetUid || payment.Id || payment.Number || index)}
             isLoading={isLoading}
             layoutVersion="advance-payments-table-1"
@@ -150,7 +141,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
     () => [
       {
         id: 'fromDate',
-        header: t('Дата'),
+        header: t('Вхідна дата'),
         width: 160,
         minWidth: 140,
         accessor: (payment) => payment.FromDate,
@@ -175,7 +166,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
       },
       {
         id: 'vatPercent',
-        header: t('VAT, %'),
+        header: t('ПДВ %'),
         width: 110,
         minWidth: 96,
         align: 'right',
@@ -184,7 +175,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
       },
       {
         id: 'vatAmount',
-        header: t('Сума VAT'),
+        header: t('Сума ПДВ'),
         width: 140,
         minWidth: 120,
         align: 'right',
@@ -237,15 +228,30 @@ function formatDateTime(value?: string): string {
 
   const date = new Date(value)
 
-  return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`
 }
 
 function formatPercent(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }
 
 function displayValue(value?: string | null): string {

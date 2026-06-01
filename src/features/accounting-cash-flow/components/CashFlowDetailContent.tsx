@@ -1,6 +1,7 @@
-import { Anchor, Button, Divider, Group, Stack, Tooltip } from '@mantine/core'
+import { Anchor, Button, Divider, Group, Stack } from '@mantine/core'
 import { IconExternalLink, IconFileTypePdf } from '@tabler/icons-react'
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -25,11 +26,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
-})
-
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
 })
 
 export function CashFlowDetailContent({ item }: { item: AccountingCashFlowHeadItem }) {
@@ -67,11 +63,15 @@ function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
               </Anchor>
             ))}
             {hasOrderLink ? (
-              <Tooltip label={t('Маршрут постачання недоступний у консолі')}>
-                <Button color="gray" disabled leftSection={<IconExternalLink size={16} />} variant="light">
-                  {t('На логістичний шлях')}
-                </Button>
-              </Tooltip>
+              <Button
+                color="gray"
+                component={Link}
+                leftSection={<IconExternalLink size={16} />}
+                to={detail.linkToOrder}
+                variant="light"
+              >
+                {t('На логістичний шлях')}
+              </Button>
             ) : null}
           </Group>
           <Divider />
@@ -260,8 +260,13 @@ function formatDate(value?: string): string {
   return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date)
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }
 
 function displayValue(value?: string | number): string {

@@ -317,8 +317,8 @@ export function PaymentAccountFormPage() {
 
             <SegmentedControl
               data={[
-                { label: t('Готівка'), value: String(PaymentRegisterType.Cash) },
-                { label: t('Картка'), value: String(PaymentRegisterType.Card) },
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
                 { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
               ]}
               disabled={isLoading || isSaving || isDeleting || isEditMode}
@@ -488,7 +488,7 @@ function BankFields({
       <Checkbox
         checked={form.isActive}
         disabled={disabled}
-        label={t('Головний')}
+        label={t('Основний')}
         mt="lg"
         onChange={(event) => onChange({ isActive: event.currentTarget.checked })}
       />
