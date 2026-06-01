@@ -27,8 +27,8 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 - `ui`: 132
 - `route`: 0
 - `shell`: 0
-- `todo`: 4
-- `deferred`: 5
+- `todo`: 3
+- `deferred`: 6
 - Poland-specific skipped rows: 3
 
 ## Area Counts
@@ -130,7 +130,7 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 56 | P1 clients | clients | `/clients` | `ClientsView` | ui | list parity slice includes dynamic filters, sort descriptors, reserve days, export, active switch, and subclient structure |
 | 57 | P0 foundation | dashboard | `/dashboard` | `DashboardPage` | ui | dashboard route registered and lazy-loaded |
 | 58 | P1 clients | new-clients-from-ecommerce | `/new-clients-from-ecommerce` | `NewEcommerceClientsView` | ui | read-only table/API slice implemented; row navigation opens client edit |
-| 59 | P4 supply-warehouse | orders | `/orders/develop/all/edit/:netUid/specifications` | `SupplySpecificationContainer` | todo | old line 212 |
+| 59 | P4 supply-warehouse | orders | `/orders/develop/all/edit/:netUid/specifications` | `SupplySpecificationContainer` | deferred | obsolete: unfinished, unreachable dev prototype (route.config.ts:212, no nav link, renders JSON.stringify stub). Superseded by `SupplySpecificationGridView`, already migrated at `/orders/ukraine/all/edit/:id/specifications` (#69) |
 | 64 | P4 supply-warehouse | supply-orders | `/supply-orders/product-placement/:id` | `SupplyProductPlacementView` | ui | read-only supply order product placement view wired to `/products/incomes/supply/order/get`, with order/invoice/packing-list status, product rows, placement positions, VAT/customs/weight totals |
 | 67 | P4 supply-warehouse | orders | `/orders/ukraine/all/new` | `NewSupplyOrderView` | ui | direct Ukraine order create-from-file route migrated with supplier/org/agreement selection, delivery type, parse columns, upload error preview, and no inside-country foreign branch |
 | 68 | P4 supply-warehouse | orders | `/orders/ukraine/all/edit/:id/supply-invoices` | `SupplyInvoiceOperationView` | ui | direct order invoice/packing-list route wired with order products, invoice and pack-list tabs, permission-gated upload/delete actions, old one-pack-list upload visibility, totals, and reload |

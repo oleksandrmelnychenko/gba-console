@@ -80,9 +80,9 @@ const STATUS_COLORS: Record<string, string> = {
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   0: 'Не оплачено',
-  1: 'Частково',
+  1: 'Оплачено',
   2: 'Оплачено',
-  3: 'Переплата',
+  3: 'Оплачено частково',
 }
 
 const STATUS_LABELS: Record<string, string> = {
