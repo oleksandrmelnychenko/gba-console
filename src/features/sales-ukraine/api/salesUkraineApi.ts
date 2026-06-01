@@ -136,6 +136,29 @@ export async function switchSale(saleNetId: string, clientAgreementNetId: string
   })
 }
 
+export async function getMergedSales(saleNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/merged', {
+    query: { netId: saleNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function getCurrentUnmergedSale(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/current/unmerged', {
+    query: { netId: clientAgreementNetId },
+  })
+
+  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+}
+
+export async function updateMergedSale(sale: SalesUkraineSale): Promise<void> {
+  await apiRequest<unknown>('/sales/update/merged', {
+    body: sale,
+    method: 'POST',
+  })
+}
+
 export async function updateSale(sale: SalesUkraineSale): Promise<void> {
   await apiRequest<unknown>('/sales/update', {
     body: sale,

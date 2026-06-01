@@ -1,0 +1,336 @@
+import { Alert, Badge, Button, Card, Chip, Group, Loader, Stack, Table, Text } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { IconAlertCircle, IconFileInvoice } from '@tabler/icons-react'
+import { useEffect } from 'react'
+import { useValueState } from '../../../shared/hooks/useValueState'
+import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
+import type { SalesUkraineSale, SalesUkraineSaleMerged } from '../types'
+
+const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+
+export function MergedSalesDrawer({
+  saleNetId,
+  onClose,
+  onChanged,
+}: {
+  onChanged: () => void
+  onClose: () => void
+  saleNetId: string | null
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppDrawer
+      offset={8}
+      opened={Boolean(saleNetId)}
+      padding="lg"
+      position="right"
+      radius="md"
+      size="min(960px, 100vw)"
+      title={t("Об'єднання продажів")}
+      onClose={onClose}
+    >
+      {saleNetId && <MergedSalesContent key={saleNetId} saleNetId={saleNetId} onChanged={onChanged} />}
+    </AppDrawer>
+  )
+}
+
+function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; saleNetId: string }) {
+  const { t } = useI18n()
+  const [mergedSale, setMergedSale] = useValueState<SalesUkraineSale | null>(null)
+  const [isLoading, setLoading] = useValueState(true)
+  const [error, setError] = useValueState<string | null>(null)
+  const [clientFilter, setClientFilter] = useValueState<string>('all')
+  const [confirmSale, setConfirmSale] = useValueState<SalesUkraineSale | null>(null)
+  const [isConverting, setConverting] = useValueState(false)
+  const [reloadKey, reload] = useValueState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    async function load() {
+      try {
+        const next = await getMergedSales(saleNetId)
+
+        if (!cancelled) {
+          setMergedSale(next)
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : t("Не вдалося завантажити об'єднання"))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [saleNetId, reloadKey, setError, setLoading, setMergedSale, t])
+
+  const merges = Array.isArray(mergedSale?.InputSaleMerges) ? mergedSale.InputSaleMerges : []
+  const clientFilters = buildClientFilters(merges)
+  const visibleMerges =
+    clientFilter === 'all' ? merges : merges.filter((merge) => getClientNetUid(merge) === clientFilter)
+
+  async function convert() {
+    if (!confirmSale) {
+      return
+    }
+
+    setConverting(true)
+
+    const payload: SalesUkraineSale = {
+      ...confirmSale,
+      BaseLifeCycleStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 },
+      BaseSalePaymentStatus: { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 },
+      IsPrintedPaymentInvoice: true,
+    }
+
+    try {
+      await updateMergedSale(payload)
+      notifications.show({ color: 'green', message: t('Рахунок створено') })
+      setConfirmSale(null)
+      reload((key) => key + 1)
+      onChanged()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+    } finally {
+      setConverting(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <Group justify="center" py="xl">
+        <Loader />
+      </Group>
+    )
+  }
+
+  return (
+    <Stack gap="md">
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+
+      {clientFilters.length > 1 && (
+        <Chip.Group multiple={false} value={clientFilter} onChange={(value) => setClientFilter((value as string) || 'all')}>
+          <Group gap="xs">
+            <Chip value="all">{t('Усі')}</Chip>
+            {clientFilters.map((filter) => (
+              <Chip key={filter.value} value={filter.value}>
+                {filter.label}
+              </Chip>
+            ))}
+          </Group>
+        </Chip.Group>
+      )}
+
+      {visibleMerges.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          {t("Об'єднаних продажів не знайдено")}
+        </Text>
+      ) : (
+        visibleMerges.map((merge, index) => (
+          <MergedSaleCard
+            key={getInputSale(merge)?.NetUid || merge.InputSaleId || index}
+            sale={getInputSale(merge)}
+            onInvoice={setConfirmSale}
+          />
+        ))
+      )}
+
+      <AppModal
+        centered
+        opened={Boolean(confirmSale)}
+        size="sm"
+        title={t('Зробити рахунок')}
+        onClose={() => (isConverting ? undefined : setConfirmSale(null))}
+      >
+        <Stack gap="md">
+          <Text>{t('Перетворити цей продаж на рахунок?')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConfirmSale(null)}>
+              {t('Скасувати')}
+            </Button>
+            <Button color="teal" loading={isConverting} onClick={convert}>
+              {t('Зробити рахунок')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
+    </Stack>
+  )
+}
+
+function MergedSaleCard({ sale, onInvoice }: { onInvoice: (sale: SalesUkraineSale) => void; sale?: SalesUkraineSale }) {
+  const { t } = useI18n()
+
+  if (!sale) {
+    return null
+  }
+
+  const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const client = sale.ClientAgreement?.Client
+  const currency = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+
+  return (
+    <Card withBorder padding="md" radius="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="flex-start" wrap="wrap">
+          <Stack gap={2}>
+            <Group gap="xs">
+              <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
+              <Badge color={getClientColor(client)} size="xs" variant="light">
+                {getClientTypeLabel(client, t)}
+              </Badge>
+            </Group>
+            <Text size="sm">{displayValue(client?.FullName)}</Text>
+            <Text size="xs" c="dimmed">
+              {[getUserLastName(sale), formatDateTime(sale.Updated)].filter(Boolean).join(' · ')}
+            </Text>
+          </Stack>
+          <Button
+            color="teal"
+            leftSection={<IconFileInvoice size={16} />}
+            size="xs"
+            variant="light"
+            onClick={() => onInvoice(sale)}
+          >
+            {t('Зробити рахунок')}
+          </Button>
+        </Group>
+
+        <Table withRowBorders={false}>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>{t('Код Виробника')}</Table.Th>
+              <Table.Th>{t('Назва товару')}</Table.Th>
+              <Table.Th ta="right">{t('К-сть')}</Table.Th>
+              <Table.Th ta="right">{t('Сума')}</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {orderItems.map((item, index) => (
+              <Table.Tr key={item.NetUid || item.Id || index}>
+                <Table.Td>{displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)}</Table.Td>
+                <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
+                <Table.Td ta="right">{displayValue(getNumber(item.Qty))}</Table.Td>
+                <Table.Td ta="right">
+                  {formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount))} {currency}
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Stack>
+    </Card>
+  )
+}
+
+function buildClientFilters(merges: SalesUkraineSaleMerged[]): Array<{ label: string; value: string }> {
+  const seen = new Map<string, string>()
+
+  merges.forEach((merge) => {
+    const netUid = getClientNetUid(merge)
+    const client = getInputSale(merge)?.ClientAgreement?.Client
+
+    if (netUid && !seen.has(netUid)) {
+      seen.set(netUid, client?.FullName || netUid)
+    }
+  })
+
+  return Array.from(seen.entries()).map(([value, label]) => ({ label, value }))
+}
+
+function getInputSale(merge: SalesUkraineSaleMerged): SalesUkraineSale | undefined {
+  return merge.InputSale
+}
+
+function getClientNetUid(merge: SalesUkraineSaleMerged): string {
+  return getInputSale(merge)?.ClientAgreement?.Client?.NetUid || ''
+}
+
+function getClientTypeLabel(client: { IsSubClient?: boolean; IsTradePoint?: boolean } | undefined, t: (key: string) => string): string {
+  if (client?.IsTradePoint) {
+    return t('Торгова точка')
+  }
+
+  if (client?.IsSubClient) {
+    return t('Субклієнт')
+  }
+
+  return t('Клієнт')
+}
+
+function getClientColor(client: { IsSubClient?: boolean; IsTradePoint?: boolean } | undefined): string {
+  if (client?.IsTradePoint) {
+    return 'grape'
+  }
+
+  if (client?.IsSubClient) {
+    return 'cyan'
+  }
+
+  return 'blue'
+}
+
+function getUserLastName(sale: SalesUkraineSale): string {
+  const user = sale.User || sale.UpdateUser
+
+  return user?.LastName?.trim() || ''
+}
+
+function formatDateTime(value?: Date | string): string {
+  if (!value) {
+    return ''
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('uk-UA')
+}
+
+function formatAmount(value: number | null): string {
+  return typeof value === 'number' ? amountFormatter.format(value) : '—'
+}
+
+function getNumber(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
+}
+
+function displayValue(value: unknown): string {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : '—'
+  }
+
+  if (typeof value === 'string') {
+    return value.trim() || '—'
+  }
+
+  return '—'
+}

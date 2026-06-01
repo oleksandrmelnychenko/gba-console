@@ -94,6 +94,8 @@ export type SalesUkraineHistoryInvoiceEdit = SalesUkraineEntity
 export type SalesUkraineClient = SalesUkraineEntity & {
   FirstName?: string
   FullName?: string
+  IsSubClient?: boolean
+  IsTradePoint?: boolean
   LastName?: string
   MiddleName?: string
   MobileNumber?: string
@@ -202,6 +204,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   FromDate?: Date | string
   HasDocuments?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
+  InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean
   IsCashOnDelivery?: boolean
   IsDevelopment?: boolean
@@ -228,6 +231,15 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   Transporter?: SalesUkraineTransporter
   UpdateUser?: SalesUkraineUser
   User?: SalesUkraineUser
+}
+
+export type SalesUkraineSaleMerged = {
+  InputSale?: SalesUkraineSale
+  InputSaleId?: number
+  IsEditMode?: boolean
+  IsSelected?: boolean
+  OutputSale?: SalesUkraineSale
+  OutputSaleId?: number
 }
 
 export type SalesUkraineOrganizationOption = SalesUkraineEntity & {

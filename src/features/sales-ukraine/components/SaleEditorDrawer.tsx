@@ -17,7 +17,16 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconFileInvoice, IconPencil, IconPlus, IconSearch, IconTrash, IconTruck } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconArrowsJoin,
+  IconFileInvoice,
+  IconPencil,
+  IconPlus,
+  IconSearch,
+  IconTrash,
+  IconTruck,
+} from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -36,6 +45,7 @@ import {
   updateOrderItem,
   updateSaleFromData,
 } from '../api/salesUkraineApi'
+import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
 import type {
   SaleClientDebtTotal,
@@ -79,6 +89,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isDetailsOpen, setDetailsOpen] = useValueState(false)
   const [isConvertOpen, setConvertOpen] = useValueState(false)
   const [isConverting, setConverting] = useValueState(false)
+  const [isMergedOpen, setMergedOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -213,6 +224,11 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       </Card>
 
       <Group justify="flex-end" gap="sm">
+        {Array.isArray(sale.InputSaleMerges) && sale.InputSaleMerges.length > 0 && (
+          <Button leftSection={<IconArrowsJoin size={16} />} variant="light" onClick={() => setMergedOpen(true)}>
+            {t("Об'єднання")}
+          </Button>
+        )}
         {sale.Transporter && (
           <Button leftSection={<IconTruck size={16} />} variant="light" onClick={() => setDetailsOpen(true)}>
             {t('Доставка')}
@@ -286,6 +302,12 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
           setDetailsOpen(false)
           reload()
         }}
+      />
+
+      <MergedSalesDrawer
+        saleNetId={isMergedOpen ? sale.NetUid ?? null : null}
+        onChanged={reload}
+        onClose={() => setMergedOpen(false)}
       />
 
       <AppModal
