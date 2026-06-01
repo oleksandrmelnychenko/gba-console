@@ -10,7 +10,7 @@ export function ConsoleLayout() {
   return (
     <NavigationProvider>
       <AppShell
-        header={{ height: 140 }}
+        header={{ height: 128 }}
         footer={{ height: 36 }}
         padding={0}
       >

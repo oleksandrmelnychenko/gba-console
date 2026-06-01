@@ -791,7 +791,7 @@
   align-items: center;
   justify-content: safe center;
   gap: 4px;
-  padding: 5px 12px;
+  padding: 2px 12px;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -853,7 +853,7 @@
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -3px;
+  bottom: -1px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
