@@ -52,7 +52,6 @@
   border-bottom: 1px solid var(--mantine-color-gray-2);
   border-bottom-left-radius: 16px;
   border-bottom-right-radius: 16px;
-  overflow: hidden;
 }
 
 .mantine-Drawer-content {
@@ -783,6 +782,8 @@
 /* Sub-header navigation (2 rows: modules / active-module items) */
 .console-subnav {
   border-top: 1px solid var(--mantine-color-gray-2);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
   background: var(--mantine-color-white);
 }
 
