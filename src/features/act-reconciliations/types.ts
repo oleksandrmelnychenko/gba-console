@@ -154,6 +154,7 @@ export type ProductIncomeFromItemQueryParams = {
   fromDate: string
   itemNetId: string
   qty: string
+  reason: string
   rowNumber?: string
   storageNetId: string
   storageNumber?: string

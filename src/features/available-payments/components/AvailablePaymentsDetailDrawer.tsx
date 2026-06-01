@@ -38,6 +38,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
+import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   createAvailablePaymentOutcome,
@@ -139,6 +141,7 @@ export function AvailablePaymentsDetailDrawer({
   const [isSaving, setSaving] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [confirmCloseOutcomeOpen, setConfirmCloseOutcomeOpen] = useValueState(false)
+  const cashFlowRequestRef = useRef<Record<string, number>>({})
   const movementSearchRequestRef = useRef(0)
   const movementSearchTimeoutRef = useRef<number | null>(null)
 
@@ -289,6 +292,10 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   function requestDrawerClose() {
+    if (isSaving) {
+      return
+    }
+
     if (outcomeModels.length > 0) {
       setConfirmCloseOutcomeOpen(true)
       return
@@ -298,12 +305,21 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   function confirmDrawerClose() {
+    if (isSaving) {
+      return
+    }
+
     closeOutcomeForm()
     onClose()
   }
 
   function handleMovementSearchChange(nextValue: string) {
-    updateForm({ movementSearch: nextValue })
+    const selectedMovementLabel = selectedMovement?.OperationName || selectedMovement?.Name || ''
+
+    updateForm({
+      movementSearch: nextValue,
+      movementValue: nextValue === selectedMovementLabel ? form.movementValue : '',
+    })
 
     const value = nextValue.trim()
     const requestId = movementSearchRequestRef.current + 1
@@ -327,6 +343,10 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   function openOutcomeForm(nextModels: AvailablePaymentTaskModel[]) {
+    if (isSaving) {
+      return
+    }
+
     const payableModels = nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done)
 
     if (payableModels.length === 0) {
@@ -357,6 +377,19 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
+    const requestId = (cashFlowRequestRef.current[model.id] || 0) + 1
+    cashFlowRequestRef.current[model.id] = requestId
+    const isCurrentCashFlowRequest = () => cashFlowRequestRef.current[model.id] === requestId
+    const filterError = getDateRangeError(filters.from, filters.to)
+
+    if (filterError) {
+      setCashFlows((current) => ({
+        ...current,
+        [model.id]: { data: null, error: filterError, isLoading: false },
+      }))
+      return
+    }
+
     setCashFlows((current) => ({
       ...current,
       [model.id]: { data: null, error: null, isLoading: true },
@@ -370,19 +403,23 @@ export function AvailablePaymentsDetailDrawer({
         typePaymentTask,
       })
 
-      setCashFlows((current) => ({
-        ...current,
-        [model.id]: { data: result, error: null, isLoading: false },
-      }))
+      if (isCurrentCashFlowRequest()) {
+        setCashFlows((current) => ({
+          ...current,
+          [model.id]: { data: result, error: null, isLoading: false },
+        }))
+      }
     } catch (cashFlowError) {
-      setCashFlows((current) => ({
-        ...current,
-        [model.id]: {
-          data: null,
-          error: cashFlowError instanceof Error ? cashFlowError.message : t('Не вдалося завантажити рух коштів'),
-          isLoading: false,
-        },
-      }))
+      if (isCurrentCashFlowRequest()) {
+        setCashFlows((current) => ({
+          ...current,
+          [model.id]: {
+            data: null,
+            error: cashFlowError instanceof Error ? cashFlowError.message : t('Не вдалося завантажити рух коштів'),
+            isLoading: false,
+          },
+        }))
+      }
     }
   }
 
@@ -409,10 +446,14 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   async function handleMoveToDone(model: AvailablePaymentTaskModel) {
+    if (isSaving) {
+      return
+    }
+
     const localFiles = filesByTaskId[model.id] || []
     const taskWithDocuments = buildTaskWithLocalDocuments(model.task, localFiles)
 
-    if ((taskWithDocuments.SupplyPaymentTaskDocuments || []).length === 0) {
+    if (countActiveDocuments(taskWithDocuments.SupplyPaymentTaskDocuments) === 0) {
       setError(t('Додайте хоча б один документ'))
       return
     }
@@ -451,14 +492,20 @@ export function AvailablePaymentsDetailDrawer({
   async function handleCreateOutcome(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
+    if (isSaving) {
+      return
+    }
+
     const validationError = validateOutcomeForm({
       amount: form.amount,
+      date: form.date,
       outcomeModels,
       selectedCurrencyRegister,
       selectedMovement,
       selectedOrganization,
       selectedRegister,
       t,
+      time: form.time,
     })
 
     if (validationError) {
@@ -567,15 +614,19 @@ export function AvailablePaymentsDetailDrawer({
           centered
           opened={confirmCloseOutcomeOpen}
           title={t('Є незбережені зміни')}
-          onClose={() => setConfirmCloseOutcomeOpen(false)}
+          onClose={() => {
+            if (!isSaving) {
+              setConfirmCloseOutcomeOpen(false)
+            }
+          }}
         >
           <Stack gap="md">
             <Text>{t('Якщо закрити вікно, дані видаткового ордера не будуть збережені.')}</Text>
             <Group justify="flex-end">
-              <Button color="gray" variant="light" onClick={() => setConfirmCloseOutcomeOpen(false)}>
+              <Button color="gray" disabled={isSaving} variant="light" onClick={() => setConfirmCloseOutcomeOpen(false)}>
                 {t('Залишитися')}
               </Button>
-              <Button color="red" onClick={confirmDrawerClose}>
+              <Button color="red" disabled={isSaving} onClick={confirmDrawerClose}>
                 {t('Закрити без збереження')}
               </Button>
             </Group>
@@ -636,10 +687,10 @@ function AvailablePaymentTaskList({
               {t('Вибрано платіжних задач')}: {markedModels.length}
             </Text>
             <Group gap="xs">
-              <Button size="xs" variant="light" onClick={() => onCreateOutcome(markedModels)}>
+              <Button disabled={isSaving} size="xs" variant="light" onClick={() => onCreateOutcome(markedModels)}>
                 {t('Створити видатковий')}
               </Button>
-              <Button color="gray" size="xs" variant="subtle" onClick={onClearMarked}>
+              <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
                 {t('Очистити')}
               </Button>
             </Group>
@@ -660,6 +711,7 @@ function AvailablePaymentTaskList({
                 <Checkbox
                   checked={markedTaskIds.includes(model.id)}
                   aria-label={t('Вибрати платіжну задачу')}
+                  disabled={isSaving}
                   onChange={() => onToggleMarked(model)}
                 />
               )}
@@ -784,17 +836,20 @@ function AvailablePaymentOutcomeForm({
           <>
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <TextInput
+                disabled={isSaving}
                 label={t('Номер')}
                 value={form.customNumber}
                 onChange={(event) => updateForm({ customNumber: event.currentTarget.value })}
               />
               <TextInput
+                disabled={isSaving}
                 label={t('Від якої дати')}
                 type="date"
                 value={form.date}
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
+                disabled={isSaving}
                 label={t('Час')}
                 type="time"
                 value={form.time}
@@ -805,6 +860,7 @@ function AvailablePaymentOutcomeForm({
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <Select
                 data={organizationOptions}
+                disabled={isSaving}
                 label={t('Організація')}
                 searchable
                 value={form.organizationValue || null}
@@ -828,7 +884,7 @@ function AvailablePaymentOutcomeForm({
                   label: register.Name || getEntityValue(register),
                   value: getEntityValue(register),
                 }))}
-                disabled={!selectedOrganization}
+                disabled={isSaving || !selectedOrganization}
                 label={t('Грошові рахунки')}
                 searchable
                 value={form.registerValue || null}
@@ -847,7 +903,7 @@ function AvailablePaymentOutcomeForm({
                   label: currencyRegister.Currency?.Code || currencyRegister.Currency?.Name || getEntityValue(currencyRegister),
                   value: getEntityValue(currencyRegister),
                 }))}
-                disabled={!selectedRegister}
+                disabled={isSaving || !selectedRegister}
                 label={t('Валюта')}
                 searchable
                 value={form.selectedCurrencyValue || null}
@@ -859,6 +915,7 @@ function AvailablePaymentOutcomeForm({
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
+                disabled={isSaving}
                 label={t('Сума')}
                 min={0}
                 value={form.amount}
@@ -867,6 +924,7 @@ function AvailablePaymentOutcomeForm({
               <NumberInput
                 allowNegative={false}
                 decimalScale={4}
+                disabled={isSaving}
                 label={t('Курс обміну')}
                 min={0}
                 value={form.exchangeRate}
@@ -877,22 +935,32 @@ function AvailablePaymentOutcomeForm({
                   label: movement.OperationName || movement.Name || getEntityValue(movement),
                   value: getEntityValue(movement),
                 }))}
+                disabled={isSaving}
                 label={t('Статті руху грошових коштів')}
                 searchable
                 searchValue={form.movementSearch}
                 value={form.movementValue || null}
-                onChange={(value) => updateForm({ movementValue: value || '' })}
+                onChange={(value) => {
+                  const movement = movements.find((item) => getEntityValue(item) === value) || null
+
+                  updateForm({
+                    movementSearch: movement?.OperationName || movement?.Name || '',
+                    movementValue: value || '',
+                  })
+                }}
                 onSearchChange={onMovementSearchChange}
               />
             </SimpleGrid>
 
             <SimpleGrid cols={{ base: 1, md: 2 }}>
               <TextInput
+                disabled={isSaving}
                 label={t('Призначення платежу')}
                 value={form.paymentPurpose}
                 onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
               />
               <Textarea
+                disabled={isSaving}
                 label={t('Коментар')}
                 value={form.comment}
                 onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -902,11 +970,13 @@ function AvailablePaymentOutcomeForm({
             <Group gap="lg">
               <Checkbox
                 checked={form.isManagementAccounting}
+                disabled={isSaving}
                 label={t('Управлінський облік')}
                 onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
               />
               <Checkbox
                 checked={form.isAccounting}
+                disabled={isSaving}
                 label={t('Бухгалтерський облік')}
                 onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
               />
@@ -1010,6 +1080,7 @@ function CashFlowTab({
   onFiltersChange: (filters: CashFlowFilters) => void
 }) {
   const { t } = useI18n()
+  const filterError = getDateRangeError(filters.from, filters.to)
   const controls = (
     <Group align="end" gap="sm" wrap="wrap">
       <TextInput
@@ -1028,6 +1099,17 @@ function CashFlowTab({
       />
     </Group>
   )
+
+  if (filterError) {
+    return (
+      <Stack gap="md">
+        {controls}
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
+        </Alert>
+      </Stack>
+    )
+  }
 
   if (!state || state.isLoading) {
     return (
@@ -1051,47 +1133,71 @@ function CashFlowTab({
     )
   }
 
-  const rows = extractCashFlowRows(state.data)
+  const items = extractCashFlowRows(state.data).map(toCashFlowGridItem)
+  const summary = extractCashFlowSummary(state.data, items)
 
   return (
     <Stack gap="md">
       {controls}
-      <Table.ScrollContainer minWidth={720}>
-        <Table withTableBorder withColumnBorders striped>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>{t('Дата')}</Table.Th>
-              <Table.Th>{t('Номер')}</Table.Th>
-              <Table.Th>{t('Тип')}</Table.Th>
-              <Table.Th style={{ textAlign: 'right' }}>{t('Сума')}</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {rows.length === 0 ? (
-              <Table.Tr>
-                <Table.Td colSpan={4}>
-                  <Text c="dimmed" size="sm">
-                    {t('Рух коштів відсутній')}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              rows.map((row) => (
-                <Table.Tr key={getCashFlowRowKey(row)}>
-                  <Table.Td>{formatDate(readUnknownDate(row, ['FromDate', 'Date', 'Created']))}</Table.Td>
-                  <Table.Td>{displayValue(readUnknown(row, ['Number', 'CustomNumber']))}</Table.Td>
-                  <Table.Td>{displayValue(readUnknown(row, ['Name', 'Type', 'OperationTypeName']))}</Table.Td>
-                  <Table.Td style={{ textAlign: 'right' }}>
-                    {formatAmount(readUnknownNumber(row, ['CurrentValue', 'Amount', 'Total', 'GrossPrice']))}
-                  </Table.Td>
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
+      <CashFlowGrid
+        items={items}
+        leadColumns={CASH_FLOW_TAB_LEAD_COLUMNS}
+        summary={summary}
+        columnWidth={130}
+        maxHeight={360}
+        emptyText={t('Рух коштів відсутній')}
+        getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
+      />
     </Stack>
   )
+}
+
+const CASH_FLOW_TAB_LEAD_COLUMNS: CashFlowGridLeadColumn<CashFlowGridItem>[] = [
+  { id: 'name', isLabel: true, header: 'Назва', cell: (item) => displayValue(item.Name) },
+  { id: 'date', header: 'Дата', width: 150, cell: (item) => formatDate(item.FromDate) },
+  { id: 'number', header: 'Номер', width: 130, cell: (item) => displayValue(item.Number) },
+]
+
+function toCashFlowGridItem(row: DataRecord): CashFlowGridItem {
+  return {
+    CurrentBalance: readUnknownNumber(row, ['CurrentBalance']),
+    CurrentValue: readUnknownNumber(row, ['CurrentValue', 'Amount', 'Total', 'GrossPrice']),
+    FromDate: readUnknownDateString(row, ['FromDate', 'Date', 'Created']),
+    IsCreditValue: readUnknown(row, ['IsCreditValue']) === true,
+    Name: stringOrUndefined(readUnknown(row, ['Name', 'Type', 'OperationTypeName'])),
+    Number: stringOrUndefined(readUnknown(row, ['Number', 'CustomNumber'])),
+    OrganizationName: stringOrUndefined(readUnknown(row, ['OrganizationName'])),
+  }
+}
+
+function extractCashFlowSummary(
+  data: AvailablePaymentAccountingCashFlow | null,
+  items: CashFlowGridItem[],
+): CashFlowGridSummary {
+  const record = asRecord(data)
+
+  return {
+    afterInAmount: record ? readUnknownNumber(record, ['AfterRangeInAmount']) : undefined,
+    afterOutAmount: record ? readUnknownNumber(record, ['AfterRangeOutAmount']) : undefined,
+    beforeBalance: record ? readUnknownNumber(record, ['BeforeRangeBalance']) : undefined,
+    beforeInAmount: record ? readUnknownNumber(record, ['BeforeRangeInAmount']) : undefined,
+    beforeOutAmount: record ? readUnknownNumber(record, ['BeforeRangeOutAmount']) : undefined,
+    closingBalance: items.at(-1)?.CurrentBalance,
+  }
+}
+
+function readUnknownDateString(record: DataRecord, keys: string[]): string | undefined {
+  const value = readUnknownDate(record, keys)
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return value
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : undefined
 }
 
 function PaymentTab({
@@ -1118,7 +1224,7 @@ function PaymentTab({
         {!isDone ? (
           <FileButton multiple onChange={(nextFiles) => onFilesChanged(mergeLocalFiles(files, nextFiles || []))}>
             {(props) => (
-              <Button {...props} color="gray" leftSection={<IconFileUpload size={16} />} variant="light">
+              <Button {...props} color="gray" disabled={isSaving} leftSection={<IconFileUpload size={16} />} variant="light">
                 {t('Завантажити файли')}
               </Button>
             )}
@@ -1135,7 +1241,7 @@ function PaymentTab({
             </Button>
           )}
           {!isDone && (
-            <Button color="violet" leftSection={<IconCash size={16} />} onClick={onCreateOutcome}>
+            <Button color="violet" disabled={isSaving} leftSection={<IconCash size={16} />} onClick={onCreateOutcome}>
               {t('Створити видатковий')}
             </Button>
           )}
@@ -1156,6 +1262,7 @@ function PaymentTab({
                   <ActionIcon
                     aria-label={t('Видалити')}
                     color="red"
+                    disabled={isSaving}
                     size="sm"
                     variant="subtle"
                     onClick={() => onFilesChanged(files.filter((entry) => getLocalFileKey(entry) !== getLocalFileKey(file)))}
@@ -1267,16 +1374,17 @@ function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] })
 
   return (
     <Stack gap={4}>
-      {documents.map((document) => {
+      {documents.map((document, index) => {
         const label = document.FileName || document.Name || t('Документ')
-        const url = document.DocumentUrl || document.Url
+        const url = getDocumentUrl(document)
+        const isDeleted = Boolean(document.Deleted)
 
-        return url ? (
-          <Anchor key={getDocumentKey(document)} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
+        return url && !isDeleted ? (
+          <Anchor key={getDocumentKey(document, index)} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
             {label}
           </Anchor>
         ) : (
-          <Text key={getDocumentKey(document)} size="sm">
+          <Text key={getDocumentKey(document, index)} c={isDeleted ? 'dimmed' : undefined} size="sm" td={isDeleted ? 'line-through' : undefined}>
             {label}
           </Text>
         )
@@ -1285,9 +1393,26 @@ function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] })
   )
 }
 
-function getDocumentKey(document: AvailablePaymentDocument): string {
+function getDocumentKey(document: AvailablePaymentDocument, index: number): string {
   return String(
-    document.NetUid || document.Id || document.FileName || document.DocumentUrl || document.Url || document.Name || 'document',
+    document.NetUid ||
+      document.Id ||
+      document.FileName ||
+      getDocumentUrl(document) ||
+      document.Name ||
+      `document-${index}`,
+  )
+}
+
+function getDocumentUrl(document: AvailablePaymentDocument): string | undefined {
+  return (
+    document.DocumentUrl ||
+    document.DocumentURL ||
+    document.PdfDocumentURL ||
+    document.PdfDocumentUrl ||
+    document.URL ||
+    document.Url ||
+    document.url
   )
 }
 
@@ -1321,22 +1446,15 @@ function buildTaskWithLocalDocuments(task: SupplyPaymentTask, files: File[]): Su
 }
 
 function getTaskDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
-  return (model.task.SupplyPaymentTaskDocuments || []).length + files.length
+  return countActiveDocuments(model.task.SupplyPaymentTaskDocuments) + files.length
+}
+
+function countActiveDocuments(documents: AvailablePaymentDocument[] = []): number {
+  return documents.filter((document) => !document.Deleted).length
 }
 
 function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymentTaskRow, rowIndex: number): string {
   return `${model.id}-${rowIndex}-${row.number || row.name || ''}-${row.serviceNumber || ''}`
-}
-
-function getCashFlowRowKey(row: DataRecord): string {
-  return [
-    readUnknown(row, ['NetUid', 'Id']),
-    readUnknown(row, ['Number', 'CustomNumber']),
-    readUnknown(row, ['FromDate', 'Date', 'Created']),
-    readUnknown(row, ['Amount', 'Total']),
-  ]
-    .filter(Boolean)
-    .join('-') || JSON.stringify(row).slice(0, 80)
 }
 
 function TaskStatusBadge({ task }: { task: SupplyPaymentTask }) {
@@ -1459,23 +1577,35 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
 
 function validateOutcomeForm({
   amount,
+  date,
   outcomeModels,
   selectedCurrencyRegister,
   selectedMovement,
   selectedOrganization,
   selectedRegister,
   t,
+  time,
 }: {
   amount: number
+  date: string
   outcomeModels: AvailablePaymentTaskModel[]
   selectedCurrencyRegister: AvailablePaymentCurrencyRegister | null
   selectedMovement: AvailablePaymentMovement | null
   selectedOrganization: AvailablePaymentsOrganization | null
   selectedRegister: AvailablePaymentRegister | null
   t: (key: string) => string
+  time: string
 }): string | null {
   if (outcomeModels.length === 0) {
     return t('Виберіть платіжні задачі')
+  }
+
+  if (!isValidDateInput(date)) {
+    return t('Вкажіть дату видаткового ордера')
+  }
+
+  if (!isValidTimeInput(time)) {
+    return t('Вкажіть час видаткового ордера')
   }
 
   if (!selectedOrganization) {
@@ -1637,6 +1767,32 @@ function createDefaultCashFlowFilters(): CashFlowFilters {
     from: getDateShiftedByDays(-30),
     to: formatLocalDate(new Date()),
   }
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
+}
+
+function isValidDateInput(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+}
+
+function isValidTimeInput(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
 function toIsoDateTime(dateValue: string, timeValue: string): string {

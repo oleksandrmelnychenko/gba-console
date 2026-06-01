@@ -77,6 +77,14 @@ export type DataTableProps<TData> = {
   manualSorting?: boolean
   sorting?: DataTableSortingState
   onSortingChange?: (sorting: DataTableSortingState) => void
+  renderExpandedRow?: (row: TData) => ReactNode
+  getRowCanExpand?: (row: TData) => boolean
+  expandColumnLabels?: DataTableExpandColumnLabels
+}
+
+export type DataTableExpandColumnLabels = {
+  collapseRow?: string
+  expandRow?: string
 }
 
 export type DataTableColumnMeta = {

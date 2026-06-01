@@ -1,12 +1,15 @@
-import { ActionIcon, Anchor, Button, Group, Menu, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Divider, Group, Menu, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconFileExcel, IconFileText, IconFileTypePdf } from '@tabler/icons-react'
 import { useMemo } from 'react'
+import { useAuth } from '../../auth/useAuth'
+import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
   getSaleActForEditingHistoryDocument,
+  getSaleActProtocolEditDocument,
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
@@ -16,19 +19,39 @@ import {
 import type { SaleDocumentResult, SalesUkraineSale } from '../types'
 
 type DocumentAction = {
+  bundlesInvoice?: boolean
   fetch: () => Promise<SaleDocumentResult>
   key: string
   label: string
 }
 
-type DocumentResultState = {
+type DocumentFile = {
+  excelUrl: string | null
   label: string
-  result: SaleDocumentResult
+  pdfUrl: string | null
 }
+
+type DocumentResultState = {
+  documents: DocumentFile[]
+  label: string
+}
+
+const INVOICE_BUNDLE_ROLES: ReadonlyArray<UserRoleType> = [
+  UserRoleType.Administrator,
+  UserRoleType.GBA,
+  UserRoleType.FinanceDirector,
+  UserRoleType.Accountant,
+]
 
 export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
+  const { user } = useAuth()
   const [resultState, setResultState] = useValueState<DocumentResultState | null>(null)
+
+  const isAbleToInvoiceDocument = useMemo(() => {
+    const roleType = user?.UserRole?.UserRoleType
+    return roleType !== undefined && INVOICE_BUNDLE_ROLES.includes(roleType)
+  }, [user])
 
   const actions = useMemo(() => buildDocumentActions(sale, t), [sale, t])
 
@@ -38,10 +61,11 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
 
     try {
       const result = await action.fetch()
+      const documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
 
-      if (result.excelUrl || result.pdfUrl) {
+      if (documents.length) {
         notifications.update({ id: notificationId, autoClose: 1500, color: 'green', loading: false, message: t('Документ готовий') })
-        setResultState({ label: action.label, result })
+        setResultState({ documents, label: action.label })
       } else {
         notifications.update({ id: notificationId, autoClose: 3000, color: 'orange', loading: false, message: t('Документ недоступний') })
       }
@@ -82,22 +106,34 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
       >
         {resultState && (
           <Stack gap="sm">
-            {resultState.result.pdfUrl && (
-              <Anchor href={resultState.result.pdfUrl} target="_blank" rel="noopener noreferrer">
-                <Group gap="xs">
-                  <IconFileTypePdf size={18} />
-                  <Text>{t('Відкрити PDF')}</Text>
-                </Group>
-              </Anchor>
-            )}
-            {resultState.result.excelUrl && (
-              <Anchor href={resultState.result.excelUrl} target="_blank" rel="noopener noreferrer">
-                <Group gap="xs">
-                  <IconFileExcel size={18} />
-                  <Text>{t('Відкрити Excel')}</Text>
-                </Group>
-              </Anchor>
-            )}
+            {resultState.documents.map((document, index) => (
+              <Stack key={`${document.label}-${index}`} gap="xs">
+                {resultState.documents.length > 1 && (
+                  <>
+                    {index > 0 && <Divider />}
+                    <Text fw={600} size="sm">
+                      {document.label}
+                    </Text>
+                  </>
+                )}
+                {document.pdfUrl && (
+                  <Anchor href={document.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    <Group gap="xs">
+                      <IconFileTypePdf size={18} />
+                      <Text>{t('Відкрити PDF')}</Text>
+                    </Group>
+                  </Anchor>
+                )}
+                {document.excelUrl && (
+                  <Anchor href={document.excelUrl} target="_blank" rel="noopener noreferrer">
+                    <Group gap="xs">
+                      <IconFileExcel size={18} />
+                      <Text>{t('Відкрити Excel')}</Text>
+                    </Group>
+                  </Anchor>
+                )}
+              </Stack>
+            ))}
             <Group justify="flex-end">
               <Button variant="subtle" onClick={() => setResultState(null)}>
                 {t('Закрити')}
@@ -151,6 +187,14 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
       label: `${t('Акт редагування')} ${index + 1}`,
     })
 
+    if (index === history.length - 1) {
+      actions.push({
+        fetch: () => getSaleActProtocolEditDocument(netId),
+        key: 'act-protocol-edit-current',
+        label: t('Акт редагування (поточний)'),
+      })
+    }
+
     if (index === history.length - 1 && isVat) {
       actions.push({
         fetch: () => getSaleShipmentListHistoryDocument(netId, historyNetId),
@@ -161,10 +205,35 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
   })
 
   if (isVat && withVatAccounting) {
-    actions.push({ fetch: () => getSalePaymentDocument(netId), key: 'payment', label: t('Рахунок на оплату') })
+    actions.push({ bundlesInvoice: true, fetch: () => getSalePaymentDocument(netId), key: 'payment', label: t('Рахунок на оплату') })
   }
 
   return actions
+}
+
+function buildDocumentFiles(
+  action: DocumentAction,
+  result: SaleDocumentResult,
+  isAbleToInvoiceDocument: boolean,
+  t: (key: string) => string,
+): DocumentFile[] {
+  const documents: DocumentFile[] = []
+
+  if (result.excelUrl || result.pdfUrl) {
+    documents.push({ excelUrl: result.excelUrl, label: action.label, pdfUrl: result.pdfUrl })
+  }
+
+  if (action.bundlesInvoice && (result.isAcceptedToPacking || isAbleToInvoiceDocument)) {
+    if (result.invoiceExcelUrl || result.invoicePdfUrl) {
+      documents.push({
+        excelUrl: result.invoiceExcelUrl,
+        label: t('Видаткова накладна'),
+        pdfUrl: result.invoicePdfUrl,
+      })
+    }
+  }
+
+  return documents
 }
 
 function getLifecycleType(sale: SalesUkraineSale): number | null {

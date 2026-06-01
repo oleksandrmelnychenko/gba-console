@@ -4,6 +4,7 @@ import type { Column } from '@tanstack/react-table'
 export function getPinnedStyle<TData>(
   column: Column<TData, unknown>,
   zIndex: number,
+  leftOffset = 0,
 ): CSSProperties {
   const pinned = column.getIsPinned()
 
@@ -17,7 +18,10 @@ export function getPinnedStyle<TData>(
       pinned === 'left'
         ? '1px 0 0 var(--mantine-color-gray-2)'
         : '-1px 0 0 var(--mantine-color-gray-2)',
-    left: pinned === 'left' ? `${Math.round(column.getStart('left'))}px` : undefined,
+    left:
+      pinned === 'left'
+        ? `${Math.round(column.getStart('left')) + leftOffset}px`
+        : undefined,
     position: 'sticky',
     right: pinned === 'right' ? `${Math.round(column.getAfter('right'))}px` : undefined,
     zIndex,

@@ -61,24 +61,52 @@ function CalculateMergedServicesPanelContent({
   ]
 
   function updateItem(index: number, patch: Partial<CalculateMergedServiceInvoiceItem>) {
+    if (isSaving) {
+      return
+    }
+
     setItems((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)))
   }
 
   async function handleSubmit() {
+    if (isSaving) {
+      return
+    }
+
     await onSubmit({ extraChargeType, isAuto, items: items.filter((item) => item.isSelected) })
   }
 
   return (
-    <AppDrawer opened={opened} size="md" title={t('Розрахувати')} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="md"
+      title={t('Розрахувати')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         <Group gap="lg">
-          <Checkbox checked={isAuto} label={t('Розрахувати автоматично')} onChange={() => setIsAuto(true)} />
-          <Checkbox checked={!isAuto} label={t('Розрахувати вручну')} onChange={() => setIsAuto(false)} />
+          <Checkbox
+            checked={isAuto}
+            disabled={isSaving}
+            label={t('Розрахувати автоматично')}
+            onChange={() => setIsAuto(true)}
+          />
+          <Checkbox
+            checked={!isAuto}
+            disabled={isSaving}
+            label={t('Розрахувати вручну')}
+            onChange={() => setIsAuto(false)}
+          />
         </Group>
 
         {isAuto && (
           <Select
             data={typeOptions}
+            disabled={isSaving}
             label={t('Тип')}
             value={String(extraChargeType)}
             onChange={(value) => setExtraChargeType((Number(value) || 0) as SupplyExtraChargeType)}
@@ -95,18 +123,19 @@ function CalculateMergedServicesPanelContent({
                 {!isAuto && (
                   <Checkbox
                     checked={item.isSelected}
+                    disabled={isSaving}
                     onChange={() => updateItem(index, { isSelected: !item.isSelected })}
                   />
                 )}
                 <TextInput
-                  disabled={!item.isSelected || isAuto}
+                  disabled={isSaving || !item.isSelected || isAuto}
                   label={t('Вартість')}
                   type="number"
                   value={item.value}
                   onChange={(event) => updateItem(index, { value: event.currentTarget.value })}
                 />
                 <TextInput
-                  disabled={!item.isSelected || isAuto}
+                  disabled={isSaving || !item.isSelected || isAuto}
                   label={`${t('Вартість')} (${t('Бух.')})`}
                   type="number"
                   value={item.accountingValue}
@@ -122,7 +151,7 @@ function CalculateMergedServicesPanelContent({
         </Text>
 
         <Group justify="flex-end">
-          <Button color="violet" loading={isSaving} onClick={handleSubmit}>
+          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Розрахувати')}
           </Button>
         </Group>

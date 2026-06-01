@@ -3,6 +3,7 @@ import { IconAlertCircle, IconFileTypePdf } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { SpecificationDownloadDocument } from '../specificationTypes'
 
 type SpecificationDownloadModalProps = {
@@ -36,7 +37,7 @@ export function SpecificationDownloadModal({
         ) : document?.DocumentURL || document?.PdfDocumentURL ? (
           <>
             {document.DocumentURL && (
-              <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer">
+              <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer">
                 <Stack gap={2}>
                   <ExcelIcon size={22} />
                   <Text size="sm">{t('Excel документ')}</Text>
@@ -44,7 +45,7 @@ export function SpecificationDownloadModal({
               </Anchor>
             )}
             {document.PdfDocumentURL && (
-              <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer">
+              <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer">
                 <Stack gap={2}>
                   <IconFileTypePdf size={22} stroke={1.8} />
                   <Text size="sm">{t('PDF документ')}</Text>

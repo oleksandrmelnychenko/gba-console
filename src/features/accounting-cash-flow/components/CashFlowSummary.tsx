@@ -2,11 +2,6 @@ import { Card, SimpleGrid, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { AccountingCashFlow, AccountingCashFlowHeadItem } from '../types'
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
-
 export function CashFlowSummary({
   cashFlow,
   lastItem,
@@ -44,6 +39,11 @@ function SummaryValue({ label, value }: { label: string; value?: number }) {
   )
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }

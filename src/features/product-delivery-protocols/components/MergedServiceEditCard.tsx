@@ -20,6 +20,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { getResponsibleUsers, getSupplyOrganizations, getSupplyServiceConsumableProducts } from '../api/protocolDetailApi'
 import type {
   ActProvidingService,
@@ -262,15 +263,27 @@ export function MergedServiceEditCard({
   )
 
   function update<K extends keyof EditDraft>(key: K, value: EditDraft[K]) {
+    if (isSaving) {
+      return
+    }
+
     setDraft((current) => ({ ...current, [key]: value }))
   }
 
   function selectOrganization(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     const organization = organizations.find((item) => item.NetUid === netUid) || draft.supplyOrganization
     setDraft((current) => ({ ...current, supplyOrganization: organization || null, agreement: null }))
   }
 
   function selectAgreement(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     const agreement = (draft.supplyOrganization?.SupplyOrganizationAgreements || []).find(
       (item) => item.NetUid === netUid,
     )
@@ -278,6 +291,10 @@ export function MergedServiceEditCard({
   }
 
   function selectProduct(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     update('consumableProduct', products.find((item) => item.NetUid === netUid) || draft.consumableProduct)
   }
 
@@ -285,10 +302,18 @@ export function MergedServiceEditCard({
     key: 'accountingTaskUser' | 'supplyInformationTaskUser' | 'taskUser',
     netUid: string | null,
   ) {
+    if (isSaving) {
+      return
+    }
+
     update(key, availableUsers.find((item) => item.NetUid === netUid) || null)
   }
 
   async function handleSave() {
+    if (isSaving) {
+      return
+    }
+
     if (!draft.supplyOrganization || !draft.agreement || !draft.consumableProduct || !draft.invoiceNumber) {
       setValidationError(t('Заповніть обовʼязкові поля'))
 
@@ -318,6 +343,17 @@ export function MergedServiceEditCard({
 
     if ((service.AccountingPaymentTask || draft.createAccountingTask) && accountingGrossPrice > 0 && !draft.accountingTaskUser) {
       setValidationError(t('Вкажіть відповідального за бухгалтерську платіжну задачу'))
+
+      return
+    }
+
+    if (!areDateInputsValid([
+      draft.fromDate,
+      draft.supplyInformationTaskPayToDate,
+      draft.taskPayToDate,
+      draft.accountingTaskPayToDate,
+    ])) {
+      setValidationError(t('Вкажіть коректну дату'))
 
       return
     }
@@ -416,7 +452,16 @@ export function MergedServiceEditCard({
   }
 
   return (
-    <AppDrawer opened={opened} size="lg" title={t('Редагувати')} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="lg"
+      title={t('Редагувати')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="sm">
         {loadError && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -431,6 +476,7 @@ export function MergedServiceEditCard({
 
         <Select
           data={organizationOptions}
+          disabled={isSaving}
           label={t('Постачальник послуг')}
           searchable
           value={draft.supplyOrganization?.NetUid || null}
@@ -438,6 +484,7 @@ export function MergedServiceEditCard({
         />
         <Select
           data={agreementOptions}
+          disabled={isSaving}
           label={t('Договір')}
           searchable
           value={draft.agreement?.NetUid || null}
@@ -445,17 +492,20 @@ export function MergedServiceEditCard({
         />
         <Select
           data={productOptions}
+          disabled={isSaving}
           label={t('Тип')}
           searchable
           value={draft.consumableProduct?.NetUid || null}
           onChange={selectProduct}
         />
         <TextInput
+          disabled={isSaving}
           label={t('Номер інвойса')}
           value={draft.invoiceNumber}
           onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
         />
         <TextInput
+          disabled={isSaving}
           label={t('Назва')}
           value={draft.name}
           onChange={(event) => update('name', event.currentTarget.value)}
@@ -463,12 +513,14 @@ export function MergedServiceEditCard({
 
         <Group grow>
           <TextInput
+            disabled={isSaving}
             label={t('Вартість Брутто')}
             type="number"
             value={draft.grossPrice}
             onChange={(event) => update('grossPrice', event.currentTarget.value)}
           />
           <TextInput
+            disabled={isSaving}
             label={t('ПДВ %')}
             type="number"
             value={draft.percent}
@@ -478,12 +530,14 @@ export function MergedServiceEditCard({
 
         <Group grow>
           <TextInput
+            disabled={isSaving}
             label={t('Вартість Брутто (Бух.)')}
             type="number"
             value={draft.accountingGrossPrice}
             onChange={(event) => update('accountingGrossPrice', event.currentTarget.value)}
           />
           <TextInput
+            disabled={isSaving}
             label={`${t('ПДВ %')} (${t('Бух.')})`}
             type="number"
             value={draft.accountingPercent}
@@ -493,12 +547,14 @@ export function MergedServiceEditCard({
 
         <Group grow>
           <TextInput
+            disabled={isSaving}
             label={t('Курс валют')}
             type="number"
             value={draft.exchangeRate}
             onChange={(event) => update('exchangeRate', event.currentTarget.value)}
           />
           <TextInput
+            disabled={isSaving}
             label={t('Курс валют (Бух.)')}
             type="number"
             value={draft.accountingExchangeRate}
@@ -508,11 +564,13 @@ export function MergedServiceEditCard({
 
         <Checkbox
           checked={draft.isIncludeAccountingValue}
+          disabled={isSaving}
           label={t('Включати бух. вартість у ціну брутто')}
           onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
         />
 
         <TextInput
+          disabled={isSaving}
           label={t('Від якої дати')}
           type="date"
           value={draft.fromDate}
@@ -521,6 +579,7 @@ export function MergedServiceEditCard({
 
         <Checkbox
           checked={draft.createInformationTask}
+          disabled={isSaving}
           label={t('Доставка в межах країни')}
           onChange={(event) => update('createInformationTask', event.currentTarget.checked)}
         />
@@ -528,11 +587,13 @@ export function MergedServiceEditCard({
         {draft.createInformationTask && (
           <Stack gap="sm">
             <NumberInput
+              disabled={isSaving}
               label={t('Вартість доставки в межах країни')}
               value={draft.supplyInformationTaskGrossPrice}
               onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
             />
             <TextInput
+              disabled={isSaving}
               label={t('Сплатити до')}
               type="date"
               value={draft.supplyInformationTaskPayToDate}
@@ -540,12 +601,14 @@ export function MergedServiceEditCard({
             />
             <Select
               data={userOptions}
+              disabled={isSaving}
               label={t('Відповідальний за оплату в межах країни')}
               searchable
               value={draft.supplyInformationTaskUser?.NetUid || null}
               onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
             />
             <Textarea
+              disabled={isSaving}
               label={t('Коментар')}
               value={draft.supplyInformationTaskComment}
               onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
@@ -554,6 +617,7 @@ export function MergedServiceEditCard({
         )}
 
         <DocumentToggleList
+          disabled={isSaving}
           deletedDocuments={deletedAccountDocuments}
           documents={service.SupplyServiceAccountDocument ? [service.SupplyServiceAccountDocument] : []}
           label={t('Рахунок')}
@@ -561,12 +625,14 @@ export function MergedServiceEditCard({
         />
         <FileInput
           clearable
+          disabled={isSaving}
           label={t('Рахунок')}
           multiple
           value={accountDocuments}
           onChange={setAccountDocuments}
         />
         <DocumentToggleList
+          disabled={isSaving}
           deletedDocuments={deletedActDocuments}
           documents={service.ActProvidingServiceDocument ? [service.ActProvidingServiceDocument] : []}
           label={t('Акт надання послуг')}
@@ -574,30 +640,34 @@ export function MergedServiceEditCard({
         />
         <FileInput
           clearable
+          disabled={isSaving}
           label={t('Акт надання послуг')}
           multiple
           value={actDocuments}
           onChange={setActDocuments}
         />
         <DocumentToggleList
+          disabled={isSaving}
           deletedDocuments={deletedInvoiceDocuments}
           documents={service.InvoiceDocuments || []}
           label={t('Документи інвойса')}
           onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedInvoiceDocuments)}
         />
-        <FileInput clearable label={t('Інші файли')} multiple value={files} onChange={setFiles} />
+        <FileInput clearable disabled={isSaving} label={t('Інші файли')} multiple value={files} onChange={setFiles} />
 
         <Divider />
 
         {!service.SupplyPaymentTask && (
           <Checkbox
             checked={draft.createTask}
+            disabled={isSaving}
             label={t('Створити платіжну задачу')}
             onChange={(event) => update('createTask', event.currentTarget.checked)}
           />
         )}
         <TaskDocumentsEditor
           comment={draft.taskComment}
+          disabled={isSaving}
           deletedDocuments={deletedTaskDocuments}
           documents={service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || []}
           files={taskDocuments}
@@ -616,12 +686,14 @@ export function MergedServiceEditCard({
         {!service.AccountingPaymentTask && (
           <Checkbox
             checked={draft.createAccountingTask}
+            disabled={isSaving}
             label={`${t('Створити платіжну задачу')} (${t('Бух.')})`}
             onChange={(event) => update('createAccountingTask', event.currentTarget.checked)}
           />
         )}
         <TaskDocumentsEditor
           comment={draft.accountingTaskComment}
+          disabled={isSaving}
           deletedDocuments={deletedAccountingTaskDocuments}
           documents={service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || []}
           files={accountingTaskDocuments}
@@ -641,7 +713,7 @@ export function MergedServiceEditCard({
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="violet" loading={isSaving} onClick={handleSave}>
+          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSave}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -652,6 +724,7 @@ export function MergedServiceEditCard({
 
 function TaskDocumentsEditor({
   comment,
+  disabled,
   deletedDocuments,
   documents,
   files,
@@ -667,6 +740,7 @@ function TaskDocumentsEditor({
   onToggleDeleted,
 }: {
   comment: string
+  disabled?: boolean
   deletedDocuments: Record<string, boolean>
   documents: SupplyDocument[]
   files: File[]
@@ -694,6 +768,7 @@ function TaskDocumentsEditor({
       </Text>
       <Group grow>
         <TextInput
+          disabled={disabled}
           label={t('Сплатити до')}
           type="date"
           value={taskDate}
@@ -701,29 +776,41 @@ function TaskDocumentsEditor({
         />
         <Select
           data={userOptions}
+          disabled={disabled}
           label={t('Відповідальний')}
           searchable
           value={taskUserValue}
           onChange={onChangeTaskUser}
         />
       </Group>
-      <Textarea label={t('Коментар')} value={comment} onChange={(event) => onChangeComment(event.currentTarget.value)} />
+      <Textarea
+        disabled={disabled}
+        label={t('Коментар')}
+        value={comment}
+        onChange={(event) => onChangeComment(event.currentTarget.value)}
+      />
       {documents.length > 0 && (
         <Stack gap={4}>
           {documents.map((document, index) => {
             const key = getDocumentKey(document, index)
-            const deleted = Boolean(deletedDocuments[key])
+            const deleted = isDocumentDeleted(document, index, deletedDocuments)
 
             return (
               <Group key={key} gap="xs" justify="space-between">
                 {document.DocumentUrl ? (
-                  <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
+                  <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
                     {document.FileName || document.DocumentUrl}
                   </Anchor>
                 ) : (
                   <Text size="sm">{document.FileName || '-'}</Text>
                 )}
-                <Button color={deleted ? 'gray' : 'red'} size="xs" variant="subtle" onClick={() => onToggleDeleted(document, index)}>
+                <Button
+                  color={deleted ? 'gray' : 'red'}
+                  disabled={disabled}
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => onToggleDeleted(document, index)}
+                >
                   {deleted ? t('Відновити') : t('Видалити')}
                 </Button>
                 {deleted && (
@@ -736,17 +823,19 @@ function TaskDocumentsEditor({
           })}
         </Stack>
       )}
-      <FileInput clearable label={t('Додати файли')} multiple value={files} onChange={onChangeFiles} />
+      <FileInput clearable disabled={disabled} label={t('Додати файли')} multiple value={files} onChange={onChangeFiles} />
     </Stack>
   )
 }
 
 function DocumentToggleList({
+  disabled = false,
   deletedDocuments,
   documents,
   label,
   onToggleDeleted,
 }: {
+  disabled?: boolean
   deletedDocuments: Record<string, boolean>
   documents: SupplyDocument[]
   label: string
@@ -765,18 +854,24 @@ function DocumentToggleList({
       </Text>
       {documents.map((document, index) => {
         const key = getDocumentKey(document, index)
-        const deleted = Boolean(deletedDocuments[key])
+        const deleted = isDocumentDeleted(document, index, deletedDocuments)
 
         return (
           <Group key={key} gap="xs" justify="space-between">
             {document.DocumentUrl ? (
-              <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
+              <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
                 {document.FileName || document.DocumentUrl}
               </Anchor>
             ) : (
               <Text size="sm">{document.FileName || '-'}</Text>
             )}
-            <Button color={deleted ? 'gray' : 'red'} size="xs" variant="subtle" onClick={() => onToggleDeleted(document, index)}>
+            <Button
+              color={deleted ? 'gray' : 'red'}
+              disabled={disabled}
+              size="xs"
+              variant="subtle"
+              onClick={() => onToggleDeleted(document, index)}
+            >
               {deleted ? t('Відновити') : t('Видалити')}
             </Button>
             {deleted && (
@@ -798,13 +893,16 @@ function toggleDeletedDocument(
 ) {
   const key = getDocumentKey(document, index)
 
-  setDeletedDocuments((current) => ({ ...current, [key]: !current[key] }))
+  setDeletedDocuments((current) => ({
+    ...current,
+    [key]: !(key in current ? current[key] : Boolean(document.Deleted)),
+  }))
 }
 
 function markDeletedDocuments(documents: SupplyDocument[], deletedDocuments: Record<string, boolean>): SupplyDocument[] {
   return documents.map((document, index) => ({
     ...document,
-    Deleted: Boolean(deletedDocuments[getDocumentKey(document, index)]),
+    Deleted: isDocumentDeleted(document, index, deletedDocuments),
   }))
 }
 
@@ -819,8 +917,18 @@ function markSingleDocumentDeleted(document: SupplyDocument | null | undefined, 
 
   return {
     ...document,
-    Deleted: Boolean(deletedDocuments[getDocumentKey(document, 0)]),
+    Deleted: isDocumentDeleted(document, 0, deletedDocuments),
   }
+}
+
+function isDocumentDeleted(
+  document: SupplyDocument,
+  index: number,
+  deletedDocuments: Record<string, boolean>,
+): boolean {
+  const key = getDocumentKey(document, index)
+
+  return key in deletedDocuments ? deletedDocuments[key] : Boolean(document.Deleted)
 }
 
 function buildPaymentTask({
@@ -888,6 +996,20 @@ function toLocalDateInput(value?: Date | string): string {
   const date = new Date(value)
 
   return Number.isNaN(date.getTime()) ? formatLocalDate(new Date()) : formatLocalDate(date)
+}
+
+function areDateInputsValid(values: string[]): boolean {
+  return values.every((value) => !value || isValidDateInputValue(value))
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function mergeUsers(users: ProtocolUser[], extraUsers: Array<ProtocolUser | null | undefined>): ProtocolUser[] {

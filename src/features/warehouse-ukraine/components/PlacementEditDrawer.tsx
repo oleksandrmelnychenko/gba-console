@@ -79,12 +79,12 @@ function completePlacementsToRowQty(
   ]
 }
 
-function placementKey(placement: DynamicProductPlacement): string {
-  return String(
-    placement.NetUid
-      || placement.Id
-      || `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}`,
-  )
+function placementKey(placement: DynamicProductPlacement, index: number): string {
+  if (placement.NetUid || placement.Id) {
+    return String(placement.NetUid || placement.Id)
+  }
+
+  return `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}-${index}`
 }
 
 export function PlacementEditDrawer({
@@ -96,23 +96,11 @@ export function PlacementEditDrawer({
   onApply,
 }: PlacementEditDrawerProps) {
   const { t } = useI18n()
-  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>([])
+  const [placements, setPlacements] = useValueState<DynamicProductPlacement[]>(() =>
+    row ? row.DynamicProductPlacements.map((placement) => ({ ...placement })) : [],
+  )
   const [draft, setDraft] = useValueState<PlacementDraftState | null>(null)
   const [error, setError] = useValueState<string | null>(null)
-
-  const rowKey = row?.NetUid || row?.Id || ''
-  const [syncedKey, setSyncedKey] = useValueState<string | number>('')
-
-  if (opened && rowKey !== syncedKey) {
-    setSyncedKey(rowKey)
-    setPlacements(row ? row.DynamicProductPlacements.map((placement) => ({ ...placement })) : [])
-    setDraft(null)
-    setError(null)
-  }
-
-  if (!opened && syncedKey !== '') {
-    setSyncedKey('')
-  }
 
   const rowQty = row?.Qty || 0
   const product = item?.Product
@@ -298,17 +286,48 @@ export function PlacementEditDrawer({
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
         </Text>
 
-        <DataTable
-          columns={placementColumns}
-          data={placements}
-          emptyText={t('Даних не знайдено')}
-          getRowId={(placement) => placementKey(placement)}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={560}
-          rowClassName={(placement) => (placement.IsApplied ? 'placement-row-applied' : undefined)}
-          tableId="warehouse-ukraine-placement-edit"
-          onRowClick={(placement) => !placement.IsApplied && openDraft(placement)}
-        />
+        <Table withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>#</Table.Th>
+              <Table.Th>{t('Склад')}</Table.Th>
+              <Table.Th>{t('Ряд')}</Table.Th>
+              <Table.Th>{t('Полиця')}</Table.Th>
+              <Table.Th>{t('К-сть')}</Table.Th>
+              <Table.Th />
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {placements.map((placement, index) => (
+              <Table.Tr
+                key={placementKey(placement, index)}
+                style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
+                onClick={() => !placement.IsApplied && openDraft(placement)}
+              >
+                <Table.Td>{index + 1}</Table.Td>
+                <Table.Td>{placement.StorageNumber}</Table.Td>
+                <Table.Td>{placement.RowNumber}</Table.Td>
+                <Table.Td>{placement.CellNumber}</Table.Td>
+                <Table.Td>{placement.Qty}</Table.Td>
+                <Table.Td>
+                  {!placement.IsApplied && (
+                    <ActionIcon
+                      aria-label={t('Видалити')}
+                      color="red"
+                      variant="subtle"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        removePlacement(placement)
+                      }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
 
         {!draft && (
           <Group>

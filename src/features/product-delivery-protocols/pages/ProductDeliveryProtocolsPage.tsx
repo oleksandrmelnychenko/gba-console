@@ -29,6 +29,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import {
   createProtocol,
@@ -644,7 +645,12 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
         ) : downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
           <>
             {downloadDocument.DocumentURL && (
-              <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor
+                href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                target="_blank"
+                rel="noreferrer"
+                className="document-link"
+              >
                 <span className="document-link-badge document-link-badge-excel">
                   <ExcelIcon size={22} />
                 </span>
@@ -652,7 +658,12 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
               </Anchor>
             )}
             {downloadDocument.PdfDocumentURL && (
-              <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+              <Anchor
+                href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                target="_blank"
+                rel="noreferrer"
+                className="document-link"
+              >
                 <span className="document-link-badge document-link-badge-pdf">
                   <IconFileTypePdf size={22} stroke={1.8} />
                 </span>

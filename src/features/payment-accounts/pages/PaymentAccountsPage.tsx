@@ -40,11 +40,6 @@ const PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
-
 type TypeFilter = 'all' | '0' | '1' | '2'
 
 export function PaymentAccountsPage() {
@@ -230,8 +225,8 @@ export function PaymentAccountsPage() {
             <SegmentedControl
               data={[
                 { label: t('Усі'), value: 'all' },
-                { label: t('Готівка'), value: String(PaymentRegisterType.Cash) },
-                { label: t('Картка'), value: String(PaymentRegisterType.Card) },
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
                 { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
               ]}
               value={typeFilter}
@@ -331,7 +326,7 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
       },
       {
         id: 'isActive',
-        header: t('Головний'),
+        header: t('Основний'),
         width: 110,
         minWidth: 96,
         align: 'center',
@@ -426,9 +421,9 @@ function getCurrencyAmount(registers: PaymentCurrencyRegister[] | undefined, cod
 function getPaymentRegisterTypeLabel(type: PaymentRegisterType | undefined, t: (value: string) => string): string {
   switch (type) {
     case PaymentRegisterType.Cash:
-      return t('Готівка')
+      return t('Каса')
     case PaymentRegisterType.Card:
-      return t('Картка')
+      return t('Банківська картка')
     case PaymentRegisterType.Bank:
       return t('Банк')
     default:
@@ -451,8 +446,15 @@ function toSelectOptions<T extends { Id?: number; NetUid?: string }>(items: T[],
   }, [])
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  const numberToFormat = typeof value === 'number' && Number.isFinite(value) ? value : 0
+
+  return moneyFormatter.format(numberToFormat)
 }
 
 function displayValue(value?: string | number | null): string {

@@ -52,7 +52,11 @@ export function ProductPlacementForm({
   const showPlacement = displayQtyField && Boolean(selectedStorage) && !selectedStorage?.ForDefective
 
   const qtyError = getQtyError(qty, maxAvailableQty, displayQtyField, t)
-  const canSubmit = Boolean(fromDate) && Boolean(storageNetId) && !qtyError && !isSubmitting
+  const placementComplete =
+    !showPlacement ||
+    (Boolean(placement.storageNumber) && Boolean(placement.rowNumber) && Boolean(placement.cellNumber))
+  const canSubmit =
+    Boolean(fromDate) && Boolean(storageNetId) && !qtyError && placementComplete && !isSubmitting
 
   function handleSubmit() {
     if (!canSubmit) {
@@ -103,7 +107,7 @@ export function ProductPlacementForm({
             value={qty}
             onChange={(event) => setQty(event.currentTarget.value)}
           />
-          {showPlacement && <PlacementFields values={placement} onChange={setPlacement} />}
+          {showPlacement && <PlacementFields required values={placement} onChange={setPlacement} />}
         </>
       )}
       <Group justify="flex-end">

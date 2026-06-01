@@ -22,6 +22,7 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
+  IconArrowsLeftRight,
   IconBrandEdge,
   IconChevronDown,
   IconChevronUp,
@@ -64,9 +65,11 @@ import {
 } from '../api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleModal } from '../components/NewSaleModal'
+import { SaleEditDrawer } from '../components/SaleEditDrawer'
 import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
+import { SaleExpandContent } from '../components/SaleExpandContent'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
@@ -191,10 +194,14 @@ export function SalesUkrainePage() {
   const [clientOptions, setClientOptions] = useValueState<SalesUkraineClientOption[]>([])
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
-  const [discountSale, setDiscountSale] = useValueState<SalesUkraineSale | null>(null)
+  const [discountTarget, setDiscountTarget] = useValueState<{
+    orderItem?: SalesUkraineOrderItem
+    sale: SalesUkraineSale
+  } | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [editShiftSale, setEditShiftSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
   const [auditLoading, setAuditLoading] = useValueState(false)
@@ -334,11 +341,22 @@ export function SalesUkrainePage() {
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
     onOpenEditor: setEditorSale,
-    onOpenDiscount: setDiscountSale,
+    onOpenEditShift: setEditShiftSale,
+    onOpenDiscount: (sale: SalesUkraineSale) => setDiscountTarget({ sale }),
     onOpenSale: setSelectedSale,
     onUnlock: requestUnlock,
     onWillNotShip: requestWillNotShip,
   }
+
+  const renderSaleExpandContent = useCallback(
+    (sale: SalesUkraineSale) => (
+      <SaleExpandContent
+        sale={sale}
+        onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
+      />
+    ),
+    [setDiscountTarget],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -641,26 +659,24 @@ export function SalesUkrainePage() {
             </Alert>
           )}
 
-          <Group justify="space-between" align="center" gap="sm" wrap="wrap">
-            {toolbarLeft}
-            {toolbarRight}
-          </Group>
-
-          {isLoading ? (
-            <Group justify="center" py="xl">
-              <Loader color="violet" size="sm" />
-            </Group>
-          ) : sales.length === 0 ? (
-            <Text c="dimmed" size="sm" ta="center" py="xl">
-              {t('Продажів не знайдено')}
-            </Text>
-          ) : (
-            <div className="sale-list">
-              {sales.map((sale, index) => (
-                <SaleListRow key={String(sale.NetUid || sale.Id || index)} sale={sale} handlers={saleHandlers} />
-              ))}
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            data={sales}
+            defaultLayout={SALES_UKRAINE_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Продажів не знайдено')}
+            getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
+            isLoading={isLoading}
+            layoutVersion="sales-ukraine-table-1"
+            loadingText={t('Завантаження продажів')}
+            maxHeight="calc(100vh - 360px)"
+            minWidth={1720}
+            tableId="sales-ukraine"
+            toolbarLeft={toolbarLeft}
+            toolbarRight={toolbarRight}
+            getRowCanExpand={(sale) => getOrderItemCount(sale) > 0}
+            renderExpandedRow={renderSaleExpandContent}
+            onRowClick={setSelectedSale}
+          />
 
           {totalPages > 1 && (
             <Group justify="flex-end">
@@ -681,10 +697,11 @@ export function SalesUkrainePage() {
       </AppDrawer>
 
       <SaleDiscountModal
-        sale={discountSale}
-        onClose={() => setDiscountSale(null)}
+        orderItem={discountTarget?.orderItem}
+        sale={discountTarget?.sale ?? null}
+        onClose={() => setDiscountTarget(null)}
         onSaved={() => {
-          setDiscountSale(null)
+          setDiscountTarget(null)
           reload()
         }}
       />
@@ -705,6 +722,15 @@ export function SalesUkrainePage() {
       />
 
       <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
+
+      <SaleEditDrawer
+        sale={editShiftSale}
+        onClose={() => setEditShiftSale(null)}
+        onSaved={() => {
+          setEditShiftSale(null)
+          reload()
+        }}
+      />
 
       <AppDrawer
         opened={Boolean(auditSale)}
@@ -750,7 +776,21 @@ export function SalesUkrainePage() {
   )
 }
 
-type SaleRowHandlers = {
+function useSalesUkraineColumns({
+  canEditSale,
+  canUnlock,
+  canWillNotShip,
+  isAdmin,
+  onOpenAudit,
+  onOpenConsignment,
+  onOpenDetails,
+  onOpenDiscount,
+  onOpenEditor,
+  onOpenEditShift,
+  onOpenSale,
+  onUnlock,
+  onWillNotShip,
+}: {
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
@@ -760,6 +800,7 @@ type SaleRowHandlers = {
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
+  onOpenEditShift: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
@@ -923,24 +964,236 @@ function SaleListRow({ sale, handlers }: { sale: SalesUkraineSale; handlers: Sal
         </Group>
       </Group>
 
-      {expanded && orderItems.length > 0 && (
-        <Stack gap={4} className="sale-row-items">
-          {orderItems.map((item, index) => (
-            <Group key={`${getOrderItemProductCode(item) || index}`} gap="sm" wrap="nowrap" justify="space-between">
-              <Group gap="xs" wrap="nowrap" style={{ flex: '1 1 auto', minWidth: 0 }}>
-                <Text size="sm" c="dimmed" style={{ flex: '0 0 110px' }}>{displayValue(getOrderItemProductCode(item))}</Text>
-                <Text size="sm" lineClamp={1}>{displayValue(getOrderItemProductName(item))}</Text>
+          return (
+            <>
+              <Text c={unpaid ? 'red' : undefined} fw={600}>
+                {formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}
+              </Text>
+              <Text c={unpaid ? 'red' : 'dimmed'} size="xs">
+                {displayValue(getSaleCurrencyCode(sale))}
+              </Text>
+            </>
+          )
+        },
+      },
+      {
+        id: 'amountEur',
+        header: t('Екв.'),
+        width: 124,
+        minWidth: 112,
+        align: 'right',
+        accessor: (sale) => getSecondaryAmount(sale),
+        cell: (sale) => (
+          <>
+            <Text>{formatAmount(getSecondaryAmount(sale))}</Text>
+            <Text size="xs" c="dimmed">
+              {getSecondaryAmountCode(sale)}
+            </Text>
+          </>
+        ),
+      },
+      {
+        id: 'vat',
+        header: t('ПДВ'),
+        width: 110,
+        minWidth: 100,
+        align: 'right',
+        accessor: (sale) => getNumber(sale.Order?.TotalVat),
+        cell: (sale) => formatAmount(getNumber(sale.Order?.TotalVat)),
+      },
+      {
+        id: 'discount',
+        header: t('Знижка'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (sale) => getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount),
+        cell: (sale) => {
+          const items = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+          const firstDiscount = getNumber(items[0]?.OneTimeDiscount)
+          const text = firstDiscount ? `${amountFormatter.format(firstDiscount)} %` : '—'
+
+          if (!isNewOrPackagingStatus(sale) || items.length === 0) {
+            return text
+          }
+
+          const discounts = items.map((item) => getNumber(item.OneTimeDiscount) ?? 0)
+          const hasUniformDiscount = discounts[0] !== 0 && discounts.every((value) => value === discounts[0])
+          const allPositive = discounts.every((value) => value > 0)
+
+          if (hasUniformDiscount) {
+            return (
+              <Anchor
+                component="button"
+                fw={600}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenDiscount(sale)
+                }}
+              >
+                {`${amountFormatter.format(discounts[0])} %`}
+              </Anchor>
+            )
+          }
+
+          if (allPositive) {
+            const average = Math.round((discounts.reduce((sum, value) => sum + value, 0) / discounts.length) * 100) / 100
+
+            return <Text span>{`${amountFormatter.format(average)} %`}</Text>
+          }
+
+          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+
+          if (lifeCycleType === 1 || lifeCycleType === 2) {
+            return '—'
+          }
+
+          return (
+            <Anchor
+              component="button"
+              fw={400}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenDiscount(sale)
+              }}
+            >
+              {t('Знижка')}
+            </Anchor>
+          )
+        },
+      },
+      {
+        id: 'positions',
+        header: t('Позиції'),
+        width: 96,
+        minWidth: 88,
+        align: 'right',
+        accessor: getOrderItemCount,
+        cell: (sale) => displayValue(getOrderItemCount(sale)),
+      },
+      {
+        id: 'transporter',
+        header: t('Перевізник'),
+        width: 170,
+        minWidth: 130,
+        accessor: (sale) => sale.Transporter?.Name || sale.Transporter?.Title,
+        cell: (sale) => {
+          const name = sale.Transporter?.Name || sale.Transporter?.Title
+
+          if (!sale.Transporter) {
+            return displayValue(name)
+          }
+
+          return (
+            <Anchor
+              component="button"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenDetails(sale)
+              }}
+            >
+              {displayValue(name)}
+            </Anchor>
+          )
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 132,
+        minWidth: 132,
+        maxWidth: 132,
+        align: 'center',
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (sale) => {
+          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
+          const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
+          const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+          const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
+          const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+          const showUnlock = canUnlock && Boolean(sale.IsLocked)
+          const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
+          const showEditShift = showEdit && getOrderItemCount(sale) > 0
+
+          return (
+            <Box onClick={(event) => event.stopPropagation()}>
+              <Group gap={2} justify="center" wrap="nowrap">
+                <Tooltip label={t('Деталі')}>
+                  <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenSale(sale)}>
+                    <IconEye size={18} />
+                  </ActionIcon>
+                </Tooltip>
+                {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
+                <Menu position="bottom-end" shadow="md" withinPortal>
+                  <Menu.Target>
+                    <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
+                      <IconDots size={18} />
+                    </ActionIcon>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    {showEdit && (
+                      <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+                        {t('Відкрити продаж')}
+                      </Menu.Item>
+                    )}
+                    {showEditShift && (
+                      <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
+                        {lifeCycleType === 0 ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
+                      </Menu.Item>
+                    )}
+                      {showTtn && (
+                        <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
+                          {t('Друк ТТН')}
+                        </Menu.Item>
+                      )}
+                      {showWillNotShip && (
+                        <Menu.Item
+                          color="orange"
+                          disabled={!sale.ChangedToInvoice}
+                          leftSection={<IconAlertTriangle size={16} />}
+                          onClick={() => onWillNotShip(sale)}
+                        >
+                          {t('Не буде відвантажено')}
+                        </Menu.Item>
+                      )}
+                      {showUnlock && (
+                        <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
+                          {t('Розблокувати')}
+                        </Menu.Item>
+                      )}
+                      <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+                        {t('Історія редагувань')}
+                      </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
               </Group>
-              <Group gap="lg" wrap="nowrap" style={{ flex: '0 0 auto' }}>
-                <Text size="sm" ta="right" style={{ minWidth: 60 }}>{displayValue(getNumber(item.Qty))}</Text>
-                <Text size="sm" ta="right" style={{ minWidth: 90 }}>{formatAmount(getNumber(item.PricePerItem))}</Text>
-                <Text size="sm" fw={600} ta="right" style={{ minWidth: 90 }}>{formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount))}</Text>
-              </Group>
-            </Group>
-          ))}
-        </Stack>
-      )}
-    </Box>
+            </Box>
+          )
+        },
+      },
+    ],
+    [
+      canEditSale,
+      canUnlock,
+      canWillNotShip,
+      isAdmin,
+      onOpenAudit,
+      onOpenConsignment,
+      onOpenDetails,
+      onOpenDiscount,
+      onOpenEditor,
+      onOpenEditShift,
+      onOpenSale,
+      onUnlock,
+      onWillNotShip,
+      t,
+    ],
   )
 }
 
@@ -1216,7 +1469,7 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
   const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-  return status === 0 || status === 1
+  return status === 0 || status === 1 || status === 2
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {

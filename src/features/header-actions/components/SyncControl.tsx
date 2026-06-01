@@ -310,7 +310,7 @@ export function SyncControl() {
 
     try {
       const response = await request()
-      const message = response.Message || t('Синхронізацію запущено')
+      const message = response?.Message || t('Синхронізацію запущено')
       dispatch({ type: 'syncSucceeded', message })
       notifications.show({ color: 'green', message })
     } catch (error) {

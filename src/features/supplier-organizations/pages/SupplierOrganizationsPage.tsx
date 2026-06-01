@@ -29,6 +29,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
   getSupplyOrganizations,
@@ -130,6 +131,10 @@ export function SupplierOrganizationsPage() {
   }
 
   async function exportList() {
+    if (isExporting) {
+      return
+    }
+
     setExporting(true)
     setError(null)
 
@@ -178,7 +183,15 @@ export function SupplierOrganizationsPage() {
             </Button>
           </PermissionGate>
           <Tooltip label={t('Друк')}>
-            <ActionIcon aria-label={t('Друк')} color="gray" loading={isExporting} size={38} variant="light" onClick={exportList}>
+            <ActionIcon
+              aria-label={t('Друк')}
+              color="gray"
+              disabled={isExporting}
+              loading={isExporting}
+              size={38}
+              variant="light"
+              onClick={exportList}
+            >
               <IconDownload size={18} />
             </ActionIcon>
           </Tooltip>
@@ -268,8 +281,8 @@ function useSupplierOrganizationColumns({
         header: t('Організація'),
         width: 180,
         minWidth: 150,
-        accessor: (organization) => getPrimaryAgreement(organization)?.Organization?.Name,
-        cell: (organization) => displayValue(getPrimaryAgreement(organization)?.Organization?.Name),
+        accessor: (organization) => getAgreementOrganizations(organization),
+        cell: (organization) => displayValue(getAgreementOrganizations(organization)),
       },
       {
         id: 'tin',
@@ -300,8 +313,8 @@ function useSupplierOrganizationColumns({
         header: t('Валюта'),
         width: 110,
         minWidth: 90,
-        accessor: (organization) => getPrimaryAgreement(organization)?.Currency?.Code,
-        cell: (organization) => displayValue(getPrimaryAgreement(organization)?.Currency?.Code || getPrimaryAgreement(organization)?.Currency?.Name),
+        accessor: (organization) => getAgreementCurrencies(organization),
+        cell: (organization) => displayValue(getAgreementCurrencies(organization)),
       },
       {
         id: 'balance',
@@ -469,7 +482,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
     <AppModal centered opened={Boolean(document)} title={t('Документ')} onClose={onClose}>
       <Stack gap="sm">
         {document?.DocumentURL && (
-          <Anchor href={document.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={upgradeHttpToHttps(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <ExcelIcon size={22} />
               <span>{t('Завантажити Excel')}</span>
@@ -477,7 +490,7 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
           </Anchor>
         )}
         {document?.PdfDocumentURL && (
-          <Anchor href={document.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+          <Anchor href={upgradeHttpToHttps(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
             <Group gap="xs">
               <IconFileTypePdf size={22} stroke={1.8} />
               <span>{t('Завантажити PDF')}</span>
@@ -490,8 +503,12 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
   )
 }
 
-function getPrimaryAgreement(organization: SupplyOrganization) {
-  return organization.SupplyOrganizationAgreements?.[0] || null
+function getAgreementOrganizations(organization: SupplyOrganization): string {
+  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Organization?.Name || []).join(' ')
+}
+
+function getAgreementCurrencies(organization: SupplyOrganization): string {
+  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Currency?.Code || []).join(' ')
 }
 
 function readStoredSearch(): string {

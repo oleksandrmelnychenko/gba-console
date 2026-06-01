@@ -26,30 +26,46 @@ const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
-  dateStyle: 'short',
-  timeStyle: 'short',
-})
+type AdvancePaymentsLoadState = {
+  error: string | null
+  isLoading: boolean
+  payments: AdvancePayment[]
+}
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
+type AdvancePaymentsLoadAction =
+  | { type: 'failed'; error: string }
+  | { type: 'invalid-filter' }
+  | { type: 'loaded'; payments: AdvancePayment[] }
+  | { type: 'start-loading' }
+
+const INITIAL_ADVANCE_PAYMENTS_LOAD_STATE: AdvancePaymentsLoadState = {
+  error: null,
+  isLoading: true,
+  payments: [],
+}
 
 export function AdvancePaymentsPage() {
   const { t } = useI18n()
   const [fromDate, setFromDate] = useValueState(() => shiftMonth(-1))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
-  const [payments, setPayments] = useValueState<AdvancePayment[]>([])
-  const [error, setError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [loadState, dispatchLoadState] = useReducer(advancePaymentsLoadReducer, INITIAL_ADVANCE_PAYMENTS_LOAD_STATE)
+  const { error, isLoading, payments } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const filterError = getDateRangeError(fromDate, toDate)
   const columns = useAdvancePaymentColumns()
 
   useEffect(() => {
     let isActive = true
-    setLoading(true)
-    setError(null)
+
+    if (filterError) {
+      dispatchLoadState({ type: 'invalid-filter' })
+
+      return () => {
+        isActive = false
+      }
+    }
+
+    dispatchLoadState({ type: 'start-loading' })
 
     async function loadPayments() {
       try {
@@ -59,16 +75,14 @@ export function AdvancePaymentsPage() {
         })
 
         if (isActive) {
-          setPayments(nextPayments)
+          dispatchLoadState({ payments: nextPayments, type: 'loaded' })
         }
       } catch (loadError) {
         if (isActive) {
-          setPayments([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові платежі'))
-        }
-      } finally {
-        if (isActive) {
-          setLoading(false)
+          dispatchLoadState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові платежі'),
+            type: 'failed',
+          })
         }
       }
     }
@@ -78,7 +92,7 @@ export function AdvancePaymentsPage() {
     return () => {
       isActive = false
     }
-  }, [fromDate, reloadKey, setError, setLoading, setPayments, t, toDate])
+  }, [filterError, fromDate, reloadKey, t, toDate])
 
   function resetFilters() {
     setFromDate(shiftMonth(-1))
@@ -89,45 +103,30 @@ export function AdvancePaymentsPage() {
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={fromDate}
-              onChange={(event) => setFromDate(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 160 }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={toDate}
-              onChange={(event) => setToDate(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 160 }}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={resetFilters}
-              >
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                loading={isLoading}
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={reload}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
+          <Group justify="space-between" wrap="wrap">
+            <div>
+              <Text fw={700} size="xl">
+                {t('Зарахування авансу')}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+                  <IconRestore size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Group>
+
+          <Group align="end" gap="sm">
+            <TextInput label={t('Від якої дати')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До якої дати')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
           </Group>
 
           {error && (
@@ -136,7 +135,13 @@ export function AdvancePaymentsPage() {
             </Alert>
           )}
 
-          <Badge color="violet" variant="light" w="fit-content">
+          {filterError && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError}
+            </Alert>
+          )}
+
+          <Badge color="blue" variant="light" w="fit-content">
             {t('Завантажено')}: {payments.length}
           </Badge>
 
@@ -144,7 +149,7 @@ export function AdvancePaymentsPage() {
             columns={columns}
             data={payments}
             defaultLayout={ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Авансових платежів за період не знайдено')}
+            emptyText={t('Немає даних за вибраний період')}
             getRowId={(payment, index) => String(payment.NetUid || payment.Id || payment.Number || index)}
             isLoading={isLoading}
             layoutVersion="advance-payments-table-1"
@@ -165,7 +170,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
     () => [
       {
         id: 'fromDate',
-        header: t('Дата'),
+        header: t('Вхідна дата'),
         width: 160,
         minWidth: 140,
         accessor: (payment) => payment.FromDate,
@@ -190,7 +195,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
       },
       {
         id: 'vatPercent',
-        header: t('VAT, %'),
+        header: t('ПДВ %'),
         width: 110,
         minWidth: 96,
         align: 'right',
@@ -199,7 +204,7 @@ function useAdvancePaymentColumns(): DataTableColumn<AdvancePayment>[] {
       },
       {
         id: 'vatAmount',
-        header: t('Сума VAT'),
+        header: t('Сума ПДВ'),
         width: 140,
         minWidth: 120,
         align: 'right',
@@ -241,6 +246,52 @@ function shiftMonth(months: number): string {
   return formatLocalDate(date)
 }
 
+function advancePaymentsLoadReducer(
+  state: AdvancePaymentsLoadState,
+  action: AdvancePaymentsLoadAction,
+): AdvancePaymentsLoadState {
+  switch (action.type) {
+    case 'failed':
+      return {
+        error: action.error,
+        isLoading: false,
+        payments: [],
+      }
+    case 'invalid-filter':
+      return {
+        error: null,
+        isLoading: false,
+        payments: [],
+      }
+    case 'loaded':
+      return {
+        error: null,
+        isLoading: false,
+        payments: action.payments,
+      }
+    case 'start-loading':
+      return {
+        ...state,
+        error: null,
+        isLoading: true,
+      }
+    default:
+      return state
+  }
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
+}
+
 function getUserName(user?: User | null): string | undefined {
   return user?.FullName || [user?.LastName, user?.FirstName, user?.MiddleName].filter(Boolean).join(' ')
 }
@@ -252,15 +303,30 @@ function formatDateTime(value?: string): string {
 
   const date = new Date(value)
 
-  return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+
+  return `${day}.${month}.${year} ${hours}:${minutes}`
 }
 
 function formatPercent(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  return moneyFormatter.format(typeof value === 'number' && Number.isFinite(value) ? value : 0)
 }
 
 function displayValue(value?: string | null): string {

@@ -200,15 +200,27 @@ export function NewMergedServiceForm({
   )
 
   function update<K extends keyof NewMergedServiceFormValues>(key: K, value: NewMergedServiceFormValues[K]) {
+    if (isSaving) {
+      return
+    }
+
     setValues((current) => ({ ...current, [key]: value }))
   }
 
   function selectOrganization(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     const organization = organizations.find((item) => item.NetUid === netUid) || null
     setValues((current) => ({ ...current, supplyOrganization: organization, agreement: null }))
   }
 
   function selectAgreement(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     const agreement = (values.supplyOrganization?.SupplyOrganizationAgreements || []).find(
       (item) => item.NetUid === netUid,
     )
@@ -216,14 +228,26 @@ export function NewMergedServiceForm({
   }
 
   function selectProduct(netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     update('consumableProduct', products.find((item) => item.NetUid === netUid) || null)
   }
 
   function selectUser(key: 'accountingTaskUser' | 'supplyInformationTaskUser' | 'taskUser', netUid: string | null) {
+    if (isSaving) {
+      return
+    }
+
     update(key, users.find((item) => item.NetUid === netUid) || null)
   }
 
   async function handleSubmit() {
+    if (isSaving) {
+      return
+    }
+
     if (!values.supplyOrganization || !values.agreement || !values.consumableProduct || !values.invoiceNumber) {
       setValidationError(t('Заповніть обовʼязкові поля'))
 
@@ -259,7 +283,16 @@ export function NewMergedServiceForm({
   }
 
   return (
-    <AppDrawer opened={opened} size="lg" title={t('Додати')} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="lg"
+      title={t('Додати')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="sm">
         {loadError && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -503,7 +536,7 @@ export function NewMergedServiceForm({
           <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
             {t('Скасувати')}
           </Button>
-          <Button color="violet" loading={isSaving} onClick={handleSubmit}>
+          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
             {t('Зберегти')}
           </Button>
         </Group>

@@ -77,16 +77,33 @@ export function AssignInvoicesToMergedServicePanel({
   }, [opened, service, setError, setInvoices, setLoading, setSelected, t])
 
   function toggle(invoice: SupplyInvoice) {
+    if (isSaving) {
+      return
+    }
+
     const netUid = invoice.NetUid || ''
     setSelected((records) => ({ ...records, [netUid]: !records[netUid] }))
   }
 
   async function handleAssign() {
+    if (isSaving) {
+      return
+    }
+
     await onAssign(invoices.filter((invoice) => invoice.NetUid && selected[invoice.NetUid]))
   }
 
   return (
-    <AppDrawer opened={opened} size="md" title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="md"
+      title={`${t('Додати')} ${t('Інвойси').toLowerCase()}`}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -94,7 +111,7 @@ export function AssignInvoicesToMergedServicePanel({
           </Alert>
         )}
         <Group justify="flex-end">
-          <Button color="violet" disabled={isLoading} loading={isSaving} onClick={handleAssign}>
+          <Button color="violet" disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -103,7 +120,7 @@ export function AssignInvoicesToMergedServicePanel({
             {t('Завантаження')}
           </Text>
         ) : (
-          <InvoiceSelectList invoices={invoices} selected={selected} onToggle={toggle} />
+          <InvoiceSelectList disabled={isSaving} invoices={invoices} selected={selected} onToggle={toggle} />
         )}
       </Stack>
     </AppDrawer>

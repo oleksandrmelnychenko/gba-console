@@ -26,13 +26,14 @@ import {
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { useAuth } from '../../auth/useAuth'
 import {
   exportGroupedProductRemains,
   exportProductRemains,
@@ -66,6 +67,7 @@ type ProductRemainsTab = 'batches' | 'products'
 
 const ALL_STORAGES_VALUE = '__all_storages__'
 const LOCAL_CURRENCY_CODE = 'UAH'
+const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const PAGE_SIZE = 25
 const pageSizeOptions = ['25', '50', '100']
 
@@ -100,6 +102,7 @@ const BATCH_DETAILS_TABLE_DEFAULT_LAYOUT = {
 
 function useProductRemainsPageModel() {
   const { t } = useI18n()
+  const { hasPermission } = useAuth()
   const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>('batches')
   const [storages, setStorages] = useValueState<ProductRemainStorage[]>([])
   const [selectedStorageValue, setSelectedStorageValue] = useValueState(ALL_STORAGES_VALUE)
@@ -142,11 +145,22 @@ function useProductRemainsPageModel() {
   const productStorageError =
     activeTab === 'products' && !storageNetId ? t('Для залишків за товарами оберіть конкретний склад') : null
   const selectedSupplierNetId = supplierNetId || undefined
+  const exportScopeKey = [
+    activeTab,
+    dateFrom,
+    dateTo,
+    storageNetId || '',
+    selectedSupplierNetId || '',
+    productSearchValue,
+  ].join('|')
+  const exportScopeKeyRef = useRef(exportScopeKey)
+  const exportRequestRef = useRef(0)
   const resourceError = storageResourceError || supplierResourceError
+  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
-  const productColumns = useProductRemainProductColumns(setSelectedMovementRow)
+  const productColumns = useProductRemainProductColumns(canOpenProductMovement, openMovement)
   const batchToolbarLeft = useMemo(() => <TableStatus loaded={batchRows.length} totals={batchTotals} />, [batchRows.length, batchTotals])
   const productToolbarLeft = useMemo(
     () => <TableStatus loaded={productRows.length} searchValue={productSearchValue} totals={productTotals} />,
@@ -163,6 +177,10 @@ function useProductRemainsPageModel() {
     setProductHasMore(false)
     setLoadingProducts(false)
   }, [setLoadingProducts, setProductHasMore, setProductRows, setProductTotals])
+
+  useEffect(() => {
+    exportScopeKeyRef.current = exportScopeKey
+  }, [exportScopeKey])
   const batchDetailColumns = useProductRemainBatchDetailColumns()
   const activeError = activeTab === 'batches' ? batchError : productStorageError || productError
   const isActiveLoading = activeTab === 'batches' ? isLoadingBatches : isLoadingProducts
@@ -255,11 +273,24 @@ function useProductRemainsPageModel() {
     reload()
   }
 
-  async function handleExport() {
-    if (filterError || (activeTab === 'products' && !storageNetId)) {
+  function openMovement(row: RemainingConsignment) {
+    if (!canOpenProductMovement || !row.ConsignmentItemNetId) {
       return
     }
 
+    setSelectedMovementRow(row)
+  }
+
+  async function handleExport() {
+    if (exportingTab || filterError || (activeTab === 'products' && !storageNetId)) {
+      return
+    }
+
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const requestKey = exportScopeKeyRef.current
+    const isLatestExport = () => exportRequestRef.current === requestId
+    const isCurrentExport = () => isLatestExport() && exportScopeKeyRef.current === requestKey
     const tabToExport = activeTab
     setExportingTab(tabToExport)
     setBatchError(null)
@@ -282,9 +313,15 @@ function useProductRemainsPageModel() {
               to: dateTo,
             })
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
+      if (isCurrentExport()) {
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      }
     } catch (exportError) {
+      if (!isCurrentExport()) {
+        return
+      }
+
       const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт залишків')
 
       if (tabToExport === 'batches') {
@@ -293,14 +330,16 @@ function useProductRemainsPageModel() {
         setProductError(message)
       }
     } finally {
-      setExportingTab(null)
+      if (isLatestExport()) {
+        setExportingTab(null)
+      }
     }
   }
 
   return {
     activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
-    isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
+    isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
@@ -593,7 +632,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const {
     activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
-    isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, pageSize, productColumns,
+    isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
@@ -788,7 +827,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   minWidth={1600}
                   tableId="product-remains-products"
                   toolbarLeft={productToolbarLeft}
-                  onRowClick={setSelectedMovementRow}
+                  onRowClick={openMovement}
                 />
                 <TableFooter
                   canLoadMore={productHasMore && !filterError && Boolean(storageNetId)}
@@ -836,7 +875,12 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
               {downloadDocument.DocumentURL && (
-                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-excel">
                     <ExcelIcon size={22} />
                   </span>
@@ -844,7 +888,12 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 </Anchor>
               )}
               {downloadDocument.PdfDocumentURL && (
-                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>
@@ -977,7 +1026,10 @@ function useProductRemainBatchColumns() {
   )
 }
 
-function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignment) => void) {
+function useProductRemainProductColumns(
+  canOpenProductMovement: boolean,
+  onOpenMovement: (row: RemainingConsignment) => void,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
@@ -1095,11 +1147,17 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       minWidth: 64,
       enableSorting: false,
       cell: (row) => (
-        <Tooltip label={row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')}>
+        <Tooltip
+          label={
+            canOpenProductMovement
+              ? row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')
+              : t('Недостатньо прав')
+          }
+        >
           <ActionIcon
             aria-label={t('Рух товару')}
             color="gray"
-            disabled={!row.ConsignmentItemNetId}
+            disabled={!canOpenProductMovement || !row.ConsignmentItemNetId}
             size="sm"
             variant="subtle"
             onClick={(event) => {
@@ -1113,7 +1171,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       ),
     },
     ],
-    [onOpenMovement, t],
+    [canOpenProductMovement, onOpenMovement, t],
   )
 }
 

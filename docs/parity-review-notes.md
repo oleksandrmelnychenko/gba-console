@@ -28,9 +28,9 @@ These legacy gates have **no console counterpart because the underlying action/e
 
 | Legacy key | Where (legacy) | Why not migrated |
 | --- | --- | --- |
-| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | console placement editor has no "ActReconciliation new" action |
-| `PlacementHeader_…_CarryOut` (Провести / full-placement) | placement.header.view.tsx | console has no CarryOut/FullPlaced action |
-| `PlacementHeader_…_GetUp` (Підняти) | placement.header.view.tsx | console has no GetUp action |
+| `PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY` | placement.header.view.tsx | drawer + API **BUILT** (§13); only the header button-wire is pending (placement page is user-WIP) |
+| ~~`PlacementHeader_…_CarryOut` (Провести / full-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
+| ~~`PlacementHeader_…_GetUp` (Оприходувати / partial-placement)~~ | placement.header.view.tsx | **BUILT** — see §11 |
 | `Sales_Ukraine_all_Change_Products_Btn_PKEY` | shared product carousel | console renders product description read-only; editing goes through the full edit panel gated by `Product_Entire_Assortment_EditBtn_PKEY` instead |
 
 ### 1c. Audit-tooling note (not a product issue)
@@ -280,6 +280,44 @@ Audited the 8 non-WIP sibling sales tabs vs legacy (run `wf_64e149b5`): 3 HIGH, 
   JSON at runtime). Existing online-shop features (Edge icon, retail line, MisplacedSaleId, red-unpaid,
   realtime, filters, details) preserved. Adversarially verified (ok=true). A future cleanup could unify
   both features on one shared sale type to drop the cast.
+
+---
+
+## 7. Accounting + clients/org parity audits (2026-06-01)
+
+Extended the deep parity audit beyond sales. Two read-only audits → triaged → applied the clear
+faithful fixes (per-screen verified, tsc 0 / eslint 0), recorded the intentional/judgment/large items.
+
+### Accounting (8 screens, run `wf_198862fd`) — fixes in commit `dfedfe5`
+Applied: income-cashflows FromDate-desc sort + reset-from=today-7 + empty money → `0,00`;
+accounting-cash-flow «На логістичний шлях» supply-order link enabled; payment-accounts register-type
+labels + empty money; advance-payments empty money + titles/date; advanced-reports PayedTo marker;
+currency-convertors exchange-rate precision (2 fixed decimals) + rate-row date.
+- **⚠ PLN HIGH = FALSE POSITIVE — NOT changed.** The audit flagged the console dropping PLN
+  (currency-convertors `CURRENCY_ORDER=[EUR,USD]`, payment-accounts `SKIPPED_CURRENCY_CODE=PLN`) as a
+  HIGH bug. This is an **intentional console decision** (you reverted my earlier PLN change). PLN was
+  NOT re-added anywhere.
+- **Money format kept uk-UA, not legacy dot.** The fix agents initially switched money to legacy
+  `toFixed(2)` (dot, no grouping); I reverted that to the console-wide `Intl uk-UA` grouping
+  (`1 234,50`) for consistency with the sales screens — adopting only the legacy *intent* (always show
+  `0,00`, never «—»). The legacy non-localized dot-format is a deliberate console-localization divergence.
+- Skipped (recorded): income detail-drawer extra fields; cash-flow per-type drill-in document panels +
+  Poland `/orders/poland/all/edit` link (route not yet registered); payment-accounts filter-cookie
+  persistence; advanced-reports Document-Structure action; date-serialization toDateString-vs-ISO
+  (console uses ISO app-wide; backend accepts). All medium/large or convention.
+
+### Clients/org (5 screens, run `wf_8ac8e34c`) — fixes in commit `fa53c81`
+Applied: supplier-organizations Currency/Organization columns join ALL agreements (was first-only);
+organisation-services status labels (`Не завершено`/`Оплачено частково`); online-shop-seo add-warehouse
+storage list → `/storages/get/all`.
+- Recorded (intentional/judgment, NOT changed): organization-clients ≥1-agreement validation +
+  agreement auto-persist (console behaviour, arguably better); uk-UA money grouping (console convention);
+  organisation-services hardcoded-per-collection service label + IsPayed status branch + the 2 extra
+  service collections; assorted LOW money/label items.
+
+**Note on WIP:** during these fixes the user was actively editing other features (available-payments,
+consumable-orders, outgoing-cashflows, product-delivery-protocols, supply-ukraine-orders) — only
+explicit non-WIP paths were committed.
 - **sales-charts:** by-client mount-time empty fetch (minor); client/manager search sources
   (payers/managers vs legacy charts dropdowns) — "confirm with product".
 - **sales-debtors day labels:** «Борг через N днів» (console interpolates the count — more informative)
@@ -310,3 +348,193 @@ leak; debounce + silent non-destructive reload intact). **Known trade-off:** an 
 whole point was to stop reloading on every event); broaden the gate later if inbound-into-filter
 parity is ever wanted.
 
+
+---
+
+## 8. Products / customs / consumables parity audit (2026-06-01)
+
+Read-only audit of 8 non-WIP screens → fixes in commit `0eafa3f` (tsc 0 / eslint 0; verified):
+- **transporters (HIGH):** Archive/«Усі» filters were wired to `/transporters/all/type/hidden`
+  (backend `GetAllByTransporterTypeNetId` = active-only) then force-marked Deleted, so Archive showed
+  active rows + «Усі» showed everything as «Архів». Now a single `/transporters/all/type` fetch
+  (backend `GetAllByTransporterTypeNetIdDeleted` = active+deleted) split client-side by `Deleted`,
+  matching ClientResourcesPage + the gba-server repo. (Two cross-talk verifier comments wrongly called
+  this a regression — dismissed against the backend SQL.)
+- **vat-reports (HIGH):** Type column was inverted — fixed to Sale→«Інвойс», SupplyInvoice→«Фактура»;
+  + index column + empty-money 0,00.
+- **act-reconciliations:** single-income «Причина» now on the wire (request parity — the server ignores
+  it on the single path in both legacy and console, so functionally a no-op but byte-matches legacy);
+  placement fields required; rows OrderByDescending. (Storage-column-from-sorted side-effect is inert.)
+- **product-groups:** create-flow omits the empty-GUID `netId` param; no forced `IsActive`.
+- **product-specification-codes:** unsaved-changes confirm on close.
+- **tax-free-carriers:** passport dates default to today on create (edit preserves stored dates —
+  better than legacy's reset-to-today quirk); hide Add-passport while an unsaved passport exists.
+- **consumable-products:** supply-service category label.
+
+Recorded (intentional/judgment, not changed): the date-boundary serialization (console date-only
+filters work app-wide); act-recon bulk-process Preview panel (large); plus the usual uk-UA/PLN.
+
+---
+
+## 9. Накладні + Рахунки — deep extraction vs console (run `wf_73353e85`, 2026-06-01)
+
+Exhaustive extraction of the sale **Видаткова Накладна** + **Рахунок на оплату** ecosystem:
+**85 items — 58 present · 9 partial · 13 missing.** The console has most of it; the actionable
+sales-ukraine gaps:
+
+### Missing (sales-ukraine relevant)
+- **Invoice button uses the wrong endpoint.** Legacy «друк видаткової накладної» = `GET /sales/get/document?netId=&isFromStorages=` and toggles `IsPrinted` + re-saves the sale. Console `getSaleInvoiceDocument` calls `/sales/get/last/document` (the LAST/most-recent-revision form) and has no `isFromStorages` / no `IsPrinted` side-effect. If the two endpoints differ, the printed накладна can differ.
+- **Рахунок bundles a накладна that the console drops.** `/sales/get/payment/document` can return `InvoiceDocumentURL`/`PdfInvoiceDocumentURL` (a second «Видаткова накладна») alongside the рахунок — revealed when `IsAcceptedToPacking` OR the user is GBA/Administrator/FinanceDirector/Accountant. Console `extractDocumentResult` only reads `DocumentURL`/`PdfDocumentURL`, so the bundled накладна + the role gate are dropped.
+- **VAT convert-to-invoice path missing.** Confirming a VAT sale legacy hits `POST /sales/update/get/payment/document` (persists + returns the рахунок inline). Console `SaleEditorDrawer.convertToInvoice` ALWAYS uses the non-VAT `POST /sales/update/file` (IsPrintedPaymentInvoice=true), never branching on `IsVatSale` — so the рахунок isn't auto-generated at VAT confirmation.
+- **Current Act-protocol-edit document.** `/sales/get/shifted/document?netId=&IsPrintedActProtocolEdit=` (+ the `IsPrintedActProtocolEdit` flag toggle). Console only has the per-history-edit «C» form (`/sales/get/shifted/hisotry/document`), not the current-state one.
+- **Cannot CREATE an invoice edit (Акт редагування).** Legacy `edit.sale.view.tsx` shifts order-item qty bill↔store (`/orders/items/shift/current`), which CREATES `HistoryInvoiceEdit` entries. Console is **read/print-only** for invoice history — there is no console flow to edit an issued накладна.
+- **`ConfirmProcessing` approve** (set/edit/act/for/editing) — the per-sale approve button from the legacy audit timeline is not in the console audit drawer.
+
+### Belongs to warehouse-ukraine (verify there, not a sales-ukraine gap)
+Invoice register (`/sales/get/register/invoice` + `/document`), shipment create/modal exports
+(`/sales/shipments/document/create|/export`), act-for-editing get/qty/set
+(`/protocol/act/invoice/get|set/edit/act/for/editing`), and the warehouse `isFromStorages` print flow.
+
+### Partial
+PZ doc (`/sales/get/document/pz`) — wired but dead/unreachable (Poland-only, ok for UA); DownloadDocuments
+modal renders one doc only (no multi-doc for the bundled рахунок+накладна); ~~discount/percent gating uses
+lifecycle 0||1 but legacy treats Packaged(2) as Packaging too~~ **(FIXED §12)**; `IsInvoice` not written on fetch.
+
+### Row EXPANDER — MISSING (separate from documents)
+The legacy sales rows had an **inline expander** (`SaleExpandItem`): expand a row → order-items list
+(per-item discount) + transport services (Poland) + inline document download/TTN print. The console
+`DataTable` has **no expandable-row support** and the grid has no inline expander. Order items are only
+visible by opening the full `SaleEditorDrawer`; the eye-drawer (`SaleDetailsDrawer`) shows the
+carrier/delivery change-history, not the order items. → genuine parity gap; needs DataTable
+expandable-row support + a SaleExpandContent (order items + transport services).
+
+### ✅ Resolved (2026-06-01, commits 9ee10d9 + this commit)
+- **Row EXPANDER — DONE.** Added opt-in expandable rows to the shared `DataTable`
+  (`renderExpandedRow`/`getRowCanExpand`/expand toggle column, backward-compatible — inactive unless
+  `renderExpandedRow` is passed). `SaleExpandContent` reproduces `SaleExpandItem`: order items
+  (code / name / orig-number / price / sum / qty) + per-item discount affordance gated by New/Packaging
+  status and uniform-discount detection. Wired into `SalesUkrainePage` (`getRowCanExpand` = items>0).
+- **Document menu — DONE.** `SaleDocumentsMenu` now reproduces the full legacy logic: Видаткова накладна
+  (transporter+packaging), Лист на пакування (VAT), per-edit invoice/act-for-editing/shipment history +
+  current Акт редагування (`/sales/get/shifted/document`), and Рахунок на оплату which **bundles** the
+  Видаткова накладна (`InvoiceDocumentURL`/`PdfInvoiceDocumentURL`) when `IsAcceptedToPacking` OR the user
+  holds an invoice role (Administrator/GBA/FinanceDirector/Accountant). Multi-doc modal renders all files.
+- **VAT convert-to-invoice — DONE.** `SaleEditorDrawer.convertToInvoice` now branches on `IsVatSale`:
+  VAT → `convertVatSaleAndGetPaymentDocument` (`POST /sales/update/get/payment/document`, FormData
+  sale+file) and opens the returned рахунок; non-VAT → `/sales/update/file` as before. Lifecycle → Packaging(1).
+- **Create-invoice-edit (Акт редагування) — DONE.** New `SaleEditDrawer`: per-item bill↔store qty grid
+  (NumberInput, clamp bill+store ≤ Qty), bulk «Все в рахунок» / «Все на склад», `DoShift` →
+  `shiftOrderItemsCurrent` (`POST /orders/items/shift/current` with the whole Sale; ShiftStatuses use the
+  flat enum Bill=1/Store=0, no `$type` — confirmed against legacy entities). Menu trigger gated exactly
+  like the legacy `moving` icon: `canEditSale` (= `UkraineAllActOfEdit_Change_PKEY`) + no merges + items>0
+  — **no lifecycle gate** (legacy's lifecycle/ShiftStatus condition is on the *audit* `time_line_icon`,
+  not the shift-edit icon; shift-edit is available on New «Рахунок» sales too). Title «Акт редагування
+  рахунку» (New) / «…накладної» (else) — matches legacy `ActForEditingAnAccount`/`…ConsignmentNote`.
+- **`ConfirmProcessing` approve — already present** in `warehouse-ukraine` (`approveEditingAct` →
+  `/protocol/act/invoice/set/edit/act/for/editing`, EditingList approval queue). The per-sale audit-timeline
+  duplicate entry point remains optional (low value, the warehouse queue is the primary).
+
+---
+
+## 10. Big functional parity audit — 8 domains, adversarially verified (run `wf_460cf529`, 2026-06-01)
+
+Deep **functional** (not screen-level) legacy↔console diff across all non-WIP domains: sales-core,
+sales-siblings, sales-analytics, clients, online-shop, products-customs, accounting, customs-warehouse.
+21 agents; every High/Medium finding got an adversarial verifier against the legacy source.
+
+**Result: the migration is in excellent shape.** Of ~13 High/Medium claims, **12 were REFUTED** with
+concrete legacy evidence (mostly sales-vs-warehouse surface conflations or references to commented-out
+legacy code), confirming the §1–§9 work closed the real gaps. Clients / sales-analytics / accounting:
+**zero** findings. Notable refutations (kept here so they are not re-raised):
+- *Invoice endpoint missing `isFromStorages`* — FALSE. Legacy segregates two endpoints: the sales
+  dashboard uses `/sales/get/last/document` (NO `isFromStorages`), the warehouse uses
+  `/sales/get/document?...&isFromStorages=true`. Console reproduces BOTH (`getSaleInvoiceDocument` vs
+  `warehouse-ukraine/salesApi`). Adding the param would be a regression.
+- *Act-protocol-edit missing `IsPrintedActProtocolEdit` toggle* — FALSE. That toggle lives only in the
+  legacy **warehouse** view (already mirrored in `warehouse-ukraine/salesApi`); the sales `get/shifted/document`
+  call is netId-only in legacy too.
+- *`IsPrinted` write-on-print missing* — FALSE. The legacy sales-pivot write is **commented out**; the real
+  `IsPrinted` write is warehouse-only.
+- *sales-offers date filter should be ISO* — FALSE. Legacy `offers.pivot` sends `?from=${DateFromValue.toDateString()}` — console's `toDateString()` is faithful.
+- *warehouse OrdersTab missing CarryOut/GetUp/ActReconciliationNew* — these are the **§1b documented
+  not-migrated** placement actions (the underlying console action isn't built), not a regression.
+
+### ✅ Built — discount editing now fully faithful (this commit)
+The one CONFIRMED gap: the collapsed sales-row discount column let the user open the **sale-level**
+discount modal (which overwrites **every** item's `OneTimeDiscount`) even when items had **differing
+positive** per-item discounts — legacy showed a non-clickable average there and routed per-item editing
+to the expander. Reproduced the legacy 3-branch logic on the collapsed row (`SalesUkrainePage` discount
+cell): **(1)** uniform non-zero → clickable, opens sale-level modal (all items); **(2)** all-positive but
+differing → **non-clickable average** (no clobber); **(3)** mixed → clickable «Знижка» for New, hidden for
+Packaging. And made `SaleDiscountModal` accept an optional `orderItem` so the **expander's per-item**
+discount click updates **only that item** (matching legacy `sale.discount.modal` `OnSave`: per-item when an
+`OrderItem` is passed, all-items otherwise). tsc 0 / eslint 0.
+
+---
+
+## 11. Placement-header actions CarryOut + GetUp — BUILT (2026-06-01)
+
+Closed two §1b not-migrated features on the warehouse placement editor
+(`WarehouseUkraineOrderPlacementsPage`, warehouse-ukraine — non-WIP):
+
+- **«Провести» (CarryOut)** — gated by `PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY`,
+  shown only when `!order.IsPlaced`. Confirm modal → `createProductIncomeFromDynamicPlacements` →
+  `POST /products/incomes/new/supply/ukraine/dynamic?fromDate=&storageNetId=` with the supply order body
+  carrying **`IsPlaced: true`** (full placement → creates the product income, order becomes placed). Reloads.
+- **«Оприходувати» (GetUp)** — gated by `PlacementHeader_GetUp_ordersUkrainePlacement_PKEY`. Same endpoint,
+  same confirm modal, but **`IsPlaced: false`** (partial placement — order stays open for further placements).
+
+Faithful to legacy `placement.header.view.tsx` / `supply.ukraine.placement.view.tsx`
+(`NewProductIncome(isFullPlaced)` → `createUkraineProductIncomeFomDynamicPlacementsAction`): same single
+endpoint, the only difference is the `IsPlaced` flag, each behind an "AreYouSureToDoAction" confirm.
+Added a «Дата оприходування» date input (legacy header `DateFromValue`, defaults to today) feeding
+`fromDate`, and the selected storage feeding `storageNetId`. tsc 0 / eslint 0.
+
+**Still deferred:** `ActReconciliationNew` (opens the full `NewActReconciliationView` reconciliation
+creation sub-form — a larger build, left for when the act-reconciliation creation flow is migrated).
+
+---
+
+## 12. Discount gating — Packaged(2) treated as Packaging (§9 partial closed, 2026-06-01)
+
+Legacy `SaleLifeCycleStatusConvertor.Parse` maps **both** `Packaging`(1) and `Packaged`(2) →
+`'SaleLifeCyclePackaging'`, so legacy `IsNewOrPackagingStatus` is true for 0/1/2. The console's
+`isNewOrPackagingStatus` only checked `0 || 1` — Packaged(2) sales lost the discount affordance.
+
+- **`SalesUkrainePage.isNewOrPackagingStatus`** → now `0 || 1 || 2`, so the collapsed-row discount cell
+  treats Packaged like Packaging (Branch 1 uniform clickable, Branch 2 average non-clickable, Branch 3
+  add hidden for 1/2 — already correct).
+- **`SaleExpandContent`** — corrected the per-item affordance to the exact legacy rule: existing per-item
+  discount is clickable for **any** non-uniform sale (was gated to New/Packaging), and the empty
+  «Знижка» add link shows **only for New(0)** (legacy hides the add for IsInvoice = Packaging/Packaged).
+  Removed the now-unused local `isNewOrPackagingStatus`. tsc 0 / eslint 0.
+
+---
+
+## 13. ActReconciliationNew (placement «Інший товар / більша кількість») — drawer BUILT, wire pending (2026-06-01)
+
+Despite the name, the legacy `NewActReconciliationView` (opened from the placement header) is an
+**"add unordered / extra product"** form: it appends a `SupplyOrderUkraineItem` with `NotOrdered: true`
+(Product + Qty + UnitPrice + NetWeight) to the supply order and saves via the SAME
+`POST /supplies/ukraine/order/update` the console already uses (`updateSupplyOrderUkraine`). It also lists
+existing `NotOrdered` items with a delete. It is **placement-only** (not reachable from the standalone
+Act Reconciliations list) and does NOT hit any `/reconciliation/*` create endpoint.
+
+Built (warehouse-ukraine, self-contained, tsc 0 / eslint 0):
+- `api/orderPlacementsApi.ts` → `searchPlacementProducts` (`/products/search/vendorcode`).
+- `placementsTypes.ts` → added `UnitPrice?` to `PlacementOrderItem`.
+- `components/PlacementUnorderedProductsDrawer.tsx` → lists `NotOrdered` items (delete) + add-form
+  (product search + Qty/Ціна/Вага → `NotOrdered:true` item → `updateSupplyOrderUkraine`). Validation
+  = product selected && qty>0 (legacy). The console placement grid already filters `NotOrdered` items out,
+  so these extras now have a home.
+
+**Wire pending (the placement page is user-WIP — not touched to avoid clobbering uncommitted changes).**
+To finish, add to `WarehouseUkraineOrderPlacementsPage`:
+1. `import { PlacementUnorderedProductsDrawer } from '../components/PlacementUnorderedProductsDrawer'`
+2. model: `const [unorderedOpen, setUnorderedOpen] = useValueState(false)` + expose `setOrder`,
+   `unorderedOpen`, `setUnorderedOpen`; perm `const canActReconciliation =
+   hasPermission('PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY')`.
+3. header button (when `!order.IsPlaced && canActReconciliation`):
+   `<Button variant="light" onClick={() => model.setUnorderedOpen(true)}>{t('Інший товар / більша кількість')}</Button>`
+4. render: `<PlacementUnorderedProductsDrawer order={model.order} opened={model.unorderedOpen}
+   onClose={() => model.setUnorderedOpen(false)} onSaved={(updated) => { model.setOrder(updated); model.setUnorderedOpen(false) }} />`

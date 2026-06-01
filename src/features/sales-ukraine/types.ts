@@ -164,6 +164,23 @@ export type SalesUkraineProduct = SalesUkraineEntity & {
   VendorCode?: string
 }
 
+export const OrderItemShiftStatusType = {
+  Store: 0,
+  Bill: 1,
+} as const
+
+export type OrderItemShiftStatusTypeValue =
+  (typeof OrderItemShiftStatusType)[keyof typeof OrderItemShiftStatusType]
+
+export type SalesUkraineOrderItemShiftStatus = SalesUkraineEntity & {
+  ShiftStatus?: OrderItemShiftStatusTypeValue
+  Qty?: number
+  Comment?: string
+  OrderItemId?: number
+  User?: SalesUkraineUser
+  HistoryInvoiceEditId?: number
+}
+
 export type SalesUkraineOrderItem = SalesUkraineEntity & {
   OneTimeDiscount?: number
   OneTimeDiscountComment?: string
@@ -172,6 +189,8 @@ export type SalesUkraineOrderItem = SalesUkraineEntity & {
   Qty?: number
   TotalAmount?: number
   TotalAmountLocal?: number
+  ShiftStatuses?: SalesUkraineOrderItemShiftStatus[]
+  User?: SalesUkraineUser
 }
 
 export type SalesUkraineOrder = SalesUkraineEntity & {
@@ -257,4 +276,7 @@ export type SalesUkraineClientOption = SalesUkraineEntity & {
 export type SaleDocumentResult = {
   excelUrl: string | null
   pdfUrl: string | null
+  invoiceExcelUrl: string | null
+  invoicePdfUrl: string | null
+  isAcceptedToPacking: boolean
 }

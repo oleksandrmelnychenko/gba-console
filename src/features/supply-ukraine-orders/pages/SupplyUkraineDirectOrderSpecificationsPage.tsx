@@ -19,10 +19,11 @@ import {
   IconFileImport,
   IconFilesOff,
 } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import {
   addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
@@ -54,7 +55,7 @@ import {
   getDirectSupplyOrderById,
   getSupplyInvoiceItems,
 } from '../api/supplyUkraineOrdersApi'
-import type { DirectSupplyOrder, SupplyInvoice } from '../types'
+import type { DirectSupplyOrder, SupplyInvoice, SupplyInvoiceDeliveryDocument } from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadFilesFromTheApplication_PKEY'
@@ -86,6 +87,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const [uploadResult, setUploadResult] = useState<UploadProductSpecificationResult | null>(null)
 
   const [isDocumentsOpen, setDocumentsOpen] = useState(false)
+  const [isDocumentsCloseConfirmOpen, setDocumentsCloseConfirmOpen] = useState(false)
   const [isSavingDocuments, setSavingDocuments] = useState(false)
   const [existingDocuments, setExistingDocuments] = useState<DeliveryDocumentDraft[]>([])
   const [newDocuments, setNewDocuments] = useState<DeliveryDocumentDraft[]>([])
@@ -99,6 +101,10 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const [editingSpecificationItem, setEditingSpecificationItem] = useState<PackingListPackageOrderItem | null>(null)
   const [isSavingSpecification, setSavingSpecification] = useState(false)
   const [vendorCodeFilter, setVendorCodeFilter] = useState('')
+  const uploadRequestRef = useRef(0)
+  const documentsSaveRequestRef = useRef(0)
+  const downloadRequestRef = useRef(0)
+  const specificationSaveRequestRef = useRef(0)
   const invoices = order?.SupplyInvoices || []
   const canDownload = hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) && Boolean(packingList && (packingList.Id || 0) > 0)
   const canEditSpecification = hasPermission(PERMISSION_EDIT_SPECIFICATION)
@@ -234,65 +240,151 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   }, [selectedPackListNetId, t])
 
   function selectInvoice(invoice: SupplyInvoice) {
+    if (isUploading || isSavingDocuments || isDownloading || isSavingSpecification) {
+      return
+    }
+
+    uploadRequestRef.current += 1
+    documentsSaveRequestRef.current += 1
+    downloadRequestRef.current += 1
+    specificationSaveRequestRef.current += 1
+    setUploading(false)
+    setSavingDocuments(false)
+    setDownloading(false)
+    setSavingSpecification(false)
     setSelectedInvoiceNetId(invoice.NetUid || null)
   }
 
   function selectPackList(packList: { NetUid?: string }) {
+    if (isUploading || isSavingDocuments || isDownloading || isSavingSpecification) {
+      return
+    }
+
+    uploadRequestRef.current += 1
+    downloadRequestRef.current += 1
+    specificationSaveRequestRef.current += 1
+    setUploading(false)
+    setDownloading(false)
+    setSavingSpecification(false)
     setSelectedPackListNetId(packList.NetUid || null)
   }
 
   async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
-    if (!selectedInvoice?.NetUid) {
+    const invoiceNetId = selectedInvoice?.NetUid
+    const packListNetId = selectedPackListNetId
+
+    if (!invoiceNetId || isUploading) {
       return
     }
+
+    const requestId = uploadRequestRef.current + 1
+    uploadRequestRef.current = requestId
+    const isCurrentUpload = () => uploadRequestRef.current === requestId
 
     setUploading(true)
 
     try {
-      const result = await uploadProductSpecificationForInvoice(selectedInvoice.NetUid, parseConfiguration, file)
-      setUploadOpen(false)
-      setUploadResult(result)
+      const result = await uploadProductSpecificationForInvoice(invoiceNetId, parseConfiguration, file)
 
-      if (selectedPackListNetId) {
-        setPackingList(await getPackingListSpecificationProducts(selectedPackListNetId))
+      if (isCurrentUpload()) {
+        setUploadOpen(false)
+        setUploadResult(result)
+
+        if (packListNetId) {
+          const nextPackingList = await getPackingListSpecificationProducts(packListNetId)
+
+          if (isCurrentUpload()) {
+            setPackingList(nextPackingList)
+          }
+        }
       }
     } catch (uploadError) {
-      notifications.show({
-        color: 'red',
-        message: uploadError instanceof Error ? uploadError.message : t('Не вдалося виконати запит'),
-      })
+      if (isCurrentUpload()) {
+        notifications.show({
+          color: 'red',
+          message: uploadError instanceof Error ? uploadError.message : t('Не вдалося виконати запит'),
+        })
+      }
     } finally {
-      setUploading(false)
+      if (isCurrentUpload()) {
+        setUploading(false)
+      }
     }
   }
 
   function openDocuments() {
-    if (!selectedInvoice) {
+    if (!selectedInvoice || isSavingDocuments) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
       return
     }
 
     setNumberCustomDeclaration(selectedInvoice.NumberCustomDeclaration || '')
-    setDateCustomDeclaration(
-      selectedInvoice.DateCustomDeclaration
-        ? formatLocalDate(new Date(selectedInvoice.DateCustomDeclaration))
-        : formatLocalDate(new Date()),
-    )
+    setDateCustomDeclaration(getInvoiceCustomDeclarationDate(selectedInvoice))
     setExistingDocuments(
       (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => ({
         contentType: document.ContentType || '',
-        deleted: false,
+        deleted: Boolean(document.Deleted),
         documentUrl: document.DocumentUrl || '',
         file: null,
         fileName: document.FileName || '',
-        id: document.Id || index,
+        id: getDeliveryDocumentDraftId(document, index),
       })),
     )
     setNewDocuments([])
     setDocumentsOpen(true)
+    setDocumentsCloseConfirmOpen(false)
+  }
+
+  function hasDeliveryDocumentDraftChanges(): boolean {
+    const sourceDocuments = selectedInvoice?.SupplyInvoiceDeliveryDocuments || []
+
+    if (!selectedInvoice) {
+      return (
+        newDocuments.length > 0 ||
+        existingDocuments.some((document) => document.deleted) ||
+        Boolean(numberCustomDeclaration || dateCustomDeclaration)
+      )
+    }
+
+    return (
+      newDocuments.length > 0 ||
+      existingDocuments.some((document, index) => {
+        const sourceDocument = sourceDocuments.find(
+          (source, sourceIndex) => getDeliveryDocumentDraftId(source, sourceIndex) === document.id,
+        ) || sourceDocuments[index]
+
+        return Boolean(document.deleted) !== Boolean(sourceDocument?.Deleted)
+      }) ||
+      numberCustomDeclaration !== (selectedInvoice.NumberCustomDeclaration || '') ||
+      dateCustomDeclaration !== getInvoiceCustomDeclarationDate(selectedInvoice)
+    )
+  }
+
+  function requestCloseDocuments() {
+    if (isSavingDocuments) {
+      return
+    }
+
+    if (hasDeliveryDocumentDraftChanges()) {
+      setDocumentsCloseConfirmOpen(true)
+      return
+    }
+
+    closeDocumentsDraft()
+  }
+
+  function closeDocumentsDraft() {
+    setDocumentsCloseConfirmOpen(false)
+    setDocumentsOpen(false)
+    setNewDocuments([])
+    setExistingDocuments([])
   }
 
   function addDocumentFiles(files: File[]) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((current) => {
       const startId = current.length > 0 ? current[current.length - 1].id + 1 : 0
 
@@ -300,13 +392,14 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         ...current,
         ...files.map((file, index) => {
           const fileInfo = file.name.split('.')
+          const contentType = fileInfo.length > 1 ? fileInfo.pop() || '' : ''
 
           return {
-            contentType: fileInfo[1] || '',
+            contentType,
             deleted: false,
             documentUrl: '',
             file,
-            fileName: fileInfo[0] || file.name,
+            fileName: fileInfo.join('.') || file.name,
             id: startId + index,
           }
         }),
@@ -315,29 +408,48 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   }
 
   function removeNewDocument(document: DeliveryDocumentDraft) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((current) => current.filter((item) => item.id !== document.id))
   }
 
   function removeExistingDocument(document: DeliveryDocumentDraft) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setExistingDocuments((current) =>
       current.map((item) => (item.id === document.id ? { ...item, deleted: !item.deleted } : item)),
     )
   }
 
   async function saveDocuments() {
-    if (!selectedInvoice?.NetUid) {
+    const invoice = selectedInvoice
+
+    if (!invoice?.NetUid || isSavingDocuments) {
       return
     }
+
+    if (dateCustomDeclaration && !isValidDateInputValue(dateCustomDeclaration)) {
+      notifications.show({ color: 'yellow', message: t('Вкажіть коректну дату митної декларації') })
+      return
+    }
+
+    const requestId = documentsSaveRequestRef.current + 1
+    documentsSaveRequestRef.current = requestId
+    const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
 
     setSavingDocuments(true)
 
     try {
       const invoicePayload: SpecificationSupplyInvoice = {
-        ...(selectedInvoice as unknown as SpecificationSupplyInvoice),
-        DateCustomDeclaration: dateCustomDeclaration ? new Date(dateCustomDeclaration).toISOString() : undefined,
+        ...(invoice as unknown as SpecificationSupplyInvoice),
+        DateCustomDeclaration: dateCustomDeclaration ? formatLocalInputDateTime(dateCustomDeclaration) : formatLocalInputDateTime(),
         NumberCustomDeclaration: numberCustomDeclaration,
-        SupplyInvoiceDeliveryDocuments: (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).map((document) => {
-          const draft = existingDocuments.find((item) => item.id === document.Id)
+        SupplyInvoiceDeliveryDocuments: (invoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => {
+          const draft = existingDocuments.find((item) => item.id === getDeliveryDocumentDraftId(document, index))
 
           return draft ? { ...document, Deleted: draft.deleted } : document
         }),
@@ -345,25 +457,37 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
       const files = newDocuments.map((document) => document.file).filter((file): file is File => Boolean(file))
 
       await addDeliveryDocumentsToInvoice(invoicePayload, files)
-      setDocumentsOpen(false)
-      setNewDocuments([])
-      setExistingDocuments([])
-      setSelectedInvoice(await getSupplyInvoiceItems(selectedInvoice.NetUid))
-      notifications.show({ color: 'green', message: t('Документи збережено') })
+      const updatedInvoice = await getSupplyInvoiceItems(invoice.NetUid)
+
+      if (isCurrentDocumentsSave()) {
+        closeDocumentsDraft()
+        setSelectedInvoice(updatedInvoice)
+        notifications.show({ color: 'green', message: t('Документи збережено') })
+      }
     } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
-      })
+      if (isCurrentDocumentsSave()) {
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
+        })
+      }
     } finally {
-      setSavingDocuments(false)
+      if (isCurrentDocumentsSave()) {
+        setSavingDocuments(false)
+      }
     }
   }
 
   async function openDownload() {
-    if (!selectedPackListNetId) {
+    const packListNetId = selectedPackListNetId
+
+    if (!packListNetId || isDownloading) {
       return
     }
+
+    const requestId = downloadRequestRef.current + 1
+    downloadRequestRef.current = requestId
+    const isCurrentDownload = () => downloadRequestRef.current === requestId
 
     setDownloadOpen(true)
     setDownloadDocument(null)
@@ -371,38 +495,67 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
     setDownloading(true)
 
     try {
-      setDownloadDocument(await getSpecificationDownloadUrls(selectedPackListNetId))
+      const document = await getSpecificationDownloadUrls(packListNetId)
+
+      if (isCurrentDownload()) {
+        setDownloadDocument(document)
+      }
     } catch (downloadFetchError) {
-      setDownloadError(downloadFetchError instanceof Error ? downloadFetchError.message : t('Документ недоступний для завантаження'))
+      if (isCurrentDownload()) {
+        setDownloadError(downloadFetchError instanceof Error ? downloadFetchError.message : t('Документ недоступний для завантаження'))
+      }
     } finally {
-      setDownloading(false)
+      if (isCurrentDownload()) {
+        setDownloading(false)
+      }
     }
   }
 
   async function saveSpecification(payload: ProductSpecificationSubmitPayload) {
-    if (!selectedInvoiceNetId) {
+    const invoiceNetId = selectedInvoiceNetId
+    const packListNetId = selectedPackListNetId
+
+    if (isSavingSpecification) {
+      return
+    }
+
+    if (!invoiceNetId) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
       return
     }
 
+    const requestId = specificationSaveRequestRef.current + 1
+    specificationSaveRequestRef.current = requestId
+    const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
+
     setSavingSpecification(true)
 
     try {
-      await addOrUpdateProductSpecification(selectedInvoiceNetId, payload)
+      await addOrUpdateProductSpecification(invoiceNetId, payload)
 
-      if (selectedPackListNetId) {
-        setPackingList(await getPackingListSpecificationProducts(selectedPackListNetId))
+      if (packListNetId) {
+        const nextPackingList = await getPackingListSpecificationProducts(packListNetId)
+
+        if (isCurrentSpecificationSave()) {
+          setPackingList(nextPackingList)
+        }
       }
 
-      setEditingSpecificationItem(null)
-      notifications.show({ color: 'green', message: t('Зміни збережено') })
+      if (isCurrentSpecificationSave()) {
+        setEditingSpecificationItem(null)
+        notifications.show({ color: 'green', message: t('Зміни збережено') })
+      }
     } catch (saveError) {
-      notifications.show({
-        color: 'red',
-        message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
-      })
+      if (isCurrentSpecificationSave()) {
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося змінити митний код'),
+        })
+      }
     } finally {
-      setSavingSpecification(false)
+      if (isCurrentSpecificationSave()) {
+        setSavingSpecification(false)
+      }
     }
   }
 
@@ -457,8 +610,9 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
             <Group justify="flex-end" gap="xs">
-              {canUploadSpecifications && (
+	              {canUploadSpecifications && (
                 <Button
+                  disabled={isUploading || isSavingDocuments || isSavingSpecification}
                   leftSection={<IconFileImport size={16} />}
                   variant="light"
                   onClick={() => setUploadOpen(true)}
@@ -466,9 +620,9 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
                   {t('Завантаження митних кодів')}
                 </Button>
               )}
-              {canUploadDocuments && (
+	              {canUploadDocuments && (
                 <Button
-                  disabled={!selectedInvoice}
+                  disabled={!selectedInvoice || isSavingDocuments || isUploading || isSavingSpecification}
                   leftSection={<IconFileImport size={16} />}
                   variant="light"
                   onClick={openDocuments}
@@ -476,9 +630,11 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
                   {t('Завантаження документів доставки')}
                 </Button>
               )}
-              {canDownload && (
+	              {canDownload && (
                 <Button
+                  disabled={isDownloading || isSavingDocuments || isUploading || isSavingSpecification}
                   leftSection={<IconDownload size={16} />}
+                  loading={isDownloading}
                   variant="light"
                   onClick={openDownload}
                 >
@@ -489,10 +645,11 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
 
             <Group gap="xs" wrap="wrap">
               {invoices.map((invoice) => (
-                <Button
-                  key={invoice.NetUid || invoice.Id}
-                  color={invoice.NetUid === selectedInvoiceNetId ? 'violet' : 'gray'}
-                  loading={isInvoiceLoading && invoice.NetUid === selectedInvoiceNetId}
+	                <Button
+	                  key={invoice.NetUid || invoice.Id}
+	                  color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
+	                  disabled={isUploading || isSavingDocuments || isDownloading || isSavingSpecification}
+	                  loading={isInvoiceLoading && invoice.NetUid === selectedInvoiceNetId}
                   variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
                   onClick={() => selectInvoice(invoice)}
                 >
@@ -504,10 +661,11 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
             {selectedInvoice && (selectedInvoice.PackingLists?.length || 0) > 0 && (
               <Group gap="xs" wrap="wrap">
                 {(selectedInvoice.PackingLists || []).map((packList) => (
-                  <Button
-                    key={packList.NetUid || packList.Id}
-                    color={packList.NetUid === selectedPackListNetId ? 'violet' : 'gray'}
-                    size="xs"
+	                  <Button
+	                    key={packList.NetUid || packList.Id}
+	                    color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
+	                    disabled={isUploading || isSavingDocuments || isDownloading || isSavingSpecification}
+	                    size="xs"
                     variant={packList.NetUid === selectedPackListNetId ? 'outline' : 'subtle'}
                     onClick={() => selectPackList(packList)}
                   >
@@ -564,9 +722,13 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
       )}
 
       <UploadProductSpecificationModal
-        isLoading={isUploading}
+	        isLoading={isUploading}
         opened={isUploadOpen}
-        onClose={() => setUploadOpen(false)}
+        onClose={() => {
+          if (!isUploading) {
+            setUploadOpen(false)
+          }
+        }}
         onSubmit={submitUpload}
       />
       <UploadProductSpecificationResultModal result={uploadResult} onClose={() => setUploadResult(null)} />
@@ -580,11 +742,33 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         onAddFiles={addDocumentFiles}
         onChangeDateCustomDeclaration={setDateCustomDeclaration}
         onChangeNumberCustomDeclaration={setNumberCustomDeclaration}
-        onClose={() => setDocumentsOpen(false)}
+        onClose={requestCloseDocuments}
         onRemoveExistingDocument={removeExistingDocument}
         onRemoveNewDocument={removeNewDocument}
         onSave={saveDocuments}
       />
+      <AppModal
+        centered
+        opened={isDocumentsCloseConfirmOpen}
+        title={t('Є незбережені зміни')}
+        onClose={() => {
+          if (!isSavingDocuments) {
+            setDocumentsCloseConfirmOpen(false)
+          }
+        }}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSavingDocuments} variant="light" onClick={() => setDocumentsCloseConfirmOpen(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" disabled={isSavingDocuments} onClick={closeDocumentsDraft}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
       <SpecificationDownloadModal
         document={downloadDocument}
         error={downloadError}
@@ -601,6 +785,26 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
       />
     </Stack>
   )
+}
+
+function getDeliveryDocumentDraftId(document: SupplyInvoiceDeliveryDocument, index: number): number {
+  return document.Id ?? index
+}
+
+function getInvoiceCustomDeclarationDate(invoice: SupplyInvoice): string {
+  return invoice.DateCustomDeclaration
+    ? formatLocalDate(new Date(invoice.DateCustomDeclaration))
+    : formatLocalDate(new Date())
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function filterPackingListByVendorCode(

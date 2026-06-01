@@ -8,7 +8,6 @@ import type {
   ProductSubGroup,
   ProductSubGroupsWithTotal,
 } from '../types'
-import { getEmptyGuid } from '../utils'
 
 type ListKey = 'ProductGroups' | 'ProductProductGroups' | 'ProductSubGroups'
 
@@ -40,7 +39,7 @@ export async function getProductGroupWithRoot(netId: string): Promise<ProductGro
 export async function getRootProductGroups(netId?: string): Promise<ProductGroup[]> {
   const result = await apiRequest<unknown>('/products/groups/root/groups/get', {
     query: {
-      netId: netId || getEmptyGuid(),
+      netId: netId || undefined,
     },
   })
 

@@ -248,6 +248,7 @@ export function TaxFreeCarrierFormPage() {
             </SimpleGrid>
 
             <PassportsSection
+              canAdd={!isEditMode || !passports.some(isUnsavedPassport)}
               disabled={isLoading || isSaving}
               passports={passports}
               onAdd={openNewPassport}
@@ -278,12 +279,14 @@ export function TaxFreeCarrierFormPage() {
 }
 
 function PassportsSection({
+  canAdd,
   disabled,
   passports,
   onAdd,
   onEdit,
   onRemove,
 }: {
+  canAdd: boolean
   disabled: boolean
   passports: TaxFreeCarrierPassport[]
   onAdd: () => void
@@ -299,17 +302,19 @@ function PassportsSection({
           <IconId size={18} />
           <Text fw={700}>{t('Новий Паспорт')}</Text>
         </Group>
-        <Button
-          color="gray"
-          disabled={disabled}
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          type="button"
-          variant="light"
-          onClick={onAdd}
-        >
-          {t('Новий Паспорт')}
-        </Button>
+        {canAdd && (
+          <Button
+            color="gray"
+            disabled={disabled}
+            leftSection={<IconPlus size={16} />}
+            size="xs"
+            type="button"
+            variant="light"
+            onClick={onAdd}
+          >
+            {t('Новий Паспорт')}
+          </Button>
+        )}
       </Group>
 
       {passports.length === 0 ? (
@@ -428,6 +433,10 @@ function CarsSection({
       )}
     </Stack>
   )
+}
+
+function isUnsavedPassport(passport: TaxFreeCarrierPassport): boolean {
+  return !passport.NetUid && !passport.Id
 }
 
 function createEmptyCarrier(): TaxFreeCarrier {

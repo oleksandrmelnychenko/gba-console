@@ -114,6 +114,7 @@ export function ActReconciliationActionsModal({
           fromDate: values.fromDate,
           itemNetId: target.item.NetUid || '',
           qty: values.qty,
+          reason: values.reason,
           rowNumber: values.rowNumber,
           storageNetId: values.storageNetId,
           storageNumber: values.storageNumber,

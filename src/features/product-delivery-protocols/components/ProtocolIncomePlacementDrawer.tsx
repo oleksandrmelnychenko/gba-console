@@ -81,12 +81,12 @@ function completePlacementsToRowQty(
   ]
 }
 
-function placementKey(placement: DynamicProductPlacement): string {
-  return String(
-    placement.NetUid
-      || placement.Id
-      || `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}`,
-  )
+function placementKey(placement: DynamicProductPlacement, index: number): string {
+  if (placement.NetUid || placement.Id) {
+    return String(placement.NetUid || placement.Id)
+  }
+
+  return `${placement.StorageNumber || 'N'}-${placement.RowNumber || 'N'}-${placement.CellNumber || 'N'}-${placement.Qty || 0}-${index}`
 }
 
 export function ProtocolIncomePlacementDrawer({
@@ -299,17 +299,48 @@ function ProtocolIncomePlacementDrawerContent({
           {`${t('Доступна К-сть')} ${Math.max(rowQty - placedQty, 0)}`}
         </Text>
 
-        <DataTable
-          columns={placementColumns}
-          data={placements}
-          emptyText={t('Немає розміщень')}
-          getRowId={(placement) => placementKey(placement)}
-          maxHeight="calc(100vh - 320px)"
-          minWidth={560}
-          rowClassName={(placement) => (placement.IsApplied ? 'placement-row-applied' : undefined)}
-          tableId="protocol-income-placements"
-          onRowClick={(placement) => !placement.IsApplied && openDraft(placement)}
-        />
+        <Table withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>#</Table.Th>
+              <Table.Th>{t('Склад')}</Table.Th>
+              <Table.Th>{t('Ряд')}</Table.Th>
+              <Table.Th>{t('Полиця')}</Table.Th>
+              <Table.Th>{t('К-сть')}</Table.Th>
+              <Table.Th />
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>
+            {placements.map((placement, index) => (
+              <Table.Tr
+                key={placementKey(placement, index)}
+                style={{ cursor: placement.IsApplied ? 'default' : 'pointer' }}
+                onClick={() => !placement.IsApplied && openDraft(placement)}
+              >
+                <Table.Td>{index + 1}</Table.Td>
+                <Table.Td>{placement.StorageNumber}</Table.Td>
+                <Table.Td>{placement.RowNumber}</Table.Td>
+                <Table.Td>{placement.CellNumber}</Table.Td>
+                <Table.Td>{placement.Qty}</Table.Td>
+                <Table.Td>
+                  {!placement.IsApplied && (
+                    <ActionIcon
+                      aria-label={t('Видалити')}
+                      color="red"
+                      variant="subtle"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        removePlacement(placement)
+                      }}
+                    >
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  )}
+                </Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
 
         {!draft && (
           <Group>

@@ -79,10 +79,22 @@ type ServiceCollectionKey =
   | 'VehicleDeliveryServices'
   | 'VehicleServices'
 
+type OrganizationSearchState = {
+  error: string | null
+  isLoading: boolean
+  suggestions: ServiceOrganization[]
+}
+
+const EMPTY_ORGANIZATION_SEARCH_STATE: OrganizationSearchState = {
+  error: null,
+  isLoading: false,
+  suggestions: [],
+}
+
 export function OrganisationServicesPage() {
   const { t } = useI18n()
   const [organizationSearch, setOrganizationSearch] = useValueState('')
-  const [organizationSuggestions, setOrganizationSuggestions] = useValueState<ServiceOrganization[]>([])
+  const [organizationSearchState, setOrganizationSearchState] = useValueState<OrganizationSearchState>(EMPTY_ORGANIZATION_SEARCH_STATE)
   const [selectedOrganization, setSelectedOrganization] = useValueState<ServiceOrganization | null>(null)
   const [selectedServiceTypes, setSelectedServiceTypes] = useValueState<string[]>([])
   const [documentFilters, setDocumentFilters] = useValueState<DocumentFilter[]>([])
@@ -91,7 +103,6 @@ export function OrganisationServicesPage() {
   const [paymentTasks, setPaymentTasks] = useValueState<OrganizationPaymentTasks>(createEmptyPaymentTasks)
   const [lastSearchParams, setLastSearchParams] = useValueState<OrganizationPaymentTasksParams | null>(null)
   const [error, setError] = useValueState<string | null>(null)
-  const [isSearchingOrganizations, setSearchingOrganizations] = useValueState(false)
   const [isLoadingTasks, setLoadingTasks] = useValueState(false)
   const paymentTasksRequestRef = useRef(0)
   const availableServiceOptions = useMemo(
@@ -103,6 +114,7 @@ export function OrganisationServicesPage() {
     [documentFilters, paymentTasks.SupplyPaymentTasks],
   )
   const columns = useOrganisationServicesColumns()
+  const visibleError = organizationSearchState.error || error
   const loadPaymentTasks = useCallback(
     async (params: OrganizationPaymentTasksParams) => {
       const requestId = paymentTasksRequestRef.current + 1
@@ -163,28 +175,31 @@ export function OrganisationServicesPage() {
 
   useEffect(() => {
     if (selectedOrganization || organizationSearch.trim().length < 2) {
-      setOrganizationSuggestions([])
-      setSearchingOrganizations(false)
+      setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
       return
     }
 
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
-      setSearchingOrganizations(true)
+      setOrganizationSearchState((current) => ({
+        ...current,
+        error: null,
+        isLoading: true,
+      }))
 
       searchServiceOrganizations(organizationSearch, controller.signal)
         .then((organizations) => {
-          setOrganizationSuggestions(organizations)
+          if (!controller.signal.aborted) {
+            setOrganizationSearchState({ error: null, isLoading: false, suggestions: organizations })
+          }
         })
         .catch((searchError) => {
           if (!controller.signal.aborted) {
-            setOrganizationSuggestions([])
-            setError(searchError instanceof Error ? searchError.message : t('Не вдалося знайти організації'))
-          }
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) {
-            setSearchingOrganizations(false)
+            setOrganizationSearchState({
+              error: searchError instanceof Error ? searchError.message : t('Не вдалося знайти організації'),
+              isLoading: false,
+              suggestions: [],
+            })
           }
         })
     }, 250)
@@ -196,9 +211,7 @@ export function OrganisationServicesPage() {
   }, [
     organizationSearch,
     selectedOrganization,
-    setError,
-    setOrganizationSuggestions,
-    setSearchingOrganizations,
+    setOrganizationSearchState,
     t,
   ])
 
@@ -210,7 +223,7 @@ export function OrganisationServicesPage() {
     setSelectedOrganization(organization)
     setOrganizationSearch(organization.Name || '')
     setSelectedServiceTypes(serviceTypes.map(String))
-    setOrganizationSuggestions([])
+    setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
   }
@@ -220,7 +233,7 @@ export function OrganisationServicesPage() {
     setSelectedOrganization(null)
     setOrganizationSearch('')
     setSelectedServiceTypes([])
-    setOrganizationSuggestions([])
+    setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
     setLoadingTasks(false)
@@ -274,8 +287,8 @@ export function OrganisationServicesPage() {
           <Stack gap="md">
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <OrganisationSearchControl
-                isLoading={isSearchingOrganizations}
-                organizations={organizationSuggestions}
+                isLoading={organizationSearchState.isLoading}
+                organizations={organizationSearchState.suggestions}
                 selectedOrganization={selectedOrganization}
                 value={organizationSearch}
                 onChange={updateOrganizationSearch}
@@ -345,9 +358,9 @@ export function OrganisationServicesPage() {
         </form>
       </Card>
 
-      {error && (
+      {visibleError && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
+          {visibleError}
         </Alert>
       )}
 
@@ -646,7 +659,7 @@ function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (va
   }
 
   if (status === 0) {
-    return t('Не виконано')
+    return t('Не завершено')
   }
 
   if (status === 1) {
@@ -654,7 +667,7 @@ function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (va
   }
 
   if (status === 2) {
-    return t('Частково оплачено')
+    return t('Оплачено частково')
   }
 
   return t('Немає статусу')

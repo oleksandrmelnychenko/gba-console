@@ -165,6 +165,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: assignError instanceof Error ? assignError.message : t('Не вдалося виконати запит'),
       })
+      throw assignError
     } finally {
       setAssigning(false)
     }
@@ -184,6 +185,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
       })
+      throw saveError
     } finally {
       setSavingInvoiceDocuments(false)
     }
@@ -207,6 +209,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'),
       })
+      throw saveError
     } finally {
       setSavingService(false)
     }
@@ -229,6 +232,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: calculateError instanceof Error ? calculateError.message : t('Не вдалося виконати запит'),
       })
+      throw calculateError
     } finally {
       setSavingService(false)
     }
@@ -248,6 +252,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: assignError instanceof Error ? assignError.message : t('Не вдалося виконати запит'),
       })
+      throw assignError
     } finally {
       setSavingService(false)
     }
@@ -271,6 +276,7 @@ function useLogisticPathModel(netId: string | undefined) {
         color: 'red',
         message: removeError instanceof Error ? removeError.message : t('Не вдалося виконати запит'),
       })
+      throw removeError
     } finally {
       setSavingService(false)
     }

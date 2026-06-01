@@ -49,6 +49,10 @@ export function ProductCapitalizationUploadModal({
   const [validationError, setValidationError] = useValueState<string | null>(null)
 
   function submitForm() {
+    if (isSubmitting) {
+      return
+    }
+
     const parseConfiguration = toParseConfiguration(form)
 
     if (!form.file || !parseConfiguration) {
@@ -61,11 +65,20 @@ export function ProductCapitalizationUploadModal({
       return
     }
 
+    if (hasDuplicateColumns(parseConfiguration)) {
+      setValidationError(t('Колонки імпорту не можуть повторюватися'))
+      return
+    }
+
     setValidationError(null)
     onSubmit(form.file, parseConfiguration)
   }
 
   function closeModal() {
+    if (isSubmitting) {
+      return
+    }
+
     setForm(EMPTY_FORM)
     setValidationError(null)
     onClose()
@@ -175,7 +188,7 @@ export function ProductCapitalizationUploadModal({
           <Button disabled={isSubmitting} variant="subtle" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isSubmitting} onClick={submitForm}>
+          <Button disabled={isSubmitting} leftSection={<IconUpload size={16} />} loading={isSubmitting} onClick={submitForm}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -185,7 +198,7 @@ export function ProductCapitalizationUploadModal({
 }
 
 function toParseConfiguration(form: UploadForm): ProductCapitalizationParseConfiguration | null {
-  if (!form.startRow || !form.endRow || !form.vendorCodeColumnNumber || !form.qtyColumnNumber) {
+  if (!form.startRow || !form.endRow || !form.vendorCodeColumnNumber || !form.qtyColumnNumber || !form.priceColumnNumber) {
     return null
   }
 
@@ -204,6 +217,20 @@ function toParseConfiguration(form: UploadForm): ProductCapitalizationParseConfi
     WithPrice: priceColumnNumber > 0,
     WithWeight: weightColumnNumber > 0,
   }
+}
+
+function hasDuplicateColumns(parseConfiguration: ProductCapitalizationParseConfiguration): boolean {
+  const columns = [
+    parseConfiguration.PriceColumnNumber,
+    parseConfiguration.QtyColumnNumber,
+    parseConfiguration.VendorCodeColumnNumber,
+  ]
+
+  if (parseConfiguration.WeightColumnNumber > 0) {
+    columns.push(parseConfiguration.WeightColumnNumber)
+  }
+
+  return new Set(columns).size !== columns.length
 }
 
 function toPositiveNumber(value: number | string): number | '' {

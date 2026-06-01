@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { PlacementStorage, PlacementSupplyOrder } from '../placementsTypes'
+import type { PlacementProduct, PlacementStorage, PlacementSupplyOrder } from '../placementsTypes'
 
 function normalizeOrder(result: unknown): PlacementSupplyOrder {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
@@ -30,6 +30,38 @@ export async function updateSupplyOrderUkraine(order: PlacementSupplyOrder): Pro
   })
 
   return normalizeOrder(result)
+}
+
+export async function createProductIncomeFromDynamicPlacements(
+  order: PlacementSupplyOrder,
+  fromDate: string,
+  storageNetId: string,
+): Promise<void> {
+  await apiRequest<unknown>('/products/incomes/new/supply/ukraine/dynamic', {
+    method: 'POST',
+    query: { fromDate, storageNetId },
+    body: order,
+  })
+}
+
+export async function searchPlacementProducts(value: string): Promise<PlacementProduct[]> {
+  const result = await apiRequest<unknown>('/products/search/vendorcode', {
+    query: { limit: 20, offset: 0, value: value.trim() },
+  })
+
+  if (Array.isArray(result)) {
+    return result as PlacementProduct[]
+  }
+
+  if (result && typeof result === 'object') {
+    const payload = result as Record<string, unknown>
+
+    if (Array.isArray(payload.Items)) {
+      return payload.Items as PlacementProduct[]
+    }
+  }
+
+  return []
 }
 
 export async function getNonDefectiveStorages(): Promise<PlacementStorage[]> {

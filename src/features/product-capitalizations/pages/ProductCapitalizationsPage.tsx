@@ -34,6 +34,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportProductCapitalization,
   getProductCapitalization,
@@ -147,6 +148,7 @@ function useProductCapitalizationsPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [createPanelOpened, setCreatePanelOpened] = useValueState(false)
   const detailRequestRef = useRef(0)
+  const exportRequestRef = useRef(0)
   const { capitalizations, hasNextPage, isLoading, total } = listState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
@@ -165,8 +167,12 @@ function useProductCapitalizationsPageModel() {
     try {
       const detailedCapitalization = await getProductCapitalization(capitalization.NetUid)
 
-      if (detailRequestRef.current === requestId && detailedCapitalization) {
-        setSelectedCapitalization(detailedCapitalization)
+      if (detailRequestRef.current === requestId) {
+        if (detailedCapitalization) {
+          setSelectedCapitalization(detailedCapitalization)
+        } else {
+          setDetailError(t('Оприбуткування не знайдено або видалено'))
+        }
       }
     } catch (loadError) {
       if (detailRequestRef.current === requestId) {
@@ -185,9 +191,13 @@ function useProductCapitalizationsPageModel() {
     setDetailLoading(false)
   }, [setDetailError, setDetailLoading, setSelectedCapitalization])
   const handleExport = useCallback(async (capitalization: ProductCapitalization) => {
-    if (!capitalization.NetUid) {
+    if (!capitalization.NetUid || exportingNetId) {
       return
     }
+
+    const requestId = exportRequestRef.current + 1
+    exportRequestRef.current = requestId
+    const isCurrentExport = () => exportRequestRef.current === requestId
 
     setExportingNetId(capitalization.NetUid)
     setError(null)
@@ -196,20 +206,35 @@ function useProductCapitalizationsPageModel() {
     try {
       const document = await exportProductCapitalization(capitalization.NetUid)
 
-      setDownloadDocument(document)
-      setDownloadModalOpened(true)
+      if (isCurrentExport()) {
+        setDownloadDocument(document)
+        setDownloadModalOpened(true)
+      }
     } catch (exportError) {
-      const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування')
+      if (isCurrentExport()) {
+        const message = exportError instanceof Error ? exportError.message : t('Не вдалося сформувати експорт оприбуткування')
 
-      if (selectedCapitalization?.NetUid === capitalization.NetUid) {
-        setDetailError(message)
-      } else {
-        setError(message)
+        if (selectedCapitalization?.NetUid === capitalization.NetUid) {
+          setDetailError(message)
+        } else {
+          setError(message)
+        }
       }
     } finally {
-      setExportingNetId(null)
+      if (isCurrentExport()) {
+        setExportingNetId(null)
+      }
     }
-  }, [selectedCapitalization?.NetUid, setDetailError, setDownloadDocument, setDownloadModalOpened, setError, setExportingNetId, t])
+  }, [
+    exportingNetId,
+    selectedCapitalization?.NetUid,
+    setDetailError,
+    setDownloadDocument,
+    setDownloadModalOpened,
+    setError,
+    setExportingNetId,
+    t,
+  ])
   const columns = useProductCapitalizationColumns(capitalizations, openDetail, handleExport, exportingNetId)
   const detailItems = useMemo(
     () => selectedCapitalization?.ProductCapitalizationItems || [],
@@ -371,6 +396,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
           <ActionIcon
             aria-label={t('Оновити')}
             color="gray"
+            disabled={isLoading}
             loading={isLoading}
             size={38}
             variant="light"
@@ -502,7 +528,12 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
           {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
             <>
               {downloadDocument.DocumentURL && (
-                <Anchor href={downloadDocument.DocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-excel">
                     <ExcelIcon size={22} />
                   </span>
@@ -510,7 +541,12 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 </Anchor>
               )}
               {downloadDocument.PdfDocumentURL && (
-                <Anchor href={downloadDocument.PdfDocumentURL} target="_blank" rel="noreferrer" className="document-link">
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
                   <span className="document-link-badge document-link-badge-pdf">
                     <IconFileTypePdf size={22} stroke={1.8} />
                   </span>
@@ -570,7 +606,7 @@ function ProductCapitalizationDetailDrawer({
             </Text>
             <Button
               color="gray"
-              disabled={!capitalization.NetUid}
+              disabled={!capitalization.NetUid || Boolean(exportingNetId)}
               leftSection={<IconDownload size={16} />}
               loading={exportingNetId === capitalization.NetUid}
               variant="light"
@@ -766,7 +802,7 @@ function useProductCapitalizationColumns(
                 <ActionIcon
                   aria-label="Експорт"
                   color="gray"
-                  disabled={!capitalization.NetUid}
+                  disabled={!capitalization.NetUid || Boolean(exportingNetId)}
                   loading={exportingNetId === capitalization.NetUid}
                   size="sm"
                   variant="subtle"

@@ -54,7 +54,16 @@ export function ShiftForm({
   const showPlacement = displayQtyField && Boolean(toStorage) && !toStorage?.ForDefective
 
   const qtyError = getQtyError(qty, maxAvailableQty, displayQtyField, t)
-  const canSubmit = Boolean(fromDate) && Boolean(fromStorageNetId) && Boolean(toStorageNetId) && !qtyError && !isSubmitting
+  const placementComplete =
+    !showPlacement ||
+    (Boolean(placement.storageNumber) && Boolean(placement.rowNumber) && Boolean(placement.cellNumber))
+  const canSubmit =
+    Boolean(fromDate) &&
+    Boolean(fromStorageNetId) &&
+    Boolean(toStorageNetId) &&
+    !qtyError &&
+    placementComplete &&
+    !isSubmitting
 
   function handleSubmit() {
     if (!canSubmit) {
@@ -115,7 +124,7 @@ export function ShiftForm({
             value={qty}
             onChange={(event) => setQty(event.currentTarget.value)}
           />
-          {showPlacement && <PlacementFields values={placement} onChange={setPlacement} />}
+          {showPlacement && <PlacementFields required values={placement} onChange={setPlacement} />}
         </>
       )}
       <Group justify="flex-end">

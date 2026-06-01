@@ -72,11 +72,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   timeStyle: 'short',
 })
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
-
 type SelectOption = {
   label: string
   value: string
@@ -106,6 +101,7 @@ export function IncomeCashflowsPage() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
+  const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
 
@@ -157,6 +153,20 @@ export function IncomeCashflowsPage() {
   }, [setCurrencies, setError, setLoadingLookups, setOrganizations, setPaymentRegisters, setSelectedOrganizationIds, t])
 
   const loadIncomeOrders = useCallback(async (offset: number, append: boolean) => {
+    if (filterError) {
+      requestRef.current += 1
+
+      if (!append) {
+        setIncomeOrders([])
+      }
+
+      setError(null)
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+
     const requestId = requestRef.current + 1
     requestRef.current = requestId
 
@@ -199,6 +209,7 @@ export function IncomeCashflowsPage() {
     }
   }, [
     currencyNetId,
+    filterError,
     fromDate,
     normalizedSearchValue,
     paymentRegisterNetId,
@@ -221,7 +232,7 @@ export function IncomeCashflowsPage() {
   }, [loadIncomeOrders])
 
   const resetFilters = useCallback(() => {
-    setFromDate(shiftDate(-1))
+    setFromDate(shiftDate(-7))
     setToDate(formatLocalDate(new Date()))
     setSearchValue('')
     setCurrencyNetId('')
@@ -378,6 +389,12 @@ export function IncomeCashflowsPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -1086,25 +1103,27 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 }
 
 function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCashflowRow[] {
-  return incomeOrders.map((income, index) => ({
-    amount: income.Amount,
-    comment: income.Comment,
-    currency: income.Currency?.Code || income.Currency?.Name,
-    fromDate: income.FromDate,
-    id: String(income.NetUid || income.Id || index),
-    income,
-    isAccounting: income.IsAccounting,
-    isCanceled: income.IsCanceled,
-    isManagementAccounting: income.IsManagementAccounting,
-    number: income.Number,
-    operationType: income.OperationTypeName,
-    organization: getEntityName(income.Organization),
-    payer: getIncomePayerName(income),
-    paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
-    paymentRegister: income.PaymentRegister?.Name,
-    responsible: getEntityName(income.User),
-    rootAssigned: Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length),
-  }))
+  return incomeOrders
+    .toSorted((left, right) => (right.FromDate || '').localeCompare(left.FromDate || ''))
+    .map((income, index) => ({
+      amount: income.Amount,
+      comment: income.Comment,
+      currency: income.Currency?.Code || income.Currency?.Name,
+      fromDate: income.FromDate,
+      id: String(income.NetUid || income.Id || index),
+      income,
+      isAccounting: income.IsAccounting,
+      isCanceled: income.IsCanceled,
+      isManagementAccounting: income.IsManagementAccounting,
+      number: income.Number,
+      operationType: income.OperationTypeName,
+      organization: getEntityName(income.Organization),
+      payer: getIncomePayerName(income),
+      paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
+      paymentRegister: income.PaymentRegister?.Name,
+      responsible: getEntityName(income.User),
+      rootAssigned: Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length),
+    }))
 }
 
 function getIncomePayerName(income: IncomePaymentOrder): string | undefined {
@@ -1216,6 +1235,18 @@ function shiftDate(days: number): string {
   return formatLocalDate(date)
 }
 
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
+}
+
 function formatDateTime(value?: string): string {
   if (!value) {
     return '—'
@@ -1230,8 +1261,15 @@ function formatDateTime(value?: string): string {
   return dateTimeFormatter.format(date)
 }
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 function formatMoney(value?: number): string {
-  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
+
+  return moneyFormatter.format(amount)
 }
 
 function displayValue(value?: string | number | null): string {

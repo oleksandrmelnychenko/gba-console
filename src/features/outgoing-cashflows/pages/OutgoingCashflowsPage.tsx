@@ -35,6 +35,7 @@ import {
 import type {
   AssignedIncomePaymentOrder,
   AssignedPaymentOrder,
+  ConsumablesOrder,
   Currency,
   NamedEntity,
   Organization,
@@ -99,6 +100,7 @@ export function OutgoingCashflowsPage() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
+  const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
 
@@ -141,6 +143,24 @@ export function OutgoingCashflowsPage() {
   ])
 
   const loadCashflows = useCallback(async (offset: number, append: boolean) => {
+    if (filterError) {
+      requestRef.current += 1
+
+      if (!append) {
+        setCashflows({
+          Collection: [],
+          NegativeDifferenceAmount: 0,
+          PositiveDifferenceAmount: 0,
+        })
+      }
+
+      setError(null)
+      setHasMore(false)
+      setLoading(false)
+      setLoadingMore(false)
+      return
+    }
+
     const requestId = requestRef.current + 1
     requestRef.current = requestId
 
@@ -187,6 +207,7 @@ export function OutgoingCashflowsPage() {
     }
   }, [
     currencyNetId,
+    filterError,
     fromDate,
     normalizedSearchValue,
     paymentMovementNetId,
@@ -247,7 +268,7 @@ export function OutgoingCashflowsPage() {
   ])
 
   const handleCancel = useCallback(async () => {
-    if (!cancelRow?.order.NetUid) {
+    if (!cancelRow?.order.NetUid || isCanceling) {
       return
     }
 
@@ -263,7 +284,7 @@ export function OutgoingCashflowsPage() {
     } finally {
       setCanceling(false)
     }
-  }, [cancelRow, loadCashflows, setCancelRow, setCanceling, setError, t])
+  }, [cancelRow, isCanceling, loadCashflows, setCancelRow, setCanceling, setError, t])
 
   return (
     <Stack gap="md">
@@ -358,6 +379,12 @@ export function OutgoingCashflowsPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -706,7 +733,7 @@ function PayedToCell({ row }: { row: OutgoingCashflowRow }) {
 
 function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowRow | null; onClose: () => void }) {
   const { t } = useI18n()
-  const relatedOrders = row?.order.OutcomePaymentOrderConsumablesOrders || []
+  const relatedOrders = getActiveRelatedConsumablesOrders(row?.order.OutcomePaymentOrderConsumablesOrders)
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Видатковий ордер')} onClose={onClose}>
@@ -745,7 +772,7 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
             {relatedOrders.length > 0 ? (
               relatedOrders.map((item, index) => {
                 const order = item.ConsumablesOrder
-                const itemsCount = order?.ConsumablesOrderItems?.length || 0
+                const itemsCount = getActiveConsumablesItemsCount(order)
 
                 return (
                   <SimpleGrid key={getRelatedOrderKey(row, item, index)} cols={{ base: 1, sm: 2 }}>
@@ -891,14 +918,23 @@ function CancelOutgoingCashflowModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={Boolean(row)} title={t('Скасувати видатковий ордер')} onClose={onClose}>
+    <AppModal
+      centered
+      opened={Boolean(row)}
+      title={t('Скасувати видатковий ордер')}
+      onClose={() => {
+        if (!isSaving) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="md">
         <Text>{row ? t('Ордер "{number}" буде позначено як скасований.', { number: displayValue(row.number) }) : ''}</Text>
         <Group justify="flex-end">
           <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
             {t('Закрити')}
           </Button>
-          <Button color="red" loading={isSaving} onClick={onCancel}>
+          <Button color="red" disabled={isSaving} loading={isSaving} onClick={onCancel}>
             {t('Скасувати')}
           </Button>
         </Group>
@@ -969,7 +1005,20 @@ function getEntityName(entity?: NamedEntity | null): string | undefined {
 }
 
 function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
-  return Boolean(order.RootAssignedPaymentOrder) || Boolean(order.AssignedPaymentOrders?.length)
+  return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
+    Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
+}
+
+function getActiveRelatedConsumablesOrders(
+  orders?: OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders'],
+): NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']> {
+  return (orders || []).filter(
+    (order) => !order.Deleted && getActiveConsumablesItemsCount(order.ConsumablesOrder) > 0,
+  )
+}
+
+function getActiveConsumablesItemsCount(order?: ConsumablesOrder | null): number {
+  return (order?.ConsumablesOrderItems || []).filter((item) => !item.Deleted).length
 }
 
 function getAssignedPaymentOrderKey(assignedPaymentOrder: AssignedPaymentOrder, index: number): string {
@@ -1062,6 +1111,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

@@ -16,8 +16,8 @@ describe('resolveProductCapitalizationSelection', () => {
     expect(resolveProductCapitalizationSelection(null, products, ' abc-001 ')).toBe(products[0])
   })
 
-  it('uses the single search result when the user did not pick from the dropdown', () => {
-    expect(resolveProductCapitalizationSelection(null, [products[0]], 'ABC')).toBe(products[0])
+  it('does not use a stale single search result when the query changed', () => {
+    expect(resolveProductCapitalizationSelection(null, [products[0]], 'ABC')).toBeNull()
   })
 
   it('does not guess when multiple results remain ambiguous', () => {

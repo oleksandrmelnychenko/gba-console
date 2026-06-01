@@ -51,7 +51,7 @@ function useActReconciliationViewModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const requestRef = useRef(0)
 
-  const items = useMemo(() => reconciliation?.ActReconciliationItems || [], [reconciliation])
+  const items = useMemo(() => sortByDifferenceFirst(reconciliation?.ActReconciliationItems || []), [reconciliation])
   const organizationNetId = useMemo(() => getOrganizationNetId(reconciliation), [reconciliation])
   const totals = useMemo(() => buildTotals(items), [items])
   const selectedItems = useMemo(
@@ -534,6 +534,17 @@ function getStorageQty(item: ActReconciliationItem, storageNetUid: string): numb
   )
 
   return availability?.Qty
+}
+
+function sortByDifferenceFirst(items: ActReconciliationItem[]): ActReconciliationItem[] {
+  return items
+    .map((item, index) => ({ index, item }))
+    .sort((left, right) => {
+      const difference = Number(Boolean(right.item.HasDifference)) - Number(Boolean(left.item.HasDifference))
+
+      return difference !== 0 ? difference : left.index - right.index
+    })
+    .map((entry) => entry.item)
 }
 
 function buildTotals(items: ActReconciliationItem[]) {

@@ -22,7 +22,7 @@ type NewRateDraft = {
   rates: Record<string, string>
 }
 
-const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
+const dateFormatter = new Intl.DateTimeFormat('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 type CurrencyTraderExchangeRatesViewState = {
   canEdit: boolean
@@ -181,7 +181,7 @@ export function CurrencyTraderExchangeRatesDrawer({
                           onChange={(event) => onChangeEditingValue(event.currentTarget.value)}
                         />
                       ) : (
-                        <NumberFormatter decimalScale={4} value={rate.ExchangeRate ?? 0} />
+                        <NumberFormatter decimalScale={2} fixedDecimalScale value={rate.ExchangeRate ?? 0} />
                       )}
                     </Table.Td>
                     {canEdit && (

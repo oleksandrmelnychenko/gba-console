@@ -85,7 +85,7 @@ export async function getProductStorageAvailableConsignments(params: {
     query: params,
   })
 
-  return readArrayPayload(result, ['Items', 'Consignments', 'Data']) as ProductStorageAvailableConsignment[]
+  return readArrayPayload(result, ['Items', 'Consignments', 'Data']).map(normalizeAvailableConsignment)
 }
 
 export async function createProductStorageSupplyReturn(payload: ProductStorageSupplyReturnPayload): Promise<void> {
@@ -157,6 +157,8 @@ function normalizeAvailability(availability: ProductStorageAvailability): Produc
 
   return {
     ...availability,
+    Amount: readNumber(availability.Amount) ?? undefined,
+    ChangedQty: readNumber(availability.ChangedQty) ?? undefined,
     Placements: normalizePlacements(availability.Placements),
     Product: availability.Product
       ? {
@@ -164,6 +166,8 @@ function normalizeAvailability(availability: ProductStorageAvailability): Produc
           ProductPlacements: productPlacements,
         }
       : availability.Product,
+    Qty: readNumber(availability.Qty) ?? undefined,
+    TotalRowsQty: readNumber(availability.TotalRowsQty) ?? undefined,
   }
 }
 
@@ -184,7 +188,22 @@ function readNumber(value: unknown): number | null {
 }
 
 function normalizePlacements(placements: ProductStoragePlacement[] | undefined): ProductStoragePlacement[] {
-  return Array.isArray(placements) ? placements : []
+  return Array.isArray(placements)
+    ? placements.map((placement) => ({
+        ...placement,
+        Qty: readNumber(placement.Qty) ?? undefined,
+      }))
+    : []
+}
+
+function normalizeAvailableConsignment(result: unknown): ProductStorageAvailableConsignment {
+  const consignment = (result && typeof result === 'object' ? result : {}) as ProductStorageAvailableConsignment
+
+  return {
+    ...consignment,
+    ConsignmentItemId: readNumber(consignment.ConsignmentItemId) ?? undefined,
+    RemainingQty: readNumber(consignment.RemainingQty) ?? undefined,
+  }
 }
 
 function normalizeExportDocument(result: unknown): ProductStoragesExportDocument {
@@ -195,7 +214,15 @@ function normalizeExportDocument(result: unknown): ProductStoragesExportDocument
   const payload = result as Record<string, unknown>
 
   return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
+    DocumentURL:
+      readString(payload.DocumentURL)
+      || readString(payload.XlsxDocument)
+      || readString(payload.URL)
+      || readString(payload.url),
+    PdfDocumentURL: readString(payload.PdfDocumentURL) || readString(payload.PdfDocument),
   }
+}
+
+function readString(value: unknown): string {
+  return typeof value === 'string' ? value : ''
 }

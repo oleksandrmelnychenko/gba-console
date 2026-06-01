@@ -66,11 +66,6 @@ type DetailField = {
   value: ReactNode
 }
 
-const moneyFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
-
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -545,6 +540,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           leadColumns={leadColumns}
           summary={summary}
           emptyText={t('Рухів коштів не знайдено')}
+          formatMoney={formatMoney}
           getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
           isLoading={isCashFlowLoading}
           isRowActive={(item) => item === selectedItem}
@@ -1128,11 +1124,7 @@ function formatDateTime(value: unknown): string {
 }
 
 function formatMoney(value?: number): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return '-'
-  }
-
-  return moneyFormatter.format(value)
+  return (typeof value === 'number' && Number.isFinite(value) ? value : 0).toFixed(2)
 }
 
 function formatAmount(value?: number): string {

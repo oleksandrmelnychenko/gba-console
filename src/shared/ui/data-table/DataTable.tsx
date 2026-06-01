@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Table } from '@mantine/core'
 import {
   closestCenter,
@@ -46,10 +46,13 @@ import { useI18n } from '../../i18n/useI18n'
 import type { TranslateFunction } from '../../i18n/types'
 import type {
   DataTableColumnMeta,
+  DataTableExpandColumnLabels,
   DataTableLabels,
   DataTableProps,
 } from './types'
 import './data-table.css'
+
+const EXPAND_COLUMN_WIDTH = 40
 
 export function DataTable<TData>({
   columns,
@@ -72,8 +75,32 @@ export function DataTable<TData>({
   manualSorting = false,
   sorting: controlledSorting,
   onSortingChange,
+  renderExpandedRow,
+  getRowCanExpand,
+  expandColumnLabels,
 }: DataTableProps<TData>) {
   const { t } = useI18n()
+  const isExpandable = Boolean(renderExpandedRow)
+  const expandLabels = useMemo(
+    () => createExpandColumnLabels(t, expandColumnLabels),
+    [expandColumnLabels, t],
+  )
+  const [expandedRowIds, setExpandedRowIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  )
+  const toggleExpandedRow = useCallback((rowId: string) => {
+    setExpandedRowIds((current) => {
+      const next = new Set(current)
+
+      if (next.has(rowId)) {
+        next.delete(rowId)
+      } else {
+        next.add(rowId)
+      }
+
+      return next
+    })
+  }, [])
   const labels = useMemo(
     () => ({ ...createDefaultLabels(t), ...labelsOverride }),
     [labelsOverride, t],
@@ -234,9 +261,12 @@ export function DataTable<TData>({
     }),
   )
 
+  const expandColumnWidth = isExpandable ? EXPAND_COLUMN_WIDTH : 0
   const visibleLeafColumns = table.getVisibleLeafColumns()
-  const baseTableWidth = table.getTotalSize()
-  const tableWidth = Math.ceil(Math.max(minWidth, baseTableWidth, scrollViewportWidth))
+  const baseTableWidth = table.getTotalSize() + expandColumnWidth
+  const tableWidth = Math.ceil(
+    Math.max(minWidth + expandColumnWidth, baseTableWidth, scrollViewportWidth),
+  )
   const fillColumnId = getFillColumnId(visibleLeafColumns, tableWidth, baseTableWidth)
   const fillColumnExtraWidth = fillColumnId ? tableWidth - baseTableWidth : 0
   const columnWidths = createRenderedColumnWidths(
@@ -251,6 +281,28 @@ export function DataTable<TData>({
   )
   const normalizedEmptyText = typeof emptyText === 'string' ? t(emptyText) : emptyText
   const normalizedLoadingText = typeof loadingText === 'string' ? t(loadingText) : loadingText
+
+  const expandConfig = useMemo(
+    () =>
+      renderExpandedRow
+        ? {
+            canExpandRow: (row: TData) => getRowCanExpand?.(row) ?? true,
+            collapseLabel: expandLabels.collapseRow,
+            expandLabel: expandLabels.expandRow,
+            isRowExpanded: (rowId: string) => expandedRowIds.has(rowId),
+            onToggleRow: toggleExpandedRow,
+            renderExpandedRow,
+          }
+        : undefined,
+    [
+      expandLabels.collapseRow,
+      expandLabels.expandRow,
+      expandedRowIds,
+      getRowCanExpand,
+      renderExpandedRow,
+      toggleExpandedRow,
+    ],
+  )
 
   useEffect(() => {
     writeDataTableLayout(tableId, {
@@ -306,12 +358,19 @@ export function DataTable<TData>({
           <Table
             className="data-table-table"
             highlightOnHover={false}
-            style={{ minWidth, width: tableWidth }}
+            style={{ minWidth: minWidth + expandColumnWidth, width: tableWidth }}
             withTableBorder={false}
           >
             <Table.Thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <Table.Tr key={headerGroup.id}>
+                  {isExpandable ? (
+                    <Table.Th
+                      aria-hidden
+                      className="data-table-th data-table-expand-th"
+                      style={{ width: EXPAND_COLUMN_WIDTH, minWidth: EXPAND_COLUMN_WIDTH }}
+                    />
+                  ) : null}
                   <SortableContext
                     items={normalizedLayout.columnOrder}
                     strategy={horizontalListSortingStrategy}
@@ -323,7 +382,7 @@ export function DataTable<TData>({
                         header={header}
                         isFillColumn={header.column.id === fillColumnId}
                         labels={labels}
-                        pinnedStyle={getPinnedStyle(header.column, 3)}
+                        pinnedStyle={getPinnedStyle(header.column, 3, expandColumnWidth)}
                       />
                     ))}
                   </SortableContext>
@@ -333,10 +392,12 @@ export function DataTable<TData>({
             <DataTableBody
               emptyText={normalizedEmptyText}
               columnWidths={columnWidths}
+              expand={expandConfig}
               fillColumnId={fillColumnId}
               isLoading={isLoading}
               labels={labels}
               loadingText={normalizedLoadingText}
+              pinnedLeftOffset={expandColumnWidth}
               table={table}
               visibleColumnCount={visibleColumnCount}
               onRowClick={onRowClick}
@@ -385,6 +446,16 @@ function readCompatibleDataTableLayout(tableId: string, layoutVersion?: string) 
 
 function normalizeLayoutVersion(layoutVersion?: number | string) {
   return layoutVersion === undefined ? undefined : String(layoutVersion)
+}
+
+function createExpandColumnLabels(
+  t: TranslateFunction,
+  labelsOverride?: DataTableExpandColumnLabels,
+): Required<DataTableExpandColumnLabels> {
+  return {
+    collapseRow: labelsOverride?.collapseRow ?? t('Згорнути рядок'),
+    expandRow: labelsOverride?.expandRow ?? t('Розгорнути рядок'),
+  }
 }
 
 function createDefaultLabels(t: TranslateFunction): Required<DataTableLabels> {

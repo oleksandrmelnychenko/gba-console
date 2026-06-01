@@ -27,7 +27,17 @@ export function MergeInvoicesModal({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="md" title={t("Об'єднати інвойси?")} onClose={onClose}>
+    <AppModal
+      centered
+      opened={opened}
+      size="md"
+      title={t("Об'єднати інвойси?")}
+      onClose={() => {
+        if (!isMerging) {
+          onClose()
+        }
+      }}
+    >
       <Stack gap="sm">
         {invoices.map((invoice) => {
           const netId = invoice.NetUid || ''
@@ -57,7 +67,7 @@ export function MergeInvoicesModal({
           <Button disabled={isMerging} variant="subtle" onClick={onClose}>
             {t('Ні')}
           </Button>
-          <Button disabled={selectedNetIds.length < 2} loading={isMerging} onClick={onConfirm}>
+          <Button disabled={isMerging || selectedNetIds.length < 2} loading={isMerging} onClick={onConfirm}>
             {t('Так')}
           </Button>
         </Group>

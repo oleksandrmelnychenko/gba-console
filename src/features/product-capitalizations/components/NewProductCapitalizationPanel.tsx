@@ -106,6 +106,14 @@ function fromDraftItem({ __rowKey, ...item }: DraftItem): ProductCapitalizationI
   }
 }
 
+function getCapitalizationItemVendorCode(item: ProductCapitalizationItem): string | undefined {
+  return item.Product?.VendorCode || item.ProductVendorCode
+}
+
+function isValidCapitalizationItemProduct(item: ProductCapitalizationItem): boolean {
+  return Boolean((item.ProductId || item.Product?.Id) && !item.Product?.Deleted)
+}
+
 export type NewProductCapitalizationPanelProps = {
   opened: boolean
   onClose: () => void
@@ -115,7 +123,8 @@ export type NewProductCapitalizationPanelProps = {
 export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: NewProductCapitalizationPanelProps) {
   const { t } = useI18n()
   const model = useNewProductCapitalizationModel(opened, onClose, onCreated)
-  const itemColumns = useItemColumns(model.items, model.updateItem, model.removeItem)
+  const isFormBusy = model.isSubmitting || model.isParsing
+  const itemColumns = useItemColumns(model.items, model.updateItem, model.removeItem, isFormBusy)
 
   return (
     <AppDrawer
@@ -135,11 +144,13 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
 
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
           <TextInput
+            disabled={isFormBusy}
             label={t('Коментар')}
             value={model.comment}
             onChange={(event) => model.setComment(event.currentTarget.value)}
           />
           <TextInput
+            disabled={isFormBusy}
             label={t('Дата')}
             type="datetime-local"
             value={model.fromDate}
@@ -147,6 +158,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           />
           <Select
             data={model.organizationOptions}
+            disabled={isFormBusy}
             label={t('Організація')}
             searchable
             value={model.selectedOrganizationNetId}
@@ -154,7 +166,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           />
           <Select
             data={model.storageOptions}
-            disabled={!model.selectedOrganizationNetId || model.isLoadingStorages}
+            disabled={isFormBusy || !model.selectedOrganizationNetId || model.isLoadingStorages}
             label={t('Склад')}
             placeholder={model.isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
             searchable
@@ -168,6 +180,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
         <Group align="end" gap="sm" wrap="nowrap">
           <Autocomplete
             data={model.vendorCodeOptions}
+            disabled={isFormBusy}
             label={t('Артикул')}
             style={{ flex: 1.4 }}
             value={model.vendorCodeQuery}
@@ -177,6 +190,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           <NumberInput
             allowDecimal={false}
             allowNegative={false}
+            disabled={isFormBusy}
             label={t('Кількість')}
             min={1}
             style={{ flex: 1 }}
@@ -185,6 +199,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           />
           <NumberInput
             allowNegative={false}
+            disabled={isFormBusy}
             label={t('Вага за одиницю')}
             min={0}
             style={{ flex: 1 }}
@@ -194,26 +209,28 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           <NumberInput
             allowNegative={false}
             decimalScale={2}
+            disabled={isFormBusy}
             label={t('Ціна за одиницю')}
             min={0}
             style={{ flex: 1 }}
             value={model.itemEntry.unitPrice}
             onChange={(value) => model.setItemEntry((current) => ({ ...current, unitPrice: toNumberOrEmpty(value) }))}
           />
-          <Button leftSection={<IconPlus size={16} />} mb={1} onClick={model.addItem}>
+          <Button disabled={isFormBusy} leftSection={<IconPlus size={16} />} mb={1} onClick={model.addItem}>
             {t('Додати рядок')}
           </Button>
         </Group>
 
         <Group justify="space-between">
           <Button
+            disabled={isFormBusy}
             leftSection={<IconFileSpreadsheet size={16} />}
             variant="light"
             onClick={model.openUploadModal}
           >
             {t('Імпорт з Excel')}
           </Button>
-          <Button color="green" loading={model.isSubmitting} onClick={model.submit}>
+          <Button color="green" disabled={isFormBusy} loading={model.isSubmitting} onClick={model.submit}>
             {t('Провести')}
           </Button>
         </Group>
@@ -286,6 +303,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   const [debouncedVendorCode] = useDebouncedValue(vendorCodeQuery, VENDOR_CODE_DEBOUNCE_MS)
   const [confirmCloseOpen, setConfirmCloseOpen] = useValueState(false)
   const [initialFromDate, setInitialFromDate] = useValueState(fromDate)
+  const searchRequestRef = useRef(0)
   const parseRequestRef = useRef(0)
   const submitRequestRef = useRef(0)
   const storages = storageState.items
@@ -376,16 +394,18 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     }
 
     let cancelled = false
+    const requestId = searchRequestRef.current + 1
+    searchRequestRef.current = requestId
 
     async function searchProducts() {
       try {
         const products = await searchProductsByVendorCode(query)
 
-        if (!cancelled) {
+        if (!cancelled && searchRequestRef.current === requestId) {
           setSearchedProducts(products)
         }
       } catch {
-        if (!cancelled) {
+        if (!cancelled && searchRequestRef.current === requestId) {
           setSearchedProducts([])
         }
       }
@@ -437,12 +457,10 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
   const changeVendorCodeQuery = useCallback(
     (value: string) => {
+      searchRequestRef.current += 1
       setVendorCodeQuery(value)
       setSelectedProduct(null)
-
-      if (!value.trim()) {
-        setSearchedProducts([])
-      }
+      setSearchedProducts([])
     },
     [setSearchedProducts, setSelectedProduct, setVendorCodeQuery],
   )
@@ -457,9 +475,13 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   )
 
   const addItem = useCallback(() => {
+    if (isSubmitting || isParsing) {
+      return
+    }
+
     const product = resolveProductCapitalizationSelection(selectedProduct, searchedProducts, vendorCodeQuery)
 
-    if (!product || !product.Id) {
+    if (!product || !product.Id || product.Deleted) {
       notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Артикул')}` })
       return
     }
@@ -499,6 +521,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     itemEntry.quantity,
     itemEntry.unitPrice,
     itemEntry.weight,
+    isParsing,
+    isSubmitting,
     searchedProducts,
     selectedProduct,
     setItemEntry,
@@ -512,34 +536,52 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
   const updateItem = useCallback(
     (rowKey: string, field: 'Qty' | 'UnitPrice' | 'Weight', value: number) => {
+      if (isSubmitting || isParsing) {
+        return
+      }
+
       setItems((current) =>
         current.map((item) => (item.__rowKey === rowKey ? { ...item, [field]: value } : item)),
       )
     },
-    [setItems],
+    [isParsing, isSubmitting, setItems],
   )
 
   const removeItem = useCallback(
     (rowKey: string) => {
+      if (isSubmitting || isParsing) {
+        return
+      }
+
       setItems((current) => current.filter((item) => item.__rowKey !== rowKey))
     },
-    [setItems],
+    [isParsing, isSubmitting, setItems],
   )
 
   const openUploadModal = useCallback(() => {
+    if (isSubmitting || isParsing) {
+      return
+    }
+
     setUploadError(null)
     setUploadModalOpened(true)
-  }, [setUploadError, setUploadModalOpened])
+  }, [isParsing, isSubmitting, setUploadError, setUploadModalOpened])
 
   const closeUploadModal = useCallback(() => {
+    if (isParsing) {
+      return
+    }
+
+    parseRequestRef.current += 1
     setUploadError(null)
     setUploadModalOpened(false)
-  }, [setUploadError, setUploadModalOpened])
+  }, [isParsing, setUploadError, setUploadModalOpened])
 
   const resetDraft = useCallback(() => {
     const nextFromDate = toDateTimeLocal(new Date())
 
     parseRequestRef.current += 1
+    searchRequestRef.current += 1
     submitRequestRef.current += 1
     setInitialFromDate(nextFromDate)
     setComment('')
@@ -576,6 +618,10 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
   const parseFromFile = useCallback(
     async (file: File, parseConfiguration: ProductCapitalizationParseConfiguration) => {
+      if (isSubmitting || isParsing) {
+        return
+      }
+
       const requestId = parseRequestRef.current + 1
       parseRequestRef.current = requestId
       const isCurrentParse = () => parseRequestRef.current === requestId
@@ -584,14 +630,31 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
 
       try {
         const result = await parseProductCapitalizationItemsFromFile(file, parseConfiguration)
+        const parsedItems: ProductCapitalizationItem[] = []
+        const invalidVendorCodes: string[] = []
+
+        result.Items.forEach((item) => {
+          if (isValidCapitalizationItemProduct(item)) {
+            parsedItems.push(item)
+
+            return
+          }
+
+          const vendorCode = getCapitalizationItemVendorCode(item)
+
+          if (vendorCode) {
+            invalidVendorCodes.push(vendorCode)
+          }
+        })
+        const missingVendorCodes = Array.from(new Set([...result.MissingVendorCodes, ...invalidVendorCodes]))
 
         if (isCurrentParse()) {
-          setItems((current) => [...current, ...result.Items.map(toDraftItem)])
+          setItems((current) => [...current, ...parsedItems.map(toDraftItem)])
           setUploadModalOpened(false)
         }
 
-        if (isCurrentParse() && result.MissingVendorCodes.length > 0) {
-          setMissingVendorCodes(result.MissingVendorCodes)
+        if (isCurrentParse() && missingVendorCodes.length > 0) {
+          setMissingVendorCodes(missingVendorCodes)
           setMissingModalOpened(true)
         }
       } catch (parseError) {
@@ -604,10 +667,24 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
         }
       }
     },
-    [setItems, setMissingModalOpened, setMissingVendorCodes, setParsing, setUploadError, setUploadModalOpened, t],
+    [
+      isParsing,
+      isSubmitting,
+      setItems,
+      setMissingModalOpened,
+      setMissingVendorCodes,
+      setParsing,
+      setUploadError,
+      setUploadModalOpened,
+      t,
+    ],
   )
 
   const submit = useCallback(async () => {
+    if (isSubmitting || isParsing) {
+      return
+    }
+
     const requestId = submitRequestRef.current + 1
     submitRequestRef.current = requestId
     const isCurrentSubmit = () => submitRequestRef.current === requestId
@@ -627,6 +704,11 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       return
     }
 
+    if (items.some((item) => !isValidCapitalizationItemProduct(item))) {
+      notifications.show({ color: 'yellow', message: t('Є рядки без активного товару') })
+      return
+    }
+
     const organization = organizations.find((candidate) => candidate.NetUid === selectedOrganizationNetId)
     const storage = storages.find((candidate) => candidate.NetUid === selectedStorageNetId)
 
@@ -640,17 +722,28 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       return
     }
 
+    const fromDateIso = toIsoDateTimeOrNull(fromDate)
+
+    if (!fromDateIso) {
+      notifications.show({ color: 'yellow', message: t('Вкажіть коректну дату') })
+      return
+    }
+
     setSubmitting(true)
     setError(null)
 
     try {
       const productCapitalization = await createProductCapitalization({
         Comment: comment,
-        FromDate: new Date(fromDate).toISOString(),
+        FromDate: fromDateIso,
         Organization: organization,
         ProductCapitalizationItems: items.map(fromDraftItem),
         Storage: storage,
       })
+
+      if (!productCapitalization || (!productCapitalization.NetUid && !productCapitalization.Id)) {
+        throw new Error(t('Сервер не повернув створене оприбуткування'))
+      }
 
       if (isCurrentSubmit() && productCapitalization) {
         await recordHistoryUpdate(
@@ -677,6 +770,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
   }, [
     comment,
     fromDate,
+    isParsing,
+    isSubmitting,
     items,
     onClose,
     onCreated,
@@ -783,6 +878,7 @@ function useItemColumns(
   items: DraftItem[],
   onUpdate: (rowKey: string, field: 'Qty' | 'UnitPrice' | 'Weight', value: number) => void,
   onRemove: (rowKey: string) => void,
+  disabled: boolean,
 ): DataTableColumn<DraftItem>[] {
   const { t } = useI18n()
 
@@ -828,6 +924,7 @@ function useItemColumns(
           <NumberInput
             allowDecimal={false}
             allowNegative={false}
+            disabled={disabled}
             hideControls
             min={1}
             size="xs"
@@ -847,6 +944,7 @@ function useItemColumns(
           <NumberInput
             allowNegative={false}
             decimalScale={2}
+            disabled={disabled}
             hideControls
             min={0}
             size="xs"
@@ -865,6 +963,7 @@ function useItemColumns(
         cell: (item) => (
           <NumberInput
             allowNegative={false}
+            disabled={disabled}
             hideControls
             min={0}
             size="xs"
@@ -886,6 +985,7 @@ function useItemColumns(
             <ActionIcon
               aria-label={t('Видалити')}
               color="red"
+              disabled={disabled}
               size="sm"
               variant="subtle"
               onClick={() => onRemove(item.__rowKey)}
@@ -896,7 +996,7 @@ function useItemColumns(
         ),
       },
     ],
-    [items, onRemove, onUpdate, t],
+    [disabled, items, onRemove, onUpdate, t],
   )
 }
 
@@ -921,6 +1021,16 @@ function toDateTimeLocal(date: Date): string {
   const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
 
   return offsetDate.toISOString().slice(0, 16)
+}
+
+function toIsoDateTimeOrNull(value: string): string | null {
+  if (!value) {
+    return null
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
 }
 
 function toNumberOrEmpty(value: number | string): number | '' {

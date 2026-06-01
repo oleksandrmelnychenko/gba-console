@@ -136,31 +136,39 @@ export function MergedServicesSection({
   const canAddService = canEdit && hasPermission(ADD_MERGED_SERVICE_PERMISSION)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
-    await onSaveService({
-      files: {
-        accountDocuments: values.accountDocuments,
-        accountingTaskDocuments: values.accountingTaskFiles,
-        actDocuments: values.actDocuments,
-        documents: values.files,
-        taskDocuments: values.taskFiles,
-      },
-      service: buildServiceFromForm(values),
-    })
-    setNewOpen(false)
+    try {
+      await onSaveService({
+        files: {
+          accountDocuments: values.accountDocuments,
+          accountingTaskDocuments: values.accountingTaskFiles,
+          actDocuments: values.actDocuments,
+          documents: values.files,
+          taskDocuments: values.taskFiles,
+        },
+        service: buildServiceFromForm(values),
+      })
+      setNewOpen(false)
+    } catch {
+      // Parent reports API errors; keep the form open for correction/retry.
+    }
   }
 
   async function handleEditSave(service: MergedService, files: MergedServiceEditFiles) {
-    await onSaveService({
-      files: {
-        accountDocuments: files.accountDocuments,
-        accountingTaskDocuments: files.accountingTaskDocuments,
-        actDocuments: files.actDocuments,
-        documents: files.files,
-        taskDocuments: files.taskDocuments,
-      },
-      service,
-    })
-    setEditService(null)
+    try {
+      await onSaveService({
+        files: {
+          accountDocuments: files.accountDocuments,
+          accountingTaskDocuments: files.accountingTaskDocuments,
+          actDocuments: files.actDocuments,
+          documents: files.files,
+          taskDocuments: files.taskDocuments,
+        },
+        service,
+      })
+      setEditService(null)
+    } catch {
+      // Parent reports API errors; keep edited values.
+    }
   }
 
   async function handleCalculate(payload: {
@@ -172,17 +180,21 @@ export function MergedServicesSection({
       return
     }
 
-    await onCalculate({
-      extraChargeType: payload.extraChargeType,
-      invoices: payload.items.map((item) => ({
-        ...item.entity,
-        AccountingValue: Number(item.accountingValue) || 0,
-        Value: Number(item.value) || 0,
-      })),
-      isAuto: payload.isAuto,
-      serviceNetId: calculateService.NetUid,
-    })
-    setCalculateService(null)
+    try {
+      await onCalculate({
+        extraChargeType: payload.extraChargeType,
+        invoices: payload.items.map((item) => ({
+          ...item.entity,
+          AccountingValue: Number(item.accountingValue) || 0,
+          Value: Number(item.value) || 0,
+        })),
+        isAuto: payload.isAuto,
+        serviceNetId: calculateService.NetUid,
+      })
+      setCalculateService(null)
+    } catch {
+      // Parent reports API errors; keep the drawer open.
+    }
   }
 
   async function handleAssign(invoices: SupplyInvoice[]) {
@@ -190,8 +202,12 @@ export function MergedServicesSection({
       return
     }
 
-    await onAssignServiceInvoices(assignService, invoices)
-    setAssignService(null)
+    try {
+      await onAssignServiceInvoices(assignService, invoices)
+      setAssignService(null)
+    } catch {
+      // Parent reports API errors; keep selected invoices.
+    }
   }
 
   async function handleRemoveConfirm() {
@@ -199,8 +215,12 @@ export function MergedServicesSection({
       return
     }
 
-    await onRemoveService(removeTarget)
-    setRemoveTarget(null)
+    try {
+      await onRemoveService(removeTarget)
+      setRemoveTarget(null)
+    } catch {
+      // Parent reports API errors; keep confirmation open.
+    }
   }
 
   return (
@@ -208,7 +228,13 @@ export function MergedServicesSection({
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Об’єднані сервіси')}</Text>
         {canAddService && (
-          <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+          <Button
+            color="violet"
+            disabled={isSaving}
+            leftSection={<IconPlus size={16} />}
+            variant="light"
+            onClick={() => setNewOpen(true)}
+          >
             {t('Додати')}
           </Button>
         )}
@@ -224,6 +250,7 @@ export function MergedServicesSection({
             <MergedServiceViewCard
               key={service.NetUid}
               canEdit={canEdit}
+              isSaving={isSaving}
               service={service}
               onAssignInvoices={() => setAssignService(service)}
               onCalculate={() => setCalculateService(service)}
@@ -237,7 +264,11 @@ export function MergedServicesSection({
       <NewMergedServiceForm
         isSaving={isSaving}
         opened={isNewOpen}
-        onClose={() => setNewOpen(false)}
+        onClose={() => {
+          if (!isSaving) {
+            setNewOpen(false)
+          }
+        }}
         onSubmit={handleNewSubmit}
       />
 
@@ -246,7 +277,11 @@ export function MergedServicesSection({
           isSaving={isSaving}
           opened={Boolean(editService)}
           service={editService}
-          onClose={() => setEditService(null)}
+          onClose={() => {
+            if (!isSaving) {
+              setEditService(null)
+            }
+          }}
           onSave={handleEditSave}
         />
       )}
@@ -256,7 +291,11 @@ export function MergedServicesSection({
           isSaving={isSaving}
           opened={Boolean(calculateService)}
           service={calculateService}
-          onClose={() => setCalculateService(null)}
+          onClose={() => {
+            if (!isSaving) {
+              setCalculateService(null)
+            }
+          }}
           onSubmit={handleCalculate}
         />
       )}
@@ -267,18 +306,31 @@ export function MergedServicesSection({
           opened={Boolean(assignService)}
           service={assignService}
           onAssign={handleAssign}
-          onClose={() => setAssignService(null)}
+          onClose={() => {
+            if (!isSaving) {
+              setAssignService(null)
+            }
+          }}
         />
       )}
 
-      <AppModal centered opened={Boolean(removeTarget)} title={t('Видалити')} onClose={() => setRemoveTarget(null)}>
+      <AppModal
+        centered
+        opened={Boolean(removeTarget)}
+        title={t('Видалити')}
+        onClose={() => {
+          if (!isSaving) {
+            setRemoveTarget(null)
+          }
+        }}
+      >
         <Stack gap="md">
           <Text size="sm">{t('Ви впевнені, що хочете видалити?')}</Text>
           <Group justify="flex-end" gap="sm">
             <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveTarget(null)}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" loading={isSaving} onClick={handleRemoveConfirm}>
+            <Button color="red" disabled={isSaving} loading={isSaving} onClick={handleRemoveConfirm}>
               {t('Видалити')}
             </Button>
           </Group>

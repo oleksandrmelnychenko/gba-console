@@ -377,7 +377,7 @@ function ConsumableCategoryPanel({
               <Text fw={700}>{displayValue(category.Name)}</Text>
               {category.IsSupplyServiceCategory && (
                 <Badge color="teal" variant="light">
-                  {t('Деталі послуг')}
+                  {t('Послуги')}
                 </Badge>
               )}
             </Group>
@@ -550,7 +550,7 @@ function CategoryEditorForm({
       <TextInput label={t('Назва')} value={name} onChange={(event) => setName(event.currentTarget.value)} />
       <Checkbox
         checked={isSupplyServiceCategory}
-        label={t('Деталі послуг')}
+        label={t('Послуги')}
         onChange={(event) => setSupplyServiceCategory(event.currentTarget.checked)}
       />
       <Group justify="flex-end">

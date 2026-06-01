@@ -322,6 +322,8 @@ function useSpecificationModel(netId: string | undefined) {
     selectedDocumentOrganization?.SupplyOrganizationAgreements?.find(
       (agreement) => agreement.NetUid === documentAgreementNetId,
     ) || null
+  const isActionBusy =
+    isUploading || isSavingDocuments || isMerging || isDownloading || isSavingSpecification
 
   async function loadDocumentOrganizations() {
     try {
@@ -336,12 +338,20 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function selectDocumentOrganization(netUid: string | null) {
+    if (isSavingDocuments) {
+      return
+    }
+
     const organization = documentOrganizations.find((item) => item.NetUid === netUid) || null
     setDocumentOrganizationNetId(netUid)
     setDocumentAgreementNetId(organization?.SupplyOrganizationAgreements?.[0]?.NetUid || null)
   }
 
   function selectInvoice(invoice: SpecificationSupplyInvoice) {
+    if (isActionBusy) {
+      return
+    }
+
     if (!invoice.PackingLists || invoice.PackingLists.length === 0) {
       notifications.show({ color: 'red', message: t('В інвойсі відсутні пак лісти') })
 
@@ -357,6 +367,10 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function selectPackList(packList: SpecificationPackingList) {
+    if (isActionBusy) {
+      return
+    }
+
     invalidateActionRequests()
     setProtocolState((current) => ({
       ...current,
@@ -396,13 +410,14 @@ function useSpecificationModel(netId: string | undefined) {
   async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
     const invoiceNetUid = selectedInvoice?.NetUid || null
     const packListNetUid = selectedPackListNetId
+
+    if (!invoiceNetUid || isActionBusy) {
+      return
+    }
+
     const requestId = uploadRequestRef.current + 1
     uploadRequestRef.current = requestId
     const isCurrentUpload = () => uploadRequestRef.current === requestId
-
-    if (!invoiceNetUid) {
-      return
-    }
 
     setUploading(true)
 
@@ -450,12 +465,16 @@ function useSpecificationModel(netId: string | undefined) {
       return
     }
 
+    if (isActionBusy) {
+      return
+    }
+
     setNumberCustomDeclaration(selectedInvoice.NumberCustomDeclaration || '')
     setDateCustomDeclaration(getInvoiceCustomDeclarationDate(selectedInvoice))
     setExistingDocuments(
       (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => ({
         contentType: document.ContentType || '',
-        deleted: false,
+        deleted: Boolean(document.Deleted),
         documentUrl: document.DocumentUrl || '',
         file: null,
         fileName: document.FileName || '',
@@ -480,7 +499,13 @@ function useSpecificationModel(netId: string | undefined) {
 
     return (
       newDocuments.length > 0 ||
-      existingDocuments.some((document) => document.deleted) ||
+      existingDocuments.some((document, index) => {
+        const sourceDocument = (selectedInvoice.SupplyInvoiceDeliveryDocuments || []).find(
+          (source, sourceIndex) => getDeliveryDocumentDraftId(source, sourceIndex) === document.id,
+        ) || selectedInvoice.SupplyInvoiceDeliveryDocuments?.[index]
+
+        return Boolean(document.deleted) !== Boolean(sourceDocument?.Deleted)
+      }) ||
       numberCustomDeclaration !== (selectedInvoice.NumberCustomDeclaration || '') ||
       dateCustomDeclaration !== getInvoiceCustomDeclarationDate(selectedInvoice) ||
       documentOrganizationNetId !== (selectedInvoice.SupplyOrganization?.NetUid || null) ||
@@ -502,10 +527,18 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function cancelCloseDocuments() {
+    if (isSavingDocuments) {
+      return
+    }
+
     setDocumentsCloseConfirmOpen(false)
   }
 
   function closeDocumentsDraft() {
+    if (isSavingDocuments) {
+      return
+    }
+
     setDocumentsCloseConfirmOpen(false)
     setDocumentsOpen(false)
     setNewDocuments([])
@@ -513,18 +546,23 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function addDocumentFiles(files: File[]) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((current) => {
       const startId = current.length > 0 ? current[current.length - 1].id + 1 : 0
 
       const additions = files.map((file, index) => {
         const parts = file.name.split('.')
+        const contentType = parts.length > 1 ? parts.pop() || '' : ''
 
         return {
-          contentType: parts.length > 1 ? parts[parts.length - 1] : '',
+          contentType,
           deleted: false,
           documentUrl: '',
           file,
-          fileName: parts[0],
+          fileName: parts.join('.') || file.name,
           id: startId + index,
         }
       })
@@ -534,10 +572,18 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function removeNewDocument(document: DeliveryDocumentDraft) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((current) => current.filter((item) => item.id !== document.id))
   }
 
   function removeExistingDocument(document: DeliveryDocumentDraft) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setExistingDocuments((current) =>
       current.map((item) => (item.id === document.id ? { ...item, deleted: !item.deleted } : item)),
     )
@@ -545,15 +591,25 @@ function useSpecificationModel(netId: string | undefined) {
 
   async function saveDocuments() {
     const invoice = selectedInvoice
-    const requestId = documentsSaveRequestRef.current + 1
-    documentsSaveRequestRef.current = requestId
-    const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
+
+    if (isSavingDocuments) {
+      return
+    }
 
     if (!invoice?.NetUid || (invoice.PackingLists?.length || 0) === 0) {
       notifications.show({ color: 'red', message: t('В інвойсі відсутні пак лісти') })
 
       return
     }
+
+    if (dateCustomDeclaration && !isValidDateInputValue(dateCustomDeclaration)) {
+      notifications.show({ color: 'yellow', message: t('Вкажіть коректну дату митної декларації') })
+      return
+    }
+
+    const requestId = documentsSaveRequestRef.current + 1
+    documentsSaveRequestRef.current = requestId
+    const isCurrentDocumentsSave = () => documentsSaveRequestRef.current === requestId
 
     setSavingDocuments(true)
 
@@ -609,6 +665,10 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openMerge() {
+    if (isActionBusy) {
+      return
+    }
+
     setProtocolState((current) => ({
       ...current,
       selectedMergeNetIds: getMergeInvoiceNetIds(protocol),
@@ -617,6 +677,10 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function toggleMergeInvoice(invoiceNetId: string) {
+    if (isMerging) {
+      return
+    }
+
     setProtocolState((current) => ({
       ...current,
       selectedMergeNetIds: current.selectedMergeNetIds.includes(invoiceNetId)
@@ -626,7 +690,7 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   async function confirmMerge() {
-    if (!netId) {
+    if (!netId || isMerging) {
       return
     }
 
@@ -653,12 +717,13 @@ function useSpecificationModel(netId: string | undefined) {
 
   async function openDownload() {
     const packListNetUid = selectedPackListNetId
-    const requestId = downloadRequestRef.current + 1
-    downloadRequestRef.current = requestId
 
-    if (!packListNetUid) {
+    if (!packListNetUid || isActionBusy) {
       return
     }
+
+    const requestId = downloadRequestRef.current + 1
+    downloadRequestRef.current = requestId
 
     setDownloadOpen(true)
     setDownloadDocument(null)
@@ -687,21 +752,30 @@ function useSpecificationModel(netId: string | undefined) {
   }
 
   function openSpecificationEditor(item: PackingListPackageOrderItem) {
+    if (isActionBusy) {
+      return
+    }
+
     setEditingSpecificationItem(item)
   }
 
   async function saveSpecification(payload: ProductSpecificationSubmitPayload) {
     const invoiceNetUid = selectedInvoiceNetId
     const packListNetUid = selectedPackListNetId
-    const requestId = specificationSaveRequestRef.current + 1
-    specificationSaveRequestRef.current = requestId
-    const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
 
     if (!invoiceNetUid) {
       notifications.show({ color: 'red', message: t('Інвойс відсутній') })
 
       return
     }
+
+    if (isSavingSpecification) {
+      return
+    }
+
+    const requestId = specificationSaveRequestRef.current + 1
+    specificationSaveRequestRef.current = requestId
+    const isCurrentSpecificationSave = () => specificationSaveRequestRef.current === requestId
 
     setSavingSpecification(true)
 
@@ -745,7 +819,7 @@ function useSpecificationModel(netId: string | undefined) {
   return {
     addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, documentAgreementNetId,
     documentOrganizationNetId, documentOrganizations, downloadDocument, downloadError, editingSpecificationItem,
-    error, existingDocuments, isDocumentsCloseConfirmOpen, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
+    error, existingDocuments, isActionBusy, isDocumentsCloseConfirmOpen, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
     isMergeOpen, isMerging, isPackingListLoading, isSavingDocuments, isSavingSpecification, isUploading,
     isUploadOpen, newDocuments, numberCustomDeclaration, openDocuments, openDownload, openMerge,
     openSpecificationEditor, packingList, packingListError, protocol, removeExistingDocument,
@@ -800,11 +874,13 @@ export function ProductDeliveryProtocolSpecificationPage() {
         <Group gap="sm" align="center">
           <SegmentedControl
             data={SPECIFICATION_CURRENCY_OPTIONS}
+            disabled={model.isActionBusy}
             value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
             onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
           />
           <SegmentedControl
             data={SERVICE_MODE_OPTIONS}
+            disabled={model.isActionBusy}
             value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
             onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
           />
@@ -829,7 +905,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {canUpload && (
                   <Button
                     color="violet"
+                    disabled={model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
+                    loading={model.isUploading}
                     variant="light"
                     onClick={() => model.setUploadOpen(true)}
                   >
@@ -839,7 +917,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {canUploadDocuments && (
                   <Button
                     color="gray"
+                    disabled={model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
+                    loading={model.isSavingDocuments}
                     variant="light"
                     onClick={model.openDocuments}
                   >
@@ -849,7 +929,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {canMerge && (
                   <Button
                     color="gray"
+                    disabled={model.isActionBusy}
                     leftSection={<IconLayersIntersect size={16} />}
+                    loading={model.isMerging}
                     variant="light"
                     onClick={model.openMerge}
                   >
@@ -859,7 +941,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {canDownload && (
                   <Button
                     color="gray"
+                    disabled={model.isActionBusy}
                     leftSection={<IconDownload size={16} />}
+                    loading={model.isDownloading}
                     variant="light"
                     onClick={model.openDownload}
                   >
@@ -873,6 +957,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                   <Button
                     key={invoice.NetUid || invoice.Id}
                     color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+                    disabled={model.isActionBusy}
                     variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
                     onClick={() => model.selectInvoice(invoice)}
                   >
@@ -897,6 +982,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                     <Button
                       key={packList.NetUid || packList.Id}
                       color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+                      disabled={model.isActionBusy}
                       size="xs"
                       variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
                       onClick={() => model.selectPackList(packList)}
@@ -920,6 +1006,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 <TextInput
                   label={t('Пошук')}
                   placeholder={t('Код товару')}
+                  disabled={model.isActionBusy}
                   value={vendorCodeFilter}
                   w={260}
                   onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
@@ -957,10 +1044,38 @@ export function ProductDeliveryProtocolSpecificationPage() {
         </Stack>
       ) : null}
 
+      <ProductDeliveryProtocolSpecificationModals
+        canSaveSpecification={canSaveSpecification}
+        invoices={invoices}
+        model={model}
+      />
+    </Stack>
+  )
+}
+
+type SpecificationModel = ReturnType<typeof useSpecificationModel>
+
+function ProductDeliveryProtocolSpecificationModals({
+  canSaveSpecification,
+  invoices,
+  model,
+}: {
+  canSaveSpecification: boolean
+  invoices: SpecificationSupplyInvoice[]
+  model: SpecificationModel
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
       <UploadProductSpecificationModal
         isLoading={model.isUploading}
         opened={model.isUploadOpen}
-        onClose={() => model.setUploadOpen(false)}
+        onClose={() => {
+          if (!model.isUploading) {
+            model.setUploadOpen(false)
+          }
+        }}
         onSubmit={model.submitUpload}
       />
 
@@ -992,7 +1107,11 @@ export function ProductDeliveryProtocolSpecificationPage() {
         isMerging={model.isMerging}
         opened={model.isMergeOpen}
         selectedNetIds={model.selectedMergeNetIds}
-        onClose={() => model.setMergeOpen(false)}
+        onClose={() => {
+          if (!model.isMerging) {
+            model.setMergeOpen(false)
+          }
+        }}
         onConfirm={model.confirmMerge}
         onToggle={model.toggleMergeInvoice}
       />
@@ -1002,7 +1121,11 @@ export function ProductDeliveryProtocolSpecificationPage() {
         error={model.downloadError}
         isLoading={model.isDownloading}
         opened={model.isDownloadOpen}
-        onClose={() => model.setDownloadOpen(false)}
+        onClose={() => {
+          if (!model.isDownloading) {
+            model.setDownloadOpen(false)
+          }
+        }}
       />
 
       <ProductSpecificationEditDrawer
@@ -1017,21 +1140,25 @@ export function ProductDeliveryProtocolSpecificationPage() {
         centered
         opened={model.isDocumentsCloseConfirmOpen}
         title={t('Є незбережені зміни')}
-        onClose={model.cancelCloseDocuments}
+        onClose={() => {
+          if (!model.isSavingDocuments) {
+            model.cancelCloseDocuments()
+          }
+        }}
       >
         <Stack gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={model.cancelCloseDocuments}>
+            <Button color="gray" disabled={model.isSavingDocuments} variant="light" onClick={model.cancelCloseDocuments}>
               {t('Залишитися')}
             </Button>
-            <Button color="red" onClick={model.closeDocumentsDraft}>
+            <Button color="red" disabled={model.isSavingDocuments} onClick={model.closeDocumentsDraft}>
               {t('Закрити без збереження')}
             </Button>
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
+    </>
   )
 }
 
@@ -1039,6 +1166,16 @@ function getInvoiceCustomDeclarationDate(invoice: SpecificationSupplyInvoice): s
   return invoice.DateCustomDeclaration
     ? formatLocalDate(new Date(invoice.DateCustomDeclaration))
     : formatLocalDate(new Date())
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function getDeliveryDocumentDraftId(document: SupplyInvoiceDeliveryDocument, index: number): number {

@@ -550,11 +550,13 @@ function DeprecatedConsumableOrdersPanel({ storage }: { storage: ConsumablesStor
   const requestRef = useRef(0)
   const storageNetId = storage.NetUid || ''
   const { error, isLoading, orders } = ordersState
+  const filterError = getDateRangeError(fromDate, toDate)
   const rows = useMemo(() => flattenDeprecatedConsumableOrders(orders), [orders])
   const columns = useDeprecatedConsumableOrderColumns()
 
   useEffect(() => {
-    if (!storageNetId) {
+    if (!storageNetId || filterError) {
+      requestRef.current += 1
       setOrdersState(EMPTY_DEPRECATED_CONSUMABLE_ORDERS_STATE)
       return
     }
@@ -595,7 +597,7 @@ function DeprecatedConsumableOrdersPanel({ storage }: { storage: ConsumablesStor
     }
 
     void loadOrders()
-  }, [fromDate, normalizedSearchValue, setOrdersState, storageNetId, t, toDate])
+  }, [filterError, fromDate, normalizedSearchValue, setOrdersState, storageNetId, t, toDate])
 
   function resetFilters() {
     setFromDate(shiftDate(-7))
@@ -626,6 +628,12 @@ function DeprecatedConsumableOrdersPanel({ storage }: { storage: ConsumablesStor
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -825,6 +833,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

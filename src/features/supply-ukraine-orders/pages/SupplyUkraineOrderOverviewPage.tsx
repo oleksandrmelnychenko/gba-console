@@ -29,6 +29,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -102,6 +103,7 @@ export function SupplyUkraineOrderOverviewPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [documentsOpened, setDocumentsOpened] = useState(false)
+  const [documentsCloseConfirmOpened, setDocumentsCloseConfirmOpened] = useState(false)
   const [documentDrafts, setDocumentDrafts] = useState<SupplyOrderUkraineDocument[]>([])
   const [newDocuments, setNewDocuments] = useState<UkraineOrderNewDocument[]>([])
   const [hasVatItemChanges, setVatItemChanges] = useState(false)
@@ -176,7 +178,7 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   async function calculateVatPercentForOrder() {
-    if (!order) {
+    if (!order || isSavingVat) {
       return
     }
 
@@ -226,7 +228,7 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   async function saveItemVatPercentChanges() {
-    if (!order) {
+    if (!order || isSavingVatItems) {
       return
     }
 
@@ -261,6 +263,10 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   function cancelItemVatPercentChanges() {
+    if (isSavingVatItems) {
+      return
+    }
+
     setOrder((currentOrder) => {
       if (!currentOrder) {
         return currentOrder
@@ -285,18 +291,59 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   function openDocumentsModal() {
-    setDocumentDrafts(order?.SupplyOrderUkraineDocuments || [])
+    if (isSavingDocuments) {
+      return
+    }
+
+    setDocumentDrafts(
+      (order?.SupplyOrderUkraineDocuments || []).map((document) => ({
+        ...document,
+        Deleted: Boolean(document.Deleted),
+      })),
+    )
     setNewDocuments([])
     setDocumentsOpened(true)
+    setDocumentsCloseConfirmOpened(false)
+  }
+
+  function hasDocumentDraftChanges(): boolean {
+    const sourceDocuments = order?.SupplyOrderUkraineDocuments || []
+
+    return (
+      newDocuments.length > 0 ||
+      documentDrafts.some((document, index) => {
+        const sourceDocument = sourceDocuments.find((source) => isSameDocument(source, document)) || sourceDocuments[index]
+
+        return Boolean(document.Deleted) !== Boolean(sourceDocument?.Deleted)
+      })
+    )
+  }
+
+  function requestCloseDocumentsModal() {
+    if (isSavingDocuments) {
+      return
+    }
+
+    if (hasDocumentDraftChanges()) {
+      setDocumentsCloseConfirmOpened(true)
+      return
+    }
+
+    closeDocumentsModal()
   }
 
   function closeDocumentsModal() {
     setDocumentsOpened(false)
+    setDocumentsCloseConfirmOpened(false)
     setDocumentDrafts([])
     setNewDocuments([])
   }
 
   function addDocumentFiles(files: File[]) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((currentDocuments) => [
       ...currentDocuments,
       ...files.map((file, index) => createNewDocumentDraft(file, currentDocuments.length + index)),
@@ -304,10 +351,18 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   function removeNewDocument(document: UkraineOrderNewDocument) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setNewDocuments((currentDocuments) => currentDocuments.filter((currentDocument) => currentDocument.id !== document.id))
   }
 
   function toggleExistingDocument(document: SupplyOrderUkraineDocument) {
+    if (isSavingDocuments) {
+      return
+    }
+
     setDocumentDrafts((currentDocuments) =>
       currentDocuments.map((currentDocument) =>
         isSameDocument(currentDocument, document)
@@ -318,7 +373,7 @@ export function SupplyUkraineOrderOverviewPage() {
   }
 
   async function saveDocuments() {
-    if (!order) {
+    if (!order || isSavingDocuments) {
       return
     }
 
@@ -371,6 +426,7 @@ export function SupplyUkraineOrderOverviewPage() {
           </Stack>
           {canManageDocuments && order && (
             <Button
+              disabled={isSavingDocuments}
               leftSection={<IconFileUpload size={16} />}
               variant="light"
               onClick={openDocumentsModal}
@@ -379,7 +435,12 @@ export function SupplyUkraineOrderOverviewPage() {
             </Button>
           )}
           {canOpenPlacement && id && !order?.IsPlaced && (
-            <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate(`/orders/ukraine/placement/${id}`)}>
+            <Button
+              disabled={isSavingDocuments || isSavingVat || isSavingVatItems}
+              leftSection={<IconPackageImport size={16} />}
+              variant="light"
+              onClick={() => navigate(`/orders/ukraine/placement/${id}`)}
+            >
               {t('Розміщення товару')}
             </Button>
           )}
@@ -421,7 +482,7 @@ export function SupplyUkraineOrderOverviewPage() {
           <Group align="flex-end" justify="space-between" wrap="wrap">
             <NumberInput
               allowDecimal={false}
-              disabled={!order || isSavingVat}
+                disabled={!order || isSavingVat || isSavingVatItems}
               label={t('Відсоток ПДВ')}
               max={100}
               min={0}
@@ -432,6 +493,7 @@ export function SupplyUkraineOrderOverviewPage() {
             {canCalculateVat && (
               <Button
                 leftSection={<IconCalculator size={16} />}
+                disabled={!order || isSavingVat || isSavingVatItems}
                 loading={isSavingVat}
                 onClick={calculateVatPercentForOrder}
               >
@@ -453,7 +515,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 </Text>
               </Stack>
               {order && (
-                <Button leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                <Button disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
                   {t('Завантажити')}
                 </Button>
               )}
@@ -483,6 +545,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 <Group gap="xs">
                   <Button
                     leftSection={<IconDeviceFloppy size={16} />}
+                    disabled={isSavingVatItems}
                     loading={isSavingVatItems}
                     size="sm"
                     onClick={saveItemVatPercentChanges}
@@ -545,11 +608,33 @@ export function SupplyUkraineOrderOverviewPage() {
         newDocuments={newDocuments}
         opened={documentsOpened}
         onAddFiles={addDocumentFiles}
-        onClose={closeDocumentsModal}
+        onClose={requestCloseDocumentsModal}
         onRemoveNewDocument={removeNewDocument}
         onSave={saveDocuments}
         onToggleExistingDocument={toggleExistingDocument}
       />
+      <AppModal
+        centered
+        opened={documentsCloseConfirmOpened}
+        title={t('Є незбережені зміни')}
+        onClose={() => {
+          if (!isSavingDocuments) {
+            setDocumentsCloseConfirmOpened(false)
+          }
+        }}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити вікно, зміни по документах не будуть збережені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSavingDocuments} variant="light" onClick={() => setDocumentsCloseConfirmOpened(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" disabled={isSavingDocuments} onClick={closeDocumentsModal}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -871,7 +956,13 @@ function isSameDocument(first: SupplyOrderUkraineDocument, second: SupplyOrderUk
     return first.NetUid === second.NetUid
   }
 
-  return Boolean(first.Id && second.Id && first.Id === second.Id)
+  if (first.Id && second.Id) {
+    return first.Id === second.Id
+  }
+
+  const firstKey = getDocumentFallbackKey(first)
+
+  return Boolean(firstKey && firstKey === getDocumentFallbackKey(second))
 }
 
 function createNewDocumentDraft(file: File, index: number): UkraineOrderNewDocument {
@@ -915,6 +1006,14 @@ function toPercentNumber(value: string | number, decimalPlaces: number): number 
 
 function upgradeHttpToHttps(url: string): string {
   return url.startsWith('http:') ? url.replace('http:', 'https:') : url
+}
+
+function getDocumentFallbackKey(document: SupplyOrderUkraineDocument): string {
+  return [
+    document.DocumentUrl,
+    document.FileName || document.Name,
+    document.ContentType,
+  ].filter(Boolean).join(':')
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

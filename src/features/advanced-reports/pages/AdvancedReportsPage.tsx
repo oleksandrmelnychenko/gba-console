@@ -15,7 +15,7 @@ import {
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconEdit, IconEye, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -91,6 +91,8 @@ export function AdvancedReportsPage() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
+  const filterError = getDateRangeError(fromDate, toDate)
+  const lookupRequestRef = useRef(0)
 
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(reports.Collection)
@@ -111,6 +113,8 @@ export function AdvancedReportsPage() {
   )
 
   const loadLookups = useCallback(async () => {
+    const requestId = lookupRequestRef.current + 1
+    lookupRequestRef.current = requestId
     setLoadingLookups(true)
 
     try {
@@ -120,13 +124,19 @@ export function AdvancedReportsPage() {
         getAdvancedReportPaymentMovements(),
       ])
 
-      setCurrencies(nextCurrencies)
-      setPaymentRegisters(nextRegisters)
-      setPaymentMovements(nextMovements)
+      if (lookupRequestRef.current === requestId) {
+        setCurrencies(nextCurrencies)
+        setPaymentRegisters(nextRegisters)
+        setPaymentMovements(nextMovements)
+      }
     } catch (lookupError) {
-      setError(lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити довідники'))
+      if (lookupRequestRef.current === requestId) {
+        setError(lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити довідники'))
+      }
     } finally {
-      setLoadingLookups(false)
+      if (lookupRequestRef.current === requestId) {
+        setLoadingLookups(false)
+      }
     }
   }, [setCurrencies, setError, setLoadingLookups, setPaymentMovements, setPaymentRegisters, t])
 
@@ -134,31 +144,65 @@ export function AdvancedReportsPage() {
     void loadLookups()
   }, [loadLookups])
 
+  const resetReportsForInvalidFilter = useCallback(() => {
+    setReports({
+      Collection: [],
+      NegativeDifferenceAmount: 0,
+      PositiveDifferenceAmount: 0,
+    })
+    setError(null)
+    setLoading(false)
+  }, [setError, setLoading, setReports])
+
+  const startReportsLoading = useCallback(() => {
+    setLoading(true)
+    setError(null)
+  }, [setError, setLoading])
+
+  const setReportsLoaded = useCallback(
+    (nextReports: AdvancedReportsResponse) => {
+      setReports(nextReports)
+      setLoading(false)
+    },
+    [setLoading, setReports],
+  )
+
+  const setReportsFailed = useCallback(
+    (loadError: unknown) => {
+      setReports({
+        Collection: [],
+        NegativeDifferenceAmount: 0,
+        PositiveDifferenceAmount: 0,
+      })
+      setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
+      setLoading(false)
+    },
+    [setError, setLoading, setReports, t],
+  )
+
   useEffect(() => {
     let cancelled = false
 
+    if (filterError) {
+      resetReportsForInvalidFilter()
+
+      return () => {
+        cancelled = true
+      }
+    }
+
     async function loadReports() {
-      setLoading(true)
-      setError(null)
+      startReportsLoading()
 
       try {
         const nextReports = await getAdvancedReports(activeFilters)
 
         if (!cancelled) {
-          setReports(nextReports)
+          setReportsLoaded(nextReports)
         }
       } catch (loadError) {
         if (!cancelled) {
-          setReports({
-            Collection: [],
-            NegativeDifferenceAmount: 0,
-            PositiveDifferenceAmount: 0,
-          })
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити авансові звіти'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          setReportsFailed(loadError)
         }
       }
     }
@@ -168,7 +212,15 @@ export function AdvancedReportsPage() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, reloadKey, setError, setLoading, setReports, t])
+  }, [
+    activeFilters,
+    filterError,
+    reloadKey,
+    resetReportsForInvalidFilter,
+    setReportsFailed,
+    setReportsLoaded,
+    startReportsLoading,
+  ])
 
   const openAdvanceReport = useCallback(
     (row: AdvancedReportRow) => {
@@ -337,6 +389,12 @@ export function AdvancedReportsPage() {
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
+        </Alert>
+      )}
+
+      {filterError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError}
         </Alert>
       )}
 
@@ -575,7 +633,7 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
       )}
       {row.rootAssigned && (
         <Badge color="gray" size="xs" variant="light">
-          {t('Призначено')}
+          {t('Підзвіт')}
         </Badge>
       )}
       {Boolean(row.differenceAmount) && (
@@ -760,6 +818,18 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function getDateRangeError(fromDate: string, toDate: string): string | null {
+  if (!fromDate || !toDate) {
+    return 'Вкажіть період'
+  }
+
+  if (fromDate > toDate) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
 }
 
 function formatDateTime(value?: string): string {

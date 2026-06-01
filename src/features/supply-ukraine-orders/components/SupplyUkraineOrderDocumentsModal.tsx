@@ -118,14 +118,14 @@ export function SupplyUkraineOrderDocumentsModal({
         <Divider />
 
         <Group justify="flex-end">
-          <FileButton multiple onChange={(files) => onAddFiles(files || [])}>
+          <FileButton multiple accept=".xls,.xlsx,.pdf" onChange={(files) => onAddFiles(files || [])}>
             {(props) => (
-              <Button disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light" {...props}>
+              <Button {...props} disabled={isSaving} leftSection={<IconUpload size={16} />} variant="light">
                 {t('Завантажити')}
               </Button>
             )}
           </FileButton>
-          <Button loading={isSaving} onClick={onSave}>
+          <Button disabled={isSaving} loading={isSaving} onClick={onSave}>
             {t('Зберегти')}
           </Button>
         </Group>

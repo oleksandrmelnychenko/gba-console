@@ -1,18 +1,12 @@
 import type { ProductGroup, ProductSubGroup } from './types'
 import { translate } from '../../shared/i18n/translate'
 
-const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const dateFormatter = new Intl.DateTimeFormat('uk-UA')
-
-export function getEmptyGuid(): string {
-  return EMPTY_GUID
-}
 
 export function createEmptyProductGroup(): ProductGroup {
   return {
     Description: '',
     FullName: '',
-    IsActive: true,
     IsSubGroup: false,
     Name: '',
     ProductProductGroups: [],
@@ -86,7 +80,7 @@ export function normalizeProductGroupForSave(
     ...productGroup,
     Description: description,
     FullName: fullName,
-    IsActive: productGroup.IsActive !== false,
+    IsActive: productGroup.IsActive === undefined ? undefined : productGroup.IsActive !== false,
     IsSubGroup: rootProductGroups.some((rootProductGroup) => rootProductGroup.Deleted !== true)
       ? true
       : rootProductGroups.some((rootProductGroup) => rootProductGroup.Deleted === true)
