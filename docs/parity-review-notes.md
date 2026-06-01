@@ -397,8 +397,8 @@ Invoice register (`/sales/get/register/invoice` + `/document`), shipment create/
 
 ### Partial
 PZ doc (`/sales/get/document/pz`) — wired but dead/unreachable (Poland-only, ok for UA); DownloadDocuments
-modal renders one doc only (no multi-doc for the bundled рахунок+накладна); discount/percent gating uses
-lifecycle 0||1 but legacy treats Packaged(2) as Packaging too; `IsInvoice` not written on fetch.
+modal renders one doc only (no multi-doc for the bundled рахунок+накладна); ~~discount/percent gating uses
+lifecycle 0||1 but legacy treats Packaged(2) as Packaging too~~ **(FIXED §12)**; `IsInvoice` not written on fetch.
 
 ### Row EXPANDER — MISSING (separate from documents)
 The legacy sales rows had an **inline expander** (`SaleExpandItem`): expand a row → order-items list
@@ -492,3 +492,19 @@ Added a «Дата оприходування» date input (legacy header `DateF
 
 **Still deferred:** `ActReconciliationNew` (opens the full `NewActReconciliationView` reconciliation
 creation sub-form — a larger build, left for when the act-reconciliation creation flow is migrated).
+
+---
+
+## 12. Discount gating — Packaged(2) treated as Packaging (§9 partial closed, 2026-06-01)
+
+Legacy `SaleLifeCycleStatusConvertor.Parse` maps **both** `Packaging`(1) and `Packaged`(2) →
+`'SaleLifeCyclePackaging'`, so legacy `IsNewOrPackagingStatus` is true for 0/1/2. The console's
+`isNewOrPackagingStatus` only checked `0 || 1` — Packaged(2) sales lost the discount affordance.
+
+- **`SalesUkrainePage.isNewOrPackagingStatus`** → now `0 || 1 || 2`, so the collapsed-row discount cell
+  treats Packaged like Packaging (Branch 1 uniform clickable, Branch 2 average non-clickable, Branch 3
+  add hidden for 1/2 — already correct).
+- **`SaleExpandContent`** — corrected the per-item affordance to the exact legacy rule: existing per-item
+  discount is clickable for **any** non-uniform sale (was gated to New/Packaging), and the empty
+  «Знижка» add link shows **only for New(0)** (legacy hides the add for IsInvoice = Packaging/Packaged).
+  Removed the now-unused local `isNewOrPackagingStatus`. tsc 0 / eslint 0.

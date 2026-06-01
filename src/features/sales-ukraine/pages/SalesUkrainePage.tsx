@@ -1438,7 +1438,7 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
   const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-  return status === 0 || status === 1
+  return status === 0 || status === 1 || status === 2
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {

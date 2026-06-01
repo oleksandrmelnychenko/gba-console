@@ -8,7 +8,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 const NEW_LIFECYCLE_TYPE = 0
-const PACKAGING_LIFECYCLE_TYPE = 1
 
 export function SaleExpandContent({
   sale,
@@ -20,7 +19,7 @@ export function SaleExpandContent({
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const isNewOrPackaging = isNewOrPackagingStatus(sale)
+  const isNew = sale.BaseLifeCycleStatus?.SaleLifeCycleType === NEW_LIFECYCLE_TYPE
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
 
   if (!orderItems.length) {
@@ -38,7 +37,7 @@ export function SaleExpandContent({
       {orderItems.map((orderItem, index) => (
         <SaleExpandContentItem
           key={String(orderItem.NetUid || orderItem.Id || index)}
-          isNewOrPackaging={isNewOrPackaging}
+          isNew={isNew}
           hasUniformDiscount={hasUniformDiscount}
           localCurrencyCode={localCurrencyCode}
           orderItem={orderItem}
@@ -51,13 +50,13 @@ export function SaleExpandContent({
 
 function SaleExpandContentItem({
   hasUniformDiscount,
-  isNewOrPackaging,
+  isNew,
   localCurrencyCode,
   orderItem,
   onOpenItemDiscount,
 }: {
   hasUniformDiscount: boolean
-  isNewOrPackaging: boolean
+  isNew: boolean
   localCurrencyCode: string
   orderItem: SalesUkraineOrderItem
   onOpenItemDiscount: () => void
@@ -98,7 +97,7 @@ function SaleExpandContentItem({
           <Text size="xs" c="dimmed" tt="uppercase">
             {t('Знижка')}
           </Text>
-          {!hasUniformDiscount && (hasDiscount || isNewOrPackaging) ? (
+          {!hasUniformDiscount && (hasDiscount || isNew) ? (
             <Anchor
               component="button"
               fw={hasDiscount ? 600 : 400}
@@ -147,12 +146,6 @@ function hasUniformOrderItemDiscount(orderItems: SalesUkraineOrderItem[]): boole
   }
 
   return orderItems.every((item) => getNumber(item.OneTimeDiscount) === firstDiscount)
-}
-
-function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
-  const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-  return status === NEW_LIFECYCLE_TYPE || status === PACKAGING_LIFECYCLE_TYPE
 }
 
 function getOrderItemProductName(item: SalesUkraineOrderItem): string {
