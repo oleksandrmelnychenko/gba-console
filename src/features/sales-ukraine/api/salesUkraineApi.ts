@@ -201,6 +201,45 @@ export async function updateSaleFromData(sale: SalesUkraineSale, file: File | nu
   })
 }
 
+export async function convertVatSaleAndGetPaymentDocument(
+  sale: SalesUkraineSale,
+  file: File | null,
+): Promise<SaleDocumentResult> {
+  const formData = new FormData()
+  formData.append('sale', JSON.stringify(sale))
+
+  if (file) {
+    formData.append('file', file)
+  }
+
+  const result = await apiRequest<unknown>('/sales/update/get/payment/document', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return extractDocumentResult(result)
+}
+
+export async function shiftOrderItemsCurrent(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/orders/items/shift/current', {
+    body: sale,
+    method: 'POST',
+  })
+
+  if (result && typeof result === 'object') {
+    const record = result as Record<string, unknown>
+    const nested = record.Sale
+
+    if (nested && typeof nested === 'object') {
+      return nested as SalesUkraineSale
+    }
+
+    return result as SalesUkraineSale
+  }
+
+  return null
+}
+
 export async function getSaleConsignmentNoteSettings(): Promise<SaleConsignmentNoteSetting[]> {
   const result = await apiRequest<unknown>('/consignment/note/settings/all/get', {
     query: CONSIGNMENT_QUERY,

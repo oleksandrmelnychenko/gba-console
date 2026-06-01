@@ -407,3 +407,29 @@ The legacy sales rows had an **inline expander** (`SaleExpandItem`): expand a ro
 visible by opening the full `SaleEditorDrawer`; the eye-drawer (`SaleDetailsDrawer`) shows the
 carrier/delivery change-history, not the order items. → genuine parity gap; needs DataTable
 expandable-row support + a SaleExpandContent (order items + transport services).
+
+### ✅ Resolved (2026-06-01, commits 9ee10d9 + this commit)
+- **Row EXPANDER — DONE.** Added opt-in expandable rows to the shared `DataTable`
+  (`renderExpandedRow`/`getRowCanExpand`/expand toggle column, backward-compatible — inactive unless
+  `renderExpandedRow` is passed). `SaleExpandContent` reproduces `SaleExpandItem`: order items
+  (code / name / orig-number / price / sum / qty) + per-item discount affordance gated by New/Packaging
+  status and uniform-discount detection. Wired into `SalesUkrainePage` (`getRowCanExpand` = items>0).
+- **Document menu — DONE.** `SaleDocumentsMenu` now reproduces the full legacy logic: Видаткова накладна
+  (transporter+packaging), Лист на пакування (VAT), per-edit invoice/act-for-editing/shipment history +
+  current Акт редагування (`/sales/get/shifted/document`), and Рахунок на оплату which **bundles** the
+  Видаткова накладна (`InvoiceDocumentURL`/`PdfInvoiceDocumentURL`) when `IsAcceptedToPacking` OR the user
+  holds an invoice role (Administrator/GBA/FinanceDirector/Accountant). Multi-doc modal renders all files.
+- **VAT convert-to-invoice — DONE.** `SaleEditorDrawer.convertToInvoice` now branches on `IsVatSale`:
+  VAT → `convertVatSaleAndGetPaymentDocument` (`POST /sales/update/get/payment/document`, FormData
+  sale+file) and opens the returned рахунок; non-VAT → `/sales/update/file` as before. Lifecycle → Packaging(1).
+- **Create-invoice-edit (Акт редагування) — DONE.** New `SaleEditDrawer`: per-item bill↔store qty grid
+  (NumberInput, clamp bill+store ≤ Qty), bulk «Все в рахунок» / «Все на склад», `DoShift` →
+  `shiftOrderItemsCurrent` (`POST /orders/items/shift/current` with the whole Sale; ShiftStatuses use the
+  flat enum Bill=1/Store=0, no `$type` — confirmed against legacy entities). Menu trigger gated exactly
+  like the legacy `moving` icon: `canEditSale` (= `UkraineAllActOfEdit_Change_PKEY`) + no merges + items>0
+  — **no lifecycle gate** (legacy's lifecycle/ShiftStatus condition is on the *audit* `time_line_icon`,
+  not the shift-edit icon; shift-edit is available on New «Рахунок» sales too). Title «Акт редагування
+  рахунку» (New) / «…накладної» (else) — matches legacy `ActForEditingAnAccount`/`…ConsignmentNote`.
+- **`ConfirmProcessing` approve — already present** in `warehouse-ukraine` (`approveEditingAct` →
+  `/protocol/act/invoice/set/edit/act/for/editing`, EditingList approval queue). The per-sale audit-timeline
+  duplicate entry point remains optional (low value, the warehouse queue is the primary).

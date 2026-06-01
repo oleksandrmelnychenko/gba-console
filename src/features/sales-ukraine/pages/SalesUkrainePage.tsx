@@ -21,6 +21,7 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
+  IconArrowsLeftRight,
   IconBrandEdge,
   IconDots,
   IconExternalLink,
@@ -60,6 +61,7 @@ import {
 } from '../api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleModal } from '../components/NewSaleModal'
+import { SaleEditDrawer } from '../components/SaleEditDrawer'
 import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
@@ -199,6 +201,7 @@ export function SalesUkrainePage() {
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
   const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [editShiftSale, setEditShiftSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
   const [auditLoading, setAuditLoading] = useValueState(false)
@@ -338,6 +341,7 @@ export function SalesUkrainePage() {
     onOpenConsignment: setConsignmentSale,
     onOpenDetails: setDetailsSale,
     onOpenEditor: setEditorSale,
+    onOpenEditShift: setEditShiftSale,
     onOpenDiscount: setDiscountSale,
     onOpenSale: setSelectedSale,
     onUnlock: requestUnlock,
@@ -715,6 +719,15 @@ export function SalesUkrainePage() {
 
       <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
 
+      <SaleEditDrawer
+        sale={editShiftSale}
+        onClose={() => setEditShiftSale(null)}
+        onSaved={() => {
+          setEditShiftSale(null)
+          reload()
+        }}
+      />
+
       <AppDrawer
         opened={Boolean(auditSale)}
         position="right"
@@ -769,6 +782,7 @@ function useSalesUkraineColumns({
   onOpenDetails,
   onOpenDiscount,
   onOpenEditor,
+  onOpenEditShift,
   onOpenSale,
   onUnlock,
   onWillNotShip,
@@ -782,6 +796,7 @@ function useSalesUkraineColumns({
   onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenDiscount: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
+  onOpenEditShift: (sale: SalesUkraineSale) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
   onWillNotShip: (sale: SalesUkraineSale) => void
@@ -1029,6 +1044,7 @@ function useSalesUkraineColumns({
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
           const showUnlock = canUnlock && Boolean(sale.IsLocked)
           const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
+          const showEditShift = showEdit && getOrderItemCount(sale) > 0
 
           return (
             <Box onClick={(event) => event.stopPropagation()}>
@@ -1049,6 +1065,11 @@ function useSalesUkraineColumns({
                     {showEdit && (
                       <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
                         {t('Відкрити продаж')}
+                      </Menu.Item>
+                    )}
+                    {showEditShift && (
+                      <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
+                        {lifeCycleType === 0 ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
                       </Menu.Item>
                     )}
                       {showTtn && (
@@ -1092,6 +1113,7 @@ function useSalesUkraineColumns({
       onOpenDetails,
       onOpenDiscount,
       onOpenEditor,
+      onOpenEditShift,
       onOpenSale,
       onUnlock,
       onWillNotShip,

@@ -38,6 +38,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   addOrderItem,
+  convertVatSaleAndGetPaymentDocument,
   deleteOrderItem,
   getSaleById,
   getSaleClientAgreements,
@@ -169,7 +170,17 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
     }
 
     try {
-      await updateSaleFromData(payload, null)
+      if (sale.IsVatSale) {
+        const document = await convertVatSaleAndGetPaymentDocument(payload, null)
+        const url = document.pdfUrl || document.excelUrl
+
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer')
+        }
+      } else {
+        await updateSaleFromData(payload, null)
+      }
+
       notifications.show({ color: 'green', message: t('Рахунок створено') })
       setConvertOpen(false)
       reload()
