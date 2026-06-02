@@ -1,9 +1,10 @@
-import { Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft } from '@tabler/icons-react'
+import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { IconAlertCircle, IconArrowLeft, IconMapPin } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -21,6 +22,7 @@ import type {
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'vendorCode', 'productName'],
+    right: ['placementDetails'],
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
@@ -86,6 +88,7 @@ function SupplyOrderProductPlacementContent({
   const [income, setIncome] = useValueState<ProductIncomeInfo | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
+  const [placementDetailsRow, setPlacementDetailsRow] = useValueState<SupplyPlacementRow | null>(null)
 
   useEffect(() => {
     let isActive = true
@@ -130,14 +133,19 @@ function SupplyOrderProductPlacementContent({
   }, [id, loadIncome, setError, setIncome, setLoading, t])
 
   const rows = useMemo(() => mapRows(income?.ProductIncomeItems || []), [income?.ProductIncomeItems])
-  const columns = usePlacementColumns()
+  const columns = usePlacementColumns(setPlacementDetailsRow)
   const firstPackingItem = rows[0]?.item.PackingListPackageOrderItem
+  const firstUkraineItem = rows[0]?.item.SupplyOrderUkraineItem
   const packingList = income?.PackingList || firstPackingItem?.PackingList || null
   const invoice = packingList?.SupplyInvoice || null
   const order = invoice?.SupplyOrder || null
-  const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || income?.Currency?.Code || ''
+  const ukraineOrder = firstUkraineItem?.SupplyOrderUkraine || null
+  const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code
+    || ukraineOrder?.ClientAgreement?.Agreement?.Currency?.Code
+    || income?.Currency?.Code
+    || ''
   const exchangeRate = firstPackingItem?.ExchangeRateAmount
-  const status = getPlacementStatus(packingList)
+  const status = firstUkraineItem ? getUkrainePlacementStatus(rows) : getPlacementStatus(packingList)
 
   return (
     <Stack gap="lg">
@@ -164,21 +172,21 @@ function SupplyOrderProductPlacementContent({
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
-            <Title order={4}>{t('Замовлення постачальника')}</Title>
+            <Title order={4}>{firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}</Title>
             <Badge color={status.color} variant="light">
               {status.label}
             </Badge>
           </Group>
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-            <DetailValue label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number} />
-            <DetailValue label={t('Постачальник')} value={getEntityName(order?.Client)} />
-            <DetailValue label={t('Від')} value={formatDate(order?.DateFrom)} />
-            <DetailValue label={t('Організація')} value={getEntityName(order?.Organization || income?.Organization)} />
+            <DetailValue label={t('Номер замовлення')} value={order?.SupplyOrderNumber?.Number || ukraineOrder?.Number} />
+            <DetailValue label={t('Постачальник')} value={getEntityName(order?.Client || ukraineOrder?.Supplier)} />
+            <DetailValue label={t('Від')} value={formatDate(order?.DateFrom || ukraineOrder?.FromDate)} />
+            <DetailValue label={t('Організація')} value={getEntityName(order?.Organization || ukraineOrder?.Organization || income?.Organization)} />
             <DetailValue label={t('Валюта')} value={currencyCode} />
-            <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name} />
-            <DetailValue label={t('Інвойс')} value={invoice?.Number} />
-            <DetailValue label={t('Дата інвойсу')} value={formatDate(invoice?.DateFrom)} />
+            <DetailValue label={t('Договір')} value={order?.ClientAgreement?.Agreement?.Name || ukraineOrder?.ClientAgreement?.Agreement?.Name} />
+            <DetailValue label={t('Інвойс')} value={invoice?.Number || ukraineOrder?.InvNumber} />
+            <DetailValue label={t('Дата інвойсу')} value={formatDate(invoice?.DateFrom || ukraineOrder?.InvDate)} />
             <DetailValue label={t('Пакувальний лист')} value={packingList?.InvNo || packingList?.Number} />
             <DetailValue label={t('Номер приходу')} value={income?.Number} />
             <DetailValue label={t('Дата розміщення')} value={formatDate(income?.FromDate)} />
@@ -228,11 +236,15 @@ function SupplyOrderProductPlacementContent({
           <TotalValue label={t('Вага брутто')} value={formatAmount(packingList?.TotalGrossWeight || income?.TotalGrossWeight)} />
         </Group>
       </Card>
+
+      <PlacementDetailsDrawer row={placementDetailsRow} onClose={() => setPlacementDetailsRow(null)} />
     </Stack>
   )
 }
 
-function usePlacementColumns(): DataTableColumn<SupplyPlacementRow>[] {
+function usePlacementColumns(
+  onOpenPlacementDetails: (row: SupplyPlacementRow) => void,
+): DataTableColumn<SupplyPlacementRow>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<SupplyPlacementRow>[]>(
@@ -400,40 +412,72 @@ function usePlacementColumns(): DataTableColumn<SupplyPlacementRow>[] {
         accessor: (row) => row.placements.map(formatPlacement).join(', '),
         cell: (row) => <PlacementList placements={row.placements} />,
       },
+      {
+        id: 'placementDetails',
+        header: '',
+        width: 64,
+        minWidth: 58,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+        enableReorder: false,
+        cell: (row) =>
+          row.placements.length > 0 ? (
+            <Tooltip label={t('Місця зберігання')}>
+              <ActionIcon
+                aria-label={t('Місця зберігання')}
+                color="blue"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpenPlacementDetails(row)
+                }}
+              >
+                <IconMapPin size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null,
+      },
     ],
-    [t],
+    [onOpenPlacementDetails, t],
   )
 }
 
 function mapRows(items: ProductIncomeItem[]): SupplyPlacementRow[] {
   return items.map((item, index) => {
     const packingItem = item.PackingListPackageOrderItem
-    const product = packingItem?.SupplyInvoiceOrderItem?.Product || item.Product || null
+    const ukraineItem = item.SupplyOrderUkraineItem
+    const product = packingItem?.SupplyInvoiceOrderItem?.Product || ukraineItem?.Product || item.Product || null
     const specification = [...(item.ConsignmentItems || []), ...(packingItem?.ConsignmentItems || [])].find(
       (consignmentItem) => consignmentItem.ProductSpecification,
-    )?.ProductSpecification
-    const totalNetPrice = roundMoney(packingItem?.TotalNetPrice)
+    )?.ProductSpecification || ukraineItem?.ProductSpecification
+    const totalNetPrice = roundMoney(packingItem?.TotalNetPrice ?? ukraineItem?.NetPriceLocal)
     const vatAmount = roundMoney(packingItem?.VatAmount)
+    const totalGrossPrice = roundMoney(ukraineItem?.GrossPriceLocal)
 
     return {
-      actualQty: readFiniteNumber(item.Qty),
+      actualQty: readFiniteNumber(ukraineItem?.PlacedQty ?? item.Qty),
       customsRate: roundMoney(specification?.DutyPercent),
       customsValue: roundMoney(specification?.CustomsValue),
       index: index + 1,
-      isImported: Boolean(packingItem?.ProductIsImported),
+      isImported: Boolean(packingItem?.ProductIsImported || ukraineItem?.ProductIsImported),
       item,
       measureUnit: getEntityName(product?.MeasureUnit),
-      orderedQty: readFiniteNumber(packingItem?.Qty),
+      orderedQty: readFiniteNumber(packingItem?.Qty ?? ukraineItem?.Qty),
       placements: packingItem?.ProductPlacements || [],
       productName: product?.NameUA || product?.Name,
       specificationCode: specification?.SpecificationCode,
-      total: isFiniteNumber(totalNetPrice) || isFiniteNumber(vatAmount)
+      total: isFiniteNumber(totalGrossPrice)
+        ? totalGrossPrice
+        : isFiniteNumber(totalNetPrice) || isFiniteNumber(vatAmount)
         ? readFiniteNumber(totalNetPrice) + readFiniteNumber(vatAmount)
         : undefined,
-      totalGrossWeight: roundWeight(packingItem?.TotalGrossWeight),
+      totalGrossWeight: roundWeight(packingItem?.TotalGrossWeight ?? ukraineItem?.TotalGrossWeight),
       totalNetPrice,
-      totalNetWeight: roundWeight(packingItem?.TotalNetWeight),
-      unitPrice: roundMoney(packingItem?.UnitPrice),
+      totalNetWeight: roundWeight(packingItem?.TotalNetWeight ?? ukraineItem?.TotalNetWeight),
+      unitPrice: roundMoney(packingItem?.UnitPrice ?? ukraineItem?.UnitPriceLocal),
       vatAmount,
       vatPercent: readFiniteNumber(packingItem?.VatPercent),
       vendorCode: product?.VendorCode || product?.Code,
@@ -483,6 +527,51 @@ function PlacementList({ placements }: { placements: ProductIncomePlacement[] })
   )
 }
 
+function PlacementDetailsDrawer({ row, onClose }: { row: SupplyPlacementRow | null; onClose: () => void }) {
+  const { t } = useI18n()
+
+  return (
+    <AppDrawer
+      opened={Boolean(row)}
+      padding="md"
+      size="md"
+      title={row ? `${displayValue(row.vendorCode)} ${displayValue(row.productName)}` : t('Місця зберігання')}
+      onClose={onClose}
+    >
+      {row && (
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+            <DetailValue label={t('Код товару')} value={row.vendorCode} />
+            <DetailValue label={t('Назва товару')} value={row.productName} />
+            <DetailValue label={t('Факт')} value={formatAmount(row.actualQty)} />
+            <DetailValue label={t('Замовлено')} value={formatAmount(row.orderedQty)} />
+          </SimpleGrid>
+
+          <Stack gap="xs">
+            <Text fw={700}>{t('Місця зберігання')}</Text>
+            {row.placements.length === 0 ? (
+              <Text c="dimmed" size="sm">
+                {t('Місця зберігання не вказані')}
+              </Text>
+            ) : (
+              row.placements.map((placement, index) => (
+                <Card key={placement.NetUid || placement.Id || index} withBorder radius="sm" padding="sm">
+                  <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                    <DetailValue label={t('Позиція')} value={formatPlacementAddress(placement)} />
+                    <DetailValue label={t('Кількість')} value={formatAmount(placement.Qty)} />
+                    <DetailValue label={t('Склад')} value={getEntityName(placement.Storage)} />
+                    <DetailValue label={t('Статус')} value={placement.IsApplied ? t('Застосовано') : t('Очікує')} />
+                  </SimpleGrid>
+                </Card>
+              ))
+            )}
+          </Stack>
+        </Stack>
+      )}
+    </AppDrawer>
+  )
+}
+
 function getPlacementStatus(packingList?: ProductIncomePackingList | null): { color: string; label: string } {
   const invoice = packingList?.SupplyInvoice
 
@@ -497,18 +586,44 @@ function getPlacementStatus(packingList?: ProductIncomePackingList | null): { co
   return { color: 'gray', label: 'Не розміщено' }
 }
 
+function getUkrainePlacementStatus(rows: SupplyPlacementRow[]): { color: string; label: string } {
+  if (rows.length === 0) {
+    return { color: 'gray', label: 'Не розміщено' }
+  }
+
+  const placedRows = rows.filter((row) => readFiniteNumber(row.actualQty) > 0)
+  const fullyPlaced = rows.every((row) => {
+    const orderedQty = readFiniteNumber(row.orderedQty)
+    const actualQty = readFiniteNumber(row.actualQty)
+
+    return orderedQty > 0 && actualQty >= orderedQty
+  })
+
+  if (fullyPlaced) {
+    return { color: 'green', label: 'Розміщено' }
+  }
+
+  if (placedRows.length > 0) {
+    return { color: 'yellow', label: 'Частково розміщено' }
+  }
+
+  return { color: 'gray', label: 'Не розміщено' }
+}
+
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.FullName || entity?.NameUA || entity?.Name || entity?.LastName || entity?.Number || entity?.Code
 }
 
 function formatPlacement(placement: ProductIncomePlacement): string {
-  const address = placement.Address || [
+  return `${formatPlacementAddress(placement)} - ${formatAmount(placement.Qty)}`
+}
+
+function formatPlacementAddress(placement: ProductIncomePlacement): string {
+  return placement.Address || [
     placement.StorageNumber,
     placement.RowNumber,
     placement.CellNumber,
-  ].filter(Boolean).join('-')
-
-  return `${address || '-'} - ${formatAmount(placement.Qty)}`
+  ].filter(Boolean).join('-') || '-'
 }
 
 function formatDate(value?: string): string {

@@ -107,6 +107,7 @@ function useActProvidingServicesPageModel() {
     (row: ActProvidingServiceRow) => {
       if (!row.supplyOrderUkraineNetUid && (!row.protocolNetId || !row.netId)) {
         notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
+        return
       }
 
       setSelectedRow(row)
@@ -362,6 +363,9 @@ function ActProvidingServiceOptionsModal({
   const { hasPermission } = useAuth()
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
   const canOpenViewOption = hasPermission(PERMISSION_VIEW_OPTION)
+  const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
+  const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
+  const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
 
   return (
     <AppModal centered opened={Boolean(row)} title={t('Виберіть опцію')} onClose={onClose}>
@@ -376,18 +380,20 @@ function ActProvidingServiceOptionsModal({
             </Text>
           </Group>
 
-          <Button
-            component={Link}
-            disabled={!row.netId}
-            justify="flex-start"
-            leftSection={<IconEye size={18} />}
-            to={`/act-providing-services/${row.netId}`}
-            variant="light"
-          >
-            {t('Огляд')}
-          </Button>
-          {row.supplyOrderUkraineNetUid
-            ? canOpenViewOption && (
+          {canOpenViewOption && (
+            <Button
+              component={Link}
+              disabled={!row.netId}
+              justify="flex-start"
+              leftSection={<IconEye size={18} />}
+              to={`/act-providing-services/${row.netId}`}
+              variant="light"
+            >
+              {t('Огляд')}
+            </Button>
+          )}
+          {canOpenSupplyOrder
+            ? (
                 <Button
                   justify="flex-start"
                   leftSection={<IconRoute size={18} />}
@@ -400,8 +406,7 @@ function ActProvidingServiceOptionsModal({
                   {t('Замовлення в Україну')}
                 </Button>
               )
-            : row.protocolNetId
-              && canOpenLogisticWay && (
+            : canOpenProtocol && (
                 <Button
                   justify="flex-start"
                   leftSection={<IconRoute size={18} />}
@@ -414,6 +419,11 @@ function ActProvidingServiceOptionsModal({
                   {t('Логістичний шлях')}
                 </Button>
               )}
+          {!hasAvailableActions && (
+            <Text c="dimmed" size="sm">
+              {t('Немає доступних дій')}
+            </Text>
+          )}
         </Stack>
       )}
     </AppModal>

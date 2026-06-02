@@ -564,7 +564,6 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     filterError,
     groups,
     hasMore,
-    isOutcomePaymentTasksMode,
     isLoading,
     isLoadingMore,
     loadMoreGroups,
@@ -621,17 +620,15 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             w={240}
             onChange={(value) => applyFilters({ ...filterDraft, organizationNetId: value || '' })}
           />
-          {!isOutcomePaymentTasksMode && (
-            <Select
-              data={typeOptions}
-              label={t('Тип')}
-              value={String(filterDraft.type)}
-              w={200}
-              onChange={(value) =>
-                applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
-              }
-            />
-          )}
+          <Select
+            data={typeOptions}
+            label={t('Тип')}
+            value={String(filterDraft.type)}
+            w={200}
+            onChange={(value) =>
+              applyFilters({ ...filterDraft, type: Number(value ?? AccountingTypeValue.All) as FilterDraft['type'] })
+            }
+          />
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}
@@ -912,7 +909,7 @@ function getCurrencyTotal(group: GroupedPaymentTask, code: string): number {
 }
 
 function countNotDone(group: GroupedPaymentTask): number {
-  return (group.SupplyPaymentTasks || []).filter((task) => task.TaskStatus !== TaskStatusValue.Done).length
+  return (group.SupplyPaymentTasks || []).filter((task) => task.TaskStatus === TaskStatusValue.NotDone).length
 }
 
 function countNotDoneTasks(groups: GroupedPaymentTask[]): number {

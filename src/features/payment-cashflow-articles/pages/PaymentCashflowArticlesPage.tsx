@@ -57,7 +57,6 @@ export function PaymentCashflowArticlesPage() {
 
       navigate(`/accounting/payment-cashflow-articles/edit/${article.NetUid}`, {
         state: {
-          backgroundLocation: location,
           nodeTitle: article.OperationName,
           returnPath: `${location.pathname}${location.search}`,
         },
@@ -179,7 +178,6 @@ export function PaymentCashflowArticlesPage() {
                   onClick={() =>
                     navigate('/accounting/payment-cashflow-articles/new', {
                       state: {
-                        backgroundLocation: location,
                         returnPath: `${location.pathname}${location.search}`,
                       },
                     })

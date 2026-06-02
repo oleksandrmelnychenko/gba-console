@@ -90,7 +90,7 @@ describe('getProductIncomeDocumentSourceLink', () => {
     expect(getProductIncomeDocumentSourceLink(document)).toBe('/orders/ukraine/income-1/product-income')
   })
 
-  it('links capitalizations without requiring the income document NetUid', () => {
+  it('links capitalizations to the exact capitalization document', () => {
     const document = incomeDocument({
       ProductIncomeItems: [
         {
@@ -103,7 +103,23 @@ describe('getProductIncomeDocumentSourceLink', () => {
       ],
     })
 
-    expect(getProductIncomeDocumentSourceLink(document)).toBe('/products/capitalization')
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/products/capitalization?netId=capitalization-1')
+  })
+
+  it('encodes capitalization NetUid in the source link', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          ProductCapitalizationItem: {
+            ProductCapitalization: {
+              NetUid: 'capitalization/1 2',
+            },
+          },
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/products/capitalization?netId=capitalization%2F1%202')
   })
 
   it('links sale returns without requiring the income document NetUid', () => {

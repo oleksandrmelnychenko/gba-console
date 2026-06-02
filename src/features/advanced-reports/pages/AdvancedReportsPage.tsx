@@ -657,7 +657,7 @@ function PayedToCell({ row }: { row: AdvancedReportRow }) {
 
 function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow | null; onClose: () => void }) {
   const { t } = useI18n()
-  const relatedOrders = row?.order.OutcomePaymentOrderConsumablesOrders || []
+  const relatedOrders = getActiveRelatedConsumableOrders(row?.order)
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Авансовий звіт')} onClose={onClose}>
@@ -666,10 +666,15 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Номер')} value={displayValue(row.number)} />
+            <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Склад')} value={displayValue(row.storage)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
             <DetailItem label={t('Роль')} value={displayValue(row.role)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
@@ -678,6 +683,10 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
             <DetailItem label={t('Різниця')} value={formatMoney(row.differenceAmount)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Закрито')} value={row.order.IsUnderReportDone ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Бухгалтерський')} value={row.order.IsAccounting ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Управлінський')} value={row.order.IsManagementAccounting ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
+            <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
           </SimpleGrid>
 
           <Stack gap={2}>
@@ -697,11 +706,15 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
                 const itemsCount = order?.ConsumablesOrderItems?.length || 0
 
                 return (
-                  <SimpleGrid key={item.NetUid || item.Id || index} cols={{ base: 1, sm: 2 }}>
+                  <SimpleGrid key={getRelatedOrderKey(item, index)} cols={{ base: 1, sm: 2 }}>
                     <DetailItem label={t('Документ')} value={displayValue(order?.Number)} />
+                    <DetailItem label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                    <DetailItem label={t('Дата організації')} value={formatDateTime(order?.OrganizationFromDate)} />
                     <DetailItem label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
                     <DetailItem label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
                     <DetailItem label={t('Позицій')} value={String(itemsCount)} />
+                    <DetailItem label={t('Сума без ПДВ')} value={formatMoney(order?.TotalAmountWithoutVAT)} />
+                    <DetailItem label={t('Сума з ПДВ')} value={formatMoney(order?.TotalAmount)} />
                   </SimpleGrid>
                 )
               })
@@ -737,6 +750,14 @@ function AdvancedReportDocumentStructureDrawer({
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} value={hasNumber(row.order.VAT) ? formatMoney(row.order.VAT) : displayValue(undefined)} />
+            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+            <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+            <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+            <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber || row.number)} />
           </SimpleGrid>
@@ -745,7 +766,7 @@ function AdvancedReportDocumentStructureDrawer({
 
           <Stack gap="sm">
             {rootAssignedOrder && !rootAssignedOrder.Deleted && (
-              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} title={t('Кореневий документ')} />
+              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} parentOrder={row.order} title={t('Кореневий документ')} />
             )}
 
             {assignedOrders.filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted).length > 0 ? (
@@ -755,6 +776,7 @@ function AdvancedReportDocumentStructureDrawer({
                   <AssignedPaymentOrderBlock
                     key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
                     assignedPaymentOrder={assignedPaymentOrder}
+                    parentOrder={row.order}
                     title={`${t('Пов’язаний документ')} ${index + 1}`}
                   />
                 ))
@@ -772,9 +794,11 @@ function AdvancedReportDocumentStructureDrawer({
 
 function AssignedPaymentOrderBlock({
   assignedPaymentOrder,
+  parentOrder,
   title,
 }: {
   assignedPaymentOrder: AssignedPaymentOrder
+  parentOrder: OutcomePaymentOrder
   title: string
 }) {
   const { t } = useI18n()
@@ -787,6 +811,10 @@ function AssignedPaymentOrderBlock({
         <IconHierarchy2 size={16} />
         <Text fw={700}>{title}</Text>
       </Group>
+      <AdvanceReportStructureSummary
+        assignedPaymentOrder={assignedPaymentOrder}
+        parentOrder={parentOrder}
+      />
       {assignedOutcome && <AssignedOutcomeOrderView order={assignedOutcome} />}
       {assignedIncome && <AssignedIncomeOrderView order={assignedIncome} />}
       {!assignedOutcome && !assignedIncome && (
@@ -795,6 +823,33 @@ function AssignedPaymentOrderBlock({
         </Text>
       )}
     </Stack>
+  )
+}
+
+function AdvanceReportStructureSummary({
+  assignedPaymentOrder,
+  parentOrder,
+}: {
+  assignedPaymentOrder: AssignedPaymentOrder
+  parentOrder: OutcomePaymentOrder
+}) {
+  const { t } = useI18n()
+  const assignedOutcome = assignedPaymentOrder.AssignedOutcomePaymentOrder || assignedPaymentOrder.RootOutcomePaymentOrder
+  const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
+  const currency = assignedIncome?.Currency?.Code
+    || assignedIncome?.Currency?.Name
+    || assignedOutcome?.PaymentCurrencyRegister?.Currency?.Code
+    || assignedOutcome?.PaymentCurrencyRegister?.Currency?.Name
+    || parentOrder.PaymentCurrencyRegister?.Currency?.Code
+    || parentOrder.PaymentCurrencyRegister?.Currency?.Name
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
+      <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
+      <DetailItem label={t('Сума авансового звіту')} value={formatMoneyWithCurrency(parentOrder.Amount, currency)} />
+      <DetailItem label={t('Сума зв’язки')} value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
+    </SimpleGrid>
   )
 }
 
@@ -913,12 +968,33 @@ function getConsumableProductOrganizationNames(
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
-  return entity?.LastName || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code
+  return joinTruthyParts(entity?.FirstName, entity?.LastName, entity?.MiddleName)
+    || entity?.LastName
+    || entity?.FullName
+    || entity?.Name
+    || entity?.OperationName
+    || entity?.Code
+    || entity?.Number
 }
 
 function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
   return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
     Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
+}
+
+function getActiveRelatedConsumableOrders(
+  order?: OutcomePaymentOrder | null,
+): NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']> {
+  return (order?.OutcomePaymentOrderConsumablesOrders || []).filter(
+    (item) => !item.Deleted && item.ConsumablesOrder && !item.ConsumablesOrder.Deleted,
+  )
+}
+
+function getRelatedOrderKey(
+  item: NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']>[number],
+  index: number,
+): string {
+  return String(item.NetUid || item.Id || item.ConsumablesOrder?.NetUid || item.ConsumablesOrder?.Id || `related-${index}`)
 }
 
 function getAssignedPaymentOrderKey(assignedPaymentOrder: AssignedPaymentOrder, index: number): string {
@@ -948,15 +1024,19 @@ function getPaymentRegisterTypeLabel(
     return direction === 'income' ? t('Прибутковий касовий ордер') : t('Видатковий касовий ордер')
   }
 
-  if (type === 1) {
+  if (type === 2) {
     return direction === 'income' ? t('Прибутковий банківський ордер') : t('Видатковий банківський ордер')
   }
 
-  return direction === 'income' ? t('Прибутковий ордер') : t('Видатковий ордер')
+  return direction === 'income' ? t('Прибутковий картковий ордер') : t('Видатковий картковий ордер')
 }
 
 function unique(values: string[]): string[] {
   return Array.from(new Set(values))
+}
+
+function joinTruthyParts(...parts: Array<string | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part)).join(' ')
 }
 
 function toSelectOptions<T extends { NetUid?: string }>(items: T[], getLabel: (item: T) => string | undefined) {
@@ -1009,6 +1089,20 @@ function formatDateTime(value?: string): string {
 
 function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+}
+
+function formatMoneyWithCurrency(value?: number, currency?: string): string {
+  if (!hasNumber(value)) {
+    return displayValue(undefined)
+  }
+
+  const formatted = formatMoney(value)
+
+  return currency ? `${formatted} ${currency}` : formatted
+}
+
+function hasNumber(value?: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function displayValue(value?: string | number | null): string {

@@ -113,6 +113,7 @@ export function ConsumableOrderPayPage() {
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []), [selectedRegister])
   const movementOptions = useMemo(() => toEntityOptions(paymentMovements, (movement) => movement?.OperationName || ''), [paymentMovements])
   const items = order?.ConsumablesOrderItems?.filter((item) => !item.Deleted) || []
+  const isOrderPaid = Boolean(order?.IsPayed)
 
   useEffect(() => {
     if (!id) {
@@ -259,6 +260,11 @@ export function ConsumableOrderPayPage() {
       return
     }
 
+    if (order.IsPayed) {
+      setError(t('Накладна вже оплачена'))
+      return
+    }
+
     const validationError = validatePaymentForm({
       amount: form.amount,
       order,
@@ -331,7 +337,7 @@ export function ConsumableOrderPayPage() {
                 </Button>
                 <Button
                   color="violet"
-                  disabled={isLoading || isSaving}
+                  disabled={isLoading || isSaving || isOrderPaid}
                   leftSection={<IconDeviceFloppy size={16} />}
                   loading={isSaving}
                   type="submit"
@@ -347,16 +353,22 @@ export function ConsumableOrderPayPage() {
               </Alert>
             )}
 
+            {isOrderPaid && (
+              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+                {t('Накладна вже оплачена. Повторна оплата недоступна.')}
+              </Alert>
+            )}
+
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Дата')}
                 type="date"
                 value={form.date}
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Час')}
                 type="time"
                 value={form.time}
@@ -365,7 +377,7 @@ export function ConsumableOrderPayPage() {
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Сума')}
                 min={0}
                 value={form.amount}
@@ -373,7 +385,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={organizationOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Організація')}
                 searchable
                 value={form.organizationValue || null}
@@ -381,7 +393,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={registerOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Каса / рахунок')}
                 searchable
                 value={form.paymentRegisterValue || null}
@@ -389,7 +401,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={currencyOptions}
-                disabled={!selectedRegister || isLoading || isSaving}
+                disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
                 label={t('Валюта')}
                 searchable
                 value={form.selectedCurrencyRegisterValue || null}
@@ -397,14 +409,14 @@ export function ConsumableOrderPayPage() {
               />
               <Autocomplete
                 data={movementOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Стаття руху коштів')}
                 value={form.movementSearch}
                 onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
                 onOptionSubmit={handleMovementSubmit}
               />
               <Button
-                disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading}
+                disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving || isOrderPaid}
                 leftSection={<IconPlus size={16} />}
                 mt={24}
                 type="button"
@@ -414,7 +426,7 @@ export function ConsumableOrderPayPage() {
                 {t('Створити статтю')}
               </Button>
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Коментар')}
                 value={form.comment}
                 onChange={(event) => updateForm({ comment: event.currentTarget.value })}

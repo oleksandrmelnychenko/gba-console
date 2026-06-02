@@ -113,9 +113,13 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
     [form.selectedCurrencyValue, selectedRegister],
   )
   const selectedCurrency = selectedCurrencyRegister?.Currency || null
+  const organizationSupplyAgreements = useMemo(
+    () => selectedOrganization ? filterSupplyAgreementsByOrganization(supplyAgreements, selectedOrganization) : [],
+    [selectedOrganization, supplyAgreements],
+  )
   const selectedAgreement = useMemo(
-    () => supplyAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
-    [form.selectedAgreementValue, supplyAgreements],
+    () => organizationSupplyAgreements.find((agreement) => getEntityValue(agreement) === form.selectedAgreementValue) || null,
+    [form.selectedAgreementValue, organizationSupplyAgreements],
   )
   const agreementCurrency = selectedAgreement?.Currency || null
   const selectedMovement = useMemo(
@@ -130,7 +134,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
   const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(organizationRegisters), [organizationRegisters])
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister), [selectedRegister])
-  const agreementOptions = useMemo(() => toSupplyAgreementOptions(supplyAgreements), [supplyAgreements])
+  const agreementOptions = useMemo(() => toSupplyAgreementOptions(organizationSupplyAgreements), [organizationSupplyAgreements])
   const counterpartyOptions = useMemo(() => toUniqueLabels(supplyOrganizations), [supplyOrganizations])
   const movementOptions = useMemo(() => toUniqueLabels(paymentMovements), [paymentMovements])
 
@@ -251,6 +255,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
     updateForm({
       organizationValue: value || '',
       paymentRegisterValue: nextRegister ? getEntityValue(nextRegister) : '',
+      selectedAgreementValue: '',
       selectedCurrencyValue: nextCurrency ? getEntityValue(nextCurrency) : '',
     })
   }
@@ -281,7 +286,10 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
             () => supplyOrganization.SupplyOrganizationAgreements || [],
           )
         : supplyOrganization.SupplyOrganizationAgreements || []
-      const nextAgreement = nextAgreements[0] || null
+      const organizationAgreements = selectedOrganization
+        ? filterSupplyAgreementsByOrganization(nextAgreements, selectedOrganization)
+        : []
+      const nextAgreement = organizationAgreements[0] || null
 
       setSelectedSupplyOrganization(supplyOrganization)
       setSupplyAgreements(nextAgreements)
@@ -362,6 +370,11 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
 
     if (!selectedAgreement) {
       setError(t('Договір'))
+      return
+    }
+
+    if (!isSupplyAgreementForOrganization(selectedAgreement, selectedOrganization)) {
+      setError(t('Договір не належить вибраній організації'))
       return
     }
 
@@ -586,4 +599,30 @@ function createInitialForm(): FormState {
     selectedMovementValue: '',
     time: toTimeValue(now),
   }
+}
+
+function filterSupplyAgreementsByOrganization(
+  agreements: SupplyOrganizationAgreement[],
+  organization: Organization,
+): SupplyOrganizationAgreement[] {
+  return agreements.filter((agreement) => isSupplyAgreementForOrganization(agreement, organization))
+}
+
+function isSupplyAgreementForOrganization(
+  agreement: SupplyOrganizationAgreement,
+  organization: Organization | null,
+): boolean {
+  if (!organization) {
+    return false
+  }
+
+  const agreementOrganization = agreement.Organization
+
+  return Boolean(
+    agreementOrganization
+      && (
+        (agreementOrganization.NetUid && agreementOrganization.NetUid === organization.NetUid)
+        || (typeof agreementOrganization.Id === 'number' && agreementOrganization.Id === organization.Id)
+      ),
+  )
 }

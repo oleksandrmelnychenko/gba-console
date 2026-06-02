@@ -22,8 +22,11 @@ export function getProductIncomeDocumentSourceLink(document: ProductIncomeDocume
     }
   }
 
-  if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization?.NetUid)) {
-    return '/products/capitalization'
+  const capitalizationNetUid = items.find((item) => item.ProductCapitalizationItem?.ProductCapitalization?.NetUid)
+    ?.ProductCapitalizationItem?.ProductCapitalization?.NetUid
+
+  if (capitalizationNetUid) {
+    return `/products/capitalization?netId=${encodeURIComponent(capitalizationNetUid)}`
   }
 
   if (items.some((item) => item.SaleReturnItem !== null && typeof item.SaleReturnItem !== 'undefined')) {

@@ -23,6 +23,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { calculateConsumableOrderItemTotals } from '../../consumable-orders/consumableOrderCalculations'
 import {
   calculateAdvanceReportConsumableOrder,
   searchAdvanceReportSupplyOrganizations,
@@ -1189,44 +1190,11 @@ function normalizeOrderTotals(order: AdvanceReportConsumablesOrder): AdvanceRepo
 }
 
 function normalizeCalculatedItem(item: AdvanceReportConsumablesOrderItem): AdvanceReportConsumablesOrderItem {
-  const qty = item.Qty || 0
-  const vatPercent = item.VatPercent || 0
-  let pricePerItem = item.PricePerItem || 0
-  let totalWithVat = item.TotalPriceWithVAT || 0
-  let vatAmount = item.VAT || 0
-
-  if (pricePerItem > 0 && qty > 0) {
-    totalWithVat = roundMoney(pricePerItem * qty)
-  } else if (totalWithVat > 0) {
-    pricePerItem = qty > 0 ? roundMoney(totalWithVat / qty) : totalWithVat
-  }
-
-  if (vatPercent > 0) {
-    vatAmount = roundMoney((totalWithVat * vatPercent) / (100 + vatPercent))
-  }
-
-  const totalWithoutVat = roundMoney(totalWithVat - vatAmount)
-
-  if (vatPercent === 0 && vatAmount > 0 && totalWithoutVat > 0) {
-    return {
-      ...item,
-      PricePerItem: pricePerItem,
-      Qty: qty,
-      TotalPrice: totalWithoutVat,
-      TotalPriceWithVAT: totalWithVat,
-      VAT: vatAmount,
-      VatPercent: roundMoney((vatAmount / totalWithoutVat) * 100),
-    }
-  }
+  const totals = calculateConsumableOrderItemTotals(item)
 
   return {
     ...item,
-    PricePerItem: pricePerItem,
-    Qty: qty,
-    TotalPrice: totalWithoutVat,
-    TotalPriceWithVAT: totalWithVat,
-    VAT: vatAmount,
-    VatPercent: vatPercent,
+    ...totals,
   }
 }
 
@@ -1407,10 +1375,6 @@ function toNumber(value: string | number): number {
   const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'))
 
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100
 }
 
 function formatAmount(value?: number): string {

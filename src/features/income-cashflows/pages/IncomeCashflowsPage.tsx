@@ -8,7 +8,6 @@ import {
   Group,
   Menu,
   MultiSelect,
-  SegmentedControl,
   Select,
   SimpleGrid,
   Stack,
@@ -17,9 +16,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconEye, IconPlus, IconRefresh, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { IconAlertCircle, IconChevronDown, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -27,37 +26,36 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
+import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
   cancelIncomeCashflow,
   getIncomeCashflowClientAgreements,
   getIncomeCashflowCurrencies,
   getIncomeCashflowOrganizations,
-  getIncomeCashflowSupplyOrganizationAgreements,
   getIncomeCashflows,
   searchIncomeCashflowClientPayers,
-  searchIncomeCashflowCounterparties,
   searchIncomeCashflowPaymentRegisters,
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
-import {
-  IncomeCounterpartySearchType,
-  IncomePaymentOperationType,
-} from '../types'
+import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
 import type {
+  AssignedPaymentOrder,
   Client,
   ClientAgreement,
   Currency,
   IncomeCashflowRow,
   IncomePaymentOrder,
+  IncomePaymentOrderSale,
   NamedEntity,
   Organization,
+  OutcomePaymentOrder,
   PaymentRegister,
-  SupplyOrganization,
-  SupplyOrganizationAgreement,
 } from '../types'
 
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 350
+const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -77,32 +75,56 @@ type SelectOption = {
   value: string
 }
 
+type IncomeDocumentStructureCalculationState = {
+  calculatedOutcome: OutcomePaymentOrder | null
+  error: string | null
+  isCalculating: boolean
+}
+
+type IncomeDocumentStructureCalculationAction =
+  | { type: 'error'; error: string }
+  | { type: 'idle' }
+  | { type: 'loading' }
+  | { type: 'success'; calculatedOutcome: OutcomePaymentOrder | null }
+
+const INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE: IncomeDocumentStructureCalculationState = {
+  calculatedOutcome: null,
+  error: null,
+  isCalculating: false,
+}
+
 export function IncomeCashflowsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [incomeOrders, setIncomeOrders] = useValueState<IncomePaymentOrder[]>([])
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [selectedOrganizationIds, setSelectedOrganizationIds] = useValueState<string[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-1))
+  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
-  const [currencyNetId, setCurrencyNetId] = useValueState('')
-  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
+  const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
+  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<IncomeCashflowRow | null>(null)
+  const [selectedStructureCalculationState, dispatchSelectedStructureCalculation] = useReducer(
+    incomeDocumentStructureCalculationReducer,
+    INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE,
+  )
   const [cancelRow, setCancelRow] = useValueState<IncomeCashflowRow | null>(null)
   const [isCanceling, setCanceling] = useValueState(false)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
-  const filterError = getDateRangeError(fromDate, toDate)
+  const dateRangeError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
+  const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
 
   const organizationOptions = useMemo(
@@ -115,12 +137,58 @@ export function IncomeCashflowsPage() {
         })),
     [organizations],
   )
+  const selectedOrganizationFilterIds = useMemo(
+    () => getSelectedOrganizationFilterIds(selectedOrganizationIds, organizationOptions),
+    [organizationOptions, selectedOrganizationIds],
+  )
+  const filterError = dateRangeError || getOrganizationFilterError(selectedOrganizationFilterIds.length, t)
   const [reassignRow, setReassignRow] = useValueState<IncomeCashflowRow | null>(null)
+
+  const openIncomeDetails = useCallback(
+    (row: IncomeCashflowRow) => {
+      const outcomeToCalculate = getIncomeDocumentStructureOutcomeToCalculate(row.income)
+      const requestId = structureCalculationRequestRef.current + 1
+      structureCalculationRequestRef.current = requestId
+
+      setSelectedRow(row)
+
+      if (!outcomeToCalculate) {
+        dispatchSelectedStructureCalculation({ type: 'idle' })
+        return
+      }
+
+      dispatchSelectedStructureCalculation({ type: 'loading' })
+      void calculateAdvanceReportOrder(outcomeToCalculate)
+        .then((calculatedOrder) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            dispatchSelectedStructureCalculation({ calculatedOutcome: calculatedOrder, type: 'success' })
+          }
+        })
+        .catch((calculationLoadError: unknown) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            dispatchSelectedStructureCalculation({
+              error: calculationLoadError instanceof Error
+                ? calculationLoadError.message
+                : t('Не вдалося перерахувати структуру документів'),
+              type: 'error',
+            })
+          }
+        })
+    },
+    [setSelectedRow, t],
+  )
+
+  const closeIncomeDetails = useCallback(() => {
+    structureCalculationRequestRef.current += 1
+    setSelectedRow(null)
+    dispatchSelectedStructureCalculation({ type: 'idle' })
+  }, [setSelectedRow])
+
   const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
   const totalQty = incomeOrders[0]?.TotalQty || incomeOrders.length
   const columns = useIncomeCashflowColumns({
     onCancel: setCancelRow,
-    onOpen: setSelectedRow,
+    onOpen: openIncomeDetails,
     onReassign: setReassignRow,
   })
   const isTableBusy = isLoading || isSearchSettling
@@ -183,7 +251,7 @@ export function IncomeCashflowsPage() {
         from: fromDate,
         limit: PAGE_SIZE,
         offset,
-        organizationIds: toFiniteNumberIds(selectedOrganizationIds),
+        organizationIds: selectedOrganizationFilterIds,
         registerNetId: paymentRegisterNetId,
         to: toDate,
         value: normalizedSearchValue,
@@ -213,7 +281,7 @@ export function IncomeCashflowsPage() {
     fromDate,
     normalizedSearchValue,
     paymentRegisterNetId,
-    selectedOrganizationIds,
+    selectedOrganizationFilterIds,
     setError,
     setHasMore,
     setIncomeOrders,
@@ -421,7 +489,7 @@ export function IncomeCashflowsPage() {
         maxHeight="calc(100vh - 365px)"
         minWidth={1680}
         tableId="income-cashflows"
-        onRowClick={setSelectedRow}
+        onRowClick={openIncomeDetails}
       />
 
       {hasMore && (
@@ -434,9 +502,10 @@ export function IncomeCashflowsPage() {
 
       <IncomeCashflowDetailDrawer
         row={selectedRow}
-        onClose={() => setSelectedRow(null)}
+        structureCalculation={selectedStructureCalculationState}
+        onClose={closeIncomeDetails}
         onReassign={(row) => {
-          setSelectedRow(null)
+          closeIncomeDetails()
           setReassignRow(row)
         }}
       />
@@ -677,18 +746,21 @@ function useIncomeCashflowColumns({
 
 function IncomeCashflowDetailDrawer({
   row,
+  structureCalculation,
   onClose,
   onReassign,
 }: {
   row: IncomeCashflowRow | null
+  structureCalculation: IncomeDocumentStructureCalculationState
   onClose: () => void
   onReassign: (row: IncomeCashflowRow) => void
 }) {
   const { t } = useI18n()
   const income = row?.income
+  const orderSales = income?.IncomePaymentOrderSales || []
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="lg" title={t('Прибутковий ордер')} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Прибутковий ордер')} onClose={onClose}>
       {row && income && (
         <Stack gap="md">
           {isClientPaymentReassignable(income) && (
@@ -715,10 +787,20 @@ function IncomeCashflowDetailDrawer({
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem label={t('Курс')} value={displayValue(income.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} value={hasNumber(income.EuroAmount) ? formatMoney(income.EuroAmount) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ %')} value={hasNumber(income.VatPercent) ? displayValue(income.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} value={hasNumber(income.VAT) ? formatMoney(income.VAT) : displayValue(undefined)} />
             <DetailItem label={t('Бухгалтерський')} value={income.IsAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Управлінський')} value={income.IsManagementAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Скасовано')} value={income.IsCanceled ? t('Так') : t('Ні')} />
-            <DetailItem label={t('Підстава')} value={displayValue(income.PaymentPurpose || income.ArrivalNumber)} />
+            <DetailItem label={t('Призначення платежу')} value={displayValue(income.PaymentPurpose)} />
+            <DetailItem label={t('Вхідний номер')} value={displayValue(income.ArrivalNumber)} />
+            <DetailItem label={t('Договір')} value={displayValue(getIncomeAgreementName(income))} />
+            <DetailItem
+              label={t('Сума у валюті договору')}
+              value={hasNumber(income.AgreementExchangedAmount) ? formatMoney(income.AgreementExchangedAmount) : displayValue(undefined)}
+            />
           </SimpleGrid>
 
           <Stack gap={2}>
@@ -728,26 +810,244 @@ function IncomeCashflowDetailDrawer({
             <Text size="sm">{displayValue(income.Comment)}</Text>
           </Stack>
 
-          {Boolean(income.AssignedPaymentOrders?.length || income.RootAssignedPaymentOrder) && (
+          {orderSales.length > 0 && (
             <>
               <Divider />
-              <Stack gap="xs">
-                <Text fw={700}>{t('Призначені платежі')}</Text>
-                {income.RootAssignedPaymentOrder && (
-                  <DetailItem label={t('Кореневий платіж')} value={displayValue(income.RootAssignedPaymentOrder.Number)} />
-                )}
-                {(income.AssignedPaymentOrders || []).map((assignedOrder, index) => (
-                  <SimpleGrid key={getAssignedKey(assignedOrder, index)} cols={{ base: 1, sm: 2 }}>
-                    <DetailItem label={t('Номер')} value={displayValue(assignedOrder.Number)} />
-                    <DetailItem label={t('Сума')} value={formatMoney(assignedOrder.Amount)} />
-                  </SimpleGrid>
-                ))}
-              </Stack>
+              <IncomeOrderSalesSection currency={income.Currency?.Code || income.Currency?.Name} sales={orderSales} />
+            </>
+          )}
+
+          {hasIncomeDocumentStructure(income) && (
+            <>
+              <Divider />
+              <IncomeDocumentStructure income={income} structureCalculation={structureCalculation} />
             </>
           )}
         </Stack>
       )}
     </AppDrawer>
+  )
+}
+
+function IncomeOrderSalesSection({
+  currency,
+  sales,
+}: {
+  currency?: string
+  sales: IncomePaymentOrderSale[]
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Stack gap="xs">
+      <Text fw={700}>{t('Рахунки та продажі')}</Text>
+      {sales.map((sale, index) => (
+        <IncomeOrderSaleBlock
+          key={getIncomeOrderSaleKey(sale, index)}
+          currency={currency}
+          sale={sale}
+        />
+      ))}
+    </Stack>
+  )
+}
+
+function IncomeOrderSaleBlock({
+  currency,
+  sale,
+}: {
+  currency?: string
+  sale: IncomePaymentOrderSale
+}) {
+  const { t } = useI18n()
+  const saleDocument = sale.Sale || sale.ReSale || null
+  const amount = firstNumber(sale.Amount, saleDocument?.TotalAmount, saleDocument?.TotalAmountLocal)
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Тип')} value={sale.ReSale ? t('Ресейл') : t('Продаж')} />
+      <DetailItem label={t('Дата')} value={formatDateTime(sale.Created || saleDocument?.Created)} />
+      <DetailItem label={t('Номер рахунку')} value={displayValue(saleDocument?.SaleNumber?.Value)} />
+      <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(amount, currency)} />
+      <Stack gap={2}>
+        <Text c="dimmed" size="xs" tt="uppercase">
+          {t('Оплата')}
+        </Text>
+        <IncomePaymentStatusBadge value={saleDocument} />
+      </Stack>
+    </SimpleGrid>
+  )
+}
+
+function IncomePaymentStatusBadge({ value }: { value: unknown }) {
+  const { t } = useI18n()
+  const status = getAccountingCashFlowRecordPaymentStatus(value)
+
+  if (!status) {
+    return (
+      <Text c="dimmed" size="sm">
+        {displayValue(undefined)}
+      </Text>
+    )
+  }
+
+  return (
+    <Badge color={status.color} size="sm" variant="light">
+      {t(status.label)}
+    </Badge>
+  )
+}
+
+function incomeDocumentStructureCalculationReducer(
+  _state: IncomeDocumentStructureCalculationState,
+  action: IncomeDocumentStructureCalculationAction,
+): IncomeDocumentStructureCalculationState {
+  switch (action.type) {
+    case 'error':
+      return {
+        calculatedOutcome: null,
+        error: action.error,
+        isCalculating: false,
+      }
+    case 'loading':
+      return {
+        calculatedOutcome: null,
+        error: null,
+        isCalculating: true,
+      }
+    case 'success':
+      return {
+        calculatedOutcome: action.calculatedOutcome,
+        error: null,
+        isCalculating: false,
+      }
+    case 'idle':
+    default:
+      return INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE
+  }
+}
+
+function IncomeDocumentStructure({
+  income,
+  structureCalculation,
+}: {
+  income: IncomePaymentOrder
+  structureCalculation: IncomeDocumentStructureCalculationState
+}) {
+  const { t } = useI18n()
+  const rootAssignedOrder = income.RootAssignedPaymentOrder || null
+  const assignedOrders = income.AssignedPaymentOrders || []
+  const outcomeToCalculate = getIncomeDocumentStructureOutcomeToCalculate(income)
+  const calculatedOutcomeKey = getOutcomeOrderKey(outcomeToCalculate)
+  const calculatedTotal = structureCalculation.calculatedOutcome?.Amount
+  const getCalculatedTotalForAssignedOrder = (assignedOrder: AssignedPaymentOrder): number | undefined =>
+    calculatedOutcomeKey && getOutcomeOrderKey(getIncomeAssignedOutcome(assignedOrder)) === calculatedOutcomeKey
+      ? calculatedTotal
+      : undefined
+
+  return (
+    <Stack gap="sm">
+      <Group gap="xs">
+        <IconHierarchy2 size={16} />
+        <Text fw={700}>{t('Структура документів')}</Text>
+      </Group>
+
+      {structureCalculation.isCalculating && (
+        <Alert color="blue" variant="light">
+          {t('Перерахунок структури документів...')}
+        </Alert>
+      )}
+
+      {structureCalculation.error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {structureCalculation.error}
+        </Alert>
+      )}
+
+      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+        <DetailItem label={t('Прибутковий ордер')} value={displayValue(income.Number)} />
+        <DetailItem label={t('Дата')} value={formatDateTime(income.FromDate)} />
+        <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(income.Amount, income.Currency?.Code || income.Currency?.Name)} />
+        <DetailItem
+          label={t('Перерахована сума')}
+          value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcomeToCalculate)) : displayValue(undefined)}
+        />
+        <DetailItem label={t('Платник')} value={displayValue(getIncomePayerName(income))} />
+      </SimpleGrid>
+
+      {rootAssignedOrder && (
+        <IncomeAssignedPaymentOrderBlock
+          assignedOrder={rootAssignedOrder}
+          calculatedTotal={getCalculatedTotalForAssignedOrder(rootAssignedOrder)}
+          title={t('Кореневий документ')}
+        />
+      )}
+
+      {assignedOrders.length > 0 ? (
+        assignedOrders.map((assignedOrder, index) => (
+          <IncomeAssignedPaymentOrderBlock
+            key={getAssignedKey(assignedOrder, index)}
+            assignedOrder={assignedOrder}
+            calculatedTotal={getCalculatedTotalForAssignedOrder(assignedOrder)}
+            title={`${t('Пов’язаний документ')} ${index + 1}`}
+          />
+        ))
+      ) : !rootAssignedOrder ? (
+        <Text c="dimmed" size="sm">
+          {t('Структура документів відсутня')}
+        </Text>
+      ) : null}
+    </Stack>
+  )
+}
+
+function IncomeAssignedPaymentOrderBlock({
+  assignedOrder,
+  calculatedTotal,
+  title,
+}: {
+  assignedOrder: AssignedPaymentOrder
+  calculatedTotal?: number
+  title: string
+}) {
+  const { t } = useI18n()
+  const outcome = getIncomeAssignedOutcome(assignedOrder)
+
+  return (
+    <Stack gap="xs">
+      <Text fw={600} size="sm">{title}</Text>
+      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+        <DetailItem label={t('Номер зв’язки')} value={displayValue(assignedOrder.Number)} />
+        <DetailItem label={t('Сума зв’язки')} value={formatMoney(assignedOrder.Amount)} />
+        <DetailItem
+          label={t('Сума авансового звіту')}
+          value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, getOutcomeCurrency(outcome)) : displayValue(undefined)}
+        />
+      </SimpleGrid>
+
+      {outcome ? (
+        <IncomeAssignedOutcomeOrderView order={outcome} />
+      ) : (
+        <Text c="dimmed" size="sm">
+          {t('Пов’язаний видатковий документ не завантажено')}
+        </Text>
+      )}
+    </Stack>
+  )
+}
+
+function IncomeAssignedOutcomeOrderView({ order }: { order: OutcomePaymentOrder }) {
+  const { t } = useI18n()
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(order, t)} />
+      <DetailItem label={t('Номер')} value={displayValue(order.Number || order.CustomNumber || order.AdvanceNumber)} />
+      <DetailItem label={t('Авансовий звіт')} value={displayValue(order.AdvanceNumber)} />
+      <DetailItem label={t('Дата')} value={formatDateTime(order.FromDate)} />
+      <DetailItem label={t('Сума')} value={formatMoneyWithCurrency(order.Amount, getOutcomeCurrency(order))} />
+      <DetailItem label={t('Отримувач')} value={displayValue(getOutcomePayedTo(order))} />
+    </SimpleGrid>
   )
 }
 
@@ -783,8 +1083,6 @@ function CancelIncomeCashflowModal({
   )
 }
 
-type ReassignSearchType = typeof IncomeCounterpartySearchType.Client | typeof IncomeCounterpartySearchType.Supplier
-
 function ReassignIncomeClientModal({
   row,
   onClose,
@@ -795,51 +1093,38 @@ function ReassignIncomeClientModal({
   onSaved: () => void
 }) {
   const { t } = useI18n()
-  const [searchType, setSearchType] = useValueState<ReassignSearchType>(IncomeCounterpartySearchType.Client)
   const [searchValue, setSearchValue] = useValueState('')
   const [clients, setClients] = useValueState<Client[]>([])
-  const [supplyOrganizations, setSupplyOrganizations] = useValueState<SupplyOrganization[]>([])
   const [selectedClientValue, setSelectedClientValue] = useValueState('')
   const [clientAgreements, setClientAgreements] = useValueState<ClientAgreement[]>([])
-  const [supplyAgreements, setSupplyAgreements] = useValueState<SupplyOrganizationAgreement[]>([])
   const [selectedAgreementValue, setSelectedAgreementValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
   const [debouncedSearch] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
 
-  const isSupplier = searchType === IncomeCounterpartySearchType.Supplier
   const opened = Boolean(row)
 
-  const counterpartyOptions = useMemo(() => {
-    const source: NamedEntity[] = isSupplier ? supplyOrganizations : clients
-    return toSelectOptions(source, getEntityName)
-  }, [clients, isSupplier, supplyOrganizations])
+  const counterpartyOptions = useMemo(() => toSelectOptions(clients, getEntityName), [clients])
 
   const agreementOptions = useMemo(
-    () => (isSupplier ? toSupplyAgreementOptions(supplyAgreements) : toClientAgreementOptions(clientAgreements)),
-    [clientAgreements, isSupplier, supplyAgreements],
+    () => toClientAgreementOptions(clientAgreements),
+    [clientAgreements],
   )
 
   const resetReassignForm = useCallback(() => {
-    setSearchType(IncomeCounterpartySearchType.Client)
     setSearchValue('')
     setClients([])
-    setSupplyOrganizations([])
     setSelectedClientValue('')
     setClientAgreements([])
-    setSupplyAgreements([])
     setSelectedAgreementValue('')
     setError(null)
   }, [
     setClientAgreements,
     setClients,
     setError,
-    setSearchType,
     setSearchValue,
     setSelectedAgreementValue,
     setSelectedClientValue,
-    setSupplyAgreements,
-    setSupplyOrganizations,
   ])
 
   const handleClose = useCallback(() => {
@@ -865,15 +1150,6 @@ function ReassignIncomeClientModal({
       if (!value) {
         if (!cancelled) {
           setClients([])
-          setSupplyOrganizations([])
-        }
-        return
-      }
-
-      if (isSupplier) {
-        const result = await searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Supplier).catch(() => [])
-        if (!cancelled) {
-          setSupplyOrganizations(result as SupplyOrganization[])
         }
         return
       }
@@ -889,7 +1165,7 @@ function ReassignIncomeClientModal({
     return () => {
       cancelled = true
     }
-  }, [debouncedSearch, isSupplier, opened, setClients, setSupplyOrganizations])
+  }, [debouncedSearch, opened, setClients])
 
   useEffect(() => {
     let cancelled = false
@@ -898,28 +1174,7 @@ function ReassignIncomeClientModal({
       if (!selectedClientValue) {
         if (!cancelled) {
           setClientAgreements([])
-          setSupplyAgreements([])
           setSelectedAgreementValue('')
-        }
-        return
-      }
-
-      if (isSupplier) {
-        const selected = supplyOrganizations.find(
-          (entity) => String(entity.NetUid || entity.Id || '') === selectedClientValue,
-        )
-        const supplyId = selected?.Id
-
-        if (!supplyId) {
-          if (!cancelled) {
-            setSupplyAgreements([])
-          }
-          return
-        }
-
-        const result = await getIncomeCashflowSupplyOrganizationAgreements(supplyId).catch(() => [])
-        if (!cancelled) {
-          setSupplyAgreements(result)
         }
         return
       }
@@ -935,37 +1190,7 @@ function ReassignIncomeClientModal({
     return () => {
       cancelled = true
     }
-  }, [
-    isSupplier,
-    selectedClientValue,
-    setClientAgreements,
-    setSelectedAgreementValue,
-    setSupplyAgreements,
-    supplyOrganizations,
-  ])
-
-  const handleSearchTypeChanged = useCallback(
-    (value: string) => {
-      setSearchType(Number(value) as ReassignSearchType)
-      setSearchValue('')
-      setClients([])
-      setSupplyOrganizations([])
-      setSelectedClientValue('')
-      setClientAgreements([])
-      setSupplyAgreements([])
-      setSelectedAgreementValue('')
-    },
-    [
-      setClientAgreements,
-      setClients,
-      setSearchType,
-      setSearchValue,
-      setSelectedAgreementValue,
-      setSelectedClientValue,
-      setSupplyAgreements,
-      setSupplyOrganizations,
-    ],
-  )
+  }, [selectedClientValue, setClientAgreements, setSelectedAgreementValue])
 
   const handleSubmit = useCallback(async () => {
     const incomeNetId = row?.income.NetUid
@@ -1000,20 +1225,10 @@ function ReassignIncomeClientModal({
           </Text>
         )}
 
-        <SegmentedControl
-          data={[
-            { label: t('За клієнтами'), value: String(IncomeCounterpartySearchType.Client) },
-            { label: t('За постачальниками'), value: String(IncomeCounterpartySearchType.Supplier) },
-          ]}
-          disabled={isSaving}
-          value={String(searchType)}
-          onChange={handleSearchTypeChanged}
-        />
-
         <Autocomplete
           data={counterpartyOptions.map((option) => option.label)}
           disabled={isSaving}
-          label={isSupplier ? t('Постачальник') : t('Клієнт')}
+          label={t('Клієнт')}
           placeholder={t('Почніть вводити назву')}
           value={searchValue}
           onChange={setSearchValue}
@@ -1116,7 +1331,7 @@ function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCash
       isCanceled: income.IsCanceled,
       isManagementAccounting: income.IsManagementAccounting,
       number: income.Number,
-      operationType: income.OperationTypeName,
+      operationType: getIncomeOperationTypeName(income),
       organization: getEntityName(income.Organization),
       payer: getIncomePayerName(income),
       paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
@@ -1138,6 +1353,109 @@ function getIncomePayerName(income: IncomePaymentOrder): string | undefined {
   return getEntityName(income.SupplyOrganization)
 }
 
+function getIncomeOperationTypeName(income: IncomePaymentOrder): string {
+  if (income.OperationTypeName?.trim()) {
+    return income.OperationTypeName
+  }
+
+  switch (Number(income.OperationType)) {
+    case IncomePaymentOperationType.ClientPayment:
+      return 'Оплата покупця'
+    case IncomePaymentOperationType.SupplierReturn:
+      return 'Повернення постачальника'
+    case IncomePaymentOperationType.OtherAccountingWithCounterparts:
+      return 'Інші з контрагентами'
+    case IncomePaymentOperationType.OtherIncome:
+      return 'Інший прихід'
+    case IncomePaymentOperationType.ReturnFromColleague:
+      return 'Повернення від колеги'
+    default:
+      return 'Невідомий тип операції'
+  }
+}
+
+function hasIncomeDocumentStructure(income: IncomePaymentOrder): boolean {
+  return Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length)
+}
+
+function getIncomeDocumentStructureOutcomeToCalculate(income: IncomePaymentOrder): OutcomePaymentOrder | null {
+  const rootOutcome = getIncomeAssignedOutcome(income.RootAssignedPaymentOrder)
+
+  if (rootOutcome && !rootOutcome.Deleted) {
+    return rootOutcome
+  }
+
+  return getActiveIncomeAssignedPaymentOrders(income.AssignedPaymentOrders)
+    .map(getIncomeAssignedOutcome)
+    .find((outcome): outcome is OutcomePaymentOrder => Boolean(outcome && !outcome.Deleted)) || null
+}
+
+function getActiveIncomeAssignedPaymentOrders(orders?: AssignedPaymentOrder[]): AssignedPaymentOrder[] {
+  return (orders || []).filter((assignedOrder) => !assignedOrder.Deleted)
+}
+
+function getIncomeAssignedOutcome(assignedOrder?: AssignedPaymentOrder | null): OutcomePaymentOrder | null {
+  return assignedOrder?.AssignedOutcomePaymentOrder || assignedOrder?.RootOutcomePaymentOrder || null
+}
+
+function getOutcomeOrderKey(order?: OutcomePaymentOrder | null): string {
+  return String(order?.NetUid || order?.Id || order?.Number || order?.CustomNumber || order?.AdvanceNumber || '')
+}
+
+function getIncomeAgreementName(income: IncomePaymentOrder): string | undefined {
+  const clientAgreement = income.ClientAgreement?.Agreement
+
+  if (clientAgreement) {
+    return joinTruthyParts(clientAgreement.Name || clientAgreement.Number, clientAgreement.Currency?.Code || clientAgreement.Currency?.Name)
+  }
+
+  const supplyAgreement = income.SupplyOrganizationAgreement
+
+  if (supplyAgreement) {
+    return joinTruthyParts(supplyAgreement.Name || supplyAgreement.Number, supplyAgreement.Currency?.Code || supplyAgreement.Currency?.Name)
+  }
+
+  return undefined
+}
+
+function getOutcomePaymentOrderTypeLabel(order: OutcomePaymentOrder, t: (value: string) => string): string {
+  if (order.IsUnderReport) {
+    return t('Авансовий звіт')
+  }
+
+  const registerType = order.PaymentCurrencyRegister?.PaymentRegister?.Type ?? order.PaymentRegister?.Type
+
+  if (registerType === PaymentRegisterType.Cash) {
+    return t('Видатковий касовий ордер')
+  }
+
+  if (registerType === PaymentRegisterType.Bank) {
+    return t('Видатковий банківський ордер')
+  }
+
+  if (registerType === PaymentRegisterType.Card) {
+    return t('Видатковий картковий ордер')
+  }
+
+  return order.OperationTypeName || t('Видатковий ордер')
+}
+
+function getOutcomeCurrency(order: OutcomePaymentOrder | null): string | undefined {
+  return order?.PaymentCurrencyRegister?.Currency?.Code
+    || order?.PaymentCurrencyRegister?.Currency?.Name
+}
+
+function getOutcomePayedTo(order: OutcomePaymentOrder): string | undefined {
+  return getEntityName(order.Client)
+    || getPersonFullName(order.Colleague)
+    || getEntityName(order.Organization)
+    || getEntityName(order.User)
+}
+
+function getPersonFullName(person?: NamedEntity | null): string | undefined {
+  return joinTruthyParts(person?.FirstName, person?.LastName, person?.MiddleName) || getEntityName(person)
+}
+
 function toSelectOptions<T extends NamedEntity>(items: T[], labelGetter: (item: T) => string | undefined): SelectOption[] {
   const options: SelectOption[] = []
 
@@ -1147,23 +1465,6 @@ function toSelectOptions<T extends NamedEntity>(items: T[], labelGetter: (item: 
     if (value) {
       options.push({
         label: labelGetter(item) || getEntityName(item) || value,
-        value,
-      })
-    }
-  }
-
-  return options
-}
-
-function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]): SelectOption[] {
-  const options: SelectOption[] = []
-
-  for (const agreement of agreements) {
-    const value = getEntityOptionValue(agreement)
-
-    if (value) {
-      options.push({
-        label: joinTruthyParts(agreement.Name || agreement.Number, agreement.Currency?.Code || agreement.Currency?.Name),
         value,
       })
     }
@@ -1204,6 +1505,22 @@ function toFiniteNumberIds(values: string[]): number[] {
   return ids
 }
 
+function getSelectedOrganizationFilterIds(selectedIds: string[], allOptions: SelectOption[]): number[] {
+  if (selectedIds.length === 0 || selectedIds.length >= allOptions.length) {
+    return []
+  }
+
+  return toFiniteNumberIds(selectedIds)
+}
+
+function getOrganizationFilterError(selectedFilterCount: number, t: (value: string) => string): string | null {
+  if (selectedFilterCount <= MAX_ORGANIZATION_QUERY_FILTER_IDS) {
+    return null
+  }
+
+  return t('Забагато організацій у фільтрі. Оберіть усі організації або звузьте вибір.')
+}
+
 function joinTruthyParts(...parts: Array<string | undefined>): string {
   const nextParts: string[] = []
 
@@ -1226,6 +1543,12 @@ function getEntityName(entity?: NamedEntity | null): string | undefined {
 
 function getAssignedKey(assignedOrder: { NetUid?: string; Id?: number }, index: number): string {
   return String(assignedOrder.NetUid || assignedOrder.Id || `assigned-${index}`)
+}
+
+function getIncomeOrderSaleKey(sale: IncomePaymentOrderSale, index: number): string {
+  const saleDocument = sale.Sale || sale.ReSale
+
+  return String(sale.NetUid || sale.Id || saleDocument?.NetUid || saleDocument?.Id || `income-sale-${index}`)
 }
 
 function shiftDate(days: number): string {
@@ -1270,6 +1593,24 @@ function formatMoney(value?: number): string {
   const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
 
   return moneyFormatter.format(amount)
+}
+
+function formatMoneyWithCurrency(value?: number, currency?: string): string {
+  if (!hasNumber(value)) {
+    return displayValue(undefined)
+  }
+
+  const formatted = formatMoney(value)
+
+  return currency ? `${formatted} ${currency}` : formatted
+}
+
+function firstNumber(...values: Array<number | undefined>): number | undefined {
+  return values.find(hasNumber)
+}
+
+function hasNumber(value?: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function displayValue(value?: string | number | null): string {

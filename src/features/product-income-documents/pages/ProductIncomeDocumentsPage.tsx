@@ -411,10 +411,10 @@ function useProductIncomeDocumentsPageModel() {
 
       try {
         const response = await getProductIncomeDocuments({
-          from: dateFrom,
+          from: toDateTimeQuery(dateFrom, 'start'),
           limit: pageSize,
           offset,
-          to: dateTo,
+          to: toDateTimeQuery(dateTo, 'end'),
           value: searchValue,
         })
 
@@ -848,6 +848,7 @@ function ProductIncomeOptionsModal({
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
   const title = document ? `${displayValue(row?.type)} ${displayValue(document.Number)}`.trim() : t('Виберіть опцію')
+  const primarySourceLink = document ? getPrimaryProductIncomeSourceLink(document) : null
 
   return (
     <AppModal centered opened={Boolean(document)} title={t('Виберіть опцію')} onClose={onClose}>
@@ -856,8 +857,19 @@ function ProductIncomeOptionsModal({
           <Text c="dimmed" size="sm">
             {title}
           </Text>
+          {primarySourceLink && (
+            <Button
+              component={Link}
+              justify="flex-start"
+              leftSection={<IconExternalLink size={18} />}
+              to={primarySourceLink}
+              variant="light"
+            >
+              {t('Відкрити джерело')}
+            </Button>
+          )}
           <Button justify="flex-start" leftSection={<IconEye size={18} />} variant="light" onClick={() => onOverview(document)}>
-            {t('Огляд')}
+            {t('Деталі документа')}
           </Button>
           <Button
             disabled={!document.NetUid}
@@ -872,6 +884,12 @@ function ProductIncomeOptionsModal({
       )}
     </AppModal>
   )
+}
+
+function getPrimaryProductIncomeSourceLink(document: ProductIncomeDocument): string | null {
+  const sourceLink = getProductIncomeDocumentSourceLink(document)
+
+  return sourceLink && sourceLink !== '/sales/return/client' ? sourceLink : null
 }
 
 function ProductIncomeDocumentDrawer({
@@ -1192,6 +1210,9 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   const agreement = firstItem?.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement
   const currencyCode = agreement?.Currency?.Code || agreement?.Currency?.Name || ''
   const isVat = Boolean(agreement?.WithVATAccounting)
+  const totalAmount = document.TotalNetPrice || sumRows(items, (item) => item.SaleReturnItem?.Amount)
+  const totalVat = document.TotalVatAmount || sumRows(items, (item) => item.SaleReturnItem?.VatAmount)
+  const columns = getSaleReturnOverviewColumns(t, currencyCode, isVat, items)
 
   return (
     <Card withBorder radius="md" padding="md">
@@ -1215,60 +1236,107 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
             {t('Позицій не знайдено')}
           </Text>
         ) : (
-          <Stack gap="xs">
-            {items.map((item) => {
-              const saleReturnItem = item.SaleReturnItem
-
-              return (
-                <Card key={getSaleReturnIncomeItemKey(item)} withBorder radius="sm" padding="sm">
-                  <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-                    <Stack gap={2}>
-                      <Group gap={6} align="baseline" wrap="nowrap">
-                        <Text c="dimmed" size="xs">
-                          {displayValue(saleReturnItem?.OrderItem?.Product?.VendorCode)}
-                        </Text>
-                        <Text fw={600} size="sm">
-                          {displayValue(saleReturnItem?.OrderItem?.Product?.Name)}
-                        </Text>
-                      </Group>
-                    </Stack>
-                    <Group gap="lg" align="flex-start" wrap="nowrap">
-                      <Stack gap={0} align="flex-end">
-                        <Text fw={600} size="sm">
-                          {formatMoney(saleReturnItem?.AmountLocal)} {currencyCode}
-                        </Text>
-                        <Text c="dimmed" size="xs">
-                          {t('Сума нетто (інвойса)')}
-                        </Text>
-                      </Stack>
-                      {isVat && (
-                        <Stack gap={0} align="flex-end">
-                          <Text fw={600} size="sm">
-                            {formatMoney(saleReturnItem?.VatAmount)}
-                          </Text>
-                          <Text c="dimmed" size="xs">
-                            {t('ПДВ')}
-                          </Text>
-                        </Stack>
-                      )}
-                      <Stack gap={0} align="flex-end">
-                        <Text fw={600} size="sm">
-                          {formatAmount(saleReturnItem?.Qty ?? item.Qty)}
-                        </Text>
-                        <Text c="dimmed" size="xs">
-                          {t('штук')}
-                        </Text>
-                      </Stack>
-                    </Group>
-                  </Group>
-                </Card>
-              )
-            })}
-          </Stack>
+          <DataTable
+            columns={columns}
+            data={items}
+            defaultLayout={{ density: 'compact' }}
+            emptyText={t('Позицій не знайдено')}
+            getRowId={(item) => getSaleReturnIncomeItemKey(item)}
+            layoutVersion="product-income-sale-return-items-1"
+            maxHeight={420}
+            minWidth={isVat ? 1010 : 886}
+            tableId="product-income-sale-return-items"
+          />
         )}
+
+        <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="sm">
+          <DetailValue label={t('Всього позицій')} value={String(items.length)} />
+          <DetailValue label={t('Вся кількість')} value={formatAmount(document.TotalQty || sumRows(items, (item) => item.SaleReturnItem?.Qty ?? item.Qty))} />
+          <DetailValue label={t('Загальна сума')} value={formatMoney(totalAmount)} />
+          {isVat && <DetailValue label={t('ПДВ')} value={formatMoney(totalVat)} />}
+        </SimpleGrid>
       </Stack>
     </Card>
   )
+}
+
+function getSaleReturnOverviewColumns(
+  t: (value: string) => string,
+  currencyCode: string,
+  isVat: boolean,
+  items: ProductIncomeItem[],
+): DataTableColumn<ProductIncomeItem>[] {
+  return [
+    {
+      id: 'index',
+      header: '#',
+      width: 56,
+      minWidth: 52,
+      align: 'right',
+      accessor: (item) => items.indexOf(item) + 1,
+      cell: (item) => String(items.indexOf(item) + 1),
+    },
+    {
+      id: 'vendorCode',
+      header: t('Код товару'),
+      width: 140,
+      minWidth: 120,
+      accessor: (item) => item.SaleReturnItem?.OrderItem?.Product?.VendorCode,
+      cell: (item) => <Text fw={700}>{displayValue(item.SaleReturnItem?.OrderItem?.Product?.VendorCode)}</Text>,
+    },
+    {
+      id: 'name',
+      header: t('Назва товару'),
+      width: 320,
+      minWidth: 240,
+      accessor: (item) => item.SaleReturnItem?.OrderItem?.Product?.Name,
+      cell: (item) => (
+        <Text size="sm" lineClamp={2}>
+          {displayValue(item.SaleReturnItem?.OrderItem?.Product?.Name)}
+        </Text>
+      ),
+    },
+    {
+      id: 'qty',
+      header: t('Кількість'),
+      width: 110,
+      minWidth: 96,
+      align: 'right',
+      accessor: (item) => item.SaleReturnItem?.Qty ?? item.Qty,
+      cell: (item) => formatAmount(item.SaleReturnItem?.Qty ?? item.Qty),
+    },
+    {
+      id: 'amount',
+      header: t('Сума'),
+      width: 124,
+      minWidth: 108,
+      align: 'right',
+      accessor: (item) => item.SaleReturnItem?.Amount,
+      cell: (item) => formatMoney(item.SaleReturnItem?.Amount),
+    },
+    {
+      id: 'amountLocal',
+      header: currencyCode || t('Сума у валюті'),
+      width: 136,
+      minWidth: 118,
+      align: 'right',
+      accessor: (item) => item.SaleReturnItem?.AmountLocal,
+      cell: (item) => formatMoney(item.SaleReturnItem?.AmountLocal),
+    },
+    ...(isVat
+      ? [
+          {
+            id: 'vat',
+            header: t('ПДВ'),
+            width: 124,
+            minWidth: 108,
+            align: 'right' as const,
+            accessor: (item: ProductIncomeItem) => item.SaleReturnItem?.VatAmount,
+            cell: (item: ProductIncomeItem) => formatMoney(item.SaleReturnItem?.VatAmount),
+          },
+        ]
+      : []),
+  ]
 }
 
 type ActReconciliationOverviewRow = {
@@ -2032,6 +2100,12 @@ function getFilterError(dateFrom: string, dateTo: string): string | null {
   }
 
   return null
+}
+
+function toDateTimeQuery(dateValue: string, boundary: 'start' | 'end'): string {
+  const time = boundary === 'start' ? 'T00:00:00.000' : 'T23:59:59.999'
+
+  return new Date(`${dateValue}${time}`).toISOString()
 }
 
 function readStoredFilters(): { from: string; to: string; value: string } {

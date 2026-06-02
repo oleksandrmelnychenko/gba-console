@@ -68,7 +68,7 @@ const EMPTY_ITEM_ENTRY: ItemEntryDraft = {
   weight: '',
 }
 
-type DraftItem = ProductCapitalizationItem & { __rowKey: string }
+type DraftItem = ProductCapitalizationItem & { __priceRequired: boolean; __rowKey: string }
 
 type StorageSelectionState = {
   items: ClientResourceStorage[]
@@ -90,11 +90,12 @@ function nextRowKey(): string {
   return `pc-item-${rowKeySequence}`
 }
 
-function toDraftItem(item: ProductCapitalizationItem): DraftItem {
-  return { ...item, __rowKey: nextRowKey() }
+function toDraftItem(item: ProductCapitalizationItem, options: { priceRequired?: boolean } = {}): DraftItem {
+  return { ...item, __priceRequired: options.priceRequired ?? true, __rowKey: nextRowKey() }
 }
 
-function fromDraftItem({ __rowKey, ...item }: DraftItem): ProductCapitalizationItem {
+function fromDraftItem({ __priceRequired, __rowKey, ...item }: DraftItem): ProductCapitalizationItem {
+  void __priceRequired
   void __rowKey
 
   return {
@@ -254,7 +255,7 @@ export function NewProductCapitalizationPanel({ opened, onClose, onCreated }: Ne
           opened={model.uploadModalOpened}
           submitError={model.uploadError}
           onClose={model.closeUploadModal}
-          onSubmit={model.parseFromFile}
+          onSubmit={model.parseFromFiles}
         />
       )}
 
@@ -616,8 +617,8 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     setVendorCodeQuery,
   ])
 
-  const parseFromFile = useCallback(
-    async (file: File, parseConfiguration: ProductCapitalizationParseConfiguration) => {
+  const parseFromFiles = useCallback(
+    (files: File[], parseConfiguration: ProductCapitalizationParseConfiguration) => {
       if (isSubmitting || isParsing) {
         return
       }
@@ -628,44 +629,59 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       setParsing(true)
       setUploadError(null)
 
-      try {
-        const result = await parseProductCapitalizationItemsFromFile(file, parseConfiguration)
-        const parsedItems: ProductCapitalizationItem[] = []
-        const invalidVendorCodes: string[] = []
-
-        result.Items.forEach((item) => {
-          if (isValidCapitalizationItemProduct(item)) {
-            parsedItems.push(item)
-
+      void Promise.all(files.map((file) => parseProductCapitalizationItemsFromFile(file, parseConfiguration)))
+        .then((results) => {
+          if (!isCurrentParse()) {
             return
           }
 
-          const vendorCode = getCapitalizationItemVendorCode(item)
+        const parsedItems: ProductCapitalizationItem[] = []
+        const invalidVendorCodes: string[] = []
+        const missingVendorCodes: string[] = []
 
-          if (vendorCode) {
-            invalidVendorCodes.push(vendorCode)
-          }
+        results.forEach((result) => {
+          missingVendorCodes.push(...result.MissingVendorCodes)
+
+          result.Items.forEach((item) => {
+            if (isValidCapitalizationItemProduct(item)) {
+              parsedItems.push(item)
+
+              return
+            }
+
+            const vendorCode = getCapitalizationItemVendorCode(item)
+
+            if (vendorCode) {
+              invalidVendorCodes.push(vendorCode)
+            }
+          })
         })
-        const missingVendorCodes = Array.from(new Set([...result.MissingVendorCodes, ...invalidVendorCodes]))
+
+        const uniqueMissingVendorCodes = Array.from(new Set([...missingVendorCodes, ...invalidVendorCodes]))
 
         if (isCurrentParse()) {
-          setItems((current) => [...current, ...parsedItems.map(toDraftItem)])
+          setItems((current) => [
+            ...current,
+            ...parsedItems.map((item) => toDraftItem(item, { priceRequired: parseConfiguration.WithPrice })),
+          ])
           setUploadModalOpened(false)
         }
 
-        if (isCurrentParse() && missingVendorCodes.length > 0) {
-          setMissingVendorCodes(missingVendorCodes)
+        if (isCurrentParse() && uniqueMissingVendorCodes.length > 0) {
+          setMissingVendorCodes(uniqueMissingVendorCodes)
           setMissingModalOpened(true)
         }
-      } catch (parseError) {
-        if (isCurrentParse()) {
-          setUploadError(parseError instanceof Error ? parseError.message : t('Не вдалося розпізнати файл'))
-        }
-      } finally {
-        if (isCurrentParse()) {
-          setParsing(false)
-        }
-      }
+        })
+        .catch((parseError: unknown) => {
+          if (isCurrentParse()) {
+            setUploadError(parseError instanceof Error ? parseError.message : t('Не вдалося розпізнати файл'))
+          }
+        })
+        .finally(() => {
+          if (isCurrentParse()) {
+            setParsing(false)
+          }
+        })
     },
     [
       isParsing,
@@ -699,7 +715,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
       return
     }
 
-    if (items.some((item) => toFiniteNumber(item.UnitPrice) <= 0)) {
+    if (items.some((item) => item.__priceRequired && toFiniteNumber(item.UnitPrice) <= 0)) {
       notifications.show({ color: 'yellow', message: `${t('Заповніть поле')} - ${t('Ціна за одиницю')}` })
       return
     }
@@ -848,7 +864,7 @@ function useNewProductCapitalizationModel(opened: boolean, onClose: () => void, 
     changeVendorCodeQuery,
     closeUploadModal,
     openUploadModal,
-    parseFromFile,
+    parseFromFiles,
     removeItem,
     requestClose,
     selectOrganization,

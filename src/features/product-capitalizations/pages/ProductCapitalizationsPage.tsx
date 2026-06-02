@@ -29,6 +29,7 @@ import {
   IconRestore,
 } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -126,6 +127,8 @@ function productCapitalizationsListReducer(
 
 function useProductCapitalizationsPageModel() {
   const { t } = useI18n()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const sourceCapitalizationNetId = searchParams.get('netId') || ''
   const initialFilters = useMemo<FilterDraft>(
     () => ({
       from: getDateShiftedByDays(-7),
@@ -149,6 +152,7 @@ function useProductCapitalizationsPageModel() {
   const [createPanelOpened, setCreatePanelOpened] = useValueState(false)
   const detailRequestRef = useRef(0)
   const exportRequestRef = useRef(0)
+  const sourceCapitalizationNetIdRef = useRef('')
   const { capitalizations, hasNextPage, isLoading, total } = listState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
@@ -186,10 +190,17 @@ function useProductCapitalizationsPageModel() {
   }, [setDetailError, setDetailLoading, setSelectedCapitalization, t])
   const closeDetail = useCallback(() => {
     detailRequestRef.current += 1
+    sourceCapitalizationNetIdRef.current = ''
     setSelectedCapitalization(null)
     setDetailError(null)
     setDetailLoading(false)
-  }, [setDetailError, setDetailLoading, setSelectedCapitalization])
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+      nextParams.delete('netId')
+
+      return nextParams
+    }, { replace: true })
+  }, [setDetailError, setDetailLoading, setSearchParams, setSelectedCapitalization])
   const handleExport = useCallback(async (capitalization: ProductCapitalization) => {
     if (!capitalization.NetUid || exportingNetId) {
       return
@@ -252,6 +263,20 @@ function useProductCapitalizationsPageModel() {
   )
   const canMoveBack = page > 1
   const canMoveForward = total ? page * pageSize < total : hasNextPage
+
+  useEffect(() => {
+    if (!sourceCapitalizationNetId) {
+      sourceCapitalizationNetIdRef.current = ''
+      return
+    }
+
+    if (sourceCapitalizationNetIdRef.current === sourceCapitalizationNetId) {
+      return
+    }
+
+    sourceCapitalizationNetIdRef.current = sourceCapitalizationNetId
+    void openDetail({ NetUid: sourceCapitalizationNetId })
+  }, [openDetail, sourceCapitalizationNetId])
 
   useEffect(() => {
     if (filterError) {

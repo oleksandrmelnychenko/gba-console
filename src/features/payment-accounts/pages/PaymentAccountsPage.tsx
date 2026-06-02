@@ -13,9 +13,9 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch, IconStar } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -46,13 +46,14 @@ export function PaymentAccountsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [accounts, setAccounts] = useValueState<PaymentAccount[]>([])
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [totalEuroAmount, setTotalEuroAmount] = useValueState(0)
-  const [searchValue, setSearchValue] = useValueState('')
+  const [searchValue, setSearchValue] = useValueState(() => searchParams.get('value') || '')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
-  const [typeFilter, setTypeFilter] = useValueState<TypeFilter>('all')
-  const [organizationNetId, setOrganizationNetId] = useValueState('')
+  const [typeFilter, setTypeFilter] = useValueState<TypeFilter>(() => normalizeTypeFilter(searchParams.get('type')))
+  const [organizationNetId, setOrganizationNetId] = useValueState(() => searchParams.get('organizationNetId') || '')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingLookups, setLoadingLookups] = useValueState(true)
@@ -69,7 +70,6 @@ export function PaymentAccountsPage() {
 
       navigate(`/accounting/payment-accounts/edit/${account.NetUid}`, {
         state: {
-          backgroundLocation: location,
           nodeTitle: account.Name,
           returnPath: `${location.pathname}${location.search}`,
         },
@@ -79,6 +79,25 @@ export function PaymentAccountsPage() {
   )
 
   const columns = usePaymentAccountColumns(openAccount)
+
+  useEffect(() => {
+    const nextSearchParams = new URLSearchParams()
+    const nextSearchValue = searchValue.trim()
+
+    if (nextSearchValue) {
+      nextSearchParams.set('value', nextSearchValue)
+    }
+
+    if (typeFilter !== 'all') {
+      nextSearchParams.set('type', typeFilter)
+    }
+
+    if (organizationNetId) {
+      nextSearchParams.set('organizationNetId', organizationNetId)
+    }
+
+    setSearchParams(nextSearchParams, { replace: true })
+  }, [organizationNetId, searchValue, setSearchParams, typeFilter])
 
   useEffect(() => {
     let isActive = true
@@ -209,7 +228,6 @@ export function PaymentAccountsPage() {
                   onClick={() =>
                     navigate('/accounting/payment-accounts/new', {
                       state: {
-                        backgroundLocation: location,
                         returnPath: `${location.pathname}${location.search}`,
                       },
                     })
@@ -331,7 +349,16 @@ function usePaymentAccountColumns(onOpen: (account: PaymentAccount) => void): Da
         minWidth: 96,
         align: 'center',
         accessor: (account) => account.IsActive,
-        cell: (account) => account.IsActive ? t('Так') : '—',
+        cell: (account) =>
+          account.IsActive ? (
+            <Badge color="violet" leftSection={<IconStar size={12} />} size="xs" variant="light">
+              {t('Основний')}
+            </Badge>
+          ) : (
+            <Text c="dimmed" size="sm">
+              -
+            </Text>
+          ),
       },
       {
         id: 'eur',
@@ -429,6 +456,10 @@ function getPaymentRegisterTypeLabel(type: PaymentRegisterType | undefined, t: (
     default:
       return '—'
   }
+}
+
+function normalizeTypeFilter(value: string | null): TypeFilter {
+  return value === '0' || value === '1' || value === '2' ? value : 'all'
 }
 
 function toSelectOptions<T extends { Id?: number; NetUid?: string }>(items: T[], getLabel: (item: T) => string | undefined) {

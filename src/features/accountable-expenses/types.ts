@@ -8,26 +8,50 @@ export type EntityFields = {
 
 export type NamedEntity = EntityFields & {
   Code?: string
+  FirstName?: string
   FullName?: string
   LastName?: string
+  MiddleName?: string
   Name?: string
   Number?: string
+  OperationName?: string
   VendorCode?: string
 }
 
 export type Currency = NamedEntity
 
+export type PaymentRegister = EntityFields & {
+  Name?: string
+  Type?: number
+}
+
 export type PaymentCurrencyRegister = EntityFields & {
   Currency?: Currency | null
+  PaymentRegister?: PaymentRegister | null
+}
+
+export type PaymentMovement = EntityFields & {
+  OperationName?: string
+}
+
+export type PaymentMovementOperation = EntityFields & {
+  PaymentMovement?: PaymentMovement | null
 }
 
 export type OutcomePaymentOrder = EntityFields & {
   AdvanceNumber?: string
+  Amount?: number
   Colleague?: NamedEntity | null
+  Comment?: string
+  CustomNumber?: string
+  FromDate?: string
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean
+  Number?: string
   Organization?: NamedEntity | null
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  PaymentMovementOperation?: PaymentMovementOperation | null
+  PaymentPurpose?: string
 }
 
 export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
@@ -81,6 +105,7 @@ export type AccountableExpenseRow = {
   productName?: string
   qty?: number
   responsible?: string
+  vendorCode?: string
 }
 
 export type AccountableExpensesSearchParams = {

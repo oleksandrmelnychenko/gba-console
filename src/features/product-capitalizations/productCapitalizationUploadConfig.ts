@@ -2,7 +2,7 @@ import type { ProductCapitalizationParseConfiguration } from './types'
 
 export type ProductCapitalizationUploadForm = {
   endRow: number | ''
-  file: File | null
+  files: File[]
   priceColumnNumber: number | ''
   pricePerItem: boolean
   qtyColumnNumber: number | ''

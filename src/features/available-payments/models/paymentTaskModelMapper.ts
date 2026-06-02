@@ -668,7 +668,7 @@ function serviceName(key: string, task: SupplyPaymentTask, t: Translate): string
 function paymentSymbol(task: SupplyPaymentTask, t: Translate): string {
   return (task.OutcomePaymentOrderSupplyPaymentTasks || []).length > 0
     ? t('Оплачено')
-    : t('Неоплаченно')
+    : t('Не оплачено')
 }
 
 function getPaidOrder(task: SupplyPaymentTask) {

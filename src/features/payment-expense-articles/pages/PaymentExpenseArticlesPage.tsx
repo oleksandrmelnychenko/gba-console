@@ -57,7 +57,6 @@ export function PaymentExpenseArticlesPage() {
 
       navigate(`/accounting/payment-expense-articles/edit/${article.NetUid}`, {
         state: {
-          backgroundLocation: location,
           nodeTitle: article.OperationName,
           returnPath: `${location.pathname}${location.search}`,
         },
@@ -183,7 +182,6 @@ export function PaymentExpenseArticlesPage() {
                   onClick={() =>
                     navigate('/accounting/payment-expense-articles/new', {
                       state: {
-                        backgroundLocation: location,
                         returnPath: `${location.pathname}${location.search}`,
                       },
                     })

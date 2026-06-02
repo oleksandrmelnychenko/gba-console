@@ -66,6 +66,106 @@ describe('client form API contracts', () => {
     })
   })
 
+  it('removes read-only and recursive client graph fields from save payloads', async () => {
+    const client: Client = {
+      NetUid: 'client-net-id',
+      FullName: 'Client',
+      ClientContractDocuments: [{ NetUid: 'document-1', FileName: 'contract.pdf' }],
+      ClientInDebts: [{ NetUid: 'debt-1', Debt: { Name: 'Debt' } }],
+      SubClients: [{ NetUid: 'sub-link-1', SubClient: { NetUid: 'sub-client-1' } }],
+      RootClients: [{ NetUid: 'root-link-1', RootClient: { NetUid: 'root-client-1' } }],
+      RootClient: { NetUid: 'root-client-1' },
+      TotalCurrentAmount: 2500,
+      IsClientExpanded: true,
+      IsSelected: true,
+      ClientAgreements: [
+        {
+          NetUid: 'client-agreement-1',
+          Client: { NetUid: 'nested-client', SubClients: [{ NetUid: 'nested-sub-link' }] },
+          Agreement: {
+            NetUid: 'agreement-1',
+            Name: 'Agreement',
+            ClientAgreements: [{ NetUid: 'recursive-client-agreement' }],
+            ClientInDebts: [{ NetUid: 'recursive-debt' }],
+            IsSelected: true,
+            Currency: { Code: 'EUR', Id: 1, IsSelected: true, Name: 'Euro' },
+            Organization: {
+              Id: 2,
+              Name: 'Organization',
+              Manager: 'Manager',
+              VatRate: { Id: 20, NetUid: 'vat-20', Value: 20 },
+            },
+            Pricing: {
+              BasePricing: {
+                BasePricing: { Id: 99, Name: 'Nested base' },
+                Id: 4,
+                Name: 'Base',
+              },
+              Id: 3,
+              Name: 'Retail',
+            },
+            ProviderPricing: {
+              Currency: { Code: 'EUR', Id: 1, IsSelected: true, Name: 'Euro' },
+              Id: 5,
+              Name: 'Provider pricing',
+              Pricing: { BasePricing: { Id: 7, Name: 'Provider base' }, Id: 6, Name: 'Purchase' },
+            },
+            PromotionalPricing: { BasePricing: { Id: 9, Name: 'Promo base' }, Id: 8, Name: 'Promo' },
+          },
+        },
+      ],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await updateClient(client)
+
+    const body = apiRequestMock.mock.calls[0]?.[1]?.body as Client
+    expect(body).toMatchObject({
+      FullName: 'Client',
+      NetUid: 'client-net-id',
+    })
+    expect(body).not.toHaveProperty('ClientContractDocuments')
+    expect(body).not.toHaveProperty('ClientInDebts')
+    expect(body).not.toHaveProperty('SubClients')
+    expect(body).not.toHaveProperty('RootClients')
+    expect(body).not.toHaveProperty('RootClient')
+    expect(body).not.toHaveProperty('TotalCurrentAmount')
+    expect(body).not.toHaveProperty('IsClientExpanded')
+    expect(body).not.toHaveProperty('IsSelected')
+
+    const savedClientAgreement = body.ClientAgreements?.[0]
+    expect(savedClientAgreement).toMatchObject({ NetUid: 'client-agreement-1' })
+    expect(savedClientAgreement).not.toHaveProperty('Client')
+    expect(savedClientAgreement?.Agreement).toMatchObject({
+      Currency: { Code: 'EUR', Id: 1, Name: 'Euro' },
+      Name: 'Agreement',
+      NetUid: 'agreement-1',
+      Organization: {
+        Id: 2,
+        Name: 'Organization',
+        VatRate: { Id: 20, NetUid: 'vat-20', Value: 20 },
+      },
+      Pricing: {
+        BasePricing: { Id: 4, Name: 'Base' },
+        Id: 3,
+        Name: 'Retail',
+      },
+      ProviderPricing: {
+        Currency: { Code: 'EUR', Id: 1, Name: 'Euro' },
+        Id: 5,
+        Name: 'Provider pricing',
+        Pricing: { BasePricing: { Id: 7, Name: 'Provider base' }, Id: 6, Name: 'Purchase' },
+      },
+      PromotionalPricing: { BasePricing: { Id: 9, Name: 'Promo base' }, Id: 8, Name: 'Promo' },
+    })
+    expect(savedClientAgreement?.Agreement).not.toHaveProperty('ClientAgreements')
+    expect(savedClientAgreement?.Agreement).not.toHaveProperty('ClientInDebts')
+    expect(savedClientAgreement?.Agreement).not.toHaveProperty('IsSelected')
+    expect(savedClientAgreement?.Agreement?.Currency).not.toHaveProperty('IsSelected')
+    expect(savedClientAgreement?.Agreement?.Organization).not.toHaveProperty('Manager')
+    expect(savedClientAgreement?.Agreement?.Pricing?.BasePricing).not.toHaveProperty('BasePricing')
+  })
+
   it('strips unchanged product group discounts from client save payloads', async () => {
     const client: Client = {
       NetUid: 'client-net-id',

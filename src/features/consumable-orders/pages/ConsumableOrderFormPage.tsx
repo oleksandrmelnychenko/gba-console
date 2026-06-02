@@ -39,6 +39,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { calculateConsumableOrderItemTotals } from '../consumableOrderCalculations'
 import {
   calculateConsumableOrder,
   createConsumableOrder,
@@ -1263,30 +1264,11 @@ function validateItem(item: ConsumablesOrderItem, t: (value: string) => string):
 }
 
 function normalizeCalculatedItem(item: ConsumablesOrderItem): ConsumablesOrderItem {
-  const qty = item.Qty || 0
-  const vatPercent = item.VatPercent || 0
-  const pricePerItem = item.PricePerItem || 0
-  let totalWithVat = item.TotalPriceWithVAT || 0
-  let totalWithoutVat = item.TotalPrice || 0
-  let vatAmount = item.VAT || 0
-
-  if (pricePerItem > 0 && qty > 0) {
-    totalWithoutVat = roundMoney(pricePerItem * qty)
-    vatAmount = roundMoney(totalWithoutVat * (vatPercent / 100))
-    totalWithVat = roundMoney(totalWithoutVat + vatAmount)
-  } else if (totalWithVat > 0) {
-    totalWithoutVat = vatPercent > 0 ? roundMoney(totalWithVat / (1 + vatPercent / 100)) : totalWithVat
-    vatAmount = roundMoney(totalWithVat - totalWithoutVat)
-  }
+  const totals = calculateConsumableOrderItemTotals(item)
 
   return {
     ...item,
-    PricePerItem: pricePerItem,
-    Qty: qty,
-    TotalPrice: totalWithoutVat,
-    TotalPriceWithVAT: totalWithVat,
-    VAT: vatAmount,
-    VatPercent: vatPercent,
+    ...totals,
   }
 }
 
@@ -1574,10 +1556,6 @@ function toNumber(value: string | number): number {
   const parsed = typeof value === 'number' ? value : Number(value.replace(',', '.'))
 
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100
 }
 
 function formatAmount(value?: number): string {

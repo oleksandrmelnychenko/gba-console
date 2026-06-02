@@ -14,6 +14,7 @@ export type NamedEntity = EntityFields & {
   MiddleName?: string
   Name?: string
   OperationName?: string
+  Number?: string
 }
 
 export type Currency = NamedEntity
@@ -48,8 +49,10 @@ export type AssignedIncomePaymentOrder = EntityFields & {
 }
 
 export type AssignedPaymentOrder = EntityFields & {
+  Amount?: number
   AssignedIncomePaymentOrder?: AssignedIncomePaymentOrder | null
   AssignedOutcomePaymentOrder?: OutcomePaymentOrder | null
+  Number?: string
   RootIncomePaymentOrder?: AssignedIncomePaymentOrder | null
   RootOutcomePaymentOrder?: OutcomePaymentOrder | null
 }
@@ -69,6 +72,8 @@ export type ConsumablesOrderItem = EntityFields & {
   Qty?: number
   TotalPrice?: number
   TotalPriceWithVAT?: number
+  VAT?: number
+  VatPercent?: number
 }
 
 export type ConsumablesOrder = EntityFields & {
@@ -77,7 +82,10 @@ export type ConsumablesOrder = EntityFields & {
   ConsumablesOrderItems?: ConsumablesOrderItem[]
   ConsumablesStorage?: NamedEntity | null
   Number?: string
+  OrganizationFromDate?: string
+  OrganizationNumber?: string
   TotalAmount?: number
+  TotalAmountWithoutVAT?: number
 }
 
 export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
@@ -86,6 +94,7 @@ export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
 
 export type OutcomePaymentOrder = EntityFields & {
   AdvanceNumber?: string
+  AfterExchangeAmount?: number
   Amount?: number
   Client?: NamedEntity | null
   ClientAgreement?: ClientAgreement | null
@@ -95,6 +104,8 @@ export type OutcomePaymentOrder = EntityFields & {
   ConsumableProductOrganization?: NamedEntity | null
   CustomNumber?: string
   DifferenceAmount?: number
+  EuroAmount?: number
+  ExchangeRate?: number
   FromDate?: string
   IsAccounting?: boolean
   IsCanceled?: boolean
@@ -112,12 +123,15 @@ export type OutcomePaymentOrder = EntityFields & {
   RootAssignedPaymentOrder?: AssignedPaymentOrder | null
   TotalRowsQty?: number
   User?: NamedEntity | null
+  VAT?: number
+  VatPercent?: number
 }
 
 export type OutgoingCashflowsResponse = {
   Collection: OutcomePaymentOrder[]
   NegativeDifferenceAmount?: number
   PositiveDifferenceAmount?: number
+  TotalRowsQty?: number
 }
 
 export type OutgoingCashflowRow = {

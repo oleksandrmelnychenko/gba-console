@@ -72,11 +72,13 @@ function normalizeOutgoingCashflowsResponse(result: unknown): OutgoingCashflowsR
   const payload = result && typeof result === 'object' && !Array.isArray(result)
     ? (result as Partial<OutgoingCashflowsResponse>)
     : {}
+  const collection = readCollection(readArrayPayload(result, ['Collection', 'Items', 'OutcomePaymentOrders', 'Data']))
 
   return {
-    Collection: readCollection(readArrayPayload(result, ['Collection', 'Items', 'OutcomePaymentOrders', 'Data'])),
+    Collection: collection,
     NegativeDifferenceAmount: readNumber(payload.NegativeDifferenceAmount),
     PositiveDifferenceAmount: readNumber(payload.PositiveDifferenceAmount),
+    TotalRowsQty: readNumber(payload.TotalRowsQty) || readNumber(collection[0]?.TotalRowsQty),
   }
 }
 

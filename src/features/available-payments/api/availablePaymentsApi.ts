@@ -22,7 +22,7 @@ export async function getGroupedPaymentTasks(
     offset: params.offset,
     organizationNetId: params.organizationNetId,
     to: params.to,
-    typePaymentTask: params.onlyAvailableForPayment ? undefined : params.typePaymentTask,
+    typePaymentTask: params.typePaymentTask,
   }
   const endpoint = params.onlyAvailableForPayment
     ? '/payments/tasks/grouped/all/available/filtered'
