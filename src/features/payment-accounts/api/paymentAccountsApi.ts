@@ -3,11 +3,16 @@ import type {
   BankItem,
   Currency,
   Organization,
+  PaymentAccountActivitySearchParams,
   PaymentAccount,
+  PaymentAccountIncomeOrder,
+  PaymentAccountOutcomeOrder,
   PaymentAccountPayload,
   PaymentAccountsResponse,
   PaymentAccountsSearchParams,
   PaymentCurrencyRegister,
+  PaymentRegisterCurrencyExchange,
+  PaymentRegisterTransfer,
 } from '../types'
 
 export async function getPaymentAccounts(params: PaymentAccountsSearchParams = {}): Promise<PaymentAccountsResponse> {
@@ -77,6 +82,54 @@ export async function getPaymentAccountBanks(): Promise<BankItem[]> {
   return readArrayPayload(result, ['Items', 'Banks', 'Data']) as BankItem[]
 }
 
+export async function getPaymentAccountTransfers(
+  params: PaymentAccountActivitySearchParams,
+): Promise<PaymentRegisterTransfer[]> {
+  const result = await apiRequest<unknown>('/payments/registers/transfers/all', {
+    query: {
+      currencyNetId: params.currencyNetId || undefined,
+      from: params.from,
+      paymentRegisterNetId: params.netId,
+      to: params.to,
+      type: params.type,
+    },
+  })
+
+  return readArrayPayload(result, ['Items', 'PaymentRegisterTransfers', 'Transfers', 'Collection', 'Data']) as PaymentRegisterTransfer[]
+}
+
+export async function getPaymentAccountExchanges(
+  params: PaymentAccountActivitySearchParams,
+): Promise<PaymentRegisterCurrencyExchange[]> {
+  const result = await apiRequest<unknown>('/payments/registers/exchanges/all', {
+    query: {
+      from: params.from,
+      fromCurrencyNetId: params.fromCurrencyNetId || undefined,
+      paymentRegisterNetId: params.netId,
+      to: params.to,
+      toCurrencyNetId: params.toCurrencyNetId || undefined,
+    },
+  })
+
+  return readArrayPayload(result, ['Items', 'PaymentRegisterExchanges', 'Exchanges', 'Collection', 'Data']) as PaymentRegisterCurrencyExchange[]
+}
+
+export async function getPaymentAccountCurrencyActivity(params: {
+  currencyRegisterNetId: string
+  from: string
+  to: string
+}): Promise<PaymentCurrencyRegister | null> {
+  const result = await apiRequest<unknown>('/payments/registers/currencies/get/filtered', {
+    query: {
+      from: params.from,
+      netId: params.currencyRegisterNetId,
+      to: params.to,
+    },
+  })
+
+  return normalizePaymentCurrencyRegister(result)
+}
+
 function normalizePaymentAccountsResponse(result: unknown): PaymentAccountsResponse {
   if (Array.isArray(result)) {
     return {
@@ -119,6 +172,30 @@ function normalizePaymentAccount(result: unknown): PaymentAccount | null {
   }
 }
 
+function normalizePaymentCurrencyRegister(result: unknown): PaymentCurrencyRegister | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const register = result as PaymentCurrencyRegister
+  const paymentRegister = register.PaymentRegister
+
+  return {
+    ...register,
+    IncomePaymentOrders: normalizeArray<PaymentAccountIncomeOrder>(register.IncomePaymentOrders),
+    OutcomePaymentOrders: normalizeArray<PaymentAccountOutcomeOrder>(register.OutcomePaymentOrders),
+    PaymentRegister: paymentRegister
+      ? {
+          ...paymentRegister,
+          IncomePaymentOrders: normalizeArray<PaymentAccountIncomeOrder>(paymentRegister.IncomePaymentOrders),
+          OutcomePaymentOrders: normalizeArray<PaymentAccountOutcomeOrder>(paymentRegister.OutcomePaymentOrders),
+        }
+      : paymentRegister,
+    PaymentRegisterCurrencyExchanges: normalizeArray<PaymentRegisterCurrencyExchange>(register.PaymentRegisterCurrencyExchanges),
+    PaymentRegisterTransfers: normalizeArray<PaymentRegisterTransfer>(register.PaymentRegisterTransfers),
+  }
+}
+
 function isPaymentAccount(account: PaymentAccount | null): account is PaymentAccount {
   return Boolean(account)
 }
@@ -141,6 +218,10 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
   }
 
   return []
+}
+
+function normalizeArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : []
 }
 
 function readNumber(value: unknown): number {

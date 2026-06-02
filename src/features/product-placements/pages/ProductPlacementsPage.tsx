@@ -288,6 +288,11 @@ function useProductPlacementsPageModel() {
       return
     }
 
+    if (form.StartRow > form.EndRow) {
+      setImportError(t('Кінцевий рядок має бути не меншим за початковий'))
+      return
+    }
+
     setUploading(true)
     setImportError(null)
 

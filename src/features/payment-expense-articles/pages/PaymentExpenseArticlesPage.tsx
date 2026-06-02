@@ -58,7 +58,6 @@ export function PaymentExpenseArticlesPage() {
 
       navigate(`/accounting/payment-expense-articles/edit/${article.NetUid}`, {
         state: {
-          backgroundLocation: location,
           nodeTitle: article.OperationName,
           returnPath: `${location.pathname}${location.search}`,
         },
@@ -183,12 +182,35 @@ export function PaymentExpenseArticlesPage() {
       )}
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
+          <Group justify="space-between" wrap="wrap">
+            <div>
+              <Text fw={700} size="xl">
+                {t('Статті витрат')}
+              </Text>
+            </div>
+
+            <Group gap="xs">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              {canCreate && (
+                <Button
+                  color="violet"
+                  leftSection={<IconPlus size={16} />}
+                  onClick={() =>
+                    navigate('/accounting/payment-expense-articles/new', {
+                      state: {
+                        returnPath: `${location.pathname}${location.search}`,
+                      },
+                    })
+                  }
+                >
+                  {t('Нова стаття')}
+                </Button>
+              )}
+            </Group>
           </Group>
 
           {error && (

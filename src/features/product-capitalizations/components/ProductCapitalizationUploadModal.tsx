@@ -15,12 +15,12 @@ type ProductCapitalizationUploadModalProps = {
   opened: boolean
   submitError: string | null
   onClose: () => void
-  onSubmit: (file: File, parseConfiguration: ProductCapitalizationParseConfiguration) => void
+  onSubmit: (files: File[], parseConfiguration: ProductCapitalizationParseConfiguration) => void
 }
 
 const EMPTY_FORM: ProductCapitalizationUploadForm = {
   endRow: '',
-  file: null,
+  files: [],
   priceColumnNumber: '',
   pricePerItem: true,
   qtyColumnNumber: '',
@@ -48,8 +48,8 @@ export function ProductCapitalizationUploadModal({
 
     const parseConfiguration = toProductCapitalizationParseConfiguration(form)
 
-    if (!form.file || !parseConfiguration) {
-      setValidationError(t('Заповніть файл, артикул, кількість і діапазон рядків'))
+    if (form.files.length === 0 || !parseConfiguration) {
+      setValidationError(t('Заповніть файли, артикул, кількість і діапазон рядків'))
       return
     }
 
@@ -64,7 +64,7 @@ export function ProductCapitalizationUploadModal({
     }
 
     setValidationError(null)
-    onSubmit(form.file, parseConfiguration)
+    onSubmit(form.files, parseConfiguration)
   }
 
   function closeModal() {
@@ -92,9 +92,10 @@ export function ProductCapitalizationUploadModal({
           disabled={isSubmitting}
           label={t('Завантажити файли')}
           leftSection={<IconFileSpreadsheet size={16} />}
-          placeholder={t('Оберіть файл')}
-          value={form.file}
-          onChange={(file) => setForm((current) => ({ ...current, file }))}
+          multiple
+          placeholder={t('Оберіть файли')}
+          value={form.files}
+          onChange={(files) => setForm((current) => ({ ...current, files: files || [] }))}
         />
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">

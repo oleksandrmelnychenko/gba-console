@@ -165,7 +165,7 @@ export function NewMergedServiceForm({
   }
 
   async function handleSubmit() {
-    if (!values.supplyOrganization || !values.agreement || !values.name || !values.invoiceNumber) {
+    if (!values.supplyOrganization || !values.agreement || !values.name.trim() || !values.invoiceNumber.trim()) {
       setValidationError(t('Заповніть обовʼязкові поля'))
 
       return
@@ -173,6 +173,21 @@ export function NewMergedServiceForm({
 
     if (!values.grossPrice && !values.grossPriceAccounting) {
       setValidationError(t('Заповніть управлінські або бухгалтерські витрати'))
+
+      return
+    }
+
+    const numericValues = [
+      values.grossPrice,
+      values.grossPriceAccounting,
+      values.percent,
+      values.percentAccounting,
+      values.exchangeRate,
+      values.accountingExchangeRate,
+    ]
+
+    if (numericValues.some((value) => value !== '' && Number(value) < 0)) {
+      setValidationError(t('Значення не можуть бути відʼємними'))
 
       return
     }

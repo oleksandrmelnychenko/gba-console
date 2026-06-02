@@ -16,15 +16,16 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
   getOutgoingCashflowCurrencies,
@@ -49,6 +50,7 @@ import type {
 
 const PAGE_SIZE = 100
 const SEARCH_DEBOUNCE_MS = 350
+const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 
 const ADVANCE_REPORT_ROUTE = '/accounting/outgoing-cashflow'
 
@@ -73,6 +75,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function OutgoingCashflowsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -86,8 +89,8 @@ export function OutgoingCashflowsPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
-  const [currencyNetId, setCurrencyNetId] = useValueState('')
-  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState('')
+  const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
+  const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
   const [paymentMovementNetId, setPaymentMovementNetId] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -96,16 +99,25 @@ export function OutgoingCashflowsPage() {
   const [hasMore, setHasMore] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [structureRow, setStructureRow] = useValueState<OutgoingCashflowRow | null>(null)
+  const [structureCalculatedOrder, setStructureCalculatedOrder] = useValueState<OutcomePaymentOrder | null>(null)
+  const [structureCalculationError, setStructureCalculationError] = useValueState<string | null>(null)
+  const [isCalculatingStructure, setCalculatingStructure] = useValueState(false)
   const [cancelRow, setCancelRow] = useValueState<OutgoingCashflowRow | null>(null)
   const [isCanceling, setCanceling] = useValueState(false)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
-  const filterError = getDateRangeError(fromDate, toDate)
+  const dateRangeError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
+  const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
 
   const organizationOptions = useMemo(() => toOrganizationOptions(organizations), [organizations])
+  const selectedOrganizationFilterIds = useMemo(
+    () => getSelectedOrganizationFilterIds(selectedOrganizationIds, organizationOptions),
+    [organizationOptions, selectedOrganizationIds],
+  )
+  const filterError = dateRangeError || getOrganizationFilterError(selectedOrganizationFilterIds.length, t)
 
   const loadLookups = useCallback(async () => {
     setLoadingLookups(true)
@@ -178,7 +190,7 @@ export function OutgoingCashflowsPage() {
         from: fromDate,
         limit: PAGE_SIZE,
         offset,
-        organizationIds: selectedOrganizationIds,
+        organizationIds: selectedOrganizationFilterIds,
         paymentMovementNetId,
         registerNetId: paymentRegisterNetId,
         to: toDate,
@@ -187,7 +199,8 @@ export function OutgoingCashflowsPage() {
 
       if (requestRef.current === requestId) {
         setCashflows((current) => mergeCashflowResponses(current, nextCashflows, append))
-        setHasMore(nextCashflows.Collection.length === PAGE_SIZE)
+        const nextTotalQty = nextCashflows.TotalRowsQty || offset + nextCashflows.Collection.length
+        setHasMore(nextCashflows.Collection.length === PAGE_SIZE && offset + nextCashflows.Collection.length < nextTotalQty)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
@@ -213,7 +226,7 @@ export function OutgoingCashflowsPage() {
     normalizedSearchValue,
     paymentMovementNetId,
     paymentRegisterNetId,
-    selectedOrganizationIds,
+    selectedOrganizationFilterIds,
     setCashflows,
     setError,
     setHasMore,
@@ -240,11 +253,65 @@ export function OutgoingCashflowsPage() {
     [navigate],
   )
 
+  const openDocumentStructure = useCallback(
+    (row: OutgoingCashflowRow) => {
+      const orderToCalculate = getDocumentStructureOutcomeToCalculate(row.order)
+      const requestId = structureCalculationRequestRef.current + 1
+      structureCalculationRequestRef.current = requestId
+
+      setStructureRow(row)
+      setStructureCalculatedOrder(null)
+      setStructureCalculationError(null)
+
+      if (!orderToCalculate) {
+        setCalculatingStructure(false)
+        return
+      }
+
+      setCalculatingStructure(true)
+      void calculateAdvanceReportOrder(orderToCalculate)
+        .then((calculatedOrder) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setStructureCalculatedOrder(calculatedOrder)
+          }
+        })
+        .catch((calculationError: unknown) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setStructureCalculationError(
+              calculationError instanceof Error
+                ? calculationError.message
+                : t('Не вдалося перерахувати структуру документів'),
+            )
+          }
+        })
+        .finally(() => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setCalculatingStructure(false)
+          }
+        })
+    },
+    [
+      setCalculatingStructure,
+      setStructureCalculatedOrder,
+      setStructureCalculationError,
+      setStructureRow,
+      t,
+    ],
+  )
+
+  const closeDocumentStructure = useCallback(() => {
+    structureCalculationRequestRef.current += 1
+    setStructureRow(null)
+    setStructureCalculatedOrder(null)
+    setStructureCalculationError(null)
+    setCalculatingStructure(false)
+  }, [setCalculatingStructure, setStructureCalculatedOrder, setStructureCalculationError, setStructureRow])
+
   const rows = useMemo(() => buildCashflowRows(cashflows.Collection), [cashflows.Collection])
   const columns = useOutgoingCashflowColumns({
     onCancel: setCancelRow,
     onEditReport: openAdvanceReport,
-    onOpenDocumentStructure: setStructureRow,
+    onOpenDocumentStructure: openDocumentStructure,
     onOpen: setSelectedRow,
   })
   const isTableBusy = isLoading || isSearchSettling
@@ -431,7 +498,13 @@ export function OutgoingCashflowsPage() {
       )}
 
       <OutgoingCashflowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
-      <OutgoingCashflowDocumentStructureDrawer row={structureRow} onClose={() => setStructureRow(null)} />
+      <OutgoingCashflowDocumentStructureDrawer
+        calculatedOrder={structureCalculatedOrder}
+        calculationError={structureCalculationError}
+        isCalculating={isCalculatingStructure}
+        row={structureRow}
+        onClose={closeDocumentStructure}
+      />
       <CancelOutgoingCashflowModal
         isSaving={isCanceling}
         row={cancelRow}
@@ -749,18 +822,25 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
             <DetailItem label={t('Номер')} value={displayValue(row.number)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
             <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem label={t('Клієнт')} value={displayValue(getEntityName(row.order.ClientAgreement?.Client) || getEntityName(row.order.Client))} />
             <DetailItem label={t('Різниця')} value={formatMoney(row.differenceAmount)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Закрито')} value={row.order.IsUnderReportDone ? t('Так') : t('Ні')} />
             <DetailItem label={t('Скасовано')} value={row.isCanceled ? t('Так') : t('Ні')} />
             <DetailItem label={t('Бухгалтерський')} value={row.isAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Управлінський')} value={row.isManagementAccounting ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
+            <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
           </SimpleGrid>
 
           <Stack gap={2}>
@@ -782,9 +862,13 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
                 return (
                   <SimpleGrid key={getRelatedOrderKey(row, item, index)} cols={{ base: 1, sm: 2 }}>
                     <DetailItem label={t('Документ')} value={displayValue(order?.Number)} />
+                    <DetailItem label={t('Номер організації')} value={displayValue(order?.OrganizationNumber)} />
+                    <DetailItem label={t('Дата організації')} value={formatDateTime(order?.OrganizationFromDate)} />
                     <DetailItem label={t('Постачальник/отримувач')} value={displayValue(getEntityName(order?.ConsumableProductOrganization))} />
                     <DetailItem label={t('Склад')} value={displayValue(getEntityName(order?.ConsumablesStorage))} />
                     <DetailItem label={t('Позицій')} value={String(itemsCount)} />
+                    <DetailItem label={t('Сума без ПДВ')} value={formatMoneyOptional(order?.TotalAmountWithoutVAT)} />
+                    <DetailItem label={t('Сума з ПДВ')} value={formatMoneyOptional(order?.TotalAmount)} />
                   </SimpleGrid>
                 )
               })
@@ -801,25 +885,57 @@ function OutgoingCashflowDetailDrawer({ row, onClose }: { row: OutgoingCashflowR
 }
 
 function OutgoingCashflowDocumentStructureDrawer({
+  calculatedOrder,
+  calculationError,
+  isCalculating,
   onClose,
   row,
 }: {
+  calculatedOrder: OutcomePaymentOrder | null
+  calculationError: string | null
+  isCalculating: boolean
   onClose: () => void
   row: OutgoingCashflowRow | null
 }) {
   const { t } = useI18n()
-  const assignedOrders = row?.order.AssignedPaymentOrders || []
+  const assignedOrders = getActiveAssignedPaymentOrders(row?.order.AssignedPaymentOrders)
   const rootAssignedOrder = row?.order.RootAssignedPaymentOrder || null
+  const calculatedTotal = calculatedOrder?.Amount
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
       {row && (
         <Stack gap="md">
+          {isCalculating && (
+            <Alert color="blue" variant="light">
+              {t('Перерахунок структури документів...')}
+            </Alert>
+          )}
+
+          {calculationError && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {calculationError}
+            </Alert>
+          )}
+
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.number)} />
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem
+              label={t('Перерахована сума')}
+              value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
+            />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
+            <DetailItem label={t('Сума в EUR')} value={formatMoneyOptional(row.order.EuroAmount ?? row.order.AfterExchangeAmount)} />
+            <DetailItem label={t('ПДВ %')} value={hasNumber(row.order.VatPercent) ? displayValue(row.order.VatPercent) : displayValue(undefined)} />
+            <DetailItem label={t('ПДВ')} value={formatMoneyOptional(row.order.VAT)} />
+            <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
+            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+            <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
+            <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+            <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber)} />
           </SimpleGrid>
@@ -827,8 +943,13 @@ function OutgoingCashflowDocumentStructureDrawer({
           <Divider />
 
           <Stack gap="sm">
-            {rootAssignedOrder && (
-              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} title={t('Кореневий документ')} />
+            {rootAssignedOrder && !rootAssignedOrder.Deleted && (
+              <AssignedPaymentOrderBlock
+                assignedPaymentOrder={rootAssignedOrder}
+                calculatedTotal={calculatedTotal}
+                parentOrder={row.order}
+                title={t('Кореневий документ')}
+              />
             )}
 
             {assignedOrders.length > 0 ? (
@@ -836,10 +957,12 @@ function OutgoingCashflowDocumentStructureDrawer({
                 <AssignedPaymentOrderBlock
                   key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
                   assignedPaymentOrder={assignedPaymentOrder}
+                  calculatedTotal={calculatedTotal}
+                  parentOrder={row.order}
                   title={`${t('Пов’язаний документ')} ${index + 1}`}
                 />
               ))
-            ) : !rootAssignedOrder ? (
+            ) : !rootAssignedOrder || rootAssignedOrder.Deleted ? (
               <Text c="dimmed" size="sm">
                 {t('Структура документів відсутня')}
               </Text>
@@ -853,9 +976,13 @@ function OutgoingCashflowDocumentStructureDrawer({
 
 function AssignedPaymentOrderBlock({
   assignedPaymentOrder,
+  calculatedTotal,
+  parentOrder,
   title,
 }: {
   assignedPaymentOrder: AssignedPaymentOrder
+  calculatedTotal?: number
+  parentOrder: OutcomePaymentOrder
   title: string
 }) {
   const { t } = useI18n()
@@ -868,6 +995,11 @@ function AssignedPaymentOrderBlock({
         <IconHierarchy2 size={16} />
         <Text fw={700}>{title}</Text>
       </Group>
+      <AdvanceReportStructureSummary
+        assignedPaymentOrder={assignedPaymentOrder}
+        calculatedTotal={calculatedTotal}
+        parentOrder={parentOrder}
+      />
       {assignedOutcome && <AssignedOutcomeOrderView order={assignedOutcome} />}
       {assignedIncome && <AssignedIncomeOrderView order={assignedIncome} />}
       {!assignedOutcome && !assignedIncome && (
@@ -876,6 +1008,36 @@ function AssignedPaymentOrderBlock({
         </Text>
       )}
     </Stack>
+  )
+}
+
+function AdvanceReportStructureSummary({
+  assignedPaymentOrder,
+  calculatedTotal,
+  parentOrder,
+}: {
+  assignedPaymentOrder: AssignedPaymentOrder
+  calculatedTotal?: number
+  parentOrder: OutcomePaymentOrder
+}) {
+  const { t } = useI18n()
+  const assignedOutcome = assignedPaymentOrder.AssignedOutcomePaymentOrder || assignedPaymentOrder.RootOutcomePaymentOrder
+  const assignedIncome = assignedPaymentOrder.AssignedIncomePaymentOrder || assignedPaymentOrder.RootIncomePaymentOrder
+  const currency = assignedIncome?.Currency?.Code
+    || assignedIncome?.Currency?.Name
+    || assignedOutcome?.PaymentCurrencyRegister?.Currency?.Code
+    || assignedOutcome?.PaymentCurrencyRegister?.Currency?.Name
+    || parentOrder.PaymentCurrencyRegister?.Currency?.Code
+    || parentOrder.PaymentCurrencyRegister?.Currency?.Name
+  const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
+
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
+      <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
+      <DetailItem label={t('Сума авансового звіту')} value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
+      <DetailItem label={t('Сума зв’язки')} value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
+    </SimpleGrid>
   )
 }
 
@@ -986,6 +1148,12 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
 }
 
 function getPayedTo(order: OutcomePaymentOrder): string | undefined {
+  const consumablesRecipients = getConsumablesOrderRecipientNames(order)
+
+  if (consumablesRecipients) {
+    return consumablesRecipients
+  }
+
   if (!order.IsUnderReport) {
     return getEntityName(order.ConsumableProductOrganization)
       || getEntityName(order.ClientAgreement?.Client)
@@ -997,28 +1165,60 @@ function getPayedTo(order: OutcomePaymentOrder): string | undefined {
   return getColleagueFullName(order.Colleague)
 }
 
-function getColleagueFullName(colleague?: NamedEntity | null): string | undefined {
-  if (!colleague?.Id || colleague.Id <= 0) {
-    return undefined
-  }
+function getConsumablesOrderRecipientNames(order: OutcomePaymentOrder): string | undefined {
+  const names = getActiveRelatedConsumablesOrders(order.OutcomePaymentOrderConsumablesOrders)
+    .map((item) => getEntityName(item.ConsumablesOrder?.ConsumableProductOrganization))
+    .filter((name): name is string => Boolean(name))
 
-  return [colleague.LastName, colleague.FirstName, colleague.MiddleName].filter(Boolean).join(' ') || undefined
+  return Array.from(new Set(names)).join(', ') || undefined
+}
+
+function getColleagueFullName(colleague?: NamedEntity | null): string | undefined {
+  return joinTruthyParts(colleague?.LastName, colleague?.FirstName, colleague?.MiddleName)
+    || getEntityName(colleague)
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
-  return entity?.LastName || entity?.FullName || entity?.Name || entity?.OperationName || entity?.Code
+  return entity?.FullName
+    || joinTruthyParts(entity?.LastName, entity?.FirstName, entity?.MiddleName)
+    || entity?.LastName
+    || entity?.Name
+    || entity?.OperationName
+    || entity?.Code
+    || entity?.Number
 }
 
 function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
-  return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
+  return Boolean(order.IsUnderReport) ||
+    Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
     Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
+}
+
+function getDocumentStructureOutcomeToCalculate(order: OutcomePaymentOrder): OutcomePaymentOrder | null {
+  const rootOutcome = order.RootAssignedPaymentOrder?.AssignedOutcomePaymentOrder
+    || order.RootAssignedPaymentOrder?.RootOutcomePaymentOrder
+    || null
+
+  if (rootOutcome && !rootOutcome.Deleted) {
+    return rootOutcome
+  }
+
+  if (order.IsUnderReport || getActiveAssignedPaymentOrders(order.AssignedPaymentOrders).length > 0) {
+    return order
+  }
+
+  return null
+}
+
+function getActiveAssignedPaymentOrders(orders?: AssignedPaymentOrder[]): AssignedPaymentOrder[] {
+  return (orders || []).filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted)
 }
 
 function getActiveRelatedConsumablesOrders(
   orders?: OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders'],
 ): NonNullable<OutcomePaymentOrder['OutcomePaymentOrderConsumablesOrders']> {
   return (orders || []).filter(
-    (order) => !order.Deleted && getActiveConsumablesItemsCount(order.ConsumablesOrder) > 0,
+    (order) => !order.Deleted && order.ConsumablesOrder && !order.ConsumablesOrder.Deleted,
   )
 }
 
@@ -1092,6 +1292,25 @@ function toOrganizationOptions(organizations: Organization[]) {
   }, [])
 }
 
+function getSelectedOrganizationFilterIds(
+  selectedIds: string[],
+  allOptions: Array<{ label: string; value: string }>,
+): string[] {
+  if (selectedIds.length === 0 || selectedIds.length >= allOptions.length) {
+    return []
+  }
+
+  return selectedIds
+}
+
+function getOrganizationFilterError(selectedFilterCount: number, t: (value: string) => string): string | null {
+  if (selectedFilterCount <= MAX_ORGANIZATION_QUERY_FILTER_IDS) {
+    return null
+  }
+
+  return t('Забагато організацій у фільтрі. Оберіть усі організації або звузьте вибір.')
+}
+
 function mergeCashflowResponses(
   current: OutgoingCashflowsResponse,
   next: OutgoingCashflowsResponse,
@@ -1148,8 +1367,30 @@ function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
 }
 
+function formatMoneyOptional(value?: number): string {
+  return hasNumber(value) ? formatMoney(value) : '—'
+}
+
+function formatMoneyWithCurrency(value?: number, currency?: string): string {
+  if (!hasNumber(value)) {
+    return displayValue(undefined)
+  }
+
+  const formatted = formatMoney(value)
+
+  return currency ? `${formatted} ${currency}` : formatted
+}
+
 function formatOptionalNumber(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? String(value) : '—'
+}
+
+function hasNumber(value?: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function joinTruthyParts(...parts: Array<string | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part)).join(' ')
 }
 
 function displayValue(value?: string | number | null): string {

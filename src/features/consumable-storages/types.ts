@@ -40,9 +40,26 @@ export type PriceTotal = {
   TotalPrice?: number
 }
 
+export type SupplyOrganizationAgreement = EntityFields & {
+  Currency?: NamedEntity | null
+  Name?: string
+  Number?: string
+  Organization?: Organization | null
+}
+
+export type ConsumablesOrder = EntityFields & {
+  ConsumablesOrderItems?: ConsumablesOrderItem[]
+  Number?: string | number
+  OrganizationFromDate?: string
+  OrganizationNumber?: string
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
+  TotalAmount?: number
+  TotalAmountWithoutVAT?: number
+}
+
 export type ConsumablesStorage = EntityFields & {
   ConsumableProducts?: ConsumableProduct[]
-  ConsumablesOrders?: unknown[]
+  ConsumablesOrders?: ConsumablesOrder[]
   Description?: string
   IsSelected?: boolean
   Name?: string
@@ -69,9 +86,11 @@ export type PaymentCostMovementOperation = EntityFields & {
 
 export type ConsumablesOrderItem = EntityFields & {
   ConsumableProduct?: ConsumableProduct | null
+  Currency?: NamedEntity | null
   PaymentCostMovementOperation?: PaymentCostMovementOperation | null
   PricePerItem?: number
   Qty?: number
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   TotalPrice?: number
 }
 
@@ -85,6 +104,8 @@ export type DeprecatedConsumableOrderItem = EntityFields & {
 
 export type DeprecatedConsumableOrder = EntityFields & {
   Comment?: string
+  CommissionHead?: UserProfile | null
+  ConsumablesStorage?: ConsumablesStorage | null
   CreatedBy?: UserProfile | null
   DepreciatedConsumableOrderItems?: DeprecatedConsumableOrderItem[]
   DepreciatedTo?: UserProfile | null

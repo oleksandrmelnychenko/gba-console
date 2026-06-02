@@ -7,7 +7,7 @@ import {
 
 const baseForm: ProductCapitalizationUploadForm = {
   endRow: 10,
-  file: null,
+  files: [],
   priceColumnNumber: '',
   pricePerItem: true,
   qtyColumnNumber: 2,

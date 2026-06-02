@@ -28,9 +28,10 @@ import {
   IconExternalLink,
   IconFileUpload,
   IconInfoCircle,
+  IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -39,6 +40,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
+import { getAccountingCashFlowPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
@@ -60,6 +62,7 @@ import {
   type AvailablePaymentCurrencyRegister,
   type AvailablePaymentDocument,
   type AvailablePaymentMovement,
+  type AvailablePaymentOrderSummary,
   type AvailablePaymentRegister,
   type AvailablePaymentTaskModel,
   type AvailablePaymentTaskRow,
@@ -109,6 +112,19 @@ type CashFlowFilters = {
   to: string
 }
 
+type OutcomeOpenOptions = {
+  requireDocuments?: boolean
+}
+
+type TaskDetailTab = 'cash-flow' | 'invoice' | 'payment' | 'transfer'
+
+type DeletedDocumentsByTaskId = Record<string, Record<string, boolean>>
+
+type DeletedDocumentsState = {
+  byTaskId: DeletedDocumentsByTaskId
+  scopeKey: string
+}
+
 type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
   source: AccountingCashFlowHeadItem
 }
@@ -119,6 +135,8 @@ const SEARCH_DEBOUNCE_MS = 300
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
+const EMPTY_DELETED_DOCUMENTS: Record<string, boolean> = {}
+const EMPTY_DELETED_DOCUMENTS_BY_TASK_ID: DeletedDocumentsByTaskId = {}
 
 export function AvailablePaymentsDetailDrawer({
   filesByTaskId,
@@ -134,13 +152,19 @@ export function AvailablePaymentsDetailDrawer({
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const deletedDocumentsScopeKey = getGroupedPaymentTaskKey(group)
   const models = useMemo(() => buildTaskModels(group, t), [group, t])
   const [expandedId, setExpandedId] = useValueState<string | null>(null)
-  const [activeTabs, setActiveTabs] = useValueState<Record<string, string>>({})
+  const [activeTabs, setActiveTabs] = useValueState<Record<string, TaskDetailTab>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
   const [cashFlowFiltersByTaskId, setCashFlowFiltersByTaskId] = useValueState<Record<string, CashFlowFilters>>({})
+  const [deletedDocumentsState, setDeletedDocumentsState] = useValueState<DeletedDocumentsState>(() => ({
+    byTaskId: EMPTY_DELETED_DOCUMENTS_BY_TASK_ID,
+    scopeKey: '',
+  }))
   const [selectedCashFlowItem, setSelectedCashFlowItem] = useValueState<AccountingCashFlowHeadItem | null>(null)
   const [outcomeModels, setOutcomeModels] = useValueState<AvailablePaymentTaskModel[]>([])
+  const [outcomeRequiresDocuments, setOutcomeRequiresDocuments] = useValueState(true)
   const [registers, setRegisters] = useValueState<AvailablePaymentRegister[]>([])
   const [movements, setMovements] = useValueState<AvailablePaymentMovement[]>([])
   const [form, setForm] = useValueState<OutcomeFormState>(() => createInitialOutcomeForm())
@@ -151,6 +175,10 @@ export function AvailablePaymentsDetailDrawer({
   const cashFlowRequestRef = useRef<Record<string, number>>({})
   const movementSearchRequestRef = useRef(0)
   const movementSearchTimeoutRef = useRef<number | null>(null)
+  const deletedDocumentsByTaskId =
+    deletedDocumentsState.scopeKey === deletedDocumentsScopeKey
+      ? deletedDocumentsState.byTaskId
+      : EMPTY_DELETED_DOCUMENTS_BY_TASK_ID
 
   useEffect(() => {
     if (outcomeModels.length === 0) {
@@ -291,6 +319,8 @@ export function AvailablePaymentsDetailDrawer({
   function closeOutcomeForm() {
     resetMovementSearchState()
     setOutcomeModels([])
+    setOutcomeRequiresDocuments(true)
+    setDeletedDocumentsState({ byTaskId: EMPTY_DELETED_DOCUMENTS_BY_TASK_ID, scopeKey: '' })
     setForm(createInitialOutcomeForm())
     setMovements([])
     setRegisters([])
@@ -351,12 +381,13 @@ export function AvailablePaymentsDetailDrawer({
     }, SEARCH_DEBOUNCE_MS)
   }
 
-  function openOutcomeForm(nextModels: AvailablePaymentTaskModel[]) {
+  function openOutcomeForm(nextModels: AvailablePaymentTaskModel[], options: OutcomeOpenOptions = {}) {
     if (isSaving) {
       return
     }
 
     const payableModels = nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done)
+    const shouldRequireDocuments = options.requireDocuments ?? true
 
     if (payableModels.length === 0) {
       setError(t('Немає платіжних задач для створення видаткового ордера'))
@@ -370,13 +401,17 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
-    if (payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)) {
+    if (
+      shouldRequireDocuments &&
+      payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]) === 0)
+    ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
     }
 
     resetMovementSearchState()
     setOutcomeModels(payableModels)
+    setOutcomeRequiresDocuments(shouldRequireDocuments)
     setForm(createInitialOutcomeForm(payableModels))
     setError(null)
   }
@@ -433,7 +468,7 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   async function handleCashFlowTab(model: AvailablePaymentTaskModel, tab: string | null) {
-    const nextTab = tab || 'invoice'
+    const nextTab = resolveTaskDetailTab(model, tab)
     setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
 
     if (nextTab !== 'cash-flow' || !model.serviceAgreementNetId || cashFlows[model.id]?.data) {
@@ -461,7 +496,7 @@ export function AvailablePaymentsDetailDrawer({
     }
 
     const localFiles = filesByTaskId[model.id] || []
-    const taskWithDocuments = buildTaskWithLocalDocuments(model.task, localFiles)
+    const taskWithDocuments = buildTaskWithDocumentChanges(model, localFiles, deletedDocumentsByTaskId[model.id])
 
     if (countActiveDocuments(taskWithDocuments.SupplyPaymentTaskDocuments) === 0) {
       setError(t('Додайте хоча б один документ'))
@@ -486,9 +521,37 @@ export function AvailablePaymentsDetailDrawer({
     const isOpening = expandedId !== model.id
     setExpandedId(isOpening ? model.id : null)
 
-    if (isOpening && !activeTabs[model.id]) {
-      setActiveTabs((current) => ({ ...current, [model.id]: 'invoice' }))
+    if (isOpening) {
+      const nextTab = resolveTaskDetailTab(model, activeTabs[model.id])
+
+      setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
     }
+  }
+
+  function handleToggleExistingDocumentDeleted(
+    model: AvailablePaymentTaskModel,
+    document: AvailablePaymentDocument,
+    index: number,
+  ) {
+    const key = getDocumentKey(document, index)
+
+    setDeletedDocumentsState((current) => {
+      const byTaskId =
+        current.scopeKey === deletedDocumentsScopeKey ? current.byTaskId : EMPTY_DELETED_DOCUMENTS_BY_TASK_ID
+      const currentTaskDocuments = byTaskId[model.id] || EMPTY_DELETED_DOCUMENTS
+      const currentDeleted = isDocumentDeleted(document, index, currentTaskDocuments)
+
+      return {
+        byTaskId: {
+          ...byTaskId,
+          [model.id]: {
+            ...currentTaskDocuments,
+            [key]: !currentDeleted,
+          },
+        },
+        scopeKey: deletedDocumentsScopeKey,
+      }
+    })
   }
 
   function handleRedirectToSource(model: AvailablePaymentTaskModel) {
@@ -523,7 +586,10 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
-    if (outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)) {
+    if (
+      outcomeRequiresDocuments &&
+      outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]) === 0)
+    ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
     }
@@ -531,7 +597,7 @@ export function AvailablePaymentsDetailDrawer({
     const documents = outcomeModels.flatMap((model) => filesByTaskId[model.id] || [])
     const modelsWithDocuments = outcomeModels.map((model) => ({
       ...model,
-      task: buildTaskWithLocalDocuments(model.task, filesByTaskId[model.id] || []),
+      task: buildTaskWithDocumentChanges(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]),
     }))
 
     setSaving(true)
@@ -590,6 +656,7 @@ export function AvailablePaymentsDetailDrawer({
             markedModels={markedModels}
             markedTaskIds={markedTaskIds}
             models={models}
+            deletedDocumentsByTaskId={deletedDocumentsByTaskId}
             onCashFlowTab={handleCashFlowTab}
             onCashFlowFiltersChange={handleCashFlowFiltersChange}
             onCashFlowRowClick={(item) => setSelectedCashFlowItem(item)}
@@ -599,6 +666,7 @@ export function AvailablePaymentsDetailDrawer({
             onMoveToDone={handleMoveToDone}
             onRedirectToSource={handleRedirectToSource}
             onToggleExpanded={handleToggleExpanded}
+            onToggleExistingDocumentDeleted={handleToggleExistingDocumentDeleted}
             onToggleMarked={onToggleMarked}
           />
         )}
@@ -663,6 +731,7 @@ function AvailablePaymentTaskList({
   markedModels,
   markedTaskIds,
   models,
+  deletedDocumentsByTaskId,
   onCashFlowTab,
   onCashFlowFiltersChange,
   onCashFlowRowClick,
@@ -672,9 +741,10 @@ function AvailablePaymentTaskList({
   onMoveToDone,
   onRedirectToSource,
   onToggleExpanded,
+  onToggleExistingDocumentDeleted,
   onToggleMarked,
 }: {
-  activeTabs: Record<string, string>
+  activeTabs: Record<string, TaskDetailTab>
   cashFlowFiltersByTaskId: Record<string, CashFlowFilters>
   cashFlows: Record<string, CashFlowState>
   expandedId: string | null
@@ -683,15 +753,21 @@ function AvailablePaymentTaskList({
   markedModels: AvailablePaymentTaskModel[]
   markedTaskIds: string[]
   models: AvailablePaymentTaskModel[]
+  deletedDocumentsByTaskId: DeletedDocumentsByTaskId
   onCashFlowTab: (model: AvailablePaymentTaskModel, tab: string | null) => Promise<void>
   onCashFlowFiltersChange: (model: AvailablePaymentTaskModel, filters: CashFlowFilters) => void
   onCashFlowRowClick: (item: AccountingCashFlowHeadItem) => void
   onClearMarked: () => void
-  onCreateOutcome: (models: AvailablePaymentTaskModel[]) => void
+  onCreateOutcome: (models: AvailablePaymentTaskModel[], options?: OutcomeOpenOptions) => void
   onFilesChanged: (taskId: string, files: File[]) => void
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
   onToggleExpanded: (model: AvailablePaymentTaskModel) => void
+  onToggleExistingDocumentDeleted: (
+    model: AvailablePaymentTaskModel,
+    document: AvailablePaymentDocument,
+    index: number,
+  ) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
@@ -705,7 +781,7 @@ function AvailablePaymentTaskList({
               {t('Вибрано платіжних задач')}: {markedModels.length}
             </Text>
             <Group gap="xs">
-              <Button disabled={isSaving} size="xs" variant="light" onClick={() => onCreateOutcome(markedModels)}>
+              <Button disabled={isSaving} size="xs" variant="light" onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}>
                 {t('Створити видатковий')}
               </Button>
               <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
@@ -716,7 +792,11 @@ function AvailablePaymentTaskList({
         </Alert>
       )}
 
-      {models.map((model) => (
+      {models.map((model) => {
+        const activeTab = resolveTaskDetailTab(model, activeTabs[model.id])
+        const tabs = getTaskDetailTabs(model)
+
+        return (
         <Stack key={model.id} gap={0}>
           <Group
             align="center"
@@ -766,18 +846,13 @@ function AvailablePaymentTaskList({
               }}
             >
               <SegmentedControl
-                data={[
-                  { label: t('Рахунок'), value: 'invoice' },
-                  { label: t('Рух коштів'), value: 'cash-flow' },
-                  { label: t('Оплата'), value: 'payment' },
-                  { label: t('Переказ'), value: 'transfer' },
-                ]}
-                value={activeTabs[model.id] || 'invoice'}
+                data={tabs.map((tab) => ({ label: getTaskDetailTabLabel(tab, t), value: tab }))}
+                value={activeTab}
                 onChange={(value) => void onCashFlowTab(model, value)}
               />
 
-              {(activeTabs[model.id] || 'invoice') === 'invoice' && <InvoiceTab model={model} />}
-              {activeTabs[model.id] === 'cash-flow' && (
+              {activeTab === 'invoice' && <InvoiceTab model={model} />}
+              {activeTab === 'cash-flow' && (
                 <CashFlowTab
                   filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
                   state={cashFlows[model.id]}
@@ -785,23 +860,58 @@ function AvailablePaymentTaskList({
                   onRowClick={onCashFlowRowClick}
                 />
               )}
-              {activeTabs[model.id] === 'payment' && (
+              {activeTab === 'payment' && (
                 <PaymentTab
+                  deletedDocuments={deletedDocumentsByTaskId[model.id] || EMPTY_DELETED_DOCUMENTS}
                   files={filesByTaskId[model.id] || []}
                   isSaving={isSaving}
                   model={model}
                   onCreateOutcome={() => onCreateOutcome([model])}
                   onFilesChanged={(files) => onFilesChanged(model.id, files)}
                   onMoveToDone={() => void onMoveToDone(model)}
+                  onToggleExistingDocumentDeleted={(document, index) => onToggleExistingDocumentDeleted(model, document, index)}
                 />
               )}
-              {activeTabs[model.id] === 'transfer' && <TransferTab model={model} />}
+              {activeTab === 'transfer' && <TransferTab model={model} />}
             </Stack>
           )}
         </Stack>
-      ))}
+        )
+      })}
     </Stack>
   )
+}
+
+function getTaskDetailTabs(model: AvailablePaymentTaskModel): TaskDetailTab[] {
+  const tabs: TaskDetailTab[] = ['invoice', 'cash-flow']
+
+  if (model.task.TaskStatus === TaskStatusValue.Done) {
+    return [...tabs, 'transfer']
+  }
+
+  return [...tabs, 'payment']
+}
+
+function resolveTaskDetailTab(model: AvailablePaymentTaskModel, tab?: string | null): TaskDetailTab {
+  const tabs = getTaskDetailTabs(model)
+
+  return tabs.includes(tab as TaskDetailTab) ? tab as TaskDetailTab : 'invoice'
+}
+
+function getTaskDetailTabLabel(tab: TaskDetailTab, t: (key: string) => string): string {
+  if (tab === 'cash-flow') {
+    return t('Рух коштів')
+  }
+
+  if (tab === 'payment') {
+    return t('Оплата')
+  }
+
+  if (tab === 'transfer') {
+    return t('Переказ')
+  }
+
+  return t('Рахунок')
 }
 
 function AvailablePaymentOutcomeForm({
@@ -1200,6 +1310,7 @@ function AvailablePaymentCashFlowDetailDrawer({
             <CashFlowDetailValue label={t('Номер')} value={displayValue(item.Number)} />
             <CashFlowDetailValue label={t('Організація')} value={displayValue(item.OrganizationName)} />
             <CashFlowDetailValue label={t('Операція')} value={item.IsCreditValue ? t('Кредит') : t('Дебет')} />
+            <CashFlowDetailValue label={t('Статус накладної')} value={<CashFlowPaymentStatusBadge item={item} />} />
             <CashFlowDetailValue label={t('Сума')} value={formatAmount(item.CurrentValue)} />
             <CashFlowDetailValue label={t('Поточний баланс')} value={formatAmount(item.CurrentBalance)} />
           </SimpleGrid>
@@ -1211,7 +1322,7 @@ function AvailablePaymentCashFlowDetailDrawer({
   )
 }
 
-function CashFlowDetailValue({ label, value }: { label: string; value: string }) {
+function CashFlowDetailValue({ label, value }: { label: string; value: ReactNode }) {
   return (
     <Stack gap={2}>
       <Text size="xs" c="dimmed">
@@ -1228,7 +1339,23 @@ const CASH_FLOW_TAB_LEAD_COLUMNS: CashFlowGridLeadColumn<AvailablePaymentCashFlo
   { id: 'name', isLabel: true, header: 'Назва', cell: (item) => displayValue(item.Name) },
   { id: 'date', header: 'Дата', width: 150, cell: (item) => formatDate(item.FromDate) },
   { id: 'number', header: 'Номер', width: 130, cell: (item) => displayValue(item.Number) },
+  { id: 'paymentStatus', header: 'Статус', width: 150, cell: (item) => <CashFlowPaymentStatusBadge item={item.source} /> },
 ]
+
+function CashFlowPaymentStatusBadge({ item }: { item: AccountingCashFlowHeadItem }) {
+  const { t } = useI18n()
+  const status = getAccountingCashFlowPaymentStatus(item)
+
+  if (!status) {
+    return displayValue(undefined)
+  }
+
+  return (
+    <Badge color={status.color} variant="light">
+      {t(status.label)}
+    </Badge>
+  )
+}
 
 function toCashFlowGridItem(row: DataRecord): AvailablePaymentCashFlowGridItem {
   return {
@@ -1275,19 +1402,23 @@ function stringOrUndefined(value: unknown): string | undefined {
 }
 
 function PaymentTab({
+  deletedDocuments,
   files,
   isSaving,
   model,
   onCreateOutcome,
   onFilesChanged,
   onMoveToDone,
+  onToggleExistingDocumentDeleted,
 }: {
+  deletedDocuments: Record<string, boolean>
   files: File[]
   isSaving: boolean
   model: AvailablePaymentTaskModel
   onCreateOutcome: () => void
   onFilesChanged: (files: File[]) => void
   onMoveToDone: () => void
+  onToggleExistingDocumentDeleted: (document: AvailablePaymentDocument, index: number) => void
 }) {
   const { t } = useI18n()
   const isDone = model.task.TaskStatus === TaskStatusValue.Done
@@ -1321,7 +1452,12 @@ function PaymentTab({
           )}
         </Group>
       </Group>
-      <DocumentsList documents={model.task.SupplyPaymentTaskDocuments || []} />
+      <DocumentsList
+        deletedDocuments={deletedDocuments}
+        disabled={isSaving}
+        documents={model.task.SupplyPaymentTaskDocuments || []}
+        onToggleDeleted={onToggleExistingDocumentDeleted}
+      />
       {files.length > 0 && (
         <>
           <Divider />
@@ -1367,6 +1503,7 @@ function TransferTab({ model }: { model: AvailablePaymentTaskModel }) {
 
   return (
     <SimpleGrid cols={{ base: 1, md: 3 }}>
+      <InfoCell label={t('Документ')} value={getTransferOrderTypeLabel(order, t)} />
       <InfoCell label={t('Номер')} value={displayValue(order.Number)} />
       <InfoCell label={t('Дата')} value={formatDateTime(order.FromDate)} />
       <InfoCell
@@ -1377,6 +1514,20 @@ function TransferTab({ model }: { model: AvailablePaymentTaskModel }) {
       <InfoCell label={t('Оплатив')} value={displayValue(order.User?.LastName || order.User?.FullName || order.User?.Name)} />
     </SimpleGrid>
   )
+}
+
+function getTransferOrderTypeLabel(order: AvailablePaymentOrderSummary, t: (key: string) => string): string {
+  const registerType = order.PaymentCurrencyRegister?.PaymentRegister?.Type ?? order.PaymentRegister?.Type
+
+  if (registerType === 0) {
+    return t('Видатковий касовий ордер')
+  }
+
+  if (registerType === 2) {
+    return t('Видатковий банківський ордер')
+  }
+
+  return t('Видатковий картковий ордер')
 }
 
 function InfoCell({ label, value }: { label: string; value: string }) {
@@ -1435,7 +1586,17 @@ function RedirectToSourceButton({
   )
 }
 
-function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] }) {
+function DocumentsList({
+  deletedDocuments = EMPTY_DELETED_DOCUMENTS,
+  disabled = false,
+  documents,
+  onToggleDeleted,
+}: {
+  deletedDocuments?: Record<string, boolean>
+  disabled?: boolean
+  documents: AvailablePaymentDocument[]
+  onToggleDeleted?: (document: AvailablePaymentDocument, index: number) => void
+}) {
   const { t } = useI18n()
 
   if (documents.length === 0) {
@@ -1449,18 +1610,40 @@ function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] })
   return (
     <Stack gap={4}>
       {documents.map((document, index) => {
+        const key = getDocumentKey(document, index)
         const label = document.FileName || document.Name || t('Документ')
         const url = getDocumentUrl(document)
-        const isDeleted = Boolean(document.Deleted)
-
-        return url && !isDeleted ? (
-          <Anchor key={getDocumentKey(document, index)} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
+        const isDeleted = isDocumentDeleted(document, index, deletedDocuments)
+        const content = url && !isDeleted ? (
+          <Anchor key={key} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
             {label}
           </Anchor>
         ) : (
-          <Text key={getDocumentKey(document, index)} c={isDeleted ? 'dimmed' : undefined} size="sm" td={isDeleted ? 'line-through' : undefined}>
+          <Text key={key} c={isDeleted ? 'dimmed' : undefined} size="sm" td={isDeleted ? 'line-through' : undefined}>
             {label}
           </Text>
+        )
+
+        if (!onToggleDeleted) {
+          return content
+        }
+
+        return (
+          <Group key={key} gap="xs" justify="space-between" wrap="nowrap">
+            <div>{content}</div>
+            <Tooltip label={isDeleted ? t('Відновити') : t('Видалити')}>
+              <ActionIcon
+                aria-label={isDeleted ? t('Відновити') : t('Видалити')}
+                color={isDeleted ? 'blue' : 'red'}
+                disabled={disabled}
+                size="sm"
+                variant="subtle"
+                onClick={() => onToggleDeleted(document, index)}
+              >
+                {isDeleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         )
       })}
     </Stack>
@@ -1502,15 +1685,15 @@ function getLocalFileKey(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`
 }
 
-function buildTaskWithLocalDocuments(task: SupplyPaymentTask, files: File[]): SupplyPaymentTask {
-  if (files.length === 0) {
-    return task
-  }
-
+function buildTaskWithDocumentChanges(
+  model: AvailablePaymentTaskModel,
+  files: File[],
+  deletedDocuments: Record<string, boolean> = EMPTY_DELETED_DOCUMENTS,
+): SupplyPaymentTask {
   return {
-    ...task,
+    ...model.task,
     SupplyPaymentTaskDocuments: [
-      ...(task.SupplyPaymentTaskDocuments || []),
+      ...markDeletedDocuments(model.task.SupplyPaymentTaskDocuments || [], deletedDocuments),
       ...files.map((file) => ({
         ContentType: file.type,
         FileName: file.name,
@@ -1519,12 +1702,44 @@ function buildTaskWithLocalDocuments(task: SupplyPaymentTask, files: File[]): Su
   }
 }
 
-function getTaskDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
-  return countActiveDocuments(model.task.SupplyPaymentTaskDocuments) + files.length
+function markDeletedDocuments(
+  documents: AvailablePaymentDocument[],
+  deletedDocuments: Record<string, boolean>,
+): AvailablePaymentDocument[] {
+  return documents.map((document, index) => ({
+    ...document,
+    Deleted: isDocumentDeleted(document, index, deletedDocuments),
+  }))
+}
+
+function isDocumentDeleted(
+  document: AvailablePaymentDocument,
+  index: number,
+  deletedDocuments: Record<string, boolean>,
+): boolean {
+  const key = getDocumentKey(document, index)
+
+  return key in deletedDocuments ? deletedDocuments[key] : Boolean(document.Deleted)
+}
+
+function getTaskDocumentCount(
+  model: AvailablePaymentTaskModel,
+  files: File[],
+  deletedDocuments: Record<string, boolean> = EMPTY_DELETED_DOCUMENTS,
+): number {
+  return countActiveDocuments(markDeletedDocuments(model.task.SupplyPaymentTaskDocuments || [], deletedDocuments)) + files.length
 }
 
 function countActiveDocuments(documents: AvailablePaymentDocument[] = []): number {
   return documents.filter((document) => !document.Deleted).length
+}
+
+function getGroupedPaymentTaskKey(group: GroupedPaymentTask | null): string {
+  if (!group) {
+    return ''
+  }
+
+  return String(group.NetUid || group.Id || group.PayToDate || '')
 }
 
 function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymentTaskRow, rowIndex: number): string {

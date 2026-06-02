@@ -125,15 +125,36 @@ export type ProductIncomeItem = EntityFields & {
     VatAmount?: number
   } | null
   SupplyOrderUkraineItem?: {
+    GrossPriceLocal?: number
+    NetPriceLocal?: number
+    PlacedQty?: number
+    Product?: ProductIncomeProduct | null
+    ProductIsImported?: boolean
+    ProductSpecification?: {
+      CustomsValue?: number
+      DutyPercent?: number
+      SpecificationCode?: string
+    } | null
+    Qty?: number
     SupplyOrderUkraine?: {
+      ClientAgreement?: {
+        Agreement?: {
+          Currency?: NamedEntity | null
+          Name?: string
+        } | null
+      } | null
       Comment?: string
       FromDate?: string
       InvDate?: string
       InvNumber?: string
       NetUid?: string
+      Number?: string
       Organization?: NamedEntity | null
       Supplier?: NamedEntity | null
     } | null
+    TotalGrossWeight?: number
+    TotalNetWeight?: number
+    UnitPriceLocal?: number
   } | null
 }
 
@@ -150,6 +171,7 @@ export type ProductIncomeDocument = EntityFields & {
   TotalQty?: number
   TotalRowQty?: number
   TotalRowsQty?: number
+  TotalVatAmount?: number
   User?: NamedEntity | null
 }
 

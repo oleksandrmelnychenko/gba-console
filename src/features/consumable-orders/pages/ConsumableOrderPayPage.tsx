@@ -9,6 +9,7 @@ import {
   Select,
   SimpleGrid,
   Stack,
+  Table,
   Text,
   TextInput,
 } from '@mantine/core'
@@ -16,8 +17,6 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -114,13 +113,7 @@ export function ConsumableOrderPayPage() {
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []), [selectedRegister])
   const movementOptions = useMemo(() => toEntityOptions(paymentMovements, (movement) => movement?.OperationName || ''), [paymentMovements])
   const items = order?.ConsumablesOrderItems?.filter((item) => !item.Deleted) || []
-  const itemColumns = useMemo<DataTableColumn<ConsumablesOrderItem>[]>(() => [
-    { id: 'vendorCode', header: t('Артикул'), minWidth: 140, accessor: (row) => row.ConsumableProduct?.VendorCode, cell: (row) => displayValue(row.ConsumableProduct?.VendorCode) },
-    { id: 'name', header: t('Назва'), minWidth: 240, accessor: (row) => row.ConsumableProduct?.Name || row.ConsumableProductCategory?.Name, cell: (row) => displayValue(row.ConsumableProduct?.Name || row.ConsumableProductCategory?.Name) },
-    { id: 'qty', header: t('Кількість'), minWidth: 140, accessor: (row) => row.Qty, cell: (row) => `${formatAmount(row.Qty)} ${row.ConsumableProduct?.MeasureUnit?.Name || ''}` },
-    { id: 'price', header: t('Ціна'), minWidth: 120, accessor: (row) => row.PricePerItem, cell: (row) => formatMoney(row.PricePerItem) },
-    { id: 'total', header: t('Разом'), minWidth: 120, accessor: (row) => row.TotalPriceWithVAT, cell: (row) => formatMoney(row.TotalPriceWithVAT) },
-  ], [t])
+  const isOrderPaid = Boolean(order?.IsPayed)
 
   useEffect(() => {
     if (!id) {
@@ -267,6 +260,11 @@ export function ConsumableOrderPayPage() {
       return
     }
 
+    if (order.IsPayed) {
+      setError(t('Накладна вже оплачена'))
+      return
+    }
+
     const validationError = validatePaymentForm({
       amount: form.amount,
       order,
@@ -339,7 +337,7 @@ export function ConsumableOrderPayPage() {
                 </Button>
                 <Button
                   color="violet"
-                  disabled={isLoading || isSaving}
+                  disabled={isLoading || isSaving || isOrderPaid}
                   leftSection={<IconDeviceFloppy size={16} />}
                   loading={isSaving}
                   type="submit"
@@ -355,16 +353,22 @@ export function ConsumableOrderPayPage() {
               </Alert>
             )}
 
+            {isOrderPaid && (
+              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+                {t('Накладна вже оплачена. Повторна оплата недоступна.')}
+              </Alert>
+            )}
+
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Дата')}
                 type="date"
                 value={form.date}
                 onChange={(event) => updateForm({ date: event.currentTarget.value })}
               />
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Час')}
                 type="time"
                 value={form.time}
@@ -373,7 +377,7 @@ export function ConsumableOrderPayPage() {
               <NumberInput
                 allowNegative={false}
                 decimalScale={2}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Сума')}
                 min={0}
                 value={form.amount}
@@ -381,7 +385,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={organizationOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Організація')}
                 searchable
                 value={form.organizationValue || null}
@@ -389,7 +393,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={registerOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Каса / рахунок')}
                 searchable
                 value={form.paymentRegisterValue || null}
@@ -397,7 +401,7 @@ export function ConsumableOrderPayPage() {
               />
               <Select
                 data={currencyOptions}
-                disabled={!selectedRegister || isLoading || isSaving}
+                disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
                 label={t('Валюта')}
                 searchable
                 value={form.selectedCurrencyRegisterValue || null}
@@ -405,14 +409,14 @@ export function ConsumableOrderPayPage() {
               />
               <Autocomplete
                 data={movementOptions}
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Стаття руху коштів')}
                 value={form.movementSearch}
                 onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
                 onOptionSubmit={handleMovementSubmit}
               />
               <Button
-                disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading}
+                disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving || isOrderPaid}
                 leftSection={<IconPlus size={16} />}
                 mt={24}
                 type="button"
@@ -422,7 +426,7 @@ export function ConsumableOrderPayPage() {
                 {t('Створити статтю')}
               </Button>
               <TextInput
-                disabled={isLoading || isSaving}
+                disabled={isLoading || isSaving || isOrderPaid}
                 label={t('Коментар')}
                 value={form.comment}
                 onChange={(event) => updateForm({ comment: event.currentTarget.value })}
@@ -436,23 +440,45 @@ export function ConsumableOrderPayPage() {
         <Stack gap="sm">
           <Group justify="space-between">
             <Text fw={700}>{t('Позиції накладної')}</Text>
-            <Badge color="violet" variant="light">
+            <Badge color="blue" variant="light">
               {t('Разом')}: {formatMoney(order?.TotalAmount || calculateLocalTotal(items))}
             </Badge>
           </Group>
 
-          <DataTable
-            columns={itemColumns}
-            data={items}
-            emptyText={t('Позицій немає')}
-            getRowId={(item, index) => getItemKey(item, index)}
-            isLoading={isLoading}
-            layoutVersion="consumable-order-pay-items-1"
-            loadingText={t('Завантаження')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={820}
-            tableId="consumable-order-pay-items"
-          />
+          <Table.ScrollContainer minWidth={820}>
+            <Table highlightOnHover verticalSpacing="xs">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>{t('Артикул')}</Table.Th>
+                  <Table.Th>{t('Назва')}</Table.Th>
+                  <Table.Th>{t('Кількість')}</Table.Th>
+                  <Table.Th>{t('Ціна')}</Table.Th>
+                  <Table.Th>{t('Разом')}</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {items.length > 0 ? (
+                  items.map((item, index) => (
+                    <Table.Tr key={getItemKey(item, index)}>
+                      <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
+                      <Table.Td>{displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)}</Table.Td>
+                      <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
+                      <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
+                      <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
+                    </Table.Tr>
+                  ))
+                ) : (
+                  <Table.Tr>
+                    <Table.Td colSpan={5}>
+                      <Text c="dimmed" ta="center">
+                        {t('Позицій немає')}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                )}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
         </Stack>
       </Card>
     </Stack>

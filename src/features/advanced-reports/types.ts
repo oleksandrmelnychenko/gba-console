@@ -8,10 +8,13 @@ export type EntityFields = {
 
 export type NamedEntity = EntityFields & {
   Code?: string
+  FirstName?: string
   FullName?: string
   LastName?: string
+  MiddleName?: string
   Name?: string
   OperationName?: string
+  Number?: string
 }
 
 export type Currency = NamedEntity
@@ -44,8 +47,10 @@ export type AssignedIncomePaymentOrder = EntityFields & {
 }
 
 export type AssignedPaymentOrder = EntityFields & {
+  Amount?: number
   AssignedIncomePaymentOrder?: AssignedIncomePaymentOrder | null
   AssignedOutcomePaymentOrder?: OutcomePaymentOrder | null
+  Number?: string
   RootIncomePaymentOrder?: AssignedIncomePaymentOrder | null
   RootOutcomePaymentOrder?: OutcomePaymentOrder | null
 }
@@ -61,6 +66,8 @@ export type ConsumablesOrderItem = EntityFields & {
   Qty?: number
   TotalPrice?: number
   TotalPriceWithVAT?: number
+  VAT?: number
+  VatPercent?: number
 }
 
 export type ConsumablesOrder = EntityFields & {
@@ -69,7 +76,10 @@ export type ConsumablesOrder = EntityFields & {
   ConsumablesOrderItems?: ConsumablesOrderItem[]
   ConsumablesStorage?: NamedEntity | null
   Number?: string
+  OrganizationFromDate?: string
+  OrganizationNumber?: string
   TotalAmount?: number
+  TotalAmountWithoutVAT?: number
 }
 
 export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
@@ -78,11 +88,16 @@ export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
 
 export type OutcomePaymentOrder = EntityFields & {
   AdvanceNumber?: string
+  AfterExchangeAmount?: number
   Amount?: number
+  ArrivalNumber?: string
   Colleague?: (NamedEntity & { UserRole?: NamedEntity | null }) | null
   Comment?: string
   DifferenceAmount?: number
+  ExchangeRate?: number
   FromDate?: string
+  IsAccounting?: boolean
+  IsManagementAccounting?: boolean
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean
   Number?: string
@@ -92,9 +107,12 @@ export type OutcomePaymentOrder = EntityFields & {
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
+  PaymentPurpose?: string
   RootAssignedPaymentOrder?: AssignedPaymentOrder | null
   TotalRowsQty?: number
   User?: NamedEntity | null
+  VAT?: number
+  VatPercent?: number
 }
 
 export type AdvancedReportsResponse = {

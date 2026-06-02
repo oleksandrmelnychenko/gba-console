@@ -1,6 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ConsumableProduct,
+  ConsumablesOrder,
+  ConsumablesOrderItem,
   ConsumablesStorage,
   ConsumablesStoragePayload,
   DeprecatedConsumableOrder,
@@ -95,6 +97,45 @@ export async function getDeprecatedConsumableOrders(
   return normalizeDeprecatedConsumableOrders(result)
 }
 
+export async function createDeprecatedConsumableOrder(
+  order: DeprecatedConsumableOrder,
+  expensiveFirst: boolean,
+): Promise<DeprecatedConsumableOrder | null> {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/new', {
+    body: order,
+    method: 'POST',
+    query: {
+      expensiveFirst,
+    },
+  })
+
+  return normalizeDeprecatedConsumableOrder(result)
+}
+
+export async function updateDeprecatedConsumableOrder(
+  order: DeprecatedConsumableOrder,
+  expensiveFirst: boolean,
+): Promise<DeprecatedConsumableOrder | null> {
+  const result = await apiRequest<unknown>('/consumables/orders/depreciated/update', {
+    body: order,
+    method: 'POST',
+    query: {
+      expensiveFirst,
+    },
+  })
+
+  return normalizeDeprecatedConsumableOrder(result)
+}
+
+export async function deleteDeprecatedConsumableOrder(netId: string): Promise<void> {
+  await apiRequest<unknown>('/consumables/orders/depreciated/delete', {
+    method: 'DELETE',
+    query: {
+      netId,
+    },
+  })
+}
+
 function normalizeStorages(result: unknown): ConsumablesStorage[] {
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data'])
     .map(normalizeStorage)
@@ -114,9 +155,30 @@ function normalizeStorage(result: unknown): ConsumablesStorage | null {
       ? storage.ConsumableProducts
           .filter((product): product is ConsumableProduct => Boolean(product && typeof product === 'object'))
       : [],
-    ConsumablesOrders: Array.isArray(storage.ConsumablesOrders) ? storage.ConsumablesOrders : [],
+    ConsumablesOrders: Array.isArray(storage.ConsumablesOrders)
+      ? storage.ConsumablesOrders
+          .map(normalizeConsumablesOrder)
+          .filter((order): order is ConsumablesOrder => Boolean(order))
+      : [],
     PriceTotals: Array.isArray(storage.PriceTotals)
       ? storage.PriceTotals.filter((total): total is PriceTotal => Boolean(total && typeof total === 'object'))
+      : [],
+  }
+}
+
+function normalizeConsumablesOrder(result: unknown): ConsumablesOrder | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  const order = result as ConsumablesOrder
+
+  return {
+    ...order,
+    ConsumablesOrderItems: Array.isArray(order.ConsumablesOrderItems)
+      ? order.ConsumablesOrderItems.filter(
+          (item): item is ConsumablesOrderItem => Boolean(item && typeof item === 'object'),
+        )
       : [],
   }
 }

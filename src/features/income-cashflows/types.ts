@@ -64,6 +64,7 @@ export type PaymentCurrencyRegister = EntityFields & {
   Amount?: number
   Currency?: Currency | null
   IsSelected?: boolean
+  PaymentRegister?: PaymentRegister | null
 }
 
 export type PaymentRegister = NamedEntity & {
@@ -91,7 +92,16 @@ export type SaleNumber = EntityFields & {
   Value?: string
 }
 
+export type SaleStatus = EntityFields & {
+  Name?: string
+  SaleLifeCycleType?: number | string
+  SalePaymentStatusType?: number | string
+  Value?: string
+}
+
 export type Sale = EntityFields & {
+  BaseLifeCycleStatus?: SaleStatus | null
+  BaseSalePaymentStatus?: SaleStatus | null
   ChangedToInvoice?: string
   Created?: string
   SaleNumber?: SaleNumber | null
@@ -100,6 +110,8 @@ export type Sale = EntityFields & {
 }
 
 export type ReSale = EntityFields & {
+  BaseLifeCycleStatus?: SaleStatus | null
+  BaseSalePaymentStatus?: SaleStatus | null
   ChangedToInvoice?: string
   Created?: string
   SaleNumber?: SaleNumber | null
@@ -132,15 +144,35 @@ export type ClientInDebt = EntityFields & {
 
 export type IncomePaymentOrderSale = EntityFields & {
   Amount?: number
+  Created?: string
   ReSale?: ReSale | null
   ReSaleId?: number
   Sale?: Sale | null
   SaleId?: number
 }
 
+export type OutcomePaymentOrder = EntityFields & {
+  AdvanceNumber?: string
+  Amount?: number
+  Client?: NamedEntity | null
+  Colleague?: NamedEntity | null
+  Comment?: string
+  CustomNumber?: string
+  FromDate?: string
+  IsUnderReport?: boolean
+  Number?: string
+  OperationTypeName?: string
+  Organization?: Organization | null
+  PaymentCurrencyRegister?: PaymentCurrencyRegister | null
+  PaymentRegister?: PaymentRegister | null
+  User?: NamedEntity | null
+}
+
 export type AssignedPaymentOrder = EntityFields & {
   Amount?: number
+  AssignedOutcomePaymentOrder?: OutcomePaymentOrder | null
   Number?: string
+  RootOutcomePaymentOrder?: OutcomePaymentOrder | null
 }
 
 export type ClientAgreement = EntityFields & {
@@ -198,6 +230,7 @@ export type IncomePaymentOrder = EntityFields & {
   Colleague?: NamedEntity | null
   Comment?: string
   Currency?: Currency | null
+  EuroAmount?: number
   ExchangeRate?: number
   FromDate?: string
   IsAccounting?: boolean

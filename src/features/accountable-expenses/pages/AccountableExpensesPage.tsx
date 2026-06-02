@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Divider,
   Group,
   SimpleGrid,
   Stack,
@@ -29,6 +30,7 @@ import {
 import type {
   AccountableExpenseRow,
   ConsumablesOrder,
+  OutcomePaymentOrderConsumablesOrder,
   OutcomePaymentOrder,
 } from '../types'
 
@@ -179,7 +181,7 @@ export function AccountableExpensesPage() {
         isLoading={isLoading}
         layoutVersion="accountable-expenses-1"
         maxHeight="calc(100vh - 285px)"
-        minWidth={1280}
+        minWidth={1480}
         tableId="accountable-expenses"
         onRowClick={setSelectedRow}
       />
@@ -227,12 +229,32 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         cell: (row) => displayValue(row.payedTo),
       },
       {
+        id: 'vendorCode',
+        header: t('Артикул'),
+        width: 110,
+        minWidth: 90,
+        accessor: (row) => row.vendorCode,
+        cell: (row) => displayValue(row.vendorCode),
+      },
+      {
         id: 'product',
         header: t('Назва'),
         width: 210,
         minWidth: 170,
         accessor: (row) => row.productName,
         cell: (row) => displayValue(row.productName),
+      },
+      {
+        id: 'type',
+        header: t('Тип'),
+        width: 105,
+        minWidth: 90,
+        accessor: (row) => row.item.IsService,
+        cell: (row) => (
+          <Badge color={row.item.IsService ? 'indigo' : 'gray'} variant="light">
+            {row.item.IsService ? t('Послуга') : t('Товар')}
+          </Badge>
+        ),
       },
       {
         id: 'qty',
@@ -332,9 +354,10 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
 function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | null; onClose: () => void }) {
   const { t } = useI18n()
   const outcome = getOutcomePaymentOrder(row?.order)
+  const outcomeOrders = getOutcomePaymentOrders(row?.order)
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="lg" title={t('Підзвітна витрата')} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Підзвітна витрата')} onClose={onClose}>
       {row && (
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -346,7 +369,9 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
             <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem label={t('Артикул')} value={displayValue(row.vendorCode)} />
             <DetailItem label={t('Товар/послуга')} value={displayValue(row.productName)} />
+            <DetailItem label={t('Тип')} value={row.item.IsService ? t('Послуга') : t('Товар')} />
             <DetailItem label={t('Кількість')} value={formatAmount(row.qty)} />
             <DetailItem label={t('Ціна')} value={formatMoney(row.pricePerItem)} />
             <DetailItem label={t('Сума з ПДВ')} value={formatMoney(row.amount)} />
@@ -363,6 +388,45 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             </Text>
             <Text size="sm">{displayValue(row.comment)}</Text>
           </Stack>
+
+          <Divider />
+
+          <Stack gap="xs">
+            <Text fw={700}>{t('Пов’язаний видатковий документ')}</Text>
+            {outcome ? (
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />
+                <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
+                <DetailItem label={t('Сума')} value={formatMoney(outcome.Amount)} />
+                <DetailItem label={t('Валюта')} value={displayValue(outcome.PaymentCurrencyRegister?.Currency?.Code || outcome.PaymentCurrencyRegister?.Currency?.Name)} />
+                <DetailItem label={t('Рахунок')} value={displayValue(outcome.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
+                <DetailItem label={t('Стаття руху')} value={displayValue(outcome.PaymentMovementOperation?.PaymentMovement?.OperationName)} />
+                <DetailItem label={t('Призначення платежу')} value={displayValue(outcome.PaymentPurpose)} />
+                <DetailItem label={t('Коментар ордера')} value={displayValue(outcome.Comment)} />
+              </SimpleGrid>
+            ) : (
+              <Text c="dimmed" size="sm">
+                {t('Пов’язаний видатковий документ не завантажено')}
+              </Text>
+            )}
+          </Stack>
+
+          {outcomeOrders.length > 1 && (
+            <>
+              <Divider />
+              <Stack gap="xs">
+                <Text fw={700}>{t('Усі прив’язки до авансових звітів')}</Text>
+                {outcomeOrders.map((item, index) => (
+                  <SimpleGrid key={getOutcomeOrderLinkKey(item, index)} cols={{ base: 1, sm: 2 }}>
+                    <DetailItem label={t('Авансовий звіт')} value={displayValue(item.OutcomePaymentOrder?.AdvanceNumber)} />
+                    <DetailItem label={t('Видатковий ордер')} value={displayValue(item.OutcomePaymentOrder?.Number || item.OutcomePaymentOrder?.CustomNumber)} />
+                    <DetailItem label={t('Дата')} value={formatDateTime(item.OutcomePaymentOrder?.FromDate)} />
+                    <DetailItem label={t('Закрито')} value={item.OutcomePaymentOrder?.IsUnderReportDone ? t('Так') : t('Ні')} />
+                  </SimpleGrid>
+                ))}
+              </Stack>
+            </>
+          )}
         </Stack>
       )}
     </AppDrawer>
@@ -404,6 +468,7 @@ function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpenseRow[] {
         productName: item.ConsumableProduct?.Name,
         qty: item.Qty,
         responsible: order.User?.LastName || order.User?.FullName || order.User?.Name,
+        vendorCode: item.ConsumableProduct?.VendorCode,
       })
     })
   })
@@ -412,7 +477,19 @@ function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpenseRow[] {
 }
 
 function getOutcomePaymentOrder(order?: ConsumablesOrder | null): OutcomePaymentOrder | null {
-  return order?.OutcomePaymentOrderConsumablesOrders?.[0]?.OutcomePaymentOrder || null
+  return getOutcomePaymentOrders(order)[0]?.OutcomePaymentOrder || null
+}
+
+function getOutcomePaymentOrders(
+  order?: ConsumablesOrder | null,
+): NonNullable<ConsumablesOrder['OutcomePaymentOrderConsumablesOrders']> {
+  return (order?.OutcomePaymentOrderConsumablesOrders || []).filter(
+    (item) => !item.Deleted && item.OutcomePaymentOrder && !item.OutcomePaymentOrder.Deleted,
+  )
+}
+
+function getOutcomeOrderLinkKey(item: OutcomePaymentOrderConsumablesOrder, index: number): string {
+  return String(item.NetUid || item.Id || item.OutcomePaymentOrder?.NetUid || item.OutcomePaymentOrder?.Id || `outcome-${index}`)
 }
 
 function shiftDate(days: number): string {
