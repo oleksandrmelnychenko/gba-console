@@ -47,3 +47,54 @@ available order items, analogues, product-interest. → Phase 2 after the core w
 - `NewSaleReviewStep.tsx` — summary + transporter + comment + VAT → create.
 `features/products/components/ProductPickerCarousel.tsx` — extracted reusable carousel (from ProductsPage selection mode).
 Wire: 1-line swap `NewSaleModal`→`NewSaleWizard` in `SalesUkrainePage` — **handed to the user** (their WIP).
+
+---
+
+## Phase 3 — legacy inspection (direct reads, 2026-06-02; the 2 spec workflows returned empty/infra)
+
+### Review confirm + carrier + recipient (sale.single.review.view.tsx)
+- **Carrier mandatory**: `OnSaleUpdate`/`OnNewSale` bail with crouton `UnselectedCarrier` if
+  `SelectedTransporter.Id === 0` — UNLESS `SelectedTransporter.CssClass === 'self_checkout_item_class'`
+  (self-checkout needs no carrier/recipient).
+- **Recipient mandatory** (new sale, non-self-checkout): `OnNewSale` bails if `SelectedRecipient.Id === 0`.
+- **Set carrier** = `POST /sales/set/change` (`SET_SALE_CARRIER_API`), multipart **FormData {sale, file?}**,
+  `GetAuthrizationHeaderWithFileContent` → returns updated sale Body. Distinct action `SetSaleCarrierAction`.
+- **Confirm window**: `ConfirmationWindowView` with `OnSaleUpdate` (existing sale) callback; `OnNewSale` for new.
+  Create branch: `IsVatSale ? UpdateVATSaleAndGetPaymentDocument(/sales/update/get/payment/document)
+  : NewSale(/sales/new) | UpdateSaleFromData(/sales/update/file)`.
+- Recipients preloaded from `DeliveryState.DeliveryRecipients`; pre-select from `session.Sale.DeliveryRecipient`
+  (+ its `DeliveryRecipientAddresses` → `session.Sale.DeliveryRecipientAddress`).
+
+### Delivery recipients (endpoints — all MISSING in console salesUkraineApi)
+`GET /deliveries/recipients/all/client?netId={clientNetId}` → recipient list (each has DeliveryRecipientAddresses[]).
+`POST /deliveries/recipients/new` {Name, City, Department, PhoneNumber, …}. `POST /deliveries/recipients/addresses/new`
+{RecipientNetId, …}. `POST /sales/update/recipient?netId={saleNetId}` (sale with DeliveryRecipient).
+`POST /sales/update/recipient/address?netId={saleNetId}`.
+
+### Carousel data + availability (MISSING — console carousel is search-only)
+`POST /products/reservations/current/carousel` + `GET /products/reservations/current/carousel/agreement?clientAgreementNetId=`
+(reservation/availability per product: reserved count, available qty, price+VAT). `GET /products/all/availabilities/product?netId=&clientAgreementNetId=`.
+`GET /products/get/analogues?productNetId=&clientAgreementNetId=`. Live refresh via reservation-hub
+`GetProductWithoutReservedCount` → console `realtimeEvents.productReservationUpdated`.
+
+### Cart totals/recompute
+Server-recomputed: add/update order-item returns the recomputed sale (line totals + Sum/VAT/EUR/Local). The
+client sends Product+Qty (+ optional price/discount); the server sets PricePerItem/TotalAmount*. The wizard cart
+should display server totals (reload sale after each change — already does via onCartChanged) + a totals footer.
+
+### Keyboard state-machine (product step — ~11 states)
+ProductSearch→ProductSelection→FullDetail→AnalogueSelection/AnalogueFullDetail→ComponentSelection/…→
+EditShoppingCart→ViewImage→Interest. Controllers track previous-state for back-nav; `SkipKeyCode` swallows the
+dup keyup. ←/→ move carousel focus, Enter selects/adds, Esc backs out a state, Del removes, F2 edits qty.
+Pragmatic console layer: ProductPickerCarousel already does ←/→/Enter; add Esc (clear search) + Del/F2 on the cart.
+
+### merged-sales / future-sales (deeper edge flows — defer unless needed)
+Merged: `/clients/all/subclients/client`, `/sales/get/merged`, `/sales/update/merged` — combine sub-client carts
+when a client has sub-clients ordering together. Future: `/sales/reservations/new` (IsReservation) when a product
+is out of stock. Both are advanced; recommend building after the core finalize (carrier+recipient) lands.
+
+### Build order (new files / non-WIP only; wizard step files are now user-WIP)
+1. `new-sale-wizard/newSaleWizardApi.ts` — setSaleCarrier(/sales/set/change FormData), delivery-recipient
+   GET/POST, /sales/update/recipient(/address). 2. Review step: carrier-required validation + recipient select +
+   finalize via setSaleCarrier then create-branch. 3. Carousel availability enrichment. 4. Totals footer.
+5. (later) keyboard Esc/Del/F2, merged, future.
