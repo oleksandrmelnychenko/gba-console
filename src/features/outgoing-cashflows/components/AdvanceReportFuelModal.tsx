@@ -338,10 +338,16 @@ export function AdvanceReportFuelModal({
     const isCurrentSubmit = () => submitSeq.current === requestId
 
     try {
-      const calculated = await calculateAdvanceReportCompanyCarFueling(payload).catch(() => null)
+      const calculated = await calculateAdvanceReportCompanyCarFueling(payload).catch((calcError) => {
+        if (isCurrentSubmit()) {
+          setError(calcError instanceof Error ? calcError.message : t('Не вдалося розрахувати'))
+        }
 
-      if (isCurrentSubmit()) {
-        onAdd(calculated ? { ...payload, ...calculated } : payload)
+        return null
+      })
+
+      if (isCurrentSubmit() && calculated) {
+        onAdd({ ...payload, ...calculated })
         onClose()
       }
     } finally {
