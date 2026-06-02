@@ -1,8 +1,8 @@
-import { Box, Button, Group, Stepper } from '@mantine/core'
+import { Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
+import { IconBox, IconShoppingCart, IconUser } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { AppModal } from '../../../../shared/ui/AppModal'
 import { createSale, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
@@ -32,11 +32,38 @@ export function NewSaleWizard({
   const { t } = useI18n()
 
   return (
-    <AppModal centered opened={opened} size="min(1100px, 96vw)" title={t('Нова продажа')} onClose={onClose}>
+    <Modal
+      opened={opened}
+      title={t('Нова продажа')}
+      withCloseButton
+      padding="lg"
+      overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
+      transitionProps={{ transition: 'pop', duration: 200 }}
+      styles={{
+        inner: { padding: 8 },
+        content: {
+          width: 'calc(100vw - 16px)',
+          maxWidth: 'calc(100vw - 16px)',
+          height: 'calc(100dvh - 16px)',
+          maxHeight: 'calc(100dvh - 16px)',
+          borderRadius: 14,
+          display: 'flex',
+          flexDirection: 'column',
+        },
+        body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+      }}
+      onClose={onClose}
+    >
       {opened && <NewSaleWizardContent onClose={onClose} onCreated={onCreated} />}
-    </AppModal>
+    </Modal>
   )
 }
+
+const WIZARD_STEPS = [
+  { icon: IconUser, label: 'Клієнт' },
+  { icon: IconBox, label: 'Товари' },
+  { icon: IconShoppingCart, label: 'Рев’ю' },
+]
 
 function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onCreated: (sale: SalesUkraineSale) => void }) {
   const { t } = useI18n()
@@ -163,6 +190,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     <Box
       aria-label={t('Майстер нової продажі')}
       role="group"
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       onKeyDown={(event) => {
         if (event.altKey && event.key === '1') {
           setActive(0)
@@ -175,32 +203,80 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
         }
       }}
     >
-      <Stepper active={active} size="sm" onStepClick={onStepClick}>
-        <Stepper.Step label={t('Клієнт')} description={t('Клієнт і договір')}>
+      <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+        {active === 0 && (
           <NewSaleClientStep
             agreementNetId={state.agreementNetId}
             clientNetId={state.clientNetId}
             onAgreementChange={(agreementNetId, agreement) => setState((current) => ({ ...current, agreement, agreementNetId }))}
             onClientChange={(clientNetId) => setState((current) => ({ ...current, clientNetId }))}
           />
-        </Stepper.Step>
-        <Stepper.Step label={t('Товари')} description={t('Кошик')}>
+        )}
+        {active === 1 && (
           <NewSaleProductsStep agreementNetId={state.agreementNetId} sale={state.sale} onCartChanged={reloadCart} />
-        </Stepper.Step>
-        <Stepper.Step label={t('Рев’ю')} description={t('Перевізник і підтвердження')}>
+        )}
+        {active === 2 && (
           <NewSaleReviewStep
             clientNetId={state.clientNetId}
             sale={state.sale}
             value={review}
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
           />
-        </Stepper.Step>
-      </Stepper>
+        )}
+      </Box>
 
-      <Group justify="space-between" mt="lg">
-        <Button color="gray" disabled={busy} variant="subtle" onClick={active === 0 ? onClose : () => setActive((index) => Math.max(0, index - 1))}>
+      <Group
+        justify="space-between"
+        align="center"
+        mt="md"
+        pt="md"
+        style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}
+      >
+        <Button
+          color="gray"
+          disabled={busy}
+          variant="subtle"
+          onClick={active === 0 ? onClose : () => setActive((index) => Math.max(0, index - 1))}
+        >
           {active === 0 ? t('Скасувати') : t('Назад')}
         </Button>
+
+        <Group gap={6}>
+          {WIZARD_STEPS.map((step, index) => {
+            const Icon = step.icon
+            const isActive = index === active
+            const isDone = index < active
+
+            return (
+              <UnstyledButton
+                key={step.label}
+                aria-current={isActive ? 'step' : undefined}
+                aria-label={t(step.label)}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 2,
+                  padding: '4px 16px',
+                  borderRadius: 10,
+                  color: isActive
+                    ? 'var(--mantine-color-violet-7)'
+                    : isDone
+                      ? 'var(--mantine-color-teal-7)'
+                      : 'var(--mantine-color-gray-5)',
+                  background: isActive ? 'var(--mantine-color-violet-0)' : 'transparent',
+                }}
+                onClick={() => onStepClick(index)}
+              >
+                <Icon size={20} stroke={1.8} />
+                <Text fw={600} size="xs">
+                  {t(step.label)}
+                </Text>
+              </UnstyledButton>
+            )
+          })}
+        </Group>
+
         <Button color={active === 2 ? 'teal' : undefined} disabled={nextDisabled} loading={busy} onClick={handleNext}>
           {nextLabel}
         </Button>

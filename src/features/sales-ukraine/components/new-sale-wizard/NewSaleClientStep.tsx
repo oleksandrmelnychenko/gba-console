@@ -103,6 +103,7 @@ export function NewSaleClientStep({
         clearable
         autoFocus
         data={clientData}
+        filter={({ options }) => options}
         label={t('Клієнт')}
         nothingFoundMessage={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
         placeholder={t('Пошук клієнта')}
