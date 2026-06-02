@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import { getNodeIcon } from '../../../features/navigation/navigationIcons'
@@ -16,7 +16,7 @@ export function ConsoleNav() {
 
   const activeModuleKey = selectedModule ? selectedModule.NetUid || String(selectedModule.Id) : null
   const activeNodeKey = selectedNode ? selectedNode.NetUid || String(selectedNode.Id) : null
-  const items = selectedModule?.Children ?? []
+  const items = useMemo(() => selectedModule?.Children ?? [], [selectedModule])
 
   // Position each row's sliding dot under its active pill's centre (transitions
   // its `left` so the dot slides along the border when the active pill changes).
