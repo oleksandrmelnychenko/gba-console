@@ -12,16 +12,25 @@ export type ProductPickerItem = {
   VendorCode?: string
 }
 
+export type ProductPickerMeta = {
+  available?: number
+  price?: number
+}
+
+const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
+
 export function ProductPickerCarousel<T extends ProductPickerItem>({
   products,
   disabled = false,
   isLoading,
   emptyText,
+  getMeta,
   onPick,
   onOpenCard,
 }: {
   disabled?: boolean
   emptyText?: string
+  getMeta?: (product: T) => ProductPickerMeta | undefined
   isLoading?: boolean
   onOpenCard?: (productNetId: string) => void
   onPick: (product: T) => void
@@ -90,6 +99,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
             const isActive = index === safeFocused
             const code = product.VendorCode || product.Articul || '—'
             const name = product.NameUA || product.Name || ''
+            const meta = getMeta?.(product)
 
             return (
               <Card
@@ -147,6 +157,18 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                   <Text c="dimmed" size="xs" lineClamp={1}>
                     {product.MainOriginalNumber}
                   </Text>
+                )}
+                {meta && (meta.available != null || meta.price != null) && (
+                  <Group gap={8} mt={4} wrap="nowrap">
+                    {meta.available != null && (
+                      <Text c={meta.available > 0 ? 'teal' : 'red'} fw={600} size="xs">
+                        {t('Дост.')}: {metaNumberFormatter.format(meta.available)}
+                      </Text>
+                    )}
+                    {meta.price != null && (
+                      <Text size="xs">{metaNumberFormatter.format(meta.price)}</Text>
+                    )}
+                  </Group>
                 )}
               </Card>
             )

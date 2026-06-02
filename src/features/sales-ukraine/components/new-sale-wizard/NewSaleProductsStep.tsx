@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Box, Loader, NumberInput, ScrollArea, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Box, Group, Loader, NumberInput, ScrollArea, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconSearch, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -7,6 +7,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/ev
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
+import { getProductReservationsByAgreement, type WizardProductReservation } from './newSaleWizardApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -29,8 +30,16 @@ export function NewSaleProductsStep({
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const busyRef = useRef(false)
 
+  const [reservations, setReservations] = useState<Map<string, WizardProductReservation>>(new Map())
+  const [reservationReload, setReservationReload] = useState(0)
+
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
+  const isVatSale = Boolean(sale?.IsVatSale)
+  const totalLocal =
+    getNumber(sale?.Order?.TotalAmountLocal) ??
+    orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0), 0)
+  const totalVat = getNumber(sale?.Order?.TotalVat) ?? 0
 
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
@@ -45,11 +54,65 @@ export function NewSaleProductsStep({
 
     if (netId && netId === cartNetIdRef.current) {
       onCartChangedRef.current()
+      setReservationReload((key) => key + 1)
     }
+  }, [])
+
+  const handleReservationSignal = useCallback(() => {
+    setReservationReload((key) => key + 1)
   }, [])
 
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSale)
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSale)
+  useRealtimeEvent(realtimeEvents.productReservationUpdated, handleReservationSignal)
+
+  useEffect(() => {
+    if (!agreementNetId) {
+      return
+    }
+
+    let cancelled = false
+
+    async function load(id: string) {
+      try {
+        const list = await getProductReservationsByAgreement(id)
+
+        if (!cancelled) {
+          const map = new Map<string, WizardProductReservation>()
+          list.forEach((reservation) => {
+            if (reservation.ProductNetUid) {
+              map.set(reservation.ProductNetUid, reservation)
+            }
+          })
+          setReservations(map)
+        }
+      } catch {
+        /* availability is best-effort */
+      }
+    }
+
+    void load(agreementNetId)
+
+    return () => {
+      cancelled = true
+    }
+  }, [agreementNetId, reservationReload])
+
+  const getProductMeta = useCallback(
+    (product: SalesUkraineProduct) => {
+      const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
+
+      if (!reservation) {
+        return undefined
+      }
+
+      return {
+        available: reservation.AvailableQty ?? reservation.AvailableQtyUk,
+        price: reservation.Price ?? reservation.PricePerItem,
+      }
+    },
+    [reservations],
+  )
 
   useEffect(() => {
     const value = query.trim()
@@ -190,6 +253,7 @@ export function NewSaleProductsStep({
         disabled={busy || !agreementNetId || !sale?.NetUid}
         isLoading={isSearching}
         emptyText={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+        getMeta={getProductMeta}
         onPick={(product) => addProduct(product)}
         onOpenCard={setProductCardNetId}
       />
@@ -266,6 +330,22 @@ export function NewSaleProductsStep({
             </Table.Tbody>
           </Table>
         </ScrollArea.Autosize>
+
+        {orderItems.length > 0 && (
+          <Group justify="flex-end" gap="xl" mt="xs">
+            {isVatSale && (
+              <Text size="sm">
+                {t('ПДВ')}: <Text span fw={600}>{amountFormatter.format(totalVat)}</Text>
+              </Text>
+            )}
+            <Text size="sm">
+              {t('Разом')}:{' '}
+              <Text span fw={700}>
+                {amountFormatter.format(totalLocal)} {localCurrencyCode}
+              </Text>
+            </Text>
+          </Group>
+        )}
       </Box>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
