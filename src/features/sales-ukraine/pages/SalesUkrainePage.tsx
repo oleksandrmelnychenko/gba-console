@@ -111,7 +111,7 @@ const SALES_UKRAINE_TABLE_DEFAULT_LAYOUT = {
     left: ['date', 'number', 'client'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SALES_UKRAINE_ITEMS_TABLE_DEFAULT_LAYOUT = {
@@ -685,7 +685,7 @@ export function SalesUkrainePage() {
             emptyText={t('Продажів не знайдено')}
             getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
             isLoading={isLoading}
-            layoutVersion="sales-ukraine-table-1"
+            layoutVersion="sales-ukraine-table-2-compact"
             loadingText={t('Завантаження продажів')}
             maxHeight="calc(100vh - 360px)"
             minWidth={1720}
