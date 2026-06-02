@@ -98,3 +98,20 @@ is out of stock. Both are advanced; recommend building after the core finalize (
    GET/POST, /sales/update/recipient(/address). 2. Review step: carrier-required validation + recipient select +
    finalize via setSaleCarrier then create-branch. 3. Carousel availability enrichment. 4. Totals footer.
 5. (later) keyboard Esc/Del/F2, merged, future.
+
+---
+
+## Phase 3 — BUILT (2026-06-02, commits 8e9b469 / f31c02e + this)
+- **API** `newSaleWizardApi.ts`: setSaleCarrier (/sales/set/change), delivery recipients, carousel reservations, future, sub-clients.
+- **Review**: transporter (type→carrier) + delivery recipient/address selects + self-checkout awareness + comment;
+  finalize validates carrier (mandatory unless self-checkout) + recipient, persists via `setSaleCarrier`.
+- **Carousel**: availability (teal/red) + price per card from agreement reservations; refresh on
+  `productReservationUpdated` + cart change.
+- **Cart**: totals footer (ПДВ + Разом); realtime sync (saleUpdated/saleAdded, relevance-gated).
+- **Keyboard**: carousel ←/→/Enter, Alt+1/2/3 step-nav, Ctrl+Enter advance, Esc clears product search.
+
+### Remaining advanced (documented, rarely-used; build on request)
+- Cart-row keyboard (Del remove / F2 edit-qty) — cart is a Table, needs row-focus tracking.
+- **merged-sales** (combine sub-client carts; /sales/get|update/merged) — advanced, separate UI.
+- **future-sales** (reserve when out of stock; /sales/reservations/new) — needs an out-of-stock UX decision.
+These are edge flows with backend-semantics best confirmed by testing the core wizard on dev first.

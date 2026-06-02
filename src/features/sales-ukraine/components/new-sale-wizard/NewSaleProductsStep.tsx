@@ -246,6 +246,13 @@ export function NewSaleProductsStep({
         rightSection={isSearching ? <Loader size="xs" /> : null}
         value={query}
         onChange={(event) => handleQueryChange(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && query) {
+            event.preventDefault()
+            event.stopPropagation()
+            handleQueryChange('')
+          }
+        }}
       />
 
       <ProductPickerCarousel
