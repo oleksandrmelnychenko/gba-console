@@ -2,6 +2,7 @@ import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text, Tooltip } from '@m
 import { IconTrash } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../types'
 import { formatDate, formatMoney, responsibleName } from './helpers'
 
@@ -11,7 +12,7 @@ function DocumentLink({ document }: { document: SupplyDocument }) {
   }
 
   return (
-    <Anchor href={document.DocumentUrl} rel="noreferrer" size="sm" target="_blank">
+    <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
       {document.FileName || document.DocumentUrl}
     </Anchor>
   )

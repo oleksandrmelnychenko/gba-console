@@ -33,6 +33,7 @@ import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -1855,7 +1856,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
 
           return (
             <Tooltip label={t('Завантажити ТТН')}>
-              <Anchor href={path} target="_blank" rel="noreferrer">
+              <Anchor href={upgradeHttpToHttps(path)} target="_blank" rel="noreferrer">
                 <IconDownload size={18} />
               </Anchor>
             </Tooltip>
