@@ -7,6 +7,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/ev
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
+import { FutureReservationModal } from './FutureReservationModal'
 import { getProductReservationsByAgreement, type WizardProductReservation } from './newSaleWizardApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
@@ -28,6 +29,7 @@ export function NewSaleProductsStep({
   const [isSearching, setSearching] = useState(false)
   const [busy, setBusy] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const [futureProduct, setFutureProduct] = useState<SalesUkraineProduct | null>(null)
   const busyRef = useRef(false)
 
   const [reservations, setReservations] = useState<Map<string, WizardProductReservation>>(new Map())
@@ -150,6 +152,15 @@ export function NewSaleProductsStep({
 
   async function addProduct(product: SalesUkraineProduct) {
     if (!agreementNetId || !sale?.NetUid) {
+      return
+    }
+
+    const meta = getProductMeta(product)
+    const alreadyInCart = orderItems.some((item) => item.Product?.NetUid === product.NetUid)
+
+    if (!alreadyInCart && typeof meta?.available === 'number' && meta.available <= 0) {
+      setFutureProduct(product)
+
       return
     }
 
@@ -356,6 +367,16 @@ export function NewSaleProductsStep({
       </Box>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+
+      <FutureReservationModal
+        clientNetId={sale?.ClientAgreement?.Client?.NetUid ?? null}
+        product={futureProduct}
+        onClose={() => setFutureProduct(null)}
+        onReserved={() => {
+          setFutureProduct(null)
+          onCartChanged()
+        }}
+      />
     </Stack>
   )
 }

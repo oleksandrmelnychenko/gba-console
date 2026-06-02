@@ -150,13 +150,34 @@ export async function getProductReservationsByAgreement(clientAgreementNetId: st
 
 // --- Future / reservation sale --------------------------------------------
 
-export async function newFutureSale(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {
-  const result = await apiRequest<unknown>('/sales/reservations/new', {
-    body: sale,
-    method: 'POST',
+export type WizardNearestSupplyOrder = {
+  NetUID?: string
+  NetUid?: string
+  OrderArrivedDate?: string
+  Number?: string
+}
+
+export type WizardFutureReservation = {
+  ClientNetId?: string
+  ProductNetId?: string
+  Count: number
+  SupplyOrderNetId?: string
+  RemindDate?: string
+}
+
+export async function getNearestSupplyOrder(productNetId: string): Promise<WizardNearestSupplyOrder | null> {
+  const result = await apiRequest<unknown>('/supplies/orders/arrival/nearest/get', {
+    query: { netId: productNetId },
   })
 
-  return asSale(result)
+  return result && typeof result === 'object' ? (result as WizardNearestSupplyOrder) : null
+}
+
+export async function createFutureReservation(reservation: WizardFutureReservation): Promise<void> {
+  await apiRequest<unknown>('/sales/reservations/new', {
+    body: reservation,
+    method: 'POST',
+  })
 }
 
 // --- Sub-clients (merged) --------------------------------------------------
