@@ -151,7 +151,7 @@ export function DepreciatedOrderCreateModal({
               label={t('Від якої дати')}
               type="datetime-local"
               value={form.fromDate}
-              onChange={(event) => setForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+              onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, fromDate: nextValue })) }}
             />
           </SimpleGrid>
 
@@ -160,7 +160,7 @@ export function DepreciatedOrderCreateModal({
               checked={form.isManagement}
               disabled={isCreating}
               label={t('Управ.')}
-              onChange={(event) => setForm((current) => ({ ...current, isManagement: event.currentTarget.checked }))}
+              onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, isManagement: nextValue })) }}
             />
           )}
 
@@ -211,7 +211,7 @@ export function DepreciatedOrderCreateModal({
             label={t('Коментар')}
             minRows={2}
             value={form.comment}
-            onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
           />
 
           <FileInput

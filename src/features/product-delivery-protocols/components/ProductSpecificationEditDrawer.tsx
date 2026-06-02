@@ -126,7 +126,7 @@ function ProductSpecificationEditDrawerContent({
             label={t('Митний код')}
             required
             value={draft.specificationCode}
-            onChange={(event) => setDraft((current) => ({ ...current, specificationCode: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, specificationCode: nextValue })) }}
           />
           <NumberInput
             decimalScale={2}

@@ -148,9 +148,10 @@ export function ProductCapitalizationUploadModal({
               disabled={isSubmitting}
               label={t('За одиницю')}
               mb={6}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, weightPerItem: event.currentTarget.checked }))
-              }
+              onChange={(event) => {
+                const nextValue = event.currentTarget.checked
+                setForm((current) => ({ ...current, weightPerItem: nextValue }))
+              }}
             />
           </Group>
           <Group align="end" gap="sm" wrap="nowrap">
@@ -168,7 +169,7 @@ export function ProductCapitalizationUploadModal({
               disabled={isSubmitting}
               label={t('За одиницю')}
               mb={6}
-              onChange={(event) => setForm((current) => ({ ...current, pricePerItem: event.currentTarget.checked }))}
+              onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, pricePerItem: nextValue })) }}
             />
           </Group>
         </Stack>

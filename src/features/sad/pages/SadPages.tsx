@@ -401,13 +401,13 @@ export function AllSadsPage() {
             label={t('З')}
             type="date"
             value={filters.from}
-            onChange={(event) => setFilters((currentFilters) => ({ ...currentFilters, from: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, from: nextValue })) }}
           />
           <TextInput
             label={t('По')}
             type="date"
             value={filters.to}
-            onChange={(event) => setFilters((currentFilters) => ({ ...currentFilters, to: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, to: nextValue })) }}
           />
         </Group>
       </Card>
@@ -2131,7 +2131,7 @@ function SpecificationEditorModal({
         <TextInput
           label={t('Код специфікації')}
           value={draft.SpecificationCode || ''}
-          onChange={(event) => setDraft((currentDraft) => ({ ...currentDraft, SpecificationCode: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((currentDraft) => ({ ...currentDraft, SpecificationCode: nextValue })) }}
         />
         <SimpleGrid cols={{ base: 1, sm: 2 }}>
           <NumberInput

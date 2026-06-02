@@ -164,7 +164,7 @@ export function ChangeProductSpecificationPanel({
             label={t('Митний код')}
             required
             value={form.specificationCode}
-            onChange={(event) => setForm((current) => ({ ...current, specificationCode: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, specificationCode: nextValue })) }}
           />
 
           <TextInput
@@ -172,9 +172,10 @@ export function ChangeProductSpecificationPanel({
             label={t('Підтвердіть митний код')}
             required
             value={form.confirmSpecificationCode}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, confirmSpecificationCode: event.currentTarget.value }))
-            }
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setForm((current) => ({ ...current, confirmSpecificationCode: nextValue }))
+            }}
           />
 
           <NumberInput

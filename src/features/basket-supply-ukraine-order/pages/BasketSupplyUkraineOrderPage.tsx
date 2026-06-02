@@ -662,7 +662,7 @@ function BasketCartWorkflow() {
                 leftSection={SEARCH_ICON}
                 placeholder={t('Код Виробника')}
                 value={filters.search}
-                onChange={(event) => setFilters((current) => ({ ...current, search: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((current) => ({ ...current, search: nextValue })) }}
               />
               <Select
                 data={[

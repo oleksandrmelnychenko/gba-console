@@ -175,13 +175,13 @@ export function OffersPage() {
           label={t('Дата з')}
           type="date"
           value={draft.from}
-          onChange={(event) => setDraft((current) => ({ ...current, from: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, from: nextValue })) }}
         />
         <TextInput
           label={t('Дата по')}
           type="date"
           value={draft.to}
-          onChange={(event) => setDraft((current) => ({ ...current, to: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, to: nextValue })) }}
         />
         <Button onClick={reload}>{t('Застосувати')}</Button>
       </Group>

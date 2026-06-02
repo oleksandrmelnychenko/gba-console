@@ -409,14 +409,14 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
                 type="date"
                 value={filterDraft.from}
                 w={150}
-                onChange={(event) => setFilterDraft((current) => ({ ...current, from: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, from: nextValue })) }}
               />
               <TextInput
                 label={t('По')}
                 type="date"
                 value={filterDraft.to}
                 w={150}
-                onChange={(event) => setFilterDraft((current) => ({ ...current, to: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, to: nextValue })) }}
               />
               <Button color="violet" type="submit">
                 {t('Застосувати')}

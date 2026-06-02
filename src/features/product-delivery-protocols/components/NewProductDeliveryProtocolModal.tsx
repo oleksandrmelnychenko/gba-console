@@ -163,7 +163,7 @@ function NewProductDeliveryProtocolForm({
           label={t('Від якої дати')}
           type="date"
           value={fromDate}
-          onChange={(event) => setForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, fromDate: nextValue })) }}
         />
       </Group>
 
@@ -172,7 +172,7 @@ function NewProductDeliveryProtocolForm({
         label={t('Коментар')}
         minRows={2}
         value={comment}
-        onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+        onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
       />
 
       <Group justify="flex-end" gap="sm">

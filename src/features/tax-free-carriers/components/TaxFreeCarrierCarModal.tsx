@@ -64,13 +64,13 @@ export function TaxFreeCarrierCarModal({
             label={t('Номер')}
             required
             value={draft.number}
-            onChange={(event) => setDraft((current) => ({ ...current, number: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, number: nextValue })) }}
           />
           <TextInput
             inputMode="decimal"
             label={t("Об'єм")}
             value={draft.volume}
-            onChange={(event) => setDraft((current) => ({ ...current, volume: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, volume: nextValue })) }}
           />
         </SimpleGrid>
         <Group justify="flex-end">

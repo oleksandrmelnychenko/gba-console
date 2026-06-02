@@ -633,14 +633,14 @@ function InvoiceUploadModal({
             disabled={isSaving}
             label={t('Номер')}
             value={form.number}
-            onChange={(event) => setForm((current) => ({ ...current, number: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
           />
           <TextInput
             disabled={isSaving}
             label={t('Дата')}
             type="datetime-local"
             value={form.dateFrom}
-            onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
           />
         </SimpleGrid>
         <Textarea
@@ -649,7 +649,7 @@ function InvoiceUploadModal({
           label={t('Коментар')}
           minRows={2}
           value={form.comment}
-          onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
         />
         <FileInput
           clearable
@@ -670,7 +670,7 @@ function InvoiceUploadModal({
           checked={form.productIsImported}
           disabled={isSaving}
           label={t('Імпортний товар')}
-          onChange={(event) => setForm((current) => ({ ...current, productIsImported: event.currentTarget.checked }))}
+          onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, productIsImported: nextValue })) }}
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
@@ -708,14 +708,14 @@ function PackListUploadModal({
             disabled={isSaving}
             label={t('Номер')}
             value={form.number}
-            onChange={(event) => setForm((current) => ({ ...current, number: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, number: nextValue })) }}
           />
           <TextInput
             disabled={isSaving}
             label={t('Дата')}
             type="datetime-local"
             value={form.dateFrom}
-            onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, dateFrom: nextValue })) }}
           />
         </SimpleGrid>
         <Textarea
@@ -724,7 +724,7 @@ function PackListUploadModal({
           label={t('Коментар')}
           minRows={2}
           value={form.comment}
-          onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, comment: nextValue })) }}
         />
         <FileInput
           clearable
@@ -747,7 +747,7 @@ function PackListUploadModal({
           checked={form.isWeightPerUnit}
           disabled={isSaving}
           label={t('Вага на одиницю')}
-          onChange={(event) => setForm((current) => ({ ...current, isWeightPerUnit: event.currentTarget.checked }))}
+          onChange={(event) => { const nextValue = event.currentTarget.checked; setForm((current) => ({ ...current, isWeightPerUnit: nextValue })) }}
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>

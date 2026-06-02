@@ -138,7 +138,7 @@ export function PaymentShopDetailDrawer({
               <Textarea
                 label={t('Коментар')}
                 value={draft.comment}
-                onChange={(event) => setDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, comment: nextValue })) }}
               />
               <FileInput
                 label={t('Зображення')}

@@ -1540,7 +1540,7 @@ function ProductStorageActionModal({
             label={t('Дата')}
             type="date"
             value={form.fromDate}
-            onChange={(event) => onChangeForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, fromDate: nextValue })) }}
           />
           {showManagementSwitch ? (
             <Switch
@@ -1548,7 +1548,7 @@ function ProductStorageActionModal({
               disabled={isSubmitting}
               label={t('Управлінська операція')}
               mt={30}
-              onChange={(event) => onChangeForm((current) => ({ ...current, isManagement: event.currentTarget.checked }))}
+              onChange={(event) => { const nextValue = event.currentTarget.checked; onChangeForm((current) => ({ ...current, isManagement: nextValue })) }}
             />
           ) : null}
         </SimpleGrid>
@@ -1575,19 +1575,19 @@ function ProductStorageActionModal({
               disabled={isSubmitting}
               label={t('Склад')}
               value={form.storageNumber}
-              onChange={(event) => onChangeForm((current) => ({ ...current, storageNumber: event.currentTarget.value }))}
+              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, storageNumber: nextValue })) }}
             />
             <TextInput
               disabled={isSubmitting}
               label={t('Ряд')}
               value={form.rowNumber}
-              onChange={(event) => onChangeForm((current) => ({ ...current, rowNumber: event.currentTarget.value }))}
+              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, rowNumber: nextValue })) }}
             />
             <TextInput
               disabled={isSubmitting}
               label={t('Полиця')}
               value={form.cellNumber}
-              onChange={(event) => onChangeForm((current) => ({ ...current, cellNumber: event.currentTarget.value }))}
+              onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, cellNumber: nextValue })) }}
             />
           </SimpleGrid>
         ) : null}
@@ -1638,7 +1638,7 @@ function ProductStorageActionModal({
             disabled={isSubmitting}
             label={t('Причина')}
             value={form.reason}
-            onChange={(event) => onChangeForm((current) => ({ ...current, reason: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, reason: nextValue })) }}
           />
         ) : null}
 
@@ -1648,7 +1648,7 @@ function ProductStorageActionModal({
           label={t('Коментар')}
           minRows={2}
           value={form.comment}
-          onChange={(event) => onChangeForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; onChangeForm((current) => ({ ...current, comment: nextValue })) }}
         />
 
         {(actionError || returnConsignmentsError) && (

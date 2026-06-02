@@ -875,21 +875,21 @@ export function NewResalePage() {
                 label={t('Пошук товару')}
                 value={form.search}
                 style={{ flex: '1 1 260px' }}
-                onChange={(event) => setForm((currentForm) => ({ ...currentForm, search: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, search: nextValue })) }}
               />
               <TextInput
                 label={t('Від')}
                 type="date"
                 value={form.from}
                 w={150}
-                onChange={(event) => setForm((currentForm) => ({ ...currentForm, from: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, from: nextValue })) }}
               />
               <TextInput
                 label={t('До')}
                 type="date"
                 value={form.to}
                 w={150}
-                onChange={(event) => setForm((currentForm) => ({ ...currentForm, to: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, to: nextValue })) }}
               />
               <Button color="gray" variant="light" onClick={resetFilters}>
                 {t('Скинути')}
@@ -1337,7 +1337,7 @@ export function ResalePage() {
             label={t('Коментар')}
             minRows={2}
             value={detailInfo.comment}
-            onChange={(event) => setDetailInfo((current) => ({ ...current, comment: event.currentTarget.value }))}
+            onChange={(event) => { const nextValue = event.currentTarget.value; setDetailInfo((current) => ({ ...current, comment: nextValue })) }}
           />
           <Group justify="flex-end">
             <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
@@ -2122,7 +2122,7 @@ function ResaleProcessDrawer({
           label={t('Коментар')}
           minRows={2}
           value={processForm.comment}
-          onChange={(event) => setProcessForm((currentForm) => ({ ...currentForm, comment: event.currentTarget.value }))}
+          onChange={(event) => { const nextValue = event.currentTarget.value; setProcessForm((currentForm) => ({ ...currentForm, comment: nextValue })) }}
         />
         <DetailValue label={t('Організація')} value={processForm.activeProcessData?.Organization?.Name || processForm.activeProcessData?.Organization?.FullName} />
         <TotalsCard

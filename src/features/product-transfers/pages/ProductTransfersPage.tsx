@@ -844,7 +844,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
                 label={t('Дата')}
                 type="date"
                 value={createForm.fromDate}
-                onChange={(event) => setCreateForm((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+                onChange={(event) => { const nextValue = event.currentTarget.value; setCreateForm((current) => ({ ...current, fromDate: nextValue })) }}
               />
               <Switch
                 checked={createForm.isManagement}
@@ -866,7 +866,7 @@ function ProductTransferCreateModal({ model }: { model: ReturnType<typeof usePro
               label={t('Коментар')}
               minRows={2}
               value={createForm.comment}
-              onChange={(event) => setCreateForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+              onChange={(event) => { const nextValue = event.currentTarget.value; setCreateForm((current) => ({ ...current, comment: nextValue })) }}
             />
 
             <SimpleGrid cols={{ base: 1, sm: 4 }}>

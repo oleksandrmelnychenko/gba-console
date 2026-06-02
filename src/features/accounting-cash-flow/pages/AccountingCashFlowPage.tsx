@@ -486,14 +486,20 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                 type="date"
                 value={filterDraft.from}
                 w={150}
-                onChange={(event) => setFilterDraft((current) => ({ ...current, from: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const value = event.currentTarget.value
+                  setFilterDraft((current) => ({ ...current, from: value }))
+                }}
               />
               <TextInput
                 label={t('По')}
                 type="date"
                 value={filterDraft.to}
                 w={150}
-                onChange={(event) => setFilterDraft((current) => ({ ...current, to: event.currentTarget.value }))}
+                onChange={(event) => {
+                  const value = event.currentTarget.value
+                  setFilterDraft((current) => ({ ...current, to: value }))
+                }}
               />
               <Button color="violet" type="submit">
                 {t('Застосувати')}
