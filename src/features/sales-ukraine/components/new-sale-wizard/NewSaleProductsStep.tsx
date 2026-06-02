@@ -1,9 +1,11 @@
-import { ActionIcon, Anchor, Box, Group, Loader, NumberInput, ScrollArea, Stack, Table, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Anchor, Box, Loader, NumberInput, ScrollArea, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconSearch, IconTrash } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
+import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
@@ -28,6 +30,25 @@ export function NewSaleProductsStep({
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
+
+  const cartNetIdRef = useRef<string | undefined>(undefined)
+  const onCartChangedRef = useRef(onCartChanged)
+
+  useEffect(() => {
+    cartNetIdRef.current = sale?.NetUid
+    onCartChangedRef.current = onCartChanged
+  })
+
+  const handleRealtimeSale = useCallback((payload: unknown) => {
+    const netId = resolveSaleNetId(payload)
+
+    if (netId && netId === cartNetIdRef.current) {
+      onCartChangedRef.current()
+    }
+  }, [])
+
+  useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSale)
+  useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSale)
 
   useEffect(() => {
     const value = query.trim()
@@ -122,47 +143,30 @@ export function NewSaleProductsStep({
   }
 
   return (
-    <Group align="flex-start" gap="md" wrap="nowrap" style={{ minHeight: 360 }}>
-      <Stack gap="xs" style={{ flex: '0 0 360px' }}>
-        <TextInput
-          autoFocus
-          label={t('Пошук по товару')}
-          leftSection={<IconSearch size={16} />}
-          placeholder={t('Код Виробника')}
-          rightSection={isSearching ? <Loader size="xs" /> : null}
-          value={query}
-          onChange={(event) => setQuery(event.currentTarget.value)}
-        />
-        <ScrollArea.Autosize mah={360}>
-          <Stack gap={4}>
-            {results.length === 0 ? (
-              <Text c="dimmed" size="sm">
-                {query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
-              </Text>
-            ) : (
-              results.map((product, index) => (
-                <UnstyledButton
-                  key={product.NetUid || product.Id || index}
-                  disabled={busy}
-                  p="xs"
-                  style={{ borderRadius: 6 }}
-                  onClick={() => addProduct(product)}
-                >
-                  <Text fw={600} size="sm">
-                    {product.VendorCode || product.Articul || '—'}
-                  </Text>
-                  <Text c="dimmed" size="xs">
-                    {product.NameUA || product.Name || ''}
-                  </Text>
-                </UnstyledButton>
-              ))
-            )}
-          </Stack>
-        </ScrollArea.Autosize>
-      </Stack>
+    <Stack gap="md">
+      <TextInput
+        autoFocus
+        label={t('Пошук по товару')}
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Код Виробника')}
+        rightSection={isSearching ? <Loader size="xs" /> : null}
+        value={query}
+        onChange={(event) => setQuery(event.currentTarget.value)}
+      />
 
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <ScrollArea.Autosize mah={420} type="auto">
+      <ProductPickerCarousel
+        products={results}
+        isLoading={isSearching}
+        emptyText={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+        onPick={(product) => addProduct(product)}
+        onOpenCard={setProductCardNetId}
+      />
+
+      <Box>
+        <Text fw={600} mb={4} size="sm">
+          {t('Кошик')}
+        </Text>
+        <ScrollArea.Autosize mah={360} type="auto">
           <Table withColumnBorders highlightOnHover stickyHeader verticalSpacing={6}>
             <Table.Thead>
               <Table.Tr>
@@ -233,8 +237,30 @@ export function NewSaleProductsStep({
       </Box>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
-    </Group>
+    </Stack>
   )
+}
+
+function resolveSaleNetId(payload: unknown): string | undefined {
+  let value = payload
+
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value)
+    } catch {
+      return undefined
+    }
+  }
+
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+
+  const record = value as Record<string, unknown>
+  const sale = (record.Sale && typeof record.Sale === 'object' ? record.Sale : record) as Record<string, unknown>
+  const netId = sale.NetUid
+
+  return typeof netId === 'string' ? netId : undefined
 }
 
 function getNumber(value: unknown): number | null {
