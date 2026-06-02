@@ -520,6 +520,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                       tableId="supply-direct-invoice-items"
                     />
                   )}
+                  {selectedInvoice && <InvoiceTotals invoice={selectedInvoice} />}
                 </Stack>
               </Card>
             </Tabs.Panel>
@@ -560,9 +561,10 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                     emptyText={t('Рядків пак листа немає')}
                     getRowId={(item, index) => item.NetUid || String(item.Id || index)}
                     layoutVersion="supply-direct-pack-list-items-1"
-                    minWidth={980}
+                    minWidth={1180}
                     tableId="supply-direct-pack-list-items"
                   />
+                  <PackListTotals invoice={selectedInvoice} packList={selectedPackList} />
                 </Stack>
               </Card>
             </Tabs.Panel>
@@ -848,6 +850,8 @@ function usePackListItemColumns(): DataTableColumn<PackingListPackageOrderItem>[
     () => [
       { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode, cell: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-' },
       { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.Name, cell: (item) => item.SupplyInvoiceOrderItem?.Product?.Name || item.SupplyInvoiceOrderItem?.Product?.NameUA || '-' },
+      { id: 'netUnit', header: t('Нетто од.'), width: 120, align: 'right', accessor: (item) => item.NetWeight, cell: (item) => formatNumber(item.NetWeight) },
+      { id: 'grossUnit', header: t('Брутто од.'), width: 120, align: 'right', accessor: (item) => item.GrossWeight, cell: (item) => formatNumber(item.GrossWeight) },
       { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
       { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => formatNumber(item.TotalNetWeight) },
       { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => formatNumber(item.TotalGrossWeight) },
@@ -855,6 +859,92 @@ function usePackListItemColumns(): DataTableColumn<PackingListPackageOrderItem>[
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
     ],
     [t],
+  )
+}
+
+function InvoiceTotals({ invoice }: { invoice: SupplyInvoice }) {
+  const { t } = useI18n()
+
+  return (
+    <SummaryLine
+      items={[
+        [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
+        [t('Кількість у пак листах'), formatNumber(sumPackingListQty(invoice))],
+        [t('Сума інвойса'), formatMoney(invoice.TotalNetPrice)],
+        [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
+        [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
+      ]}
+    />
+  )
+}
+
+function PackListTotals({
+  invoice,
+  packList,
+}: {
+  invoice: SupplyInvoice | null
+  packList: PackingList | null
+}) {
+  const { t } = useI18n()
+
+  if (packList) {
+    return (
+      <SummaryLine
+        items={[
+          [t('Позицій'), formatNumber(packList.PackingListPackageOrderItems?.length || 0)],
+          [t('Кількість'), formatNumber(packList.TotalQuantity)],
+          [t('Сума'), formatMoney(packList.TotalNetPrice)],
+          [t('Нетто'), formatNumber(packList.TotalNetWeight)],
+          [t('Брутто'), formatNumber(packList.TotalGrossWeight)],
+        ]}
+      />
+    )
+  }
+
+  if (!invoice) {
+    return null
+  }
+
+  return (
+    <SummaryLine
+      items={[
+        [t('Позицій у пак листах'), formatNumber(countPackingListItems(invoice))],
+        [t('Кількість'), formatNumber(invoice.TotalQuantity)],
+        [t('Сума інвойса'), formatMoney(invoice.TotalNetPrice)],
+        [t('Нетто'), formatNumber(invoice.TotalNetWeight)],
+        [t('Брутто'), formatNumber(invoice.TotalGrossWeight)],
+      ]}
+    />
+  )
+}
+
+function SummaryLine({ items }: { items: Array<[string, string]> }) {
+  return (
+    <Group gap="lg" wrap="wrap">
+      {items.map(([label, value]) => (
+        <Stack key={label} gap={0}>
+          <Text c="dimmed" size="xs">{label}</Text>
+          <Text fw={700} size="sm">{value}</Text>
+        </Stack>
+      ))}
+    </Group>
+  )
+}
+
+function countPackingListItems(invoice: SupplyInvoice): number {
+  return (invoice.PackingLists || []).reduce(
+    (total, packList) => total + (packList.PackingListPackageOrderItems?.length || 0),
+    0,
+  )
+}
+
+function sumPackingListQty(invoice: SupplyInvoice): number {
+  return (invoice.PackingLists || []).reduce(
+    (total, packList) => total + (packList.PackingListPackageOrderItems || []).reduce(
+      (packListTotal, item) => packListTotal + (item.Qty || 0),
+      0,
+    ),
+    0,
   )
 }
 

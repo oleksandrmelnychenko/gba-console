@@ -15,7 +15,7 @@ import { IconAlertCircle, IconPencil, IconRefresh, IconRestore, IconSearch } fro
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductSubGroups } from '../api/productGroupsApi'
@@ -40,6 +40,8 @@ type ProductGroupSubGroupsPanelProps = {
 export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSubGroupsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnPath = `${location.pathname}${location.search}`
   const [subGroups, setSubGroups] = useValueState<ProductSubGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
@@ -58,11 +60,12 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         navigate(`/product-groups/${productGroup.NetUid}`, {
           state: {
             nodeTitle: getProductGroupName(productGroup),
+            returnPath,
           },
         })
       }
     },
-    [navigate],
+    [navigate, returnPath],
   )
   const columns = useMemo<DataTableColumn<ProductSubGroup>[]>(
     () => [
