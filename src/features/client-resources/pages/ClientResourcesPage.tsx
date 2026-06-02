@@ -205,6 +205,7 @@ type ResourceDataTableProps<TData extends ClientResourceEntity> = {
   columns: DataTableColumn<TData>[]
   data: TData[]
   emptyText?: ReactNode
+  layoutVersion?: number | string
   minWidth?: number
   tableId: string
 }
@@ -213,6 +214,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   columns,
   data,
   emptyText,
+  layoutVersion = 'client-resources-table-1',
   minWidth = 760,
   tableId,
 }: ResourceDataTableProps<TData>) {
@@ -223,11 +225,33 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       defaultLayout={CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT}
       emptyText={emptyText}
       getRowId={(row, index) => getEntityKey(row, index)}
-      layoutVersion="client-resources-table-1"
+      layoutVersion={layoutVersion}
       maxHeight="min(56vh, 620px)"
       minWidth={minWidth}
       tableId={`client-resources-${normalizeTableIdPart(tableId)}`}
     />
+  )
+}
+
+function TruncatedCell({ value }: { value: unknown }) {
+  const text = displayValue(value)
+  const hasTooltip = text && text !== '—'
+
+  return (
+    <Tooltip
+      classNames={{ tooltip: 'client-resources-cell-tooltip' }}
+      disabled={!hasTooltip}
+      label={text}
+      maw={420}
+      multiline
+      openDelay={350}
+      position="top-start"
+      withArrow
+    >
+      <Text component="span" className="client-resources-truncated-cell">
+        {text}
+      </Text>
+    </Tooltip>
   )
 }
 
@@ -1403,31 +1427,39 @@ function PerfectClientGroup({
               id: 'name',
               header: 'Назва',
               accessor: (item) => displayTranslatedEntity(item.Name, item.PerfectClientTranslations),
-              minWidth: 200,
+              cell: (item) => <TruncatedCell value={displayTranslatedEntity(item.Name, item.PerfectClientTranslations)} />,
+              maxWidth: 190,
+              width: 190,
             },
             {
               id: 'label',
               header: 'Мітка',
               accessor: (item) => item.Lable,
-              minWidth: 160,
+              cell: (item) => <TruncatedCell value={item.Lable} />,
+              maxWidth: 150,
+              width: 150,
             },
             {
               id: 'value',
               header: 'Значення',
               accessor: (item) => item.Value,
-              minWidth: 140,
+              cell: (item) => <TruncatedCell value={item.Value} />,
+              maxWidth: 130,
+              width: 130,
             },
             {
               id: 'description',
               header: 'Опис',
               accessor: (item) => item.Description,
-              minWidth: 220,
+              cell: (item) => <TruncatedCell value={item.Description} />,
+              maxWidth: 220,
+              width: 220,
             },
             {
               id: 'actions',
               header: '',
               align: 'right',
-              width: 96,
+              width: 72,
               enableHiding: false,
               enableReorder: false,
               enableResizing: false,
@@ -1467,7 +1499,8 @@ function PerfectClientGroup({
           ]}
           data={items}
           emptyText={translate("Записів немає")}
-          minWidth={860}
+          layoutVersion="client-resources-perfect-clients-table-2"
+          minWidth={762}
           tableId={`perfect-clients-${title}`}
         />
       ) : (
@@ -1621,27 +1654,27 @@ function TaxInspectionEditorModal({
               onChange={(event) => setField('InspectionName', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Номер інспекції")}
+              label={translate("Код ГНИ")}
               value={values.InspectionNumber}
               onChange={(event) => setField('InspectionNumber', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Тип інспекції")}
+              label={translate("Тип ГНИ")}
               value={values.InspectionType}
               onChange={(event) => setField('InspectionType', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Регіон")}
+              label={translate("Назва адм.района")}
               value={values.InspectionRegionName}
               onChange={(event) => setField('InspectionRegionName', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Код регіону")}
+              label={translate("Код адм.района")}
               value={values.InspectionRegionCode}
               onChange={(event) => setField('InspectionRegionCode', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("ЄДРПОУ")}
+              label={translate("Код по ЄДРПОУ")}
               value={values.InspectionUSREOU}
               onChange={(event) => setField('InspectionUSREOU', event.currentTarget.value)}
             />
@@ -2288,49 +2321,65 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'name',
                 header: 'Назва',
                 accessor: (organization) => displayTranslatedEntity(organization.Name, organization.OrganizationTranslations),
-                minWidth: 200,
+                cell: (organization) => (
+                  <TruncatedCell value={displayTranslatedEntity(organization.Name, organization.OrganizationTranslations)} />
+                ),
+                maxWidth: 190,
+                width: 190,
               },
               {
                 id: 'fullName',
                 header: 'Повна назва',
                 accessor: (organization) => organization.FullName,
-                minWidth: 220,
+                cell: (organization) => <TruncatedCell value={organization.FullName} />,
+                maxWidth: 230,
+                width: 230,
               },
               {
                 id: 'code',
                 header: 'Код',
                 accessor: (organization) => organization.Code,
-                width: 120,
+                cell: (organization) => <TruncatedCell value={organization.Code} />,
+                maxWidth: 80,
+                width: 80,
               },
               {
                 id: 'usreou',
                 header: 'ЄДРПОУ',
                 accessor: (organization) => organization.USREOU,
-                width: 130,
+                cell: (organization) => <TruncatedCell value={organization.USREOU} />,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'tin',
                 header: 'ІПН',
                 accessor: (organization) => organization.TIN,
-                width: 130,
+                cell: (organization) => <TruncatedCell value={organization.TIN} />,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'currency',
                 header: 'Валюта',
                 accessor: (organization) => displayCurrency(organization.Currency),
-                width: 130,
+                cell: (organization) => <TruncatedCell value={displayCurrency(organization.Currency)} />,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'taxInspection',
                 header: 'Податкова',
                 accessor: (organization) => organization.TaxInspection?.InspectionName,
-                minWidth: 220,
+                cell: (organization) => <TruncatedCell value={organization.TaxInspection?.InspectionName} />,
+                maxWidth: 170,
+                width: 170,
               },
               {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 96,
+                width: 72,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -2373,7 +2422,8 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={filtered}
             emptyText={translate("За цим пошуком немає організацій")}
-            minWidth={1360}
+            layoutVersion="client-resources-organizations-table-2"
+            minWidth={1102}
             tableId="organizations"
           />
         ) : (
@@ -2687,7 +2737,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       setEditor(null)
       state.reload()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти податкову інспекцію'))
+      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти налогову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -2714,7 +2764,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       setDeleteTarget(null)
       state.reload()
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити податкову інспекцію'))
+      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити налогову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -2722,7 +2772,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const createTaxInspectionAction = (
     <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
       <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
-        Нова податкова інспекція
+        Нова налогова інспекція
       </Button>
     </PermissionGate>
   )
@@ -2736,7 +2786,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         onSearchChange={setSearch}
         searchValue={search}
       />
-      <Loadable state={state} emptyTitle="Податкових інспекцій не знайдено">
+      <Loadable state={state} emptyTitle="Налогових інспекцій не знайдено">
         {filtered.length ? (
           <ResourceDataTable
             columns={[
@@ -2744,49 +2794,63 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'name',
                 header: 'Назва',
                 accessor: (inspection) => inspection.InspectionName,
-                minWidth: 220,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionName} />,
+                maxWidth: 210,
+                width: 210,
               },
               {
                 id: 'number',
-                header: 'Номер інспекції',
+                header: 'Код ГНИ',
                 accessor: (inspection) => inspection.InspectionNumber,
-                width: 150,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionNumber} />,
+                maxWidth: 110,
+                width: 110,
               },
               {
                 id: 'regionCode',
-                header: 'Код регіону',
+                header: 'Код адм.района',
                 accessor: (inspection) => inspection.InspectionRegionCode,
-                width: 140,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionCode} />,
+                maxWidth: 130,
+                width: 130,
               },
               {
                 id: 'region',
-                header: 'Регіон',
+                header: 'Назва адм.района',
                 accessor: (inspection) => inspection.InspectionRegionName,
-                minWidth: 180,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionRegionName} />,
+                maxWidth: 180,
+                width: 180,
               },
               {
                 id: 'type',
-                header: 'Тип інспекції',
+                header: 'Тип ГНИ',
                 accessor: (inspection) => inspection.InspectionType,
-                width: 140,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionType} />,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'usreou',
-                header: 'ЄДРПОУ',
+                header: 'Код по ЄДРПОУ',
                 accessor: (inspection) => inspection.InspectionUSREOU,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionUSREOU} />,
+                maxWidth: 130,
                 width: 130,
               },
               {
                 id: 'address',
                 header: 'Адреса',
                 accessor: (inspection) => inspection.InspectionAddress,
-                minWidth: 220,
+                cell: (inspection) => <TruncatedCell value={inspection.InspectionAddress} />,
+                maxWidth: 180,
+                width: 180,
               },
               {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 96,
+                width: 72,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -2796,7 +2860,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                     <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
                       <Tooltip label={translate("Редагувати")}>
                         <ActionIcon
-                          aria-label={translate("Редагувати податкову інспекцію")}
+                          aria-label={translate("Редагувати налогову інспекцію")}
                           color="gray"
                           size="sm"
                           variant="subtle"
@@ -2809,7 +2873,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                     <PermissionGate permissionKey={TAX_INSPECTION_DELETE_PERMISSION}>
                       <Tooltip label={translate("Видалити")}>
                         <ActionIcon
-                          aria-label={translate("Видалити податкову інспекцію")}
+                          aria-label={translate("Видалити налогову інспекцію")}
                           color="red"
                           disabled={!inspection.NetUid}
                           size="sm"
@@ -2829,7 +2893,8 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={filtered}
             emptyText={translate("За цим пошуком немає інспекцій")}
-            minWidth={1370}
+            layoutVersion="client-resources-tax-inspections-table-2"
+            minWidth={1052}
             tableId="tax-inspections"
           />
         ) : (
@@ -2842,7 +2907,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         isSaving={isSaving}
         opened={Boolean(editor)}
         taxInspection={editor?.taxInspection}
-        title={editor?.mode === 'edit' ? translate('Редагувати податкову інспекцію') : translate('Нова податкова інспекція')}
+        title={editor?.mode === 'edit' ? translate('Редагувати налогову інспекцію') : translate('Нова налогова інспекція')}
         onClose={() => {
           if (!isSaving) {
             setEditor(null)
@@ -3113,7 +3178,8 @@ function PricingResourceTable({
         id: 'priority',
         header: 'Пріоритет',
         accessor: (pricing) => pricing.SortingPriority,
-        width: 160,
+        maxWidth: 120,
+        width: 120,
         cell: (pricing) => (
           <Group gap={4} wrap="nowrap">
             <Text size="sm">{displayValue(pricing.SortingPriority)}</Text>
@@ -3152,45 +3218,59 @@ function PricingResourceTable({
         id: 'name',
         header: 'Назва',
         accessor: (pricing) => displayTranslatedEntity(pricing.Name, pricing.PricingTranslations),
-        minWidth: 200,
+        cell: (pricing) => (
+          <TruncatedCell value={displayTranslatedEntity(pricing.Name, pricing.PricingTranslations)} />
+        ),
+        maxWidth: 210,
+        width: 210,
       },
       {
         id: 'markup',
         header: 'Націнка',
         accessor: (pricing) => pricing.ExtraCharge,
         cell: (pricing) => formatPercent(pricing.ExtraCharge),
-        width: 120,
+        maxWidth: 100,
+        width: 100,
       },
       {
         id: 'currency',
         header: 'Валюта',
         accessor: (pricing) => displayCurrency(pricing.Currency),
+        cell: (pricing) => <TruncatedCell value={displayCurrency(pricing.Currency)} />,
+        maxWidth: 120,
         width: 120,
       },
       {
         id: 'priceType',
         header: 'Тип ціни',
         accessor: (pricing) => pricing.PriceType?.Name,
-        minWidth: 160,
+        cell: (pricing) => <TruncatedCell value={pricing.PriceType?.Name} />,
+        maxWidth: 150,
+        width: 150,
       },
       {
         id: 'base',
         header: 'База',
         accessor: (pricing) => displayTranslatedEntity(pricing.BasePricing?.Name, pricing.BasePricing?.PricingTranslations),
-        minWidth: 180,
+        cell: (pricing) => (
+          <TruncatedCell value={displayTranslatedEntity(pricing.BasePricing?.Name, pricing.BasePricing?.PricingTranslations)} />
+        ),
+        maxWidth: 170,
+        width: 170,
       },
       {
         id: 'vat',
         header: 'ПДВ',
         accessor: (pricing) => pricing.ForVat,
         cell: (pricing) => <BooleanBadge value={pricing.ForVat} />,
-        width: 100,
+        maxWidth: 80,
+        width: 80,
       },
       {
         id: 'actions',
         header: '',
         align: 'right',
-        width: 96,
+        width: 72,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
@@ -3236,7 +3316,8 @@ function PricingResourceTable({
       columns={columns}
       data={pricings}
       emptyText={translate("За цим пошуком немає правил")}
-      minWidth={1240}
+      layoutVersion="client-resources-pricing-table-2"
+      minWidth={1022}
       tableId="pricing"
     />
   )
@@ -3351,26 +3432,31 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'code',
                 header: 'Код',
                 accessor: (currency) => currency.Code,
-                width: 120,
+                cell: (currency) => <TruncatedCell value={currency.Code} />,
+                maxWidth: 90,
+                width: 90,
               },
               {
                 id: 'name',
                 header: 'Назва',
                 accessor: (currency) => currency.Name,
-                minWidth: 200,
+                cell: (currency) => <TruncatedCell value={currency.Name} />,
+                maxWidth: 190,
+                width: 190,
               },
               {
                 id: 'translations',
                 header: 'Переклади',
                 accessor: (currency) => (currency.CurrencyTranslations || []).map((translation) => translation.CultureCode).join(', '),
                 cell: (currency) => displayTranslationBadges(currency.CurrencyTranslations),
-                minWidth: 220,
+                maxWidth: 180,
+                width: 180,
               },
               {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 96,
+                width: 72,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -3413,7 +3499,8 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={filtered}
             emptyText={translate("За цим пошуком немає валют")}
-            minWidth={760}
+            layoutVersion="client-resources-currencies-table-2"
+            minWidth={532}
             tableId="currencies"
           />
         ) : (
@@ -3573,53 +3660,62 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
                 id: 'storage',
                 header: 'Склад',
                 accessor: (storage) => storage.Name,
-                minWidth: 220,
+                cell: (storage) => <TruncatedCell value={storage.Name} />,
+                maxWidth: 220,
+                width: 220,
               },
               {
                 id: 'organization',
                 header: 'Організація',
                 accessor: (storage) => storage.Organization?.Name,
-                minWidth: 200,
+                cell: (storage) => <TruncatedCell value={storage.Organization?.Name} />,
+                maxWidth: 190,
+                width: 190,
               },
               {
                 id: 'priority',
                 header: 'Пріоритет',
                 accessor: (storage) => storage.RetailPriority,
-                width: 120,
+                maxWidth: 100,
+                width: 100,
               },
               {
                 id: 'defective',
                 header: 'Брак',
                 accessor: (storage) => storage.ForDefective,
                 cell: (storage) => <BooleanBadge value={storage.ForDefective} />,
-                width: 100,
+                maxWidth: 80,
+                width: 80,
               },
               {
                 id: 'vat',
                 header: 'ПДВ',
                 accessor: (storage) => storage.ForVatProducts,
                 cell: (storage) => <BooleanBadge value={storage.ForVatProducts} />,
-                width: 100,
+                maxWidth: 80,
+                width: 80,
               },
               {
                 id: 'ecommerce',
                 header: 'Інтернет-магазин',
                 accessor: (storage) => storage.ForEcommerce,
                 cell: (storage) => <BooleanBadge value={storage.ForEcommerce} />,
-                width: 160,
+                maxWidth: 140,
+                width: 140,
               },
               {
                 id: 'resale',
                 header: 'Перепродаж',
                 accessor: (storage) => storage.IsResale || storage.AvailableForReSale,
                 cell: (storage) => <BooleanBadge value={storage.IsResale || storage.AvailableForReSale} />,
-                width: 130,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 96,
+                width: 72,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -3662,7 +3758,8 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={filtered}
             emptyText={translate("За цим пошуком немає складів")}
-            minWidth={1260}
+            layoutVersion="client-resources-storages-table-2"
+            minWidth={1002}
             tableId="storages"
           />
         ) : (
@@ -3811,25 +3908,31 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
                 id: 'codeOneC',
                 header: 'Код 1С',
                 accessor: (measureUnit) => measureUnit.CodeOneC,
-                width: 140,
+                cell: (measureUnit) => <TruncatedCell value={measureUnit.CodeOneC} />,
+                maxWidth: 120,
+                width: 120,
               },
               {
                 id: 'name',
                 header: 'Назва',
                 accessor: (measureUnit) => measureUnit.Name,
-                minWidth: 180,
+                cell: (measureUnit) => <TruncatedCell value={measureUnit.Name} />,
+                maxWidth: 180,
+                width: 180,
               },
               {
                 id: 'description',
                 header: 'Повна назва',
                 accessor: (measureUnit) => measureUnit.Description,
-                minWidth: 220,
+                cell: (measureUnit) => <TruncatedCell value={measureUnit.Description} />,
+                maxWidth: 220,
+                width: 220,
               },
               {
                 id: 'actions',
                 header: '',
                 align: 'right',
-                width: 96,
+                width: 72,
                 enableHiding: false,
                 enableReorder: false,
                 enableResizing: false,
@@ -3872,7 +3975,8 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={filtered}
             emptyText={translate("За цим пошуком немає одиниць")}
-            minWidth={760}
+            layoutVersion="client-resources-measure-units-table-2"
+            minWidth={592}
             tableId="measure-units"
           />
         ) : (
@@ -3966,31 +4070,47 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 id: 'role',
                 header: 'Роль',
                 accessor: (role) => role.Name,
-                minWidth: 220,
+                maxWidth: 220,
+                width: 220,
                 cell: (role) => (
-                  <Button
-                    color="violet"
-                    disabled={!role.Id}
-                    rightSection={<IconExternalLink size={14} />}
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => openClientsForRole(role)}
+                  <Tooltip
+                    classNames={{ tooltip: 'client-resources-cell-tooltip' }}
+                    disabled={!role.Name}
+                    label={displayValue(role.Name)}
+                    maw={420}
+                    multiline
+                    openDelay={350}
+                    position="top-start"
+                    withArrow
                   >
-                    {displayValue(role.Name)}
-                  </Button>
+                    <Button
+                      className="client-resources-truncated-action"
+                      color="violet"
+                      disabled={!role.Id}
+                      rightSection={<IconExternalLink size={14} />}
+                      size="xs"
+                      variant="subtle"
+                      onClick={() => openClientsForRole(role)}
+                    >
+                      {displayValue(role.Name)}
+                    </Button>
+                  </Tooltip>
                 ),
               },
               {
                 id: 'description',
                 header: 'Опис',
                 accessor: (role) => role.Description,
-                minWidth: 220,
+                cell: (role) => <TruncatedCell value={role.Description} />,
+                maxWidth: 260,
+                width: 260,
               },
               {
                 id: 'reserveDays',
                 header: 'Днів резерву',
                 accessor: (role) => role.OrderExpireDays,
-                width: 150,
+                maxWidth: 120,
+                width: 120,
                 cell: (role) => (
                   <Badge color="violet" variant="light">
                     {displayValue(role.OrderExpireDays)}
@@ -4028,7 +4148,8 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
             ]}
             data={roles}
             emptyText={translate("Ролей покупців не знайдено")}
-            minWidth={760}
+            layoutVersion="client-resources-product-reserve-table-2"
+            minWidth={672}
             tableId="product-reserve"
           />
         ) : (
@@ -4293,25 +4414,42 @@ function TransporterTable({
               id: 'transporter',
               header: 'Перевізник',
               accessor: (transporter) => transporter.Name,
-              minWidth: 240,
+              maxWidth: 240,
+              width: 240,
               cell: (transporter) => (
-                <Group gap="sm" wrap="nowrap">
-                  <Avatar src={transporter.ImageUrl} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
-                  <Text fw={600}>{displayValue(transporter.Name)}</Text>
-                </Group>
+                <Tooltip
+                  classNames={{ tooltip: 'client-resources-cell-tooltip' }}
+                  disabled={!transporter.Name}
+                  label={displayValue(transporter.Name)}
+                  maw={420}
+                  multiline
+                  openDelay={350}
+                  position="top-start"
+                  withArrow
+                >
+                  <Group gap="sm" wrap="nowrap" className="client-resources-transporter-cell">
+                    <Avatar src={transporter.ImageUrl} alt={displayValue(transporter.Name)} size="sm" radius="sm" />
+                    <Text fw={600} className="client-resources-truncated-cell">
+                      {displayValue(transporter.Name)}
+                    </Text>
+                  </Group>
+                </Tooltip>
               ),
             },
             {
               id: 'type',
               header: 'Тип',
               accessor: (transporter) => transporter.TransporterType?.Name,
-              minWidth: 180,
+              cell: (transporter) => <TruncatedCell value={transporter.TransporterType?.Name} />,
+              maxWidth: 180,
+              width: 180,
             },
             {
               id: 'priority',
               header: 'Пріоритет',
               accessor: (transporter) => transporter.Priority,
-              width: 130,
+              maxWidth: 110,
+              width: 110,
             },
             ...(showActions
               ? [
@@ -4319,7 +4457,7 @@ function TransporterTable({
                     id: 'actions',
                     header: '',
                     align: 'right' as const,
-                    width: 96,
+                    width: 72,
                     enableHiding: false,
                     enableReorder: false,
                     enableResizing: false,
@@ -4361,7 +4499,8 @@ function TransporterTable({
           ]}
           data={transporters}
           emptyText={translate("Записів немає")}
-          minWidth={showActions ? 760 : 640}
+          layoutVersion="client-resources-transporters-table-2"
+          minWidth={showActions ? 602 : 530}
           tableId={`transporters-${title}`}
         />
       ) : (
@@ -4703,7 +4842,7 @@ function getDeleteTargetMessage(target: ClientResourceDeleteTarget | null): stri
   }
 
   if (target.type === 'taxInspection') {
-    return `${translate('Видалити податкову інспекцію')} "${displayValue(target.taxInspection.InspectionName)}"?`
+    return `${translate('Видалити налогову інспекцію')} "${displayValue(target.taxInspection.InspectionName)}"?`
   }
 
   if (target.type === 'pricing') {

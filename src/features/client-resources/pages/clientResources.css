@@ -59,6 +59,43 @@
   max-width: 520px;
 }
 
+.client-resources-truncated-cell {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-resources-cell-tooltip {
+  border: 1px solid var(--mantine-color-gray-2);
+  background: #ffffff;
+  color: #111827;
+  opacity: 1;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.client-resources-truncated-action {
+  max-width: 100%;
+}
+
+.client-resources-truncated-action .mantine-Button-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-resources-transporter-cell {
+  width: 100%;
+  min-width: 0;
+}
+
+.client-resources-transporter-cell .mantine-Avatar-root {
+  flex: 0 0 auto;
+}
+
 .client-resources-state,
 .client-resources-empty {
   display: flex;
