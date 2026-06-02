@@ -188,7 +188,7 @@ export function ClientEditPage() {
   }
 
   if (!isLoading && client && firstStep && (!step || !activeStep)) {
-    return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} replace />
+    return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} state={location.state} replace />
   }
 
   function setField<K extends keyof Client>(key: K, value: Client[K]) {
