@@ -143,11 +143,10 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {subGroups.length} {t('з')} {totalFilteredQty}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
+        {searchValue ? `${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [searchValue, subGroups.length, totalFilteredQty, t],
+    [searchValue, t],
   )
 
   const loadSubGroups = useCallback(

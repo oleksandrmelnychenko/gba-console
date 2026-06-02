@@ -40,7 +40,6 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 
 function useActReconciliationsPageModel() {
-  const { t } = useI18n()
   const navigate = useNavigate()
   const initialFilters = useMemo<FilterDraft>(
     () => ({
@@ -78,15 +77,6 @@ function useActReconciliationsPageModel() {
 
   const columns = useReconciliationColumns(openDetail, rowSummaries)
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {reconciliations.length}
-      </Text>
-    ),
-    [reconciliations.length, t],
-  )
-
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
@@ -104,7 +94,6 @@ function useActReconciliationsPageModel() {
     filterError,
     isLoading,
     reconciliations,
-    toolbarLeft,
     applyFilters,
     openDetail,
     reload,
@@ -190,7 +179,6 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
     reload,
     resetFilters,
     applyFilters,
-    toolbarLeft,
   } = model
 
   return (
@@ -252,7 +240,6 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             maxHeight="calc(100vh - 320px)"
             minWidth={1200}
             tableId="act-reconciliations"
-            toolbarLeft={toolbarLeft}
             onRowClick={openDetail}
           />
         </Stack>

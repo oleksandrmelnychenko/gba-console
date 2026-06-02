@@ -138,12 +138,10 @@ function useProductPlacementsPageModel() {
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {placements.length}
-        {typeof total === 'number' ? ` ${t('з')} ${total}` : ''}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
+        {searchValue ? `${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [placements.length, searchValue, t, total],
+    [searchValue, t],
   )
 
   const resetPlacements = useCallback(() => {
@@ -616,10 +614,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Показано')} {placements.length}
-            </Text>
+          <Group justify="flex-end" gap="sm">
             <Group gap="xs">
               <Select
                 aria-label={t('Розмір сторінки')}

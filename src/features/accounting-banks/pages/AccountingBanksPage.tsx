@@ -84,11 +84,10 @@ export function AccountingBanksPage() {
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {visibleBanks.length} {t('з')} {banks.length}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
+        {searchValue ? `${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [banks.length, searchValue, t, visibleBanks.length],
+    [searchValue, t],
   )
 
   useEffect(() => {

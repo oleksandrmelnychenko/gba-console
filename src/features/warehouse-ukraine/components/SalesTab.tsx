@@ -331,10 +331,7 @@ export function SalesTab() {
             </Alert>
           )}
 
-          <Group justify="space-between" gap="xs">
-            <Text c="dimmed" size="xs">
-              {t('Показано')} {model.sales.length} / {model.totalQty}
-            </Text>
+          <Group justify="flex-end" gap="xs">
             <Group gap={4} wrap="nowrap">
               <Select
                 aria-label={t('Кількість рядків')}

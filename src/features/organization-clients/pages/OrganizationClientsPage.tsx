@@ -148,13 +148,13 @@ export function OrganizationClientsPage() {
     [openClient, t],
   )
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {clients.length}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [clients.length, searchValue, t],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   useEffect(() => {

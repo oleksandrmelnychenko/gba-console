@@ -88,13 +88,13 @@ function useProductAvailabilitiesPageModel() {
   }, [setAvailabilities, setLoading, setTotal])
   const columns = useProductAvailabilityColumns()
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {availabilities.length} {t('з')} {total}
-        {searchValue ? `, ${t('код')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [availabilities.length, searchValue, t, total],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('код')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   useEffect(() => {

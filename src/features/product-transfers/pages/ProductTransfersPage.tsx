@@ -136,7 +136,7 @@ function useProductTransfersPageModel() {
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
-  const [totalQty, setTotalQty] = useValueState(0)
+  const [, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -260,17 +260,6 @@ function useProductTransfersPageModel() {
 
   const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers), [transfers])
   const columns = useProductTransferColumns(openDetail, transferIndexMap)
-
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {transfers.length}
-        {totalQty > transfers.length ? ` ${t('з')} ${totalQty}` : ''}
-        {hasMore ? '+' : ''}
-      </Text>
-    ),
-    [hasMore, t, totalQty, transfers.length],
-  )
 
   const toolbarRight = useMemo(
     () => (
@@ -448,7 +437,7 @@ function useProductTransfersPageModel() {
     columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
     effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, hasMore, isAdmin,
     isCreateModalOpen, isCreating, isDetailLoading, isDownloading, isLoading, isLoadingMore, isLoadingStorages,
-    selectedTransfer, storageError, storageOptions, storages, toolbarLeft, toolbarRight, toStorageOptions,
+    selectedTransfer, storageError, storageOptions, storages, toolbarRight, toStorageOptions,
     transfers, closeCreateModal, closeDownload, handleCreate, loadMoreTransfers, openCreateModal, openDetail,
     openDownload, reload, resetFilters, setCreateForm, setExceptionMessages, applyFilters, setSelectedTransfer,
     closeDetail,
@@ -651,7 +640,7 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
   const { t } = useI18n()
   const {
     columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, openDetail, loadMoreTransfers,
-    resetFilters, applyFilters, storageError, toolbarLeft, toolbarRight, transfers,
+    resetFilters, applyFilters, storageError, toolbarRight, transfers,
   } = model
 
   return (
@@ -697,7 +686,6 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           maxHeight="calc(100vh - 340px)"
           minWidth={1780}
           tableId="product-transfers"
-          toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}
           onRowClick={openDetail}
         />

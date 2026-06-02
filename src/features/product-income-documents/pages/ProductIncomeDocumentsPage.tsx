@@ -696,10 +696,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Показано')} {rows.length}
-            </Text>
+          <Group justify="flex-end" gap="sm">
             <Group gap="xs">
               <Select
                 aria-label={t('Розмір сторінки')}
@@ -1032,12 +1029,7 @@ function ProductIncomeDocumentDrawer({
 
           {detailMode === 'remainings' && (
             <Stack gap="sm">
-              <Group justify="space-between">
-                <Title order={4}>{t('Залишки по партіям')}</Title>
-                <Text size="sm" c="dimmed">
-                  {t('Показано')} {remainings.length}
-                </Text>
-              </Group>
+              <Title order={4}>{t('Залишки по партіям')}</Title>
               {documentInfoError && (
                 <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
                   {documentInfoError}

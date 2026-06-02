@@ -176,13 +176,13 @@ function useIncompleteSalesOnlineShopPageModel() {
   }, [activeFilters, t])
 
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {sales.length}
-        {activeFilterText ? `, ${activeFilterText}` : ''}
-      </Text>
-    ),
-    [activeFilterText, sales.length, t],
+    () =>
+      activeFilterText ? (
+        <Text size="xs" c="dimmed">
+          {activeFilterText}
+        </Text>
+      ) : null,
+    [activeFilterText],
   )
 
   const isConfirming = Boolean(

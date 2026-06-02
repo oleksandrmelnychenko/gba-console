@@ -383,12 +383,10 @@ export function SalesOnlineShopPage() {
   const toolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {sales.length}
-        {totalRows ? ` ${t('з')} ${totalRows}` : ''}
-        {activeDraft.onlyMine ? `, ${t('тільки мої')}` : ''}
+        {activeDraft.onlyMine ? t('тільки мої') : ''}
       </Text>
     ),
-    [activeDraft.onlyMine, sales.length, t, totalRows],
+    [activeDraft.onlyMine, t],
   )
 
   const toolbarRight = useMemo(

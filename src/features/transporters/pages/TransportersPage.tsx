@@ -82,11 +82,10 @@ export function TransportersPage() {
   const tableToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {visibleTransporters.length} {t('з')} {transporters.length}
-        {selectedTransporterType ? `, ${t('тип')}: ${getTransporterTypeName(selectedTransporterType)}` : ''}
+        {selectedTransporterType ? `${t('тип')}: ${getTransporterTypeName(selectedTransporterType)}` : ''}
       </Text>
     ),
-    [selectedTransporterType, t, transporters.length, visibleTransporters.length],
+    [selectedTransporterType, t],
   )
   const tableToolbarRight = useMemo(
     () => (

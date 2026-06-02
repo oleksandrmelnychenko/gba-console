@@ -568,10 +568,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Показано')} {rows.length}
-            </Text>
+          <Group justify="flex-end" gap="sm">
             <Group gap="xs">
               <Select
                 aria-label={t('Розмір сторінки')}

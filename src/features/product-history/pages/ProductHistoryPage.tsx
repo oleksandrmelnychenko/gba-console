@@ -91,14 +91,13 @@ function useProductHistoryPageModel() {
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : historyItems.length === pageSize
   const columns = useProductHistoryColumns(selectedStorageIdNumbers, historyItems, offset)
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {historyItems.length}
-        {typeof total === 'number' ? ` ${t('з')} ${total}` : ''}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [historyItems.length, searchValue, t, total],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   const resetHistory = useCallback(() => {

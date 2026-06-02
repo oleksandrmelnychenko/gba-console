@@ -102,7 +102,7 @@ function useDepreciatedOrdersPageModel() {
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
-  const [totalQty, setTotalQty] = useValueState(0)
+  const [, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -202,17 +202,6 @@ function useDepreciatedOrdersPageModel() {
   )
 
   const columns = useDepreciatedOrderColumns(openDetail, orderIndexMap)
-
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {orders.length}
-        {totalQty > orders.length ? ` ${t('з')} ${totalQty}` : ''}
-        {hasMore ? '+' : ''}
-      </Text>
-    ),
-    [hasMore, orders.length, t, totalQty],
-  )
 
   useDepreciatedOrderStoragesLoader({ reloadKey, setLoadingStorages, setStorageError, setStorages })
 
@@ -316,7 +305,7 @@ function useDepreciatedOrdersPageModel() {
     columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
     filterDraft, filterError, hasMore, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
     isLoading, isLoadingMore, isLoadingStorages, orders, pageSize, selectedOrder, storageError, storages,
-    toolbarLeft, applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate, loadMoreOrders,
+    applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate, loadMoreOrders,
     openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize,
   }
 }
@@ -535,7 +524,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
   const { t } = useI18n()
   const {
     columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, loadMoreOrders, openDetail, orders,
-    pageSize, reload, resetFilters, applyFilters, setPageSize, storageError, toolbarLeft,
+    pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
   } = model
 
   return (
@@ -595,7 +584,6 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
           maxHeight="calc(100vh - 340px)"
           minWidth={1320}
           tableId="depreciated-orders"
-          toolbarLeft={toolbarLeft}
           onRowClick={openDetail}
         />
 

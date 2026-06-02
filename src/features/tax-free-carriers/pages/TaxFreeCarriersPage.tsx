@@ -157,18 +157,9 @@ function useTaxFreeCarriersPageModel() {
 
   const columns = useCarrierColumns({ canManage, carrierIndexMap, onDelete: setCarrierToDelete, onEdit: openEdit })
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {carriers.length}
-      </Text>
-    ),
-    [carriers.length, t],
-  )
-
   return {
     canManage, canPrint, carrierToDelete, carriers, columns, downloadDocument, downloadError, downloadOpened, error,
-    isDeleting, isDownloading, isLoading, searchDraft, toolbarLeft, applySearch, closeDownload, confirmDelete,
+    isDeleting, isDownloading, isLoading, searchDraft, applySearch, closeDownload, confirmDelete,
     exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, setSearchDraft,
   }
 }
@@ -245,7 +236,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
   const { t } = useI18n()
   const {
     applySearch, canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
-    openEdit, reload, resetSearch, searchDraft, setSearchDraft, toolbarLeft,
+    openEdit, reload, resetSearch, searchDraft, setSearchDraft,
   } = model
 
   return (
@@ -313,7 +304,6 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           maxHeight="calc(100vh - 320px)"
           minWidth={760}
           tableId="tax-free-carriers"
-          toolbarLeft={toolbarLeft}
           onRowClick={openEdit}
         />
       </Stack>

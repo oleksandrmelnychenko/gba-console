@@ -150,13 +150,13 @@ export function UserRolesPage() {
     [],
   )
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {filteredRoles.length}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [filteredRoles.length, searchValue, t],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   useEffect(() => {

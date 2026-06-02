@@ -774,61 +774,55 @@ function useOnlineShopSeoPageModel() {
   const pagesToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {pageRows.length} {t('сторінок')}
-        {pageSearchValue ? `, ${t('пошук')}: ${pageSearchValue}` : ''}
+        {pageSearchValue ? `${t('пошук')}: ${pageSearchValue}` : ''}
       </Text>
     ),
-    [pageRows.length, pageSearchValue, t],
+    [pageSearchValue, t],
   )
 
   const contactsToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {contacts.length} {t('контактів')}
-        {contactSearchValue ? `, ${t('пошук')}: ${contactSearchValue}` : ''}
+        {contactSearchValue ? `${t('пошук')}: ${contactSearchValue}` : ''}
       </Text>
     ),
-    [contactSearchValue, contacts.length, t],
+    [contactSearchValue, t],
   )
 
   const clientsToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {clients.length} {t('клієнтів')}
-        {clientSearchValue ? `, ${t('пошук')}: ${clientSearchValue}` : ''}
+        {clientSearchValue ? `${t('пошук')}: ${clientSearchValue}` : ''}
       </Text>
     ),
-    [clientSearchValue, clients.length, t],
+    [clientSearchValue, t],
   )
 
   const cardsToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {cards.length} {t('карток')}
-        {cardSearchValue ? `, ${t('пошук')}: ${cardSearchValue}` : ''}
+        {cardSearchValue ? `${t('пошук')}: ${cardSearchValue}` : ''}
       </Text>
     ),
-    [cardSearchValue, cards.length, t],
+    [cardSearchValue, t],
   )
 
   const storagesToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {activeStorages.length} {t('складів')}
-        {storageSearchValue ? `, ${t('пошук')}: ${storageSearchValue}` : ''}
+        {storageSearchValue ? `${t('пошук')}: ${storageSearchValue}` : ''}
       </Text>
     ),
-    [activeStorages.length, storageSearchValue, t],
+    [storageSearchValue, t],
   )
 
   const allStoragesToolbarLeft = useMemo(
     () => (
       <Text size="xs" c="dimmed">
-        {t('Показано')} {availableStorages.length} {t('складів')}
-        {allStorageSearchValue ? `, ${t('пошук')}: ${allStorageSearchValue}` : ''}
+        {allStorageSearchValue ? `${t('пошук')}: ${allStorageSearchValue}` : ''}
       </Text>
     ),
-    [allStorageSearchValue, availableStorages.length, t],
+    [allStorageSearchValue, t],
   )
 
   useEffect(() => {

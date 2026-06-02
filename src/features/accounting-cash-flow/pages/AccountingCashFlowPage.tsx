@@ -207,14 +207,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
   const items = cashFlow?.AccountingCashFlowHeadItems || []
   const lastItem = items.at(-1)
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {items.length}
-      </Text>
-    ),
-    [items.length, t],
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -351,7 +343,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     selectedAgreement,
     selectedAgreementNetUid,
     selectedItem,
-    toolbarLeft,
     handleExport,
     reload,
     resetFilters,
@@ -384,7 +375,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     selectedAgreement,
     selectedAgreementNetUid,
     selectedItem,
-    toolbarLeft,
     handleExport,
     reload,
     resetFilters,
@@ -533,9 +523,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       </Card>
 
       <Card withBorder radius="md" padding="md">
-        <Group justify="flex-end" mb="xs">
-          {toolbarLeft}
-        </Group>
         <CashFlowGrid
           items={items}
           leadColumns={leadColumns}

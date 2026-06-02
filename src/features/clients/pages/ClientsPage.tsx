@@ -178,13 +178,12 @@ function useClientsPageModel() {
   const tableToolbarLeft = useMemo(
     () => (
       <ClientTableSummary
-        count={clients.length}
         page={page}
         searchValue={normalizedSearchValue}
         totalCount={totalCount}
       />
     ),
-    [clients.length, normalizedSearchValue, page, totalCount],
+    [normalizedSearchValue, page, totalCount],
   )
   const tableToolbarRight = useMemo(
     () => (
@@ -1149,12 +1148,10 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
 }
 
 function ClientTableSummary({
-  count,
   page,
   searchValue,
   totalCount,
 }: {
-  count: number
   page: number
   searchValue: string
   totalCount: number | null
@@ -1163,7 +1160,6 @@ function ClientTableSummary({
 
   return (
     <Text size="xs" c="dimmed">
-      {t('Показано')} {count},{' '}
       <Text component="span" inherit c="dark" fw={700}>
         {t('сторінка')} {page}
       </Text>

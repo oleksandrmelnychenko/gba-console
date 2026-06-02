@@ -162,10 +162,10 @@ function useProductRemainsPageModel() {
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
   const productColumns = useProductRemainProductColumns(canOpenProductMovement, openMovement)
-  const batchToolbarLeft = useMemo(() => <TableStatus loaded={batchRows.length} totals={batchTotals} />, [batchRows.length, batchTotals])
+  const batchToolbarLeft = useMemo(() => <TableStatus totals={batchTotals} />, [batchTotals])
   const productToolbarLeft = useMemo(
-    () => <TableStatus loaded={productRows.length} searchValue={productSearchValue} totals={productTotals} />,
-    [productRows.length, productSearchValue, productTotals],
+    () => <TableStatus searchValue={productSearchValue} totals={productTotals} />,
+    [productSearchValue, productTotals],
   )
   const resetBatchesForInvalidFilter = useCallback(() => {
     setBatchRows([])
@@ -1249,11 +1249,9 @@ function useProductRemainBatchDetailColumns() {
 }
 
 function TableStatus<TItem>({
-  loaded,
   searchValue,
   totals,
 }: {
-  loaded: number
   searchValue?: string
   totals: CollectionWithTotals<TItem> | null
 }) {
@@ -1261,10 +1259,11 @@ function TableStatus<TItem>({
 
   return (
     <Group gap="md">
-      <Text size="xs" c="dimmed">
-        {t('Завантажено')} {loaded}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
+      {searchValue && (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      )}
       {totals && (
         <>
           <Text size="xs" c="dimmed">
@@ -1296,10 +1295,7 @@ function TableFooter({
   const { t } = useI18n()
 
   return (
-    <Group justify="space-between" gap="sm">
-      <Text size="sm" c="dimmed">
-        {t('Показано')} {loaded}
-      </Text>
+    <Group justify="flex-end" gap="sm">
       <Button
         color="gray"
         disabled={!canLoadMore || isLoading}

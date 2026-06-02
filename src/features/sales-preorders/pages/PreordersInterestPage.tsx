@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -169,22 +169,10 @@ export function PreordersInterestPage() {
     [t],
   )
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {preOrders.length}
-      </Text>
-    ),
-    [preOrders.length, t],
-  )
-
   return (
     <Stack gap="lg">
       <Group justify="flex-end" align="center">
         <Group gap="sm" align="center">
-          <Badge color="gray" variant="light">
-            {isLoading ? t('Завантаження') : `${t('Показано')}: ${preOrders.length}`}
-          </Badge>
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
@@ -209,7 +197,6 @@ export function PreordersInterestPage() {
         isLoading={isLoading}
         layoutVersion="sales-preorders-table-1"
         tableId="sales-preorders"
-        toolbarLeft={toolbarLeft}
       />
 
       {hasMore && (

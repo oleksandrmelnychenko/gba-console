@@ -223,15 +223,6 @@ export function ResalesPage() {
     onExport: handleExport,
     onOpenConsignmentNote: setConsignmentNoteSale,
   })
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {items.length}
-        {typeof total === 'number' ? ` ${t('з')} ${total}` : ''}
-      </Text>
-    ),
-    [items.length, t, total],
-  )
   const filterError = getDateRangeError(fromDate, toDate)
 
   useEffect(() => {
@@ -460,7 +451,6 @@ export function ResalesPage() {
             maxHeight="calc(100vh - 330px)"
             minWidth={1320}
             tableId="resales"
-            toolbarLeft={toolbarLeft}
             onRowClick={(resale) => {
               if (resale.NetUid) {
                 navigate(`/resales/${resale.NetUid}`)
@@ -559,15 +549,6 @@ export function NewResalePage() {
     selectedKeys,
     onToggle: toggleAvailability,
   })
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {availabilities.length}
-        {selectedKeys.length ? `, ${t('обрано')}: ${selectedKeys.length}` : ''}
-      </Text>
-    ),
-    [availabilities.length, selectedKeys.length, t],
-  )
   const loadAvailabilities = useCallback(
     async (nextPayload: ResaleAvailabilityFilterPayload) => {
       setLoadingAvailabilities(true)
@@ -971,7 +952,6 @@ export function NewResalePage() {
           maxHeight="calc(100vh - 410px)"
           minWidth={1440}
           tableId="resale-availabilities"
-          toolbarLeft={toolbarLeft}
           onRowClick={toggleAvailability}
         />
       </Card>

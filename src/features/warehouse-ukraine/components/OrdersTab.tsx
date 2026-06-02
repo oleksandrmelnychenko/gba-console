@@ -296,10 +296,7 @@ export function OrdersTab() {
             </Alert>
           )}
 
-          <Group justify="space-between" gap="xs">
-            <Text c="dimmed" size="xs">
-              {t('Показано')} {model.orders.length} / {model.totalQty}
-            </Text>
+          <Group justify="flex-end" gap="xs">
             <Select
               aria-label={t('Кількість рядків')}
               data={PAGE_SIZE_OPTIONS}

@@ -97,7 +97,7 @@ function useSupplyReturnsPageModel() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
-  const [totalQty, setTotalQty] = useValueState(0)
+  const [, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
@@ -200,17 +200,6 @@ function useSupplyReturnsPageModel() {
 
   const returnIndexMap = useMemo(() => buildIndexMap(supplyReturns), [supplyReturns])
   const columns = useSupplyReturnColumns(openDetail, returnIndexMap)
-
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {supplyReturns.length}
-        {totalQty > supplyReturns.length ? ` ${t('з')} ${totalQty}` : ''}
-        {hasMore ? '+' : ''}
-      </Text>
-    ),
-    [hasMore, t, supplyReturns.length, totalQty],
-  )
 
   const toolbarRight = useMemo(
     () => (
@@ -316,7 +305,6 @@ function useSupplyReturnsPageModel() {
     isLoadingMore,
     selectedReturn,
     supplyReturns,
-    toolbarLeft,
     toolbarRight,
     applyFilters,
     closeDetail,
@@ -443,7 +431,6 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
     reload,
     resetFilters,
     applyFilters,
-    toolbarLeft,
     toolbarRight,
     supplyReturns,
   } = model
@@ -503,7 +490,6 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
           maxHeight="calc(100vh - 340px)"
           minWidth={1660}
           tableId="supply-returns"
-          toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}
           onRowClick={openDetail}
         />

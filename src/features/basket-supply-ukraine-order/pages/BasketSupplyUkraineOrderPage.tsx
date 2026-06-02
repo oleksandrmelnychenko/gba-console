@@ -601,12 +601,9 @@ function BasketCartWorkflow() {
           indeterminate={selectedSourceCount > 0 && selectedSourceCount < movableSourceCount}
           onChange={toggleAllSourceItems}
         />
-        <Text size="xs" c="dimmed">
-          {t('Показано')}: {filteredCartItems.length} / {cartItems.length}
-        </Text>
       </Group>
     ),
-    [cartItems.length, filteredCartItems.length, movableSourceCount, selectedSourceCount, t, toggleAllSourceItems],
+    [movableSourceCount, selectedSourceCount, t, toggleAllSourceItems],
   )
   const destinationToolbarLeft = useMemo(
     () => (
@@ -1193,9 +1190,6 @@ function SalesWorkflowTab() {
                   indeterminate={selectedSourceCount > 0 && selectedSourceCount < sourceSales.length}
                   onChange={toggleAllSourceSales}
                 />
-                <Text c="dimmed" size="xs">
-                  {t('Показано')}: {sourceSales.length} / {sales.length}
-                </Text>
               </Group>
             }
             onRowClick={setSelectedSale}
@@ -1378,14 +1372,6 @@ function RecommendationsTab() {
     }
   }, [reloadKey, t])
 
-  const recommendationsToolbarLeft = useMemo(
-    () => (
-      <Text c="dimmed" size="xs">
-        {t('Показано')}: {recommendations.length}
-      </Text>
-    ),
-    [recommendations.length, t],
-  )
   const recommendationsToolbarRight = useMemo(
     () => (
       <Tooltip label={t('Оновити')}>
@@ -1416,7 +1402,6 @@ function RecommendationsTab() {
           maxHeight={620}
           minWidth={960}
           tableId="basket-supply-ukraine-order-recommendations"
-          toolbarLeft={recommendationsToolbarLeft}
           toolbarRight={recommendationsToolbarRight}
         />
       </Card>

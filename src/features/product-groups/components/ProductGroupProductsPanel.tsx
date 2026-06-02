@@ -134,13 +134,13 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
     [],
   )
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {productLinks.length} {t('з')} {totalFilteredQty}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [productLinks.length, searchValue, totalFilteredQty, t],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('Пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   const loadProducts = useCallback(

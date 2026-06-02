@@ -87,14 +87,13 @@ export function ProductGroupsPage() {
   )
   const columns = useProductGroupColumns(openProductGroup)
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {productGroups.length}
-        {totalQty ? ` ${t('з')} ${totalQty}` : ''}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [productGroups.length, searchValue, totalQty, t],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   useEffect(() => {

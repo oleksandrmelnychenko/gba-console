@@ -338,16 +338,6 @@ export function AllSadsPage() {
     [t],
   )
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text c="dimmed" size="xs">
-        {t('Показано')} {sads.length}
-        {hasMore ? '+' : ''}
-      </Text>
-    ),
-    [hasMore, sads.length, t],
-  )
-
   const toolbarRight = useMemo(
     () => (
       <Group gap={6} wrap="nowrap">
@@ -438,7 +428,6 @@ export function AllSadsPage() {
           isLoading={isLoading}
           minWidth={1420}
           tableId="sad-all"
-          toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}
           onRowClick={setSelectedSad}
         />

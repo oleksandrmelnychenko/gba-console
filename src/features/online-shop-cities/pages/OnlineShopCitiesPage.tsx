@@ -94,13 +94,13 @@ export function OnlineShopCitiesPage() {
   }, [setArchiveTarget, setEditorOpen, setFormError])
   const columns = useOnlineShopCityColumns(openEditor, requestArchive)
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {visibleCities.length} {t('з')} {cities.length}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [cities.length, searchValue, t, visibleCities.length],
+    () =>
+      searchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {searchValue}
+        </Text>
+      ) : null,
+    [searchValue, t],
   )
 
   useEffect(() => {

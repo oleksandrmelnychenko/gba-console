@@ -274,12 +274,12 @@ export function ClientProductMovementPage() {
   const columns = useColumns({ expandedKeys, onToggle: toggleExpanded })
 
   const toolbarLeft = useMemo(
-    () => (
+    () => (hasClient ? null : (
       <Text size="xs" c="dimmed">
-        {hasClient ? `${t('Показано')} ${documents.length}${totalRows ? ` ${t('з')} ${totalRows}` : ''}` : t('Оберіть клієнта')}
+        {t('Оберіть клієнта')}
       </Text>
-    ),
-    [documents.length, hasClient, t, totalRows],
+    )),
+    [hasClient, t],
   )
 
   const toolbarRight = useMemo(

@@ -508,9 +508,6 @@ export function SupplyUkraineOrdersPage() {
       <Group align="flex-start" justify="space-between">
         <Stack gap={2}>
           <Text fw={700} size="xl">{t('Замовлення постачання в Україну')}</Text>
-          <Text c="dimmed" size="sm">
-            {t('Показано')} {rows.length} {t('з')} {totalQty}
-          </Text>
         </Stack>
         <Group gap="xs" justify="flex-end">
           {canCreateToUkraine && (

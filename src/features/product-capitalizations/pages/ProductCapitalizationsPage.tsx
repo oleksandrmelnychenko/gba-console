@@ -242,15 +242,6 @@ function useProductCapitalizationsPageModel() {
     [selectedCapitalization?.ProductCapitalizationItems],
   )
   const itemColumns = useProductCapitalizationItemColumns(detailItems)
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {capitalizations.length}
-        {total ? ` ${t('з')} ${total}` : hasNextPage ? '+' : ''}
-      </Text>
-    ),
-    [capitalizations.length, hasNextPage, t, total],
-  )
   const canMoveBack = page > 1
   const canMoveForward = total ? page * pageSize < total : hasNextPage
 
@@ -329,7 +320,6 @@ function useProductCapitalizationsPageModel() {
     page,
     pageSize,
     selectedCapitalization,
-    toolbarLeft,
     total,
     handleExport,
     closeDetail,
@@ -372,7 +362,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     page,
     pageSize,
     selectedCapitalization,
-    toolbarLeft,
     total,
     closeDetail,
     handleExport,
@@ -495,7 +484,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             maxHeight="calc(100vh - 310px)"
             minWidth={1280}
             tableId="product-capitalizations"
-            toolbarLeft={toolbarLeft}
             onRowClick={openDetail}
           />
         </Stack>

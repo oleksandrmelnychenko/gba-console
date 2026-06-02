@@ -196,9 +196,6 @@ function SupplyOrderProductPlacementContent({
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Title order={4}>{t('Позиції')}</Title>
-            <Text c="dimmed" size="sm">
-              {t('Показано')} {rows.length}
-            </Text>
           </Group>
 
           <DataTable

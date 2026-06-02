@@ -142,13 +142,13 @@ export function OrganisationServicesPage() {
     [setError, setLoadingTasks, setPaymentTasks, t],
   )
   const toolbarLeft = useMemo(
-    () => (
-      <Text c="dimmed" size="xs">
-        {t('Показано')} {rows.length}
-        {selectedOrganization?.Name ? `, ${t('організація')}: ${selectedOrganization.Name}` : ''}
-      </Text>
-    ),
-    [rows.length, selectedOrganization, t],
+    () =>
+      selectedOrganization?.Name ? (
+        <Text c="dimmed" size="xs">
+          {t('організація')}: {selectedOrganization.Name}
+        </Text>
+      ) : null,
+    [selectedOrganization, t],
   )
   const toolbarRight = useMemo(
     () => (

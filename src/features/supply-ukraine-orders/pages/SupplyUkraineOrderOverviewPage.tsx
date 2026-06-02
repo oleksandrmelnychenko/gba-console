@@ -510,9 +510,6 @@ export function SupplyUkraineOrderOverviewPage() {
             <Group justify="space-between" align="center">
               <Stack gap={2}>
                 <Text fw={700}>{t('Документи замовлення')}</Text>
-                <Text c="dimmed" size="sm">
-                  {t('Показано')} {documents.length}
-                </Text>
               </Stack>
               {order && (
                 <Button disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
@@ -538,7 +535,6 @@ export function SupplyUkraineOrderOverviewPage() {
           <Group justify="space-between" align="flex-end">
             <Stack gap={2}>
               <Text fw={700}>{t('Товари')}</Text>
-              <Text c="dimmed" size="sm">{t('Показано')} {visibleRows.length} {t('з')} {rows.length}</Text>
             </Stack>
             <Group justify="flex-end" align="flex-end">
               {hasVatItemChanges && (

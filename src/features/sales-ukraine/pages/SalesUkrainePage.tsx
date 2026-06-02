@@ -537,17 +537,6 @@ export function SalesUkrainePage() {
     [clientOptions],
   )
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {sales.length}
-        {totalRows ? ` ${t('з')} ${totalRows}` : ''}
-        {activeDraft.onlyMine ? `, ${t('тільки мої')}` : ''}
-      </Text>
-    ),
-    [activeDraft.onlyMine, sales.length, t, totalRows],
-  )
-
   const toolbarRight = useMemo(
     () => (
       <Group gap={4} wrap="nowrap">
@@ -701,7 +690,6 @@ export function SalesUkrainePage() {
             maxHeight="calc(100vh - 360px)"
             minWidth={1720}
             tableId="sales-ukraine"
-            toolbarLeft={toolbarLeft}
             toolbarRight={toolbarRight}
             getRowCanExpand={(sale) => getOrderItemCount(sale) > 0}
             renderExpandedRow={renderSaleExpandContent}

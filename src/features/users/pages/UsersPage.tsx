@@ -162,13 +162,13 @@ export function UsersPage() {
     [openUser, t],
   )
   const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {users.length}
-        {normalizedSearchValue ? `, ${t('пошук')}: ${normalizedSearchValue}` : ''}
-      </Text>
-    ),
-    [normalizedSearchValue, t, users.length],
+    () =>
+      normalizedSearchValue ? (
+        <Text size="xs" c="dimmed">
+          {t('пошук')}: {normalizedSearchValue}
+        </Text>
+      ) : null,
+    [normalizedSearchValue, t],
   )
 
   useEffect(() => {

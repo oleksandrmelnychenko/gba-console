@@ -167,13 +167,12 @@ function useSuppliersPageModel() {
   const tableToolbarLeft = useMemo(
     () => (
       <SupplierTableSummary
-        count={suppliers.length}
         page={page}
         searchValue={normalizedSearchValue}
         totalCount={totalCount}
       />
     ),
-    [normalizedSearchValue, page, suppliers.length, totalCount],
+    [normalizedSearchValue, page, totalCount],
   )
   const tableToolbarRight = useMemo(
     () => (
@@ -827,12 +826,10 @@ function SuppliersFilterToolbar({
 }
 
 function SupplierTableSummary({
-  count,
   page,
   searchValue,
   totalCount,
 }: {
-  count: number
   page: number
   searchValue: string
   totalCount: number | null
@@ -841,7 +838,6 @@ function SupplierTableSummary({
 
   return (
     <Text size="xs" c="dimmed">
-      {t('Показано')} {count},{' '}
       <Text component="span" inherit c="dark" fw={700}>
         {t('сторінка')} {page}
       </Text>

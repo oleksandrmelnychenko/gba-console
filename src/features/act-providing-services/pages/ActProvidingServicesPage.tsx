@@ -286,10 +286,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Text c="dimmed" size="sm">
-              {t('Показано')} {rows.length}
-            </Text>
+          <Group justify="flex-end" gap="sm">
             <Group gap="xs">
               <Select
                 aria-label={t('Розмір сторінки')}

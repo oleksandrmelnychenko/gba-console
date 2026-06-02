@@ -101,7 +101,7 @@ function useProtocolsPageModel() {
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [protocols, setProtocols] = useValueState<DeliveryProductProtocol[]>([])
-  const [totalQty, setTotalQty] = useValueState(0)
+  const [, setTotalQty] = useValueState(0)
   const [organizations, setOrganizations] = useValueState<ProtocolOrganization[]>([])
   const [organizationsError, setOrganizationsError] = useValueState<string | null>(null)
   const [optionsProtocol, setOptionsProtocol] = useValueState<DeliveryProductProtocol | null>(null)
@@ -299,22 +299,13 @@ function useProtocolsPageModel() {
 
   const columns = useProtocolColumns(protocolIndexMap)
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Показано')} {protocols.length} / {totalQty}
-      </Text>
-    ),
-    [protocols.length, t, totalQty],
-  )
-
   return {
     activeFilters, canCreate, canExport, canOpenIncome, canOpenLogisticPath, canOpenOptions, canOpenSpecifications,
     closeCreateModal, closeDownload, closeOptions, columns, createError, downloadDocument, downloadError,
     downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, hasMore, isCreateModalOpen,
     isCreating, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, navigateToIncome, navigateToLogisticPath,
     navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
-    pageSize, protocols, applyFilters, reload, resetFilters, setPageSize, toolbarLeft,
+    pageSize, protocols, applyFilters, reload, resetFilters, setPageSize,
   }
 }
 
@@ -489,7 +480,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   const {
     applyFilters, canExport, canOpenOptions, columns, error, exportDocument, filterDraft, filterError,
     hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openOptions, organizations,
-    pageSize, protocols, reload, resetFilters, setPageSize, toolbarLeft,
+    pageSize, protocols, reload, resetFilters, setPageSize,
   } = model
 
   const organizationOptions = useMemo(
@@ -615,7 +606,6 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           maxHeight="calc(100vh - 360px)"
           minWidth={1240}
           tableId="product-delivery-protocols"
-          toolbarLeft={toolbarLeft}
           onRowClick={canOpenOptions ? openOptions : undefined}
         />
 
