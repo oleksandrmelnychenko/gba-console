@@ -61,7 +61,7 @@ import {
 } from '../api/salesUkraineApi'
 import { getStatusTypeKey, isStatusType } from '../saleStatus'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
-import { NewSaleModal } from '../components/NewSaleModal'
+import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
 import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
@@ -751,7 +751,7 @@ export function SalesUkrainePage() {
         <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
       </AppDrawer>
 
-      <NewSaleModal
+      <NewSaleWizard
         opened={canCreateSale && isNewSaleOpen}
         onClose={() => setNewSaleOpen(false)}
         onCreated={(sale) => {
