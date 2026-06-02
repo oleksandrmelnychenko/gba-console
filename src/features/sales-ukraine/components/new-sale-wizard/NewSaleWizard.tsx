@@ -36,14 +36,15 @@ export function NewSaleWizard({
       opened={opened}
       title={t('Нова продажа')}
       withCloseButton
+      size="100%"
       padding="lg"
       overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
       transitionProps={{ transition: 'pop', duration: 200 }}
       styles={{
         inner: { padding: 8 },
         content: {
-          width: 'calc(100vw - 16px)',
-          maxWidth: 'calc(100vw - 16px)',
+          width: '100%',
+          maxWidth: '100%',
           height: 'calc(100dvh - 16px)',
           maxHeight: 'calc(100dvh - 16px)',
           borderRadius: 14,
