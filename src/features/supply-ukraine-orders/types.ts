@@ -86,6 +86,8 @@ export type PackingListPackageOrderItemSupplyService = EntityFields & {
 export type PackingListPackageOrderItem = EntityFields & {
   AccountingTotalGrossPrice?: number
   AccountingTotalGrossPriceEur?: number
+  GrossWeight?: number
+  NetWeight?: number
   PackingListPackageOrderItemSupplyServices?: PackingListPackageOrderItemSupplyService[]
   ProductIsImported?: boolean
   Qty?: number
@@ -147,6 +149,7 @@ export type SupplyInvoice = EntityFields & {
   SupplyInvoiceDeliveryDocuments?: SupplyInvoiceDeliveryDocument[]
   SupplyInvoiceOrderItems?: SupplyInvoiceOrderItem[]
   SupplyOrder?: DirectSupplyOrder | null
+  TotalGrossWeight?: number
   TotalNetPrice?: number
   TotalNetWeight?: number
   TotalQuantity?: number
