@@ -46,6 +46,10 @@ export type ProductIncomeItem = EntityFields & {
       } | null
     } | null
     Comment?: string
+    NetWeight?: number
+    Product?: ProductIncomeProduct | null
+    TotalAmount?: number
+    UnitPrice?: number
   } | null
   Comment?: string
   ConsignmentItems?: Array<{
@@ -141,6 +145,7 @@ export type ProductIncomeDocument = EntityFields & {
   ProductIncomeItems?: ProductIncomeItem[]
   Storage?: ProductIncomeStorage | null
   TotalNetPrice?: number
+  TotalNetWeight?: number
   TotalNetWithVat?: number
   TotalQty?: number
   TotalRowQty?: number

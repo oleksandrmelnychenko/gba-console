@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, NumberInput, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconColumnInsertRight, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -19,6 +19,7 @@ import {
 } from '../api/orderPlacementsApi'
 import { NewDynamicColumnModal } from '../components/NewDynamicColumnModal'
 import { PlacementEditDrawer } from '../components/PlacementEditDrawer'
+import { PlacementUnorderedProductsDrawer } from '../components/PlacementUnorderedProductsDrawer'
 import { formatDate } from '../components/dateHelpers'
 import type {
   DynamicProductPlacement,
@@ -31,6 +32,7 @@ import type {
 } from '../placementsTypes'
 
 const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_ordersUkrainePlacement_PKEY'
+const PLACEMENT_ACT_RECONCILIATION_PERMISSION = 'PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY'
 const PLACEMENT_CARRY_OUT_PERMISSION = 'PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY'
 const PLACEMENT_GET_UP_PERMISSION = 'PlacementHeader_GetUp_ordersUkrainePlacement_PKEY'
 
@@ -150,6 +152,7 @@ function useOrderPlacementsModel() {
   const [columnModalOpen, setColumnModalOpen] = useValueState(false)
   const [columnToRemove, setColumnToRemove] = useValueState<DynamicProductPlacementColumn | null>(null)
   const [drawer, setDrawer] = useValueState<DrawerState | null>(null)
+  const [unorderedOpen, setUnorderedOpen] = useValueState(false)
   const [incomeDate, setIncomeDate] = useValueState(() => formatLocalDate(new Date()))
   const [confirmPlacement, setConfirmPlacement] = useValueState<{ isFullPlaced: boolean } | null>(null)
   const [isPlacing, setPlacing] = useValueState(false)
@@ -526,8 +529,8 @@ function useOrderPlacementsModel() {
     columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, drawer, error, gridRows, handleAddColumn,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
     isBusy, isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
-    setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setSelectedStorageId, storages,
-    totalNetWeight, totalProductsCount,
+    setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setOrder, setSelectedStorageId,
+    setUnorderedOpen, storages, totalNetWeight, totalProductsCount, unorderedOpen,
   }
 }
 
@@ -536,6 +539,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const canEditPlacement = hasPermission(PLACEMENT_ADD_CANCEL_SAVE_PERMISSION)
+  const canActReconciliation = hasPermission(PLACEMENT_ACT_RECONCILIATION_PERMISSION)
   const canCarryOut = hasPermission(PLACEMENT_CARRY_OUT_PERMISSION)
   const canGetUp = hasPermission(PLACEMENT_GET_UP_PERMISSION)
 
@@ -591,7 +595,8 @@ export function WarehouseUkraineOrderPlacementsPage() {
     const dynamicColumns: DataTableColumn<PlacementGridRow>[] = (model.order?.DynamicProductPlacementColumns || []).map(
       (column) => {
         const key = columnKey(column)
-        const canDelete = !columnHasAppliedPlacements(column)
+        const canEditDynamicColumn = canEditPlacement && !model.order?.IsPlaced
+        const canDelete = canEditDynamicColumn && !columnHasAppliedPlacements(column)
 
         return {
           id: `dynamic-${key}`,
@@ -606,6 +611,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                   <ActionIcon
                     aria-label={t('Перемістити залишки')}
                     color="gray"
+                    disabled={!canEditDynamicColumn || model.isBusy}
                     size="sm"
                     variant="subtle"
                     onClick={() => model.handleMoveRemnants(column)}
@@ -640,6 +646,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
               <Group gap="xs" wrap="nowrap">
                 <NumberInput
                   allowDecimal={false}
+                  disabled={!canEditDynamicColumn || model.isBusy}
                   hideControls
                   min={0}
                   size="xs"
@@ -655,6 +662,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 <ActionIcon
                   aria-label={t('Оприходування')}
                   color="blue"
+                  disabled={!canEditDynamicColumn || model.isBusy}
                   size="sm"
                   variant="subtle"
                   onClick={() => model.handleOpenPlacements(gridRow, key, row)}
@@ -669,7 +677,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
     )
 
     return [...fixedColumns, ...dynamicColumns]
-  }, [model, t])
+  }, [canEditPlacement, model, t])
 
   return (
     <Stack gap="md">
@@ -683,11 +691,18 @@ export function WarehouseUkraineOrderPlacementsPage() {
         >
           {t('Назад')}
         </Button>
-        <Text fw={700} size="lg">
-          {`${t('Замовлення на поставку в Україну')} #${model.order?.Number || ''} ${t('Від')} ${formatDate(
-            model.order?.FromDate,
-          )}`}
-        </Text>
+        <Group gap="sm" justify="flex-end">
+          <Text fw={700} size="lg">
+            {`${t('Замовлення на поставку в Україну')} #${model.order?.Number || ''} ${t('Від')} ${formatDate(
+              model.order?.FromDate,
+            )}`}
+          </Text>
+          {model.order && (
+            <Badge color={model.order.IsPlaced ? 'green' : 'gray'} variant="light">
+              {model.order.IsPlaced ? t('Розміщено') : t('Не розміщено')}
+            </Badge>
+          )}
+        </Group>
       </Group>
 
       <Card withBorder radius="md" padding="md">
@@ -706,6 +721,15 @@ export function WarehouseUkraineOrderPlacementsPage() {
             {canEditPlacement && !model.order?.IsPlaced && (
               <Button disabled={model.isBusy} variant="light" onClick={() => model.setColumnModalOpen(true)}>
                 {t('Додати колонку')}
+              </Button>
+            )}
+            {canActReconciliation && !model.order?.IsPlaced && (
+              <Button
+                disabled={model.isBusy || model.isDirty}
+                variant="light"
+                onClick={() => model.setUnorderedOpen(true)}
+              >
+                {t('Інший товар / більша кількість')}
               </Button>
             )}
           </Group>
@@ -805,6 +829,16 @@ export function WarehouseUkraineOrderPlacementsPage() {
         selectedStorage={model.selectedStorage}
         onApply={model.handleApplyPlacements}
         onClose={() => model.setDrawer(null)}
+      />
+
+      <PlacementUnorderedProductsDrawer
+        order={model.order}
+        opened={model.unorderedOpen}
+        onClose={() => model.setUnorderedOpen(false)}
+        onSaved={(updatedOrder) => {
+          model.setOrder(updatedOrder)
+          model.setUnorderedOpen(false)
+        }}
       />
 
       <AppModal

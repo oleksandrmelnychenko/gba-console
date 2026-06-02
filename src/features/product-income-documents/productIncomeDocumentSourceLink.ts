@@ -4,11 +4,6 @@ const ACT_RECONCILIATION_PATH = '/ukraine/act/reconcoliation'
 
 export function getProductIncomeDocumentSourceLink(document: ProductIncomeDocument): string | null {
   const items = document.ProductIncomeItems || []
-  const firstItem = items[0]
-
-  if (!firstItem) {
-    return null
-  }
 
   const actReconciliationNetUid = items.find((item) => item.ActReconciliationItem?.ActReconciliation?.NetUid)
     ?.ActReconciliationItem?.ActReconciliation?.NetUid
@@ -17,19 +12,17 @@ export function getProductIncomeDocumentSourceLink(document: ProductIncomeDocume
     return `${ACT_RECONCILIATION_PATH}/${actReconciliationNetUid}`
   }
 
-  if (!document.NetUid) {
-    return null
+  if (document.NetUid) {
+    if (items.some((item) => item.PackingListPackageOrderItem)) {
+      return `/supply-orders/product-placement/${document.NetUid}`
+    }
+
+    if (items.some((item) => item.SupplyOrderUkraineItem)) {
+      return `/orders/ukraine/${document.NetUid}/product-income`
+    }
   }
 
-  if (firstItem.PackingListPackageOrderItem) {
-    return `/supply-orders/product-placement/${document.NetUid}`
-  }
-
-  if (firstItem.SupplyOrderUkraineItem) {
-    return `/orders/ukraine/${document.NetUid}/product-income`
-  }
-
-  if (firstItem.ProductCapitalizationItem?.ProductCapitalization?.NetUid) {
+  if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization?.NetUid)) {
     return '/products/capitalization'
   }
 

@@ -1002,6 +1002,10 @@ function ProductIncomeDocumentDrawer({
             />
           )}
 
+          {detailMode === 'view' && overviewKind === 'actReconciliation' && (
+            <ActReconciliationOverview document={document} isLoading={isLoadingDocumentInfo} />
+          )}
+
           {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
 
           <Divider />
@@ -1274,6 +1278,122 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   )
 }
 
+type ActReconciliationOverviewRow = {
+  amount?: number
+  comment?: string
+  key: string
+  netWeight?: number
+  productName?: string
+  qty?: number
+  unitPrice?: number
+  vendorCode?: string
+}
+
+function ActReconciliationOverview({
+  document,
+  isLoading,
+}: {
+  document: ProductIncomeDocument
+  isLoading: boolean
+}) {
+  const { t } = useI18n()
+  const rows = getActReconciliationOverviewRows(document)
+  const columns = useMemo<DataTableColumn<ActReconciliationOverviewRow>[]>(
+    () => [
+      {
+        id: 'vendorCode',
+        header: t('Код'),
+        width: 140,
+        minWidth: 120,
+        accessor: (row) => row.vendorCode,
+        cell: (row) => <Text fw={700}>{displayValue(row.vendorCode)}</Text>,
+      },
+      {
+        id: 'productName',
+        header: t('Назва'),
+        width: 300,
+        minWidth: 220,
+        accessor: (row) => row.productName,
+        cell: (row) => (
+          <Text size="sm" lineClamp={2}>
+            {displayValue(row.productName)}
+          </Text>
+        ),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.qty,
+        cell: (row) => formatAmount(row.qty),
+      },
+      {
+        id: 'unitPrice',
+        header: t('Ціна'),
+        width: 116,
+        minWidth: 104,
+        align: 'right',
+        accessor: (row) => row.unitPrice,
+        cell: (row) => formatMoney(row.unitPrice),
+      },
+      {
+        id: 'netWeight',
+        header: t('Вага нетто'),
+        width: 120,
+        minWidth: 108,
+        align: 'right',
+        accessor: (row) => row.netWeight,
+        cell: (row) => formatAmount(row.netWeight),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        width: 124,
+        minWidth: 108,
+        align: 'right',
+        accessor: (row) => row.amount,
+        cell: (row) => formatMoney(row.amount),
+      },
+    ],
+    [t],
+  )
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="start">
+          <Title order={4}>{t('Прихідна накладна (акт звірки)')}</Title>
+          <Text c="dimmed" size="sm">
+            {displayValue(document.Number)} · {formatMoney(document.TotalNetPrice)}
+          </Text>
+        </Group>
+
+        <DataTable
+          columns={columns}
+          data={rows}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(row) => row.key}
+          isLoading={isLoading}
+          layoutVersion="product-income-act-reconciliation-overview-1"
+          loadingText={t('Завантаження позицій акта звірки')}
+          maxHeight={320}
+          minWidth={820}
+          tableId="product-income-act-reconciliation-overview"
+        />
+
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+          <DetailValue label={t('Всього товарів')} value={rows.length} />
+          <DetailValue label={t('Вся кількість')} value={formatAmount(document.TotalQty)} />
+          <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
+          <DetailValue label={t('Сума')} value={formatMoney(document.TotalNetPrice)} />
+        </SimpleGrid>
+      </Stack>
+    </Card>
+  )
+}
+
 function mergeProductIncomeInfo(
   document: ProductIncomeDocument,
   info: ProductIncomeInfo | null,
@@ -1291,7 +1411,7 @@ function mergeProductIncomeInfo(
 
 function getOverviewKind(
   document: ProductIncomeDocument,
-): 'capitalization' | 'saleReturn' | 'document' {
+): 'actReconciliation' | 'capitalization' | 'saleReturn' | 'document' {
   const items = document.ProductIncomeItems || []
 
   if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization)) {
@@ -1300,6 +1420,10 @@ function getOverviewKind(
 
   if (items.some((item) => item.SaleReturnItem?.SaleReturn)) {
     return 'saleReturn'
+  }
+
+  if (items.some((item) => item.ActReconciliationItem)) {
+    return 'actReconciliation'
   }
 
   return 'document'
@@ -1322,10 +1446,6 @@ function getDeferredOverviewNote(
 
   if (items.some((item) => item.SupplyOrderUkraineItem?.SupplyOrderUkraine)) {
     return t('Огляд прихідного інвойса в Україну доступний у модулі замовлень')
-  }
-
-  if (items.some((item) => item.ActReconciliationItem?.ActReconciliation)) {
-    return t('Огляд акта звірки доступний у модулі актів')
   }
 
   return null
@@ -1839,6 +1959,45 @@ function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
   )
 }
 
+function getActReconciliationOverviewRows(document: ProductIncomeDocument): ActReconciliationOverviewRow[] {
+  return (document.ProductIncomeItems || []).reduce<ActReconciliationOverviewRow[]>((rows, item, index) => {
+    const reconciliationItem = item.ActReconciliationItem
+
+    if (!reconciliationItem) {
+      return rows
+    }
+
+    const product = reconciliationItem.Product || item.Product
+
+    rows.push({
+      amount: reconciliationItem.TotalAmount,
+      comment: reconciliationItem.Comment || item.Comment,
+      key: getActReconciliationIncomeItemKey(item, index),
+      netWeight: reconciliationItem.NetWeight,
+      productName: product?.NameUA || product?.Name,
+      qty: item.Qty,
+      unitPrice: reconciliationItem.UnitPrice,
+      vendorCode: product?.VendorCode || product?.Code,
+    })
+
+    return rows
+  }, [])
+}
+
+function getActReconciliationIncomeItemKey(item: ProductIncomeItem, index: number): string {
+  const reconciliationItem = item.ActReconciliationItem
+
+  return String(
+    item.NetUid ||
+      item.Id ||
+      reconciliationItem?.Product?.NetUid ||
+      reconciliationItem?.Product?.VendorCode ||
+      item.Product?.NetUid ||
+      item.Product?.VendorCode ||
+      index,
+  )
+}
+
 function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
   const items = document.ProductIncomeItems || []
   const amount = getDocumentAmount(document)
@@ -1983,6 +2142,12 @@ function getItemComment(item: ProductIncomeItem): string | undefined {
     || item.SupplyOrderUkraineItem?.SupplyOrderUkraine?.Comment
     || item.PackingListPackageOrderItem?.PackingList?.SupplyInvoice?.Comment
     || item.ProductCapitalizationItem?.ProductCapitalization?.Comment
+}
+
+function sumRows<TItem>(items: TItem[], selector: (item: TItem) => number | undefined): number | undefined {
+  const total = items.reduce((sum, item) => sum + (selector(item) || 0), 0)
+
+  return total || undefined
 }
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {

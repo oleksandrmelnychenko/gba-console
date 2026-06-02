@@ -1054,7 +1054,7 @@ function useSalesUkraineColumns({
 
           const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-          if (lifeCycleType === 1 || lifeCycleType === 2) {
+          if (isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)) {
             return '—'
           }
 
@@ -1122,7 +1122,7 @@ function useSalesUkraineColumns({
         enableSorting: false,
         cell: (sale) => {
           const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-          const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
+          const isPackaging = isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)
           const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
           const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
           const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
@@ -1153,7 +1153,7 @@ function useSalesUkraineColumns({
                     )}
                     {showEditShift && (
                       <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
-                        {lifeCycleType === 0 ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
+                        {isStatusType(lifeCycleType, 0) ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
                       </Menu.Item>
                     )}
                       {showTtn && (
@@ -1417,7 +1417,7 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const source = sale.Order?.OrderSource
   const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const isInvoiceStage = lifeCycleType === 1 || lifeCycleType === 2
+  const isInvoiceStage = isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)
 
   const indicator =
     source === 0
@@ -1494,7 +1494,7 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
   const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-  return status === 0 || status === 1 || status === 2
+  return isStatusType(status, 0) || isStatusType(status, 1) || isStatusType(status, 2)
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {

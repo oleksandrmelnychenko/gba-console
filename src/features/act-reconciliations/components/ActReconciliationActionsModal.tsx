@@ -1,7 +1,7 @@
 import { Alert, NumberInput, Table, Tabs, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -13,6 +13,8 @@ import {
   type ActionQuantityValidationReason,
 } from '../actReconciliationActionQuantity'
 import {
+  createDepreciatedOrderFromItem,
+  createDepreciatedOrderFromItems,
   createProductIncomeFromItem,
   createProductIncomeFromItems,
   createProductTransferFromItem,
@@ -22,6 +24,9 @@ import {
 import type { ActReconciliationItem, ReconciliationStorageOption } from '../types'
 import { ProductPlacementForm, type ProductPlacementFormValues } from './ProductPlacementForm'
 import { ShiftForm, type ShiftFormValues } from './ShiftForm'
+import { WriteOffForm, type WriteOffFormValues } from './WriteOffForm'
+
+type ActionTab = 'placement' | 'shift' | 'writeoff'
 
 export type ActionTarget =
   | { mode: 'single'; item: ActReconciliationItem }
@@ -47,6 +52,7 @@ export function ActReconciliationActionsModal({
   const [isSubmitting, setSubmitting] = useValueState(false)
   const [submitError, setSubmitError] = useValueState<string | null>(null)
   const [quantityDrafts, setQuantityDrafts] = useValueState<Record<string, string>>({})
+  const [activeTab, setActiveTab] = useValueState<ActionTab>('placement')
 
   useEffect(() => {
     if (!opened) {
@@ -85,10 +91,14 @@ export function ActReconciliationActionsModal({
 
   const singleItem = target?.mode === 'single' ? target.item : null
   const maxAvailableQty = singleItem?.QtyDifference
-  const previewState = useMemo(
-    () => (target?.mode === 'multi' ? getQuantityPreviewState(target.items, quantityDrafts) : null),
-    [quantityDrafts, target],
-  )
+  const actionItems = getActionItems(target)
+  const hasWriteOffItems = actionItems.writeoff.length > 0
+  const activeTabValue = activeTab === 'writeoff' && !hasWriteOffItems ? 'placement' : activeTab
+  const activeItems = getItemsForActiveTab(actionItems, activeTabValue)
+  const previewState =
+    target?.mode === 'multi'
+      ? getQuantityPreviewState(activeItems, quantityDrafts, target.items)
+      : null
 
   useEffect(() => {
     if (!opened || target?.mode !== 'multi') {
@@ -119,6 +129,7 @@ export function ActReconciliationActionsModal({
   function handleClose() {
     setSubmitError(null)
     setSubmitting(false)
+    setActiveTab('placement')
     onClose()
   }
 
@@ -210,6 +221,50 @@ export function ActReconciliationActionsModal({
     )
   }
 
+  function handleWriteOffSubmit(values: WriteOffFormValues) {
+    if (!target || !hasWriteOffItems) {
+      return
+    }
+
+    if (target.mode === 'single') {
+      void runSubmit(() =>
+        createDepreciatedOrderFromItem({
+          comment: values.comment,
+          fromDate: values.fromDate,
+          itemNetId: target.item.NetUid || '',
+          organizationNetId,
+          qty: values.qty,
+          reason: values.reason,
+          storageNetId: values.storageNetId,
+        }),
+      )
+      return
+    }
+
+    if (previewState && !previewState.canSubmit) {
+      return
+    }
+
+    void runSubmit(() =>
+      createDepreciatedOrderFromItems(
+        {
+          comment: values.comment,
+          fromDate: values.fromDate,
+          organizationNetId,
+          storageNetId: values.storageNetId,
+        },
+        actionItems.writeoff.map((item, index) => ({
+          ...item,
+          Reason: values.reason,
+          ToOperationQty: resolveActionToOperationQty(
+            item,
+            quantityDrafts[getItemKeyFromItems(item, index, target.items)],
+          ),
+        })),
+      ),
+    )
+  }
+
   return (
     <AppModal centered opened={opened} size="lg" title={getModalTitle(target, t)} onClose={handleClose}>
       {(storagesError || submitError) && (
@@ -220,18 +275,20 @@ export function ActReconciliationActionsModal({
       {target?.mode === 'multi' && (
         <ActionQuantityPreview
           disabled={isSubmitting}
-          items={target.items}
+          getItemKey={(item, index) => getItemKeyFromItems(item, index, target.items)}
+          items={activeItems}
           quantityDrafts={quantityDrafts}
           validationByKey={previewState?.validationByKey || {}}
           onQuantityChange={(item, value) =>
-            setQuantityDrafts((current) => ({ ...current, [getItemKey(item, target.items.indexOf(item))]: value }))
+            setQuantityDrafts((current) => ({ ...current, [getItemKeyFromItems(item, 0, target.items)]: value }))
           }
         />
       )}
-      <Tabs defaultValue="placement" keepMounted={false}>
+      <Tabs keepMounted={false} value={activeTabValue} onChange={(value) => setActiveTab((value as ActionTab) || 'placement')}>
         <Tabs.List mb="md">
           <Tabs.Tab value="placement">{t('Оприходування')}</Tabs.Tab>
           <Tabs.Tab value="shift">{t('Переміщення')}</Tabs.Tab>
+          {hasWriteOffItems && <Tabs.Tab value="writeoff">{t('Списання')}</Tabs.Tab>}
         </Tabs.List>
         <Tabs.Panel value="placement">
           <ProductPlacementForm
@@ -253,6 +310,18 @@ export function ActReconciliationActionsModal({
             onSubmit={handleShiftSubmit}
           />
         </Tabs.Panel>
+        {hasWriteOffItems && (
+          <Tabs.Panel value="writeoff">
+            <WriteOffForm
+              isSubmitting={isSubmitting}
+              maxAvailableQty={maxAvailableQty}
+              submitDisabled={previewState ? !previewState.canSubmit : false}
+              storages={storages}
+              storagesLoading={storagesLoading}
+              onSubmit={handleWriteOffSubmit}
+            />
+          </Tabs.Panel>
+        )}
       </Tabs>
     </AppModal>
   )
@@ -260,12 +329,14 @@ export function ActReconciliationActionsModal({
 
 function ActionQuantityPreview({
   disabled,
+  getItemKey: resolveItemKey,
   items,
   quantityDrafts,
   validationByKey,
   onQuantityChange,
 }: {
   disabled: boolean
+  getItemKey: (item: ActReconciliationItem, index: number) => string
   items: ActReconciliationItem[]
   quantityDrafts: Record<string, string>
   validationByKey: Record<string, ActionQuantityValidationReason | null>
@@ -293,7 +364,7 @@ function ActionQuantityPreview({
           </Table.Thead>
           <Table.Tbody>
             {items.map((item, index) => {
-              const itemKey = getItemKey(item, index)
+              const itemKey = resolveItemKey(item, index)
               const limit = getActionQuantityLimit(item)
               const validationReason = validationByKey[itemKey]
               const isEditable = limit !== undefined && limit > 0
@@ -358,10 +429,15 @@ function buildInitialQuantityDrafts(items: ActReconciliationItem[]): Record<stri
   }, {})
 }
 
-function getQuantityPreviewState(items: ActReconciliationItem[], quantityDrafts: Record<string, string>) {
+function getQuantityPreviewState(
+  items: ActReconciliationItem[],
+  quantityDrafts: Record<string, string>,
+  allItems: ActReconciliationItem[] = items,
+) {
   return items.reduce(
     (state, item) => {
-      const itemKey = getItemKey(item, state.index)
+      const itemIndex = allItems.indexOf(item)
+      const itemKey = getItemKey(item, itemIndex >= 0 ? itemIndex : state.index)
       const validation = validateActionQuantity(quantityDrafts[itemKey], getActionQuantityLimit(item))
 
       state.validationByKey[itemKey] = validation.reason
@@ -392,6 +468,35 @@ function getQuantityError(
 
 function getItemKey(item: ActReconciliationItem, index: number): string {
   return String(item.NetUid || item.Id || item.Product?.NetUid || `item-${index}`)
+}
+
+function getItemKeyFromItems(item: ActReconciliationItem, fallbackIndex: number, items: ActReconciliationItem[]): string {
+  const itemIndex = items.indexOf(item)
+
+  return getItemKey(item, itemIndex >= 0 ? itemIndex : fallbackIndex)
+}
+
+function getActionItems(target: ActionTarget | null): {
+  all: ActReconciliationItem[]
+  writeoff: ActReconciliationItem[]
+} {
+  const all = target?.mode === 'multi' ? target.items : target?.mode === 'single' ? [target.item] : []
+
+  return {
+    all,
+    writeoff: all.filter(isWriteOffItem),
+  }
+}
+
+function getItemsForActiveTab(
+  actionItems: { all: ActReconciliationItem[]; writeoff: ActReconciliationItem[] },
+  activeTab: ActionTab,
+): ActReconciliationItem[] {
+  return activeTab === 'writeoff' ? actionItems.writeoff : actionItems.all
+}
+
+function isWriteOffItem(item: ActReconciliationItem): boolean {
+  return Boolean(item.HasDifference && item.NegativeDifference)
 }
 
 function displayValue(value: unknown): string {

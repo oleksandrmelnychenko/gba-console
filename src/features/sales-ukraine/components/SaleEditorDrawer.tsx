@@ -4,6 +4,7 @@ import {
   Badge,
   Button,
   Card,
+  FileInput,
   Group,
   Loader,
   NumberInput,
@@ -112,6 +113,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
   const [isDetailsOpen, setDetailsOpen] = useValueState(false)
   const [isConvertOpen, setConvertOpen] = useValueState(false)
   const [isConverting, setConverting] = useValueState(false)
+  const [invoiceTtnFile, setInvoiceTtnFile] = useValueState<File | null>(null)
   const [isMergedOpen, setMergedOpen] = useValueState(false)
   const [isReassignOpen, setReassignOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -245,18 +247,19 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
     try {
       if (sale.IsVatSale) {
-        const document = await convertVatSaleAndGetPaymentDocument(payload, null)
+        const document = await convertVatSaleAndGetPaymentDocument(payload, invoiceTtnFile)
         const url = document.pdfUrl || document.excelUrl
 
         if (url) {
           window.open(url, '_blank', 'noopener,noreferrer')
         }
       } else {
-        await updateSaleFromData(payload, null)
+        await updateSaleFromData(payload, invoiceTtnFile)
       }
 
       notifications.show({ color: 'green', message: t('Рахунок створено') })
       setConvertOpen(false)
+      setInvoiceTtnFile(null)
       reload()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
@@ -457,7 +460,14 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
         opened={isConvertOpen}
         size="sm"
         title={t('Зробити рахунок')}
-        onClose={() => (isConverting ? undefined : setConvertOpen(false))}
+        onClose={() => {
+          if (isConverting) {
+            return
+          }
+
+          setConvertOpen(false)
+          setInvoiceTtnFile(null)
+        }}
       >
         <Stack gap="md">
           <Text>{t('Перетворити продаж на рахунок?')}</Text>
@@ -482,8 +492,26 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
               {retailPaymentError}
             </Text>
           )}
+          {sale.CustomersOwnTtn && (
+            <FileInput
+              clearable
+              disabled={isConverting}
+              label={t('Завантажити ТТН')}
+              placeholder={t('Оберіть файл')}
+              value={invoiceTtnFile}
+              onChange={setInvoiceTtnFile}
+            />
+          )}
           <Group justify="flex-end">
-            <Button color="gray" disabled={isConverting} variant="subtle" onClick={() => setConvertOpen(false)}>
+            <Button
+              color="gray"
+              disabled={isConverting}
+              variant="subtle"
+              onClick={() => {
+                setConvertOpen(false)
+                setInvoiceTtnFile(null)
+              }}
+            >
               {t('Скасувати')}
             </Button>
             <Button color="teal" disabled={reviewIssues.length > 0} loading={isConverting} onClick={convertToInvoice}>

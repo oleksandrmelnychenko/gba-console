@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Card, Chip, Group, Loader, Stack, Table, Text } from '@mantine/core'
+import { Alert, Badge, Button, Card, Checkbox, Chip, Group, Loader, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconFileInvoice } from '@tabler/icons-react'
 import { useEffect } from 'react'
@@ -7,6 +7,17 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
+import {
+  buildMergedSaleInvoiceDrafts,
+  buildMergedSaleInvoicePayload,
+  getMergedSaleKey,
+  getNumber,
+  getOrderItemKey,
+  getOrderItems,
+  hasSelectedMergedSaleItems,
+  type MergedSaleInvoiceDraft,
+  type MergedSaleInvoiceDraftBySale,
+} from '../mergedSaleInvoice'
 import type { SalesUkraineSale, SalesUkraineSaleMerged } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -46,6 +57,7 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
   const [error, setError] = useValueState<string | null>(null)
   const [clientFilter, setClientFilter] = useValueState<string>('all')
   const [confirmSale, setConfirmSale] = useValueState<SalesUkraineSale | null>(null)
+  const [drafts, setDrafts] = useValueState<MergedSaleInvoiceDraftBySale>({})
   const [isConverting, setConverting] = useValueState(false)
   const [reloadKey, reload] = useValueState(0)
 
@@ -60,6 +72,7 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
 
         if (!cancelled) {
           setMergedSale(next)
+          setDrafts(buildMergedSaleInvoiceDrafts(Array.isArray(next?.InputSaleMerges) ? next.InputSaleMerges : []))
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -77,12 +90,64 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
     return () => {
       cancelled = true
     }
-  }, [saleNetId, reloadKey, setError, setLoading, setMergedSale, t])
+  }, [saleNetId, reloadKey, setDrafts, setError, setLoading, setMergedSale, t])
 
   const merges = Array.isArray(mergedSale?.InputSaleMerges) ? mergedSale.InputSaleMerges : []
   const clientFilters = buildClientFilters(merges)
-  const visibleMerges =
-    clientFilter === 'all' ? merges : merges.filter((merge) => getClientNetUid(merge) === clientFilter)
+  const visibleMerges = merges
+    .map((merge, index) => ({ index, merge }))
+    .filter(({ merge }) => clientFilter === 'all' || getClientNetUid(merge) === clientFilter)
+
+  function updateSaleDraft(sale: SalesUkraineSale, index: number, updater: (draft: MergedSaleInvoiceDraft) => MergedSaleInvoiceDraft) {
+    const key = getMergedSaleKey(sale, index)
+
+    setDrafts((current) => {
+      const currentDraft = current[key] || { items: {}, selected: false }
+
+      return { ...current, [key]: updater(currentDraft) }
+    })
+  }
+
+  function toggleSale(sale: SalesUkraineSale, index: number, selected: boolean) {
+    updateSaleDraft(sale, index, (draft) => ({
+      selected,
+      items: Object.fromEntries(Object.entries(draft.items).map(([key, item]) => [key, { ...item, selected }])),
+    }))
+  }
+
+  function toggleItem(sale: SalesUkraineSale, saleIndex: number, itemKey: string, selected: boolean) {
+    updateSaleDraft(sale, saleIndex, (draft) => {
+      const items = {
+        ...draft.items,
+        [itemKey]: { ...(draft.items[itemKey] || { qty: '', selected }), selected },
+      }
+      const hasSelectedItems = Object.values(items).some((item) => item.selected)
+
+      return { selected: hasSelectedItems, items }
+    })
+  }
+
+  function updateItemQty(sale: SalesUkraineSale, saleIndex: number, itemKey: string, qty: number | string) {
+    updateSaleDraft(sale, saleIndex, (draft) => ({
+      ...draft,
+      items: {
+        ...draft.items,
+        [itemKey]: { ...(draft.items[itemKey] || { selected: true, qty }), qty },
+      },
+    }))
+  }
+
+  function requestConvert(sale: SalesUkraineSale, index: number) {
+    const payload = buildMergedSaleInvoicePayload(sale, drafts[getMergedSaleKey(sale, index)])
+
+    if (!payload.Order?.OrderItems?.length) {
+      notifications.show({ color: 'orange', message: t('Оберіть товари для рахунку') })
+
+      return
+    }
+
+    setConfirmSale(payload)
+  }
 
   async function convert() {
     if (!confirmSale) {
@@ -145,11 +210,16 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
           {t("Об'єднаних продажів не знайдено")}
         </Text>
       ) : (
-        visibleMerges.map((merge, index) => (
+        visibleMerges.map(({ index, merge }) => (
           <MergedSaleCard
             key={getInputSale(merge)?.NetUid || merge.InputSaleId || index}
+            draft={drafts[getMergedSaleKey(getInputSale(merge) || {}, index)]}
+            index={index}
             sale={getInputSale(merge)}
-            onInvoice={setConfirmSale}
+            onInvoice={requestConvert}
+            onItemQtyChange={updateItemQty}
+            onItemToggle={toggleItem}
+            onSaleToggle={toggleSale}
           />
         ))
       )}
@@ -177,16 +247,33 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
   )
 }
 
-function MergedSaleCard({ sale, onInvoice }: { onInvoice: (sale: SalesUkraineSale) => void; sale?: SalesUkraineSale }) {
+function MergedSaleCard({
+  draft,
+  index,
+  sale,
+  onInvoice,
+  onItemQtyChange,
+  onItemToggle,
+  onSaleToggle,
+}: {
+  draft?: MergedSaleInvoiceDraft
+  index: number
+  onInvoice: (sale: SalesUkraineSale, index: number) => void
+  onItemQtyChange: (sale: SalesUkraineSale, saleIndex: number, itemKey: string, qty: number | string) => void
+  onItemToggle: (sale: SalesUkraineSale, saleIndex: number, itemKey: string, selected: boolean) => void
+  onSaleToggle: (sale: SalesUkraineSale, index: number, selected: boolean) => void
+  sale?: SalesUkraineSale
+}) {
   const { t } = useI18n()
 
   if (!sale) {
     return null
   }
 
-  const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const orderItems = getOrderItems(sale)
   const client = sale.ClientAgreement?.Client
   const currency = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+  const canInvoice = hasSelectedMergedSaleItems(sale, draft)
 
   return (
     <Card withBorder padding="md" radius="md">
@@ -204,20 +291,29 @@ function MergedSaleCard({ sale, onInvoice }: { onInvoice: (sale: SalesUkraineSal
               {[getUserLastName(sale), formatDateTime(sale.Updated)].filter(Boolean).join(' · ')}
             </Text>
           </Stack>
-          <Button
-            color="teal"
-            leftSection={<IconFileInvoice size={16} />}
-            size="xs"
-            variant="light"
-            onClick={() => onInvoice(sale)}
-          >
-            {t('Зробити рахунок')}
-          </Button>
+          <Group gap="sm">
+            <Checkbox
+              checked={draft?.selected ?? false}
+              label={t('Усі товари')}
+              onChange={(event) => onSaleToggle(sale, index, event.currentTarget.checked)}
+            />
+            <Button
+              color="teal"
+              disabled={!canInvoice}
+              leftSection={<IconFileInvoice size={16} />}
+              size="xs"
+              variant="light"
+              onClick={() => onInvoice(sale, index)}
+            >
+              {t('Зробити рахунок')}
+            </Button>
+          </Group>
         </Group>
 
         <Table withRowBorders={false}>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th w={44} />
               <Table.Th>{t('Код Виробника')}</Table.Th>
               <Table.Th>{t('Назва товару')}</Table.Th>
               <Table.Th ta="right">{t('К-сть')}</Table.Th>
@@ -225,16 +321,45 @@ function MergedSaleCard({ sale, onInvoice }: { onInvoice: (sale: SalesUkraineSal
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {orderItems.map((item, index) => (
-              <Table.Tr key={item.NetUid || item.Id || index}>
-                <Table.Td>{displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)}</Table.Td>
-                <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
-                <Table.Td ta="right">{displayValue(getNumber(item.Qty))}</Table.Td>
-                <Table.Td ta="right">
-                  {formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount))} {currency}
-                </Table.Td>
-              </Table.Tr>
-            ))}
+            {orderItems.map((item, itemIndex) => {
+              const key = getOrderItemKey(item, itemIndex)
+              const itemDraft = draft?.items[key]
+              const qty = getNumber(itemDraft?.qty) ?? getNumber(item.Qty) ?? 0
+              const maxQty = getNumber(item.Qty) ?? undefined
+
+              return (
+                <Table.Tr key={key}>
+                  <Table.Td>
+                    <Checkbox
+                      aria-label={t('Обрати товар')}
+                      checked={itemDraft?.selected ?? false}
+                      onChange={(event) => onItemToggle(sale, index, key, event.currentTarget.checked)}
+                    />
+                  </Table.Td>
+                  <Table.Td>{displayValue(item.Product?.VendorCode || item.Product?.MainOriginalNumber)}</Table.Td>
+                  <Table.Td>{displayValue(item.Product?.NameUA || item.Product?.Name)}</Table.Td>
+                  <Table.Td ta="right">
+                    <NumberInput
+                      allowNegative={false}
+                      clampBehavior="strict"
+                      decimalScale={2}
+                      disabled={!itemDraft?.selected}
+                      hideControls
+                      max={maxQty}
+                      min={0}
+                      size="xs"
+                      value={itemDraft?.qty ?? ''}
+                      w={88}
+                      onChange={(value) => onItemQtyChange(sale, index, key, value)}
+                    />
+                  </Table.Td>
+                  <Table.Td ta="right">
+                    {formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount), qty, getNumber(item.Qty))}{' '}
+                    {currency}
+                  </Table.Td>
+                </Table.Tr>
+              )
+            })}
           </Table.Tbody>
         </Table>
       </Stack>
@@ -305,22 +430,16 @@ function formatDateTime(value?: Date | string): string {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('uk-UA')
 }
 
-function formatAmount(value: number | null): string {
-  return typeof value === 'number' ? amountFormatter.format(value) : '—'
-}
-
-function getNumber(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
+function formatAmount(value: number | null, qty?: number, originalQty?: number | null): string {
+  if (typeof value !== 'number') {
+    return '—'
   }
 
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-
-    return Number.isFinite(parsed) ? parsed : null
+  if (typeof qty === 'number' && typeof originalQty === 'number' && originalQty > 0 && qty !== originalQty) {
+    return amountFormatter.format((value / originalQty) * qty)
   }
 
-  return null
+  return amountFormatter.format(value)
 }
 
 function displayValue(value: unknown): string {
