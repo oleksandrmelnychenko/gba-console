@@ -967,8 +967,11 @@ function ProductCarouselRow({
       className={`product-carousel-row ${getProductRowToneClass(product)}`}
       onClick={() => onSelect(product)}
     >
-      <span className="product-carousel-row-code">{getProductCode(product)}</span>
-      <span className="product-carousel-row-name">{getProductTitle(product)}</span>
+      <IconBox size={16} stroke={1.7} className="product-carousel-row-icon" />
+      <span className="product-carousel-row-body">
+        <span className="product-carousel-row-code">{getProductCode(product)}</span>
+        <span className="product-carousel-row-name">{getProductTitle(product)}</span>
+      </span>
     </button>
   )
 }

@@ -230,12 +230,12 @@
 .product-carousel-row {
   display: flex;
   flex: none; /* keep natural height — never squash/overlap; overflow is clipped by the rail */
-  flex-direction: column;
-  align-items: stretch; /* name sits UNDER code as a 2nd line */
-  gap: 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   min-height: 0;
   width: 100%;
-  padding: 5px 10px;
+  padding: 3px 10px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -251,12 +251,24 @@
   background: rgba(124, 58, 237, 0.06);
 }
 
+.product-carousel-row-icon {
+  flex: 0 0 auto;
+  color: var(--mantine-color-gray-5);
+}
+
+.product-carousel-row-body {
+  display: flex;
+  flex-direction: column; /* name sits UNDER code as a 2nd line */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .product-carousel-row-code {
   min-width: 0;
   overflow: hidden;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -265,8 +277,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--mantine-color-gray-7);
-  font-size: 14px;
-  line-height: 1.2;
+  font-size: 12.5px;
+  line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
