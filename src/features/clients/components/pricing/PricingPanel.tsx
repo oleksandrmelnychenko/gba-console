@@ -185,7 +185,7 @@ export function PricingPanel({
   function applyDiscountsToAgreement(agreementNetId: string, updatedProductGroupDiscounts: ProductGroupDiscount[]) {
     const nextAgreements = clientAgreements.map((clientAgreement) =>
       clientAgreement.Agreement?.NetUid === agreementNetId
-        ? { ...clientAgreement, ProductGroupDiscounts: updatedProductGroupDiscounts }
+        ? { ...clientAgreement, ProductGroupDiscounts: updatedProductGroupDiscounts, __ProductGroupDiscountsChanged: true }
         : clientAgreement,
     )
 

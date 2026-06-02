@@ -9,6 +9,7 @@ import {
   DISCOUNT_SELECT_ALL_PERMISSION,
 } from '../../permissions'
 import type { ProductGroupDiscount } from '../../types'
+import { compactChangedProductGroupDiscounts } from '../../productGroupDiscountPayload'
 
 type DiscountNode = {
   netId: string
@@ -130,6 +131,7 @@ export function DiscountsTree({
   const canEditPercent = hasPermission(DISCOUNT_PERCENT_INPUT_PERMISSION)
   const canCheckRow = hasPermission(DISCOUNT_ROW_CHECKBOX_PERMISSION)
   const treeRef = useRef<ProductGroupDiscount[]>([])
+  const baselineDiscountsRef = useRef<ProductGroupDiscount[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [percent, setPercent] = useState('')
@@ -158,6 +160,7 @@ export function DiscountsTree({
 
         const map = buildDiscountMap(result)
         treeRef.current = result
+        baselineDiscountsRef.current = result
         setDiscountMap(map)
         setInitialValue(toCompareValue(map))
         setPercent('')
@@ -169,6 +172,7 @@ export function DiscountsTree({
         }
 
         treeRef.current = []
+        baselineDiscountsRef.current = []
         setDiscountMap({})
         setInitialValue('')
         setPercent('')
@@ -203,7 +207,9 @@ export function DiscountsTree({
     onDraftChange?.({
       clientAgreementNetId,
       isDirty: nextIsDirty,
-      productGroupDiscounts: nextIsDirty ? mapToDiscountArray(nextMap, treeRef.current) : treeRef.current,
+      productGroupDiscounts: nextIsDirty
+        ? compactChangedProductGroupDiscounts(mapToDiscountArray(nextMap, treeRef.current), baselineDiscountsRef.current)
+        : [],
     })
   }, [clientAgreementNetId, initialValue, onDraftChange])
 
@@ -348,12 +354,14 @@ export function DiscountsTree({
 
   function handleApply() {
     const updatedDiscounts = mapToDiscountArray(discountMap, treeRef.current)
+    const changedDiscounts = compactChangedProductGroupDiscounts(updatedDiscounts, baselineDiscountsRef.current)
     const nextInitialValue = toCompareValue(discountMap)
 
     treeRef.current = updatedDiscounts
+    baselineDiscountsRef.current = updatedDiscounts
     setInitialValue(nextInitialValue)
     emitDraftChange(discountMap, nextInitialValue)
-    onApplyChanges(updatedDiscounts)
+    onApplyChanges(changedDiscounts)
   }
 
   function renderDiscountNode(node: DiscountNode, depth = 0) {

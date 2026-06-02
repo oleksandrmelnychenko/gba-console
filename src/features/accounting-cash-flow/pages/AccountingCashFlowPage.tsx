@@ -43,6 +43,7 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
+import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import type {
   AccountingCashFlow,
   AccountingCashFlowAgreement,
@@ -735,7 +736,7 @@ function AccountingCashFlowDetailDrawer({
     () => (isSaleReturn ? (toRecord(item?.SaleReturn) as AccountingCashFlowSaleReturn | null) : null),
     [isSaleReturn, item?.SaleReturn],
   )
-  const detailFields = useMemo(() => (item ? buildHeadItemFields(item) : []), [item])
+  const detailFields = useMemo(() => (item ? buildHeadItemFields(item, t) : []), [item, t])
 
   return (
     <AppDrawer
@@ -763,8 +764,9 @@ function AccountingCashFlowDetailDrawer({
   )
 }
 
-function buildHeadItemFields(item: AccountingCashFlowHeadItem): DetailField[] {
-  return [
+function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) => string): DetailField[] {
+  const paymentStatus = getAccountingCashFlowPaymentStatus(item)
+  const fields: DetailField[] = [
     { label: 'Дата', value: formatDateTime(item.FromDate) },
     { label: 'Документ', value: displayValue(item.Name) },
     { label: 'Номер', value: displayValue(item.Number) },
@@ -774,15 +776,28 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem): DetailField[] {
     { label: 'Сума', value: formatMoney(item.CurrentValue) },
     { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
   ]
+
+  if (paymentStatus) {
+    fields.splice(5, 0, {
+      label: 'Статус накладної',
+      value: (
+        <Badge color={paymentStatus.color} variant="light">
+          {t(paymentStatus.label)}
+        </Badge>
+      ),
+    })
+  }
+
+  return fields
 }
 
 function DetailValue({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <Box>
+    <Box style={{ minWidth: 0 }}>
       <Text size="xs" c="dimmed">
         {label}
       </Text>
-      <Text size="sm" fw={600} lineClamp={2}>
+      <Text size="sm" fw={600} style={{ overflowWrap: 'anywhere' }}>
         {value || '-'}
       </Text>
     </Box>

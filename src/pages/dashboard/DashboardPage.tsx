@@ -97,18 +97,18 @@ export function DashboardPage() {
   )
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
+    <Stack className="dashboard-page" gap="lg">
+      <Group className="dashboard-page-actions" justify="flex-end" align="end">
         <Button rightSection={<IconArrowRight size={16} />} color="violet">
           {t('Відкрити наступний модуль')}
         </Button>
       </Group>
 
-      <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
+      <SimpleGrid className="dashboard-stats-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
         {stats.map((item) => (
-          <Card key={item.label} withBorder radius="md" padding="lg">
+          <Card key={item.label} withBorder radius="md" padding="lg" className="dashboard-stat-card">
             <Group justify="space-between" align="flex-start" wrap="nowrap">
-              <Box>
+              <Box className="dashboard-stat-copy">
                 <Text size="sm" c="dimmed">
                   {t(item.label)}
                 </Text>
@@ -127,10 +127,10 @@ export function DashboardPage() {
         ))}
       </SimpleGrid>
 
-      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-        <Card withBorder radius="md" padding="lg" className="wide-card">
-          <Group justify="space-between" mb="md">
-            <Box>
+      <Box className="dashboard-overview-grid">
+        <Card withBorder radius="md" padding="lg" className="dashboard-migration-card">
+          <Group justify="space-between" mb="md" gap="sm" align="flex-start">
+            <Box className="dashboard-section-copy">
               <Title order={3} size="h4">
                 {t('Черга перенесення')}
               </Title>
@@ -143,18 +143,20 @@ export function DashboardPage() {
             </Badge>
           </Group>
 
-          <DataTable
-            columns={migrationColumns}
-            data={migrationRows}
-            defaultLayout={MIGRATION_TABLE_DEFAULT_LAYOUT}
-            getRowId={(row) => row.area}
-            layoutVersion="dashboard-migration-table-1"
-            minWidth={640}
-            tableId="dashboard-migration"
-          />
+          <Box className="dashboard-table-wrap">
+            <DataTable
+              columns={migrationColumns}
+              data={migrationRows}
+              defaultLayout={MIGRATION_TABLE_DEFAULT_LAYOUT}
+              getRowId={(row) => row.area}
+              layoutVersion="dashboard-migration-table-1"
+              minWidth={640}
+              tableId="dashboard-migration"
+            />
+          </Box>
         </Card>
 
-        <Card withBorder radius="md" padding="lg">
+        <Card withBorder radius="md" padding="lg" className="dashboard-readiness-card">
           <Stack align="center" gap="sm">
             <RingProgress
               size={160}
@@ -175,7 +177,7 @@ export function DashboardPage() {
             </Text>
           </Stack>
         </Card>
-      </SimpleGrid>
+      </Box>
     </Stack>
   )
 }

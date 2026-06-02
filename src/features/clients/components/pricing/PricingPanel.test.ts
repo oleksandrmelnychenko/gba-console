@@ -27,6 +27,7 @@ describe('applyPendingDiscountDraft', () => {
       {
         Agreement: { NetUid: 'agreement-1' },
         ProductGroupDiscounts: [{ DiscountRate: 12, ProductGroupId: 1 }],
+        __ProductGroupDiscountsChanged: true,
       },
       {
         Agreement: { NetUid: 'agreement-2' },

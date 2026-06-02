@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from './saleStatus'
+import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from './saleStatus'
 
 describe('sale status helpers', () => {
   it('normalizes numeric and string enum values to the same key', () => {
@@ -14,6 +14,15 @@ describe('sale status helpers', () => {
     expect(isStatusType('1', 1)).toBe(true)
     expect(isStatusType('2', 1)).toBe(false)
     expect(isStatusType(undefined, 1)).toBe(false)
+  })
+
+  it('maps lifecycle enum values and legacy names to readable status keys', () => {
+    expect(getSaleLifecycleStatusKey(0)).toBe('New')
+    expect(getSaleLifecycleStatusKey('1')).toBe('Packaging')
+    expect(getSaleLifecycleStatusKey('Packaged')).toBe('Packaged')
+    expect(getSaleLifecycleStatusKey('SaleLifeCyclePackaging')).toBe('Packaging')
+    expect(getSaleLifecycleStatusKey(102)).toBe('InvoiceChanged')
+    expect(getSaleLifecycleStatusKey(undefined)).toBe('')
   })
 
   it('allows one-time discount editing only for new and packaging lifecycle states', () => {

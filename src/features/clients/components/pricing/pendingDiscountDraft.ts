@@ -10,7 +10,7 @@ export function applyPendingDiscountDraft(client: Client, draft: DiscountsTreeDr
     ...client,
     ClientAgreements: (client.ClientAgreements || []).map((clientAgreement) =>
       clientAgreement.Agreement?.NetUid === draft.clientAgreementNetId
-        ? { ...clientAgreement, ProductGroupDiscounts: draft.productGroupDiscounts }
+        ? { ...clientAgreement, ProductGroupDiscounts: draft.productGroupDiscounts, __ProductGroupDiscountsChanged: true }
         : clientAgreement,
     ),
   }
