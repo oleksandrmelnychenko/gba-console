@@ -26,17 +26,21 @@ Also `/hubs/exchangerates` (ExchangeRateUpdated/CrossExchangeRateUpdated → pri
 STEP 1 Clients: `/clients/payers/search/all` ✓ · `/agreements/client/all` ✓ · `/clients/get/debt/total` ✓ ·
 **MISSING** `/clients/all/clientsubclients/client` (sub-sub-clients) · `/clients/all/subclients/client` (merged).
 STEP 2 Products/cart: `/products/search/vendorcode` ✓ · `/sales/get/current` ✓ · `/orders/items/new` ✓ ·
-`/orders/items/update` ✓ · `/orders/items/delete` ✓ · **MISSING** `/products/reservations/current/carousel/agreement`
-(carousel data) · `/products/all/availabilities/product` · `/products/get/analogues`.
+`/orders/items/update` ✓ · `/orders/items/delete` ✓ ·
+`/products/reservations/current/carousel/agreement?clientAgreementNetId=&productNetId=` ✓ ·
+`/products/pricings/current?productNetId=&clientAgreementNetId=` ✓ ·
+`/products/pricings/all?productNetId=&clientAgreementNetId=` ✓ ·
+`/products/all/availabilities/product?netId=&clientAgreementNetId=` ·
+`/products/get/analogues?productNetId=&clientAgreementNetId=`.
 STEP 3 Review: `/transporters/types/all` ✓ · `/transporters/all/type(/hidden)` ✓ · `/sales/new` ✓ (createSale) ·
-`/sales/update/file` ✓ · `/sales/update/get/payment/document` ✓ (VAT branch) · **MISSING** `/sales/set/change`
-(set carrier) · `/deliveries/recipients/all/client` + `/new` + `/sales/update/recipient(/address)`.
+`/sales/update/file` ✓ · `/sales/update/get/payment/document` ✓ (VAT branch) · `/sales/set/change` ✓
+(set carrier) · `/deliveries/recipients/all/client` + `/new` + `/sales/update/recipient(/address)` ✓.
 Create branch: `IsVatSale ? convertVatSaleAndGetPaymentDocument : createSale/updateSaleFromData`.
 
 ## Heavy edge-logic (capture but phase)
 Session flags (IsNewSale/IsFromShop/IsFromMergedSale), merged-sales (combine sub-client carts),
-invoice-builder (payment types), future sales (`/sales/reservations/*` when no stock), reservation/shift of
-available order items, analogues, product-interest. → Phase 2 after the core wizard works.
+invoice-builder (payment types), reservation/shift of available order items, analogues, product-interest.
+Basic future reservation (`/sales/reservations/new` when no stock) is built; deeper legacy flows remain phase work.
 
 ## File plan (all NEW files — no collision with active sales-ukraine WIP)
 `features/sales-ukraine/components/new-sale-wizard/`:
@@ -65,15 +69,20 @@ Wire: 1-line swap `NewSaleModal`→`NewSaleWizard` in `SalesUkrainePage` — **h
 - Recipients preloaded from `DeliveryState.DeliveryRecipients`; pre-select from `session.Sale.DeliveryRecipient`
   (+ its `DeliveryRecipientAddresses` → `session.Sale.DeliveryRecipientAddress`).
 
-### Delivery recipients (endpoints — all MISSING in console salesUkraineApi)
+### Delivery recipients
 `GET /deliveries/recipients/all/client?netId={clientNetId}` → recipient list (each has DeliveryRecipientAddresses[]).
 `POST /deliveries/recipients/new` {Name, City, Department, PhoneNumber, …}. `POST /deliveries/recipients/addresses/new`
 {RecipientNetId, …}. `POST /sales/update/recipient?netId={saleNetId}` (sale with DeliveryRecipient).
-`POST /sales/update/recipient/address?netId={saleNetId}`.
+`POST /sales/update/recipient/address?netId={saleNetId}`. These are wired in `newSaleWizardApi.ts` and contract-tested.
 
-### Carousel data + availability (MISSING — console carousel is search-only)
-`POST /products/reservations/current/carousel` + `GET /products/reservations/current/carousel/agreement?clientAgreementNetId=`
-(reservation/availability per product: reserved count, available qty, price+VAT). `GET /products/all/availabilities/product?netId=&clientAgreementNetId=`.
+### Carousel data + availability
+Console now loads agreement-aware product data on product selection:
+`GET /products/reservations/current/carousel/agreement?clientAgreementNetId=&productNetId=`,
+`GET /products/pricings/current?productNetId=&clientAgreementNetId=`, and
+`GET /products/pricings/all?productNetId=&clientAgreementNetId=`.
+The reservation endpoint is product-specific on the server; do not reintroduce a bulk call without
+`productNetId`. Remaining deeper carousel endpoints:
+`GET /products/all/availabilities/product?netId=&clientAgreementNetId=`.
 `GET /products/get/analogues?productNetId=&clientAgreementNetId=`. Live refresh via reservation-hub
 `GetProductWithoutReservedCount` → console `realtimeEvents.productReservationUpdated`.
 
@@ -88,10 +97,11 @@ EditShoppingCart→ViewImage→Interest. Controllers track previous-state for ba
 dup keyup. ←/→ move carousel focus, Enter selects/adds, Esc backs out a state, Del removes, F2 edits qty.
 Pragmatic console layer: ProductPickerCarousel already does ←/→/Enter; add Esc (clear search) + Del/F2 on the cart.
 
-### merged-sales / future-sales (deeper edge flows — defer unless needed)
+### merged-sales / future-sales
 Merged: `/clients/all/subclients/client`, `/sales/get/merged`, `/sales/update/merged` — combine sub-client carts
-when a client has sub-clients ordering together. Future: `/sales/reservations/new` (IsReservation) when a product
-is out of stock. Both are advanced; recommend building after the core finalize (carrier+recipient) lands.
+when a client has sub-clients ordering together. Future reservation creation uses `/sales/reservations/new`
+when a product is out of stock; deeper reservation/merged-sale semantics still need dev validation after core
+finalize (carrier+recipient) lands.
 
 ### Build order (new files / non-WIP only; wizard step files are now user-WIP)
 1. `new-sale-wizard/newSaleWizardApi.ts` — setSaleCarrier(/sales/set/change FormData), delivery-recipient
@@ -103,6 +113,9 @@ is out of stock. Both are advanced; recommend building after the core finalize (
 
 ## Phase 3 — BUILT (2026-06-02, commits 8e9b469 / f31c02e + this)
 - **API** `newSaleWizardApi.ts`: setSaleCarrier (/sales/set/change), delivery recipients, carousel reservations, future, sub-clients.
+- **Pricing chain**: product selection enriches the cart candidate with current agreement price,
+  calculated pricings with discounts, and product-specific reservation/availability. Contract tests
+  assert `productNetId + clientAgreementNetId` for reservation/current-price/calculated-pricing calls.
 - **Review**: transporter (type→carrier) + delivery recipient/address selects + self-checkout awareness + comment;
   finalize validates carrier (mandatory unless self-checkout) + recipient, persists via `setSaleCarrier`.
 - **Carousel**: availability (teal/red) + price per card from agreement reservations; refresh on
@@ -113,5 +126,6 @@ is out of stock. Both are advanced; recommend building after the core finalize (
 ### Remaining advanced (documented, rarely-used; build on request)
 - Cart-row keyboard (Del remove / F2 edit-qty) — cart is a Table, needs row-focus tracking.
 - **merged-sales** (combine sub-client carts; /sales/get|update/merged) — advanced, separate UI.
-- **future-sales** (reserve when out of stock; /sales/reservations/new) — needs an out-of-stock UX decision.
+- **future-sales deep parity** — basic reserve-on-out-of-stock modal posts `/sales/reservations/new`; remaining work is
+  deeper legacy semantics around reservation/shift flows.
 These are edge flows with backend-semantics best confirmed by testing the core wizard on dev first.

@@ -212,11 +212,16 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             onAgreementChange={(agreementNetId, agreement) => setState((current) => ({ ...current, agreement, agreementNetId }))}
             onClientChange={(clientNetId) => setState((current) => ({ ...current, clientNetId }))}
           />
-        )}
-        {active === 1 && (
-          <NewSaleProductsStep agreementNetId={state.agreementNetId} sale={state.sale} onCartChanged={reloadCart} />
-        )}
-        {active === 2 && (
+        </Stepper.Step>
+        <Stepper.Step label={t('Товари')} description={t('Кошик')}>
+          <NewSaleProductsStep
+            agreementNetId={state.agreementNetId}
+            clientNetId={state.clientNetId}
+            sale={state.sale}
+            onCartChanged={reloadCart}
+          />
+        </Stepper.Step>
+        <Stepper.Step label={t('Рев’ю')} description={t('Перевізник і підтвердження')}>
           <NewSaleReviewStep
             clientNetId={state.clientNetId}
             sale={state.sale}

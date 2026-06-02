@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
-import { isStatusType } from '../saleStatus'
+import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
+import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../types'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -12,7 +13,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-const NEW_LIFECYCLE_TYPE = 0
 const BASE_CURRENCY_CODE = 'EUR'
 
 export function SaleExpandContent({
@@ -26,7 +26,7 @@ export function SaleExpandContent({
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const isNew = isStatusType(sale.BaseLifeCycleStatus?.SaleLifeCycleType, NEW_LIFECYCLE_TYPE)
+  const canEditDiscount = isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
   const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
 
@@ -46,7 +46,7 @@ export function SaleExpandContent({
         {orderItems.map((orderItem, index) => (
           <SaleExpandContentItem
             key={String(orderItem.NetUid || orderItem.Id || index)}
-            isNew={isNew}
+            canEditDiscount={canEditDiscount}
             isVatSale={isVatSale}
             hasUniformDiscount={hasUniformDiscount}
             localCurrencyCode={localCurrencyCode}
@@ -62,16 +62,16 @@ export function SaleExpandContent({
 }
 
 function SaleExpandContentItem({
+  canEditDiscount,
   hasUniformDiscount,
-  isNew,
   isVatSale,
   localCurrencyCode,
   onOpenProductCard,
   orderItem,
   onOpenItemDiscount,
 }: {
+  canEditDiscount: boolean
   hasUniformDiscount: boolean
-  isNew: boolean
   isVatSale: boolean
   localCurrencyCode: string
   onOpenProductCard: (productNetId: string) => void
@@ -79,8 +79,9 @@ function SaleExpandContentItem({
   onOpenItemDiscount: () => void
 }) {
   const { t } = useI18n()
-  const discount = getNumber(orderItem.OneTimeDiscount)
-  const hasDiscount = typeof discount === 'number' && discount !== 0
+  const oneTimeDiscount = getNumber(orderItem.OneTimeDiscount)
+  const hasOneTimeDiscount = typeof oneTimeDiscount === 'number' && oneTimeDiscount !== 0
+  const baseDiscount = getVisibleOrderItemBaseDiscount(orderItem)
   const productNetId = orderItem.Product?.NetUid
   const openProductCard = productNetId
     ? (event: { stopPropagation: () => void }) => {
@@ -172,29 +173,30 @@ function SaleExpandContentItem({
         <ValueBlock label={localCurrencyCode || t('Сума')} value={formatAmount(getNumber(orderItem.TotalAmountLocal))} />
         <ValueBlock label={secondCode} value={formatAmount(secondAmount)} />
         {isVatSale && <ValueBlock label={t('ПДВ')} value={formatAmount(getNumber(orderItem.TotalVat))} />}
-        <ValueBlock label={t('Кількість')} value={qtyText} />
+        <ValueBlock label={t('Count')} value={qtyText} />
+        <ValueBlock label={t('Базова знижка')} value={formatPercent(baseDiscount)} />
 
         <Box style={{ minWidth: 72, textAlign: 'right' }}>
           <Text size="xs" c="dimmed" tt="uppercase">
-            {t('Знижка')}
+            {t('Разова знижка')}
           </Text>
-          {!hasUniformDiscount && (hasDiscount || isNew) ? (
+          {!hasUniformDiscount && canEditDiscount ? (
             <Anchor
               c="gray.8"
               component="button"
-              fw={hasDiscount ? 600 : 400}
+              fw={hasOneTimeDiscount ? 600 : 400}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenItemDiscount()
               }}
             >
-              {hasDiscount ? `${amountFormatter.format(discount)} %` : t('Знижка')}
+              {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : t('Знижка')}
             </Anchor>
           ) : (
-            <Text>{hasDiscount ? `${amountFormatter.format(discount)} %` : '—'}</Text>
+            <Text>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : '—'}</Text>
           )}
-          {hasDiscount && discountUpdater && (
+          {hasOneTimeDiscount && discountUpdater && (
             <Text c="dimmed" size="xs">
               {discountUpdater}
             </Text>
@@ -244,6 +246,10 @@ function getResponsible(user?: SalesUkraineUser | null): string {
 
 function formatAmount(value: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : displayValue(value)
+}
+
+function formatPercent(value: number | null): string {
+  return typeof value === 'number' ? `${amountFormatter.format(value)} %` : '—'
 }
 
 function formatDateTime(value?: Date | string): string {

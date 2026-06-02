@@ -13,7 +13,7 @@ import {
   Title,
 } from '@mantine/core'
 import { IconAlertCircle, IconUpload, IconX } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import {
@@ -24,8 +24,9 @@ import {
 import { exportAgreementDocument, exportAgreementWarrantyConditions } from '../../api/clientAgreementsApi'
 import { uploadClientContract } from '../../api/clientCabinetApi'
 import { ClientAgreementsPanel } from './ClientAgreementsPanel'
-import { DiscountsTree } from './DiscountsTree'
+import { DiscountsTree, type DiscountsTreeDraft } from './DiscountsTree'
 import { ManagerPicker } from './ManagerPicker'
+import { applyPendingDiscountDraft } from './pendingDiscountDraft'
 import { ServicePayersPanel } from './ServicePayersPanel'
 import type {
   Agreement,
@@ -48,6 +49,7 @@ export type PricingPanelProps = {
   mode?: PricingPanelMode
   disabled?: boolean
   onChange: (client: Client) => void
+  onPendingDiscountDraftChange?: (draft: DiscountsTreeDraft | null) => void
   onValidityChange?: (isValid: boolean) => void
 }
 
@@ -104,6 +106,7 @@ export function PricingPanel({
   mode = 'edit',
   disabled = false,
   onChange,
+  onPendingDiscountDraftChange,
   onValidityChange,
 }: PricingPanelProps) {
   const { t } = useI18n()
@@ -118,6 +121,7 @@ export function PricingPanel({
   const [isUploadingDocuments, setUploadingDocuments] = useState(false)
   const pendingDocumentsRef = useRef<File[]>([])
   const [documentsError, setDocumentsError] = useState<string | null>(null)
+  const discountDraftRef = useRef<DiscountsTreeDraft | null>(null)
 
   const clientAgreements = useMemo(() => client.ClientAgreements || [], [client.ClientAgreements])
   const servicePayers = useMemo(() => client.ServicePayers || [], [client.ServicePayers])
@@ -174,19 +178,72 @@ export function PricingPanel({
 
   const showDiscountsTree = !isProvider && Boolean(highlightedAgreement?.Agreement?.NetUid)
 
+  const selectedAgreementLabel = highlightedAgreement?.Agreement
+    ? `${getAgreementName(highlightedAgreement.Agreement, t('Основний договір'))} (${highlightedAgreement.Agreement.Organization?.Name || ''})`
+    : ''
+
+  function applyDiscountsToAgreement(agreementNetId: string, updatedProductGroupDiscounts: ProductGroupDiscount[]) {
+    const nextAgreements = clientAgreements.map((clientAgreement) =>
+      clientAgreement.Agreement?.NetUid === agreementNetId
+        ? { ...clientAgreement, ProductGroupDiscounts: updatedProductGroupDiscounts, __ProductGroupDiscountsChanged: true }
+        : clientAgreement,
+    )
+
+    onChange({
+      ...client,
+      ClientAgreements: nextAgreements,
+    })
+  }
+
+  function canChangeSelectedAgreement(nextAgreementNetId?: string): boolean {
+    const discountDraft = discountDraftRef.current
+
+    if (
+      !selectedAgreementNetId
+      || selectedAgreementNetId === nextAgreementNetId
+      || !discountDraft?.isDirty
+      || discountDraft.clientAgreementNetId !== selectedAgreementNetId
+    ) {
+      return true
+    }
+
+    const shouldApply = window.confirm(`${t('Застосувати зміни')} ${t('Договір')}: ${selectedAgreementLabel}`)
+
+    if (!shouldApply) {
+      return false
+    }
+
+    applyDiscountsToAgreement(selectedAgreementNetId, discountDraft.productGroupDiscounts)
+    discountDraftRef.current = null
+    onPendingDiscountDraftChange?.(null)
+
+    return true
+  }
+
   function handleRowClick(clientAgreement: ClientAgreement) {
     const netId = clientAgreement.Agreement?.NetUid
 
-    if (!netId) {
-      setSelectedAgreementNetId(undefined)
+    const nextAgreementNetId = selectedAgreementNetId === netId ? undefined : netId
+
+    if (!canChangeSelectedAgreement(nextAgreementNetId)) {
       return
     }
 
-    setSelectedAgreementNetId((current) => (current === netId ? undefined : netId))
+    if (!netId) {
+      setSelectedAgreementNetId(undefined)
+      discountDraftRef.current = null
+      onPendingDiscountDraftChange?.(null)
+      return
+    }
+
+    discountDraftRef.current = null
+    onPendingDiscountDraftChange?.(null)
+    setSelectedAgreementNetId(nextAgreementNetId)
   }
 
   function handleSaveAgreement(agreement: Agreement, isEdit: boolean) {
-    const existing = clientAgreements
+    const clientWithPendingDiscounts = applyPendingDiscountDraft(client, discountDraftRef.current)
+    const existing = clientWithPendingDiscounts.ClientAgreements || []
     let savedAgreement = agreement
     let nextAgreements: ClientAgreement[]
 
@@ -229,9 +286,12 @@ export function PricingPanel({
     }
 
     onChange({
-      ...client,
+      ...clientWithPendingDiscounts,
       ClientAgreements: nextAgreements,
     })
+
+    discountDraftRef.current = null
+    onPendingDiscountDraftChange?.(null)
 
     if (savedAgreement.IsActive && savedAgreement.NetUid) {
       setSelectedAgreementNetId(savedAgreement.NetUid)
@@ -245,6 +305,8 @@ export function PricingPanel({
 
     if (agreement.NetUid && agreement.NetUid === selectedAgreementNetId) {
       setSelectedAgreementNetId(undefined)
+      discountDraftRef.current = null
+      onPendingDiscountDraftChange?.(null)
     }
 
     onChange({
@@ -289,21 +351,23 @@ export function PricingPanel({
   }
 
   function handleApplyDiscounts(updatedProductGroupDiscounts: ProductGroupDiscount[]) {
-    if (!highlightedAgreement) {
+    const agreementNetId = highlightedAgreement?.Agreement?.NetUid
+
+    if (!agreementNetId) {
       return
     }
 
-    const nextAgreements = clientAgreements.map((clientAgreement) =>
-      clientAgreement === highlightedAgreement
-        ? { ...clientAgreement, ProductGroupDiscounts: updatedProductGroupDiscounts }
-        : clientAgreement,
-    )
-
-    onChange({
-      ...client,
-      ClientAgreements: nextAgreements,
-    })
+    applyDiscountsToAgreement(agreementNetId, updatedProductGroupDiscounts)
+    discountDraftRef.current = null
+    onPendingDiscountDraftChange?.(null)
   }
+
+  const handleDiscountDraftChange = useCallback((draft: DiscountsTreeDraft) => {
+    const nextDraft = draft.isDirty ? draft : null
+
+    discountDraftRef.current = nextDraft
+    onPendingDiscountDraftChange?.(nextDraft)
+  }, [onPendingDiscountDraftChange])
 
   function handleAddDocuments(files: File[]) {
     pendingDocumentsRef.current = [...pendingDocumentsRef.current, ...files]
@@ -356,10 +420,6 @@ export function PricingPanel({
       setUploadingDocuments(false)
     }
   }
-
-  const selectedAgreementLabel = highlightedAgreement?.Agreement
-    ? `${getAgreementName(highlightedAgreement.Agreement, t('Основний договір'))} (${highlightedAgreement.Agreement.Organization?.Name || ''})`
-    : ''
 
   if (isLoadingLookups) {
     return (
@@ -427,6 +487,7 @@ export function PricingPanel({
                   productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts || []}
                   selectedAgreementName={selectedAgreementLabel}
                   onApplyChanges={handleApplyDiscounts}
+                  onDraftChange={handleDiscountDraftChange}
                 />
               </Card>
             )}

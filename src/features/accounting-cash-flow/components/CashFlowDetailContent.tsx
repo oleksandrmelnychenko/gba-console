@@ -1,4 +1,4 @@
-import { Anchor, Button, Divider, Group, Stack } from '@mantine/core'
+import { Anchor, Badge, Button, Divider, Group, Stack } from '@mantine/core'
 import { IconExternalLink, IconFileTypePdf } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -141,6 +141,14 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
           cell: (row) => displayValue(row.Currency),
         },
         {
+          id: 'paymentStatus',
+          header: t('Оплата'),
+          width: 140,
+          minWidth: 120,
+          accessor: (row) => row.PaymentStatus?.label,
+          cell: (row) => renderPaymentStatus(row, t),
+        },
+        {
           id: 'netPrice',
           header: t('Вартість'),
           width: 160,
@@ -202,6 +210,14 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
         cell: (row) => displayValue(row.Currency),
       },
       {
+        id: 'paymentStatus',
+        header: t('Оплата'),
+        width: 140,
+        minWidth: 120,
+        accessor: (row) => row.PaymentStatus?.label,
+        cell: (row) => renderPaymentStatus(row, t),
+      },
+      {
         id: 'netPrice',
         header: t('Вартість Нетто'),
         width: 130,
@@ -239,6 +255,18 @@ function useDetailColumns(columnKind: CashFlowDetailViewModel['columnKind']): Da
       },
     ]
   }, [columnKind, t])
+}
+
+function renderPaymentStatus(row: CashFlowDetailRow, t: (key: string) => string) {
+  if (!row.PaymentStatus) {
+    return displayValue(undefined)
+  }
+
+  return (
+    <Badge color={row.PaymentStatus.color} size="sm" variant="light">
+      {t(row.PaymentStatus.label)}
+    </Badge>
+  )
 }
 
 function formatDateTime(value?: string): string {

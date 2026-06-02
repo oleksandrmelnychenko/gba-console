@@ -240,6 +240,7 @@ export type ClientAgreement = {
   Created?: Date | string
   Updated?: Date | string
   Deleted?: boolean
+  __ProductGroupDiscountsChanged?: boolean
 }
 
 export type AgreementUpsert = Agreement

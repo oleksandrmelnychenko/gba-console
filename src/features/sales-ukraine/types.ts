@@ -173,9 +173,12 @@ export type SalesUkraineStatus = SalesUkraineEntity & {
 
 export type SalesUkraineProduct = SalesUkraineEntity & {
   Articul?: string
+  IsForSale?: boolean
+  IsForZeroSale?: boolean
   MainOriginalNumber?: string
   Name?: string
   NameUA?: string
+  Top?: string
   VendorCode?: string
 }
 
@@ -197,6 +200,7 @@ export type SalesUkraineOrderItemShiftStatus = SalesUkraineEntity & {
 }
 
 export type SalesUkraineOrderItem = SalesUkraineEntity & {
+  Discount?: number
   OneTimeDiscount?: number
   OneTimeDiscountComment?: string
   PricePerItem?: number

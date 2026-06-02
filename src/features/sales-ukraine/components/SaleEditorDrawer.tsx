@@ -53,6 +53,7 @@ import {
   updateSaleFromData,
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
+import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
 import { isStatusType } from '../saleStatus'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
@@ -616,16 +617,20 @@ function useItemColumns({
       cell: (item) => formatAmount(getNumber(item.PricePerItem)),
     },
     {
+      id: 'baseDiscount',
+      header: t('Базова знижка'),
+      width: 132,
+      align: 'right',
+      accessor: (item) => getVisibleOrderItemBaseDiscount(item),
+      cell: (item) => formatPercent(getVisibleOrderItemBaseDiscount(item)),
+    },
+    {
       id: 'discount',
-      header: t('Знижка'),
-      width: 100,
+      header: t('Разова знижка'),
+      width: 132,
       align: 'right',
       accessor: (item) => getNumber(item.OneTimeDiscount),
-      cell: (item) => {
-        const discount = getNumber(item.OneTimeDiscount)
-
-        return discount ? `${amountFormatter.format(discount)} %` : '—'
-      },
+      cell: (item) => formatPercent(getNumber(item.OneTimeDiscount)),
     },
     {
       id: 'total',
@@ -1215,6 +1220,10 @@ function getUserName(sale: SalesUkraineSale): string {
 
 function formatAmount(value: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : '—'
+}
+
+function formatPercent(value: number | null): string {
+  return typeof value === 'number' ? `${amountFormatter.format(value)} %` : '—'
 }
 
 function getNumber(value: unknown): number | null {

@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { Client, ClientUpsertResult } from '../types'
+import { toSaveDiscount } from '../productGroupDiscountPayload'
+import type { Client, ClientAgreement, ClientUpsertResult } from '../types'
 
 export async function getClientById(netId: string): Promise<Client | null> {
   const result = await apiRequest<unknown>('/clients/get', {
@@ -17,7 +18,7 @@ export async function createClient(client: Client, parentId?: string | null): Pr
     query: {
       parentId: parentId || undefined,
     },
-    body: client,
+    body: prepareClientSavePayload(client),
   })
 
   return normalizeClient(result)
@@ -26,7 +27,7 @@ export async function createClient(client: Client, parentId?: string | null): Pr
 export async function updateClient(client: Client): Promise<ClientUpsertResult> {
   const result = await apiRequest<unknown>('/clients/update', {
     method: 'POST',
-    body: client,
+    body: prepareClientSavePayload(client),
   })
 
   return normalizeClient(result)
@@ -47,4 +48,32 @@ function normalizeClient(result: unknown): Client | null {
   }
 
   return null
+}
+
+export function prepareClientSavePayload(client: Client): Client {
+  if (!Array.isArray(client.ClientAgreements)) {
+    return client
+  }
+
+  return {
+    ...client,
+    ClientAgreements: client.ClientAgreements.map(prepareClientAgreementSavePayload),
+  }
+}
+
+function prepareClientAgreementSavePayload(clientAgreement: ClientAgreement): ClientAgreement {
+  const {
+    __ProductGroupDiscountsChanged: discountsChanged,
+    ProductGroupDiscounts,
+    ...payload
+  } = clientAgreement
+
+  if (!discountsChanged) {
+    return payload
+  }
+
+  return {
+    ...payload,
+    ProductGroupDiscounts: (ProductGroupDiscounts || []).map(toSaveDiscount),
+  }
 }

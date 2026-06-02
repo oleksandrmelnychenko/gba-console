@@ -92,9 +92,10 @@ function FutureReservationForm({
   const numericCount = typeof count === 'number' ? count : Number(String(count).replace(',', '.'))
   const isValid = Number.isFinite(numericCount) && numericCount > 0
   const supplyOrderNetId = order?.NetUID || order?.NetUid
+  const canReserve = Boolean(clientNetId && product.NetUid && supplyOrderNetId && isValid)
 
   async function reserve() {
-    if (!isValid || !supplyOrderNetId) {
+    if (!clientNetId || !product.NetUid || !supplyOrderNetId || !isValid) {
       return
     }
 
@@ -102,7 +103,7 @@ function FutureReservationForm({
 
     try {
       await createFutureReservation({
-        ClientNetId: clientNetId ?? undefined,
+        ClientNetId: clientNetId,
         Count: numericCount,
         ProductNetId: product.NetUid,
         RemindDate: order?.OrderArrivedDate,
@@ -136,6 +137,10 @@ function FutureReservationForm({
           {t('Найближча поставка')}: {order?.Number ? `${order.Number} · ` : ''}
           {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}
         </Alert>
+      ) : !clientNetId ? (
+        <Alert color="orange" variant="light">
+          {t('Оберіть клієнта для резервування')}
+        </Alert>
       ) : (
         <Alert color="orange" variant="light">
           {t('Немає найближчої поставки для резервування')}
@@ -156,7 +161,7 @@ function FutureReservationForm({
         <Button color="gray" disabled={isSaving} variant="subtle" onClick={onCancel}>
           {t('Скасувати')}
         </Button>
-        <Button disabled={!isValid || !supplyOrderNetId} loading={isSaving} onClick={reserve}>
+        <Button disabled={!canReserve} loading={isSaving} onClick={reserve}>
           {t('Зарезервувати')}
         </Button>
       </Group>

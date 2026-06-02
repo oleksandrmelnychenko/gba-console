@@ -1,4 +1,9 @@
 import type { AccountingCashFlowHeadItem } from '../types'
+import {
+  type AccountingCashFlowPaymentStatus,
+  getAccountingCashFlowPaymentStatus,
+  getAccountingCashFlowRecordPaymentStatus,
+} from '../accountingCashFlowPaymentStatus'
 
 export type CashFlowDetailRow = {
   ContainerNumber?: string
@@ -8,6 +13,7 @@ export type CashFlowDetailRow = {
   Name?: string
   NetPrice?: number
   Number?: string
+  PaymentStatus?: AccountingCashFlowPaymentStatus | null
   ServiceNumber?: string
   Symbol?: string
   Vat?: number
@@ -129,14 +135,19 @@ function mapBaseService(
     columnKind: 'baseService',
     documents: collectServiceDocuments(service),
     linkToOrder: getLinkToOrder(service),
-    rows: getRowsFromBaseService(service, Boolean(item.IsAccounting)),
+    rows: getRowsFromBaseService(service, Boolean(item.IsAccounting), getAccountingCashFlowPaymentStatus(item)),
     title: stringValue(item.Name),
   }
 }
 
-function getRowsFromBaseService(service: Record<string, unknown>, isAccounting: boolean): CashFlowDetailRow[] {
+function getRowsFromBaseService(
+  service: Record<string, unknown>,
+  isAccounting: boolean,
+  fallbackPaymentStatus: AccountingCashFlowPaymentStatus | null,
+): CashFlowDetailRow[] {
   const currencyCode = readPath(service, ['SupplyOrganizationAgreement', 'Currency', 'Code'])
   const detailItems = readArray(service, 'ServiceDetailItems')
+  const servicePaymentStatus = getAccountingCashFlowRecordPaymentStatus(service) || fallbackPaymentStatus
 
   if (detailItems.length > 0) {
     return detailItems.map((detailItem) => {
@@ -150,6 +161,7 @@ function getRowsFromBaseService(service: Record<string, unknown>, isAccounting: 
         Name: stringValue(key?.Name),
         NetPrice: numberValue(detail?.NetPrice),
         Number: stringValue(service.Number),
+        PaymentStatus: getAccountingCashFlowRecordPaymentStatus(detail) || servicePaymentStatus,
         ServiceNumber: stringValue(service.ServiceNumber),
         Symbol: stringValue(key?.Symbol),
         Vat: numberValue(detail?.Vat),
@@ -166,6 +178,7 @@ function getRowsFromBaseService(service: Record<string, unknown>, isAccounting: 
       Name: stringValue(service.Name) || stringValue(service.Number),
       NetPrice: numberValue(isAccounting ? service.AccountingNetPrice : service.NetPrice),
       Number: stringValue(service.Number),
+      PaymentStatus: servicePaymentStatus,
       ServiceNumber: stringValue(service.ServiceNumber),
       Symbol: '',
       Vat: numberValue(isAccounting ? service.AccountingVat : service.Vat),
@@ -193,6 +206,7 @@ function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailV
       FromData: stringValue(readPath(service, ['BillOfLadingDocument', 'Date'])),
       NetPrice: numberValue(service?.NetPrice),
       Number: stringValue(service?.Number),
+      PaymentStatus: getAccountingCashFlowRecordPaymentStatus(service) || getAccountingCashFlowPaymentStatus(item),
       ServiceNumber: stringValue(service?.ServiceNumber),
     }
   })

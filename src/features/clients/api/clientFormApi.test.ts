@@ -66,6 +66,89 @@ describe('client form API contracts', () => {
     })
   })
 
+  it('strips unchanged product group discounts from client save payloads', async () => {
+    const client: Client = {
+      NetUid: 'client-net-id',
+      ClientAgreements: [
+        {
+          Agreement: { NetUid: 'agreement-1' },
+          ProductGroupDiscounts: [
+            {
+              DiscountRate: 5,
+              ProductGroup: { Id: 10, Name: 'Root' },
+              ProductGroupId: 10,
+              SubProductGroupDiscounts: [
+                {
+                  DiscountRate: 3,
+                  ProductGroup: { Id: 11, Name: 'Child' },
+                  ProductGroupId: 11,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await updateClient(client)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+      method: 'POST',
+      body: {
+        NetUid: 'client-net-id',
+        ClientAgreements: [{ Agreement: { NetUid: 'agreement-1' } }],
+      },
+    })
+  })
+
+  it('keeps only marked compact discount changes in client save payloads', async () => {
+    const client: Client = {
+      NetUid: 'client-net-id',
+      ClientAgreements: [
+        {
+          Agreement: { NetUid: 'agreement-1' },
+          ProductGroupDiscounts: [
+            {
+              DiscountRate: 12,
+              IsActive: true,
+              IsSelected: true,
+              ProductGroup: { Id: 10, Name: 'Root', SubProductGroups: [{ Id: 99 }] },
+              ProductGroupId: 10,
+              SubProductGroupDiscounts: [{ DiscountRate: 7, ProductGroupId: 11 }],
+            },
+          ],
+          __ProductGroupDiscountsChanged: true,
+        },
+      ],
+    }
+    apiRequestMock.mockResolvedValueOnce(client)
+
+    await updateClient(client)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/update', {
+      method: 'POST',
+      body: {
+        NetUid: 'client-net-id',
+        ClientAgreements: [
+          {
+            Agreement: { NetUid: 'agreement-1' },
+            ProductGroupDiscounts: [
+              {
+                DiscountRate: 12,
+                IsActive: true,
+                IsSelected: undefined,
+                ProductGroup: { FullName: undefined, Id: 10, Name: 'Root', NetUid: undefined },
+                ProductGroupId: 10,
+                SubProductGroupDiscounts: [],
+              },
+            ],
+          },
+        ],
+      },
+    })
+  })
+
   it('deletes a client by net id', async () => {
     apiRequestMock.mockResolvedValueOnce(null)
 

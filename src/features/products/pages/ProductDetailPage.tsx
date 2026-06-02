@@ -107,6 +107,7 @@ import {
   getProductTitle,
   isProductRealtimePayloadForProduct,
 } from '../utils'
+import { getProductPriceBreakdown } from '../productPricing'
 
 export type ProductDetailPanel = 'audit' | 'edit' | 'images' | 'movement' | 'remains' | 'specification' | 'storage-history' | 'writeoff'
 
@@ -2237,13 +2238,31 @@ function formatSpecificationAuthor(specification: ProductSpecification): string 
 }
 
 function PriceRow({ price }: { price: CalculatedProductPrice }) {
+  const { t } = useI18n()
+  const breakdown = getProductPriceBreakdown(price)
+
   return (
-    <Group justify="space-between" gap="md" wrap="nowrap">
-      <Text size="sm">{displayValue(price.Pricing?.Name)}</Text>
-      <Text size="sm" fw={600}>
-        {formatPrice(price.RetailPriceEUR)} / {formatPrice(price.RetailPriceLocal)}
-      </Text>
-    </Group>
+    <Box py={4}>
+      <Group justify="space-between" gap="md" wrap="nowrap">
+        <Text size="sm">{displayValue(breakdown.pricingName)}</Text>
+        <Text size="sm" fw={600}>
+          {formatPrice(breakdown.retailPriceEUR)} / {formatPrice(breakdown.retailPriceLocal)}
+        </Text>
+      </Group>
+      {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
+        <Group gap={6} mt={4} wrap="wrap">
+          {breakdown.hasBasePrice ? (
+            <Text c="dimmed" size="xs">{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+          ) : null}
+          {breakdown.discountPriceEUR !== undefined ? (
+            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+          ) : null}
+          {breakdown.discountRate !== undefined ? (
+            <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
+          ) : null}
+        </Group>
+      ) : null}
+    </Box>
   )
 }
 

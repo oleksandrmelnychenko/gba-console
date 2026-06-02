@@ -38,6 +38,8 @@ import { ContactInfoFields } from '../components/form/ContactInfoFields'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
+import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
+import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { validateClientForm, validateRegionCodeSubmitState } from '../components/form/validateClientForm'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 
@@ -86,6 +88,7 @@ type NewStepContentProps = {
   onCreateCountry: (name: string, code: string) => void
   onCreateRegion: (name: string) => void
   onDraftChange: (client: Client) => void
+  onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   onPricingValidityChange: (isValid: boolean) => void
   step: NewClientStep
 }
@@ -115,6 +118,7 @@ export function ClientNewPage() {
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
   const pendingDocumentsRef = useRef<File[]>([])
+  const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
   const regionCodeRequestRef = useRef(0)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
@@ -441,7 +445,8 @@ export function ClientNewPage() {
       return
     }
 
-    const validationErrors = validateClientForm(draft, role, t('Забагато символів'))
+    const draftToSubmit = applyPendingDiscountDraft(draft, pendingDiscountDraftRef.current) as ClientDraft
+    const validationErrors = validateClientForm(draftToSubmit, role, t('Забагато символів'))
 
     if (Object.keys(validationErrors).length > 0) {
       setError(t('Перевірте правильність заповнення форми'))
@@ -459,7 +464,7 @@ export function ClientNewPage() {
       return
     }
 
-    if ((draft.ClientAgreements || []).length === 0) {
+    if ((draftToSubmit.ClientAgreements || []).length === 0) {
       setError(t('Додайте договір'))
       return
     }
@@ -468,7 +473,7 @@ export function ClientNewPage() {
     setError(null)
 
     try {
-      const createdClient = await createClient(buildCreatePayload(draft), routeState?.parentClientId)
+      const createdClient = await createClient(buildCreatePayload(draftToSubmit), routeState?.parentClientId)
       const pendingDocuments = pendingDocumentsRef.current
       let documentsWereSaved = true
 
@@ -481,7 +486,7 @@ export function ClientNewPage() {
               ...createdClient,
               ClientContractDocuments: [
                 ...(createdClient.ClientContractDocuments || []),
-                ...(draft.ClientContractDocuments || []),
+                ...(draftToSubmit.ClientContractDocuments || []),
               ],
             },
             pendingDocuments,
@@ -501,7 +506,8 @@ export function ClientNewPage() {
       })
       setDraft(createEmptyDraft())
       pendingDocumentsRef.current = []
-      navigate(getClientType(draft) === CLIENT_TYPE_PROVIDER ? '/suppliers' : '/clients', {
+      pendingDiscountDraftRef.current = null
+      navigate(getClientType(draftToSubmit) === CLIENT_TYPE_PROVIDER ? '/suppliers' : '/clients', {
         replace: true,
         state: createdClient
           ? {
@@ -589,6 +595,9 @@ export function ClientNewPage() {
                     onCreateCountry={handleCreateCountry}
                     onCreateRegion={handleCreateRegion}
                     onDraftChange={setDraftClient}
+                    onPendingDiscountDraftChange={(discountDraft) => {
+                      pendingDiscountDraftRef.current = discountDraft
+                    }}
                     onPricingValidityChange={setPricingValid}
                   />
                 </Card>
@@ -657,6 +666,7 @@ function NewStepContent({
   onCreateCountry,
   onCreateRegion,
   onDraftChange,
+  onPendingDiscountDraftChange,
   onPricingValidityChange,
 }: NewStepContentProps) {
   const { t } = useI18n()
@@ -746,6 +756,7 @@ function NewStepContent({
           isProvider={getClientType(draft) === CLIENT_TYPE_PROVIDER}
           mode="new"
           onChange={onDraftChange}
+          onPendingDiscountDraftChange={onPendingDiscountDraftChange}
           onValidityChange={onPricingValidityChange}
         />
       </Stack>

@@ -1,5 +1,4 @@
-import { Alert, Card, Group, Select, Stack, Text, Textarea } from '@mantine/core'
-import { IconInfoCircle } from '@tabler/icons-react'
+import { Card, Group, Select, Stack, Text, Textarea } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleTransporterTypes, getSaleTransportersByType } from '../../api/salesUkraineApi'
@@ -152,11 +151,7 @@ export function NewSaleReviewStep({
         />
       </Group>
 
-      {selfCheckout ? (
-        <Alert color="blue" icon={<IconInfoCircle size={18} />} variant="light">
-          {t('Самовивіз — отримувач не потрібен')}
-        </Alert>
-      ) : (
+      {!selfCheckout && (
         <Group grow align="start">
           <Select
             searchable

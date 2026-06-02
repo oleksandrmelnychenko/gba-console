@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
+import type { ProductGroup } from '../../product-groups/types'
 import { updateClient } from './clientFormApi'
 import type {
   AgreementUpsert,
@@ -120,32 +121,102 @@ export async function getAgreementProductGroupDiscounts(
     ? await getRootProductGroups(rootNetId)
     : (await getProductGroups()).ProductGroups
 
-  const existing = new Map<number, ProductGroupDiscount>()
+  return mergeProductGroupDiscounts(productGroups, productGroupDiscounts)
+}
 
-  productGroupDiscounts.forEach((discount) => {
-    if (typeof discount.ProductGroupId === 'number') {
-      existing.set(discount.ProductGroupId, discount)
-    }
-  })
+export function mergeProductGroupDiscounts(
+  productGroups: ProductGroup[],
+  productGroupDiscounts: ProductGroupDiscount[] = [],
+): ProductGroupDiscount[] {
+  const existing = buildDiscountsByProductGroupId(productGroupDiscounts)
 
   return productGroups.map((productGroup) => {
-    const matched = typeof productGroup.Id === 'number' ? existing.get(productGroup.Id) : undefined
-
-    if (matched) {
-      return {
-        ...matched,
-        ProductGroup: productGroup,
-      }
-    }
-
-    return {
-      ProductGroupId: productGroup.Id,
-      ProductGroup: productGroup,
-      IsActive: true,
-      DiscountRate: 0,
-      SubProductGroupDiscounts: [],
-    }
+    return buildProductGroupDiscount(productGroup, existing, undefined, new Set())
   })
+}
+
+function buildDiscountsByProductGroupId(productGroupDiscounts: ProductGroupDiscount[]): Map<number, ProductGroupDiscount> {
+  const existing = new Map<number, ProductGroupDiscount>()
+
+  function visit(discounts: ProductGroupDiscount[]) {
+    discounts.forEach((discount) => {
+      const productGroupId = getDiscountProductGroupId(discount)
+
+      if (typeof productGroupId === 'number') {
+        existing.set(productGroupId, discount)
+      }
+
+      if (Array.isArray(discount.SubProductGroupDiscounts)) {
+        visit(discount.SubProductGroupDiscounts)
+      }
+    })
+  }
+
+  visit(productGroupDiscounts)
+
+  return existing
+}
+
+function buildProductGroupDiscount(
+  productGroup: ProductGroup,
+  existing: Map<number, ProductGroupDiscount>,
+  parentDiscount: ProductGroupDiscount | undefined,
+  visitedProductGroupIds: Set<number>,
+): ProductGroupDiscount {
+  const productGroupId = productGroup.Id
+  const matched = typeof productGroupId === 'number' ? existing.get(productGroupId) : undefined
+  const nextVisitedIds = new Set(visitedProductGroupIds)
+
+  if (typeof productGroupId === 'number') {
+    nextVisitedIds.add(productGroupId)
+  }
+
+  const subProductGroups = getSubProductGroups(productGroup).filter((subProductGroup) => {
+    return typeof subProductGroup.Id !== 'number' || !nextVisitedIds.has(subProductGroup.Id)
+  })
+
+  const baseDiscount: ProductGroupDiscount = {
+    ...(matched || {}),
+    ClientAgreementId: matched?.ClientAgreementId ?? parentDiscount?.ClientAgreementId,
+    DiscountRate: matched?.DiscountRate ?? 0,
+    IsActive: matched?.IsActive ?? true,
+    ParentProductGroupDiscountId: parentDiscount?.Id ?? matched?.ParentProductGroupDiscountId,
+    ProductGroup: productGroup,
+    ProductGroupId: productGroupId ?? matched?.ProductGroupId,
+  }
+
+  const matchedSubDiscounts = Array.isArray(matched?.SubProductGroupDiscounts)
+    ? matched.SubProductGroupDiscounts
+    : []
+
+  return {
+    ...baseDiscount,
+    SubProductGroupDiscounts: subProductGroups.length > 0
+      ? subProductGroups.map((subProductGroup) =>
+          buildProductGroupDiscount(subProductGroup, existing, baseDiscount, nextVisitedIds),
+        )
+      : matchedSubDiscounts,
+  }
+}
+
+function getDiscountProductGroupId(discount: ProductGroupDiscount): number | undefined {
+  if (typeof discount.ProductGroupId === 'number') {
+    return discount.ProductGroupId
+  }
+
+  const productGroup = discount.ProductGroup as { Id?: unknown } | undefined
+
+  return typeof productGroup?.Id === 'number' ? productGroup.Id : undefined
+}
+
+function getSubProductGroups(productGroup: ProductGroup): ProductGroup[] {
+  return (productGroup.SubProductGroups || []).reduce<ProductGroup[]>((subProductGroups, productSubGroup) => {
+    if (productSubGroup.SubProductGroup) {
+      subProductGroups.push(productSubGroup.SubProductGroup)
+    }
+
+    return subProductGroups
+  }, [])
 }
 
 function upsertClientAgreement(

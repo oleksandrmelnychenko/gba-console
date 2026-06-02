@@ -78,6 +78,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
+  CalculatedProductPrice,
   Product,
   ProductFileUploadConfiguration,
   ProductFileUploadMode,
@@ -108,6 +109,13 @@ import {
   getRelatedProductRowColor,
   isProductRealtimePayloadForProduct,
 } from '../utils'
+import {
+  buildProductUploadPriceConfigurations,
+  getDuplicateProductUploadPricingIds,
+  getProductPriceBreakdown,
+  hasDuplicateProductUploadPricings,
+  isDuplicateProductUploadPricingId,
+} from '../productPricing'
 import { ShopImageGallery } from '../components/ShopImageGallery'
 import {
   PRODUCT_BALANCES_PERMISSION,
@@ -258,7 +266,7 @@ type ProductFileUploadPriceRow = {
   pricingId: string
 }
 type ProductFileUploadForm = ProductFileUploadColumnForm & {
-  files: File[]
+  file: File | null
   mode: ProductFileUploadMode
   prices: ProductFileUploadPriceRow[]
 }
@@ -1098,19 +1106,7 @@ function ProductInlineView({
           <Stack gap={4}>
             {prices.length > 0 ? (
               prices.map((price, index) => (
-                <Group
-                  key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`}
-                  justify="space-between"
-                  gap="sm"
-                  wrap="nowrap"
-                  className="product-inline-price-row"
-                >
-                  <Text size="sm" lineClamp={1}>{displayValue(price.Pricing?.Name)}</Text>
-                  <Group gap="md" wrap="nowrap">
-                    <Text size="sm" fw={650}>{formatPrice(price.RetailPriceEUR)}</Text>
-                    <Text size="sm" fw={650}>{formatPrice(price.RetailPriceLocal)}</Text>
-                  </Group>
-                </Group>
+                <ProductInlinePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
               ))
             ) : (
               <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
@@ -1140,6 +1136,36 @@ function ProductInlineView({
         title={getProductTitle(product)}
         onClose={() => setPreviewImageUrl(null)}
       />
+    </Box>
+  )
+}
+
+function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
+  const { t } = useI18n()
+  const breakdown = getProductPriceBreakdown(price)
+
+  return (
+    <Box className="product-inline-price-row">
+      <Group justify="space-between" gap="sm" wrap="nowrap">
+        <Text size="sm" lineClamp={1}>{displayValue(breakdown.pricingName)}</Text>
+        <Group gap="md" wrap="nowrap">
+          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceEUR)}</Text>
+          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceLocal)}</Text>
+        </Group>
+      </Group>
+      {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
+        <Group gap={6} mt={4} wrap="wrap">
+          {breakdown.hasBasePrice ? (
+            <Text c="dimmed" size="xs">{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+          ) : null}
+          {breakdown.discountPriceEUR !== undefined ? (
+            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+          ) : null}
+          {breakdown.discountRate !== undefined ? (
+            <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
+          ) : null}
+        </Group>
+      ) : null}
     </Box>
   )
 }
@@ -2058,7 +2084,16 @@ function ProductFileUploadModal({
   })
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setUploading] = useState(false)
-  const canSubmit = Boolean(form.files.length > 0 && form.startRow > 0 && form.endRow > 0 && form.vendorCode > 0 && !isUploading)
+  const duplicatePricingIds = getDuplicateProductUploadPricingIds(form.prices)
+  const hasDuplicatePricingRows = duplicatePricingIds.length > 0
+  const canSubmit = Boolean(
+    Boolean(form.file)
+    && form.startRow > 0
+    && form.endRow > 0
+    && form.vendorCode > 0
+    && !hasDuplicatePricingRows
+    && !isUploading,
+  )
   const pricingOptions = pricingState.data.reduce<Array<{ label: string; value: string }>>((options, pricing) => {
     const value = String(pricing.Id || '')
 
@@ -2109,6 +2144,7 @@ function ProductFileUploadModal({
   }
 
   function setField<K extends keyof ProductFileUploadForm>(field: K, value: ProductFileUploadForm[K]) {
+    setError(null)
     setForm((currentForm) => ({
       ...currentForm,
       [field]: value,
@@ -2120,6 +2156,7 @@ function ProductFileUploadModal({
   }
 
   function addPriceRow() {
+    setError(null)
     setForm((currentForm) => ({
       ...currentForm,
       prices: [
@@ -2134,6 +2171,7 @@ function ProductFileUploadModal({
   }
 
   function updatePriceRow(key: string, patch: Partial<ProductFileUploadPriceRow>) {
+    setError(null)
     setForm((currentForm) => ({
       ...currentForm,
       prices: currentForm.prices.map((priceRow) => (
@@ -2143,6 +2181,7 @@ function ProductFileUploadModal({
   }
 
   function removePriceRow(key: string) {
+    setError(null)
     setForm((currentForm) => ({
       ...currentForm,
       prices: currentForm.prices.filter((priceRow) => priceRow.key !== key),
@@ -2150,8 +2189,18 @@ function ProductFileUploadModal({
   }
 
   async function submitUpload() {
+    if (hasDuplicateProductUploadPricings(form.prices)) {
+      setError(t('Один тип ціни вибрано кілька разів'))
+      return
+    }
+
     if (!canSubmit) {
       setError(t('Виберіть файл і заповніть обовʼязкові колонки'))
+      return
+    }
+
+    if (!form.file) {
+      setError(t('Виберіть файл'))
       return
     }
 
@@ -2164,7 +2213,7 @@ function ProductFileUploadModal({
     setError(null)
 
     try {
-      await uploadProductsFromFile(buildProductFileUploadConfiguration(form), form.files)
+      await uploadProductsFromFile(buildProductFileUploadConfiguration(form), form.file)
       notifications.show({ color: 'green', message: t('Файл товарів завантажено') })
       onClose()
       onUploadSuccess()
@@ -2183,6 +2232,11 @@ function ProductFileUploadModal({
             {error || pricingState.error}
           </Alert>
         ) : null}
+        {!error && !pricingState.error && hasDuplicatePricingRows ? (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {t('Один тип ціни вибрано кілька разів. Приберіть дубль перед завантаженням.')}
+          </Alert>
+        ) : null}
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <Select
@@ -2194,11 +2248,10 @@ function ProductFileUploadModal({
           />
           <FileInput
             clearable
-            multiple
             label={t('Файл')}
             placeholder={t('Оберіть файл')}
-            value={form.files}
-            onChange={(nextFiles) => setField('files', Array.isArray(nextFiles) ? nextFiles : [])}
+            value={form.file}
+            onChange={(nextFile) => setField('file', nextFile)}
           />
         </SimpleGrid>
 
@@ -2236,30 +2289,35 @@ function ProductFileUploadModal({
           </Group>
         ) : form.prices.length > 0 ? (
           <Stack gap="xs">
-            {form.prices.map((priceRow) => (
-              <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
-                <Select
-                  allowDeselect={false}
-                  data={pricingOptions}
-                  label={t('Тип ціни')}
-                  style={{ flex: '1 1 240px' }}
-                  value={priceRow.pricingId}
-                  onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
-                />
-                <NumberInput
-                  label={t('Колонка')}
-                  min={0}
-                  style={{ flex: '0 0 130px' }}
-                  value={priceRow.columnNumber}
-                  onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
-                />
-                <Tooltip label={t('Видалити')}>
-                  <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
-                    <IconTrash size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-            ))}
+            {form.prices.map((priceRow) => {
+              const isDuplicatePricing = isDuplicateProductUploadPricingId(form.prices, priceRow.pricingId)
+
+              return (
+                <Group key={priceRow.key} gap="xs" wrap="nowrap" align="flex-end">
+                  <Select
+                    allowDeselect={false}
+                    data={pricingOptions}
+                    error={isDuplicatePricing ? t('Дубль типу ціни') : undefined}
+                    label={t('Тип ціни')}
+                    style={{ flex: '1 1 240px' }}
+                    value={priceRow.pricingId}
+                    onChange={(value) => updatePriceRow(priceRow.key, { pricingId: value || '' })}
+                  />
+                  <NumberInput
+                    label={t('Колонка')}
+                    min={0}
+                    style={{ flex: '0 0 130px' }}
+                    value={priceRow.columnNumber}
+                    onChange={(value) => updatePriceRow(priceRow.key, { columnNumber: readProductUploadNumber(value) })}
+                  />
+                  <Tooltip label={t('Видалити')}>
+                    <ActionIcon aria-label={t('Видалити')} color="red" variant="light" onClick={() => removePriceRow(priceRow.key)}>
+                      <IconTrash size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Group>
+              )
+            })}
           </Stack>
         ) : (
           <Text c="dimmed" size="sm">{t('Ціни не додані')}</Text>
@@ -2477,7 +2535,7 @@ function createProductFileUploadForm(): ProductFileUploadForm {
     descriptionRU: 0,
     descriptionUA: 0,
     endRow: 0,
-    files: [],
+    file: null,
     isForSale: 0,
     isForWeb: 0,
     mainOriginalNumber: 0,
@@ -2501,16 +2559,7 @@ function createProductFileUploadForm(): ProductFileUploadForm {
 }
 
 function buildProductFileUploadConfiguration(form: ProductFileUploadForm): ProductFileUploadConfiguration {
-  const priceConfigurations = form.prices.reduce<ProductFileUploadConfiguration['PriceConfigurations']>((items, priceRow) => {
-    if (priceRow.pricingId && priceRow.columnNumber > 0) {
-      items.push({
-        ColumnNumber: priceRow.columnNumber,
-        PricingId: Number(priceRow.pricingId),
-      })
-    }
-
-    return items
-  }, [])
+  const priceConfigurations = buildProductUploadPriceConfigurations(form.prices)
 
   return {
     DescriptionPL: 0,
