@@ -1,5 +1,5 @@
-import { Alert, Button, Card, Group, Pagination, Select, Stack, Text } from '@mantine/core'
-import { IconAlertCircle, IconFileDownload } from '@tabler/icons-react'
+import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text } from '@mantine/core'
+import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconFileDownload } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -39,7 +39,7 @@ const DEBTORS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['regionCode', 'clientName'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -261,6 +261,43 @@ export function SalesDebtorsPage() {
             >
               {t('Сформувати звіт')}
             </Button>
+            <Group gap={4} wrap="nowrap">
+              <Select
+                aria-label={t('Розмір сторінки')}
+                data={pageSizeOptions}
+                disabled={isLoading}
+                size="xs"
+                value={String(pageSize)}
+                w={72}
+                onChange={(value) => {
+                  setPage(1)
+                  setPageSize(Number(value) || PAGE_SIZE)
+                }}
+              />
+              <Text size="xs" c="dark" fw={700} style={{ whiteSpace: 'nowrap' }}>
+                {t('стор.')} {page}
+              </Text>
+              <ActionIcon
+                aria-label={t('Попередня сторінка')}
+                color="gray"
+                disabled={page <= 1 || isLoading}
+                size="sm"
+                variant="subtle"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+              >
+                <IconChevronLeft size={16} />
+              </ActionIcon>
+              <ActionIcon
+                aria-label={t('Наступна сторінка')}
+                color="gray"
+                disabled={page >= totalPages || isLoading}
+                size="sm"
+                variant="subtle"
+                onClick={() => setPage((current) => current + 1)}
+              >
+                <IconChevronRight size={16} />
+              </ActionIcon>
+            </Group>
           </Group>
 
           {error && (
@@ -269,20 +306,6 @@ export function SalesDebtorsPage() {
             </Alert>
           )}
 
-          <Group justify="space-between" gap="sm">
-            <Select
-              aria-label={t('Розмір сторінки')}
-              data={pageSizeOptions}
-              value={String(pageSize)}
-              w={90}
-              onChange={(value) => {
-                setPage(1)
-                setPageSize(Number(value) || PAGE_SIZE)
-              }}
-            />
-            <Pagination total={totalPages} value={page} onChange={setPage} />
-          </Group>
-
           <DataTable
             columns={columns}
             data={debtors.ClientInDebtors}
@@ -290,41 +313,33 @@ export function SalesDebtorsPage() {
             emptyText={t('Боржників не знайдено')}
             getRowId={(debtor, index) => String(debtor.ClientNetId || index)}
             isLoading={isLoading}
-            layoutVersion="sales-debtors-table-1"
+            layoutVersion="sales-debtors-table-2-compact"
             loadingText={t('Завантаження боржників')}
             maxHeight="calc(100vh - 360px)"
             minWidth={1100}
             tableId="sales-debtors"
           />
 
-          <Card withBorder radius="md" padding="sm">
-            <Group gap="xl">
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">
-                  {t('Загальна кількість днів')}
-                </Text>
-                <Text fw={600} c={debtors.TotalMissedDays < 0 ? 'red' : undefined}>
-                  {debtors.TotalMissedDays}
-                </Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">
-                  {t('Залишок боргу')}
-                </Text>
-                <Text fw={600}>
-                  {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} <Text span size="xs" c="dimmed">{currencyCode}</Text>
-                </Text>
-              </Stack>
-              <Stack gap={2}>
-                <Text size="xs" c="dimmed">
-                  {t('Прострочений борг')}
-                </Text>
-                <Text fw={600} c={debtors.TotalOverdueDebtorsValue > 0 ? 'red' : undefined}>
-                  {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} <Text span size="xs" c="dimmed">{currencyCode}</Text>
-                </Text>
-              </Stack>
-            </Group>
-          </Card>
+          <Group justify="flex-end" gap="xl" px="xs" wrap="wrap">
+            <Text size="sm" c="dimmed">
+              {t('Загальна кількість днів')}:{' '}
+              <Text span fw={700} c={debtors.TotalMissedDays < 0 ? 'red' : 'dark'}>
+                {debtors.TotalMissedDays}
+              </Text>
+            </Text>
+            <Text size="sm" c="dimmed">
+              {t('Залишок боргу')}:{' '}
+              <Text span fw={700} c="dark">
+                {moneyFormatter.format(debtors.TotalRemainderDebtorsValue)} {currencyCode}
+              </Text>
+            </Text>
+            <Text size="sm" c="dimmed">
+              {t('Прострочений борг')}:{' '}
+              <Text span fw={700} c={debtors.TotalOverdueDebtorsValue > 0 ? 'red' : 'dark'}>
+                {moneyFormatter.format(debtors.TotalOverdueDebtorsValue)} {currencyCode}
+              </Text>
+            </Text>
+          </Group>
         </Stack>
       </Card>
 
