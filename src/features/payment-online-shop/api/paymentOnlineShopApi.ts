@@ -49,7 +49,6 @@ export async function editPaymentImage(payload: EditPaymentImagePayload): Promis
       Amount: payload.amount,
       User: payload.user,
       Comment: payload.comment,
-      PaymentType: 0,
     },
   })
 

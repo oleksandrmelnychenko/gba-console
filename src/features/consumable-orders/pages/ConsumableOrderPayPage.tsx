@@ -145,7 +145,13 @@ export function ConsumableOrderPayPage() {
           return
         }
 
-        const calculation = await calculateConsumableOrder(nextOrder).catch(() => null)
+        const calculation = await calculateConsumableOrder(nextOrder).catch((calcError) => {
+          if (!cancelled) {
+            setError(calcError instanceof Error ? calcError.message : t('Не вдалося розрахувати оплату накладної'))
+          }
+
+          return null
+        })
         const calculatedOrder = calculation?.Collection[0] || nextOrder
         const defaultOrganization = calculatedOrder.SupplyOrganizationAgreement?.Organization || nextOrganizations[0] || null
         const defaultRegister = nextRegisters[0] || null
