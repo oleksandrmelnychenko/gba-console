@@ -1,0 +1,178 @@
+/* Compact sales grid — dense, header-less rows (legacy "Накладні та рахунки" layout) */
+.sales-grid {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.sales-grid-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) /* client + meta */
+    118px /* local amount */
+    104px /* secondary amount */
+    96px /* vat */
+    74px /* positions */
+    34px /* lock / discount */
+    96px /* doc actions */
+    150px; /* status + payment */
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  cursor: pointer;
+  transition: background-color 110ms var(--tx-ease-smooth);
+}
+
+.sales-grid-row:hover,
+.sales-grid-row.is-expanded {
+  background: var(--mantine-color-gray-0);
+}
+
+.sg-client {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.sg-client-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 0 0 auto;
+}
+
+.sg-bang {
+  color: var(--mantine-color-red-6);
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  align-self: center;
+}
+
+.sg-bang[data-clickable='true'] {
+  cursor: pointer;
+}
+
+.sg-client-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sg-client-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--mantine-color-gray-9);
+}
+
+.sg-client-code {
+  flex: 0 0 auto;
+  color: var(--mantine-color-violet-7);
+  font-weight: 700;
+}
+
+.sg-client-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sg-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--mantine-color-gray-6);
+}
+
+.sg-meta-sep {
+  color: var(--mantine-color-gray-4);
+}
+
+.sg-meta-contract {
+  color: var(--mantine-color-teal-7);
+}
+
+.sg-amt {
+  text-align: right;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.sg-amt-val {
+  font-weight: 600;
+  color: var(--mantine-color-gray-9);
+}
+
+.sg-amt-unit {
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-gray-5);
+}
+
+.sg-amt.is-unpaid .sg-amt-val,
+.sg-amt.is-unpaid .sg-amt-unit {
+  color: var(--mantine-color-red-6);
+}
+
+.sg-positions {
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--mantine-color-gray-7);
+  white-space: nowrap;
+}
+
+.sg-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sg-doc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+}
+
+.sg-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  text-align: right;
+  min-width: 0;
+}
+
+.sg-status-pay {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.sales-grid-expand {
+  padding: 8px 12px 12px 40px;
+  background: var(--mantine-color-gray-0);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.sales-grid-state {
+  padding: 48px 12px;
+  text-align: center;
+  color: var(--mantine-color-dimmed);
+  font-size: 13px;
+}
