@@ -70,3 +70,10 @@ export type ChangeProductSpecificationPayload = {
   body: ProductSpecification
   specificationChangeMode: ProductSpecificationChangeMode
 }
+
+export type SpecificationCodeUploadResult = {
+  InvalidVendorCodes: string[]
+  ParsedCount: number
+  SuccessfullyUpdatedCount: number
+  UpdateWasNotRequiredCount: number
+}

@@ -3,6 +3,7 @@ import type {
   ChangeProductSpecificationPayload,
   ProductSpecification,
   ProductSpecificationsSearchParams,
+  SpecificationCodeUploadResult,
 } from '../types'
 
 export async function getProductSpecifications(
@@ -39,6 +40,32 @@ export async function changeProductSpecification(
   }
 
   return result as ProductSpecification
+}
+
+export async function uploadSpecificationCodesFile(file: File): Promise<SpecificationCodeUploadResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const result = await apiRequest<unknown>('/products/specification/new/all/file', {
+    body: formData,
+    method: 'POST',
+  })
+
+  const payload = (result && typeof result === 'object' ? result : {}) as Record<string, unknown>
+  const invalid = payload.InvalidVendorCodes
+
+  return {
+    InvalidVendorCodes: Array.isArray(invalid) ? invalid.map((code) => String(code)) : [],
+    ParsedCount: toCount(payload.ParsedCount),
+    SuccessfullyUpdatedCount: toCount(payload.SuccessfullyUpdatedCount),
+    UpdateWasNotRequiredCount: toCount(payload.UpdateWasNotRequiredCount),
+  }
+}
+
+function toCount(value: unknown): number {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(numberValue) ? numberValue : 0
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

@@ -13,6 +13,7 @@ const CHANGE_PERMISSION = 'Accounting_Specification_codes_ChangeBtn_PKEY'
 
 type ChangeForm = {
   changeMode: ProductSpecificationChangeMode
+  confirmSpecificationCode: string
   customs: number | ''
   customsValue: number | ''
   specificationCode: string
@@ -80,6 +81,11 @@ export function ChangeProductSpecificationPanel({
 
     if (!specificationCode) {
       setError(t('Заповніть поле') + ' - ' + t('Митний код'))
+      return
+    }
+
+    if (form.confirmSpecificationCode.trim() !== specificationCode) {
+      setError(t('Митні коди не співпадають'))
       return
     }
 
@@ -161,6 +167,16 @@ export function ChangeProductSpecificationPanel({
             onChange={(event) => setForm((current) => ({ ...current, specificationCode: event.currentTarget.value }))}
           />
 
+          <TextInput
+            disabled={isSubmitting}
+            label={t('Підтвердіть митний код')}
+            required
+            value={form.confirmSpecificationCode}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, confirmSpecificationCode: event.currentTarget.value }))
+            }
+          />
+
           <NumberInput
             decimalScale={2}
             disabled={isSubmitting}
@@ -235,6 +251,7 @@ function areFormsEqual(left: ChangeForm, right: ChangeForm): boolean {
 function buildForm(productSpecification: ProductSpecification | null): ChangeForm {
   return {
     changeMode: ProductSpecificationChangeMode.SingleProduct,
+    confirmSpecificationCode: '',
     customs: toNumberOrZero(productSpecification?.Duty),
     customsValue: toNumberOrZero(productSpecification?.CustomsValue),
     specificationCode: productSpecification?.SpecificationCode || '',
