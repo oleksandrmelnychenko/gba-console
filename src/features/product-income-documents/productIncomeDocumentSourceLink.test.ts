@@ -49,6 +49,20 @@ describe('getProductIncomeDocumentSourceLink', () => {
     expect(getProductIncomeDocumentSourceLink(document)).toBe('/supply-orders/product-placement/income-1')
   })
 
+  it('links supply order placement when the first item has no source data', () => {
+    const document = incomeDocument({
+      NetUid: 'income-1',
+      ProductIncomeItems: [
+        {},
+        {
+          PackingListPackageOrderItem: {},
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/supply-orders/product-placement/income-1')
+  })
+
   it('preserves the Ukraine supply order product income link', () => {
     const document = incomeDocument({
       NetUid: 'income-1',
@@ -60,6 +74,48 @@ describe('getProductIncomeDocumentSourceLink', () => {
     })
 
     expect(getProductIncomeDocumentSourceLink(document)).toBe('/orders/ukraine/income-1/product-income')
+  })
+
+  it('links Ukraine supply order income when the first item has no source data', () => {
+    const document = incomeDocument({
+      NetUid: 'income-1',
+      ProductIncomeItems: [
+        {},
+        {
+          SupplyOrderUkraineItem: {},
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/orders/ukraine/income-1/product-income')
+  })
+
+  it('links capitalizations without requiring the income document NetUid', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          ProductCapitalizationItem: {
+            ProductCapitalization: {
+              NetUid: 'capitalization-1',
+            },
+          },
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/products/capitalization')
+  })
+
+  it('links sale returns without requiring the income document NetUid', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          SaleReturnItem: {},
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/sales/return/client')
   })
 
   it('preserves null when a non-reconciliation source needs the income document NetUid', () => {

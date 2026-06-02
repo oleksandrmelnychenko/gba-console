@@ -4,6 +4,8 @@ import type {
   ActReconciliationAppliedAction,
   ActReconciliationItem,
   ActReconciliationsSearchParams,
+  DepreciatedOrderFromItemQueryParams,
+  DepreciatedOrderFromItemsQueryParams,
   ProductIncomeFromItemQueryParams,
   ProductIncomeFromItemsQueryParams,
   ProductTransferFromItemQueryParams,
@@ -87,6 +89,26 @@ export async function createProductTransferFromItems(
   items: ActReconciliationItem[],
 ): Promise<void> {
   await apiRequest<unknown>('/products/transfers/new/reconciliation/many', {
+    method: 'POST',
+    query: { ...queryParams },
+    body: items,
+  })
+}
+
+export async function createDepreciatedOrderFromItem(
+  queryParams: DepreciatedOrderFromItemQueryParams,
+): Promise<void> {
+  await apiRequest<unknown>('/orders/depreciated/new/reconciliation', {
+    method: 'POST',
+    query: { ...queryParams },
+  })
+}
+
+export async function createDepreciatedOrderFromItems(
+  queryParams: DepreciatedOrderFromItemsQueryParams,
+  items: ActReconciliationItem[],
+): Promise<void> {
+  await apiRequest<unknown>('/orders/depreciated/new/reconciliation/many', {
     method: 'POST',
     query: { ...queryParams },
     body: items,

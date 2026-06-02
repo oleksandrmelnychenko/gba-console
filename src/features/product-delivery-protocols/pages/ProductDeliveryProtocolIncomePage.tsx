@@ -1005,7 +1005,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
   const handleCarryOut = useCallback(async () => {
     setConfirmCarryOut(false)
 
-    if (isSaving) {
+    if (isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
 
@@ -1040,12 +1040,12 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setSaving(false)
     }
   }, [
-    fromDate, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage,
+    fromDate, invoice, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage,
     setConfirmCarryOut, setError, setSaving, t,
   ])
 
   const handleProductIncome = useCallback(async () => {
-    if (isSaving) {
+    if (isSaving || isPlacementLocked(invoice, packingList)) {
       return
     }
 
@@ -1077,8 +1077,8 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setSaving(false)
     }
   }, [
-    fromDate, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage, setError,
-    setSaving, t,
+    fromDate, invoice, isDirty, isSaving, packingList, recordDynamicIncomeHistory, reloadFromServer, selectedStorage,
+    setError, setSaving, t,
   ])
 
   const placementStatus = useMemo(() => {

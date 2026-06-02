@@ -187,3 +187,20 @@ export type ProductTransferFromItemsQueryParams = {
   organizationNetId: string
   toStorageNetId: string
 }
+
+export type DepreciatedOrderFromItemQueryParams = {
+  comment: string
+  fromDate: string
+  itemNetId: string
+  organizationNetId: string
+  qty: string
+  reason: string
+  storageNetId: string
+}
+
+export type DepreciatedOrderFromItemsQueryParams = {
+  comment: string
+  fromDate: string
+  organizationNetId: string
+  storageNetId: string
+}

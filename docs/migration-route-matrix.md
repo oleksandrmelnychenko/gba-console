@@ -195,8 +195,8 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 | 128 | P6 customs-extra | tax-free | `/tax-free/carriers/new` | `NewTaxFreeCarrierView` | ui | carrier create form wired with passenger/organization mode, passport drawer, car modal, and save |
 | 129 | P6 customs-extra | tax-free | `/tax-free/all` | `AllTaxFreeView` | ui | Tax Free documents list wired with filters, status progression, carrier/passport edit, details drawer, and print preview |
 | 130 | P3 admin-directory | transporters | `/transporters` | `TransportersView` | ui | type selection, status filter, table, refresh, and archive action wired |
-| 131 | P6 customs-extra | ukraine | `/ukraine/act/reconcoliation/:netid` | `ViewActReconciliationsView` | ui | act reconciliation detail wired with placements, shifts, applied actions, history drawer, save/cancel, approve, and delete |
-| 132 | P6 customs-extra | ukraine | `/ukraine/act/reconcoliation` | `AllActReconciliationsView` | ui | act reconciliation list wired with date filters, paging, action modal, create, delete, and detail navigation |
+| 131 | P6 customs-extra | ukraine | `/ukraine/act/reconcoliation/:netid` | `ViewActReconciliationsView` | ui | act reconciliation detail wired with item selection, placement/shift/write-off item actions, applied-actions history, totals, and storage availability columns; standalone save/approve/delete is not exposed by legacy or current server routes |
+| 132 | P6 customs-extra | ukraine | `/ukraine/act/reconcoliation` | `AllActReconciliationsView` | ui | act reconciliation list wired with date filters, difference totals, history/detail actions, and detail navigation; standalone create/delete is not exposed by legacy or current server routes |
 | 133 | P3 admin-directory | users | `/users/new` | `UserView` | ui | create form with role, region, and password validation wired |
 | 134 | P3 admin-directory | users | `/users/edit/:netid` | `UserView` | ui | profile edit, delete, and password reset wired |
 | 135 | P3 admin-directory | users | `/users/roles` | `UserRolesView` | ui | roles and assigned pages/permissions overview wired |

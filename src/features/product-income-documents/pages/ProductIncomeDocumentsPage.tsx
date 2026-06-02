@@ -57,6 +57,14 @@ import {
   getProductIncomeRemainings,
 } from '../api/productIncomeDocumentsApi'
 import { getProductIncomeDocumentSourceLink } from '../productIncomeDocumentSourceLink'
+import {
+  getIncomeItemProduct,
+  getItemProductCode,
+  getItemProductName,
+  getOverviewKind,
+  mapDocumentRow,
+  type DocumentRow,
+} from '../productIncomeDocumentRows'
 import type {
   NamedEntity,
   ProductIncomeDocument,
@@ -108,21 +116,6 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
-
-type DocumentRow = {
-  amount?: number
-  client?: string
-  comment?: string
-  currency?: string
-  document: ProductIncomeDocument
-  docState?: string
-  invDate?: string
-  invNumber?: string
-  organization?: string
-  qty?: number
-  specificationDate?: string
-  type?: string
-}
 
 type DocumentsListState = {
   documents: ProductIncomeDocument[]
@@ -999,6 +992,10 @@ function ProductIncomeDocumentDrawer({
             />
           )}
 
+          {detailMode === 'view' && overviewKind === 'actReconciliation' && (
+            <ActReconciliationOverview document={document} isLoading={isLoadingDocumentInfo} />
+          )}
+
           {detailMode === 'view' && overviewKind === 'saleReturn' && <SaleReturnOverview document={document} />}
 
           <Divider />
@@ -1266,6 +1263,122 @@ function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   )
 }
 
+type ActReconciliationOverviewRow = {
+  amount?: number
+  comment?: string
+  key: string
+  netWeight?: number
+  productName?: string
+  qty?: number
+  unitPrice?: number
+  vendorCode?: string
+}
+
+function ActReconciliationOverview({
+  document,
+  isLoading,
+}: {
+  document: ProductIncomeDocument
+  isLoading: boolean
+}) {
+  const { t } = useI18n()
+  const rows = getActReconciliationOverviewRows(document)
+  const columns = useMemo<DataTableColumn<ActReconciliationOverviewRow>[]>(
+    () => [
+      {
+        id: 'vendorCode',
+        header: t('Код'),
+        width: 140,
+        minWidth: 120,
+        accessor: (row) => row.vendorCode,
+        cell: (row) => <Text fw={700}>{displayValue(row.vendorCode)}</Text>,
+      },
+      {
+        id: 'productName',
+        header: t('Назва'),
+        width: 300,
+        minWidth: 220,
+        accessor: (row) => row.productName,
+        cell: (row) => (
+          <Text size="sm" lineClamp={2}>
+            {displayValue(row.productName)}
+          </Text>
+        ),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 110,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.qty,
+        cell: (row) => formatAmount(row.qty),
+      },
+      {
+        id: 'unitPrice',
+        header: t('Ціна'),
+        width: 116,
+        minWidth: 104,
+        align: 'right',
+        accessor: (row) => row.unitPrice,
+        cell: (row) => formatMoney(row.unitPrice),
+      },
+      {
+        id: 'netWeight',
+        header: t('Вага нетто'),
+        width: 120,
+        minWidth: 108,
+        align: 'right',
+        accessor: (row) => row.netWeight,
+        cell: (row) => formatAmount(row.netWeight),
+      },
+      {
+        id: 'amount',
+        header: t('Сума'),
+        width: 124,
+        minWidth: 108,
+        align: 'right',
+        accessor: (row) => row.amount,
+        cell: (row) => formatMoney(row.amount),
+      },
+    ],
+    [t],
+  )
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="sm">
+        <Group justify="space-between" align="start">
+          <Title order={4}>{t('Прихідна накладна (акт звірки)')}</Title>
+          <Text c="dimmed" size="sm">
+            {displayValue(document.Number)} · {formatMoney(document.TotalNetPrice)}
+          </Text>
+        </Group>
+
+        <DataTable
+          columns={columns}
+          data={rows}
+          emptyText={t('Позицій не знайдено')}
+          getRowId={(row) => row.key}
+          isLoading={isLoading}
+          layoutVersion="product-income-act-reconciliation-overview-1"
+          loadingText={t('Завантаження позицій акта звірки')}
+          maxHeight={320}
+          minWidth={820}
+          tableId="product-income-act-reconciliation-overview"
+        />
+
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+          <DetailValue label={t('Всього товарів')} value={rows.length} />
+          <DetailValue label={t('Вся кількість')} value={formatAmount(document.TotalQty)} />
+          <DetailValue label={t('Вага нетто')} value={formatAmount(document.TotalNetWeight || sumRows(rows, (row) => row.netWeight))} />
+          <DetailValue label={t('Сума')} value={formatMoney(document.TotalNetPrice)} />
+        </SimpleGrid>
+      </Stack>
+    </Card>
+  )
+}
+
 function mergeProductIncomeInfo(
   document: ProductIncomeDocument,
   info: ProductIncomeInfo | null,
@@ -1279,22 +1392,6 @@ function mergeProductIncomeInfo(
     ...info,
     ProductIncomeItems: info.ProductIncomeItems?.length ? info.ProductIncomeItems : document.ProductIncomeItems,
   }
-}
-
-function getOverviewKind(
-  document: ProductIncomeDocument,
-): 'capitalization' | 'saleReturn' | 'document' {
-  const items = document.ProductIncomeItems || []
-
-  if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization)) {
-    return 'capitalization'
-  }
-
-  if (items.some((item) => item.SaleReturnItem?.SaleReturn)) {
-    return 'saleReturn'
-  }
-
-  return 'document'
 }
 
 function getCapitalizationNetUid(document: ProductIncomeDocument): string | null {
@@ -1314,10 +1411,6 @@ function getDeferredOverviewNote(
 
   if (items.some((item) => item.SupplyOrderUkraineItem?.SupplyOrderUkraine)) {
     return t('Огляд прихідного інвойса в Україну доступний у модулі замовлень')
-  }
-
-  if (items.some((item) => item.ActReconciliationItem?.ActReconciliation)) {
-    return t('Огляд акта звірки доступний у модулі актів')
   }
 
   return null
@@ -1809,12 +1902,6 @@ function getMovementHistoryProductFromNamedEntity(entity?: NamedEntity | null): 
   }
 }
 
-function getIncomeItemProduct(item: ProductIncomeItem): NamedEntity | null | undefined {
-  return item.PackingListPackageOrderItem?.SupplyInvoiceOrderItem?.Product
-    || item.SaleReturnItem?.OrderItem?.Product
-    || item.Product
-}
-
 function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
   const saleReturnItem = item.SaleReturnItem
 
@@ -1831,141 +1918,43 @@ function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
   )
 }
 
-function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
-  const items = document.ProductIncomeItems || []
-  const amount = getDocumentAmount(document)
-  const documentIsActive = !document.Deleted
-  const baseRow = {
-    amount,
-    comment: document.Comment,
-    currency: document.Currency?.Code || document.Currency?.Name,
-    document,
-  }
-  const saleReturnItem = items.find((item) => item.SaleReturnItem)?.SaleReturnItem
+function getActReconciliationOverviewRows(document: ProductIncomeDocument): ActReconciliationOverviewRow[] {
+  return (document.ProductIncomeItems || []).reduce<ActReconciliationOverviewRow[]>((rows, item, index) => {
+    const reconciliationItem = item.ActReconciliationItem
 
-  if (saleReturnItem?.SaleReturn) {
-    return {
-      ...baseRow,
-      client: getEntityName(saleReturnItem.SaleReturn.Client),
-      comment: saleReturnItem.Comment || document.Comment,
-      docState: getDocumentState(documentIsActive && !items.some((item) => item.SaleReturnItem?.SaleReturn?.IsCanceled)),
-      invDate: saleReturnItem.SaleReturn.FromDate,
-      invNumber: saleReturnItem.SaleReturn.Number,
-      organization: getEntityName(saleReturnItem.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement?.Organization),
-      qty: document.TotalQty,
-      specificationDate: saleReturnItem.SaleReturn.FromDate,
-      type: translate('Повернення продажу'),
+    if (!reconciliationItem) {
+      return rows
     }
-  }
 
-  const packingItem = items.find((item) => item.PackingListPackageOrderItem)?.PackingListPackageOrderItem
-  const packingInvoice = packingItem?.PackingList?.SupplyInvoice
+    const product = reconciliationItem.Product || item.Product
 
-  if (packingInvoice) {
-    return {
-      ...baseRow,
-      amount: packingInvoice.SupplyOrder?.Client?.IsNotResident ? document.TotalNetPrice : document.TotalNetWithVat || 0,
-      client: getEntityName(packingInvoice.SupplyOrder?.Client),
-      comment: packingInvoice.Comment || document.Comment,
-      docState: getDocumentState(documentIsActive),
-      invDate: packingInvoice.DateFrom,
-      invNumber: packingInvoice.Number,
-      organization: getEntityName(packingInvoice.SupplyOrder?.Organization),
-      qty: sumItems(items, (item) => item.PackingListPackageOrderItem?.Qty),
-      specificationDate: packingInvoice.DateCustomDeclaration || packingInvoice.Created,
-      type: translate('Інвойс від постачальника'),
-    }
-  }
+    rows.push({
+      amount: reconciliationItem.TotalAmount,
+      comment: reconciliationItem.Comment || item.Comment,
+      key: getActReconciliationIncomeItemKey(item, index),
+      netWeight: reconciliationItem.NetWeight,
+      productName: product?.NameUA || product?.Name,
+      qty: item.Qty,
+      unitPrice: reconciliationItem.UnitPrice,
+      vendorCode: product?.VendorCode || product?.Code,
+    })
 
-  const ukraineItem = items.find((item) => item.SupplyOrderUkraineItem)?.SupplyOrderUkraineItem
-  const ukraineOrder = ukraineItem?.SupplyOrderUkraine
-
-  if (ukraineOrder) {
-    return {
-      ...baseRow,
-      client: getEntityName(ukraineOrder.Supplier),
-      comment: ukraineOrder.Comment || document.Comment,
-      docState: getDocumentState(documentIsActive),
-      invDate: ukraineOrder.FromDate,
-      invNumber: ukraineOrder.InvNumber,
-      organization: getEntityName(ukraineOrder.Organization),
-      qty: sumItems(items, (item) => item.Qty),
-      specificationDate: ukraineOrder.InvDate,
-      type: translate('Прихідний інвойс в Україну'),
-    }
-  }
-
-  const reconciliationItem = items.find((item) => item.ActReconciliationItem)?.ActReconciliationItem
-  const reconciliation = reconciliationItem?.ActReconciliation
-
-  if (reconciliation) {
-    const sourceOrder = reconciliation.SupplyOrderUkraine
-    const sourceInvoice = reconciliation.SupplyInvoice
-
-    return {
-      ...baseRow,
-      client: sourceOrder ? getEntityName(sourceOrder.Supplier) : getEntityName(sourceInvoice?.SupplyOrder?.Client),
-      comment: reconciliationItem.Comment || document.Comment,
-      docState: getDocumentState(documentIsActive),
-      invDate: sourceOrder?.FromDate || reconciliation.FromDate,
-      invNumber: sourceOrder?.InvNumber || reconciliation.InvNumber,
-      organization: sourceOrder
-        ? getEntityName(sourceOrder.Organization)
-        : getEntityName(sourceInvoice?.SupplyOrder?.Organization),
-      qty: sumItems(items, (item) => item.Qty),
-      specificationDate: sourceOrder?.InvDate || reconciliation.InvDate,
-      type: sourceOrder ? translate('Прихідний інвойс в Україну') : translate('Інвойс від постачальника'),
-    }
-  }
-
-  const capitalizationItem = items.find((item) => item.ProductCapitalizationItem)?.ProductCapitalizationItem
-  const capitalization = capitalizationItem?.ProductCapitalization
-
-  if (capitalization) {
-    return {
-      ...baseRow,
-      client: '',
-      comment: capitalization.Comment || document.Comment,
-      docState: getDocumentState(documentIsActive),
-      invDate: capitalization.FromDate,
-      invNumber: capitalization.Number,
-      organization: getEntityName(capitalization.Organization),
-      qty: sumItems(items, (item) => item.Qty),
-      specificationDate: capitalization.FromDate,
-      type: translate('Оприбуткування товару'),
-    }
-  }
-
-  return {
-    ...baseRow,
-    docState: getDocumentState(documentIsActive),
-    qty: document.TotalQty,
-    type: translate('Документ приходу'),
-  }
+    return rows
+  }, [])
 }
 
-function getDocumentAmount(document: ProductIncomeDocument): number | undefined {
-  if (isFiniteNumber(document.TotalNetPrice) && document.TotalNetPrice !== 0) {
-    return document.TotalNetPrice
-  }
+function getActReconciliationIncomeItemKey(item: ProductIncomeItem, index: number): string {
+  const reconciliationItem = item.ActReconciliationItem
 
-  if (isFiniteNumber(document.TotalNetWithVat)) {
-    return document.TotalNetWithVat
-  }
-
-  return undefined
-}
-
-function getItemProductCode(item: ProductIncomeItem): string | undefined {
-  const product = getIncomeItemProduct(item)
-
-  return product?.VendorCode || product?.Code
-}
-
-function getItemProductName(item: ProductIncomeItem): string | undefined {
-  const product = getIncomeItemProduct(item)
-
-  return product?.NameUA || product?.Name
+  return String(
+    item.NetUid ||
+      item.Id ||
+      reconciliationItem?.Product?.NetUid ||
+      reconciliationItem?.Product?.VendorCode ||
+      item.Product?.NetUid ||
+      item.Product?.VendorCode ||
+      index,
+  )
 }
 
 function getItemComment(item: ProductIncomeItem): string | undefined {
@@ -1977,16 +1966,14 @@ function getItemComment(item: ProductIncomeItem): string | undefined {
     || item.ProductCapitalizationItem?.ProductCapitalization?.Comment
 }
 
+function sumRows<TItem>(items: TItem[], selector: (item: TItem) => number | undefined): number | undefined {
+  const total = items.reduce((sum, item) => sum + (selector(item) || 0), 0)
+
+  return total || undefined
+}
+
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.FullName || entity?.NameUA || entity?.Name || entity?.LastName || entity?.Number || entity?.VendorCode
-}
-
-function getDocumentState(isActive: boolean): string {
-  return isActive ? translate('Проведено') : translate('Видалено')
-}
-
-function sumItems(items: ProductIncomeItem[], getValue: (item: ProductIncomeItem) => number | undefined): number {
-  return items.reduce((total, item) => total + readFiniteNumber(getValue(item)), 0)
 }
 
 function formatDateTime(value?: string): string {
@@ -2103,8 +2090,4 @@ function getDefaultFilters(): { from: string; to: string; value: string } {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
-}
-
-function readFiniteNumber(value: unknown): number {
-  return isFiniteNumber(value) ? value : 0
 }
