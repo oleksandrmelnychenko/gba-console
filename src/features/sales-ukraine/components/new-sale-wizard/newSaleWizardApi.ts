@@ -6,7 +6,7 @@ export type WizardDeliveryRecipientAddress = {
   NetUid?: string
   City?: string
   Department?: string
-  Address?: string
+  Value?: string
 }
 
 export type WizardDeliveryRecipient = {

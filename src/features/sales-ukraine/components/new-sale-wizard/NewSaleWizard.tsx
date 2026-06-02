@@ -171,6 +171,8 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
         payload.IsCashOnDelivery = review.isCashOnDelivery
         payload.CashOnDeliveryAmount = review.isCashOnDelivery ? toAmount(review.codAmount) : state.sale.CashOnDeliveryAmount
         payload.TTN = review.hasOwnTtn ? review.ttnNumber || state.sale.TTN : state.sale.TTN
+        payload.CustomersOwnTtn =
+          review.hasOwnTtn && review.ttnNumber ? { Number: review.ttnNumber } : state.sale.CustomersOwnTtn
       }
 
       const file = !selfCheckout && review.hasOwnTtn ? review.ttnFile : null

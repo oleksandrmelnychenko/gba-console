@@ -36,6 +36,7 @@ import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -503,7 +504,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
       minWidth: 220,
       accessor: (document) => document.Name || document.FileName,
       cell: (document) => document.DocumentUrl
-        ? <a className="document-link" href={document.DocumentUrl} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
+        ? <a className="document-link" href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" target="_blank">{document.Name || document.FileName || t('Документ')}</a>
         : document.Name || document.FileName || '-',
     },
     {
@@ -835,7 +836,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     </Text>
                   )}
                   {creditNote.DocumentUrl && (
-                    <a className="document-link" href={creditNote.DocumentUrl} rel="noreferrer" target="_blank">
+                    <a className="document-link" href={upgradeHttpToHttps(creditNote.DocumentUrl)} rel="noreferrer" target="_blank">
                       {creditNote.FileName || t('Документ')}
                     </a>
                   )}

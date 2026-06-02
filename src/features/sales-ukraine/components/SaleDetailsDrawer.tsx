@@ -152,6 +152,10 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
       ...(isChangedAddress ? { Id: 0 } : {}),
     }
 
+    if (isChangedAddress) {
+      payload.DeliveryRecipientAddressId = 0
+    }
+
     if (showShipmentDate && shipmentDate) {
       payload.ShipmentDate = new Date(shipmentDate).toISOString()
     }

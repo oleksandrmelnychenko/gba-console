@@ -26,6 +26,7 @@ import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
 import { PRICING_NAME_BULK_TWO } from './pricingNames'
@@ -365,7 +366,7 @@ export function ClientAgreementsPanel({
               {exportDocument.DocumentURL && (
                 <Anchor
                   className="document-link"
-                  href={exportDocument.DocumentURL}
+                  href={upgradeHttpToHttps(exportDocument.DocumentURL)}
                   rel="noreferrer"
                   target="_blank"
                 >
@@ -378,7 +379,7 @@ export function ClientAgreementsPanel({
               {exportDocument.PdfDocumentURL && (
                 <Anchor
                   className="document-link"
-                  href={exportDocument.PdfDocumentURL}
+                  href={upgradeHttpToHttps(exportDocument.PdfDocumentURL)}
                   rel="noreferrer"
                   target="_blank"
                 >

@@ -134,6 +134,22 @@ const VIRTUAL_PAGE_SIZE = 10
 const SEARCH_DEBOUNCE_MS = 250
 const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
 const DEFAULT_SORT_MODE: ProductSortMode = '2'
+
+const SEARCH_MODE_OPTION_VALUES: ProductSearchMode[] = ['0', '1', '2', '3', '4', '5']
+const SORT_MODE_OPTION_VALUES: ProductSortMode[] = ['0', '1', '2']
+const SEARCH_MODE_LABELS: Record<ProductSearchMode, string> = {
+  '0': 'Код виробника',
+  '1': 'Оригінальний / кросс номер',
+  '2': 'Розмір',
+  '3': 'Назва',
+  '4': 'Опис',
+  '5': 'Всі',
+}
+const SORT_MODE_LABELS: Record<ProductSortMode, string> = {
+  '0': 'Топові',
+  '1': 'Код виробника',
+  '2': 'Назва',
+}
 const PRODUCT_UPLOAD_DOCUMENT_PERMISSION = 'Product_Entire_Assortment_Product_Upload_Document_Btn_PKEY'
 const inlineMovementLabels = {
   income: {
@@ -286,6 +302,8 @@ export function ProductsPage() {
   const [carouselMode, setCarouselMode] = useValueState<CarouselMode>('search')
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
+  const [searchMode, setSearchMode] = useValueState<ProductSearchMode>(DEFAULT_SEARCH_MODE)
+  const [sortMode, setSortMode] = useValueState<ProductSortMode>(DEFAULT_SORT_MODE)
   const [activePanel, setActivePanel] = useValueState<ProductDetailPanel | null>(null)
   const [detailState, dispatchDetail] = useReducer(inlineDetailReducer, {
     error: null,
@@ -447,8 +465,8 @@ export function ProductsPage() {
         append: false,
         limit: PAGE_SIZE,
         offset: 0,
-        searchMode: DEFAULT_SEARCH_MODE,
-        sortMode: DEFAULT_SORT_MODE,
+        searchMode,
+        sortMode,
         value: searchValue,
       })
     }, SEARCH_DEBOUNCE_MS)
@@ -456,7 +474,7 @@ export function ProductsPage() {
     return () => {
       window.clearTimeout(timeoutId)
     }
-  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue])
+  }, [hasRequestedProducts, loadProducts, reloadKey, searchValue, searchMode, sortMode])
 
   useEffect(() => {
     if (!routeProductNetId) {
@@ -638,8 +656,8 @@ export function ProductsPage() {
       append: true,
       limit: VIRTUAL_PAGE_SIZE,
       offset: loadedProductsCount,
-      searchMode: DEFAULT_SEARCH_MODE,
-      sortMode: DEFAULT_SORT_MODE,
+      searchMode,
+      sortMode,
       value: searchValue,
     })
   }
@@ -797,6 +815,8 @@ export function ProductsPage() {
           isSelectionMode={carouselMode === 'selection'}
           isVirtualLoad={isVirtualLoad}
           searchDraft={searchDraft}
+          searchMode={searchMode}
+          sortMode={sortMode}
           selectedProduct={selectedProduct}
           topProducts={topProducts}
           onKeyDown={handleCarouselKeyDown}
@@ -805,6 +825,8 @@ export function ProductsPage() {
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
+          onSearchModeChange={setSearchMode}
+          onSortModeChange={setSortMode}
           onSelectProduct={selectProduct}
           onUploadSuccess={handleAssortmentUploadSuccess}
         />
@@ -844,9 +866,13 @@ function ProductAssortmentCarousel({
   onNext,
   onPrevious,
   onSearchDraftChange,
+  onSearchModeChange,
+  onSortModeChange,
   onSelectProduct,
   onUploadSuccess,
   searchDraft,
+  searchMode,
+  sortMode,
   selectedProduct,
   topProducts,
 }: {
@@ -862,9 +888,13 @@ function ProductAssortmentCarousel({
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
+  onSearchModeChange: (mode: ProductSearchMode) => void
+  onSortModeChange: (mode: ProductSortMode) => void
   onSelectProduct: (product: Product) => void
   onUploadSuccess: () => void
   searchDraft: string
+  searchMode: ProductSearchMode
+  sortMode: ProductSortMode
   selectedProduct: Product | null
   topProducts: Product[]
 }) {
@@ -931,16 +961,34 @@ function ProductAssortmentCarousel({
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
         ) : (
-          <TextInput
-            autoFocus
-            aria-label={t('Введіть товар')}
-            leftSection={<IconSearch size={17} />}
-            placeholder={t('Введіть артикул або назву товару')}
-            size="md"
-            value={searchDraft}
-            className="product-assortment-search-input"
-            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-          />
+          <Stack gap={6}>
+            <TextInput
+              autoFocus
+              aria-label={t('Введіть товар')}
+              leftSection={<IconSearch size={17} />}
+              placeholder={t('Введіть артикул або назву товару')}
+              size="md"
+              value={searchDraft}
+              className="product-assortment-search-input"
+              onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+            />
+            <Group gap={6} grow>
+              <Select
+                aria-label={t('Поле пошуку')}
+                size="xs"
+                data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
+                value={searchMode}
+                onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
+              />
+              <Select
+                aria-label={t('Сортування')}
+                size="xs"
+                data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
+                value={sortMode}
+                onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
+              />
+            </Group>
+          </Stack>
         )}
       </Box>
 
