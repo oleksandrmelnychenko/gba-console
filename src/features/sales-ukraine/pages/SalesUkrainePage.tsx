@@ -1046,163 +1046,18 @@ function SaleGridRow({
         </Menu>
       </div>
 
-          if (allPositive) {
-            const average = Math.round((discounts.reduce((sum, value) => sum + value, 0) / discounts.length) * 100) / 100
-
-            return <Text span>{`${amountFormatter.format(average)} %`}</Text>
-          }
-
-          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-          if (isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)) {
-            return '—'
-          }
-
-          return (
-            <Anchor
-              component="button"
-              fw={400}
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenDiscount(sale)
-              }}
-            >
-              {t('Знижка')}
-            </Anchor>
-          )
-        },
-      },
-      {
-        id: 'positions',
-        header: t('Позиції'),
-        width: 96,
-        minWidth: 88,
-        align: 'right',
-        accessor: getOrderItemCount,
-        cell: (sale) => displayValue(getOrderItemCount(sale)),
-      },
-      {
-        id: 'transporter',
-        header: t('Перевізник'),
-        width: 170,
-        minWidth: 130,
-        accessor: (sale) => sale.Transporter?.Name || sale.Transporter?.Title,
-        cell: (sale) => {
-          const name = sale.Transporter?.Name || sale.Transporter?.Title
-
-          if (!sale.Transporter) {
-            return displayValue(name)
-          }
-
-          return (
-            <Anchor
-              component="button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenDetails(sale)
-              }}
-            >
-              {displayValue(name)}
-            </Anchor>
-          )
-        },
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 132,
-        minWidth: 132,
-        maxWidth: 132,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (sale) => {
-          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-          const isPackaging = isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)
-          const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
-          const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-          const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
-          const showUnlock = canUnlock && Boolean(sale.IsLocked)
-          const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
-          const showEditShift = showEdit && getOrderItemCount(sale) > 0
-
-          return (
-            <Box onClick={(event) => event.stopPropagation()}>
-              <Group gap={2} justify="center" wrap="nowrap">
-                <Tooltip label={t('Деталі')}>
-                  <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenSale(sale)}>
-                    <IconEye size={18} />
-                  </ActionIcon>
-                </Tooltip>
-                {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
-                <Menu position="bottom-end" shadow="md" withinPortal>
-                  <Menu.Target>
-                    <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
-                      <IconDots size={18} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    {showEdit && (
-                      <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
-                        {t('Відкрити продаж')}
-                      </Menu.Item>
-                    )}
-                    {showEditShift && (
-                      <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
-                        {isStatusType(lifeCycleType, 0) ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
-                      </Menu.Item>
-                    )}
-                      {showTtn && (
-                        <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
-                          {t('Друк ТТН')}
-                        </Menu.Item>
-                      )}
-                      {showWillNotShip && (
-                        <Menu.Item
-                          color="orange"
-                          disabled={!sale.ChangedToInvoice}
-                          leftSection={<IconAlertTriangle size={16} />}
-                          onClick={() => onWillNotShip(sale)}
-                        >
-                          {t('Не буде відвантажено')}
-                        </Menu.Item>
-                      )}
-                      {showUnlock && (
-                        <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
-                          {t('Розблокувати')}
-                        </Menu.Item>
-                      )}
-                      <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
-                        {t('Історія редагувань')}
-                      </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              </Group>
-            </Box>
-          )
-        },
-      },
-    ],
-    [
-      canEditSale,
-      canUnlock,
-      canWillNotShip,
-      isAdmin,
-      onOpenAudit,
-      onOpenConsignment,
-      onOpenDetails,
-      onOpenDiscount,
-      onOpenEditor,
-      onOpenEditShift,
-      onOpenSale,
-      onUnlock,
-      onWillNotShip,
-      t,
-    ],
+      <div className="sg-status">
+        <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} size="sm" variant="light">
+          {getSaleStatusLabel(sale)}
+        </Badge>
+        <span
+          className="sg-status-pay"
+          style={{ color: paymentColor ? `var(--mantine-color-${paymentColor}-6)` : undefined }}
+        >
+          {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -1413,7 +1268,7 @@ function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const source = sale.Order?.OrderSource
   const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const isInvoiceStage = isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)
+  const isInvoiceStage = lifeCycleType === 1 || lifeCycleType === 2
 
   const indicator =
     source === 0
@@ -1490,7 +1345,7 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
   const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
 
-  return isStatusType(status, 0) || isStatusType(status, 1) || isStatusType(status, 2)
+  return status === 0 || status === 1 || status === 2
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
