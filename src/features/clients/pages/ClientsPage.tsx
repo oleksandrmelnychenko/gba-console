@@ -598,10 +598,10 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="calc(100vh - 240px)"
             isLoading={isLoading}
-            layoutVersion="clients-table-default-freeze-1"
+            layoutVersion="clients-table-fit-2"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
-            minWidth={1280}
+            minWidth={1120}
             tableId="clients"
             sorting={sorting}
             toolbarLeft={tableToolbarLeft}
@@ -1019,8 +1019,8 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
       {
         id: 'status',
         header: 'Статус',
-        width: 118,
-        minWidth: 108,
+        width: 100,
+        minWidth: 90,
         accessor: (client) => (client.IsActive === false ? t('Неактивний') : t('Активний')),
         cell: (client) => (
           <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
@@ -1031,48 +1031,48 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
       {
         id: 'regionCode',
         header: 'Код',
-        width: 96,
-        minWidth: 84,
+        width: 82,
+        minWidth: 76,
         accessor: (client) => client.RegionCode?.Value,
         cell: (client) => displayValue(client.RegionCode?.Value),
       },
       {
         id: 'client',
         header: 'Клієнт',
-        width: 280,
-        minWidth: 220,
+        width: 210,
+        minWidth: 170,
         accessor: getClientDisplayName,
         cell: (client) => <Text fw={600}>{getClientDisplayName(client)}</Text>,
       },
       {
         id: 'tin',
         header: 'ІПН',
-        width: 140,
-        minWidth: 120,
+        width: 112,
+        minWidth: 100,
         accessor: (client) => client.TIN,
         cell: (client) => displayValue(client.TIN),
       },
       {
         id: 'sroi',
         header: 'SROI',
-        width: 120,
-        minWidth: 104,
+        width: 90,
+        minWidth: 80,
         accessor: (client) => client.SROI,
         cell: (client) => displayValue(client.SROI),
       },
       {
         id: 'usreou',
         header: 'ЄДРПОУ',
-        width: 132,
-        minWidth: 112,
+        width: 108,
+        minWidth: 94,
         accessor: (client) => client.USREOU,
         cell: (client) => displayValue(client.USREOU),
       },
       {
         id: 'reserve',
         header: 'Резерв',
-        width: 104,
-        minWidth: 92,
+        width: 78,
+        minWidth: 70,
         align: 'right',
         accessor: (client) => client.OrderExpireDays,
         cell: (client) => displayValue(client.OrderExpireDays),
@@ -1080,8 +1080,8 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
       {
         id: 'location',
         header: 'Місто / район',
-        width: 180,
-        minWidth: 150,
+        width: 140,
+        minWidth: 120,
         accessor: (client) => [client.RegionCode?.City, client.RegionCode?.District].filter(Boolean).join(' '),
         cell: (client) => (
           <>
@@ -1095,24 +1095,24 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
       {
         id: 'phone',
         header: 'Телефон',
-        width: 150,
-        minWidth: 132,
+        width: 120,
+        minWidth: 110,
         accessor: getClientPhone,
         cell: (client) => displayValue(getClientPhone(client)),
       },
       {
         id: 'email',
         header: 'Email',
-        width: 220,
-        minWidth: 160,
+        width: 168,
+        minWidth: 150,
         accessor: (client) => client.EmailAddress,
         cell: (client) => displayValue(client.EmailAddress),
       },
       {
         id: 'role',
         header: 'Роль',
-        width: 180,
-        minWidth: 140,
+        width: 124,
+        minWidth: 110,
         accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
         cell: (client) => displayValue(client.ClientInRole?.ClientTypeRole?.Name),
       },

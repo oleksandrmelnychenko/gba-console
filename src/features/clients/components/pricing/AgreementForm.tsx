@@ -60,10 +60,14 @@ export function AgreementForm({
   const [providerPricingEditorOpened, setProviderPricingEditorOpened] = useState(false)
   const [providerPricingName, setProviderPricingName] = useState('')
 
-  const visiblePricings = useMemo(
-    () => (isProvider ? pricings : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting))),
-    [isProvider, pricings, agreement.WithVATAccounting],
-  )
+  const visiblePricings = useMemo(() => {
+    const filtered = isProvider
+      ? pricings
+      : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting))
+
+    // Respect the priority order set in Company Resources (lower SortingPriority = higher priority).
+    return [...filtered].sort((left, right) => (left.SortingPriority ?? Number.MAX_SAFE_INTEGER) - (right.SortingPriority ?? Number.MAX_SAFE_INTEGER))
+  }, [isProvider, pricings, agreement.WithVATAccounting])
   const organizationOptions = useMemo(() => toOptions(organizations), [organizations])
   const currencyOptions = useMemo(() => toOptions(currencies), [currencies])
   const pricingOptions = useMemo(() => toOptions(visiblePricings), [visiblePricings])

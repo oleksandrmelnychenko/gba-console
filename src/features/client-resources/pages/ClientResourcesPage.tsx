@@ -1630,12 +1630,12 @@ function TaxInspectionEditorModal({
               onChange={(event) => setField('InspectionName', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Номер")}
+              label={translate("Номер інспекції")}
               value={values.InspectionNumber}
               onChange={(event) => setField('InspectionNumber', event.currentTarget.value)}
             />
             <TextInput
-              label={translate("Тип")}
+              label={translate("Тип інспекції")}
               value={values.InspectionType}
               onChange={(event) => setField('InspectionType', event.currentTarget.value)}
             />
@@ -2691,12 +2691,12 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
 
       notifications.show({
         color: 'green',
-        message: editor?.mode === 'edit' ? translate('Податкову оновлено') : translate('Податкову створено'),
+        message: editor?.mode === 'edit' ? translate('Податкову інспекцію оновлено') : translate('Податкову інспекцію створено'),
       })
       setEditor(null)
       state.reload()
     } catch (saveError) {
-      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти податкову'))
+      setFormError(saveError instanceof Error ? saveError.message : translate('Не вдалося зберегти податкову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -2710,7 +2710,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
     const netId = deleteTarget.taxInspection.NetUid
 
     if (!netId) {
-      setFormError(translate('Податкова не має NetUid'))
+      setFormError(translate('Податкова інспекція не має ідентифікатора'))
       return
     }
 
@@ -2719,11 +2719,11 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
 
     try {
       await deleteClientResourceTaxInspection(netId)
-      notifications.show({ color: 'green', message: translate('Податкову видалено') })
+      notifications.show({ color: 'green', message: translate('Податкову інспекцію видалено') })
       setDeleteTarget(null)
       state.reload()
     } catch (deleteError) {
-      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити податкову'))
+      setFormError(deleteError instanceof Error ? deleteError.message : translate('Не вдалося видалити податкову інспекцію'))
     } finally {
       setSaving(false)
     }
@@ -2731,7 +2731,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const createTaxInspectionAction = (
     <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
       <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
-        Нова податкова
+        Нова податкова інспекція
       </Button>
     </PermissionGate>
   )
@@ -2757,9 +2757,9 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
               },
               {
                 id: 'number',
-                header: 'Номер',
+                header: 'Номер інспекції',
                 accessor: (inspection) => inspection.InspectionNumber,
-                width: 130,
+                width: 150,
               },
               {
                 id: 'regionCode',
@@ -2775,9 +2775,9 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
               },
               {
                 id: 'type',
-                header: 'Тип',
+                header: 'Тип інспекції',
                 accessor: (inspection) => inspection.InspectionType,
-                width: 130,
+                width: 140,
               },
               {
                 id: 'usreou',
@@ -2805,7 +2805,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                     <PermissionGate permissionKey={TAX_INSPECTION_EDIT_PERMISSION}>
                       <Tooltip label={translate("Редагувати")}>
                         <ActionIcon
-                          aria-label={translate("Редагувати податкову")}
+                          aria-label={translate("Редагувати податкову інспекцію")}
                           color="gray"
                           size="sm"
                           variant="subtle"
@@ -2818,7 +2818,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
                     <PermissionGate permissionKey={TAX_INSPECTION_DELETE_PERMISSION}>
                       <Tooltip label={translate("Видалити")}>
                         <ActionIcon
-                          aria-label={translate("Видалити податкову")}
+                          aria-label={translate("Видалити податкову інспекцію")}
                           color="red"
                           disabled={!inspection.NetUid}
                           size="sm"
@@ -2851,7 +2851,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
         isSaving={isSaving}
         opened={Boolean(editor)}
         taxInspection={editor?.taxInspection}
-        title={editor?.mode === 'edit' ? translate('Редагувати податкову') : translate('Нова податкова')}
+        title={editor?.mode === 'edit' ? translate('Редагувати податкову інспекцію') : translate('Нова податкова інспекція')}
         onClose={() => {
           if (!isSaving) {
             setEditor(null)
@@ -4783,7 +4783,7 @@ function getDeleteTargetMessage(target: ClientResourceDeleteTarget | null): stri
   }
 
   if (target.type === 'taxInspection') {
-    return `${translate('Видалити податкову')} "${displayValue(target.taxInspection.InspectionName)}"?`
+    return `${translate('Видалити податкову інспекцію')} "${displayValue(target.taxInspection.InspectionName)}"?`
   }
 
   if (target.type === 'pricing') {

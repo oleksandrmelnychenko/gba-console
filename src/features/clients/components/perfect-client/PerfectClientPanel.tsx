@@ -40,6 +40,7 @@ type PerfectClientFormValues = {
   Name: string
   TranslationName: string
   Lable: string
+  Description: string
   Type: string
   Value: string
   ToggleValueLeft: string
@@ -97,6 +98,7 @@ function createEmptyFormValues(): PerfectClientFormValues {
     Name: '',
     TranslationName: '',
     Lable: '',
+    Description: '',
     Type: String(PerfectClientType.Toggle),
     Value: '',
     ToggleValueLeft: '',
@@ -116,7 +118,7 @@ function buildNewPerfectClientPayload(values: PerfectClientFormValues, roleId: n
     ClientTypeRoleId: roleId,
     Name: name,
     Lable: values.Lable.trim(),
-    Description: '',
+    Description: values.Description.trim(),
     Type: type,
     Value: isToggle ? '' : values.Value.trim(),
     PerfectClientTranslations: [
@@ -512,6 +514,13 @@ function PerfectClientAddModal({
             label={t('Мітка')}
             value={values.Lable}
             onChange={(event) => setField('Lable', event.currentTarget.value)}
+          />
+          <Textarea
+            autosize
+            label={t('Опис')}
+            minRows={2}
+            value={values.Description}
+            onChange={(event) => setField('Description', event.currentTarget.value)}
           />
           {isToggle ? (
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
