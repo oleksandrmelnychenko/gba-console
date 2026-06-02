@@ -221,8 +221,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       notifications.show({ color: 'green', message: t('Товар видалено') })
       setDeletingItem(null)
       reload()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося видалити товар') })
     } finally {
       setDeleting(false)
     }
@@ -262,8 +262,8 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
       setConvertOpen(false)
       setInvoiceTtnFile(null)
       reload()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося створити рахунок') })
     } finally {
       setConverting(false)
     }
@@ -716,8 +716,8 @@ function OrderItemQtyForm({
       await updateOrderItem({ ...item, Qty: numericQty })
       notifications.show({ color: 'green', message: t('Кількість оновлено') })
       onSaved()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося оновити кількість') })
     } finally {
       setSaving(false)
     }
@@ -843,8 +843,8 @@ function AddProductForm({ sale, onCancel, onAdded }: { onAdded: () => void; onCa
 
       notifications.show({ color: 'green', message: t('Товар додано') })
       onAdded()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося додати товар') })
     } finally {
       setSaving(false)
     }
@@ -1036,8 +1036,8 @@ function ReassignSaleForm({
       await switchSale(sale.NetUid, selectedAgreement)
       notifications.show({ color: 'green', message: t('Продаж переназначено') })
       onReassigned()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося переназначити продаж') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося переназначити продаж') })
     } finally {
       setReassigning(false)
     }
@@ -1142,8 +1142,8 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
       await switchSale(sale.NetUid, selectedAgreement)
       notifications.show({ color: 'green', message: t('Договір змінено') })
       onSwitched()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося змінити договір') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося змінити договір') })
     } finally {
       setSwitching(false)
     }
