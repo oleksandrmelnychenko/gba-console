@@ -161,7 +161,7 @@ function SaleExpandContentItem({
         <ValueBlock label={localCurrencyCode || t('Сума')} value={formatAmount(getNumber(orderItem.TotalAmountLocal))} />
         <ValueBlock label={secondCode} value={formatAmount(secondAmount)} />
         {isVatSale && <ValueBlock label={t('ПДВ')} value={formatAmount(getNumber(orderItem.TotalVat))} />}
-        <ValueBlock label={t('Count')} value={qtyText} />
+        <ValueBlock label={t('Кількість')} value={qtyText} />
 
         <Box style={{ minWidth: 72, textAlign: 'right' }}>
           <Text size="xs" c="dimmed" tt="uppercase">

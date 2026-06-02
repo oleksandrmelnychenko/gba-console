@@ -11,6 +11,7 @@ import { useEffect, useMemo, type ReactNode } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getTotalActForEditing } from '../api/shellApi'
 import { DocumentVerificationTab } from '../components/DocumentVerificationTab'
 import { EditingTab } from '../components/EditingTab'
@@ -124,6 +125,8 @@ export function WarehouseUkrainePage() {
   const defaultTab = visibleTabs[0]?.value ?? ''
   const [activeTab, setActiveTab] = useValueState(defaultTab)
   const activeTabItem = visibleTabs.find((tab) => tab.value === activeTab) ?? visibleTabs[0]
+
+  usePageBreadcrumb(activeTabItem?.label ?? null)
 
   return (
     <Stack gap="md">
