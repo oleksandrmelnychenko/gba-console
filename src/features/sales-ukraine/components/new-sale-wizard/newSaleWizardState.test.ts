@@ -24,6 +24,13 @@ describe('new sale wizard state guards', () => {
     )
   })
 
+  it('requires a delivery address once carrier and recipient are chosen', () => {
+    const transporter = { Id: 2 } as SalesUkraineTransporter
+
+    expect(getReviewError({ address: null, comment: '', recipient: { Id: 5 }, transporter })).toBe('Оберіть адресу доставки')
+    expect(getReviewError({ address: { Id: 9 }, comment: '', recipient: { Id: 5 }, transporter })).toBeNull()
+  })
+
   it('gates products and review by selected agreement and cart sale', () => {
     expect(canAdvanceToProducts({ agreement: null, agreementNetId: null, clientNetId: 'client-1', sale: null })).toBe(false)
     expect(canAdvanceToProducts({ agreement: null, agreementNetId: 'agreement-1', clientNetId: 'client-1', sale: null })).toBe(true)

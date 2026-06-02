@@ -34,6 +34,10 @@ export function getReviewError(value: NewSaleReviewValue): string | null {
     return 'Оберіть отримувача'
   }
 
+  if (!value.address) {
+    return 'Оберіть адресу доставки'
+  }
+
   return null
 }
 
