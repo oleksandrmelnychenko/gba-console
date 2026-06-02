@@ -654,7 +654,7 @@ export function SalesUkrainePage() {
               flex={1}
               label={t('Пошук')}
               leftSection={<IconSearch size={16} />}
-              miw={200}
+              miw={140}
               placeholder={t('Товар або номер продажу')}
               value={filterDraft.value}
               onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
@@ -664,6 +664,7 @@ export function SalesUkrainePage() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
+            <Box style={{ marginLeft: 'auto' }}>{toolbarRight}</Box>
           </Group>
 
           {error && (
@@ -671,8 +672,6 @@ export function SalesUkrainePage() {
               {error}
             </Alert>
           )}
-
-          <Group justify="flex-end">{toolbarRight}</Group>
 
           <div className="sales-grid" style={{ maxHeight: 'calc(100vh - 320px)' }}>
             {isLoading ? (
