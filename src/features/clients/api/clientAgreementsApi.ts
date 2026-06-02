@@ -11,7 +11,7 @@ import type {
   ProductGroupDiscount,
 } from '../types'
 
-export const AgreementDownloadDocumentType = {
+const AgreementDownloadDocumentType = {
   Agreement: 0,
   WarrantyConditions: 1,
 } as const

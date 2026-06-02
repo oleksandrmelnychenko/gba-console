@@ -138,7 +138,7 @@ export function normalizeDocument(result: unknown): ReportDocument {
   }
 }
 
-export function normalizeResultTable(result: unknown): ReportResultTable {
+function normalizeResultTable(result: unknown): ReportResultTable {
   const rows = findRows(result)
   const columns = findColumns(result, rows)
 
@@ -148,7 +148,7 @@ export function normalizeResultTable(result: unknown): ReportResultTable {
   }
 }
 
-export function calculateResultTotals(table: ReportResultTable): Record<string, number> {
+function calculateResultTotals(table: ReportResultTable): Record<string, number> {
   return table.columns.reduce<Record<string, number>>((totals, column) => {
     const values = table.rows
       .map((row) => parseNumericValue(row[column]))

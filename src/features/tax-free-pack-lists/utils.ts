@@ -14,7 +14,7 @@ import type {
 } from './types'
 import { TaxFreeStatus as TaxFreeStatusValue } from './types'
 
-export const EMPTY_VALUE = '-'
+const EMPTY_VALUE = '-'
 
 export const numberFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,

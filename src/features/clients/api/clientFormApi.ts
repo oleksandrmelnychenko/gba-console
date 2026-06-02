@@ -50,7 +50,7 @@ function normalizeClient(result: unknown): Client | null {
   return null
 }
 
-export function prepareClientSavePayload(client: Client): Client {
+function prepareClientSavePayload(client: Client): Client {
   if (!Array.isArray(client.ClientAgreements)) {
     return client
   }

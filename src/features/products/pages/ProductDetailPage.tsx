@@ -2078,25 +2078,28 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
     }
   }
 
-  async function removeRule(rule: ProductWriteOffRule) {
-    if (!rule.NetUid) {
-      return
-    }
+  const removeRule = useCallback(
+    async (rule: ProductWriteOffRule) => {
+      if (!rule.NetUid) {
+        return
+      }
 
-    setRemovingNetUid(rule.NetUid)
-    setError(null)
+      setRemovingNetUid(rule.NetUid)
+      setError(null)
 
-    try {
-      await deleteProductWriteOffRule(rule.NetUid)
-      setRows((currentRows) => currentRows.filter((row) => row.NetUid !== rule.NetUid))
-      onChanged()
-      notifications.show({ color: 'green', message: t('Правило списання видалено') })
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити правило списання'))
-    } finally {
-      setRemovingNetUid(null)
-    }
-  }
+      try {
+        await deleteProductWriteOffRule(rule.NetUid)
+        setRows((currentRows) => currentRows.filter((row) => row.NetUid !== rule.NetUid))
+        onChanged()
+        notifications.show({ color: 'green', message: t('Правило списання видалено') })
+      } catch (deleteError) {
+        setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити правило списання'))
+      } finally {
+        setRemovingNetUid(null)
+      }
+    },
+    [onChanged, t],
+  )
 
   const writeOffColumns = useMemo<DataTableColumn<ProductWriteOffRule>[]>(() => [
     { id: 'date', header: t('Дата'), accessor: (row) => row.Created, cell: (row) => formatDate(row.Created) },

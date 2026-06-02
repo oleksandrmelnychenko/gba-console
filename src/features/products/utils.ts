@@ -1,4 +1,4 @@
-import type { Product, ProductImage, ProductOriginalNumber, ProductSearchMode, ProductSortMode } from './types'
+import type { Product, ProductImage, ProductOriginalNumber } from './types'
 import { translate } from '../../shared/i18n/translate'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -12,21 +12,6 @@ const priceFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
-
-export const PRODUCT_SEARCH_MODE_OPTIONS: Array<{ label: string; value: ProductSearchMode }> = [
-  { value: '5', label: 'Всі' },
-  { value: '0', label: 'Код виробника' },
-  { value: '1', label: 'Оригінальний/крос номер' },
-  { value: '2', label: 'Розмір' },
-  { value: '3', label: 'Назва' },
-  { value: '4', label: 'Опис' },
-]
-
-export const PRODUCT_SORT_MODE_OPTIONS: Array<{ label: string; value: ProductSortMode }> = [
-  { value: '2', label: 'Назва' },
-  { value: '0', label: 'Top' },
-  { value: '1', label: 'Код виробника' },
-]
 
 export function getEmptyGuid(): string {
   return EMPTY_GUID
@@ -84,7 +69,7 @@ export function getProductMainImage(product?: Product | null): ProductImage | nu
   )
 }
 
-export function getProductShopImageUrl(product?: Product | null): string {
+function getProductShopImageUrl(product?: Product | null): string {
   const vendorCode = product?.VendorCode?.trim()
 
   return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''

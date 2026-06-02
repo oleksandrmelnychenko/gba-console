@@ -173,7 +173,7 @@ export function getIdentityResponseError(response: IdentityResponse | null): str
   return error?.Description?.trim() || null
 }
 
-export const MIN_DELETABLE_USER_ROLE_TYPE = 12
+const MIN_DELETABLE_USER_ROLE_TYPE = 12
 
 export function canDeleteUserRole(role?: UserRole | null): boolean {
   return typeof role?.UserRoleType === 'number' && role.UserRoleType > MIN_DELETABLE_USER_ROLE_TYPE
@@ -199,7 +199,7 @@ export function togglePermissionSelection(selectedPermissions: UserPermission[],
     : [...selectedPermissions, permission]
 }
 
-export function getModuleNodes(modules: DashboardNodeModule[]): DashboardNode[] {
+function getModuleNodes(modules: DashboardNodeModule[]): DashboardNode[] {
   return modules.reduce<DashboardNode[]>((nodes, module) => [...(module.Children || []), ...nodes], [])
 }
 

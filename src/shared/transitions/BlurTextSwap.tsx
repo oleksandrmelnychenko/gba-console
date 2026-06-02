@@ -1,9 +1,10 @@
-import { forwardRef, useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties, type Ref } from 'react'
 
 type BlurTextSwapProps = {
   text: string
   className?: string
   style?: CSSProperties
+  ref?: Ref<HTMLSpanElement>
 }
 
 /**
@@ -15,24 +16,27 @@ type BlurTextSwapProps = {
  * truncation (ellipsis) and typography are preserved during the swap. Forwards
  * a ref to the wrapper so it can be used as a Mantine Tooltip target.
  */
-export const BlurTextSwap = forwardRef<HTMLSpanElement, BlurTextSwapProps>(function BlurTextSwap(
-  { text, className, style },
-  ref,
-) {
+export function BlurTextSwap({ text, className, style, ref }: BlurTextSwapProps) {
   const [current, setCurrent] = useState(text)
   const [previous, setPrevious] = useState<string | null>(null)
 
+  // Adjust state during render when the incoming text changes — React's
+  // recommended approach over a useEffect, which would flash a stale frame.
+  if (text !== current) {
+    setPrevious(current)
+    setCurrent(text)
+  }
+
+  // Clear the outgoing layer once the blur animation has finished.
   useEffect(() => {
-    if (text === current) {
+    if (previous == null) {
       return
     }
 
-    setPrevious(current)
-    setCurrent(text)
     const timer = window.setTimeout(() => setPrevious(null), 360)
 
     return () => window.clearTimeout(timer)
-  }, [text, current])
+  }, [previous])
 
   return (
     <span ref={ref} className="tx-blur-swap">
@@ -51,4 +55,4 @@ export const BlurTextSwap = forwardRef<HTMLSpanElement, BlurTextSwapProps>(funct
       </span>
     </span>
   )
-})
+}

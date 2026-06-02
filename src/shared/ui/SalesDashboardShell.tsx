@@ -3,7 +3,7 @@ import { IconTruckReturn } from '@tabler/icons-react'
 import type { ComponentType, ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../i18n/useI18n'
-import { usePageBreadcrumb } from './page-header-actions/PageHeaderActions'
+import { usePageBreadcrumb } from './page-header-actions/pageHeaderActionsContext'
 
 type SalesTab = { label: string; value: string; icon?: ComponentType<{ size?: number; stroke?: number; className?: string }> }
 

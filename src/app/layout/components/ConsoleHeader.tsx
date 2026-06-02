@@ -8,7 +8,8 @@ import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { BlurTextSwap } from '../../../shared/transitions/BlurTextSwap'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { PageHeaderActionsSlot, usePageBreadcrumbLabel } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { PageHeaderActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { usePageBreadcrumbLabel } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { ConsoleNav } from './ConsoleNav'
 
 export function ConsoleHeader() {

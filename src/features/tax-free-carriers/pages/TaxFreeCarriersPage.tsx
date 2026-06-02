@@ -42,8 +42,6 @@ import {
 import { TAX_FREE_CARRIER_MANAGE_PERMISSION, TAX_FREE_CARRIER_PRINT_PERMISSION } from '../permissions'
 import type { TaxFreeCarrier, TaxFreeCarrierExportColumn, TaxFreeCarrierExportDocument } from '../types'
 
-const CARRIERS_PATH = '/tax-free/carriers/all'
-
 const CARRIERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'lastName'],
@@ -490,5 +488,3 @@ function displayValue(value: unknown): string {
 
   return String(value)
 }
-
-export const TAX_FREE_CARRIERS_PATH = CARRIERS_PATH

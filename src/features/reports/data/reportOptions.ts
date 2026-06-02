@@ -7,7 +7,7 @@ import type {
   ReportMeasurementSelection,
 } from '../types'
 
-export const REPORT_CONDITION_TYPES = {
+const REPORT_CONDITION_TYPES = {
   equals: 0,
   notEquals: 1,
   inList: 2,
@@ -38,7 +38,7 @@ export const REPORT_FILTER_FIELD_TYPES = {
   saleDocumentManagerPosted: 16,
 } as const
 
-export const REPORT_GROUPING_TYPES = {
+const REPORT_GROUPING_TYPES = {
   year: 0,
   quarter: 1,
   month: 2,
@@ -63,7 +63,7 @@ export const REPORT_GROUPING_TYPES = {
   supplier: 21,
 } as const
 
-export const REPORT_FIELD_TYPES = {
+const REPORT_FIELD_TYPES = {
   salesQuantity: 0,
   salesValueWithoutVat: 2,
   salesValueVat: 3,
@@ -89,7 +89,7 @@ export const REPORT_FILTER_CONDITIONS: ReportFilterCondition[] = [
   { Name: 'Не у групі', Type: REPORT_CONDITION_TYPES.notInGroup },
 ]
 
-export const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
+const REPORT_GROUPING_GROUPS: ReportGroupingGroup[] = [
   {
     categoryKey: 'Date',
     categoryLabel: 'Дата',
@@ -181,7 +181,7 @@ export const REPORT_FILTER_FIELD_GROUPS: ReportFilterFieldGroup[] = [
   },
 ]
 
-export const REPORT_FIELD_LABELS: Record<string, string> = {
+const REPORT_FIELD_LABELS: Record<string, string> = {
   Cost: 'Собівартість',
   CostVAT: 'ПДВ собівартості',
   CostWithVAT: 'Собівартість з ПДВ',
@@ -298,13 +298,4 @@ export function getReportFieldLabel(key?: string): string {
   }
 
   return REPORT_FIELD_LABELS[key] || key
-}
-
-export function isManyValueCondition(conditionType: number): boolean {
-  return (
-    conditionType === REPORT_CONDITION_TYPES.inList
-    || conditionType === REPORT_CONDITION_TYPES.inGroupFromList
-    || conditionType === REPORT_CONDITION_TYPES.notInList
-    || conditionType === REPORT_CONDITION_TYPES.notInGroupFromList
-  )
 }

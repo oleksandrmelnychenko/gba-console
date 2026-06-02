@@ -41,7 +41,7 @@ export async function getTaxFreePackListById(netId: string): Promise<TaxFreePack
   return normalizeObject<TaxFreePackList>(result, normalizePackList)
 }
 
-export async function updateTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
+async function updateTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/update', {
     body: packList,
     method: 'POST',
@@ -50,7 +50,7 @@ export async function updateTaxFreePackList(packList: TaxFreePackList): Promise<
   return normalizeObject<TaxFreePackList>(result, normalizePackList)
 }
 
-export async function updateSaleTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
+async function updateSaleTaxFreePackList(packList: TaxFreePackList): Promise<TaxFreePackList | null> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/update/sale', {
     body: packList,
     method: 'POST',

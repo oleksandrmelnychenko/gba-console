@@ -22,14 +22,6 @@ export type UserProfile = NamedEntity & {
   PhoneNumber?: string
 }
 
-export const FuelConsumptionMode = {
-  InCity: 0,
-  Mixed: 2,
-  OutsideCity: 1,
-} as const
-
-export type FuelConsumptionMode = (typeof FuelConsumptionMode)[keyof typeof FuelConsumptionMode]
-
 export type CompanyCar = EntityFields & {
   CarBrand?: string
   CompanyCarFuelings?: unknown[]
