@@ -1,4 +1,4 @@
-import { Button, Group, Stepper } from '@mantine/core'
+import { Box, Button, Group, Stepper } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -138,7 +138,9 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
 
   return (
-    <div
+    <Box
+      aria-label={t('Майстер нової продажі')}
+      role="group"
       onKeyDown={(event) => {
         if (event.altKey && event.key === '1') {
           setActive(0)
@@ -182,6 +184,6 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
           {nextLabel}
         </Button>
       </Group>
-    </div>
+    </Box>
   )
 }

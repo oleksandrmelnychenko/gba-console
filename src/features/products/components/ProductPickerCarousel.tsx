@@ -14,11 +14,13 @@ export type ProductPickerItem = {
 
 export function ProductPickerCarousel<T extends ProductPickerItem>({
   products,
+  disabled = false,
   isLoading,
   emptyText,
   onPick,
   onOpenCard,
 }: {
+  disabled?: boolean
   emptyText?: string
   isLoading?: boolean
   onOpenCard?: (productNetId: string) => void
@@ -27,14 +29,8 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
 }) {
   const { t } = useI18n()
   const [focused, setFocused] = useState(0)
-  const [prevProducts, setPrevProducts] = useState(products)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cardRefs = useRef<Array<HTMLDivElement | null>>([])
-
-  if (products !== prevProducts) {
-    setPrevProducts(products)
-    setFocused(0)
-  }
 
   const safeFocused = products.length === 0 ? 0 : Math.min(focused, products.length - 1)
 
@@ -43,7 +39,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
   }, [safeFocused])
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (products.length === 0) {
+    if (disabled || products.length === 0 || isNestedInteractiveEvent(event)) {
       return
     }
 
@@ -81,9 +77,11 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
 
   return (
     <Box
+      aria-label={t('Результати пошуку товарів')}
+      aria-disabled={disabled || undefined}
       ref={containerRef}
-      tabIndex={0}
-      style={{ outline: 'none' }}
+      role="listbox"
+      tabIndex={disabled ? -1 : 0}
       onKeyDown={handleKeyDown}
     >
       <ScrollArea type="auto" offsetScrollbars>
@@ -96,9 +94,12 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
             return (
               <Card
                 key={product.NetUid || code || index}
+                aria-disabled={disabled || undefined}
+                aria-selected={isActive}
                 ref={(node: HTMLDivElement | null) => {
                   cardRefs.current[index] = node
                 }}
+                role="option"
                 withBorder
                 padding="xs"
                 radius="md"
@@ -109,6 +110,10 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                   minWidth: 200,
                 }}
                 onClick={() => {
+                  if (disabled) {
+                    return
+                  }
+
                   setFocused(index)
                   onPick(product)
                 }}
@@ -122,6 +127,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                       <ActionIcon
                         aria-label={t('Картка товару')}
                         color="gray"
+                        disabled={disabled}
                         size="sm"
                         variant="subtle"
                         onClick={(event) => {
@@ -149,4 +155,14 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
       </ScrollArea>
     </Box>
   )
+}
+
+function isNestedInteractiveEvent(event: React.KeyboardEvent<HTMLDivElement>): boolean {
+  const target = event.target
+
+  if (!(target instanceof HTMLElement) || target === event.currentTarget) {
+    return false
+  }
+
+  return Boolean(target.closest('button,a,input,select,textarea,[role="button"]'))
 }

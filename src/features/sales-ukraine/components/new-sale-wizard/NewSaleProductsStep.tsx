@@ -27,6 +27,7 @@ export function NewSaleProductsStep({
   const [isSearching, setSearching] = useState(false)
   const [busy, setBusy] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const busyRef = useRef(false)
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
@@ -89,7 +90,9 @@ export function NewSaleProductsStep({
       return
     }
 
-    setBusy(true)
+    if (!beginBusy()) {
+      return
+    }
 
     const existing = orderItems.find((item) => item.Product?.NetUid === product.NetUid)
 
@@ -104,7 +107,7 @@ export function NewSaleProductsStep({
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
     } finally {
-      setBusy(false)
+      endBusy()
     }
   }
 
@@ -113,7 +116,9 @@ export function NewSaleProductsStep({
       return
     }
 
-    setBusy(true)
+    if (!beginBusy()) {
+      return
+    }
 
     try {
       await updateOrderItem({ ...item, Qty: qty })
@@ -121,7 +126,7 @@ export function NewSaleProductsStep({
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
     } finally {
-      setBusy(false)
+      endBusy()
     }
   }
 
@@ -130,7 +135,9 @@ export function NewSaleProductsStep({
       return
     }
 
-    setBusy(true)
+    if (!beginBusy()) {
+      return
+    }
 
     try {
       await deleteOrderItem(netId)
@@ -138,7 +145,31 @@ export function NewSaleProductsStep({
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
     } finally {
-      setBusy(false)
+      endBusy()
+    }
+  }
+
+  function beginBusy(): boolean {
+    if (busyRef.current) {
+      return false
+    }
+
+    busyRef.current = true
+    setBusy(true)
+    return true
+  }
+
+  function endBusy() {
+    busyRef.current = false
+    setBusy(false)
+  }
+
+  function handleQueryChange(value: string) {
+    setQuery(value)
+
+    if (value.trim().length < 2) {
+      setResults([])
+      setSearching(false)
     }
   }
 
@@ -151,11 +182,12 @@ export function NewSaleProductsStep({
         placeholder={t('Код Виробника')}
         rightSection={isSearching ? <Loader size="xs" /> : null}
         value={query}
-        onChange={(event) => setQuery(event.currentTarget.value)}
+        onChange={(event) => handleQueryChange(event.currentTarget.value)}
       />
 
       <ProductPickerCarousel
         products={results}
+        disabled={busy || !agreementNetId || !sale?.NetUid}
         isLoading={isSearching}
         emptyText={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
         onPick={(product) => addProduct(product)}
