@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   Group,
-  MultiSelect,
   Pagination,
   Select,
   Stack,
@@ -18,6 +17,7 @@ import { useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -332,12 +332,10 @@ export function ClientProductMovementPage() {
               onChange={(value) => applyFilters({ ...filterDraft, clientNetId: value || '' })}
               onSearchChange={setClientQuery}
             />
-            <MultiSelect
-              clearable
-              searchable
+            <CheckboxMultiSelect
               data={organizationOptions}
               label={t('Організація')}
-              placeholder={filterDraft.organizationIds.length ? undefined : t('Усі')}
+              placeholder={t('Усі')}
               value={filterDraft.organizationIds}
               w={240}
               onChange={(value) => applyFilters({ ...filterDraft, organizationIds: value })}
