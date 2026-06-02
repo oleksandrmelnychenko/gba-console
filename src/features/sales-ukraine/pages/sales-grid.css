@@ -175,8 +175,8 @@
 }
 
 .sales-grid-expand {
-  padding: 8px 12px 12px 40px;
-  background: var(--mantine-color-gray-0);
+  padding: 6px 12px 8px 40px;
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
 }
 

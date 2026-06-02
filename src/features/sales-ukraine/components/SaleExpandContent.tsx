@@ -109,7 +109,7 @@ function SaleExpandContentItem({
       gap="sm"
       justify="space-between"
       px="xs"
-      py={3}
+      py={1}
       style={hasQtyOverflow ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 6 } : undefined}
       wrap="nowrap"
     >
@@ -119,19 +119,19 @@ function SaleExpandContentItem({
           <Group gap={6} wrap="wrap">
             {openProductCard ? (
               <>
-                <Anchor c="gray.8" component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
+                <Anchor c="black" component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
                   {displayValue(getOrderItemProductCode(orderItem))}
                 </Anchor>
-                <Anchor c="gray.7" component="button" size="sm" type="button" onClick={openProductCard}>
+                <Anchor c="black" component="button" size="sm" type="button" onClick={openProductCard}>
                   {displayValue(getOrderItemProductName(orderItem))}
                 </Anchor>
               </>
             ) : (
               <>
-                <Text c="gray.8" fw={600} size="sm">
+                <Text c="black" fw={600} size="sm">
                   {displayValue(getOrderItemProductCode(orderItem))}
                 </Text>
-                <Text c="gray.7" size="sm">
+                <Text c="black" size="sm">
                   {displayValue(getOrderItemProductName(orderItem))}
                 </Text>
               </>
