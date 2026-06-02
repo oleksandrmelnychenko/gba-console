@@ -38,23 +38,39 @@ export function isSelfCheckout(transporter: SalesUkraineTransporter | null): boo
 }
 
 export function getReviewError(value: NewSaleReviewValue): string | null {
-  if (isSelfCheckout(value.transporter)) {
-    return null
-  }
-
   if (!value.transporter) {
     return 'Оберіть перевізника'
   }
 
-  if (!value.recipient) {
-    return 'Оберіть отримувача'
+  if (!isSelfCheckout(value.transporter)) {
+    if (!value.recipient) {
+      return 'Оберіть отримувача'
+    }
+
+    if (!value.address) {
+      return 'Оберіть адресу доставки'
+    }
+
+    if (!value.mobilePhone.trim()) {
+      return 'Вкажіть мобільний телефон отримувача'
+    }
   }
 
-  if (!value.address) {
-    return 'Оберіть адресу доставки'
+  if (value.isCashOnDelivery && !(parseReviewAmount(value.codAmount) > 0)) {
+    return 'Вкажіть суму накладеного платежу'
+  }
+
+  if (value.hasOwnTtn && !value.ttnNumber.trim()) {
+    return 'Вкажіть номер ТТН'
   }
 
   return null
+}
+
+function parseReviewAmount(value: number | string): number {
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
+
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 export type NewSaleWizardStepIndex = 0 | 1 | 2
