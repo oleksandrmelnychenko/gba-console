@@ -1,4 +1,5 @@
 import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
+import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
@@ -103,61 +104,70 @@ function SaleExpandContentItem({
 
   return (
     <Group
-      align="flex-start"
+      align="center"
       className="sale-expand-content-item"
-      gap="md"
+      gap="sm"
       justify="space-between"
       px="xs"
-      py={8}
+      py={3}
       style={hasQtyOverflow ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 6 } : undefined}
       wrap="nowrap"
     >
-      <Box style={{ minWidth: 0 }}>
-        <Group gap={6} wrap="wrap">
-          {openProductCard ? (
-            <>
-              <Anchor component="button" fw={600} type="button" onClick={openProductCard}>
-                {displayValue(getOrderItemProductCode(orderItem))}
-              </Anchor>
-              <Anchor component="button" type="button" onClick={openProductCard}>
-                {displayValue(getOrderItemProductName(orderItem))}
-              </Anchor>
-            </>
-          ) : (
-            <>
-              <Text fw={600}>{displayValue(getOrderItemProductCode(orderItem))}</Text>
-              <Text>{displayValue(getOrderItemProductName(orderItem))}</Text>
-            </>
-          )}
-          {orderItem.Product?.MainOriginalNumber && (
-            <Text c="dimmed">{orderItem.Product.MainOriginalNumber}</Text>
-          )}
-        </Group>
-        <Group gap={10} wrap="wrap" mt={2}>
-          {created && (
-            <Text c="dimmed" size="xs">
-              {t('Від')} {created}
+      <Group gap={8} wrap="nowrap" align="flex-start" style={{ minWidth: 0, flex: 1 }}>
+        <IconBox size={15} stroke={1.7} style={{ color: 'var(--mantine-color-gray-5)', flexShrink: 0, marginTop: 2 }} />
+        <Box style={{ minWidth: 0 }}>
+          <Group gap={6} wrap="wrap">
+            {openProductCard ? (
+              <>
+                <Anchor c="gray.8" component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
+                  {displayValue(getOrderItemProductCode(orderItem))}
+                </Anchor>
+                <Anchor c="gray.7" component="button" size="sm" type="button" onClick={openProductCard}>
+                  {displayValue(getOrderItemProductName(orderItem))}
+                </Anchor>
+              </>
+            ) : (
+              <>
+                <Text c="gray.8" fw={600} size="sm">
+                  {displayValue(getOrderItemProductCode(orderItem))}
+                </Text>
+                <Text c="gray.7" size="sm">
+                  {displayValue(getOrderItemProductName(orderItem))}
+                </Text>
+              </>
+            )}
+            {orderItem.Product?.MainOriginalNumber && (
+              <Text c="dimmed" size="sm">
+                {orderItem.Product.MainOriginalNumber}
+              </Text>
+            )}
+          </Group>
+          <Group gap={10} wrap="wrap">
+            {created && (
+              <Text c="dimmed" size="xs">
+                {t('Від')} {created}
+              </Text>
+            )}
+            {responsible && (
+              <Text c="dimmed" size="xs">
+                {responsible}
+              </Text>
+            )}
+            {specificationCode && (
+              <Text c="dimmed" size="xs">
+                {t('Митний код')}: {specificationCode}
+              </Text>
+            )}
+          </Group>
+          {comment && (
+            <Text c="dimmed" fs="italic" size="xs">
+              {comment}
             </Text>
           )}
-          {responsible && (
-            <Text c="dimmed" size="xs">
-              {responsible}
-            </Text>
-          )}
-          {specificationCode && (
-            <Text c="dimmed" size="xs">
-              {t('Митний код')}: {specificationCode}
-            </Text>
-          )}
-        </Group>
-        {comment && (
-          <Text c="dimmed" fs="italic" mt={2} size="xs">
-            {comment}
-          </Text>
-        )}
-      </Box>
+        </Box>
+      </Group>
 
-      <Group align="flex-start" gap="lg" wrap="nowrap">
+      <Group align="center" gap="md" wrap="nowrap">
         <ValueBlock label={localCurrencyCode || t('Сума')} value={formatAmount(getNumber(orderItem.TotalAmountLocal))} />
         <ValueBlock label={secondCode} value={formatAmount(secondAmount)} />
         {isVatSale && <ValueBlock label={t('ПДВ')} value={formatAmount(getNumber(orderItem.TotalVat))} />}
@@ -169,6 +179,7 @@ function SaleExpandContentItem({
           </Text>
           {!hasUniformDiscount && (hasDiscount || isNew) ? (
             <Anchor
+              c="gray.8"
               component="button"
               fw={hasDiscount ? 600 : 400}
               type="button"
