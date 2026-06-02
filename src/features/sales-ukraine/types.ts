@@ -246,6 +246,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   CustomersOwnTtnId?: number
   DeliveryRecipient?: SalesUkraineDeliveryRecipient | null
   DeliveryRecipientAddress?: SalesUkraineDeliveryRecipientAddress | null
+  DeliveryRecipientAddressId?: number
   FromDate?: Date | string
   HasDocuments?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]

@@ -14,6 +14,7 @@ import {
   canAdvanceToReview,
   getCartItemCount,
   getReviewError,
+  isSelfCheckout,
   NEW_SALE_REVIEW_INITIAL,
   NEW_SALE_WIZARD_INITIAL,
   type NewSaleReviewValue,
@@ -120,15 +121,32 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     setBusy(true)
 
     try {
+      const selfCheckout = isSelfCheckout(review.transporter)
       const payload: SalesUkraineSale = {
         ...state.sale,
         Comment: review.comment || state.sale.Comment,
-        DeliveryRecipient: (review.recipient ?? state.sale.DeliveryRecipient) as SalesUkraineSale['DeliveryRecipient'],
-        DeliveryRecipientAddress: (review.address ?? state.sale.DeliveryRecipientAddress) as SalesUkraineSale['DeliveryRecipientAddress'],
         Transporter: review.transporter ?? state.sale.Transporter,
         TransporterId: review.transporter?.Id ?? state.sale.TransporterId,
       }
-      const updated = await setSaleCarrier(payload, null)
+
+      if (!selfCheckout) {
+        const recipient = review.recipient ?? state.sale.DeliveryRecipient
+        const address = review.address ?? state.sale.DeliveryRecipientAddress
+
+        payload.DeliveryRecipient = recipient
+          ? ({ ...recipient, MobilePhone: review.mobilePhone || recipient.MobilePhone } as SalesUkraineSale['DeliveryRecipient'])
+          : recipient
+        payload.DeliveryRecipientAddress = address
+          ? ({ ...address, City: review.city || address.City, Department: review.department || address.Department } as SalesUkraineSale['DeliveryRecipientAddress'])
+          : address
+        payload.DeliveryRecipientAddressId = review.address?.Id ?? state.sale.DeliveryRecipientAddressId
+        payload.IsCashOnDelivery = review.isCashOnDelivery
+        payload.CashOnDeliveryAmount = review.isCashOnDelivery ? toAmount(review.codAmount) : state.sale.CashOnDeliveryAmount
+        payload.TTN = review.hasOwnTtn ? review.ttnNumber || state.sale.TTN : state.sale.TTN
+      }
+
+      const file = !selfCheckout && review.hasOwnTtn ? review.ttnFile : null
+      const updated = await setSaleCarrier(payload, file)
       notifications.show({ color: 'green', message: t('Продаж створено') })
       onCreated(updated ?? state.sale)
       onClose()
@@ -212,4 +230,10 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       </Group>
     </Box>
   )
+}
+
+function toAmount(value: number | string): number | undefined {
+  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
+
+  return Number.isFinite(parsed) ? parsed : undefined
 }

@@ -5,16 +5,32 @@ export const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
 
 export type NewSaleReviewValue = {
   address: WizardDeliveryRecipientAddress | null
+  city: string
+  codAmount: number | string
   comment: string
+  department: string
+  hasOwnTtn: boolean
+  isCashOnDelivery: boolean
+  mobilePhone: string
   recipient: WizardDeliveryRecipient | null
   transporter: SalesUkraineTransporter | null
+  ttnFile: File | null
+  ttnNumber: string
 }
 
 export const NEW_SALE_REVIEW_INITIAL: NewSaleReviewValue = {
   address: null,
+  city: '',
+  codAmount: '',
   comment: '',
+  department: '',
+  hasOwnTtn: false,
+  isCashOnDelivery: false,
+  mobilePhone: '',
   recipient: null,
   transporter: null,
+  ttnFile: null,
+  ttnNumber: '',
 }
 
 export function isSelfCheckout(transporter: SalesUkraineTransporter | null): boolean {

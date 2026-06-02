@@ -5,6 +5,7 @@ import {
   getCartItemCount,
   getReviewError,
   isSelfCheckout,
+  NEW_SALE_REVIEW_INITIAL,
   SELF_CHECKOUT_CLASS,
 } from './newSaleWizardState'
 import type { SalesUkraineSale, SalesUkraineTransporter } from '../../types'
@@ -14,21 +15,19 @@ describe('new sale wizard state guards', () => {
     const transporter = { CssClass: SELF_CHECKOUT_CLASS, Id: 7 } as SalesUkraineTransporter
 
     expect(isSelfCheckout(transporter)).toBe(true)
-    expect(getReviewError({ address: null, comment: '', recipient: null, transporter })).toBeNull()
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter })).toBeNull()
   })
 
   it('requires transporter and recipient for delivery review', () => {
-    expect(getReviewError({ address: null, comment: '', recipient: null, transporter: null })).toBe('Оберіть перевізника')
-    expect(getReviewError({ address: null, comment: '', recipient: null, transporter: { Id: 2 } as SalesUkraineTransporter })).toBe(
-      'Оберіть отримувача',
-    )
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter: null })).toBe('Оберіть перевізника')
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter: { Id: 2 } as SalesUkraineTransporter })).toBe('Оберіть отримувача')
   })
 
   it('requires a delivery address once carrier and recipient are chosen', () => {
     const transporter = { Id: 2 } as SalesUkraineTransporter
 
-    expect(getReviewError({ address: null, comment: '', recipient: { Id: 5 }, transporter })).toBe('Оберіть адресу доставки')
-    expect(getReviewError({ address: { Id: 9 }, comment: '', recipient: { Id: 5 }, transporter })).toBeNull()
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, recipient: { Id: 5 }, transporter })).toBe('Оберіть адресу доставки')
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, recipient: { Id: 5 }, transporter })).toBeNull()
   })
 
   it('gates products and review by selected agreement and cart sale', () => {

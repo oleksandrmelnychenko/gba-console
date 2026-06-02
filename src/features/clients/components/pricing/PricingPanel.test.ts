@@ -42,4 +42,22 @@ describe('applyPendingDiscountDraft', () => {
     expect(applyPendingDiscountDraft(client, null)).toBe(client)
     expect(applyPendingDiscountDraft(client, { clientAgreementNetId: 'agreement-1', isDirty: false, productGroupDiscounts: [] })).toBe(client)
   })
+
+  it('returns agreements unchanged when the draft matches no agreement', () => {
+    const client: Client = {
+      ClientAgreements: [{ Agreement: { NetUid: 'agreement-1' }, ProductGroupDiscounts: [{ DiscountRate: 5, ProductGroupId: 1 }] }],
+    }
+    const draft: DiscountsTreeDraft = {
+      clientAgreementNetId: 'no-match',
+      isDirty: true,
+      productGroupDiscounts: [{ DiscountRate: 99, ProductGroupId: 1 }],
+    }
+
+    const result = applyPendingDiscountDraft(client, draft)
+
+    expect(result.ClientAgreements).toEqual([
+      { Agreement: { NetUid: 'agreement-1' }, ProductGroupDiscounts: [{ DiscountRate: 5, ProductGroupId: 1 }] },
+    ])
+    expect(result.ClientAgreements?.[0]).not.toHaveProperty('__ProductGroupDiscountsChanged')
+  })
 })

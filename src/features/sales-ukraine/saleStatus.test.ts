@@ -25,7 +25,7 @@ describe('sale status helpers', () => {
     expect(getSaleLifecycleStatusKey(undefined)).toBe('')
   })
 
-  it('allows one-time discount editing only for new and packaging lifecycle states', () => {
+  it('allows one-time discount editing for new, packaging and packaged lifecycle states', () => {
     expect(isDiscountEditableSaleLifecycle(0)).toBe(true)
     expect(isDiscountEditableSaleLifecycle('0')).toBe(true)
     expect(isDiscountEditableSaleLifecycle('New')).toBe(true)
@@ -33,8 +33,11 @@ describe('sale status helpers', () => {
     expect(isDiscountEditableSaleLifecycle(1)).toBe(true)
     expect(isDiscountEditableSaleLifecycle('1')).toBe(true)
     expect(isDiscountEditableSaleLifecycle('Packaging')).toBe(true)
-    expect(isDiscountEditableSaleLifecycle(2)).toBe(false)
-    expect(isDiscountEditableSaleLifecycle('Packaged')).toBe(false)
+    expect(isDiscountEditableSaleLifecycle(2)).toBe(true)
+    expect(isDiscountEditableSaleLifecycle('2')).toBe(true)
+    expect(isDiscountEditableSaleLifecycle('Packaged')).toBe(true)
+    expect(isDiscountEditableSaleLifecycle(3)).toBe(false)
+    expect(isDiscountEditableSaleLifecycle('Shipping')).toBe(false)
     expect(isDiscountEditableSaleLifecycle(undefined)).toBe(false)
   })
 })
