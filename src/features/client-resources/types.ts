@@ -4,7 +4,6 @@ export const CLIENT_RESOURCE_STEPS = [
   'organizations',
   'tax-inspectation',
   'pricing',
-  'map',
   'currencies',
   'storages',
   'measure-unit',

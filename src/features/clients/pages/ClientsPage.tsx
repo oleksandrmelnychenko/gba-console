@@ -100,7 +100,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
     left: ['status', 'regionCode', 'client'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 30
@@ -598,7 +598,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="calc(100vh - 240px)"
             isLoading={isLoading}
-            layoutVersion="clients-table-fit-2"
+            layoutVersion="clients-table-compact-3"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1120}
@@ -1075,7 +1075,11 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         minWidth: 70,
         align: 'right',
         accessor: (client) => client.OrderExpireDays,
-        cell: (client) => displayValue(client.OrderExpireDays),
+        cell: (client) => (
+          <Text span inherit style={{ fontVariantNumeric: 'tabular-nums' }}>
+            {displayValue(client.OrderExpireDays)}
+          </Text>
+        ),
       },
       {
         id: 'location',
@@ -1084,12 +1088,15 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         minWidth: 120,
         accessor: (client) => [client.RegionCode?.City, client.RegionCode?.District].filter(Boolean).join(' '),
         cell: (client) => (
-          <>
-            <Text size="sm">{displayValue(client.RegionCode?.City)}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(client.RegionCode?.District)}
-            </Text>
-          </>
+          <Text size="sm">
+            {displayValue(client.RegionCode?.City)}
+            {client.RegionCode?.District ? (
+              <Text component="span" inherit c="dimmed">
+                {' · '}
+                {client.RegionCode.District}
+              </Text>
+            ) : null}
+          </Text>
         ),
       },
       {
@@ -1114,7 +1121,16 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         width: 124,
         minWidth: 110,
         accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
-        cell: (client) => displayValue(client.ClientInRole?.ClientTypeRole?.Name),
+        cell: (client) => {
+          const name = client.ClientInRole?.ClientTypeRole?.Name?.trim()
+          return name ? (
+            <Badge color={roleBadgeColor(name)} variant="light">
+              {name}
+            </Badge>
+          ) : (
+            <Text c="dimmed">-</Text>
+          )
+        },
       },
       {
         id: 'actions',
@@ -1345,4 +1361,29 @@ function displayValue(value?: number | string | null): string {
 
   const normalized = value?.trim()
   return normalized || '-'
+}
+
+// Role names are dynamic free strings from the backend, so we derive a stable
+// color per name (djb2 hash, mirroring hashString in navigationIcons.tsx). The
+// palette excludes orange (reserved for create actions) and green/gray (status).
+const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
+
+function roleHash(value: string): number {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index)
+    hash |= 0
+  }
+  return Math.abs(hash)
+}
+
+function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
+  const key = name.trim().toLowerCase()
+  if (key.includes('постач')) {
+    return 'teal'
+  }
+  if (key.includes('покуп')) {
+    return 'indigo'
+  }
+  return ROLE_BADGE_PALETTE[roleHash(key) % ROLE_BADGE_PALETTE.length]
 }

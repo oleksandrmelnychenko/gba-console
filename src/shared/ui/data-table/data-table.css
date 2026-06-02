@@ -145,14 +145,25 @@
   flex: 0 0 auto;
 }
 
+/* Column controls stay out of layout at rest so the header name has the full
+   column width; they reveal on hover / keyboard focus. */
 .data-table-column-menu {
   color: var(--mantine-color-gray-5);
-  opacity: 0;
+  display: none;
 }
 
 .data-table-th:hover .data-table-column-menu,
-.data-table-column-menu:focus-visible {
-  opacity: 1;
+.data-table-th:focus-within .data-table-column-menu {
+  display: inline-flex;
+}
+
+.data-table-sort-icon[data-sorted='false'] {
+  display: none;
+}
+
+.data-table-th:hover .data-table-sort-icon[data-sorted='false'],
+.data-table-th:focus-within .data-table-sort-icon[data-sorted='false'] {
+  display: inline-flex;
 }
 
 .data-table-resizer {

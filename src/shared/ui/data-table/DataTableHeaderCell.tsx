@@ -103,7 +103,7 @@ export function DataTableHeaderCell<TData>({
             </span>
           ) : null}
           {canSort ? (
-            <span className="data-table-sort-icon" aria-label={sortLabel}>
+            <span className="data-table-sort-icon" data-sorted={sorted ? 'true' : 'false'} aria-label={sortLabel}>
               {sorted === 'asc' ? (
                 <IconChevronUp size={14} stroke={2} />
               ) : sorted === 'desc' ? (

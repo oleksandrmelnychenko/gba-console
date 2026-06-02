@@ -29,7 +29,6 @@ import {
   IconDatabaseOff,
   IconDeviceFloppy,
   IconExternalLink,
-  IconMap,
   IconMapPin,
   IconPackage,
   IconPencil,
@@ -452,12 +451,6 @@ const RESOURCE_SECTIONS: ClientResourceSection[] = [
     icon: IconCoin,
   },
   {
-    step: 'map',
-    label: 'Мапа',
-    description: 'Карта регіонів',
-    icon: IconMap,
-  },
-  {
     step: 'currencies',
     label: 'Валюти',
     description: 'Валютні довідники',
@@ -562,8 +555,6 @@ function ClientResourceSectionContent({ section, step }: { section: ClientResour
       return <TaxInspectionsPanel section={section} />
     case 'pricing':
       return <PricingPanel section={section} />
-    case 'map':
-      return <MapPanel section={section} />
     case 'currencies':
       return <CurrenciesPanel section={section} />
     case 'storages':
@@ -3251,77 +3242,6 @@ function PricingResourceTable({
   )
 }
 
-function MapPanel({ section }: { section: ClientResourceSection }) {
-  const state = useResourceData<ClientResourceRegion[]>(getClientResourceRegions, [])
-  const [search, setSearch] = useValueState('')
-  const filtered = useMemo(
-    () =>
-      state.data.filter((region) =>
-        matchesSearch(search, [
-          region.Name,
-          ...(region.RegionCodes || []).flatMap((code) => [code.Value, code.City, code.District]),
-        ]),
-      ),
-    [search, state.data],
-  )
-
-  return (
-    <ResourcePanel section={section}>
-      <PanelToolbar
-        count={filtered.length}
-        isLoading={state.isLoading}
-        onRefresh={state.reload}
-        onSearchChange={setSearch}
-        searchValue={search}
-      />
-      <Loadable state={state} emptyTitle="Регіонів не знайдено">
-        {filtered.length ? (
-          <ResourceDataTable
-            columns={[
-              {
-                id: 'region',
-                header: 'Регіон',
-                accessor: (region) => region.Name,
-                minWidth: 180,
-              },
-              {
-                id: 'codesCount',
-                header: 'Кодів',
-                accessor: (region) => region.RegionCodes?.length || 0,
-                width: 110,
-              },
-              {
-                id: 'codes',
-                header: 'Коди',
-                accessor: (region) => formatRegionCodes(region.RegionCodes),
-                minWidth: 260,
-              },
-              {
-                id: 'cities',
-                header: 'Міста',
-                accessor: (region) => formatRegionCities(region.RegionCodes),
-                minWidth: 320,
-              },
-              {
-                id: 'districts',
-                header: 'Райони',
-                accessor: (region) => formatRegionDistricts(region.RegionCodes),
-                minWidth: 260,
-              },
-            ]}
-            data={filtered}
-            emptyText={translate("За цим пошуком немає регіонів")}
-            minWidth={1120}
-            tableId="regions-map"
-          />
-        ) : (
-          <EmptyState icon={IconMap} title={translate("За цим пошуком немає регіонів")} />
-        )}
-      </Loadable>
-    </ResourcePanel>
-  )
-}
-
 function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   const state = useResourceData<ClientResourceCurrency[]>(getClientResourceCurrencies, [])
   const [search, setSearch] = useValueState('')
@@ -5465,32 +5385,6 @@ function displayCurrency(currency?: ClientResourceCurrency): string {
   }
 
   return currency.Code || translatedName
-}
-
-function formatRegionCodes(codes?: ClientResourceRegionCode[]): string {
-  return formatDistinctValues((codes || []).map((code) => code.Value))
-}
-
-function formatRegionCities(codes?: ClientResourceRegionCode[]): string {
-  return formatDistinctValues((codes || []).map((code) => code.City))
-}
-
-function formatRegionDistricts(codes?: ClientResourceRegionCode[]): string {
-  return formatDistinctValues((codes || []).map((code) => code.District))
-}
-
-function formatDistinctValues(values: Array<string | undefined>): string {
-  const uniqueValues = new Set<string>()
-
-  for (const value of values) {
-    const trimmedValue = value?.trim()
-
-    if (trimmedValue) {
-      uniqueValues.add(trimmedValue)
-    }
-  }
-
-  return uniqueValues.size ? Array.from(uniqueValues).join(', ') : '—'
 }
 
 function displayTranslatedEntity(baseName?: string, translations?: ClientResourceTranslation[]): string {
