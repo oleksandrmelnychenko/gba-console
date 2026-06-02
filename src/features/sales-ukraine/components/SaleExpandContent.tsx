@@ -154,7 +154,7 @@ function SaleExpandContentItem({
               </Text>
             )}
             {specificationCode && (
-              <Text c="dimmed" size="xs">
+              <Text c="black" size="xs">
                 {t('Митний код')}: {specificationCode}
               </Text>
             )}
