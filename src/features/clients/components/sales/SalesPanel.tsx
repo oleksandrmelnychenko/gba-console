@@ -269,6 +269,7 @@ function DateFilter({
         {label}
       </Text>
       <input
+        aria-label={label}
         style={{
           border: '1px solid var(--mantine-color-gray-4)',
           borderRadius: 'var(--mantine-radius-sm)',

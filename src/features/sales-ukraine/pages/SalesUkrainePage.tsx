@@ -871,12 +871,28 @@ function SaleGridRow({
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
 
-  const stop = (event: { stopPropagation: () => void }) => event.stopPropagation()
+  const openSale = () => onOpenSale(sale)
 
   return (
-    <div className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}`} onClick={() => onOpenSale(sale)}>
+    <div
+      className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-label={t('Відкрити продаж')}
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest('[data-row-stop]')) {
+          openSale()
+        }
+      }}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+          event.preventDefault()
+          openSale()
+        }
+      }}
+    >
       <div className="sg-client">
-        <div className="sg-client-actions" onClick={stop}>
+        <div className="sg-client-actions" data-row-stop="true">
           {showEdit && (
             <Tooltip label={t('Відкрити продаж')}>
               <ActionIcon aria-label={t('Відкрити продаж')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
@@ -889,12 +905,21 @@ function SaleGridRow({
               <span
                 className="sg-bang"
                 data-clickable={bangClickable ? 'true' : undefined}
+                role={bangClickable ? 'button' : undefined}
+                tabIndex={bangClickable ? 0 : undefined}
+                aria-label={bangClickable ? t('Замовлення не буде відвантажено') : undefined}
                 style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}
-                onClick={() => {
-                  if (bangClickable) {
-                    onWillNotShip(sale)
-                  }
-                }}
+                onClick={bangClickable ? () => onWillNotShip(sale) : undefined}
+                onKeyDown={
+                  bangClickable
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          onWillNotShip(sale)
+                        }
+                      }
+                    : undefined
+                }
               >
                 !
               </span>
@@ -986,7 +1011,7 @@ function SaleGridRow({
         {positions} {t('поз.')}
       </div>
 
-      <div className="sg-slot" onClick={stop}>
+      <div className="sg-slot" data-row-stop="true">
         {discountEditable ? (
           <Tooltip label={t('Знижка')}>
             <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
@@ -1000,7 +1025,7 @@ function SaleGridRow({
         ) : null}
       </div>
 
-      <div className="sg-doc-actions" onClick={stop}>
+      <div className="sg-doc-actions" data-row-stop="true">
         {!hidePrintBlock && <SaleDocumentsMenu sale={sale} />}
         <Menu position="bottom-end" shadow="md" withinPortal>
           <Menu.Target>
