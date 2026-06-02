@@ -60,8 +60,8 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
   const [isSaving, setSaving] = useState(false)
   const [transporters, setTransporters] = useState<SalesUkraineTransporter[]>([])
 
-  const [transporterId, setTransporterId] = useState(getTransporterValue(sale.Transporter))
-  const [shipmentDate, setShipmentDate] = useState(toDateInput(sale.ShipmentDate))
+  const [transporterId, setTransporterId] = useState(() => getTransporterValue(sale.Transporter))
+  const [shipmentDate, setShipmentDate] = useState(() => toDateInput(sale.ShipmentDate))
   const [ttn, setTtn] = useState(sale.TTN || '')
   const [city, setCity] = useState(sale.DeliveryRecipientAddress?.City || '')
   const [department, setDepartment] = useState(sale.DeliveryRecipientAddress?.Department || '')
