@@ -63,11 +63,18 @@
 }
 
 .console-header-main {
-  height: 48px;
+  height: 60px;
+  min-height: 60px;
+  align-items: center;
 }
 
 .console-header-brand {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  gap: var(--mantine-spacing-xs);
 }
 
 .console-brand-button {
@@ -81,6 +88,7 @@
   cursor: pointer;
   font: inherit;
   gap: 10px;
+  height: 44px;
   text-align: left;
 }
 
@@ -96,6 +104,19 @@
   height: 22px;
   margin: 0 6px;
   background: var(--mantine-color-gray-3);
+}
+
+.console-header-title {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+}
+
+.console-header-title .mantine-Title-root {
+  display: block;
+  margin: 0;
+  height: 18px;
+  line-height: 18px;
 }
 
 /* Slot where each page teleports its primary action(s), next to the breadcrumb */
@@ -123,15 +144,37 @@
 }
 
 .console-header-crumbs {
+  display: flex;
+  height: 20px;
   min-width: 0;
   max-width: 100%;
+  align-items: center;
   overflow: hidden;
 }
 
+.console-header-crumbs .tx-blur-swap {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 20px;
+}
+
+.console-header-crumbs .tx-blur-swap-in,
+.console-header-crumbs .tx-blur-swap-layer {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 20px;
+}
+
 .console-header-crumb {
+  display: inline-flex;
+  align-items: center;
   color: var(--mantine-color-gray-6);
   font-size: var(--mantine-font-size-sm);
   font-weight: 500;
+  height: 20px;
+  line-height: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -145,6 +188,8 @@
 }
 
 .console-header-crumb-sep {
+  display: block;
+  align-self: center;
   color: var(--mantine-color-gray-4);
   flex: 0 0 auto;
 }
@@ -152,6 +197,12 @@
 .console-bell {
   position: relative;
   display: inline-flex;
+  overflow: visible;
+}
+
+.console-bell .mantine-ActionIcon-root,
+.console-header-actions > .mantine-ActionIcon-root {
+  overflow: visible;
 }
 
 .console-bell-badge {
@@ -275,17 +326,40 @@
 
 .console-header-actions {
   flex: 0 0 auto;
+  height: 100%;
+  align-items: center;
+  overflow: visible;
 }
 
 .console-header-tool-actions {
   flex: 0 0 auto;
+  align-items: center;
   padding-right: 8px;
   margin-right: 2px;
   border-right: 1px solid var(--mantine-color-gray-2);
+  overflow: visible !important;
 }
 
 .console-header-action {
   color: var(--mantine-color-gray-7);
+  overflow: visible !important;
+}
+
+.console-header-action .mantine-ActionIcon-icon,
+.console-header-action .mantine-Indicator-root {
+  overflow: visible !important;
+}
+
+.console-header-action .mantine-Indicator-indicator {
+  z-index: 20;
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 4px;
+  overflow: visible !important;
+  line-height: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 .console-header-action:hover {
@@ -297,6 +371,8 @@
   max-width: 180px;
   overflow: hidden;
   color: var(--mantine-color-gray-8);
+  font-size: 14px;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

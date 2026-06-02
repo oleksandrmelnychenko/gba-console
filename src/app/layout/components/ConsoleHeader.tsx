@@ -37,7 +37,7 @@ export function ConsoleHeader() {
           <button type="button" className="console-brand-button" onClick={() => navigate('/dashboard')}>
             <img className="console-brand-logo" src={gbaLogo} alt="GBA" />
             <Box className="console-header-title">
-              <Title order={1} size={14} lh={1.05}>
+              <Title order={1} size={14}>
                 GBA CONSOLE
               </Title>
             </Box>
