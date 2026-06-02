@@ -511,8 +511,8 @@ export function SalesUkrainePage() {
       await confirmState.onConfirm()
       setConfirmState(null)
       reload()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося виконати дію') })
+    } catch (error) {
+      notifications.show({ color: 'red', message: error instanceof Error ? error.message : t('Не вдалося виконати дію') })
     } finally {
       setConfirming(false)
     }
