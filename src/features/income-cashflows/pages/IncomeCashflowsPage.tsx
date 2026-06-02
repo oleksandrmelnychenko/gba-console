@@ -1154,7 +1154,13 @@ function ReassignIncomeClientModal({
         return
       }
 
-      const result = await searchIncomeCashflowClientPayers(value).catch(() => [])
+      const result = await searchIncomeCashflowClientPayers(value).catch((searchError) => {
+        if (!cancelled) {
+          setError(searchError instanceof Error ? searchError.message : 'Не вдалося завантажити клієнтів')
+        }
+
+        return []
+      })
       if (!cancelled) {
         setClients(result)
       }
@@ -1165,7 +1171,7 @@ function ReassignIncomeClientModal({
     return () => {
       cancelled = true
     }
-  }, [debouncedSearch, opened, setClients])
+  }, [debouncedSearch, opened, setClients, setError])
 
   useEffect(() => {
     let cancelled = false
@@ -1179,7 +1185,13 @@ function ReassignIncomeClientModal({
         return
       }
 
-      const result = await getIncomeCashflowClientAgreements(selectedClientValue).catch(() => [])
+      const result = await getIncomeCashflowClientAgreements(selectedClientValue).catch((agreementsError) => {
+        if (!cancelled) {
+          setError(agreementsError instanceof Error ? agreementsError.message : 'Не вдалося завантажити договори')
+        }
+
+        return []
+      })
       if (!cancelled) {
         setClientAgreements(result)
       }
@@ -1190,7 +1202,7 @@ function ReassignIncomeClientModal({
     return () => {
       cancelled = true
     }
-  }, [selectedClientValue, setClientAgreements, setSelectedAgreementValue])
+  }, [selectedClientValue, setClientAgreements, setSelectedAgreementValue, setError])
 
   const handleSubmit = useCallback(async () => {
     const incomeNetId = row?.income.NetUid
