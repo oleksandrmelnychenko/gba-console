@@ -187,7 +187,15 @@ export function ClientEditPage() {
     return <Navigate to="/clients" replace />
   }
 
-  if (!isLoading && client && firstStep && (!step || !activeStep)) {
+  // Redirect to the first step on the very first render (before the drawer
+  // paints) so the editor mounts directly at the step route once — avoids the
+  // open → close → reopen flicker that a post-load redirect would cause.
+  if (firstStep && !step) {
+    return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} state={location.state} replace />
+  }
+
+  // Invalid/stale step in the URL once the client (and its real steps) loaded.
+  if (!isLoading && client && firstStep && !activeStep) {
     return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} state={location.state} replace />
   }
 
