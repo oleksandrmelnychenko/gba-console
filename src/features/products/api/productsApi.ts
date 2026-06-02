@@ -57,10 +57,10 @@ export async function getProductUploadPricings(): Promise<Pricing[]> {
   return (normalizeArray(result) as Pricing[]).filter((pricing) => !pricing.BasePricingId)
 }
 
-export async function uploadProductsFromFile(configuration: ProductFileUploadConfiguration, files: File[]): Promise<void> {
+export async function uploadProductsFromFile(configuration: ProductFileUploadConfiguration, file: File): Promise<void> {
   const formData = new FormData()
 
-  files.forEach((file) => formData.append('file', file))
+  formData.append('file', file)
   formData.append('configuration', JSON.stringify(configuration))
 
   await apiRequest<unknown>('/products/upload/file', {

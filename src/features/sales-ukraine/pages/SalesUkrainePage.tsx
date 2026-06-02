@@ -59,7 +59,8 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
-import { getStatusTypeKey, isStatusType } from '../saleStatus'
+import { getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
+import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
@@ -1022,15 +1023,22 @@ function useSalesUkraineColumns({
           const firstDiscount = getNumber(items[0]?.OneTimeDiscount)
           const text = firstDiscount ? `${amountFormatter.format(firstDiscount)} %` : '—'
 
-          if (!isNewOrPackagingStatus(sale) || items.length === 0) {
+          if (items.length === 0) {
             return text
           }
 
           const discounts = items.map((item) => getNumber(item.OneTimeDiscount) ?? 0)
           const hasUniformDiscount = discounts[0] !== 0 && discounts.every((value) => value === discounts[0])
           const allPositive = discounts.every((value) => value > 0)
+          const canEditDiscount = isSaleDiscountEditable(sale)
 
           if (hasUniformDiscount) {
+            const value = `${amountFormatter.format(discounts[0])} %`
+
+            if (!canEditDiscount) {
+              return value
+            }
+
             return (
               <Anchor
                 component="button"
@@ -1041,7 +1049,7 @@ function useSalesUkraineColumns({
                   onOpenDiscount(sale)
                 }}
               >
-                {`${amountFormatter.format(discounts[0])} %`}
+                {value}
               </Anchor>
             )
           }
@@ -1052,10 +1060,8 @@ function useSalesUkraineColumns({
             return <Text span>{`${amountFormatter.format(average)} %`}</Text>
           }
 
-          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-          if (isStatusType(lifeCycleType, 1) || isStatusType(lifeCycleType, 2)) {
-            return '—'
+          if (!canEditDiscount) {
+            return text
           }
 
           return (
@@ -1228,6 +1234,22 @@ function SaleDetail({ sale }: { sale: SalesUkraineSale }) {
         align: 'right',
         cell: (item) => formatAmount(getNumber(item.PricePerItem)),
         width: 120,
+      },
+      {
+        id: 'baseDiscount',
+        header: t('Базова знижка'),
+        accessor: (item) => getVisibleOrderItemBaseDiscount(item),
+        align: 'right',
+        cell: (item) => formatPercent(getVisibleOrderItemBaseDiscount(item)),
+        width: 132,
+      },
+      {
+        id: 'discount',
+        header: t('Разова знижка'),
+        accessor: (item) => getNumber(item.OneTimeDiscount),
+        align: 'right',
+        cell: (item) => formatPercent(getNumber(item.OneTimeDiscount)),
+        width: 132,
       },
       {
         id: 'amount',
@@ -1491,10 +1513,8 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
   return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
 }
 
-function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
-  const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-  return isStatusType(status, 0) || isStatusType(status, 1) || isStatusType(status, 2)
+function isSaleDiscountEditable(sale: SalesUkraineSale): boolean {
+  return isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
@@ -1567,6 +1587,10 @@ function formatTime(value: Date | null): string {
 
 function formatAmount(value: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : displayValue(value)
+}
+
+function formatPercent(value: number | null): string {
+  return typeof value === 'number' ? `${amountFormatter.format(value)} %` : '—'
 }
 
 function getNumber(value: unknown): number | null {

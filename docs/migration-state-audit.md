@@ -81,6 +81,18 @@ Scope is existing migrated UI only. New feature migration is intentionally pause
 - Client resource pricing create/save is blocked until required support lookups are loaded.
 - Client resource pricing validates selected currency and price type before save payload creation.
 
+### Pricing and discounts
+
+- Client agreement product-group discounts now build missing nested `SubProductGroupDiscounts` from the product-group tree and preserve existing root/child discount values.
+- Client discount tree dirty changes are guarded on agreement switch and flushed into edit/create payloads, so page Save/Create cannot drop unapplied discount edits.
+- Sales one-time discount editing uses one lifecycle helper across list, expanded rows, and modal. The editable server contract is New/Packaging; Packaged is read-only.
+- Sales item UI separates base agreement discount from one-time discount and applies the legacy X9/Х9, zero-sale, and sale-out suppression rules for base discount display.
+- New-sale product selection loads current agreement price, calculated pricings with discount breakdown, and product-specific agreement reservation. The reservation endpoint must include both `clientAgreementNetId` and `productNetId`.
+- New-sale cart mutations await cart reload before releasing local busy state; reservation cache writes are generation-guarded against realtime invalidation.
+- Future reservation receives the selected client net id explicitly from the wizard and blocks submit without client/product/supply-order ids.
+- Product price rows expose retail/base/discount breakdown, and product-file upload rejects duplicate pricing mappings before building `PriceConfigurations`.
+- Product-file upload matches the server's singular `IFormFile file` contract and sets `WithPrices` from the serialized `PriceConfigurations`.
+
 ## Known Gaps To Keep Visible
 
 These are not fixed in this pass because the user paused new migration and requested verification of already moved behavior first.

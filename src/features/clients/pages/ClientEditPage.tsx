@@ -37,6 +37,8 @@ import { EcommercePanel } from '../components/ecommerce/EcommercePanel'
 import { GeneralInfoFields, type ClientFormRole } from '../components/form/GeneralInfoFields'
 import { PerfectClientPanel } from '../components/perfect-client/PerfectClientPanel'
 import { PricingPanel } from '../components/pricing/PricingPanel'
+import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
+import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
 import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
@@ -89,6 +91,7 @@ type EditStepContentProps = {
   onCreateCountry: (name: string, code: string) => void
   onCreateRegion: (name: string) => void
   onClientChange: (client: Client) => void
+  onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   step: string
   productNetId?: string
 }
@@ -120,6 +123,7 @@ export function ClientEditPage() {
   const [formErrors, setFormErrors] = useValueState<ClientFormErrors>({})
   const [pendingDocuments, setPendingDocuments] = useValueState<File[]>([])
   const originalRegionRef = useRef<{ regionNetUid?: string; regionCode?: Client['RegionCode'] }>({})
+  const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
   const routeState = location.state as ClientEditRouteState | null
   const basePath = location.pathname.startsWith('/suppliers/edit') ? '/suppliers/edit' : '/clients/edit'
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
@@ -513,7 +517,8 @@ export function ClientEditPage() {
       return
     }
 
-    const errors = validateClientForm(client, role, t('Забагато символів'))
+    const clientToSave = applyPendingDiscountDraft(client, pendingDiscountDraftRef.current)
+    const errors = validateClientForm(clientToSave, role, t('Забагато символів'))
     setFormErrors(errors)
 
     if (Object.keys(errors).length > 0) {
@@ -525,8 +530,9 @@ export function ClientEditPage() {
     setError(null)
 
     try {
-      const updatedClient = await updateClient(client)
-      setClient(updatedClient || client)
+      const updatedClient = await updateClient(clientToSave)
+      pendingDiscountDraftRef.current = null
+      setClient(updatedClient || clientToSave)
       notifications.show({
         color: 'green',
         message: t('Картку збережено'),
@@ -623,6 +629,9 @@ export function ClientEditPage() {
         onCreateIncoterm={handleCreateIncoterm}
         onCreateRegion={handleCreateRegion}
         onGoToStep={goToStep}
+        onPendingDiscountDraftChange={(draft) => {
+          pendingDiscountDraftRef.current = draft
+        }}
         onRegionChange={handleRegionChange}
         onRegionCodeFieldChange={setRegionCodeField}
         onRemoveDocument={handleRemoveDocument}
@@ -764,6 +773,7 @@ function ClientEditBody({
   onCreateIncoterm,
   onCreateRegion,
   onGoToStep,
+  onPendingDiscountDraftChange,
   onRegionChange,
   onRegionCodeFieldChange,
   onRemoveDocument,
@@ -796,6 +806,7 @@ function ClientEditBody({
   onCreateIncoterm: (name: string) => void
   onCreateRegion: (name: string) => void
   onGoToStep: (nextStep: string) => void
+  onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
   onRegionChange: (region: Region | null) => void
   onRegionCodeFieldChange: (key: 'Value' | 'City' | 'District', value: string) => void
   onRemoveDocument: (document: ClientContractDocument) => void
@@ -887,6 +898,7 @@ function ClientEditBody({
                 onCreateCountry={onCreateCountry}
                 onCreateIncoterm={onCreateIncoterm}
                 onCreateRegion={onCreateRegion}
+                onPendingDiscountDraftChange={onPendingDiscountDraftChange}
                 onRegionChange={onRegionChange}
                 onRegionCodeFieldChange={onRegionCodeFieldChange}
                 onRemoveDocument={onRemoveDocument}
@@ -982,6 +994,7 @@ function EditStepContent({
   onCreateCountry,
   onCreateIncoterm,
   onCreateRegion,
+  onPendingDiscountDraftChange,
   onRegionChange,
   onRegionCodeFieldChange,
   onRemoveDocument,
@@ -999,6 +1012,7 @@ function EditStepContent({
         isProvider={role.isProvider}
         mode="edit"
         onChange={onClientChange}
+        onPendingDiscountDraftChange={onPendingDiscountDraftChange}
       />
     )
   }

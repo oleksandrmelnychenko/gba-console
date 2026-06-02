@@ -185,7 +185,12 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
           />
         </Stepper.Step>
         <Stepper.Step label={t('Товари')} description={t('Кошик')}>
-          <NewSaleProductsStep agreementNetId={state.agreementNetId} sale={state.sale} onCartChanged={reloadCart} />
+          <NewSaleProductsStep
+            agreementNetId={state.agreementNetId}
+            clientNetId={state.clientNetId}
+            sale={state.sale}
+            onCartChanged={reloadCart}
+          />
         </Stepper.Step>
         <Stepper.Step label={t('Рев’ю')} description={t('Перевізник і підтвердження')}>
           <NewSaleReviewStep

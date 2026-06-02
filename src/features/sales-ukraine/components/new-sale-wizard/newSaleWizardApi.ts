@@ -28,6 +28,19 @@ export type WizardProductReservation = {
   VAT?: number
 }
 
+export type WizardCalculatedProductPricing = {
+  DiscountPriceEUR?: number
+  DiscountRate?: number
+  PriceEUR?: number
+  Pricing?: {
+    Id?: number
+    Name?: string
+    NetUid?: string
+  } | null
+  RetailPriceEUR?: number
+  RetailPriceLocal?: number
+}
+
 export type WizardSubClient = {
   Id?: number
   NetUid?: string
@@ -55,6 +68,28 @@ function asArray<T>(result: unknown): T[] {
   return []
 }
 
+function asArrayOrSingle<T>(result: unknown): T[] {
+  if (Array.isArray(result)) {
+    return result as T[]
+  }
+
+  if (result && typeof result === 'object') {
+    const payload = result as Record<string, unknown>
+
+    if (Array.isArray(payload.Items)) {
+      return payload.Items as T[]
+    }
+
+    if (Array.isArray(payload.Collection)) {
+      return payload.Collection as T[]
+    }
+
+    return [result as T]
+  }
+
+  return []
+}
+
 function asSale(result: unknown): SalesUkraineSale | null {
   if (result && typeof result === 'object') {
     const record = result as Record<string, unknown>
@@ -65,6 +100,20 @@ function asSale(result: unknown): SalesUkraineSale | null {
     }
 
     return result as SalesUkraineSale
+  }
+
+  return null
+}
+
+function asNumber(result: unknown): number | null {
+  if (typeof result === 'number') {
+    return Number.isFinite(result) ? result : null
+  }
+
+  if (typeof result === 'string') {
+    const parsed = Number(result)
+
+    return Number.isFinite(parsed) ? parsed : null
   }
 
   return null
@@ -140,12 +189,34 @@ export async function updateSaleDeliveryRecipientAddress(sale: SalesUkraineSale,
 
 // --- Carousel availability / reservations ---------------------------------
 
-export async function getProductReservationsByAgreement(clientAgreementNetId: string): Promise<WizardProductReservation[]> {
+export async function getProductReservationsByAgreement(
+  clientAgreementNetId: string,
+  productNetId: string,
+): Promise<WizardProductReservation[]> {
   const result = await apiRequest<unknown>('/products/reservations/current/carousel/agreement', {
-    query: { clientAgreementNetId },
+    query: { clientAgreementNetId, productNetId },
   })
 
-  return asArray<WizardProductReservation>(result)
+  return asArrayOrSingle<WizardProductReservation>(result)
+}
+
+export async function getProductCurrentPriceByAgreement(productNetId: string, clientAgreementNetId: string): Promise<number | null> {
+  const result = await apiRequest<unknown>('/products/pricings/current', {
+    query: { clientAgreementNetId, productNetId },
+  })
+
+  return asNumber(result)
+}
+
+export async function getProductCalculatedPricingsByAgreement(
+  productNetId: string,
+  clientAgreementNetId: string,
+): Promise<WizardCalculatedProductPricing[]> {
+  const result = await apiRequest<unknown>('/products/pricings/all', {
+    query: { clientAgreementNetId, productNetId },
+  })
+
+  return asArrayOrSingle<WizardCalculatedProductPricing>(result)
 }
 
 // --- Future / reservation sale --------------------------------------------

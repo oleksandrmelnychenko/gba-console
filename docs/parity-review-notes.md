@@ -495,19 +495,19 @@ creation sub-form — a larger build, left for when the act-reconciliation creat
 
 ---
 
-## 12. Discount gating — Packaged(2) treated as Packaging (§9 partial closed, 2026-06-01)
+## 12. Discount lifecycle and base/one-time split — server-contract corrected (2026-06-02)
 
-Legacy `SaleLifeCycleStatusConvertor.Parse` maps **both** `Packaging`(1) and `Packaged`(2) →
-`'SaleLifeCyclePackaging'`, so legacy `IsNewOrPackagingStatus` is true for 0/1/2. The console's
-`isNewOrPackagingStatus` only checked `0 || 1` — Packaged(2) sales lost the discount affordance.
+The server update actor accepts one-time discount edits for **New(0)** and **Packaging(1)**, then blocks
+after packing. The console now uses one helper (`isDiscountEditableSaleLifecycle`) across the collapsed
+row, expanded item rows, and `SaleDiscountModal`, normalizing numeric/string lifecycle values
+(`0`, `"0"`, `New`, `1`, `"1"`, `Packaging`). `Packaged(2)` is read-only for editing.
 
-- **`SalesUkrainePage.isNewOrPackagingStatus`** → now `0 || 1 || 2`, so the collapsed-row discount cell
-  treats Packaged like Packaging (Branch 1 uniform clickable, Branch 2 average non-clickable, Branch 3
-  add hidden for 1/2 — already correct).
-- **`SaleExpandContent`** — corrected the per-item affordance to the exact legacy rule: existing per-item
-  discount is clickable for **any** non-uniform sale (was gated to New/Packaging), and the empty
-  «Знижка» add link shows **only for New(0)** (legacy hides the add for IsInvoice = Packaging/Packaged).
-  Removed the now-unused local `isNewOrPackagingStatus`. tsc 0 / eslint 0.
+- **One-time discount** remains the mutable `/sales/discount/update` value and keeps the legacy
+  `-100 < value < 100` range plus required comment.
+- **Base discount** is displayed separately from `OneTimeDiscount` in sales rows/editor/expander when
+  the backend sends `OrderItem.Discount`.
+- Legacy suppression is preserved for base discount display: `Top = X9/Х9`, `IsForZeroSale`, and
+  `IsForSale` show base discount as `0` instead of inventing a front-end value.
 
 ---
 

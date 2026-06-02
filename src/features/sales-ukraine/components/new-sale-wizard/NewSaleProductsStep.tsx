@@ -2,25 +2,52 @@ import { ActionIcon, Anchor, Box, Group, Loader, NumberInput, ScrollArea, Stack,
 import { notifications } from '@mantine/notifications'
 import { IconSearch, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { FocusEvent as ReactFocusEvent, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
 import { FutureReservationModal } from './FutureReservationModal'
-import { getProductReservationsByAgreement, type WizardProductReservation } from './newSaleWizardApi'
+import {
+  getProductCalculatedPricingsByAgreement,
+  getProductCurrentPriceByAgreement,
+  getProductReservationsByAgreement,
+  type WizardCalculatedProductPricing,
+  type WizardProductReservation,
+} from './newSaleWizardApi'
 import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
+type ProductPricingSnapshot = {
+  calculatedPricings: WizardCalculatedProductPricing[]
+  currentPrice: number | null
+  reservation?: WizardProductReservation
+}
+
+type ProductPricingLoadResult = ProductPricingSnapshot & {
+  product: SalesUkraineProductWithPricing
+}
+
+type SalesUkraineProductWithPricing = SalesUkraineProduct & {
+  CalculatedPrices?: WizardCalculatedProductPricing[]
+  CurrentPrice?: number
+}
+
+const EMPTY_PRODUCT_PRICING = new Map<string, ProductPricingSnapshot>()
+const EMPTY_RESERVATIONS = new Map<string, WizardProductReservation>()
+
 export function NewSaleProductsStep({
   agreementNetId,
+  clientNetId,
   sale,
   onCartChanged,
 }: {
   agreementNetId: string | null
-  onCartChanged: () => void
+  clientNetId: string | null
+  onCartChanged: () => void | Promise<void>
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
@@ -30,14 +57,34 @@ export function NewSaleProductsStep({
   const [busy, setBusy] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [futureProduct, setFutureProduct] = useState<SalesUkraineProduct | null>(null)
+  const [focusedCartIndex, setFocusedCartIndex] = useState(0)
+  const [cartFocused, setCartFocused] = useState(false)
   const busyRef = useRef(false)
+  const cartBoxRef = useRef<HTMLDivElement>(null)
+  const qtyInputRefs = useRef<Map<string, HTMLInputElement | null> | null>(null)
 
-  const [reservations, setReservations] = useState<Map<string, WizardProductReservation>>(new Map())
-  const [reservationReload, setReservationReload] = useState(0)
+  if (qtyInputRefs.current === null) {
+    qtyInputRefs.current = new Map()
+  }
+
+  const qtyInputs = qtyInputRefs.current
+
+  const [reservationsState, setReservationsState] = useState<{ agreementNetId: string | null; values: Map<string, WizardProductReservation> }>({
+    agreementNetId: null,
+    values: EMPTY_RESERVATIONS,
+  })
+  const [productPricingState, setProductPricingState] = useState<{ agreementNetId: string | null; values: Map<string, ProductPricingSnapshot> }>({
+    agreementNetId: null,
+    values: EMPTY_PRODUCT_PRICING,
+  })
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const cartCount = orderItems.length
+  const focusedRow = cartCount === 0 ? -1 : Math.min(Math.max(focusedCartIndex, 0), cartCount - 1)
   const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
   const isVatSale = Boolean(sale?.IsVatSale)
+  const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
+  const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
   const totalLocal =
     getNumber(sale?.Order?.TotalAmountLocal) ??
     orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0), 0)
@@ -45,6 +92,13 @@ export function NewSaleProductsStep({
 
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
+  const pricingCacheGenerationRef = useRef(0)
+
+  const clearProductPricingCache = useCallback(() => {
+    pricingCacheGenerationRef.current += 1
+    setReservationsState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_RESERVATIONS }))
+    setProductPricingState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_PRODUCT_PRICING }))
+  }, [])
 
   useEffect(() => {
     cartNetIdRef.current = sale?.NetUid
@@ -55,65 +109,35 @@ export function NewSaleProductsStep({
     const netId = resolveSaleNetId(payload)
 
     if (netId && netId === cartNetIdRef.current) {
-      onCartChangedRef.current()
-      setReservationReload((key) => key + 1)
+      clearProductPricingCache()
+      void onCartChangedRef.current()
     }
-  }, [])
+  }, [clearProductPricingCache])
 
   const handleReservationSignal = useCallback(() => {
-    setReservationReload((key) => key + 1)
-  }, [])
+    clearProductPricingCache()
+  }, [clearProductPricingCache])
 
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSale)
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSale)
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleReservationSignal)
 
-  useEffect(() => {
-    if (!agreementNetId) {
-      return
-    }
-
-    let cancelled = false
-
-    async function load(id: string) {
-      try {
-        const list = await getProductReservationsByAgreement(id)
-
-        if (!cancelled) {
-          const map = new Map<string, WizardProductReservation>()
-          list.forEach((reservation) => {
-            if (reservation.ProductNetUid) {
-              map.set(reservation.ProductNetUid, reservation)
-            }
-          })
-          setReservations(map)
-        }
-      } catch {
-        /* availability is best-effort */
-      }
-    }
-
-    void load(agreementNetId)
-
-    return () => {
-      cancelled = true
-    }
-  }, [agreementNetId, reservationReload])
-
   const getProductMeta = useCallback(
     (product: SalesUkraineProduct) => {
       const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
+      const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
+      const preciseReservation = pricing?.reservation
 
-      if (!reservation) {
+      if (!reservation && !pricing) {
         return undefined
       }
 
       return {
-        available: reservation.AvailableQty ?? reservation.AvailableQtyUk,
-        price: reservation.Price ?? reservation.PricePerItem,
+        available: getReservationAvailableQty(preciseReservation) ?? getReservationAvailableQty(reservation),
+        price: pricing?.currentPrice ?? getReservationPrice(preciseReservation) ?? getReservationPrice(reservation),
       }
     },
-    [reservations],
+    [productPricing, reservations],
   )
 
   useEffect(() => {
@@ -155,14 +179,7 @@ export function NewSaleProductsStep({
       return
     }
 
-    const meta = getProductMeta(product)
     const alreadyInCart = orderItems.some((item) => item.Product?.NetUid === product.NetUid)
-
-    if (!alreadyInCart && typeof meta?.available === 'number' && meta.available <= 0) {
-      setFutureProduct(product)
-
-      return
-    }
 
     if (!beginBusy()) {
       return
@@ -171,18 +188,86 @@ export function NewSaleProductsStep({
     const existing = orderItems.find((item) => item.Product?.NetUid === product.NetUid)
 
     try {
+      const pricing = await loadProductPricing(product, agreementNetId)
+      const meta = getProductMeta(pricing.product)
+      const available = getReservationAvailableQty(pricing.reservation) ?? meta?.available
+
+      if (!alreadyInCart && typeof available === 'number' && available <= 0) {
+        setFutureProduct(pricing.product)
+
+        return
+      }
+
       if (existing) {
         await updateOrderItem({ ...existing, Qty: (getNumber(existing.Qty) || 0) + 1 })
       } else {
-        await addOrderItem(agreementNetId, sale.NetUid, { Deleted: false, Id: 0, NetUid: EMPTY_GUID, Product: product, Qty: 1 })
+        await addOrderItem(agreementNetId, sale.NetUid, { Deleted: false, Id: 0, NetUid: EMPTY_GUID, Product: pricing.product, Qty: 1 })
       }
 
-      onCartChanged()
+      await onCartChanged()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
     } finally {
       endBusy()
     }
+  }
+
+  async function loadProductPricing(product: SalesUkraineProduct, clientAgreementNetId: string): Promise<ProductPricingLoadResult> {
+    if (!product.NetUid) {
+      return { calculatedPricings: [], currentPrice: null, product }
+    }
+
+    const requestGeneration = pricingCacheGenerationRef.current
+    const [currentPrice, calculatedPricings, productReservations] = await Promise.all([
+      getProductCurrentPriceByAgreement(product.NetUid, clientAgreementNetId),
+      getProductCalculatedPricingsByAgreement(product.NetUid, clientAgreementNetId),
+      getProductReservationsByAgreement(clientAgreementNetId, product.NetUid),
+    ])
+
+    if (requestGeneration !== pricingCacheGenerationRef.current) {
+      return loadProductPricing(product, clientAgreementNetId)
+    }
+
+    const reservation = findReservationForProduct(product.NetUid, productReservations)
+
+    setProductPricingState((previous) => {
+      const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_PRODUCT_PRICING)
+      const snapshot: ProductPricingSnapshot = { calculatedPricings, currentPrice }
+
+      if (reservation) {
+        snapshot.reservation = reservation
+      }
+
+      next.set(product.NetUid as string, snapshot)
+
+      return { agreementNetId: clientAgreementNetId, values: next }
+    })
+
+    if (reservation) {
+      setReservationsState((previous) => {
+        const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_RESERVATIONS)
+        next.set(product.NetUid as string, { ...reservation, ProductNetUid: reservation.ProductNetUid || product.NetUid })
+
+        return { agreementNetId: clientAgreementNetId, values: next }
+      })
+    }
+
+    const pricedProduct: SalesUkraineProductWithPricing = {
+      ...product,
+      CalculatedPrices: calculatedPricings,
+    }
+
+    if (currentPrice != null) {
+      pricedProduct.CurrentPrice = currentPrice
+    }
+
+    const result: ProductPricingLoadResult = { calculatedPricings, currentPrice, product: pricedProduct }
+
+    if (reservation) {
+      result.reservation = reservation
+    }
+
+    return result
   }
 
   async function changeQty(netId: string | undefined, item: (typeof orderItems)[number], qty: number) {
@@ -196,7 +281,7 @@ export function NewSaleProductsStep({
 
     try {
       await updateOrderItem({ ...item, Qty: qty })
-      onCartChanged()
+      await onCartChanged()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
     } finally {
@@ -215,7 +300,7 @@ export function NewSaleProductsStep({
 
     try {
       await deleteOrderItem(netId)
-      onCartChanged()
+      await onCartChanged()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
     } finally {
@@ -244,6 +329,58 @@ export function NewSaleProductsStep({
     if (value.trim().length < 2) {
       setResults([])
       setSearching(false)
+    }
+  }
+
+  function handleCartBlur(event: ReactFocusEvent<HTMLDivElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setCartFocused(false)
+    }
+  }
+
+  function focusFocusedRowQty() {
+    const item = orderItems[focusedRow]
+    const input = item?.NetUid ? qtyInputs.get(item.NetUid) : null
+
+    if (input) {
+      input.focus()
+      input.select()
+    }
+  }
+
+  function handleCartKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement
+    const inEditable = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+
+    if (inEditable) {
+      if (event.key === 'Enter' || event.key === 'Escape') {
+        event.preventDefault()
+        target.blur()
+        cartBoxRef.current?.focus()
+      }
+
+      return
+    }
+
+    if (cartCount === 0) {
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setFocusedCartIndex((focusedRow + 1) % cartCount)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setFocusedCartIndex((focusedRow - 1 + cartCount) % cartCount)
+    } else if (event.key === 'Delete') {
+      event.preventDefault()
+
+      if (!busy) {
+        void removeItem(orderItems[focusedRow]?.NetUid)
+      }
+    } else if (event.key === 'F2' || event.key === 'Enter') {
+      event.preventDefault()
+      focusFocusedRowQty()
     }
   }
 
@@ -276,7 +413,20 @@ export function NewSaleProductsStep({
         onOpenCard={setProductCardNetId}
       />
 
-      <Box>
+      <Box
+        ref={cartBoxRef}
+        aria-label={t('Кошик')}
+        role="group"
+        style={{
+          borderRadius: 'var(--mantine-radius-sm)',
+          outline: cartFocused ? '2px solid var(--mantine-color-blue-4)' : 'none',
+          outlineOffset: 2,
+        }}
+        tabIndex={cartCount > 0 ? 0 : -1}
+        onBlur={handleCartBlur}
+        onFocus={() => setCartFocused(true)}
+        onKeyDown={handleCartKeyDown}
+      >
         <Text fw={600} mb={4} size="sm">
           {t('Кошик')}
         </Text>
@@ -303,7 +453,11 @@ export function NewSaleProductsStep({
                 </Table.Tr>
               ) : (
                 orderItems.map((item, index) => (
-                  <Table.Tr key={String(item.NetUid || item.Id || index)}>
+                  <Table.Tr
+                    key={String(item.NetUid || item.Id || index)}
+                    style={cartFocused && index === focusedRow ? { background: 'var(--mantine-color-blue-light)' } : undefined}
+                    onMouseDown={() => setFocusedCartIndex(index)}
+                  >
                     <Table.Td>
                       {item.Product?.NetUid ? (
                         <Anchor component="button" fw={600} type="button" onClick={() => setProductCardNetId(item.Product?.NetUid as string)}>
@@ -317,6 +471,15 @@ export function NewSaleProductsStep({
                     <Table.Td ta="right">{amountFormatter.format(getNumber(item.PricePerItem) ?? 0)}</Table.Td>
                     <Table.Td>
                       <NumberInput
+                        ref={(el) => {
+                          if (item.NetUid) {
+                            if (el) {
+                              qtyInputs.set(item.NetUid, el)
+                            } else {
+                              qtyInputs.delete(item.NetUid)
+                            }
+                          }
+                        }}
                         allowNegative={false}
                         decimalScale={2}
                         disabled={busy}
@@ -369,12 +532,12 @@ export function NewSaleProductsStep({
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
 
       <FutureReservationModal
-        clientNetId={sale?.ClientAgreement?.Client?.NetUid ?? null}
+        clientNetId={clientNetId}
         product={futureProduct}
         onClose={() => setFutureProduct(null)}
         onReserved={() => {
           setFutureProduct(null)
-          onCartChanged()
+          void onCartChanged()
         }}
       />
     </Stack>
@@ -415,4 +578,19 @@ function getNumber(value: unknown): number | null {
   }
 
   return null
+}
+
+function findReservationForProduct(
+  productNetUid: string,
+  reservations: WizardProductReservation[],
+): WizardProductReservation | undefined {
+  return reservations.find((reservation) => reservation.ProductNetUid === productNetUid) ?? (reservations.length === 1 ? reservations[0] : undefined)
+}
+
+function getReservationAvailableQty(reservation?: WizardProductReservation): number | undefined {
+  return reservation?.AvailableQty ?? reservation?.AvailableQtyUk
+}
+
+function getReservationPrice(reservation?: WizardProductReservation): number | undefined {
+  return reservation?.Price ?? reservation?.PricePerItem
 }

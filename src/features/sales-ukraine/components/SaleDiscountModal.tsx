@@ -4,9 +4,8 @@ import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { updateSaleDiscount } from '../api/salesUkraineApi'
+import { isDiscountEditableSaleLifecycle } from '../saleStatus'
 import type { SalesUkraineOrderItem, SalesUkraineSale } from '../types'
-
-const NEW_LIFECYCLE_TYPE = 0
 
 export function SaleDiscountModal({
   sale,
@@ -49,9 +48,9 @@ function SaleDiscountForm({
 }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const isReadOnly = sale.BaseLifeCycleStatus?.SaleLifeCycleType !== NEW_LIFECYCLE_TYPE
-  const [amount, setAmount] = useState<number | string>(getInitialDiscount(sale, orderItem))
-  const [comment, setComment] = useState(
+  const isReadOnly = !isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
+  const [amount, setAmount] = useState<number | string>(() => getInitialDiscount(sale, orderItem))
+  const [comment, setComment] = useState(() =>
     orderItem ? orderItem.OneTimeDiscountComment || '' : sale.OneTimeDiscountComment || orderItems[0]?.OneTimeDiscountComment || '',
   )
   const [isSaving, setSaving] = useState(false)
@@ -60,6 +59,10 @@ function SaleDiscountForm({
   const isAmountValid = Number.isFinite(numericAmount) && numericAmount > -100 && numericAmount < 100
 
   async function save() {
+    if (isReadOnly || isSaving) {
+      return
+    }
+
     if (!comment.trim()) {
       notifications.show({ color: 'red', message: t("Коментар обов'язковий") })
 
@@ -126,7 +129,7 @@ function SaleDiscountForm({
       )}
       {isReadOnly && (
         <Alert color="gray" variant="light">
-          {t('Знижку можна змінити лише для нового продажу')}
+          {t('Знижку можна змінити лише для нового продажу або пакування')}
         </Alert>
       )}
       <NumberInput

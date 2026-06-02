@@ -1,5 +1,5 @@
 import { Alert, Box, Button, Checkbox, Group, Loader, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { useAuth } from '../../../auth/useAuth'
 import { getAgreementProductGroupDiscounts } from '../../api/clientAgreementsApi'
@@ -36,6 +36,13 @@ export type DiscountsTreeProps = {
   rootProductGroupNetId?: string
   disabled?: boolean
   onApplyChanges: (updatedProductGroupDiscounts: ProductGroupDiscount[]) => void
+  onDraftChange?: (draft: DiscountsTreeDraft) => void
+}
+
+export type DiscountsTreeDraft = {
+  clientAgreementNetId: string
+  isDirty: boolean
+  productGroupDiscounts: ProductGroupDiscount[]
 }
 
 function readProductGroup(discount: ProductGroupDiscount): ProductGroupLike {
@@ -43,45 +50,34 @@ function readProductGroup(discount: ProductGroupDiscount): ProductGroupLike {
 }
 
 function buildDiscountMap(productGroupDiscounts: ProductGroupDiscount[] = []): DiscountMap {
-  return productGroupDiscounts.reduce<DiscountMap>((accumulator, discount) => {
-    const group = readProductGroup(discount)
-    const parentNetId = group.NetUid || ''
-    const subDiscounts = Array.isArray(discount.SubProductGroupDiscounts) ? discount.SubProductGroupDiscounts : []
+  const result: DiscountMap = {}
 
-    if (parentNetId) {
-      accumulator[parentNetId] = {
-        netId: parentNetId,
-        name: group.Name || group.FullName || '',
-        percent: discount.DiscountRate || 0,
-        isSelected: false,
-        isActive: Boolean(discount.IsActive),
-        hasSubGroups: subDiscounts.length > 0,
-        clientAgreementId: discount.ClientAgreementId,
-      }
-    }
+  function visit(discounts: ProductGroupDiscount[], parentNetId?: string) {
+    discounts.forEach((discount) => {
+      const group = readProductGroup(discount)
+      const currentNetId = group.NetUid || ''
+      const subDiscounts = Array.isArray(discount.SubProductGroupDiscounts) ? discount.SubProductGroupDiscounts : []
 
-    subDiscounts.forEach((subDiscount) => {
-      const subGroup = readProductGroup(subDiscount)
-      const subNetId = subGroup.NetUid || ''
-
-      if (!subNetId) {
-        return
+      if (currentNetId) {
+        result[currentNetId] = {
+          netId: currentNetId,
+          parentNetId,
+          name: group.Name || group.FullName || '',
+          percent: discount.DiscountRate || 0,
+          isSelected: false,
+          isActive: Boolean(discount.IsActive),
+          hasSubGroups: subDiscounts.length > 0,
+          clientAgreementId: discount.ClientAgreementId,
+        }
       }
 
-      accumulator[subNetId] = {
-        netId: subNetId,
-        parentNetId,
-        name: subGroup.Name || subGroup.FullName || '',
-        percent: subDiscount.DiscountRate || 0,
-        isSelected: false,
-        isActive: Boolean(subDiscount.IsActive),
-        hasSubGroups: false,
-        clientAgreementId: discount.ClientAgreementId,
-      }
+      visit(subDiscounts, currentNetId || parentNetId)
     })
+  }
 
-    return accumulator
-  }, {})
+  visit(productGroupDiscounts)
+
+  return result
 }
 
 function mapToDiscountArray(map: DiscountMap, productGroupDiscounts: ProductGroupDiscount[]): ProductGroupDiscount[] {
@@ -126,6 +122,7 @@ export function DiscountsTree({
   rootProductGroupNetId,
   disabled = false,
   onApplyChanges,
+  onDraftChange,
 }: DiscountsTreeProps) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
@@ -200,25 +197,24 @@ export function DiscountsTree({
     return toCompareValue(discountMap) !== initialValue
   }, [discountMap, initialValue])
 
-  const agreementStatusRef = useRef({
-    clientAgreementNetId,
-    selectedAgreementName,
-    isDirty,
-  })
+  const emitDraftChange = useCallback((nextMap: DiscountMap, compareValue = initialValue) => {
+    const nextIsDirty = Boolean(compareValue) && toCompareValue(nextMap) !== compareValue
 
-  useEffect(() => {
-    const previous = agreementStatusRef.current
-
-    if (previous.clientAgreementNetId !== clientAgreementNetId && previous.isDirty) {
-      window.confirm(`${t('Застосувати зміни')} ${t('Договір')}: ${previous.selectedAgreementName}`)
-    }
-
-    agreementStatusRef.current = {
+    onDraftChange?.({
       clientAgreementNetId,
-      selectedAgreementName,
-      isDirty,
-    }
-  }, [clientAgreementNetId, isDirty, selectedAgreementName, t])
+      isDirty: nextIsDirty,
+      productGroupDiscounts: nextIsDirty ? mapToDiscountArray(nextMap, treeRef.current) : treeRef.current,
+    })
+  }, [clientAgreementNetId, initialValue, onDraftChange])
+
+  function updateDiscountMap(updater: (previous: DiscountMap) => DiscountMap) {
+    setDiscountMap((previous) => {
+      const nextMap = updater(previous)
+      emitDraftChange(nextMap)
+
+      return nextMap
+    })
+  }
 
   const nodes = useMemo(() => Object.values(discountMap), [discountMap])
   const isAnySelected = useMemo(() => nodes.some((node) => node.isSelected), [nodes])
@@ -250,7 +246,7 @@ export function DiscountsTree({
     setIsAllSelected(nextSelected)
     setPercent('')
     setSelectedNetId('')
-    setDiscountMap((previous) =>
+    updateDiscountMap((previous) =>
       Object.values(previous).reduce<DiscountMap>((accumulator, node) => {
         accumulator[node.netId] = { ...node, isSelected: nextSelected }
         return accumulator
@@ -266,14 +262,11 @@ export function DiscountsTree({
     const nextSelectedNetId = netId !== selectedNetId ? netId : ''
     setPercent('')
     setSelectedNetId(nextSelectedNetId)
-    setDiscountMap((previous) =>
+    updateDiscountMap((previous) =>
       Object.values(previous).reduce<DiscountMap>((accumulator, node) => {
         accumulator[node.netId] = {
           ...node,
-          isSelected:
-            node.netId === netId || (!!node.parentNetId && node.parentNetId === netId)
-              ? selectedNetId !== netId
-              : false,
+          isSelected: isSameOrDescendant(node, netId, previous) ? selectedNetId !== netId : false,
         }
         return accumulator
       }, {}),
@@ -289,10 +282,17 @@ export function DiscountsTree({
 
     setPercent('')
     setSelectedNetId('')
-    setDiscountMap((previous) => ({
-      ...previous,
-      [node.netId]: { ...node, isSelected: !node.isSelected },
-    }))
+    updateDiscountMap((previous) => {
+      const nextSelected = !previous[netId]?.isSelected
+
+      return Object.values(previous).reduce<DiscountMap>((accumulator, currentNode) => {
+        accumulator[currentNode.netId] = isSameOrDescendant(currentNode, netId, previous)
+          ? { ...currentNode, isSelected: nextSelected }
+          : currentNode
+
+        return accumulator
+      }, {})
+    })
   }
 
   function handleToggleActive(netId: string) {
@@ -304,14 +304,14 @@ export function DiscountsTree({
 
     setPercent('')
     setSelectedNetId('')
-    setDiscountMap((previous) => ({
+    updateDiscountMap((previous) => ({
       ...previous,
       [node.netId]: { ...node, isActive: !node.isActive },
     }))
   }
 
   function handleChangeActiveInSelected(isActive: boolean) {
-    setDiscountMap((previous) =>
+    updateDiscountMap((previous) =>
       Object.values(previous).reduce<DiscountMap>((accumulator, node) => {
         accumulator[node.netId] = { ...node, isActive: node.isSelected ? isActive : node.isActive }
         return accumulator
@@ -328,7 +328,7 @@ export function DiscountsTree({
     }
 
     const clamped = clampPercent(normalized)
-    setDiscountMap((previous) =>
+    updateDiscountMap((previous) =>
       Object.values(previous).reduce<DiscountMap>((accumulator, node) => {
         accumulator[node.netId] = node.isSelected ? { ...node, percent: clamped } : node
         return accumulator
@@ -337,14 +337,42 @@ export function DiscountsTree({
   }
 
   function handleCancel() {
-    setDiscountMap(buildDiscountMap(treeRef.current))
+    const nextMap = buildDiscountMap(treeRef.current)
+
+    setDiscountMap(nextMap)
+    emitDraftChange(nextMap)
     setPercent('')
     setIsAllSelected(false)
     setSelectedNetId('')
   }
 
   function handleApply() {
-    onApplyChanges(mapToDiscountArray(discountMap, treeRef.current))
+    const updatedDiscounts = mapToDiscountArray(discountMap, treeRef.current)
+    const nextInitialValue = toCompareValue(discountMap)
+
+    treeRef.current = updatedDiscounts
+    setInitialValue(nextInitialValue)
+    emitDraftChange(discountMap, nextInitialValue)
+    onApplyChanges(updatedDiscounts)
+  }
+
+  function renderDiscountNode(node: DiscountNode, depth = 0) {
+    const children = childNodesByParent.get(node.netId) || []
+
+    return (
+      <Box key={node.netId} pl={depth > 0 ? 'lg' : undefined}>
+        <GroupRow
+          canCheck={canCheckRow}
+          disabled={disabled}
+          node={node}
+          onCheck={handleCheckNode}
+          onSelect={handleSelectNode}
+          onToggleActive={handleToggleActive}
+          t={t}
+        />
+        {children.map((child) => renderDiscountNode(child, depth + 1))}
+      </Box>
+    )
   }
 
   if (isLoading) {
@@ -430,37 +458,29 @@ export function DiscountsTree({
         </Text>
       ) : (
         <Stack gap={4}>
-          {rootNodes.map((node) => (
-            <Box key={node.netId}>
-              <GroupRow
-                canCheck={canCheckRow}
-                disabled={disabled}
-                node={node}
-                onCheck={handleCheckNode}
-                onSelect={handleSelectNode}
-                onToggleActive={handleToggleActive}
-                t={t}
-              />
-              {node.hasSubGroups &&
-                (childNodesByParent.get(node.netId) || []).map((sub) => (
-                  <Box key={sub.netId} pl="lg">
-                    <GroupRow
-                      canCheck={canCheckRow}
-                      disabled={disabled}
-                      node={sub}
-                      onCheck={handleCheckNode}
-                      onSelect={handleSelectNode}
-                      onToggleActive={handleToggleActive}
-                      t={t}
-                    />
-                  </Box>
-                ))}
-            </Box>
-          ))}
+          {rootNodes.map((node) => renderDiscountNode(node))}
         </Stack>
       )}
     </Stack>
   )
+}
+
+function isSameOrDescendant(node: DiscountNode, targetNetId: string, map: DiscountMap): boolean {
+  if (node.netId === targetNetId) {
+    return true
+  }
+
+  let parentNetId = node.parentNetId
+
+  while (parentNetId) {
+    if (parentNetId === targetNetId) {
+      return true
+    }
+
+    parentNetId = map[parentNetId]?.parentNetId
+  }
+
+  return false
 }
 
 type GroupRowProps = {
