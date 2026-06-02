@@ -3,6 +3,11 @@ import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import {
+  hasDuplicateProductCapitalizationImportColumns,
+  type ProductCapitalizationUploadForm,
+  toProductCapitalizationParseConfiguration,
+} from '../productCapitalizationUploadConfig'
 import type { ProductCapitalizationParseConfiguration } from '../types'
 
 type ProductCapitalizationUploadModalProps = {
@@ -13,19 +18,7 @@ type ProductCapitalizationUploadModalProps = {
   onSubmit: (file: File, parseConfiguration: ProductCapitalizationParseConfiguration) => void
 }
 
-type UploadForm = {
-  endRow: number | ''
-  file: File | null
-  priceColumnNumber: number | ''
-  pricePerItem: boolean
-  qtyColumnNumber: number | ''
-  startRow: number | ''
-  vendorCodeColumnNumber: number | ''
-  weightColumnNumber: number | ''
-  weightPerItem: boolean
-}
-
-const EMPTY_FORM: UploadForm = {
+const EMPTY_FORM: ProductCapitalizationUploadForm = {
   endRow: '',
   file: null,
   priceColumnNumber: '',
@@ -45,7 +38,7 @@ export function ProductCapitalizationUploadModal({
   onSubmit,
 }: ProductCapitalizationUploadModalProps) {
   const { t } = useI18n()
-  const [form, setForm] = useValueState<UploadForm>(EMPTY_FORM)
+  const [form, setForm] = useValueState<ProductCapitalizationUploadForm>(EMPTY_FORM)
   const [validationError, setValidationError] = useValueState<string | null>(null)
 
   function submitForm() {
@@ -53,10 +46,10 @@ export function ProductCapitalizationUploadModal({
       return
     }
 
-    const parseConfiguration = toParseConfiguration(form)
+    const parseConfiguration = toProductCapitalizationParseConfiguration(form)
 
     if (!form.file || !parseConfiguration) {
-      setValidationError(t('Заповніть файл і колонки імпорту'))
+      setValidationError(t('Заповніть файл, артикул, кількість і діапазон рядків'))
       return
     }
 
@@ -65,7 +58,7 @@ export function ProductCapitalizationUploadModal({
       return
     }
 
-    if (hasDuplicateColumns(parseConfiguration)) {
+    if (hasDuplicateProductCapitalizationImportColumns(parseConfiguration)) {
       setValidationError(t('Колонки імпорту не можуть повторюватися'))
       return
     }
@@ -195,42 +188,6 @@ export function ProductCapitalizationUploadModal({
       </Stack>
     </AppModal>
   )
-}
-
-function toParseConfiguration(form: UploadForm): ProductCapitalizationParseConfiguration | null {
-  if (!form.startRow || !form.endRow || !form.vendorCodeColumnNumber || !form.qtyColumnNumber || !form.priceColumnNumber) {
-    return null
-  }
-
-  const priceColumnNumber = form.priceColumnNumber || 0
-  const weightColumnNumber = form.weightColumnNumber || 0
-
-  return {
-    EndRow: form.endRow,
-    PriceColumnNumber: priceColumnNumber,
-    PricePerItem: form.pricePerItem,
-    QtyColumnNumber: form.qtyColumnNumber,
-    StartRow: form.startRow,
-    VendorCodeColumnNumber: form.vendorCodeColumnNumber,
-    WeightColumnNumber: weightColumnNumber,
-    WeightPerItem: form.weightPerItem,
-    WithPrice: priceColumnNumber > 0,
-    WithWeight: weightColumnNumber > 0,
-  }
-}
-
-function hasDuplicateColumns(parseConfiguration: ProductCapitalizationParseConfiguration): boolean {
-  const columns = [
-    parseConfiguration.PriceColumnNumber,
-    parseConfiguration.QtyColumnNumber,
-    parseConfiguration.VendorCodeColumnNumber,
-  ]
-
-  if (parseConfiguration.WeightColumnNumber > 0) {
-    columns.push(parseConfiguration.WeightColumnNumber)
-  }
-
-  return new Set(columns).size !== columns.length
 }
 
 function toPositiveNumber(value: number | string): number | '' {

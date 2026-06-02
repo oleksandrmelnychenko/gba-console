@@ -3,7 +3,9 @@ import {
   Alert,
   Button,
   Card,
+  FileButton,
   Group,
+  ScrollArea,
   SegmentedControl,
   Stack,
   Text,
@@ -11,15 +13,17 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
+import { notifications } from '@mantine/notifications'
+import { IconAlertCircle, IconRefresh, IconRestore, IconSearch, IconUpload } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { getProductSpecifications } from '../api/productSpecificationCodesApi'
+import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
-import type { ProductSpecification, ProductSpecificationRegion } from '../types'
+import type { ProductSpecification, ProductSpecificationRegion, SpecificationCodeUploadResult } from '../types'
 
 const BATCH_SIZE = 30
 const SEARCH_DEBOUNCE_MS = 250
@@ -167,6 +171,29 @@ export function ProductSpecificationCodesPage() {
   const { t } = useI18n()
   const model = useProductSpecificationCodesModel()
   const columns = useProductSpecificationColumns(model.specifications)
+  const [uploadResult, setUploadResult] = useValueState<SpecificationCodeUploadResult | null>(null)
+  const [isUploading, setUploading] = useValueState(false)
+
+  async function handleUpload(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const result = await uploadSpecificationCodesFile(file)
+      setUploadResult(result)
+      model.reload()
+    } catch (uploadError) {
+      notifications.show({
+        color: 'red',
+        message: uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити файл'),
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <Stack gap="lg">
@@ -179,18 +206,27 @@ export function ProductSpecificationCodesPage() {
           value={model.region}
           onChange={(value) => model.setRegion(value as ProductSpecificationRegion)}
         />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={model.isLoading}
-            size={38}
-            variant="light"
-            onClick={() => model.reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Group gap="sm">
+          <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
+            {(props) => (
+              <Button {...props} leftSection={<IconUpload size={16} />} loading={isUploading} variant="light">
+                {t('Завантажити Excel')}
+              </Button>
+            )}
+          </FileButton>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={model.isLoading}
+              size={38}
+              variant="light"
+              onClick={() => model.reload()}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
 
       <Card withBorder radius="md" padding="md">
@@ -262,7 +298,67 @@ export function ProductSpecificationCodesPage() {
         onChanged={() => model.reload()}
         onClose={() => model.setSelected(null)}
       />
+
+      <SpecificationUploadResultModal result={uploadResult} onClose={() => setUploadResult(null)} />
     </Stack>
+  )
+}
+
+function SpecificationUploadResultModal({
+  result,
+  onClose,
+}: {
+  result: SpecificationCodeUploadResult | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={Boolean(result)} title={t('Результат завантаження')} onClose={onClose}>
+      {result && (
+        <Stack gap="md">
+          <Group grow>
+            <UploadStat label={t('Розпізнано')} value={result.ParsedCount} />
+            <UploadStat color="teal" label={t('Оновлено')} value={result.SuccessfullyUpdatedCount} />
+            <UploadStat label={t('Не потребує оновлення')} value={result.UpdateWasNotRequiredCount} />
+          </Group>
+
+          {result.InvalidVendorCodes.length > 0 && (
+            <Stack gap="xs">
+              <Text fw={600} size="sm">
+                {t('Не оновлені коди виробника')}: {result.InvalidVendorCodes.length}
+              </Text>
+              <ScrollArea.Autosize mah={240} type="auto">
+                <Stack gap={2}>
+                  {result.InvalidVendorCodes.map((code, index) => (
+                    <Text key={`${code}-${index}`} size="sm">
+                      {code}
+                    </Text>
+                  ))}
+                </Stack>
+              </ScrollArea.Autosize>
+            </Stack>
+          )}
+
+          <Group justify="flex-end">
+            <Button onClick={onClose}>{t('Закрити')}</Button>
+          </Group>
+        </Stack>
+      )}
+    </AppModal>
+  )
+}
+
+function UploadStat({ color, label, value }: { color?: string; label: string; value: number }) {
+  return (
+    <Card withBorder padding="sm" radius="md">
+      <Text c="dimmed" size="xs">
+        {label}
+      </Text>
+      <Text c={color} fw={700} size="xl">
+        {value}
+      </Text>
+    </Card>
   )
 }
 
