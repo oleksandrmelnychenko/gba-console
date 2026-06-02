@@ -1,6 +1,7 @@
 import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
 import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { isStatusType } from '../saleStatus'
@@ -119,7 +120,7 @@ function SaleExpandContentItem({
           <Group gap={6} wrap="wrap">
             {openProductCard ? (
               <>
-                <Anchor c="black" component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
+                <Anchor c={CREATE_ACTION_COLOR} component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
                   {displayValue(getOrderItemProductCode(orderItem))}
                 </Anchor>
                 <Anchor c="black" component="button" size="sm" type="button" onClick={openProductCard}>
@@ -128,7 +129,7 @@ function SaleExpandContentItem({
               </>
             ) : (
               <>
-                <Text c="black" fw={600} size="sm">
+                <Text c={CREATE_ACTION_COLOR} fw={600} size="sm">
                   {displayValue(getOrderItemProductCode(orderItem))}
                 </Text>
                 <Text c="black" size="sm">
