@@ -1,4 +1,4 @@
-import { Card, Group, Select, Stack, Text, Textarea } from '@mantine/core'
+import { Card, Checkbox, FileInput, Group, NumberInput, Select, Stack, Text, Textarea, TextInput } from '@mantine/core'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleTransporterTypes, getSaleTransportersByType } from '../../api/salesUkraineApi'
@@ -152,30 +152,88 @@ export function NewSaleReviewStep({
       </Group>
 
       {!selfCheckout && (
-        <Group grow align="start">
-          <Select
-            searchable
-            clearable
-            data={recipients.filter((item) => item.NetUid).map((item) => ({ label: getRecipientLabel(item), value: item.NetUid || '' }))}
-            label={t('Отримувач')}
-            placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
-            value={value.recipient?.NetUid ?? null}
-            onChange={(next) => {
-              const recipient = recipients.find((item) => item.NetUid === next) || null
-              onChange({ address: null, recipient })
-            }}
+        <Stack gap="md">
+          <Group grow align="start">
+            <Select
+              searchable
+              clearable
+              data={recipients.filter((item) => item.NetUid).map((item) => ({ label: getRecipientLabel(item), value: item.NetUid || '' }))}
+              label={t('Отримувач')}
+              placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
+              value={value.recipient?.NetUid ?? null}
+              onChange={(next) => {
+                const recipient = recipients.find((item) => item.NetUid === next) || null
+                onChange({ address: null, city: '', department: '', mobilePhone: recipient?.MobilePhone || '', recipient })
+              }}
+            />
+            <Select
+              searchable
+              clearable
+              data={addresses.filter((item) => item.NetUid).map((item) => ({ label: getAddressLabel(item), value: item.NetUid || '' }))}
+              disabled={!value.recipient}
+              label={t('Адреса доставки')}
+              placeholder={t('Оберіть адресу')}
+              value={value.address?.NetUid ?? null}
+              onChange={(next) => {
+                const address = addresses.find((item) => item.NetUid === next) || null
+                onChange({ address, city: address?.City || '', department: address?.Department || '' })
+              }}
+            />
+          </Group>
+
+          <Group grow align="start">
+            <TextInput label={t('Місто')} value={value.city} onChange={(event) => onChange({ city: event.currentTarget.value })} />
+            <TextInput
+              label={t('Відділення')}
+              value={value.department}
+              onChange={(event) => onChange({ department: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('Мобільний телефон')}
+              value={value.mobilePhone}
+              onChange={(event) => onChange({ mobilePhone: event.currentTarget.value })}
+            />
+          </Group>
+
+          <Checkbox
+            checked={value.isCashOnDelivery}
+            label={t('Накладений платіж')}
+            onChange={(event) => onChange({ isCashOnDelivery: event.currentTarget.checked })}
           />
-          <Select
-            searchable
-            clearable
-            data={addresses.filter((item) => item.NetUid).map((item) => ({ label: getAddressLabel(item), value: item.NetUid || '' }))}
-            disabled={!value.recipient}
-            label={t('Адреса доставки')}
-            placeholder={t('Оберіть адресу')}
-            value={value.address?.NetUid ?? null}
-            onChange={(next) => onChange({ address: addresses.find((item) => item.NetUid === next) || null })}
+          {value.isCashOnDelivery && (
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              label={t('Сума накладеного платежу')}
+              min={0}
+              value={value.codAmount}
+              onChange={(next) => onChange({ codAmount: next })}
+            />
+          )}
+
+          <Checkbox
+            checked={value.hasOwnTtn}
+            label={t('Власна ТТН')}
+            onChange={(event) => onChange({ hasOwnTtn: event.currentTarget.checked })}
           />
-        </Group>
+          {value.hasOwnTtn && (
+            <Group grow align="start">
+              <TextInput
+                label={t('Номер ТТН')}
+                value={value.ttnNumber}
+                onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
+              />
+              <FileInput
+                accept="application/pdf"
+                clearable
+                label={t('Файл ТТН')}
+                placeholder={t('Оберіть PDF')}
+                value={value.ttnFile}
+                onChange={(file) => onChange({ ttnFile: file })}
+              />
+            </Group>
+          )}
+        </Stack>
       )}
 
       <Textarea

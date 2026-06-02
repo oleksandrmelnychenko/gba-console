@@ -121,4 +121,36 @@ describe('mergeProductGroupDiscounts', () => {
 
     expect(result[0].SubProductGroupDiscounts?.[0]?.ParentProductGroupDiscountId).toBe(10)
   })
+
+  it('does not infinite-loop on circular subgroup references', () => {
+    const rootGroup: ProductGroup = { Id: 1, NetUid: 'root-group', Name: 'Root group', SubProductGroups: [] }
+    rootGroup.SubProductGroups = [{ SubProductGroup: rootGroup }]
+
+    const result = mergeProductGroupDiscounts([rootGroup], [])
+
+    expect(result).toHaveLength(1)
+    expect(result[0].ProductGroupId).toBe(1)
+    expect(result[0].SubProductGroupDiscounts).toEqual([])
+  })
+
+  it('tolerates null or non-array SubProductGroupDiscounts in existing discounts', () => {
+    const childGroup: ProductGroup = { Id: 2, NetUid: 'child-group', Name: 'Child group', SubProductGroups: [] }
+    const rootGroup: ProductGroup = {
+      Id: 1,
+      NetUid: 'root-group',
+      Name: 'Root group',
+      SubProductGroups: [{ SubProductGroup: childGroup }],
+    }
+    const existingDiscounts = [
+      { Id: 10, ProductGroupId: 1, DiscountRate: 9, SubProductGroupDiscounts: null } as unknown as ProductGroupDiscount,
+    ]
+
+    expect(() => mergeProductGroupDiscounts([rootGroup], existingDiscounts)).not.toThrow()
+
+    const result = mergeProductGroupDiscounts([rootGroup], existingDiscounts)
+
+    expect(result[0]).toMatchObject({ DiscountRate: 9, ProductGroupId: 1 })
+    expect(result[0].SubProductGroupDiscounts).toHaveLength(1)
+    expect(result[0].SubProductGroupDiscounts?.[0]).toMatchObject({ ProductGroupId: 2 })
+  })
 })

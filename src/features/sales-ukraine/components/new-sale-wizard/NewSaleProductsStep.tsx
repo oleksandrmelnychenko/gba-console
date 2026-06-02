@@ -57,7 +57,7 @@ export function NewSaleProductsStep({
   const [busy, setBusy] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [futureProduct, setFutureProduct] = useState<SalesUkraineProduct | null>(null)
-  const [focusedCartIndex, setFocusedCartIndex] = useState(0)
+  const [focusedItemNetUid, setFocusedItemNetUid] = useState<string | null>(null)
   const [cartFocused, setCartFocused] = useState(false)
   const busyRef = useRef(false)
   const cartBoxRef = useRef<HTMLDivElement>(null)
@@ -80,7 +80,8 @@ export function NewSaleProductsStep({
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const cartCount = orderItems.length
-  const focusedRow = cartCount === 0 ? -1 : Math.min(Math.max(focusedCartIndex, 0), cartCount - 1)
+  const focusedIndexByNetUid = focusedItemNetUid ? orderItems.findIndex((item) => item.NetUid === focusedItemNetUid) : -1
+  const focusedRow = cartCount === 0 ? -1 : focusedIndexByNetUid >= 0 ? focusedIndexByNetUid : 0
   const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
   const isVatSale = Boolean(sale?.IsVatSale)
   const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
@@ -368,10 +369,10 @@ export function NewSaleProductsStep({
 
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setFocusedCartIndex((focusedRow + 1) % cartCount)
+      setFocusedItemNetUid(orderItems[(focusedRow + 1) % cartCount]?.NetUid ?? null)
     } else if (event.key === 'ArrowUp') {
       event.preventDefault()
-      setFocusedCartIndex((focusedRow - 1 + cartCount) % cartCount)
+      setFocusedItemNetUid(orderItems[(focusedRow - 1 + cartCount) % cartCount]?.NetUid ?? null)
     } else if (event.key === 'Delete') {
       event.preventDefault()
 
@@ -456,7 +457,7 @@ export function NewSaleProductsStep({
                   <Table.Tr
                     key={String(item.NetUid || item.Id || index)}
                     style={cartFocused && index === focusedRow ? { background: 'var(--mantine-color-blue-light)' } : undefined}
-                    onMouseDown={() => setFocusedCartIndex(index)}
+                    onMouseDown={() => setFocusedItemNetUid(item.NetUid ?? null)}
                   >
                     <Table.Td>
                       {item.Product?.NetUid ? (
@@ -489,6 +490,11 @@ export function NewSaleProductsStep({
                         value={getNumber(item.Qty) ?? 0}
                         onBlur={(event) => {
                           const next = Number(event.currentTarget.value.replace(',', '.'))
+                          if (!Number.isFinite(next) || next <= 0) {
+                            event.currentTarget.value = String(getNumber(item.Qty) ?? 0)
+
+                            return
+                          }
                           if (next !== getNumber(item.Qty)) {
                             void changeQty(item.NetUid, item, next)
                           }
