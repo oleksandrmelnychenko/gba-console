@@ -3,12 +3,22 @@ import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
-import { createSale, getCurrentSaleCart, getSaleById, updateSaleFromData } from '../../api/salesUkraineApi'
+import { createSale, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
-import { canAdvanceToProducts, canAdvanceToReview, getCartItemCount, NEW_SALE_WIZARD_INITIAL, type NewSaleWizardState } from './newSaleWizardState'
+import { setSaleCarrier } from './newSaleWizardApi'
+import {
+  canAdvanceToProducts,
+  canAdvanceToReview,
+  getCartItemCount,
+  getReviewError,
+  NEW_SALE_REVIEW_INITIAL,
+  NEW_SALE_WIZARD_INITIAL,
+  type NewSaleReviewValue,
+  type NewSaleWizardState,
+} from './newSaleWizardState'
 
 export function NewSaleWizard({
   opened,
@@ -32,8 +42,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
   const { t } = useI18n()
   const [active, setActive] = useState(0)
   const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
-  const [comment, setComment] = useState('')
-  const [transporterId, setTransporterId] = useState<string | null>(null)
+  const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
 
   async function reloadCart() {
@@ -100,15 +109,28 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       return
     }
 
+    const reviewError = getReviewError(review)
+
+    if (reviewError) {
+      notifications.show({ color: 'orange', message: t(reviewError) })
+
+      return
+    }
+
     setBusy(true)
 
     try {
-      await updateSaleFromData(
-        { ...state.sale, Comment: comment || state.sale.Comment, TransporterId: transporterId ?? state.sale.TransporterId },
-        null,
-      )
+      const payload: SalesUkraineSale = {
+        ...state.sale,
+        Comment: review.comment || state.sale.Comment,
+        DeliveryRecipient: (review.recipient ?? state.sale.DeliveryRecipient) as SalesUkraineSale['DeliveryRecipient'],
+        DeliveryRecipientAddress: (review.address ?? state.sale.DeliveryRecipientAddress) as SalesUkraineSale['DeliveryRecipientAddress'],
+        Transporter: review.transporter ?? state.sale.Transporter,
+        TransporterId: review.transporter?.Id ?? state.sale.TransporterId,
+      }
+      const updated = await setSaleCarrier(payload, null)
       notifications.show({ color: 'green', message: t('Продаж створено') })
-      onCreated(state.sale)
+      onCreated(updated ?? state.sale)
       onClose()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
@@ -167,11 +189,10 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
         </Stepper.Step>
         <Stepper.Step label={t('Рев’ю')} description={t('Перевізник і підтвердження')}>
           <NewSaleReviewStep
-            comment={comment}
+            clientNetId={state.clientNetId}
             sale={state.sale}
-            transporterId={transporterId}
-            onCommentChange={setComment}
-            onTransporterChange={setTransporterId}
+            value={review}
+            onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
           />
         </Stepper.Step>
       </Stepper>
