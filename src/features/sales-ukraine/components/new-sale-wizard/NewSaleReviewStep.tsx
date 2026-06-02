@@ -251,8 +251,8 @@ function getRecipientLabel(recipient: WizardDeliveryRecipient): string {
   return [recipient.FullName, recipient.MobilePhone].filter(Boolean).join(' · ') || recipient.NetUid || ''
 }
 
-function getAddressLabel(address: { City?: string; Department?: string; Address?: string; NetUid?: string }): string {
-  return [address.City, address.Department, address.Address].filter(Boolean).join(', ') || address.NetUid || ''
+function getAddressLabel(address: { City?: string; Department?: string; Value?: string; NetUid?: string }): string {
+  return [address.City, address.Department, address.Value].filter(Boolean).join(', ') || address.NetUid || ''
 }
 
 function getNumber(value: unknown): number | null {
