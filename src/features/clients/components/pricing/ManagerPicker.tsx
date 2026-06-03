@@ -2,10 +2,10 @@ import {
   Alert,
   Avatar,
   Badge,
+  Box,
   Card,
   Group,
   Loader,
-  ScrollArea,
   Stack,
   Text,
   TextInput,
@@ -97,7 +97,17 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
       return managers
     }
 
-    return managers.filter((manager) => (manager.LastName || '').toLowerCase().indexOf(term) !== -1)
+    return managers.filter((manager) =>
+      [
+        getManagerFullName(manager),
+        manager.Abbreviation,
+        manager.UserRole?.Name,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+        .includes(term),
+    )
   }, [managers, search])
 
   function handleSelect(manager: Manager) {
@@ -132,18 +142,23 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Title order={5}>{t('Аналітики')}</Title>
+      <Stack gap={6}>
+        <Group justify="space-between" align="center">
+          <Title order={5}>{t('Аналітики')}</Title>
+          <Badge color="gray" variant="light">
+            {filteredManagers.length}
+          </Badge>
+        </Group>
         <TextInput
           disabled={disabled}
           leftSection={<IconSearch size={16} />}
           placeholder={t('Пошук')}
-          size="xs"
+          size="sm"
           value={search}
-          w={220}
+          w="100%"
           onChange={(event) => setSearch(event.currentTarget.value)}
         />
-      </Group>
+      </Stack>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -160,8 +175,15 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
           {managers.length === 0 ? t('Менеджерів не знайдено') : t('Нічого не знайдено')}
         </Text>
       ) : (
-        <ScrollArea.Autosize mah={360} type="auto">
-          <Stack gap="xs">
+        <Box
+          style={{
+            maxHeight: 'min(430px, calc(100vh - 450px))',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            paddingRight: 8,
+          }}
+        >
+          <Stack gap="sm">
             {filteredManagers.map((manager, index) => {
               const isSelected = Boolean(selectedNetUid && manager.NetUid === selectedNetUid)
               const isMainManager =
@@ -176,13 +198,15 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
               return (
                 <UnstyledButton
                   key={manager.NetUid || manager.Id || index}
+                  aria-pressed={isSelected}
                   disabled={disabled}
+                  style={{ display: 'block', width: '100%' }}
                   onClick={() => handleSelect(manager)}
                 >
                   <Card
                     bd={cardBorder}
                     bg={cardBackground}
-                    padding="sm"
+                    padding="md"
                     radius="md"
                     withBorder
                   >
@@ -192,14 +216,14 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                         fw={600}
                         fz="sm"
                         radius="xl"
-                        size={40}
+                        size={46}
                         variant="filled"
                       >
                         {manager.Abbreviation}
                       </Avatar>
 
                       <Stack flex={1} gap={2} miw={0}>
-                        <Group gap="xs" wrap="nowrap">
+                        <Group gap="xs" miw={0} wrap="nowrap">
                           <Text fw={600} size="sm" truncate>
                             {getManagerFullName(manager)}
                           </Text>
@@ -210,7 +234,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                           )}
                         </Group>
                         {manager.UserRole?.Name && (
-                          <Text c="dimmed" size="xs">
+                          <Text c="dimmed" size="xs" truncate>
                             {manager.UserRole.Name}
                           </Text>
                         )}
@@ -221,7 +245,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
               )
             })}
           </Stack>
-        </ScrollArea.Autosize>
+        </Box>
       )}
     </Stack>
   )

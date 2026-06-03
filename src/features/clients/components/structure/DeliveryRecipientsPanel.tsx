@@ -8,9 +8,10 @@ import {
   Loader,
   Stack,
   Text,
+  Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -262,17 +263,40 @@ function RecipientItem({
   onRemove: () => void
 }) {
   const fullName = recipient.FullName?.trim()
+  const [isHovered, setHovered] = useState(false)
 
   return (
-    <Card withBorder padding="sm" radius="md" style={{ opacity: recipient.Deleted ? 0.55 : 1 }}>
+    <Card
+      withBorder
+      padding="sm"
+      radius="md"
+      style={{
+        backgroundColor: isHovered ? 'var(--mantine-color-violet-0)' : undefined,
+        borderColor: isHovered ? 'var(--mantine-color-violet-3)' : undefined,
+        boxShadow: isHovered ? 'var(--mantine-shadow-xs)' : undefined,
+        opacity: recipient.Deleted ? 0.55 : 1,
+        transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <Group justify="space-between" align="center" wrap="nowrap">
         <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
           <Avatar color={recipient.Deleted ? 'gray' : 'violet'} radius="xl">
             {fullName ? fullName.slice(0, 2).toUpperCase() : 'OO'}
           </Avatar>
-          <Text fw={500} size="sm" truncate>
-            {fullName}
-          </Text>
+          <Tooltip
+            disabled={!fullName}
+            label={fullName}
+            multiline
+            position="top-start"
+            withArrow
+            withinPortal
+          >
+            <Text fw={500} size="sm" truncate style={{ minWidth: 0 }}>
+              {fullName}
+            </Text>
+          </Tooltip>
         </Group>
 
         {!recipient.Deleted && (

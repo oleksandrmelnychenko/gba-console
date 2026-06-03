@@ -465,9 +465,18 @@ export function DiscountsTree({
           {t('Груп товарів немає')}
         </Text>
       ) : (
-        <Stack gap={4}>
-          {rootNodes.map((node) => renderDiscountNode(node))}
-        </Stack>
+        <Box
+          style={{
+            maxHeight: 'min(420px, calc(100vh - 560px))',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            paddingRight: 8,
+          }}
+        >
+          <Stack gap={4}>
+            {rootNodes.map((node) => renderDiscountNode(node))}
+          </Stack>
+        </Box>
       )}
     </Stack>
   )

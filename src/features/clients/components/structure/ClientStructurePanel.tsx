@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Card, Grid, Group, Stack, Tabs, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconUserPlus, IconUsersGroup } from '@tabler/icons-react'
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientGroups, getClientWorkplaces } from '../../api/clientLookupsApi'
@@ -25,6 +25,7 @@ export type ClientStructurePanelProps = {
 export function ClientStructurePanel({ client, onChange }: ClientStructurePanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const netId = client.NetUid
   const clientId = typeof client.Id === 'number' ? client.Id : 0
 
@@ -157,7 +158,11 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
   function openNewUser() {
     navigate('/clients/new/role', {
       state: {
+        ...(location.state && typeof location.state === 'object' ? location.state : {}),
+        backgroundLocation: location,
         parentClientId: netId,
+        returnPath: `${location.pathname}${location.search}`,
+        returnState: location.state,
       },
     })
   }

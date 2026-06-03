@@ -441,7 +441,7 @@ export function PricingPanel({
       )}
 
       <Grid gap="lg">
-        <Grid.Col span={{ base: 12, md: 5 }}>
+        <Grid.Col span={{ base: 12, md: 6 }}>
           <Stack gap="lg">
             <ManagerPicker
               client={client}
@@ -460,7 +460,7 @@ export function PricingPanel({
           </Stack>
         </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 7 }}>
+        <Grid.Col span={{ base: 12, md: 6 }}>
           <Stack gap="lg">
             <ClientAgreementsPanel
               agreements={clientAgreements}

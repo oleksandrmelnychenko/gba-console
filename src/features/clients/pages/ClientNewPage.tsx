@@ -54,6 +54,7 @@ type ClientNewRouteState = {
   moduleTitle?: string
   parentClientId?: string
   returnPath?: string
+  returnState?: unknown
 }
 
 type ClientDraft = Client & {
@@ -471,7 +472,7 @@ export function ClientNewPage() {
     }
 
     setDraft(createEmptyDraft())
-    navigate(returnPath, { replace: true })
+    navigate(returnPath, { replace: true, state: routeState?.returnState })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -544,13 +545,13 @@ export function ClientNewPage() {
       setDraft(createEmptyDraft())
       pendingDocumentsRef.current = []
       pendingDiscountDraftRef.current = null
-      navigate(getClientType(draftToSubmit) === CLIENT_TYPE_PROVIDER ? '/suppliers' : '/clients', {
+      navigate(returnPath, {
         replace: true,
-        state: createdClient
+        state: routeState?.returnState ?? (createdClient
           ? {
               nodeTitle: getClientDisplayName(createdClient),
             }
-          : undefined,
+          : undefined),
       })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити клієнта'))

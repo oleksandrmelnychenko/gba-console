@@ -1,5 +1,6 @@
 import {
   Alert,
+  Box,
   Button,
   Card,
   Checkbox,
@@ -317,33 +318,42 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
           {t('Параметрів не додано')}
         </Text>
       ) : (
-        <Grid gap="lg">
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="sm">
-              {checkboxClients.map((perfectClient, index) => (
-                <CheckboxRow
-                  key={getKey(perfectClient, index)}
-                  perfectClient={perfectClient}
-                  onSelectedChange={(isSelected) => handleCheckboxSelectedChange(perfectClient, isSelected)}
-                  onValueChange={(value) => handleCheckboxValueChange(perfectClient, value)}
-                />
-              ))}
-            </Stack>
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="sm">
-              {toggleClients.map((perfectClient, index) => (
-                <ToggleRow
-                  key={getKey(perfectClient, index)}
-                  perfectClient={perfectClient}
-                  onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
-                  onSelectedChange={(isSelected) => handleToggleSelectedChange(perfectClient, isSelected)}
-                  onSideChange={() => handleToggleSideChange(perfectClient)}
-                />
-              ))}
-            </Stack>
-          </Grid.Col>
-        </Grid>
+        <Box
+          style={{
+            maxHeight: 'min(560px, calc(100vh - 380px))',
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            paddingRight: 8,
+          }}
+        >
+          <Grid gap="lg">
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Stack gap="sm">
+                {checkboxClients.map((perfectClient, index) => (
+                  <CheckboxRow
+                    key={getKey(perfectClient, index)}
+                    perfectClient={perfectClient}
+                    onSelectedChange={(isSelected) => handleCheckboxSelectedChange(perfectClient, isSelected)}
+                    onValueChange={(value) => handleCheckboxValueChange(perfectClient, value)}
+                  />
+                ))}
+              </Stack>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, md: 6 }}>
+              <Stack gap="sm">
+                {toggleClients.map((perfectClient, index) => (
+                  <ToggleRow
+                    key={getKey(perfectClient, index)}
+                    perfectClient={perfectClient}
+                    onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
+                    onSelectedChange={(isSelected) => handleToggleSelectedChange(perfectClient, isSelected)}
+                    onSideChange={() => handleToggleSideChange(perfectClient)}
+                  />
+                ))}
+              </Stack>
+            </Grid.Col>
+          </Grid>
+        </Box>
       )}
 
       <PerfectClientAddModal

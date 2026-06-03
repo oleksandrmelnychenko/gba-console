@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSubClients } from '../../api/clientCabinetApi'
@@ -18,6 +18,7 @@ function getSubClientName(client?: Client): string {
 export function SubClientsPanel({ client }: SubClientsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const netId = client.NetUid
   const [subClients, setSubClients] = useValueState<ClientSubClient[]>(client.SubClients || [])
   const [isLoading, setLoading] = useValueState(false)
@@ -70,7 +71,11 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
   function openNewUser() {
     navigate('/clients/new/role', {
       state: {
+        ...(location.state && typeof location.state === 'object' ? location.state : {}),
+        backgroundLocation: location,
         parentClientId: netId,
+        returnPath: `${location.pathname}${location.search}`,
+        returnState: location.state,
       },
     })
   }
