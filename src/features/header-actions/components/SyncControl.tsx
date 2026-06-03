@@ -493,7 +493,10 @@ export function SyncControl() {
               ) : (
                 <Stack gap={3}>
                   {state.messages.map((message, index) => (
-                    <Text key={`${message}-${index}`} size="xs" className="sync-message tx-text-swap">
+                    // Messages are only prepended, so (length - index) is stable per row —
+                    // existing rows keep their key and don't remount (only the new row animates),
+                    // which stops the whole log from re-flashing on every notification.
+                    <Text key={state.messages.length - index} size="xs" className="sync-message tx-text-swap">
                       {message}
                     </Text>
                   ))}
