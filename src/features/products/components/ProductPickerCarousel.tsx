@@ -1,5 +1,5 @@
 import { ActionIcon, Box, Card, Group, Loader, ScrollArea, Text, Tooltip } from '@mantine/core'
-import { IconInfoCircle } from '@tabler/icons-react'
+import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
@@ -27,6 +27,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
   getMeta,
   onPick,
   onOpenCard,
+  onProductInterest,
 }: {
   disabled?: boolean
   emptyText?: string
@@ -34,6 +35,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
   isLoading?: boolean
   onOpenCard?: (productNetId: string) => void
   onPick: (product: T) => void
+  onProductInterest?: (product: T) => void
   products: T[]
 }) {
   const { t } = useI18n()
@@ -132,22 +134,43 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                   <Text fw={700} size="sm" lineClamp={1}>
                     {code}
                   </Text>
-                  {product.NetUid && onOpenCard && (
-                    <Tooltip label={t('Картка товару')}>
-                      <ActionIcon
-                        aria-label={t('Картка товару')}
-                        color="gray"
-                        disabled={disabled}
-                        size="sm"
-                        variant="subtle"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onOpenCard(product.NetUid as string)
-                        }}
-                      >
-                        <IconInfoCircle size={15} />
-                      </ActionIcon>
-                    </Tooltip>
+                  {product.NetUid && (onProductInterest || onOpenCard) && (
+                    <Group gap={2} wrap="nowrap">
+                      {onProductInterest && (
+                        <Tooltip label={t('Зацікавленість')}>
+                          <ActionIcon
+                            aria-label={t('Зацікавленість')}
+                            color="gray"
+                            disabled={disabled}
+                            size="sm"
+                            variant="subtle"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onProductInterest(product)
+                            }}
+                          >
+                            <IconStar size={15} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                      {onOpenCard && (
+                        <Tooltip label={t('Картка товару')}>
+                          <ActionIcon
+                            aria-label={t('Картка товару')}
+                            color="gray"
+                            disabled={disabled}
+                            size="sm"
+                            variant="subtle"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onOpenCard(product.NetUid as string)
+                            }}
+                          >
+                            <IconInfoCircle size={15} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
                   )}
                 </Group>
                 <Text c="dimmed" size="xs" lineClamp={2} mt={2} style={{ minHeight: 32 }}>

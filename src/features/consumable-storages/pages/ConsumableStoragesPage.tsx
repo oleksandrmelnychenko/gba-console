@@ -545,6 +545,43 @@ function getPriceTotalKey(total: NonNullable<ConsumablesStorage['PriceTotals']>[
   return `${currencyKey}-${total.Qty ?? 0}-${total.TotalPrice ?? total.Amount ?? 0}`
 }
 
+function formatStorageRemnantQuantity(product: ConsumableProduct): string {
+  const quantity = formatAmount(product.SpecificationQty ?? product.TotalQty)
+  const unit = product.MeasureUnit && (product.MeasureUnit.Id ?? 0) > 0 ? product.MeasureUnit.Name : undefined
+
+  return unit ? `${quantity} ${unit}` : quantity
+}
+
+function getStorageRemnantWorthPrice(product: ConsumableProduct): number | undefined {
+  const priceTotals = product.PriceTotals
+
+  if (!priceTotals || priceTotals.length === 0) {
+    return product.WorthPrice ?? product.PricePerItem
+  }
+
+  return priceTotals.reduce((sum, total) => sum + (total.TotalPrice ?? total.Amount ?? 0), 0)
+}
+
+function getStorageRemnantCurrency(product: ConsumableProduct): string | undefined {
+  const priceTotals = product.PriceTotals
+
+  if (!priceTotals || priceTotals.length === 0) {
+    return product.Currency?.Name || product.Currency?.Code
+  }
+
+  const codes: string[] = []
+
+  for (const total of priceTotals) {
+    const code = total.Currency?.Code || total.Currency?.Name
+
+    if (code && !codes.includes(code)) {
+      codes.push(code)
+    }
+  }
+
+  return codes.length > 0 ? codes.join(' ') : undefined
+}
+
 function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
   const { t } = useI18n()
 
@@ -565,7 +602,7 @@ function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
         minWidth: 104,
         align: 'right',
         accessor: (product) => product.SpecificationQty ?? product.TotalQty,
-        cell: (product) => formatAmount(product.SpecificationQty ?? product.TotalQty),
+        cell: (product) => formatStorageRemnantQuantity(product),
       },
       {
         id: 'name',
@@ -580,16 +617,16 @@ function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
         width: 130,
         minWidth: 112,
         align: 'right',
-        accessor: (product) => product.WorthPrice ?? product.PricePerItem,
-        cell: (product) => formatMoney(product.WorthPrice ?? product.PricePerItem),
+        accessor: (product) => getStorageRemnantWorthPrice(product),
+        cell: (product) => formatMoney(getStorageRemnantWorthPrice(product)),
       },
       {
         id: 'currency',
         header: t('Валюта'),
         width: 130,
         minWidth: 112,
-        accessor: (product) => product.Currency?.Name || product.Currency?.Code,
-        cell: (product) => displayValue(product.Currency?.Name || product.Currency?.Code),
+        accessor: (product) => getStorageRemnantCurrency(product),
+        cell: (product) => displayValue(getStorageRemnantCurrency(product)),
       },
     ],
     [t],

@@ -536,6 +536,17 @@ export function ConsumableOrderFormPage() {
     })
   }
 
+  function overrideEditorVat(value: number) {
+    setItemEditor((current) => ({
+      ...current,
+      error: null,
+      item: {
+        ...current.item,
+        VAT: value,
+      },
+    }))
+  }
+
   function handleProductSubmit(value: string) {
     const product = productOptions.find((item) => getEntityValue(item) === value)
 
@@ -1024,6 +1035,15 @@ export function ConsumableOrderFormPage() {
               min={0}
               value={itemEditor.item.VatPercent || 0}
               onChange={(value) => updateEditorItem({ VatPercent: toNumber(value) })}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isMutationLocked}
+              label={t('Сума ПДВ')}
+              min={0}
+              value={itemEditor.item.VAT || 0}
+              onChange={(value) => overrideEditorVat(toNumber(value))}
             />
             <NumberInput
               allowNegative={false}

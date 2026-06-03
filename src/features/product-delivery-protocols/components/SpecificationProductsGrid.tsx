@@ -46,6 +46,7 @@ type ServiceColumn = {
 type SpecificationProductsGridProps = {
   canEditSpecification?: boolean
   currencyIsEur: boolean
+  invoiceDeliveryAmount?: number
   onEditSpecification?: (item: PackingListPackageOrderItem) => void
   packingList: SpecificationPackingList
   withManagementServices: boolean
@@ -64,13 +65,17 @@ const weightFormatter = new Intl.NumberFormat('uk-UA', {
 export function SpecificationProductsGrid({
   canEditSpecification = false,
   currencyIsEur,
+  invoiceDeliveryAmount,
   onEditSpecification,
   packingList,
   withManagementServices,
 }: SpecificationProductsGridProps) {
   const { t } = useI18n()
   const items = useMemo(() => packingList.PackingListPackageOrderItems || [], [packingList])
-  const hasDeliveryAmount = items.some((item) => (item.DeliveryAmountUah || 0) > 0 || (item.DeliveryAmountEur || 0) > 0)
+  const hasDeliveryAmount =
+    invoiceDeliveryAmount === undefined
+      ? items.some((item) => (item.DeliveryAmountUah || 0) > 0 || (item.DeliveryAmountEur || 0) > 0)
+      : (invoiceDeliveryAmount || 0) > 0
 
   const { netServiceColumns, generalServiceColumns, managementServiceColumns } = useMemo(
     () => buildServiceColumns(items, currencyIsEur),

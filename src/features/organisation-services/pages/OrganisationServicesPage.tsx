@@ -471,10 +471,10 @@ function useOrganisationServicesColumns(): DataTableColumn<PaymentTaskRow>[] {
         header: 'Статус',
         width: 152,
         minWidth: 132,
-        accessor: (row) => getStatusLabel(row.status, row.isPayed, t),
+        accessor: (row) => getStatusLabel(row.status, t),
         cell: (row) => (
-          <Badge color={getStatusColor(row.status, row.isPayed)} variant="light">
-            {getStatusLabel(row.status, row.isPayed, t)}
+          <Badge color={getStatusColor(row.status)} variant="light">
+            {getStatusLabel(row.status, t)}
           </Badge>
         ),
       },
@@ -654,11 +654,7 @@ function displayValue(value?: string | null): string {
   return normalizedValue || '-'
 }
 
-function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (value: string) => string): string {
-  if (isPayed) {
-    return t('Оплачено')
-  }
-
+function getStatusLabel(status: TaskStatus | undefined, t: (value: string) => string): string {
   if (status === 0) {
     return t('Не завершено')
   }
@@ -674,8 +670,8 @@ function getStatusLabel(status: TaskStatus | undefined, isPayed: boolean, t: (va
   return t('Немає статусу')
 }
 
-function getStatusColor(status: TaskStatus | undefined, isPayed: boolean): string {
-  if (isPayed || status === 1) {
+function getStatusColor(status: TaskStatus | undefined): string {
+  if (status === 1) {
     return 'green'
   }
 

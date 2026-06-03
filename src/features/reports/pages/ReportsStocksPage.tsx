@@ -39,6 +39,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createStockReport,
+  getReportClientAgreements,
   getReportClientTypes,
   getReportOrganizations,
   getReportPricings,
@@ -397,6 +398,7 @@ export function ReportsStocksPage() {
                       from={from}
                       label={index === 0 ? t('Значення') : undefined}
                       selection={selection}
+                      selections={selections}
                       to={to}
                       onChange={(values) => updateSelection(selections, index, setSelections, { Values: values })}
                     />
@@ -528,11 +530,12 @@ type SelectionValuePickerProps = {
   from: string
   label?: string
   selection: ReportSelection
+  selections: ReportSelection[]
   to: string
   onChange: (values: ReportSelectedValue[]) => void
 }
 
-function SelectionValuePicker({ from, label, selection, to, onChange }: SelectionValuePickerProps) {
+function SelectionValuePicker({ from, label, selection, selections, to, onChange }: SelectionValuePickerProps) {
   const { t } = useI18n()
   const [search, setSearch] = useValueState('')
   const [manualValue, setManualValue] = useValueState('')
@@ -542,6 +545,7 @@ function SelectionValuePicker({ from, label, selection, to, onChange }: Selectio
   const lookupMode = getSelectionLookupMode(selection.SelectedField.Type)
   const normalizedSearch = lookupMode === 'search' ? debouncedSearch.trim() : ''
   const minSearchLength = getSelectionLookupMinLength(selection.SelectedField.Type)
+  const dependentClientNetId = lookupMode === 'dependent' ? getDependentClientNetId(selections) : ''
   const selectOptions = useMemo(
     () =>
       mergeReportEntities([...selection.Values.map((value) => value.Data), ...options]).map((entity, index) => ({
@@ -566,13 +570,23 @@ function SelectionValuePicker({ from, label, selection, to, onChange }: Selectio
       return
     }
 
+    if (lookupMode === 'dependent' && !dependentClientNetId) {
+      setOptions([])
+      setLoading(false)
+
+      return
+    }
+
     let cancelled = false
 
     async function loadOptions() {
       setLoading(true)
 
       try {
-        const nextOptions = await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to)
+        const nextOptions =
+          lookupMode === 'dependent'
+            ? await getReportClientAgreements(dependentClientNetId)
+            : await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to)
 
         if (!cancelled) {
           setOptions(nextOptions)
@@ -594,6 +608,7 @@ function SelectionValuePicker({ from, label, selection, to, onChange }: Selectio
       cancelled = true
     }
   }, [
+    dependentClientNetId,
     from,
     lookupMode,
     minSearchLength,
@@ -665,7 +680,9 @@ function SelectionValuePicker({ from, label, selection, to, onChange }: Selectio
           nothingFoundMessage={
             lookupMode === 'search' && normalizedSearch.length < minSearchLength
               ? t('Введіть мінімум 2 символи')
-              : t('Нічого не знайдено')
+              : lookupMode === 'dependent' && !dependentClientNetId
+                ? t('Спочатку оберіть клієнта')
+                : t('Нічого не знайдено')
           }
           placeholder={t('Пошук значення')}
           rightSection={isLoading ? <Loader size="xs" /> : null}
@@ -891,7 +908,7 @@ function parseTemplates(raw: string | null): Array<{ Data: ReportRequestBody; Na
   return []
 }
 
-function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'static' {
+function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'static' | 'dependent' {
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
     case REPORT_FILTER_FIELD_TYPES.customer:
@@ -900,6 +917,8 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
     case REPORT_FILTER_FIELD_TYPES.customerPriceType:
     case REPORT_FILTER_FIELD_TYPES.productTop:
       return 'static'
+    case REPORT_FILTER_FIELD_TYPES.customerContract:
+      return 'dependent'
     case REPORT_FILTER_FIELD_TYPES.productArticle:
     case REPORT_FILTER_FIELD_TYPES.productGroup:
     case REPORT_FILTER_FIELD_TYPES.customerName:
@@ -916,6 +935,16 @@ function getSelectionLookupMode(fieldType: number): 'manual' | 'search' | 'stati
 
 function getSelectionLookupMinLength(fieldType: number): number {
   return fieldType === REPORT_FILTER_FIELD_TYPES.productGroup ? 0 : 2
+}
+
+function getDependentClientNetId(selections: ReportSelection[]): string {
+  const customerNameSelection = selections.find(
+    (selection) => selection.IsChecked && selection.SelectedField.Type === REPORT_FILTER_FIELD_TYPES.customerName,
+  )
+
+  const clientValue = customerNameSelection?.Values.find((value) => value.Data && value.Data.NetUid)
+
+  return clientValue?.Data.NetUid ? String(clientValue.Data.NetUid) : ''
 }
 
 async function loadSelectionLookupOptions(

@@ -8,7 +8,7 @@ import type {
   ClientProductMovementOrganizationOption,
 } from '../types'
 
-const CLIENT_SEARCH_LIMIT = 50
+export const CLIENT_SEARCH_PAGE_SIZE = 20
 const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
@@ -52,22 +52,23 @@ export async function getClientProductMovementOrganizations(): Promise<ClientPro
 
 export async function searchClientProductMovementClients(
   value: string,
+  offset = 0,
 ): Promise<ClientProductMovementClientOption[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      filter: buildClientSearchFilter(value),
+      filter: buildClientSearchFilter(value, offset),
     },
   })
 
   return normalizeArray(result) as ClientProductMovementClientOption[]
 }
 
-function buildClientSearchFilter(value: string): string {
+function buildClientSearchFilter(value: string, offset: number): string {
   return buildServerSearchFilter({
     filterEntityType: CLIENT_FILTER_ENTITY_TYPE_CLIENT,
     filterSql: CLIENT_SEARCH_SQL,
-    limit: CLIENT_SEARCH_LIMIT,
-    offset: 0,
+    limit: CLIENT_SEARCH_PAGE_SIZE,
+    offset,
     table: 'Client',
     value: value.trim(),
   })

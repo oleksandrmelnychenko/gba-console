@@ -2131,7 +2131,9 @@ function buildStorageOptions(storages: ProductStorageStorage[]): { label: string
   return storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
     if (storage.NetUid) {
       options.push({
-        label: storage.Name || translate('Без назви'),
+        label: storage.Organization?.Name
+          ? `${storage.Name} (${storage.Organization.Name})`
+          : storage.Name || translate('Без назви'),
         value: storage.NetUid,
       })
     }

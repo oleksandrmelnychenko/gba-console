@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Group,
   Loader,
   PasswordInput,
@@ -447,6 +448,7 @@ function UserPasswordPanel({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const { t } = useI18n()
+  const [isPasswordChangeEnabled, setPasswordChangeEnabled] = useState(false)
 
   return (
     <form onSubmit={onSubmit}>
@@ -454,30 +456,40 @@ function UserPasswordPanel({
         <Stack gap="md">
           <Group grow align="end">
             <PasswordInput
-              disabled={isResettingPassword}
+              disabled={!isPasswordChangeEnabled || isResettingPassword}
               label={t('Новий пароль')}
+              placeholder="*** *** ***"
               required
               value={password}
               onChange={(event) => onChangePassword(event.currentTarget.value)}
             />
             <PasswordInput
-              disabled={isResettingPassword}
+              disabled={!isPasswordChangeEnabled || isResettingPassword}
               label={t('Підтвердження пароля')}
+              placeholder="*** *** ***"
               required
               value={confirmPassword}
               onChange={(event) => onChangeConfirmPassword(event.currentTarget.value)}
             />
           </Group>
-          <Group justify="flex-end">
-            <Button
-              color="violet"
-              leftSection={<IconKey size={16} />}
-              loading={isResettingPassword}
-              type="submit"
-            >
-              {t('Змінити пароль')}
-            </Button>
-          </Group>
+          <Checkbox
+            checked={isPasswordChangeEnabled}
+            disabled={isResettingPassword}
+            label={t('Дозволити зміну пароля?')}
+            onChange={(event) => setPasswordChangeEnabled(event.currentTarget.checked)}
+          />
+          {isPasswordChangeEnabled && (
+            <Group justify="flex-end">
+              <Button
+                color="violet"
+                leftSection={<IconKey size={16} />}
+                loading={isResettingPassword}
+                type="submit"
+              >
+                {t('Змінити пароль')}
+              </Button>
+            </Group>
+          )}
         </Stack>
       </Card>
     </form>

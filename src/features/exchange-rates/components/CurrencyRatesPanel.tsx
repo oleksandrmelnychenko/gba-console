@@ -280,6 +280,7 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
     toDateTime,
   ])
 
+  const isReadOnly = group.id === 'government-cross'
   const selectedRateTitle = panelState.selectedRate
     ? `${panelState.selectedRate.Code}: ${formatRate(panelState.selectedRate.Amount)}`
     : t('Оберіть валюту')
@@ -440,12 +441,14 @@ export function CurrencyRatesPanel({ group, onClose, onRefresh, style }: Currenc
             {t('Завантажити ще')}
           </Button>
         )}
-        <Button variant={panelState.isFormOpen ? 'outline' : 'light'} color="violet" onClick={toggleForm}>
-          {panelState.isFormOpen ? t('Скасувати') : t('Створити')}
-        </Button>
+        {!isReadOnly && (
+          <Button variant={panelState.isFormOpen ? 'outline' : 'light'} color="violet" onClick={toggleForm}>
+            {panelState.isFormOpen ? t('Скасувати') : t('Створити')}
+          </Button>
+        )}
       </Group>
 
-      {panelState.isFormOpen && (
+      {!isReadOnly && panelState.isFormOpen && (
         <CurrencyRatesUpdateForm
           amountEntries={amountEntries}
           formDate={panelState.formDate}

@@ -137,6 +137,39 @@ export function SupplyUkrainePaymentProtocolsView() {
     await persistOrder(nextOrder)
   }
 
+  async function handleAddPaymentTask(
+    service: MergedService,
+    values: { comment: string; payToDate: Date | null; responsible: ProtocolUser | null },
+    isAccounting: boolean,
+  ): Promise<void> {
+    if (!order) {
+      return
+    }
+
+    const paymentTask: SupplyPaymentTask = {
+      Comment: values.comment,
+      PayToDate: values.payToDate ? values.payToDate.toISOString() : undefined,
+      User: values.responsible,
+    }
+
+    const nextOrder: SupplyOrderUkraine = {
+      ...order,
+      MergedServices: (order.MergedServices || []).map((item) => {
+        if (item.NetUid !== service.NetUid) {
+          return item
+        }
+
+        if (isAccounting) {
+          return { ...item, AccountingPaymentTask: paymentTask }
+        }
+
+        return { ...item, SupplyPaymentTask: paymentTask }
+      }),
+    }
+
+    await persistOrder(nextOrder)
+  }
+
   async function handleRemovePaymentTask(service: MergedService, task: SupplyPaymentTask): Promise<void> {
     if (!order) {
       return
@@ -250,6 +283,8 @@ export function SupplyUkrainePaymentProtocolsView() {
             <MergedServicesSection
               isSaving={isSaving}
               services={order.MergedServices || []}
+              users={users}
+              onAddPaymentTask={handleAddPaymentTask}
               onCreateService={handleCreateService}
               onRemovePaymentTask={handleRemovePaymentTask}
               onRemoveService={handleRemoveService}

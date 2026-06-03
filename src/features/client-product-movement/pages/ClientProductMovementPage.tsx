@@ -21,6 +21,7 @@ import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
+  CLIENT_SEARCH_PAGE_SIZE,
   exportClientProductMovementDocument,
   getClientProductMovementOrganizations,
   getClientProductMovements,
@@ -100,6 +101,8 @@ export function ClientProductMovementPage() {
   const [organizations, setOrganizations] = useValueState<ClientProductMovementOrganizationOption[]>([])
   const [clientQuery, setClientQuery] = useValueState('')
   const [clientOptions, setClientOptions] = useValueState<ClientProductMovementClientOption[]>([])
+  const [clientOffset, setClientOffset] = useValueState(0)
+  const [clientHasMore, setClientHasMore] = useValueState(false)
   const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -155,21 +158,24 @@ export function ClientProductMovementPage() {
   useEffect(() => {
     const query = clientQuery.trim()
 
-    if (query.length < 2) {
-      return
-    }
-
     let cancelled = false
     const handle = setTimeout(async () => {
       try {
-        const next = await searchClientProductMovementClients(query)
+        const next = await searchClientProductMovementClients(query, clientOffset)
 
         if (!cancelled) {
-          setClientOptions(next)
+          setClientOptions((current) =>
+            clientOffset === 0 ? next : mergeClientOptions(current, next),
+          )
+          setClientHasMore(next.length >= CLIENT_SEARCH_PAGE_SIZE)
         }
       } catch {
         if (!cancelled) {
-          setClientOptions([])
+          if (clientOffset === 0) {
+            setClientOptions([])
+          }
+
+          setClientHasMore(false)
         }
       }
     }, 300)
@@ -178,7 +184,11 @@ export function ClientProductMovementPage() {
       cancelled = true
       clearTimeout(handle)
     }
-  }, [clientQuery, setClientOptions])
+  }, [clientOffset, clientQuery, setClientHasMore, setClientOptions])
+
+  useEffect(() => {
+    setClientOffset(0)
+  }, [clientQuery, setClientOffset])
 
   useEffect(() => {
     if (!activeFilters.clientNetId) {
@@ -224,6 +234,14 @@ export function ClientProductMovementPage() {
     setPage(1)
     setFilterDraft(nextDraft)
     setActiveDraft({ ...nextDraft, article: nextDraft.article.trim() })
+  }
+
+  function loadMoreClients() {
+    if (!clientHasMore) {
+      return
+    }
+
+    setClientOffset((current) => current + CLIENT_SEARCH_PAGE_SIZE)
   }
 
   function toggleExpanded(key: string) {
@@ -324,8 +342,9 @@ export function ClientProductMovementPage() {
               searchable
               data={clientSelectData}
               label={t('Клієнт')}
-              nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+              nothingFoundMessage={t('Нічого не знайдено')}
               placeholder={t('Пошук клієнта')}
+              scrollAreaProps={{ onBottomReached: loadMoreClients }}
               searchValue={clientQuery}
               value={filterDraft.clientNetId || null}
               w={260}
@@ -651,6 +670,29 @@ function toOrganizationSelectOptions(organizations: ClientProductMovementOrganiz
   }
 
   return options
+}
+
+function mergeClientOptions(
+  current: ClientProductMovementClientOption[],
+  next: ClientProductMovementClientOption[],
+): ClientProductMovementClientOption[] {
+  const seen = new Set(current.map(getClientOptionKey))
+  const merged = [...current]
+
+  for (const client of next) {
+    const key = getClientOptionKey(client)
+
+    if (!seen.has(key)) {
+      seen.add(key)
+      merged.push(client)
+    }
+  }
+
+  return merged
+}
+
+function getClientOptionKey(client: ClientProductMovementClientOption): string {
+  return String(client.NetUid ?? client.Id ?? '')
 }
 
 function toClientSelectOptions(clients: ClientProductMovementClientOption[]): SelectOption[] {
