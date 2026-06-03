@@ -122,7 +122,7 @@ describe('getProductIncomeDocumentSourceLink', () => {
     expect(getProductIncomeDocumentSourceLink(document)).toBe('/products/capitalization?netId=capitalization%2F1%202')
   })
 
-  it('links sale returns without requiring the income document NetUid', () => {
+  it('does not link sale returns to the create screen', () => {
     const document = incomeDocument({
       ProductIncomeItems: [
         {
@@ -131,7 +131,7 @@ describe('getProductIncomeDocumentSourceLink', () => {
       ],
     })
 
-    expect(getProductIncomeDocumentSourceLink(document)).toBe('/sales/return/client')
+    expect(getProductIncomeDocumentSourceLink(document)).toBeNull()
   })
 
   it('preserves null when a non-reconciliation source needs the income document NetUid', () => {
@@ -144,6 +144,23 @@ describe('getProductIncomeDocumentSourceLink', () => {
     })
 
     expect(getProductIncomeDocumentSourceLink(document)).toBeNull()
+  })
+
+  it('ignores deleted income items when resolving the source route', () => {
+    const document = incomeDocument({
+      NetUid: 'income-1',
+      ProductIncomeItems: [
+        {
+          Deleted: true,
+          PackingListPackageOrderItem: {},
+        },
+        {
+          SupplyOrderUkraineItem: {},
+        },
+      ],
+    })
+
+    expect(getProductIncomeDocumentSourceLink(document)).toBe('/orders/ukraine/income-1/product-income')
   })
 })
 

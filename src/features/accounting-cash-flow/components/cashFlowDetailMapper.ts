@@ -35,6 +35,31 @@ export type CashFlowDetailViewModel = {
   title: string
 }
 
+const SUPPLY_PAYMENT_TASK_SERVICE_FIELDS = [
+  'ConsumablesOrder',
+  'SupplyOrderUkrainePaymentDeliveryProtocols',
+  'CustomAgencyServices',
+  'VehicleDeliveryServices',
+  'TransportationServices',
+  'PortCustomAgencyServices',
+  'PlaneDeliveryServices',
+  'BrokerServices',
+  'PaymentDeliveryProtocols',
+  'PortWorkServices',
+  'MergedServices',
+  'ContainerServices',
+  'VehicleServices',
+  'BillOfLadingServices',
+] as const
+
+const SERVICE_DOCUMENT_FIELDS = [
+  'InvoiceDocuments',
+  'BillOfLadingDocuments',
+  'ConsumablesOrderDocuments',
+  'SupplyPaymentTaskDocuments',
+  'ProFormDocuments',
+] as const
+
 const JOIN_SERVICE_TYPE = {
   SupplyOrderPaymentDeliveryProtocol: 0,
   SupplyOrderPolandPaymentDeliveryProtocol: 1,
@@ -194,44 +219,116 @@ function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailV
     return null
   }
 
-  const containerServices = readArray(task, 'ContainerServices')
-  const services = containerServices.length > 0 ? containerServices : readArray(task, 'VehicleServices')
+  const services = collectSupplyPaymentTaskServices(task)
+  const taskDocuments = collectServiceDocuments(task)
 
   const rows = services.map((serviceItem) => {
     const service = toRecord(serviceItem)
+    const nestedProForm = toRecord(service?.SupplyProForm)
+    const nestedInvoice = toRecord(service?.SupplyInvoice)
+    const nestedUkraineOrder = toRecord(service?.SupplyOrderUkraine)
+    const nestedAgreement = toRecord(nestedUkraineOrder?.ClientAgreement)
+    const nestedAgreementDetail = toRecord(nestedAgreement?.Agreement)
 
     return {
-      ContainerNumber: stringValue(service?.ContainerNumber),
-      Currency: readPath(service, ['SupplyOrganizationAgreement', 'Currency', 'Code']),
-      FromData: stringValue(readPath(service, ['BillOfLadingDocument', 'Date'])),
-      NetPrice: numberValue(service?.NetPrice),
-      Number: stringValue(service?.Number),
+      ContainerNumber:
+        stringValue(service?.ContainerNumber) ||
+        stringValue(service?.VehicleNumber) ||
+        stringValue(service?.BillOfLadingNumber),
+      Currency:
+        readPath(service, ['SupplyOrganizationAgreement', 'Currency', 'Code']) ||
+        readPath(nestedAgreementDetail, ['Currency', 'Code']),
+      FromData:
+        stringValue(service?.FromDate) ||
+        stringValue(readPath(service, ['BillOfLadingDocument', 'Date'])) ||
+        stringValue(nestedProForm?.DateFrom) ||
+        stringValue(nestedInvoice?.DateFrom) ||
+        stringValue(nestedUkraineOrder?.FromDate),
+      NetPrice:
+        numberValue(service?.NetPrice) ||
+        numberValue(service?.AccountingNetPrice) ||
+        numberValue(service?.Value) ||
+        numberValue(service?.GrossPrice),
+      Number:
+        stringValue(service?.Number) ||
+        stringValue(nestedProForm?.Number) ||
+        stringValue(nestedInvoice?.Number) ||
+        stringValue(nestedUkraineOrder?.InvNumber),
       PaymentStatus: getAccountingCashFlowRecordPaymentStatus(service) || getAccountingCashFlowPaymentStatus(item),
-      ServiceNumber: stringValue(service?.ServiceNumber),
+      ServiceNumber: stringValue(service?.ServiceNumber) || stringValue(nestedUkraineOrder?.Number),
     }
   })
 
   return {
     columnKind: 'supplyPaymentTask',
-    documents: [],
-    linkToOrder: getLinkToOrder(toRecord(containerServices[0])),
+    documents: uniqueDocuments([
+      ...taskDocuments,
+      ...services.flatMap((service) => collectServiceDocuments(toRecord(service) || {})),
+    ]),
+    linkToOrder: getLinkToOrder(toRecord(services[0])),
     rows,
     title: stringValue(item.Name),
   }
 }
 
+function collectSupplyPaymentTaskServices(task: Record<string, unknown>): unknown[] {
+  return SUPPLY_PAYMENT_TASK_SERVICE_FIELDS.flatMap((field) => {
+    const value = task[field]
+
+    if (Array.isArray(value)) {
+      return value
+    }
+
+    return value ? [value] : []
+  }).filter((service) => toRecord(service)?.Deleted !== true)
+}
+
 function collectServiceDocuments(service: Record<string, unknown>): CashFlowDetailDocument[] {
-  const source = Array.isArray(service.InvoiceDocuments)
-    ? readArray(service, 'InvoiceDocuments')
-    : readArray(service, 'BillOfLadingDocuments')
+  const nestedProForm = toRecord(service.SupplyProForm)
+  const nestedInvoice = toRecord(service.SupplyInvoice)
+  const source = [
+    ...SERVICE_DOCUMENT_FIELDS.flatMap((field) => readArray(service, field)),
+    ...readArray(nestedProForm, 'ProFormDocuments'),
+    ...readArray(nestedInvoice, 'InvoiceDocuments'),
+  ]
 
   return source
     .map((documentItem) => toRecord(documentItem))
-    .filter((document): document is Record<string, unknown> => Boolean(document) && Boolean(stringValue(document?.DocumentUrl)))
+    .filter((document): document is Record<string, unknown> =>
+      Boolean(document && document.Deleted !== true && getDocumentUrl(document)),
+    )
     .map((document) => ({
       name: stringValue(document.FileName) || stringValue(document.Name) || stringValue(document.Number),
-      url: stringValue(document.DocumentUrl),
+      url: getDocumentUrl(document),
     }))
+}
+
+function uniqueDocuments(documents: CashFlowDetailDocument[]): CashFlowDetailDocument[] {
+  const seen = new Set<string>()
+  const result: CashFlowDetailDocument[] = []
+
+  for (const document of documents) {
+    const key = document.url || document.name
+
+    if (!key || seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    result.push(document)
+  }
+
+  return result
+}
+
+function getDocumentUrl(document: Record<string, unknown>): string {
+  return stringValue(document.DocumentUrl)
+    || stringValue(document.DocumentURL)
+    || stringValue(document.PdfDocumentUrl)
+    || stringValue(document.PdfDocumentURL)
+    || stringValue(document.URL)
+    || stringValue(document.Url)
+    || stringValue(document.url)
 }
 
 function getLinkToOrder(service: Record<string, unknown> | null): string {

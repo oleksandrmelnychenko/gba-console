@@ -293,7 +293,7 @@ function useAvailablePaymentsPageModel() {
     [setFilesByTaskId],
   )
 
-  const columns = useAvailablePaymentsColumns(groupIndexMap)
+  const columns = useAvailablePaymentsColumns(groupIndexMap, openDetail)
 
   const totalsByCurrency = useMemo(() => buildCurrencyTotals(priceTotals), [priceTotals])
 
@@ -752,7 +752,10 @@ function TotalCell({ label, strong, value }: { label: string; strong?: boolean; 
   )
 }
 
-function useAvailablePaymentsColumns(indexMap: Map<GroupedPaymentTask, number>) {
+function useAvailablePaymentsColumns(
+  indexMap: Map<GroupedPaymentTask, number>,
+  onOpen: (group: GroupedPaymentTask) => void,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<GroupedPaymentTask>[]>(
@@ -846,10 +849,18 @@ function useAvailablePaymentsColumns(indexMap: Map<GroupedPaymentTask, number>) 
         enableReorder: false,
         enableResizing: false,
         enableSorting: false,
-        cell: () => (
+        cell: (group) => (
           <Box>
             <Tooltip label={t('Деталі')}>
-              <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle">
+              <ActionIcon
+                aria-label={t('Деталі')}
+                color="gray"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpen(group)
+                }}
+              >
                 <IconListDetails size={18} />
               </ActionIcon>
             </Tooltip>
@@ -857,7 +868,7 @@ function useAvailablePaymentsColumns(indexMap: Map<GroupedPaymentTask, number>) 
         ),
       },
     ],
-    [indexMap, t],
+    [indexMap, onOpen, t],
   )
 }
 

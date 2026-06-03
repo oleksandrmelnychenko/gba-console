@@ -119,6 +119,7 @@ export type AdvancedReportsResponse = {
   Collection: OutcomePaymentOrder[]
   NegativeDifferenceAmount?: number
   PositiveDifferenceAmount?: number
+  TotalRowsQty?: number
 }
 
 export type AdvancedReportRow = {

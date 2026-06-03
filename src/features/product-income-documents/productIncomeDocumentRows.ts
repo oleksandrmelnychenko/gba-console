@@ -1,4 +1,5 @@
 import { translate } from '../../shared/i18n/translate'
+import { getActiveProductIncomeItems } from './productIncomeDocumentItems'
 import type { NamedEntity, ProductIncomeDocument, ProductIncomeItem } from './types'
 
 export type DocumentRow = {
@@ -19,7 +20,7 @@ export type DocumentRow = {
 export function getOverviewKind(
   document: ProductIncomeDocument,
 ): 'actReconciliation' | 'capitalization' | 'saleReturn' | 'document' {
-  const items = document.ProductIncomeItems || []
+  const items = getActiveProductIncomeItems(document)
 
   if (items.some((item) => item.ProductCapitalizationItem?.ProductCapitalization)) {
     return 'capitalization'
@@ -56,7 +57,7 @@ export function getItemProductName(item: ProductIncomeItem): string | undefined 
 }
 
 export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
-  const items = document.ProductIncomeItems || []
+  const items = getActiveProductIncomeItems(document)
   const amount = getDocumentAmount(document)
   const documentIsActive = !document.Deleted
   const baseRow = {

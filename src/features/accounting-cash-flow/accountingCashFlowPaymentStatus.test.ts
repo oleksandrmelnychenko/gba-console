@@ -72,4 +72,23 @@ describe('accounting cash flow payment status', () => {
       }),
     ).toBeNull()
   })
+
+  it('does not treat a document lifecycle StatusType as a payment status', () => {
+    expect(
+      getAccountingCashFlowPaymentStatus({
+        CurrentValue: 100,
+        Name: 'Документ з generic статусом',
+        StatusType: 1,
+        Type: 13,
+      }),
+    ).toBeNull()
+
+    expect(
+      getAccountingCashFlowPaymentStatus({
+        PaymentStatus: {
+          StatusType: 1,
+        },
+      })?.kind,
+    ).toBe('paid')
+  })
 })

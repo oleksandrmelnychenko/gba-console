@@ -44,6 +44,39 @@ describe('ProductIncomeDocumentsPage helpers', () => {
       type: 'Акт звірки',
     })
   })
+
+  it('ignores deleted income items when deriving overview kind and row data', () => {
+    const document = incomeDocument({
+      NetUid: 'income-1',
+      ProductIncomeItems: [
+        {
+          Deleted: true,
+          PackingListPackageOrderItem: {
+            Qty: 99,
+          },
+        },
+        {
+          Qty: 3,
+          SupplyOrderUkraineItem: {
+            SupplyOrderUkraine: {
+              InvNumber: 'UK-1',
+              Supplier: {
+                Name: 'Supplier',
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    expect(getOverviewKind(document)).toBe('document')
+    expect(mapDocumentRow(document)).toMatchObject({
+      client: 'Supplier',
+      invNumber: 'UK-1',
+      qty: 3,
+      type: 'Прихідний інвойс в Україну',
+    })
+  })
 })
 
 function incomeDocument(document: ProductIncomeDocument): ProductIncomeDocument {

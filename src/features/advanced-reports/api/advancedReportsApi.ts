@@ -27,6 +27,15 @@ export async function getAdvancedReports(params: AdvancedReportsSearchParams): P
   return normalizeAdvancedReportsResponse(result)
 }
 
+export async function calculateAdvancedReportOrder(order: OutcomePaymentOrder): Promise<OutcomePaymentOrder | null> {
+  const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
+    body: order,
+    method: 'POST',
+  })
+
+  return normalizeOutcomePaymentOrder(result)
+}
+
 export async function getAdvancedReportCurrencies(): Promise<Currency[]> {
   const result = await apiRequest<unknown>('/currencies/all')
 
@@ -54,10 +63,13 @@ function normalizeAdvancedReportsResponse(result: unknown): AdvancedReportsRespo
     ? (result as Partial<AdvancedReportsResponse>)
     : {}
 
+  const collection = readCollection(readArrayPayload(result, ['Collection', 'Items', 'OutcomePaymentOrders', 'Data']))
+
   return {
-    Collection: readCollection(readArrayPayload(result, ['Collection', 'Items', 'OutcomePaymentOrders', 'Data'])),
+    Collection: collection,
     NegativeDifferenceAmount: readNumber(payload.NegativeDifferenceAmount),
     PositiveDifferenceAmount: readNumber(payload.PositiveDifferenceAmount),
+    TotalRowsQty: readNumber(payload.TotalRowsQty) || readNumber(collection[0]?.TotalRowsQty),
   }
 }
 

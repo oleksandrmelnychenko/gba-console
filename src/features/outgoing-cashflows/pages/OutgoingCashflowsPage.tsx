@@ -1137,7 +1137,7 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
     paymentMovement: order.PaymentMovementOperation?.PaymentMovement?.OperationName,
     paymentRegister: order.PaymentCurrencyRegister?.PaymentRegister?.Name,
     responsible: getEntityName(order.User),
-    rootAssigned: Boolean(order.RootAssignedPaymentOrder),
+    rootAssigned: Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted),
     totalRowsQty: order.TotalRowsQty,
   }))
 }

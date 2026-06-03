@@ -2520,7 +2520,7 @@ function formatStorageLocationQty(row: ProductStorageLocationHistory): string {
 
 function getProductGroupsFromProduct(product: Product): ProductGroup[] {
   return (product.ProductProductGroups || []).reduce<ProductGroup[]>((groups, relation) => {
-    if (relation.ProductGroup) {
+    if (!relation.Deleted && relation.ProductGroup && !relation.ProductGroup.Deleted) {
       groups.push(relation.ProductGroup)
     }
 

@@ -57,7 +57,7 @@ function ProductSpecificationEditDrawerContent({
   const isDraftDirty = canSave && !areDraftsEqual(draft, initialDraft)
 
   async function submit() {
-    if (!product) {
+    if (!product || isSaving || !canSave) {
       return
     }
 
@@ -236,7 +236,15 @@ function areDraftsEqual(left: ProductSpecificationDraft, right: ProductSpecifica
 }
 
 function buildSpecificationHistory(product: SpecificationProduct | null): ProductSpecificationEntity[] {
-  return (product?.ProductSpecifications || []).toSorted((left, right) => getDateTime(left.Created) - getDateTime(right.Created))
+  return (product?.ProductSpecifications || []).toSorted((left, right) => {
+    const timeDiff = getDateTime(right.Created) - getDateTime(left.Created)
+
+    if (timeDiff !== 0) {
+      return timeDiff
+    }
+
+    return (right.Id || 0) - (left.Id || 0)
+  })
 }
 
 function getLastSpecification(product: SpecificationProduct | null): ProductSpecificationEntity | null {

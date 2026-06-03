@@ -65,6 +65,7 @@ import {
   mapDocumentRow,
   type DocumentRow,
 } from '../productIncomeDocumentRows'
+import { getActiveProductIncomeItems } from '../productIncomeDocumentItems'
 import type {
   NamedEntity,
   ProductIncomeDocument,
@@ -483,7 +484,18 @@ function useProductIncomeDocumentsPageModel() {
     }
   }
 
+  function clearTransientSelection() {
+    exportRequestRef.current += 1
+    setExportingNetId(null)
+    setDownloadModalOpened(false)
+    setOptionsDocument(null)
+    setMovementHistoryProduct(null)
+    setStorageLocationHistoryProduct(null)
+    closeDetails()
+  }
+
   function updateSearch(nextSearchValue: string) {
+    clearTransientSelection()
     setPage(1)
     setSearchDraft(nextSearchValue)
     setSearchValue(nextSearchValue.trim())
@@ -492,6 +504,7 @@ function useProductIncomeDocumentsPageModel() {
   function resetFilters() {
     const defaults = getDefaultFilters()
 
+    clearTransientSelection()
     setDateFrom(defaults.from)
     setDateTo(defaults.to)
     setSearchDraft('')
@@ -549,6 +562,7 @@ function useProductIncomeDocumentsPageModel() {
     selectedDocument,
     storageLocationHistoryProduct,
     toolbarLeft,
+    clearTransientSelection,
     closeDetails,
     handleExport,
     openOptions,
@@ -609,6 +623,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     selectedDocument,
     storageLocationHistoryProduct,
     toolbarLeft,
+    clearTransientSelection,
     closeDetails,
     handleExport,
     openOptions,
@@ -638,7 +653,10 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             loading={isLoading}
             size={38}
             variant="light"
-            onClick={() => reload()}
+            onClick={() => {
+              clearTransientSelection()
+              reload()
+            }}
           >
             <IconRefresh size={18} />
           </ActionIcon>
@@ -654,6 +672,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               value={dateFrom}
               w={150}
               onChange={(event) => {
+                clearTransientSelection()
                 setPage(1)
                 setDateFrom(event.currentTarget.value)
               }}
@@ -664,6 +683,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               value={dateTo}
               w={150}
               onChange={(event) => {
+                clearTransientSelection()
                 setPage(1)
                 setDateTo(event.currentTarget.value)
               }}
@@ -700,6 +720,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                 value={String(pageSize)}
                 w={84}
                 onChange={(value) => {
+                  clearTransientSelection()
                   setPage(1)
                   setPageSize(Number(value || PAGE_SIZE))
                 }}
@@ -710,7 +731,10 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                 disabled={!canMoveBackward || isLoading}
                 size={36}
                 variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                onClick={() => {
+                  clearTransientSelection()
+                  setPage((currentPage) => Math.max(1, currentPage - 1))
+                }}
               >
                 <IconChevronLeft size={18} />
               </ActionIcon>
@@ -723,7 +747,10 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
                 disabled={!canMoveForward || isLoading}
                 size={36}
                 variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
+                onClick={() => {
+                  clearTransientSelection()
+                  setPage((currentPage) => currentPage + 1)
+                }}
               >
                 <IconChevronRight size={18} />
               </ActionIcon>
@@ -931,7 +958,7 @@ function ProductIncomeDocumentDrawer({
 }) {
   const { t } = useI18n()
   const row = document ? mapDocumentRow(document) : null
-  const sourceLink = document ? getProductIncomeDocumentSourceLink(document) : null
+  const sourceLink = document ? getPrimaryProductIncomeSourceLink(document) : null
   const overviewKind = document ? getOverviewKind(document) : 'document'
   const deferredOverviewNote = document ? getDeferredOverviewNote(document, t) : null
 
@@ -1031,7 +1058,7 @@ function ProductIncomeDocumentDrawer({
               )}
               <DataTable
                 columns={itemColumns}
-                data={document.ProductIncomeItems || []}
+                data={getActiveProductIncomeItems(document)}
                 defaultLayout={ITEMS_TABLE_DEFAULT_LAYOUT}
                 emptyText={t('Позицій не знайдено')}
                 getRowId={(item, index) => String(item.NetUid || item.Id || index)}
@@ -1205,7 +1232,7 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
 
 function SaleReturnOverview({ document }: { document: ProductIncomeDocument }) {
   const { t } = useI18n()
-  const items = (document.ProductIncomeItems || []).filter((item) => item.SaleReturnItem)
+  const items = getActiveProductIncomeItems(document).filter((item) => item.SaleReturnItem)
   const firstItem = items[0]?.SaleReturnItem
   const agreement = firstItem?.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement
   const currencyCode = agreement?.Currency?.Code || agreement?.Currency?.Name || ''
@@ -1471,7 +1498,7 @@ function mergeProductIncomeInfo(
 }
 
 function getCapitalizationNetUid(document: ProductIncomeDocument): string | null {
-  const items = document.ProductIncomeItems || []
+  const items = getActiveProductIncomeItems(document)
   const capitalization = items
     .map((item) => item.ProductCapitalizationItem?.ProductCapitalization)
     .find((value) => value?.NetUid)
@@ -1483,7 +1510,7 @@ function getDeferredOverviewNote(
   document: ProductIncomeDocument,
   t: (key: string) => string,
 ): string | null {
-  const items = document.ProductIncomeItems || []
+  const items = getActiveProductIncomeItems(document)
 
   if (items.some((item) => item.SupplyOrderUkraineItem?.SupplyOrderUkraine)) {
     return t('Огляд прихідного інвойса в Україну доступний у модулі замовлень')
@@ -1995,7 +2022,7 @@ function getSaleReturnIncomeItemKey(item: ProductIncomeItem): string {
 }
 
 function getActReconciliationOverviewRows(document: ProductIncomeDocument): ActReconciliationOverviewRow[] {
-  return (document.ProductIncomeItems || []).reduce<ActReconciliationOverviewRow[]>((rows, item, index) => {
+  return getActiveProductIncomeItems(document).reduce<ActReconciliationOverviewRow[]>((rows, item, index) => {
     const reconciliationItem = item.ActReconciliationItem
 
     if (!reconciliationItem) {

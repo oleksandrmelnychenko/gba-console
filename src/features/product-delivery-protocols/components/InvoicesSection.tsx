@@ -97,6 +97,10 @@ function InvoiceViewCard({
   }
 
   async function handleSaveDocuments() {
+    if (!canEdit || isSaving) {
+      return
+    }
+
     try {
       await onSaveDocuments({ ...invoice, SupplyInvoiceDeliveryDocuments: deliveryDocuments }, files)
       setFiles([])

@@ -25,11 +25,15 @@ const STATUS_OBJECT_KEYS = [
   'BasePaymentStatus',
 ]
 
-const STATUS_TYPE_KEYS = [
+const PAYMENT_STATUS_TYPE_KEYS = [
   'SalePaymentStatusType',
   'RetailPaymentStatusType',
   'PaymentStatusType',
   'InvoicePaymentStatusType',
+]
+
+const STATUS_OBJECT_TYPE_KEYS = [
+  ...PAYMENT_STATUS_TYPE_KEYS,
   'StatusType',
 ]
 
@@ -134,7 +138,9 @@ function readFirstStatusScalar(
   record: Record<string, unknown>,
   includeStatusObjectDisplayNames: boolean,
 ): AccountingCashFlowPaymentStatus | null {
-  for (const key of STATUS_TYPE_KEYS) {
+  const typeKeys = includeStatusObjectDisplayNames ? STATUS_OBJECT_TYPE_KEYS : PAYMENT_STATUS_TYPE_KEYS
+
+  for (const key of typeKeys) {
     const status = parsePaymentStatusScalar(record[key])
 
     if (status) {

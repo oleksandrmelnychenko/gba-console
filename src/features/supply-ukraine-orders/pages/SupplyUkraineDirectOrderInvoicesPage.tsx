@@ -159,6 +159,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
   const canShowPackListUpload = Boolean(
     selectedInvoice && canAddPackList && (selectedInvoice.PackingLists?.length || 0) === 0,
   )
+  const isBusy = isSaving || isLoading || isInvoiceLoading
 
   const orderItemColumns = useOrderItemColumns()
   const invoiceItemColumns = useInvoiceItemColumns()
@@ -272,6 +273,21 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
       if (!invoiceNetId) {
         setSelectedInvoice(null)
         setSelectedPackListNetId(null)
+      } else if (invoiceNetId === selectedInvoiceNetId) {
+        setInvoiceLoading(true)
+
+        try {
+          const invoice = await getSupplyInvoiceItems(invoiceNetId)
+
+          setSelectedInvoice(invoice)
+          setSelectedPackListNetId((currentPackListNetId) =>
+            currentPackListNetId && invoice?.PackingLists?.some((packList) => packList.NetUid === currentPackListNetId)
+              ? currentPackListNetId
+              : invoice?.PackingLists?.[0]?.NetUid || null,
+          )
+        } finally {
+          setInvoiceLoading(false)
+        }
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
@@ -418,17 +434,31 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
           </Stack>
         </Group>
         <Group gap="xs">
-          <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={() => reloadOrder()}>
+          <Button
+            disabled={isSaving || isInvoiceLoading}
+            leftSection={<IconRefresh size={16} />}
+            loading={isLoading}
+            variant="light"
+            onClick={() => reloadOrder()}
+          >
             {t('Оновити')}
           </Button>
           {canAddInvoice && (
-            <Button leftSection={<IconFileImport size={16} />} variant="light" onClick={() => setInvoiceUploadOpen(true)}>
+            <Button
+              disabled={isBusy}
+              leftSection={<IconFileImport size={16} />}
+              loading={isSaving}
+              variant="light"
+              onClick={() => setInvoiceUploadOpen(true)}
+            >
               {t('Додати інвойс')}
             </Button>
           )}
           {canShowPackListUpload && (
             <Button
+              disabled={isBusy}
               leftSection={<IconPackage size={16} />}
+              loading={isSaving}
               variant="light"
               onClick={() => setPackListUploadOpen(true)}
             >
@@ -485,6 +515,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                       <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
                         <Button
                           color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
+                          disabled={isBusy}
                           variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
                           onClick={() => setSelectedInvoiceNetId(invoice.NetUid || null)}
                         >
@@ -495,6 +526,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                             <ActionIcon
                               aria-label={t('Видалити')}
                               color="red"
+                              disabled={isBusy}
                               size="xs"
                               variant="subtle"
                               onClick={() => setDeleteInvoiceCandidate(invoice)}
@@ -533,6 +565,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                       <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
                         <Button
                           color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
+                          disabled={isBusy}
                           variant={packList.NetUid === selectedPackListNetId ? 'filled' : 'light'}
                           onClick={() => setSelectedPackListNetId(packList.NetUid || null)}
                         >
@@ -543,6 +576,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
                             <ActionIcon
                               aria-label={t('Видалити')}
                               color="red"
+                              disabled={isBusy}
                               size="xs"
                               variant="subtle"
                               onClick={() => setDeletePackListCandidate(packList)}

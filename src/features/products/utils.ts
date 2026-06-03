@@ -47,8 +47,9 @@ export function getProductMainOriginalNumber(product?: Product | null): string {
     return mainOriginalNumber
   }
 
-  const originalNumber = product?.ProductOriginalNumbers?.find((item) => item.IsMainOriginalNumber)?.OriginalNumber
-    || product?.ProductOriginalNumbers?.[0]?.OriginalNumber
+  const originalNumbers = getProductOriginalNumbers(product)
+  const originalNumber = originalNumbers.find((item) => item.IsMainOriginalNumber)?.OriginalNumber
+    || originalNumbers[0]?.OriginalNumber
 
   return originalNumber?.MainNumber?.trim() || originalNumber?.Number?.trim() || ''
 }
@@ -61,6 +62,10 @@ export function getProductGroupNames(product?: Product | null): string {
   }
 
   const groupNames = product?.ProductProductGroups?.reduce<string[]>((names, productGroup) => {
+    if (productGroup.Deleted || productGroup.ProductGroup?.Deleted) {
+      return names
+    }
+
     const name = productGroup.ProductGroup?.Name?.trim() || productGroup.ProductGroup?.FullName?.trim()
 
     if (name) {
@@ -75,10 +80,11 @@ export function getProductGroupNames(product?: Product | null): string {
 
 export function getProductMainImage(product?: Product | null): ProductImage | null {
   const shopImageUrl = getProductShopImageUrl(product)
+  const activeImages = product?.ProductImages?.filter((image) => !image.Deleted) || []
 
   return (
-    product?.ProductImages?.find((image) => image.IsMainImage && Boolean(image.ImageUrl))
-    || product?.ProductImages?.find((image) => Boolean(image.ImageUrl))
+    activeImages.find((image) => image.IsMainImage && Boolean(image.ImageUrl))
+    || activeImages.find((image) => Boolean(image.ImageUrl))
     || (product?.Image ? { ImageUrl: product.Image } : null)
     || (shopImageUrl ? { ImageUrl: shopImageUrl } : null)
   )
@@ -95,7 +101,9 @@ export function getProductShopGalleryImageUrl(vendorCode: string, suffix: number
 }
 
 export function getProductOriginalNumbers(product?: Product | null): ProductOriginalNumber[] {
-  return product?.ProductOriginalNumbers?.filter((item) => Boolean(item.OriginalNumber)) || []
+  return product?.ProductOriginalNumbers?.filter(
+    (item) => !item.Deleted && item.OriginalNumber?.Deleted !== true && Boolean(item.OriginalNumber),
+  ) || []
 }
 
 function normalizeProductShopImageCode(value: string): string {

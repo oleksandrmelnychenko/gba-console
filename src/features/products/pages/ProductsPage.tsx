@@ -286,6 +286,15 @@ type ProductFileUploadForm = ProductFileUploadColumnForm & {
   mode: ProductFileUploadMode
   prices: ProductFileUploadPriceRow[]
 }
+type ProductPlacementStorageCorrectionState = {
+  rows: ProductPlacementStorage[]
+  storageId: string | null
+}
+type ProductPlacementStorageCorrectionStateUpdater = (
+  value:
+    | ProductPlacementStorageCorrectionState
+    | ((state: ProductPlacementStorageCorrectionState) => ProductPlacementStorageCorrectionState),
+) => void
 
 export function ProductsPage() {
   const { t } = useI18n()
@@ -1826,6 +1835,11 @@ function ProductUploadDocumentToolbar({
   const [uploadType, setUploadType] = useState<ProductRelatedUploadType | null>(null)
   const [productUploadOpened, setProductUploadOpened] = useState(false)
   const [storageUploadOpened, setStorageUploadOpened] = useState(false)
+  const [storageCorrectionState, setStorageCorrectionState] = useState<ProductPlacementStorageCorrectionState>({
+    rows: [],
+    storageId: null,
+  })
+  const storageCorrectionRowsCount = storageCorrectionState.rows.length
 
   return (
     <>
@@ -1855,7 +1869,14 @@ function ProductUploadDocumentToolbar({
             <Menu.Divider />
             <Menu.Label>{t('Розміщення')}</Menu.Label>
             <Menu.Item leftSection={<IconUpload size={15} />} onClick={() => setStorageUploadOpened(true)}>
-              {t('Місце зберігання')}
+              <Group gap="xs" justify="space-between" wrap="nowrap">
+                <Text size="sm">{t('Місце зберігання')}</Text>
+                {storageCorrectionRowsCount > 0 ? (
+                  <Badge color="yellow" size="xs" variant="light">
+                    {storageCorrectionRowsCount}
+                  </Badge>
+                ) : null}
+              </Group>
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
@@ -1871,7 +1892,9 @@ function ProductUploadDocumentToolbar({
 
       {storageUploadOpened ? (
         <ProductPlacementStorageUploadModal
+          correctionState={storageCorrectionState}
           opened
+          onCorrectionStateChange={setStorageCorrectionState}
           onClose={() => setStorageUploadOpened(false)}
           onUploadSuccess={onUploadSuccess}
         />
@@ -1892,10 +1915,14 @@ function ProductUploadDocumentToolbar({
 }
 
 function ProductPlacementStorageUploadModal({
+  correctionState,
+  onCorrectionStateChange,
   onClose,
   onUploadSuccess,
   opened,
 }: {
+  correctionState: ProductPlacementStorageCorrectionState
+  onCorrectionStateChange: ProductPlacementStorageCorrectionStateUpdater
   onClose: () => void
   onUploadSuccess: () => void
   opened: boolean
@@ -1904,18 +1931,17 @@ function ProductPlacementStorageUploadModal({
   const [storages, setStorages] = useState<Storage[]>([])
   const [storagesError, setStoragesError] = useState<string | null>(null)
   const [isLoadingStorages, setLoadingStorages] = useState(true)
-  const [storageId, setStorageId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [startRow, setStartRow] = useState(1)
   const [endRow, setEndRow] = useState(0)
   const [columnVendorCode, setColumnVendorCode] = useState(1)
   const [columnQty, setColumnQty] = useState(2)
   const [columnPlacement, setColumnPlacement] = useState(3)
-  const [notPassedRows, setNotPassedRows] = useState<ProductPlacementStorage[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isUploading, setUploading] = useState(false)
   const [isSavingReturn, setSavingReturn] = useState(false)
-  const canUpload = Boolean(file && storageId && startRow > 0 && endRow > 0 && !isUploading)
+  const { rows: notPassedRows, storageId } = correctionState
+  const canUpload = Boolean(file && storageId && startRow > 0 && endRow > 0 && !isUploading && !isSavingReturn)
 
   useEffect(() => {
     let cancelled = false
@@ -1929,7 +1955,11 @@ function ProductPlacementStorageUploadModal({
 
         if (!cancelled) {
           setStorages(nextStorages)
-          setStorageId((current) => current || (nextStorages[0]?.Id ? String(nextStorages[0].Id) : null))
+          if (nextStorages[0]?.Id) {
+            onCorrectionStateChange((currentState) => (
+              currentState.storageId ? currentState : { ...currentState, storageId: String(nextStorages[0].Id) }
+            ))
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -1947,7 +1977,7 @@ function ProductPlacementStorageUploadModal({
     return () => {
       cancelled = true
     }
-  }, [t])
+  }, [onCorrectionStateChange, t])
 
   const storageOptions = storages.reduce<Array<{ label: string; value: string }>>((options, storage) => {
     const value = storage.Id ? String(storage.Id) : ''
@@ -1958,6 +1988,21 @@ function ProductPlacementStorageUploadModal({
 
     return options
   }, [])
+
+  function closeModal() {
+    if (isUploading || isSavingReturn) {
+      return
+    }
+
+    onClose()
+  }
+
+  function updateCorrectionState(patch: Partial<ProductPlacementStorageCorrectionState>) {
+    onCorrectionStateChange((currentState) => ({
+      ...currentState,
+      ...patch,
+    }))
+  }
 
   async function uploadFile() {
     if (!file || !storageId) {
@@ -1976,7 +2021,7 @@ function ProductPlacementStorageUploadModal({
         StartRow: startRow,
       }, file)
 
-      setNotPassedRows(returnedRows)
+      updateCorrectionState({ rows: returnedRows })
       onUploadSuccess()
 
       if (returnedRows.length === 0) {
@@ -1993,11 +2038,14 @@ function ProductPlacementStorageUploadModal({
   }
 
   function updateNotPassedRow(index: number, field: 'Placement' | 'Qty', value: string) {
-    setNotPassedRows((currentRows) => currentRows.map((row, rowIndex) => (
-      rowIndex === index
-        ? { ...row, [field]: field === 'Qty' ? Number(value) || 0 : value }
-        : row
-    )))
+    onCorrectionStateChange((currentState) => ({
+      ...currentState,
+      rows: currentState.rows.map((row, rowIndex) => (
+        rowIndex === index
+          ? { ...row, [field]: field === 'Qty' ? Number(value) || 0 : value }
+          : row
+      )),
+    }))
   }
 
   async function saveNotPassedRows() {
@@ -2014,10 +2062,11 @@ function ProductPlacementStorageUploadModal({
       onUploadSuccess()
 
       if (stillFailing.length === 0) {
+        updateCorrectionState({ rows: [] })
         notifications.show({ color: 'green', message: t('Виправлені розміщення збережено') })
         onClose()
       } else {
-        setNotPassedRows(stillFailing)
+        updateCorrectionState({ rows: stillFailing })
         notifications.show({ color: 'yellow', message: t('Деякі позиції потребують виправлення') })
       }
     } catch (saveError) {
@@ -2028,7 +2077,7 @@ function ProductPlacementStorageUploadModal({
   }
 
   return (
-    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження місць зберігання')} onClose={onClose}>
+    <AppModal centered opened={opened} size="min(960px, 96vw)" title={t('Завантаження місць зберігання')} onClose={closeModal}>
       <Stack gap="md">
         {(error || storagesError) ? (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error || storagesError}</Alert>
@@ -2042,7 +2091,7 @@ function ProductPlacementStorageUploadModal({
               label={t('Склад')}
               placeholder={isLoadingStorages ? t('Завантаження') : t('Оберіть склад')}
               value={storageId}
-              onChange={(value) => setStorageId(value)}
+              onChange={(value) => updateCorrectionState({ storageId: value })}
             />
             <FileInput
               clearable
@@ -2097,7 +2146,7 @@ function ProductPlacementStorageUploadModal({
               </Table>
             </ScrollArea>
             <Group justify="flex-end">
-              <Button color="gray" variant="light" disabled={isSavingReturn} onClick={onClose}>
+              <Button color="gray" variant="light" disabled={isSavingReturn} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
               <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
@@ -3231,9 +3280,13 @@ function getAnalogueRows(product: Product): RelatedProductRow[] {
   const rows = [...(product.AnalogueProducts || []), ...(product.BaseAnalogueProducts || [])]
 
   return rows.reduce<RelatedProductRow[]>((result, item) => {
+    if (isDeletedRecord(item)) {
+      return result
+    }
+
     const relatedProduct = readRelatedProductByKeys(item, ['AnalogueProduct', 'Product', 'RelatedProduct'])
 
-    if (relatedProduct) {
+    if (relatedProduct && !isDeletedRecord(relatedProduct)) {
       result.push({
         isProductSet: false,
         product: relatedProduct,
@@ -3247,9 +3300,13 @@ function getAnalogueRows(product: Product): RelatedProductRow[] {
 
 function getComponentRows(product: Product): RelatedProductRow[] {
   const components = (product.ComponentProducts || []).reduce<RelatedProductRow[]>((result, item) => {
+    if (isDeletedRecord(item)) {
+      return result
+    }
+
     const relatedProduct = readRelatedProductByKeys(item, ['ComponentProduct', 'Product', 'RelatedProduct'])
 
-    if (relatedProduct) {
+    if (relatedProduct && !isDeletedRecord(relatedProduct)) {
       result.push({
         isProductSet: false,
         product: relatedProduct,
@@ -3261,9 +3318,13 @@ function getComponentRows(product: Product): RelatedProductRow[] {
     return result
   }, [])
   const sets = (product.BaseSetProducts || []).reduce<RelatedProductRow[]>((result, item) => {
+    if (isDeletedRecord(item)) {
+      return result
+    }
+
     const relatedProduct = readRelatedProductByKeys(item, ['BaseProduct', 'Product', 'RelatedProduct'])
 
-    if (relatedProduct) {
+    if (relatedProduct && !isDeletedRecord(relatedProduct)) {
       result.push({
         isProductSet: true,
         product: relatedProduct,
@@ -3294,6 +3355,10 @@ function readRelatedProductByKeys(item: unknown, keys: string[]): Partial<Produc
   }
 
   return record as Partial<Product>
+}
+
+function isDeletedRecord(value: unknown): boolean {
+  return Boolean(value && typeof value === 'object' && (value as { Deleted?: boolean }).Deleted === true)
 }
 
 function readRelatedQuantity(item: unknown): number | string | undefined {

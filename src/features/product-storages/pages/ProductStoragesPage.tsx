@@ -603,6 +603,11 @@ function useProductStoragesPageModel() {
   }
 
   function openSingleAction(availability: ProductStorageAvailability) {
+    if (!canOpenAction) {
+      setActionError(t('Недостатньо прав для операції зі складською позицією'))
+      return
+    }
+
     const rows = createActionRows([availability])
 
     setActionModal({
@@ -700,6 +705,11 @@ function useProductStoragesPageModel() {
 
   async function submitAction() {
     if (!actionModal || isActionSubmitting) {
+      return
+    }
+
+    if (!canOpenAction) {
+      setActionError(t('Недостатньо прав для операції зі складською позицією'))
       return
     }
 
