@@ -6,9 +6,16 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import type {
   MergedService,
   NewMergedServiceFormValues,
+  ProtocolUser,
   SupplyInformationTask,
   SupplyPaymentTask,
 } from '../types'
+
+type AddPaymentTaskValues = {
+  comment: string
+  payToDate: Date | null
+  responsible: ProtocolUser | null
+}
 import { MergedServiceCard } from './MergedServiceCard'
 import { NewMergedServiceForm } from './NewMergedServiceForm'
 
@@ -66,16 +73,20 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
 
 export function MergedServicesSection({
   isSaving,
+  onAddPaymentTask,
   onCreateService,
   onRemovePaymentTask,
   onRemoveService,
   services,
+  users,
 }: {
   isSaving: boolean
+  onAddPaymentTask: (service: MergedService, values: AddPaymentTaskValues, isAccounting: boolean) => Promise<void>
   onCreateService: (service: MergedService, documents: File[]) => Promise<void>
   onRemovePaymentTask: (service: MergedService, task: SupplyPaymentTask) => Promise<void>
   onRemoveService: (service: MergedService) => Promise<void>
   services: MergedService[]
+  users: ProtocolUser[]
 }) {
   const { t } = useI18n()
   const [isNewOpen, setNewOpen] = useValueState(false)
@@ -117,7 +128,10 @@ export function MergedServicesSection({
           {visibleServices.map((service, index) => (
             <MergedServiceCard
               key={service.NetUid || index}
+              isSaving={isSaving}
               service={service}
+              users={users}
+              onAddPaymentTask={(target, values, isAccounting) => void onAddPaymentTask(target, values, isAccounting)}
               onRemovePaymentTask={(target, task) => void onRemovePaymentTask(target, task)}
               onRemoveService={(target) => setRemoveTarget(target)}
             />

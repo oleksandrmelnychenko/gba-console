@@ -586,6 +586,51 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     [sad?.OrganizationClientAgreement, selectedOrganizationClient?.OrganizationClientAgreements, selectedOrganizationClientAgreementNetId],
   )
 
+  const isEditorDirty = useMemo(() => {
+    if (!sad) {
+      return false
+    }
+
+    if ((selectedStathamNetId || '') !== (sad.Statham?.NetUid || '')) {
+      return true
+    }
+
+    if ((selectedStathamCarNetId || '') !== (sad.StathamCar?.NetUid || '')) {
+      return true
+    }
+
+    if ((selectedClientNetId || '') !== (sad.Client?.NetUid || '')) {
+      return true
+    }
+
+    if ((selectedClientAgreementNetId || '') !== (sad.ClientAgreement?.NetUid || '')) {
+      return true
+    }
+
+    if ((selectedOrganizationClientNetId || '') !== (sad.OrganizationClient?.NetUid || '')) {
+      return true
+    }
+
+    if ((selectedOrganizationClientAgreementNetId || '') !== (sad.OrganizationClientAgreement?.NetUid || '')) {
+      return true
+    }
+
+    if (toEditableNumber(marginAmount === '' ? null : marginAmount) !== toEditableNumber(sad.MarginAmount)) {
+      return true
+    }
+
+    return (sad.SadItems || []).some((item) => item.ChangedQty != null && item.ChangedQty !== item.Qty)
+  }, [
+    marginAmount,
+    sad,
+    selectedClientAgreementNetId,
+    selectedClientNetId,
+    selectedOrganizationClientAgreementNetId,
+    selectedOrganizationClientNetId,
+    selectedStathamCarNetId,
+    selectedStathamNetId,
+  ])
+
   const isReadonly = Boolean(sad?.IsSend)
   const status = isLoading ? t('Завантаження') : isReadonly ? t('Проведено') : t('Чернетка')
 
@@ -659,6 +704,18 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
     setSelectedStathamNetId(loadedSad.Statham?.NetUid || '')
     setSelectedStathamCarNetId(loadedSad.StathamCar?.NetUid || '')
     setMarginAmount(toEditableNumber(loadedSad.MarginAmount))
+  }
+
+  function revertEditorChanges() {
+    if (!sad) {
+      return
+    }
+
+    hydrateEditorState(sad, organizations)
+    updateLocalSad((currentSad) => ({
+      ...currentSad,
+      SadItems: (currentSad.SadItems || []).map((item) => ({ ...item, ChangedQty: item.Qty })),
+    }))
   }
 
   async function handleClientSearch(value: string) {
@@ -903,8 +960,13 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
               {t('Додати товар')}
             </Button>
           )}
+          {!isReadonly && mode === 'base' && isEditorDirty && (
+            <Button color="gray" disabled={isSaving} variant="subtle" onClick={revertEditorChanges}>
+              {t('Скасувати')}
+            </Button>
+          )}
           {!isReadonly && mode !== 'tir' && (
-            <Button disabled={isSaving} variant="light" onClick={() => saveSad(false)}>
+            <Button disabled={isSaving || (mode === 'base' && !isEditorDirty)} variant="light" onClick={() => saveSad(false)}>
               {t('Зберегти')}
             </Button>
           )}

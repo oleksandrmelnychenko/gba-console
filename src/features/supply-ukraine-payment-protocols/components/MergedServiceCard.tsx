@@ -1,10 +1,49 @@
-import { ActionIcon, Anchor, Badge, Card, Group, Stack, Text, Tooltip } from '@mantine/core'
-import { IconTrash } from '@tabler/icons-react'
+import {
+  ActionIcon,
+  Anchor,
+  Badge,
+  Button,
+  Card,
+  Group,
+  Select,
+  Stack,
+  Text,
+  Textarea,
+  TextInput,
+  Tooltip,
+} from '@mantine/core'
+import { IconPlus, IconTrash } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
+import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../types'
-import { formatDate, formatMoney, responsibleName } from './helpers'
+import type { MergedService, ProtocolUser, SupplyDocument, SupplyPaymentTask } from '../types'
+import { formatDate, formatMoney, fromDateInput, responsibleName, toDateInput } from './helpers'
+
+type AddPaymentTaskValues = {
+  comment: string
+  payToDate: Date | null
+  responsible: ProtocolUser | null
+}
+
+type SelectOption = {
+  label: string
+  value: string
+}
+
+function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const user of users) {
+    if (!user.NetUid) {
+      continue
+    }
+
+    options.push({ label: responsibleName(user) || user.FullName || '', value: user.NetUid })
+  }
+
+  return options
+}
 
 function DocumentLink({ document }: { document: SupplyDocument }) {
   if (!document.DocumentUrl) {
@@ -70,18 +109,102 @@ function PaymentTaskRow({
   )
 }
 
+function AddPaymentTaskForm({
+  isAccounting,
+  isSaving,
+  onCancel,
+  onSubmit,
+  users,
+}: {
+  isAccounting?: boolean
+  isSaving: boolean
+  onCancel: () => void
+  onSubmit: (values: AddPaymentTaskValues) => void
+  users: ProtocolUser[]
+}) {
+  const { t } = useI18n()
+  const [responsible, setResponsible] = useValueState<ProtocolUser | null>(null)
+  const [payToDate, setPayToDate] = useValueState<Date | null>(new Date())
+  const [comment, setComment] = useValueState('')
+
+  const userOptions = toProtocolUserOptions(users)
+
+  return (
+    <Card withBorder radius="sm" padding="sm">
+      <Stack gap="sm">
+        <Text fw={600} size="sm">
+          {t('Створити платіжну задачу')}
+          {isAccounting ? ` (${t('Бух.')})` : ''}
+        </Text>
+        <TextInput
+          label={t('Сплатити до')}
+          type="date"
+          value={toDateInput(payToDate)}
+          onChange={(event) => setPayToDate(fromDateInput(event.currentTarget.value))}
+        />
+        <Select
+          clearable
+          data={userOptions}
+          label={t('Відповідальний за оплату')}
+          searchable
+          value={responsible?.NetUid || null}
+          onChange={(netUid) => setResponsible(users.find((item) => item.NetUid === netUid) || null)}
+        />
+        <Textarea label={t('Коментар')} value={comment} onChange={(event) => setComment(event.currentTarget.value)} />
+        <Group justify="flex-end" gap="sm">
+          <Button color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
+            {t('Скасувати')}
+          </Button>
+          <Button
+            color="violet"
+            loading={isSaving}
+            onClick={() => onSubmit({ comment, payToDate, responsible })}
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      </Stack>
+    </Card>
+  )
+}
+
 export function MergedServiceCard({
+  isSaving,
+  onAddPaymentTask,
   onRemovePaymentTask,
   onRemoveService,
   service,
+  users,
 }: {
+  isSaving: boolean
+  onAddPaymentTask: (service: MergedService, values: AddPaymentTaskValues, isAccounting: boolean) => void
   onRemovePaymentTask: (service: MergedService, task: SupplyPaymentTask) => void
   onRemoveService: (service: MergedService) => void
   service: MergedService
+  users: ProtocolUser[]
 }) {
   const { t } = useI18n()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
   const invoiceDocuments = (service.InvoiceDocuments || []).filter((document) => !document.Deleted)
+  const [isAddOpen, setAddOpen] = useValueState(false)
+  const [isAddAccountingOpen, setAddAccountingOpen] = useValueState(false)
+
+  const hasPaymentTask = Boolean(
+    service.SupplyPaymentTask && (service.SupplyPaymentTask.Id || 0) > 0 && !service.SupplyPaymentTask.Deleted,
+  )
+  const hasAccountingPaymentTask = Boolean(
+    service.AccountingPaymentTask &&
+      (service.AccountingPaymentTask.Id || 0) > 0 &&
+      !service.AccountingPaymentTask.Deleted,
+  )
+
+  function handleAdd(isAccounting: boolean) {
+    return (values: AddPaymentTaskValues) => {
+      onAddPaymentTask(service, values, isAccounting)
+      setAddOpen(false)
+      setAddAccountingOpen(false)
+    }
+  }
 
   return (
     <Card withBorder radius="md" padding="md">
@@ -160,21 +283,60 @@ export function MergedServiceCard({
           </Stack>
         )}
 
-        {service.SupplyPaymentTask && (service.SupplyPaymentTask.Id || 0) > 0 && !service.SupplyPaymentTask.Deleted && (
+        {hasPaymentTask && (
           <PaymentTaskRow
-            task={service.SupplyPaymentTask}
+            task={service.SupplyPaymentTask as SupplyPaymentTask}
             onRemove={() => onRemovePaymentTask(service, service.SupplyPaymentTask as SupplyPaymentTask)}
           />
         )}
-        {service.AccountingPaymentTask &&
-          (service.AccountingPaymentTask.Id || 0) > 0 &&
-          !service.AccountingPaymentTask.Deleted && (
-            <PaymentTaskRow
-              isAccounting
-              task={service.AccountingPaymentTask}
-              onRemove={() => onRemovePaymentTask(service, service.AccountingPaymentTask as SupplyPaymentTask)}
+        {hasAccountingPaymentTask && (
+          <PaymentTaskRow
+            isAccounting
+            task={service.AccountingPaymentTask as SupplyPaymentTask}
+            onRemove={() => onRemovePaymentTask(service, service.AccountingPaymentTask as SupplyPaymentTask)}
+          />
+        )}
+
+        {!hasPaymentTask &&
+          !isAddAccountingOpen &&
+          (isAddOpen ? (
+            <AddPaymentTaskForm
+              isSaving={isSaving}
+              users={users}
+              onCancel={() => setAddOpen(false)}
+              onSubmit={handleAdd(false)}
             />
-          )}
+          ) : (
+            <Button
+              color="violet"
+              leftSection={<IconPlus size={16} />}
+              variant="light"
+              onClick={() => setAddOpen(true)}
+            >
+              {t('Створити платіжну задачу')}
+            </Button>
+          ))}
+
+        {!hasAccountingPaymentTask &&
+          !isAddOpen &&
+          (isAddAccountingOpen ? (
+            <AddPaymentTaskForm
+              isAccounting
+              isSaving={isSaving}
+              users={users}
+              onCancel={() => setAddAccountingOpen(false)}
+              onSubmit={handleAdd(true)}
+            />
+          ) : (
+            <Button
+              color="violet"
+              leftSection={<IconPlus size={16} />}
+              variant="light"
+              onClick={() => setAddAccountingOpen(true)}
+            >
+              {`${t('Створити платіжну задачу')} (${t('Бух.')})`}
+            </Button>
+          ))}
 
         <LabelValueRow label={t('Відповідальний')}>{responsibleName(service.User) || '-'}</LabelValueRow>
       </Stack>

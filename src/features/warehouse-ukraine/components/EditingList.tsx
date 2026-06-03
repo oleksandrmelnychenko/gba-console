@@ -5,6 +5,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslateFunction } from '../../../shared/i18n/types'
+import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -53,6 +54,10 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isProcessing, setProcessing] = useValueState(false)
   const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
+  const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
+  const [auditLoading, setAuditLoading] = useValueState(false)
+  const [auditError, setAuditError] = useValueState<string | null>(null)
+  const auditRequestRef = useRef(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
@@ -169,12 +174,55 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
 
     setError(null)
     setConfirmItem(item)
+
+    if (kind !== 'act') {
+      return
+    }
+
+    setAuditStatistic(null)
+    setAuditError(null)
+
+    const saleNetId = item.Sale?.NetUid
+
+    if (!saleNetId) {
+      return
+    }
+
+    setAuditLoading(true)
+    const requestId = auditRequestRef.current + 1
+    auditRequestRef.current = requestId
+
+    void (async () => {
+      try {
+        const statistic = await getSaleStatisticBySaleId(saleNetId)
+
+        if (auditRequestRef.current === requestId) {
+          setAuditStatistic(statistic)
+        }
+      } catch (auditFetchError) {
+        if (auditRequestRef.current === requestId) {
+          setAuditError(auditFetchError instanceof Error ? auditFetchError.message : t('Не вдалося завантажити дані'))
+        }
+      } finally {
+        if (auditRequestRef.current === requestId) {
+          setAuditLoading(false)
+        }
+      }
+    })()
+  }
+
+  function closeConfirm() {
+    auditRequestRef.current += 1
+    setConfirmItem(null)
+    setAuditStatistic(null)
+    setAuditError(null)
+    setAuditLoading(false)
   }
 
   async function processConfirmedItem() {
     if (!confirmItem?.NetUid) {
       setError(t('Не вдалося визначити запис для обробки'))
-      setConfirmItem(null)
+      closeConfirm()
 
       return
     }
@@ -184,7 +232,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
 
     try {
       await processor(confirmItem.NetUid)
-      setConfirmItem(null)
+      closeConfirm()
       reload()
       onProcessed?.()
     } catch (processError) {
@@ -271,16 +319,21 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
       <AppModal
         centered
         opened={Boolean(confirmItem)}
+        size={kind === 'act' ? 'lg' : undefined}
         title={kind === 'carrier' ? t('Підтвердити зміну перевізника') : t('Підтвердити обробку акту')}
-        onClose={() => setConfirmItem(null)}
+        onClose={closeConfirm}
       >
         <Stack gap="md">
           <Text size="sm">{t('Після підтвердження запис буде позначено як опрацьований.')}</Text>
 
           {confirmItem && kind === 'carrier' && <CarrierChangeSummary item={confirmItem} />}
 
+          {confirmItem && kind === 'act' && (
+            <SaleAuditDetail error={auditError} isLoading={auditLoading} statistic={auditStatistic} />
+          )}
+
           <Group justify="flex-end" gap="sm">
-            <Button color="gray" variant="light" onClick={() => setConfirmItem(null)}>
+            <Button color="gray" variant="light" onClick={closeConfirm}>
               {t('Скасувати')}
             </Button>
             <Button color="green" loading={isProcessing} onClick={processConfirmedItem}>
