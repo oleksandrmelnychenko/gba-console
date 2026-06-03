@@ -63,7 +63,7 @@ export function getStatusLabel(
 }
 
 export function getStatusOptions(t: (value: string) => string): Array<{ label: string; value: string }> {
-  return SALE_RETURN_ITEM_STATUSES.map((option) => ({
+  return SALE_RETURN_ITEM_STATUSES.slice(0, SALE_RETURN_ITEM_STATUSES.length - 1).map((option) => ({
     label: getStatusLabel(option.value, t),
     value: String(option.value),
   }))

@@ -1,20 +1,24 @@
-import { ActionIcon, Alert, Badge, Button, Group, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
-import type { EditingItemsResponse, EditingActItem } from '../types'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import type { EditingItemsResponse, EditingActItem, WarehouseUkraineUser } from '../types'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
 
-const PAGE_SIZE = 20
+const DEFAULT_PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 type FilterDraft = {
   from: string
   to: string
+  isDevelopment: boolean
 }
 
 type EditingListProps = {
@@ -35,23 +39,35 @@ type EditingListProps = {
 export function EditingList({ kind, layoutVersion, loader, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
+    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), isDevelopment: false }),
     [],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
   const [activeFilters, setActiveFilters] = useValueState<FilterDraft>(initialFilters)
   const [items, setItems] = useValueState<EditingActItem[]>([])
+  const [totalQty, setTotalQty] = useValueState(0)
+  const [hasMore, setHasMore] = useValueState(false)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
+  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isProcessing, setProcessing] = useValueState(false)
   const [confirmItem, setConfirmItem] = useValueState<EditingActItem | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
+  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.isDevelopment}|${pageSize}`
+  const listRequestKeyRef = useRef(listRequestKey)
+
+  useEffect(() => {
+    listRequestKeyRef.current = listRequestKey
+  }, [listRequestKey])
 
   useEffect(() => {
     if (filterError) {
       setItems([])
+      setTotalQty(0)
+      setHasMore(false)
       setLoading(false)
       return
     }
@@ -66,17 +82,21 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
         const result = await loader({
           from: toDateString(activeFilters.from),
           to: toDateString(activeFilters.to),
-          limit: PAGE_SIZE,
+          limit: pageSize,
           offset: 0,
-          isDevelopment: false,
+          isDevelopment: activeFilters.isDevelopment,
         })
 
         if (!cancelled) {
           setItems(result.items)
+          setTotalQty(result.totalQty)
+          setHasMore(result.items.length === pageSize)
         }
       } catch (loadError) {
         if (!cancelled) {
           setItems([])
+          setTotalQty(0)
+          setHasMore(false)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
         }
       } finally {
@@ -91,13 +111,44 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, loader, reloadKey, setError, setItems, setLoading, t])
+  }, [activeFilters, filterError, loader, pageSize, reloadKey, setError, setHasMore, setItems, setLoading, setTotalQty, t])
 
   const columns = useEditingColumns({
     indexMap: itemIndexMap,
     kind,
     onProcess: openProcessConfirm,
   })
+
+  async function loadMoreItems() {
+    const requestKey = listRequestKeyRef.current
+    const requestOffset = items.length
+    setLoadingMore(true)
+    setError(null)
+
+    try {
+      const result = await loader({
+        from: toDateString(activeFilters.from),
+        to: toDateString(activeFilters.to),
+        limit: pageSize,
+        offset: requestOffset,
+        isDevelopment: activeFilters.isDevelopment,
+      })
+
+      if (listRequestKeyRef.current === requestKey) {
+        setItems((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
+        setTotalQty(result.totalQty)
+        setHasMore(result.items.length === pageSize)
+      }
+    } catch (loadError) {
+      if (listRequestKeyRef.current === requestKey) {
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані'))
+      }
+    } finally {
+      if (listRequestKeyRef.current === requestKey) {
+        setLoadingMore(false)
+      }
+    }
+  }
 
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
@@ -160,6 +211,11 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
           value={filterDraft.to}
           onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
         />
+        <Checkbox
+          checked={filterDraft.isDevelopment}
+          label={t('Опрацьовані')}
+          onChange={(event) => applyFilters({ ...filterDraft, isDevelopment: event.currentTarget.checked })}
+        />
         <Tooltip label={t('Скинути')}>
           <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
             <IconRestore size={18} />
@@ -178,6 +234,20 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
         </Alert>
       )}
 
+      <Group justify="space-between" gap="xs">
+        <Text c="dimmed" size="xs">
+          {t('Показано')} {items.length} / {totalQty}
+        </Text>
+        <Select
+          aria-label={t('Кількість рядків')}
+          data={PAGE_SIZE_OPTIONS}
+          size="xs"
+          value={String(pageSize)}
+          w={88}
+          onChange={(value) => setPageSize(Number(value || DEFAULT_PAGE_SIZE))}
+        />
+      </Group>
+
       <DataTable
         columns={columns}
         data={items}
@@ -189,6 +259,14 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
         minWidth={920}
         tableId={tableId}
       />
+
+      {hasMore && (
+        <Group justify="center">
+          <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreItems}>
+            {t('Завантажити ще')}
+          </Button>
+        </Group>
+      )}
 
       <AppModal
         centered
@@ -353,10 +431,16 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <SummaryLine label={t('Перевізник')} value={previous?.Transporter?.Name} />
         <SummaryLine label={t('Місто')} value={previous?.City} />
         <SummaryLine label={t('Відділення')} value={previous?.Department} />
+        <SummaryLine label={t('Дата відвантаження')} value={formatDateTimeOrEmpty(previous?.ShipmentDate)} />
         <SummaryLine label={t("Повне ім'я")} value={previous?.FullName} />
         <SummaryLine label={t('Мобільний телефон')} value={previous?.MobilePhone} />
         <SummaryLine label={t('Коментар')} value={previous?.Comment} />
-        <SummaryLine label={t('ТТН')} value={previous?.TTN} />
+        <SummaryLine label={t('Накладений платіж')} value={formatBoolean(t, previous?.IsCashOnDelivery)} />
+        <SummaryLine label={t('Сума накладеного платежу')} value={formatAmount(previous?.CashOnDeliveryAmount)} />
+        <SummaryLine label={t('Наявність документів')} value={formatBoolean(t, previous?.HasDocument)} />
+        <SummaryLine label={t('ТТН')} value={previous?.TTN || previous?.Number} />
+        <SummaryLine label={t('Відповідальний')} value={buildUserName(previous?.User)} />
+        <SummaryLine label={t('Документ')} value={previous?.TtnPDFPath ?? undefined} link />
       </Stack>
       <Stack gap={4}>
         <Text fw={700} size="sm">
@@ -365,22 +449,43 @@ function CarrierChangeSummary({ item }: { item: EditingActItem }) {
         <SummaryLine label={t('Перевізник')} value={readNestedString(item, ['Transporter', 'Name'])} />
         <SummaryLine label={t('Місто')} value={readStringField(item, 'City')} />
         <SummaryLine label={t('Відділення')} value={readStringField(item, 'Department')} />
+        <SummaryLine
+          label={t('Дата відвантаження')}
+          value={formatDateTimeOrEmpty(readRawValue(item, 'ShipmentDate'))}
+        />
         <SummaryLine label={t("Повне ім'я")} value={readStringField(item, 'FullName')} />
         <SummaryLine label={t('Мобільний телефон')} value={readStringField(item, 'MobilePhone')} />
         <SummaryLine label={t('Коментар')} value={readStringField(item, 'Comment')} />
+        <SummaryLine label={t('Накладений платіж')} value={formatBoolean(t, readBooleanField(item, 'IsCashOnDelivery'))} />
+        <SummaryLine
+          label={t('Сума накладеного платежу')}
+          value={formatAmount(readNumberField(item, 'CashOnDeliveryAmount'))}
+        />
+        <SummaryLine label={t('Наявність документів')} value={formatBoolean(t, readBooleanField(item, 'HasDocument'))} />
         <SummaryLine label={t('ТТН')} value={readStringField(item, 'TTN') || readStringField(item, 'Number')} />
+        <SummaryLine
+          label={t('Відповідальний')}
+          value={buildUserNameFromFields(readNestedString(item, ['User', 'FirstName']), readNestedString(item, ['User', 'LastName']))}
+        />
+        <SummaryLine label={t('Документ')} value={readStringField(item, 'TtnPDFPath')} link />
       </Stack>
     </SimpleGrid>
   )
 }
 
-function SummaryLine({ label, value }: { label: string; value?: string }) {
+function SummaryLine({ label, link, value }: { label: string; link?: boolean; value?: string }) {
   return (
     <Group gap={6} wrap="nowrap" align="flex-start">
       <Text c="dimmed" size="xs" miw={110}>
         {label}:
       </Text>
-      <Text size="xs">{displayValue(value)}</Text>
+      {link && value ? (
+        <Anchor href={upgradeHttpToHttps(value)} target="_blank" rel="noreferrer" size="xs">
+          {translate('Завантажити')}
+        </Anchor>
+      ) : (
+        <Text size="xs">{displayValue(value)}</Text>
+      )}
     </Group>
   )
 }
@@ -399,6 +504,50 @@ function readNestedString(item: EditingActItem, path: string[]): string {
   })
 
   return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
+}
+
+function readRawValue(item: EditingActItem, field: string): unknown {
+  return (item as unknown as Record<string, unknown>)[field]
+}
+
+function readBooleanField(item: EditingActItem, field: string): boolean {
+  return readRawValue(item, field) === true
+}
+
+function readNumberField(item: EditingActItem, field: string): number | undefined {
+  const value = readRawValue(item, field)
+
+  return typeof value === 'number' ? value : undefined
+}
+
+const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+
+function formatAmount(value?: number): string {
+  return typeof value === 'number' ? amountFormatter.format(value) : ''
+}
+
+function formatDateTimeOrEmpty(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+
+  return formatDateTime(value as Date | string)
+}
+
+function formatBoolean(t: TranslateFunction, value?: boolean): string {
+  return value ? t('Так') : ''
+}
+
+function buildUserName(user?: WarehouseUkraineUser | null): string {
+  if (!user) {
+    return ''
+  }
+
+  return buildUserNameFromFields(user.FirstName || '', user.LastName || '')
+}
+
+function buildUserNameFromFields(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`.trim()
 }
 
 function buildBuyer(item: EditingActItem): string {

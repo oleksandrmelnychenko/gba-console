@@ -324,7 +324,7 @@ export function EditTaxFreePackListPage() {
       return
     }
 
-    setPackList({
+    const nextPackList: TaxFreePackList = {
       ...packList,
       TaxFrees: (packList.TaxFrees || []).map((taxFree, taxFreeIndex) => ({
         ...taxFree,
@@ -332,8 +332,10 @@ export function EditTaxFreePackListPage() {
           !selectedTaxFreeItemIds.has(getTaxFreeItemId(taxFree, taxFreeIndex, item, itemIndex))
         )),
       })),
-    })
+    }
+
     setSelectedTaxFreeItemIds(new Set())
+    persistPackList(nextPackList, t('Позиції повернено'))
   }
 
   async function printSelectedTaxFrees() {
@@ -387,6 +389,15 @@ export function EditTaxFreePackListPage() {
   })
   const selectedTaxFrees = (packList?.TaxFrees || []).filter((taxFree, index) => selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)))
   const hasNonPrintableSelectedTaxFrees = selectedTaxFrees.some((taxFree) => !isTaxFreeGroupPrintable(taxFree))
+  const hasSelectedReadOnlyTaxFrees = selectedTaxFrees.some((taxFree) => isTaxFreeReadOnly(taxFree, packList))
+
+  function applyStatusToSelectedTaxFrees(status: TaxFreeStatus) {
+    setPackList((currentPackList) => (currentPackList.TaxFrees || []).reduce((nextPackList, taxFree, index) => (
+      selectedTaxFreeIds.has(getTaxFreeId(taxFree, index)) && !isTaxFreeReadOnly(taxFree, nextPackList)
+        ? updateTaxFreeStatus(nextPackList, index, status)
+        : nextPackList
+    ), currentPackList))
+  }
 
   return (
     <Stack gap="md">
@@ -588,6 +599,21 @@ export function EditTaxFreePackListPage() {
                       : new Set())
                   }}
                 />
+                {selectedTaxFreeIds.size > 0 && (
+                  <Select
+                    data={taxFreeStatuses.map((status) => ({ label: status.label, value: String(status.value) }))}
+                    disabled={hasSelectedReadOnlyTaxFrees}
+                    placeholder={t('Статус')}
+                    size="xs"
+                    value={null}
+                    w={180}
+                    onChange={(value) => {
+                      if (value !== null) {
+                        applyStatusToSelectedTaxFrees(Number(value) as TaxFreeStatus)
+                      }
+                    }}
+                  />
+                )}
                 <Button
                   disabled={selectedTaxFreeIds.size === 0 || isDirty || hasNonPrintableSelectedTaxFrees}
                   leftSection={<IconPrinter size={16} />}
@@ -1137,10 +1163,16 @@ function useTaxFreeItemColumns({
           return (
             <NumberInput
               disabled={isReadOnly}
+              max={item.Qty}
               min={0}
               size="xs"
               value={item.ChangedQty ?? item.Qty ?? 0}
-              onChange={(value) => onItemQtyChange(index, typeof value === 'number' ? value : Number(value) || 0)}
+              onChange={(value) => {
+                const qty = typeof value === 'number' ? value : Number(value) || 0
+                if ((item.Qty ?? 0) >= qty) {
+                  onItemQtyChange(index, qty)
+                }
+              }}
               onClick={(event) => event.stopPropagation()}
             />
           )

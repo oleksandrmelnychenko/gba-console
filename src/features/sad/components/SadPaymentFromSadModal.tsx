@@ -29,6 +29,10 @@ import type { Sad } from '../types'
 
 const SEARCH_DEBOUNCE_MS = 300
 
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+})
+
 type SadPaymentAction = 'advance' | 'income'
 
 type NameLikeEntity = {
@@ -105,6 +109,8 @@ export function SadPaymentFromSadModal({
   )
   const selectedCurrencyRegister = useMemo(() => pickCurrencyRegister(selectedRegister), [selectedRegister])
   const currencyLabel = selectedCurrencyRegister?.Currency?.Code || selectedCurrencyRegister?.Currency?.Name || ''
+  const referenceAmount = isIncome ? sad?.TotalAmountLocal : sad?.TotalVatAmountWithMargin
+  const dateBounds = useMemo(() => getDateBounds(sad?.Created), [sad?.Created])
 
   useEffect(() => {
     if (!opened || !sad || !action) {
@@ -307,6 +313,12 @@ export function SadPaymentFromSadModal({
           </Text>
         )}
 
+        {typeof referenceAmount === 'number' && (
+          <Text size="sm">
+            {t('Сума')}: {formatPln(referenceAmount)} PLN
+          </Text>
+        )}
+
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
@@ -370,6 +382,8 @@ export function SadPaymentFromSadModal({
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Дата')}
+              max={dateBounds?.max}
+              min={dateBounds?.min}
               type="date"
               value={form.fromDate}
               onChange={(event) => updateForm({ fromDate: event.currentTarget.value })}
@@ -540,4 +554,25 @@ function toIsoDate(dateValue: string): string {
   const date = new Date(`${dateValue || formatLocalDate(new Date())}T00:00`)
 
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
+}
+
+function formatPln(value: number): string {
+  return moneyFormatter.format(value)
+}
+
+function getDateBounds(created?: Date | string): { max: string; min: string } | null {
+  if (!created) {
+    return null
+  }
+
+  const minDate = new Date(created)
+
+  if (Number.isNaN(minDate.getTime())) {
+    return null
+  }
+
+  const maxDate = new Date(minDate)
+  maxDate.setMonth(maxDate.getMonth() + 3)
+
+  return { max: formatLocalDate(maxDate), min: formatLocalDate(minDate) }
 }

@@ -65,6 +65,8 @@ const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters'
 const PAGE_SIZE = 21
 const pageSizeOptions = ['21', '42', '63', '105']
 
+const EMPTY_TAX_FREE_ITEMS: TaxFreeItem[] = []
+
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['packListNumber', 'number'],
@@ -190,7 +192,7 @@ function useTaxFreeDocumentsPageModel() {
     },
     [accountingDocument, setAccountingDocument, setOutcomeSource, setPaymentAction],
   )
-  const itemColumns = useTaxFreeItemColumns()
+  const itemColumns = useTaxFreeItemColumns(selectedDocument?.TaxFreeItems ?? EMPTY_TAX_FREE_ITEMS)
   const columns = useTaxFreeDocumentColumns({
     onOpenCarrier: openDocument,
     onOpenAccounting: openAccounting,
@@ -909,13 +911,13 @@ function useTaxFreeDocumentColumns({
   )
 }
 
-function useTaxFreeItemColumns() {
+function useTaxFreeItemColumns(items: TaxFreeItem[]) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<TaxFreeItem>[]>(
     () => [
       {
-        cell: () => '',
+        cell: (row) => items.indexOf(row) + 1,
         header: '',
         id: 'index',
         width: 48,
@@ -981,7 +983,7 @@ function useTaxFreeItemColumns() {
         width: 130,
       },
     ],
-    [t],
+    [items, t],
   )
 }
 

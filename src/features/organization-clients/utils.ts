@@ -161,10 +161,6 @@ export function validateOrganizationClient(client: OrganizationClient): string |
     return translate('Місто має містити не більше {count} символів', { count: shortTextMaxLength })
   }
 
-  if (agreements.length === 0) {
-    return translate('Додайте хоча б один договір')
-  }
-
   if (agreements.some((agreement) => !agreement.Currency?.Id && !agreement.CurrencyId)) {
     return translate('Оберіть валюту для кожного договору')
   }

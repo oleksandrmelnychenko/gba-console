@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ClientShoppingCart,
   OfferClientAgreement,
+  OfferProductReservation,
   OfferSubClientLink,
   OffersClientOption,
   OffersFilters,
@@ -82,6 +83,16 @@ export async function searchOffersProducts(value: string): Promise<OffersProduct
   })
 
   return normalizeArray(result) as OffersProduct[]
+}
+
+export async function getOfferProductAvailableQtyUk(productNetId: string, clientAgreementNetId: string): Promise<number> {
+  const result = await apiRequest<unknown>('/products/reservations/current/carousel/agreement', {
+    query: { clientAgreementNetId, productNetId },
+  })
+
+  const reservation = normalizeArray(result)[0] as OfferProductReservation | undefined
+
+  return reservation?.AvailableQtyUk ?? reservation?.AvailableQty ?? 0
 }
 
 function normalizeArray(result: unknown): unknown[] {

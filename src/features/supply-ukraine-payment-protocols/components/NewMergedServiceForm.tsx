@@ -177,6 +177,14 @@ export function NewMergedServiceForm({
       return
     }
 
+    const willCreatePaymentTask = Number(values.grossPrice) > 0 || Number(values.grossPriceAccounting) > 0
+
+    if (willCreatePaymentTask && (!values.responsibleForPayment || !values.payToDate)) {
+      setValidationError(t('Заповніть обовʼязкові поля'))
+
+      return
+    }
+
     const numericValues = [
       values.grossPrice,
       values.grossPriceAccounting,

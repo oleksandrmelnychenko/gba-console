@@ -164,6 +164,43 @@ export function ClientNewPage() {
     }
   }, [routeState?.clientType, setClientTypes, setDraft, setError, setLoading, t])
 
+  useEffect(() => {
+    if (!role.isProvider) {
+      return
+    }
+
+    const defaultCurrency = lookups.currencies[0]
+
+    if (!defaultCurrency) {
+      return
+    }
+
+    setDraft((currentDraft) => {
+      const bankDetails = currentDraft.ClientBankDetails
+      const hasAccountNumberCurrency = Boolean(bankDetails?.AccountNumber?.Currency)
+      const hasIbanCurrency = Boolean(bankDetails?.ClientBankDetailIbanNo?.Currency)
+
+      if (hasAccountNumberCurrency && hasIbanCurrency) {
+        return currentDraft
+      }
+
+      return {
+        ...currentDraft,
+        ClientBankDetails: {
+          ...bankDetails,
+          AccountNumber: {
+            ...bankDetails?.AccountNumber,
+            Currency: bankDetails?.AccountNumber?.Currency || defaultCurrency,
+          },
+          ClientBankDetailIbanNo: {
+            ...bankDetails?.ClientBankDetailIbanNo,
+            Currency: bankDetails?.ClientBankDetailIbanNo?.Currency || defaultCurrency,
+          },
+        },
+      }
+    })
+  }, [lookups.currencies, role.isProvider, setDraft])
+
   if (!requestedStep) {
     return <Navigate to="/clients/new/role" replace state={location.state} />
   }
@@ -783,6 +820,7 @@ function NewStepContent({
         regions={lookups.regions}
         role={role}
         canSaveDocuments={false}
+        isNew
         onAddDocuments={onAddDocuments}
         onChange={setDraftField}
         onCreateCountry={onCreateCountry}

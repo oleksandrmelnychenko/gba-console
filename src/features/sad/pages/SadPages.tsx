@@ -1123,12 +1123,28 @@ function SadItemsPanel({
         width: 130,
       },
       {
+        id: 'unitPrice',
+        header: t('Ціна за одиницю'),
+        accessor: (item) => item.UnitPrice,
+        cell: (item) => formatNumber(item.UnitPrice),
+        align: 'right',
+        width: 130,
+      },
+      {
         id: 'amount',
         header: t('EUR'),
         accessor: (item) => item.TotalAmount,
         cell: (item) => formatNumber(item.TotalAmount),
         align: 'right',
         width: 120,
+      },
+      {
+        id: 'amountMargin',
+        header: t('EUR (margin)'),
+        accessor: (item) => item.TotalAmountWithMargin,
+        cell: (item) => formatNumber(item.TotalAmountWithMargin),
+        align: 'right',
+        width: 130,
       },
       {
         id: 'amountLocal',

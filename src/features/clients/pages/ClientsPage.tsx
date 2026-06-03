@@ -1120,7 +1120,7 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         header: 'Роль',
         width: 124,
         minWidth: 110,
-        accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
+        accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт'),
         cell: (client) => {
           const name = client.ClientInRole?.ClientTypeRole?.Name?.trim()
           return name ? (
@@ -1128,7 +1128,7 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
               {name}
             </Badge>
           ) : (
-            <Text c="dimmed">-</Text>
+            <Text c="dimmed">{t('Новий клієнт')}</Text>
           )
         },
       },

@@ -6,6 +6,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
   createOffer,
+  getOfferProductAvailableQtyUk,
   getOfferSubClients,
   getOffersClientAgreements,
   getPublicOfferLink,
@@ -254,8 +255,8 @@ function NewOfferForm({
     .filter((product) => product.NetUid)
     .map((product) => ({ label: getProductLabel(product), value: product.NetUid ?? '' }))
 
-  function addProduct(netUid: string | null) {
-    if (!netUid) {
+  async function addProduct(netUid: string | null) {
+    if (!netUid || !agreementNetId) {
       return
     }
 
@@ -265,18 +266,37 @@ function NewOfferForm({
       return
     }
 
+    if (lines.some((line) => line.product.NetUid === netUid)) {
+      setProductQuery('')
+
+      return
+    }
+
+    const availableQtyUk = await getOfferProductAvailableQtyUk(netUid, agreementNetId).catch(() => 0)
+
+    if (availableQtyUk === 0) {
+      notifications.show({ color: 'red', message: t('Немає товарів на складі') })
+      setProductQuery('')
+
+      return
+    }
+
     setLines((current) => {
       if (current.some((line) => line.product.NetUid === netUid)) {
         return current
       }
 
-      return [...current, { key: netUid, product, qty: 1 }]
+      return [...current, { comment: '', key: netUid, product, qty: 1 }]
     })
     setProductQuery('')
   }
 
   function updateLineQty(key: string, qty: number) {
     setLines((current) => current.map((line) => (line.key === key ? { ...line, qty } : line)))
+  }
+
+  function updateLineComment(key: string, comment: string) {
+    setLines((current) => current.map((line) => (line.key === key ? { ...line, comment } : line)))
   }
 
   function removeLine(key: string) {
@@ -295,6 +315,7 @@ function NewOfferForm({
     const offer: ClientShoppingCart = {
       ClientAgreement: agreement,
       OrderItems: lines.map((line) => ({
+        Comment: line.comment.trim() || undefined,
         Product: line.product,
         Qty: line.qty,
       })),
@@ -377,7 +398,9 @@ function NewOfferForm({
         placeholder={t('Пошук товару')}
         searchValue={productQuery}
         value={null}
-        onChange={addProduct}
+        onChange={(value) => {
+          void addProduct(value)
+        }}
         onSearchChange={setProductQuery}
       />
 
@@ -387,6 +410,7 @@ function NewOfferForm({
             <Table.Tr>
               <Table.Th>{t('Товар')}</Table.Th>
               <Table.Th w={120}>{t('Кількість')}</Table.Th>
+              <Table.Th>{t('Коментар')}</Table.Th>
               <Table.Th w={48} />
             </Table.Tr>
           </Table.Thead>
@@ -400,6 +424,13 @@ function NewOfferForm({
                     min={1}
                     value={line.qty}
                     onChange={(value) => updateLineQty(line.key, typeof value === 'number' ? value : 1)}
+                  />
+                </Table.Td>
+                <Table.Td>
+                  <TextInput
+                    placeholder={t('Коментар')}
+                    value={line.comment}
+                    onChange={(event) => updateLineComment(line.key, event.currentTarget.value)}
                   />
                 </Table.Td>
                 <Table.Td>

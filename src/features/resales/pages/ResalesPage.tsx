@@ -32,8 +32,7 @@ import {
   IconTrash,
   IconTruckDelivery,
 } from '@tabler/icons-react'
-import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -42,6 +41,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addResale,
@@ -1002,9 +1002,12 @@ export function ResalePage() {
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [consignmentNoteOpened, setConsignmentNoteOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
   const changedToInvoice = Boolean(model?.ReSale?.ChangedToInvoice)
   const isCompleted = Boolean(model?.ReSale?.IsCompleted)
   const columns = useResaleDetailColumns({
+    isBusy: isSaving,
     isCompleted,
     changedToInvoice,
     onChangeAmount: updateRowAmount,
@@ -1070,9 +1073,24 @@ export function ResalePage() {
     }
   }, [applyDetailResult, id, reloadKey, setError, setLoading, setWarning, t])
 
+  useEffect(() => {
+    recalcRef.current = (itemModels: UpdatedResaleItemModel[]) => {
+      void recalculate(itemModels)
+    }
+  })
+
+  useEffect(
+    () => () => {
+      if (recalcTimerRef.current) {
+        clearTimeout(recalcTimerRef.current)
+      }
+    },
+    [],
+  )
+
   const totals = useMemo(() => getDetailTotals(model, rows), [model, rows])
 
-  function buildUpdatedModel(): UpdatedResaleModel | null {
+  function buildUpdatedModel(itemModels: UpdatedResaleItemModel[] = rows): UpdatedResaleModel | null {
     if (!model) {
       return null
     }
@@ -1084,16 +1102,16 @@ export function ResalePage() {
         ClientAgreement: detailInfo.clientAgreement,
         Comment: detailInfo.comment,
       },
-      ReSaleItemModels: rows,
+      ReSaleItemModels: itemModels,
     }
   }
 
-  async function recalculate() {
+  async function recalculate(itemModels?: UpdatedResaleItemModel[]) {
     if (!id) {
       return
     }
 
-    const nextModel = buildUpdatedModel()
+    const nextModel = buildUpdatedModel(itemModels)
 
     if (!nextModel) {
       return
@@ -1244,8 +1262,8 @@ export function ResalePage() {
   }
 
   function updateRow(index: number, patch: Partial<UpdatedResaleItemModel>) {
-    setRows((currentRows) =>
-      currentRows.map((row, rowIndex) =>
+    setRows((currentRows) => {
+      const nextRows = currentRows.map((row, rowIndex) =>
         rowIndex === index
           ? {
               ...row,
@@ -1257,8 +1275,23 @@ export function ResalePage() {
               },
             }
           : row,
-      ),
-    )
+      )
+
+      scheduleRecalculate(nextRows)
+
+      return nextRows
+    })
+  }
+
+  function scheduleRecalculate(itemModels: UpdatedResaleItemModel[]) {
+    if (recalcTimerRef.current) {
+      clearTimeout(recalcTimerRef.current)
+    }
+
+    recalcTimerRef.current = setTimeout(() => {
+      recalcTimerRef.current = null
+      recalcRef.current(itemModels)
+    }, 500)
   }
 
   if (isLoading) {
@@ -1324,7 +1357,7 @@ export function ResalePage() {
             <Select
               searchable
               disabled={changedToInvoice || !detailInfo.client}
-              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined)}
+              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
               label={t('Угода')}
               value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
               onChange={(value) => {
@@ -1353,7 +1386,7 @@ export function ResalePage() {
                 {t('ТТН')}
               </Button>
             )}
-            <Button loading={isSaving} variant="light" onClick={recalculate}>
+            <Button loading={isSaving} variant="light" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
             <Button loading={isSaving} onClick={saveResale}>
@@ -1857,12 +1890,14 @@ function useProcessColumns({
 
 function useResaleDetailColumns({
   changedToInvoice,
+  isBusy,
   isCompleted,
   onChangeAmount,
   onChangeQty,
   onChangeSalePrice,
 }: {
   changedToInvoice: boolean
+  isBusy: boolean
   isCompleted: boolean
   onChangeAmount: (index: number, value: number | string) => void
   onChangeQty: (index: number, value: number | string) => void
@@ -1928,7 +1963,7 @@ function useResaleDetailColumns({
         width: 132,
         accessor: (row) => row.QtyToReSale,
         cell: (row) => changedToInvoice ? formatAmount(row.QtyToReSale) : (
-          <NumberInput min={0} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
+          <NumberInput disabled={isBusy} min={0} value={row.QtyToReSale} onChange={(value) => onChangeQty(row.__rowIndex, value)} />
         ),
       },
       {
@@ -1937,7 +1972,7 @@ function useResaleDetailColumns({
         width: 140,
         accessor: (row) => row.SalePrice,
         cell: (row) => isCompleted ? formatMoney(row.SalePrice) : (
-          <NumberInput min={0} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
+          <NumberInput disabled={isBusy} min={0} value={row.SalePrice} onChange={(value) => onChangeSalePrice(row.__rowIndex, value)} />
         ),
       },
       {
@@ -1954,7 +1989,7 @@ function useResaleDetailColumns({
         width: 140,
         accessor: (row) => row.Amount,
         cell: (row) => isCompleted ? formatMoney(row.Amount) : (
-          <NumberInput min={0} value={row.Amount} onChange={(value) => onChangeAmount(row.__rowIndex, value)} />
+          <NumberInput disabled={isBusy} min={0} value={row.Amount} onChange={(value) => onChangeAmount(row.__rowIndex, value)} />
         ),
       },
       {
@@ -1974,7 +2009,7 @@ function useResaleDetailColumns({
         cell: (row) => `${percentFormatter.format(row.Profitability || 0)}%`,
       },
     ],
-    [changedToInvoice, isCompleted, onChangeAmount, onChangeQty, onChangeSalePrice, t],
+    [changedToInvoice, isBusy, isCompleted, onChangeAmount, onChangeQty, onChangeSalePrice, t],
   )
 }
 
@@ -2946,6 +2981,7 @@ function findClient(clients: ResaleClient[], value: string | null): ResaleClient
 function buildClientAgreementOptions(
   client: ResaleClient | null,
   organization?: { Id?: number } | null,
+  requireForReSale = true,
 ): { label: string; value: string }[] {
   if (!client?.ClientAgreements) {
     return []
@@ -2955,11 +2991,11 @@ function buildClientAgreementOptions(
     .filter((clientAgreement) => {
       const agreement = clientAgreement.Agreement
 
-      if (!agreement?.ForReSale) {
+      if (requireForReSale && !agreement?.ForReSale) {
         return false
       }
 
-      return !organization?.Id || agreement.OrganizationId === organization.Id
+      return !organization?.Id || agreement?.OrganizationId === organization.Id
     })
     .reduce<Array<{ label: string; value: string }>>((options, clientAgreement) => {
       const value = clientAgreement.NetUid || (typeof clientAgreement.Id === 'number' ? String(clientAgreement.Id) : '')

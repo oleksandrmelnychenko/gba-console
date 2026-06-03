@@ -69,6 +69,7 @@ import type {
   CartItemsTotals,
   PreviewCartItem,
   Sad,
+  SadTypeValue,
   SupplyOrderUkraineCartItem,
   SupplyOrderUkraineCartItemPriority,
   TaxFreePackList,
@@ -86,6 +87,7 @@ type CreatedDocumentState = {
   kind: 'TaxFree' | 'SAD'
   netUid?: string
   number?: string
+  sadType?: SadTypeValue
 }
 
 const BASKET_CART_TABLE_DEFAULT_LAYOUT = {
@@ -189,6 +191,7 @@ export function BasketSupplyUkraineOrderPage() {
 
 function BasketCartWorkflow() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [cartItems, setCartItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [destinationItems, setDestinationItems] = useState<SupplyOrderUkraineCartItem[]>([])
   const [notSentTaxFreePackLists, setNotSentTaxFreePackLists] = useState<TaxFreePackList[]>([])
@@ -546,6 +549,10 @@ function BasketCartWorkflow() {
         color: 'green',
         message: `${t('Документ створено')}: ${result.number || result.netUid || result.kind}`,
       })
+      const documentPath = getCreatedDocumentPath(result)
+      if (documentPath) {
+        navigate(documentPath)
+      }
     } catch (createDocumentError) {
       setCreateError(createDocumentError instanceof Error ? createDocumentError.message : t('Не вдалося створити документ'))
     } finally {
@@ -832,6 +839,7 @@ function BasketCartWorkflow() {
 
 function SalesWorkflowTab() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const today = useMemo(() => formatLocalDate(new Date()), [])
   const initialFilters = useMemo<BasketSupplySalesFilters>(
     () => ({
@@ -1102,6 +1110,10 @@ function SalesWorkflowTab() {
         color: 'green',
         message: `${t('Документ створено')}: ${result.number || result.netUid || result.kind}`,
       })
+      const documentPath = getCreatedSaleDocumentPath(result)
+      if (documentPath) {
+        navigate(documentPath)
+      }
     } catch (createDocumentError) {
       setCreateError(createDocumentError instanceof Error ? createDocumentError.message : t('Не вдалося створити документ'))
     } finally {
@@ -1836,6 +1848,7 @@ async function createSadDocument(
     kind: 'SAD',
     netUid: result?.NetUid,
     number: result?.Number,
+    sadType: documentState.sadType,
   }
 }
 
@@ -1898,7 +1911,40 @@ async function createSaleSadDocument(
     kind: 'SAD',
     netUid: result?.NetUid,
     number: result?.Number,
+    sadType: documentState.sadType,
   }
+}
+
+function getCreatedDocumentPath(document: CreatedDocumentState): string | null {
+  if (!document.netUid) {
+    return null
+  }
+
+  if (document.kind === 'TaxFree') {
+    return `/tax-free/pack-list/edit/${document.netUid}`
+  }
+
+  if (document.sadType === SAD_TYPES.TIR) {
+    return `/sad/edit/${document.netUid}/tir`
+  }
+
+  return `/sad/edit/${document.netUid}`
+}
+
+function getCreatedSaleDocumentPath(document: CreatedDocumentState): string | null {
+  if (!document.netUid) {
+    return null
+  }
+
+  if (document.kind === 'TaxFree') {
+    return `/tax-free/pack-list/edit/${document.netUid}`
+  }
+
+  if (document.sadType === SAD_TYPES.TIR) {
+    return `/sad/edit/${document.netUid}/tir`
+  }
+
+  return `/sad/edit/${document.netUid}/sale`
 }
 
 function countItems<TItem>(items: TItem[], matches: (item: TItem) => boolean) {

@@ -91,7 +91,14 @@ export type OffersProduct = OfferEntity & {
   VendorCode?: string
 }
 
+export type OfferProductReservation = {
+  AvailableQty?: number
+  AvailableQtyUk?: number
+  ProductNetUid?: string
+}
+
 export type OffersNewLine = {
+  comment: string
   key: string
   product: OffersProduct
   qty: number

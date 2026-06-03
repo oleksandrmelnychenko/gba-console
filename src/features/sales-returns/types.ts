@@ -92,6 +92,7 @@ export type SalesReturnSale = EntityFields & {
   ClientAgreement?: SalesReturnClientAgreement | null
   Created?: Date | string
   IsSaleExpanded?: boolean
+  IsVatSale?: boolean
   Order?: SalesReturnOrder | null
   SaleNumber?: SalesReturnSaleNumber | null
   TotalAmount?: number
@@ -106,6 +107,8 @@ export type SalesReturnItem = EntityFields & {
   Qty?: number
   SaleReturnItemStatus?: SalesReturnItemStatusValue
   Storage?: SalesReturnStorage | null
+  VatAmount?: number
+  VatAmountLocal?: number
 }
 
 export type SalesReturn = EntityFields & {

@@ -58,11 +58,15 @@ export type WarehouseUkraineShipmentDetails = EntityFields & {
   Comment?: string
   Department?: string
   FullName?: string
+  HasDocument?: boolean
   IsCashOnDelivery?: boolean
   MobilePhone?: string
+  Number?: string
+  ShipmentDate?: Date | string
   Transporter?: WarehouseUkraineTransporter | null
   TTN?: string
   TtnPDFPath?: string | null
+  User?: WarehouseUkraineUser | null
 }
 
 export type WarehouseUkraineOrderItem = EntityFields & {
