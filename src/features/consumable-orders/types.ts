@@ -166,6 +166,7 @@ export type ConsumablesOrder = EntityFields & {
   SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   TotalAmount?: number
   TotalAmountWithoutVAT?: number
+  TotalPaidAmount?: number
   User?: NamedEntity | null
 }
 
