@@ -18,12 +18,10 @@
   display: grid;
   grid-template-columns: minmax(190px, 240px) minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .client-resources-nav {
-  position: sticky;
-  top: 12px;
   padding: 8px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
@@ -145,13 +143,21 @@
 }
 
 .client-resources-region-row:hover {
-  border-color: var(--mantine-color-violet-3);
-  background: var(--mantine-color-violet-0);
+  border-color: var(--mantine-color-orange-3);
+  background: var(--mantine-color-orange-0);
 }
 
 .client-resources-region-row.is-active {
-  border-color: var(--mantine-color-violet-5);
-  background: var(--mantine-color-violet-0);
+  border-color: var(--mantine-color-orange-5);
+  background: var(--mantine-color-orange-0);
+}
+
+.client-resources-region-detail {
+  align-self: start;
+  padding: 14px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: #ffffff;
 }
 
 @media (max-width: 860px) {

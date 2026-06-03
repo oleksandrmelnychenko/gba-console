@@ -48,6 +48,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useNavigate, useParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -198,7 +200,7 @@ const CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 type ResourceDataTableProps<TData extends ClientResourceEntity> = {
@@ -214,7 +216,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
   columns,
   data,
   emptyText,
-  layoutVersion = 'client-resources-table-1',
+  layoutVersion = 'client-resources-table-2',
   minWidth = 760,
   tableId,
 }: ResourceDataTableProps<TData>) {
@@ -512,6 +514,8 @@ export function ClientResourcesPage() {
   const activeStep = isClientResourceStep(step) ? step : DEFAULT_STEP
   const activeSection = getSection(activeStep)
 
+  usePageBreadcrumb(translate(activeSection.label))
+
   useEffect(() => {
     if (!isClientResourceStep(step)) {
       navigate(`/clients/resources/${DEFAULT_STEP}`, { replace: true })
@@ -550,7 +554,7 @@ function ClientResourcesNav({
           <Button
             key={section.step}
             className="client-resources-nav-item"
-            color="violet"
+            color={isActive ? CREATE_ACTION_COLOR : 'gray'}
             fullWidth
             justify="space-between"
             leftSection={<Icon size={18} stroke={1.8} />}
@@ -786,7 +790,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
   } = model
   const createRegionAction = (
     <PermissionGate permissionKey={REGION_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateRegion}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateRegion}>
         Новий регіон
       </Button>
     </PermissionGate>
@@ -795,7 +799,6 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
   return (
     <ResourcePanel action={createRegionAction} section={section}>
       <PanelToolbar
-        count={filteredRegions.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -820,14 +823,14 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                       <Text fw={600}>{displayValue(region.Name)}</Text>
                     </span>
                     <Group gap={4} wrap="nowrap">
-                      <Badge variant="light" color={isActive ? 'violet' : 'gray'}>
+                      <Badge variant="light" color={isActive ? CREATE_ACTION_COLOR : 'gray'}>
                         {region.RegionCodes?.length || 0}
                       </Badge>
                       <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
                         <Tooltip label={translate("Додати код")}>
                           <ActionIcon
                             aria-label={translate("Додати код регіону")}
-                            color="violet"
+                            color={CREATE_ACTION_COLOR}
                             size="sm"
                             variant="subtle"
                             onClick={(event) => {
@@ -878,7 +881,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                 )
               })}
             </Stack>
-            <Box>
+            <Box className="client-resources-region-detail">
               <Group justify="space-between" mb="sm">
                 <div>
                   <Text fw={700}>{displayValue(selectedRegion?.Name)}</Text>
@@ -886,15 +889,12 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                     Коди регіону
                   </Text>
                 </div>
-                <Badge variant="light" color="gray">
-                  {selectedRegion?.RegionCodes?.length || 0}
-                </Badge>
                 {selectedRegion ? (
                   <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
                     <Tooltip label={translate("Додати код регіону")}>
                       <ActionIcon
                         aria-label={translate("Додати код регіону")}
-                        color="violet"
+                        color={CREATE_ACTION_COLOR}
                         variant="light"
                         onClick={() => openCreateRegionCode(selectedRegion)}
                       >
@@ -1077,7 +1077,7 @@ function RegionEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -1149,7 +1149,7 @@ function RegionCodeEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -1299,6 +1299,19 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel section={section}>
+      <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!selectedRole}
+            leftSection={<IconPlus size={16} />}
+            size="xs"
+            onClick={openCreatePerfectClient}
+          >
+            Новий параметр
+          </Button>
+        </PageHeaderActions>
+      </PermissionGate>
       <Group justify="space-between" align="flex-end" mb="md">
         <Select
           data={roleOptions}
@@ -1309,42 +1322,18 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
           placeholder={translate("Оберіть роль")}
           value={effectiveRoleId}
         />
-        <Group gap="xs">
-          <RefreshControl
-            isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
-            onRefresh={() => {
-              clientTypesState.reload()
-              perfectClientsState.reload()
-            }}
-          />
-          <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
-            <Button
-              color="violet"
-              disabled={!selectedRole}
-              leftSection={<IconPlus size={16} />}
-              size="xs"
-              onClick={openCreatePerfectClient}
-            >
-              Параметр
-            </Button>
-          </PermissionGate>
-        </Group>
+        <RefreshControl
+          isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
+          onRefresh={() => {
+            clientTypesState.reload()
+            perfectClientsState.reload()
+          }}
+        />
       </Group>
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
         <Loadable state={perfectClientsState} emptyTitle="Параметрів для ролі не знайдено">
           {selectedRole ? (
             <Stack gap="xl">
-              <Group justify="space-between">
-                <div>
-                  <Text fw={700}>{displayValue(selectedRole.Name)}</Text>
-                  <Text size="xs" c="dimmed">
-                    {displayValue(selectedRole.Description)}
-                  </Text>
-                </div>
-                <Badge variant="light" color="gray">
-                  {perfectClientsState.data.length}
-                </Badge>
-              </Group>
               <PerfectClientGroup
                 items={checkboxItems}
                 title={translate("Прапорці")}
@@ -1414,12 +1403,9 @@ function PerfectClientGroup({
 }) {
   return (
     <Box>
-      <Group justify="space-between" mb="xs">
-        <Text fw={700}>{title}</Text>
-        <Badge variant="light" color="gray">
-          {items.length}
-        </Badge>
-      </Group>
+      <Text fw={700} mb="xs">
+        {title}
+      </Text>
       {items.length ? (
         <ResourceDataTable
           columns={[
@@ -2180,7 +2166,7 @@ function ModalActions({ isSaving, onClose }: { isSaving: boolean; onClose: () =>
       <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
         Скасувати
       </Button>
-      <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
         Зберегти
       </Button>
     </Group>
@@ -2293,7 +2279,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   }
   const createOrganizationAction = (
     <PermissionGate permissionKey={ORGANIZATION_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateOrganization}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateOrganization}>
         Нова організація
       </Button>
     </PermissionGate>
@@ -2302,7 +2288,6 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createOrganizationAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -2674,7 +2659,7 @@ function OrganizationEditorModal({
             <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
               Скасувати
             </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
               Зберегти
             </Button>
           </Group>
@@ -2771,7 +2756,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   }
   const createTaxInspectionAction = (
     <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
         Нова налогова інспекція
       </Button>
     </PermissionGate>
@@ -2780,7 +2765,6 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createTaxInspectionAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -3083,7 +3067,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   const createPricingAction = (
     <PermissionGate permissionKey={PRICING_CREATE_PERMISSION}>
       <Button
-        color="violet"
+        color={CREATE_ACTION_COLOR}
         disabled={isPricingSupportBlocked}
         leftSection={<IconPlus size={16} />}
         loading={isLoadingSupport}
@@ -3098,7 +3082,6 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createPricingAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -3409,7 +3392,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   }
   const createCurrencyAction = (
     <PermissionGate permissionKey={CURRENCY_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateCurrency}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateCurrency}>
         Нова валюта
       </Button>
     </PermissionGate>
@@ -3418,7 +3401,6 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createCurrencyAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -3632,7 +3614,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   }
   const createStorageAction = (
     <PermissionGate permissionKey={STORAGE_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateStorage}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateStorage}>
         Новий склад
       </Button>
     </PermissionGate>
@@ -3641,7 +3623,6 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createStorageAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -3885,7 +3866,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   }
   const createMeasureUnitAction = (
     <PermissionGate permissionKey={MEASURE_UNIT_CREATE_PERMISSION}>
-      <Button color="violet" leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
+      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
         Нова одиниця
       </Button>
     </PermissionGate>
@@ -3894,7 +3875,6 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   return (
     <ResourcePanel action={createMeasureUnitAction} section={section}>
       <PanelToolbar
-        count={filtered.length}
         isLoading={state.isLoading}
         onRefresh={state.reload}
         onSearchChange={setSearch}
@@ -4061,7 +4041,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel section={section}>
-      <PanelToolbar count={roles.length} isLoading={state.isLoading} onRefresh={state.reload} />
+      <PanelToolbar isLoading={state.isLoading} onRefresh={state.reload} />
       <Loadable state={state} emptyTitle="Ролей клієнтів не знайдено">
         {roles.length ? (
           <ResourceDataTable
@@ -4085,7 +4065,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                   >
                     <Button
                       className="client-resources-truncated-action"
-                      color="violet"
+                      color={CREATE_ACTION_COLOR}
                       disabled={!role.Id}
                       rightSection={<IconExternalLink size={14} />}
                       size="xs"
@@ -4112,7 +4092,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
                 maxWidth: 120,
                 width: 120,
                 cell: (role) => (
-                  <Badge color="violet" variant="light">
+                  <Badge color={CREATE_ACTION_COLOR} variant="light">
                     {displayValue(role.OrderExpireDays)}
                   </Badge>
                 ),
@@ -4296,6 +4276,17 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel section={section}>
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={!selectedTransporterType}
+          leftSection={<IconPlus size={16} />}
+          size="xs"
+          onClick={openCreateTransporter}
+        >
+          Новий перевізник
+        </Button>
+      </PageHeaderActions>
       <Group justify="space-between" align="flex-end" mb="md">
         <Select
           data={typeOptions}
@@ -4306,24 +4297,13 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
           placeholder={translate("Оберіть тип")}
           value={effectiveTypeNetId}
         />
-        <Group gap="xs">
-          <RefreshControl
-            isLoading={typesState.isLoading || transportersState.isLoading}
-            onRefresh={() => {
-              typesState.reload()
-              transportersState.reload()
-            }}
-          />
-          <Button
-            color="violet"
-            disabled={!selectedTransporterType}
-            leftSection={<IconPlus size={16} />}
-            size="xs"
-            onClick={openCreateTransporter}
-          >
-            Перевізник
-          </Button>
-        </Group>
+        <RefreshControl
+          isLoading={typesState.isLoading || transportersState.isLoading}
+          onRefresh={() => {
+            typesState.reload()
+            transportersState.reload()
+          }}
+        />
       </Group>
       <Loadable state={typesState} emptyTitle="Типів перевізників не знайдено">
         <Loadable state={transportersState} emptyTitle="Перевізників не знайдено">
@@ -4401,12 +4381,9 @@ function TransporterTable({
 }) {
   return (
     <Box>
-      <Group justify="space-between" mb="xs">
-        <Text fw={700}>{title}</Text>
-        <Badge variant="light" color="gray">
-          {transporters.length}
-        </Badge>
-      </Group>
+      <Text fw={700} mb="xs">
+        {title}
+      </Text>
       {transporters.length ? (
         <ResourceDataTable
           columns={[
@@ -4520,11 +4497,7 @@ function ResourcePanel({
 }) {
   return (
     <section className="client-resources-panel">
-      {action ? (
-        <Group justify="flex-end" wrap="nowrap" mb="md">
-          {action}
-        </Group>
-      ) : null}
+      {action ? <PageHeaderActions>{action}</PageHeaderActions> : null}
       {children}
     </section>
   )
@@ -4532,14 +4505,12 @@ function ResourcePanel({
 
 function PanelToolbar({
   action,
-  count,
   isLoading,
   onRefresh,
   onSearchChange,
   searchValue,
 }: {
   action?: ReactNode
-  count: number
   isLoading: boolean
   onRefresh: () => void
   onSearchChange?: (value: string) => void
@@ -4561,9 +4532,6 @@ function PanelToolbar({
         <span />
       )}
       <Group gap="xs">
-        <Badge color="gray" variant="light">
-          {count}
-        </Badge>
         <RefreshControl isLoading={isLoading} onRefresh={onRefresh} />
         {action}
       </Group>
