@@ -167,8 +167,8 @@ function flattenReport(report: SalesByProductTopReport, totalLabel: string): Sal
           isTotal: false,
           label: product.VendorCode,
           rowId: `manager-${manager.NetId}-product-${product.ProductNetId}`,
-          total: product.TotalValueSoldProduct,
-          values: { [manager.NetId]: product.TotalValueSoldProduct },
+          total: product.ManagersSoldProduct[manager.NetId],
+          values: { [manager.NetId]: product.ManagersSoldProduct[manager.NetId] },
         })
       },
     )

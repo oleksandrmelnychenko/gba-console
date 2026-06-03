@@ -4,7 +4,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 })
 
 export function formatMoney(value: number | undefined | null): string {
-  if (!value) {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
     return ''
   }
 
