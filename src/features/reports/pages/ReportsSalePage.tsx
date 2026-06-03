@@ -291,7 +291,17 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   }
 
   if (extension === 'xls') {
-    throw new Error('Старий .xls формат не підтримується без небезпечної залежності. Збережіть файл як .xlsx.')
+    const { read, utils } = await import('xlsx')
+    const workbook = read(new Uint8Array(await file.arrayBuffer()), { type: 'array' })
+
+    return workbook.SheetNames.map((sheetName) => {
+      const worksheet = workbook.Sheets[sheetName]
+      const rows = utils
+        .sheet_to_json<unknown[]>(worksheet, { blankrows: false, header: 1 })
+        .map((row) => (Array.isArray(row) ? row.map(normalizeImportedCellValue) : []))
+
+      return buildSpreadsheetSheet(sheetName, rows)
+    }).filter((sheet) => sheet.dataRows.length > 0 || sheet.columns.length > 0)
   }
 
   const text = await file.text()
