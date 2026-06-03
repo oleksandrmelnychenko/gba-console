@@ -153,6 +153,8 @@ export function NewUkraineSaleReturnPage() {
   const [drafts, setDrafts] = useState<ReturnOrderItemDraft[]>([])
   const [createError, setCreateError] = useState<string | null>(null)
   const [createWarning, setCreateWarning] = useState<string | null>(null)
+  const [reviewOpened, setReviewOpened] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
   const [isSaving, setSaving] = useState(false)
   const [editor, setEditor] = useState<ItemEditorState | null>(null)
   const [editorQty, setEditorQty] = useState<number | ''>('')
@@ -483,14 +485,38 @@ export function NewUkraineSaleReturnPage() {
   }
 
   function removeDraft(row: SaleItemRow) {
-    setDrafts((currentDrafts) => currentDrafts.filter((draft) => getOrderItemKey(draft.orderItem) !== getOrderItemKey(row.item)))
+    removeDraftByOrderItem(row.item)
+  }
+
+  function removeDraftByOrderItem(orderItem: SalesReturnOrderItem) {
+    setDrafts((currentDrafts) => {
+      const nextDrafts = currentDrafts.filter((draft) => getOrderItemKey(draft.orderItem) !== getOrderItemKey(orderItem))
+
+      if (!nextDrafts.length) {
+        setReviewOpened(false)
+      }
+
+      return nextDrafts
+    })
+  }
+
+  function openReview() {
+    const validationError = validateCreatePayload(drafts, t)
+
+    if (validationError) {
+      setCreateError(validationError)
+      return
+    }
+
+    setReviewError(null)
+    setReviewOpened(true)
   }
 
   async function saveReturn() {
     const validationError = validateCreatePayload(drafts, t)
 
     if (validationError) {
-      setCreateError(validationError)
+      setReviewError(validationError)
       return
     }
 
@@ -500,12 +526,12 @@ export function NewUkraineSaleReturnPage() {
         ?.ClientAgreement?.Client
 
     if (!client) {
-      setCreateError(t('Неможливо визначити клієнта для повернення'))
+      setReviewError(t('Неможливо визначити клієнта для повернення'))
       return
     }
 
     setSaving(true)
-    setCreateError(null)
+    setReviewError(null)
 
     try {
       await createSaleReturn({
@@ -523,10 +549,11 @@ export function NewUkraineSaleReturnPage() {
         message: t('Повернення створено'),
       })
       setDrafts([])
+      setReviewOpened(false)
       setCreateOpened(false)
       setReloadKey((value) => value + 1)
     } catch (saveError) {
-      setCreateError(saveError instanceof Error ? saveError.message : t('Не вдалося створити повернення'))
+      setReviewError(saveError instanceof Error ? saveError.message : t('Не вдалося створити повернення'))
     } finally {
       setSaving(false)
     }
@@ -661,8 +688,8 @@ export function NewUkraineSaleReturnPage() {
             <TextInput label={t('По дату')} onChange={(event) => setSaleToDate(event.currentTarget.value)} type="date" value={saleToDate} />
           </SimpleGrid>
           <Group justify="flex-end">
-            <Button disabled={!drafts.length} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={() => void saveReturn()}>
-              {t('Створити повернення')} ({drafts.length})
+            <Button disabled={!drafts.length} leftSection={<IconEye size={16} />} onClick={openReview}>
+              {t('Перегляд')} ({drafts.length})
             </Button>
           </Group>
 
@@ -678,6 +705,58 @@ export function NewUkraineSaleReturnPage() {
           />
         </Stack>
       </AppDrawer>
+
+      <AppModal opened={reviewOpened} onClose={() => setReviewOpened(false)} size="xl" title={t('Перегляд повернення')}>
+        <Stack gap="md">
+          {reviewError ? (
+            <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+              {reviewError}
+            </Alert>
+          ) : null}
+
+          {groupDraftsByClient(drafts).map((group) => (
+            <Stack gap="xs" key={group.key}>
+              <Text fw={600}>{group.clientName}</Text>
+              <Stack gap="xs">
+                {group.drafts.map((draft) => (
+                  <Group key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap="md">
+                    <div style={{ minWidth: 0 }}>
+                      <Text fw={600} truncate>
+                        {displayValue(draft.orderItem.Product?.VendorCode)}
+                      </Text>
+                      <Text size="sm" c="dimmed" truncate>
+                        {displayValue(draft.orderItem.Product?.Name)}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        {formatAmount(draft.qty)} · {getStatusLabel(draft.status, t)} · {displayValue(draft.storage?.Name)}
+                      </Text>
+                    </div>
+                    <Tooltip label={t('Видалити')}>
+                      <ActionIcon
+                        aria-label={t('Видалити')}
+                        color="red"
+                        onClick={() => removeDraftByOrderItem(draft.orderItem)}
+                        variant="subtle"
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Group>
+                ))}
+              </Stack>
+            </Stack>
+          ))}
+
+          <Group justify="flex-end">
+            <Button variant="light" onClick={() => setReviewOpened(false)}>
+              {t('Скасувати')}
+            </Button>
+            <Button disabled={!drafts.length} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={() => void saveReturn()}>
+              {t('Зберегти')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
 
       <AppModal opened={Boolean(editor)} onClose={() => setEditor(null)} size="lg" title={t('Позиція повернення')}>
         {editor ? (
@@ -1175,6 +1254,33 @@ function flattenSaleItemRows(sales: SalesReturnSale[]): SaleItemRow[] {
       sale,
     })),
   )
+}
+
+function groupDraftsByClient(drafts: ReturnOrderItemDraft[]): Array<{
+  key: string
+  clientName: string
+  drafts: ReturnOrderItemDraft[]
+}> {
+  const groups: Array<{ key: string; clientName: string; drafts: ReturnOrderItemDraft[] }> = []
+
+  drafts.forEach((draft) => {
+    const client = draft.orderItem.Order?.Sale?.ClientAgreement?.Client
+    const key = client ? getEntityKey(client) : ''
+    const existing = groups.find((group) => group.key === key)
+
+    if (existing) {
+      existing.drafts.push(draft)
+      return
+    }
+
+    groups.push({
+      clientName: getEntityName(client) || '—',
+      drafts: [draft],
+      key,
+    })
+  })
+
+  return groups
 }
 
 function validateDraft({

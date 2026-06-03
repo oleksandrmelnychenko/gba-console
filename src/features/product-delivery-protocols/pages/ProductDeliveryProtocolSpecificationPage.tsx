@@ -1022,6 +1022,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 <SpecificationProductsGrid
                   canEditSpecification={canEditSpecification}
                   currencyIsEur={model.currencyIsEur}
+                  invoiceDeliveryAmount={model.selectedInvoice?.DeliveryAmount}
                   packingList={filteredPackingList}
                   withManagementServices={model.withManagementServices}
                   onEditSpecification={model.openSpecificationEditor}
