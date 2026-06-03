@@ -1061,6 +1061,8 @@ function getRecipientOrganizationName(order?: SupplyOrderUkraine | null): string
     if (sadType === 1) {
       return getEntityName(sad.OrganizationClient)
     }
+
+    return ''
   }
 
   return order.Organization?.Name || ''

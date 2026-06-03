@@ -119,6 +119,11 @@ function CalculateMergedServicesPanelContent({
               <Text size="sm" fw={600}>
                 № {item.number} - {t('Постачальник')}: {item.entity.SupplyInvoice?.SupplyOrder?.Client?.FullName || '-'}
               </Text>
+              <Text c="dimmed" size="xs">
+                {(item.entity.SupplyInvoice?.ExchangeRate || 0) !== 0
+                  ? `${t('Курс')}: ${item.entity.SupplyInvoice?.ExchangeRate} ${currencyCode}; ${item.entity.SupplyInvoice?.ExchangeRateEurToUah || 0} EUR`
+                  : `${item.entity.SupplyInvoice?.ExchangeRateEurToUah || 0} EUR`}
+              </Text>
               <Group align="flex-end" gap="sm" wrap="nowrap">
                 {!isAuto && (
                   <Checkbox

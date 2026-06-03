@@ -53,6 +53,7 @@ import {
 import type { Statham, StathamPassport, TaxFreeDocument, TaxFreeItem } from '../types'
 import { TaxFreeStatus } from '../types'
 import {
+  formatTaxFreeAmountPl,
   getPersonName,
   getTaxFreeClient,
   getTaxFreeItemProduct,
@@ -696,6 +697,9 @@ function TaxFreeAccountingActionModal({
             <Text size="sm" c="dimmed">
               {t('Tax Free')}: {document.Number || document.NetUid}
             </Text>
+            <Text size="sm">
+              {t('Сума')}: {formatTaxFreeAmountPl(document.VatAmountPl)}
+            </Text>
           </Stack>
         ) : null}
 
@@ -1298,6 +1302,7 @@ function TaxFreeStatusPanel({
   const [dateValue, setDateValue] = useValueState(toDateTimeInputValue(new Date()))
   const nextStatus = getNextStatus(document.TaxFreeStatus)
   const nextStatusField = getStatusDateField(nextStatus)
+  const canAdvanceStatus = (document.TaxFreeStatus ?? TaxFreeStatus.NotFormed) >= TaxFreeStatus.Printed
 
   function handleSave() {
     onSave({
@@ -1309,24 +1314,30 @@ function TaxFreeStatusPanel({
 
   return (
     <Stack gap="md">
-      <Card withBorder radius="sm" padding="md">
-        <Stack gap="sm">
-          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-            <ReadOnlyField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
-            <TextInput
-              label={t('Дата')}
-              type="datetime-local"
-              value={dateValue}
-              onChange={(event) => setDateValue(event.currentTarget.value)}
-            />
-          </SimpleGrid>
-          <Group justify="flex-end">
-            <Button loading={isSaving} onClick={handleSave}>
-              {t('Зберегти статус')}
-            </Button>
-          </Group>
-        </Stack>
-      </Card>
+      {canAdvanceStatus ? (
+        <Card withBorder radius="sm" padding="md">
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <ReadOnlyField label={t('Наступний статус')} value={getTaxFreeStatusLabel(nextStatus)} />
+              <TextInput
+                label={t('Дата')}
+                type="datetime-local"
+                value={dateValue}
+                onChange={(event) => setDateValue(event.currentTarget.value)}
+              />
+            </SimpleGrid>
+            <Group justify="flex-end">
+              <Button loading={isSaving} onClick={handleSave}>
+                {t('Зберегти статус')}
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
+      ) : (
+        <Alert color="gray" variant="light">
+          {t('Зміна статусу доступна після друку документа')}
+        </Alert>
+      )}
 
       <Stack gap="xs">
         {getStatusTimeline(document).map((item) => (

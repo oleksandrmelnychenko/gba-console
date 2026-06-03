@@ -1,5 +1,18 @@
 import { TaxFreeStatus, type Statham, type TaxFreeDocument, type TaxFreeItem } from './types'
 
+export const TAX_FREE_CURRENCY_CODE = 'PLN'
+
+const plnMoneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
+export function formatTaxFreeAmountPl(value?: number) {
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0
+
+  return `${plnMoneyFormatter.format(amount)} ${TAX_FREE_CURRENCY_CODE}`
+}
+
 const statusLabels: Record<TaxFreeStatus, string> = {
   [TaxFreeStatus.NotFormed]: 'Не сформовано',
   [TaxFreeStatus.Formed]: 'Сформовано',

@@ -465,34 +465,7 @@ function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEu
 }
 
 function getLastSpecification(specifications: ProductSpecificationEntity[]): ProductSpecificationEntity | null {
-  return specifications.reduce<ProductSpecificationEntity | null>((latest, current) => {
-    if (!latest) {
-      return current
-    }
-
-    const currentTime = getDateTime(current.Created)
-    const latestTime = getDateTime(latest.Created)
-
-    if (currentTime > latestTime) {
-      return current
-    }
-
-    if (currentTime === latestTime && (current.Id || 0) > (latest.Id || 0)) {
-      return current
-    }
-
-    return latest
-  }, null)
-}
-
-function getDateTime(value?: Date | string): number {
-  if (!value) {
-    return 0
-  }
-
-  const date = value instanceof Date ? value : new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
+  return specifications.length > 0 ? specifications[specifications.length - 1] : null
 }
 
 function roundTo(value: number, factor: number): number {

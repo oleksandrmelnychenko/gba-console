@@ -110,7 +110,6 @@ const PERMISSION_TO_UKRAINE_PLACEMENT = 'UkraineAllOrders_SelectAnOption_Product
 const PERMISSION_TO_UKRAINE_VIEW = 'UkraineAllOrders_SelectAnOption_View_PKEY'
 const PERMISSION_TO_UKRAINE_PROTOCOLS = 'UkraineAllOrders_SelectAnOption_NewPaymentProtocol_PKEY'
 const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = 'UkraineAllOrders_SelectAnOption_AddingOfficialCostsForProductDelivery_PKEY'
-const PERMISSION_DELETE = 'UkraineAllOrders_SelectAnOption_Delete_PKEY'
 const PERMISSION_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
 const PERMISSION_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
 const PERMISSION_DIRECT_LOGISTICS = 'UkraineAllOrders_SelectAnOption_LogisticWay_PKEY'
@@ -235,7 +234,6 @@ export function SupplyUkraineOrdersPage() {
   const canOpenToUkraineView = hasPermission(PERMISSION_TO_UKRAINE_VIEW)
   const canOpenToUkraineProtocols = hasPermission(PERMISSION_TO_UKRAINE_PROTOCOLS)
   const canOpenToUkraineOfficialCosts = hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)
-  const canDelete = hasPermission(PERMISSION_DELETE)
   const canOpenDirectInvoices = hasPermission(PERMISSION_DIRECT_INVOICES)
   const canOpenDirectSpecifications = hasPermission(PERMISSION_DIRECT_SPECIFICATIONS)
   const canOpenDirectLogistics = hasPermission(PERMISSION_DIRECT_LOGISTICS)
@@ -373,7 +371,6 @@ export function SupplyUkraineOrdersPage() {
     ],
   )
   const columns = useSupplyUkraineOrdersColumns({
-    canDelete,
     expandedDirectOrders,
     onDelete: setDeleteCandidate,
     onToggleDirectOrder: toggleDirectOrder,
@@ -671,12 +668,10 @@ export function SupplyUkraineOrdersPage() {
 }
 
 function useSupplyUkraineOrdersColumns({
-  canDelete,
   expandedDirectOrders,
   onDelete,
   onToggleDirectOrder,
 }: {
-  canDelete: boolean
   expandedDirectOrders: Set<string>
   onDelete: (row: SupplyUkraineOrderRow) => void
   onToggleDirectOrder: (order: DirectSupplyOrder) => void
@@ -823,7 +818,7 @@ function useSupplyUkraineOrdersColumns({
                 </ActionIcon>
               </Tooltip>
             )}
-            {canDelete && canDeleteRow(row) && (
+            {canDeleteRow(row) && (
               <Tooltip label={t('Видалити')}>
                 <ActionIcon
                   aria-label={t('Видалити')}
@@ -843,7 +838,7 @@ function useSupplyUkraineOrdersColumns({
         ),
       },
     ],
-    [canDelete, expandedDirectOrders, onDelete, onToggleDirectOrder, t],
+    [expandedDirectOrders, onDelete, onToggleDirectOrder, t],
   )
 }
 
@@ -872,6 +867,7 @@ function OrderActionsModal({
     canOpenToUkraineView,
   } = permissions
   const directHasInvoices = (row?.directOrder?.SupplyInvoices?.length || 0) > 0
+  const directHasProForma = Boolean(row?.directOrder?.SupplyProFormId)
 
   return (
     <AppModal centered opened={Boolean(row)} size="sm" title={t('Оберіть дію')} onClose={onClose}>
@@ -934,7 +930,7 @@ function OrderActionsModal({
             </Button>
           )}
 
-          {row.kind === 'direct' && canOpenDirectInvoices && row.netUid && (
+          {row.kind === 'direct' && canOpenDirectInvoices && directHasProForma && row.netUid && (
             <Button
               justify="flex-start"
               leftSection={<IconFileInvoice size={16} />}
@@ -945,7 +941,7 @@ function OrderActionsModal({
             </Button>
           )}
 
-          {row.kind === 'direct' && canOpenDirectSpecifications && directHasInvoices && row.netUid && (
+          {row.kind === 'direct' && canOpenDirectSpecifications && directHasProForma && row.netUid && (
             <Button
               justify="flex-start"
               leftSection={<IconListDetails size={16} />}
