@@ -198,8 +198,12 @@ function useAdvanceReportViewModel() {
       try {
         const calculated = await calculateAdvanceReportOrder(nextOrder)
 
-        if (calculated && recalculateRef.current === requestId) {
-          setViewState((current) => ({ ...current, order: calculated }))
+        if (recalculateRef.current === requestId) {
+          if (calculated) {
+            setViewState((current) => ({ ...current, order: calculated }))
+          } else {
+            setViewState((current) => ({ ...current, error: t('Не вдалося перерахувати суму') }))
+          }
         }
       } catch (calculateError) {
         if (recalculateRef.current === requestId) {

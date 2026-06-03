@@ -106,7 +106,13 @@ export function DocumentOutcomePaymentModal({
           searchIncomeCashflowPaymentRegisters('') as Promise<OutcomePaymentRegister[]>,
           getIncomeCashflowPaymentMovements(),
           activeSource.clientNetId
-            ? getIncomeCashflowClientAgreements(activeSource.clientNetId).catch(() => [] as ClientAgreement[])
+            ? getIncomeCashflowClientAgreements(activeSource.clientNetId).catch((agreementsError) => {
+                if (!cancelled) {
+                  setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
+                }
+
+                return [] as ClientAgreement[]
+              })
             : Promise.resolve([] as ClientAgreement[]),
         ])
 

@@ -129,7 +129,13 @@ export function TaxFreePaymentFromTaxFreeModal({
         const [nextOrganizations, nextAgreements, nextRegisters, nextMovements] = await Promise.all([
           getIncomeCashflowOrganizations(),
           client?.NetUid
-            ? getIncomeCashflowClientAgreements(client.NetUid).catch(() => [] as ClientAgreement[])
+            ? getIncomeCashflowClientAgreements(client.NetUid).catch((agreementsError) => {
+                if (!cancelled) {
+                  setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
+                }
+
+                return [] as ClientAgreement[]
+              })
             : Promise.resolve([] as ClientAgreement[]),
           isIncome ? searchIncomeCashflowPaymentRegisters('') as Promise<TaxFreePaymentRegister[]> : Promise.resolve([] as TaxFreePaymentRegister[]),
           isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
