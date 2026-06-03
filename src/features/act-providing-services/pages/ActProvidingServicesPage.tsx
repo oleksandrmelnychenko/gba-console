@@ -44,7 +44,7 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['management', 'accounting', 'date', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -332,7 +332,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             emptyText={t('Актів надання послуг не знайдено')}
             getRowId={(row, index) => String(row.netId || row.act.Id || index)}
             isLoading={isLoading}
-            layoutVersion="act-providing-services-table-1"
+            layoutVersion="act-providing-services-table-2"
             loadingText={t('Завантаження актів надання послуг')}
             maxHeight="calc(100vh - 310px)"
             minWidth={1320}

@@ -335,8 +335,6 @@ function IncompleteSalesOnlineShopPageView({
 
   return (
     <Stack gap="lg">
-      <IncompleteSalesHeader onReload={reloadSales} />
-
       <IncompleteSalesTableCard
         columns={columns}
         error={error}
@@ -347,6 +345,7 @@ function IncompleteSalesOnlineShopPageView({
         onFromChange={(from) => applyFilters({ ...filterDraft, from })}
         onNumberChange={(number) => applyFilters({ ...filterDraft, number })}
         onOpenDetail={openDetail}
+        onReload={reloadSales}
         onReset={resetFilters}
         onToChange={(to) => applyFilters({ ...filterDraft, to })}
         onToggleAccepted={(isAccepted) => applyFilters({ ...filterDraft, isAccepted })}
@@ -369,20 +368,6 @@ function IncompleteSalesOnlineShopPageView({
   )
 }
 
-function IncompleteSalesHeader({ onReload }: { onReload: () => void }) {
-  const { t } = useI18n()
-
-  return (
-    <Group justify="flex-end" align="center">
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon variant="light" color="gray" aria-label={t('Оновити')} onClick={onReload}>
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  )
-}
-
 function IncompleteSalesTableCard({
   columns,
   error,
@@ -393,6 +378,7 @@ function IncompleteSalesTableCard({
   onFromChange,
   onNumberChange,
   onOpenDetail,
+  onReload,
   onReset,
   onToChange,
   onToggleAccepted,
@@ -406,6 +392,7 @@ function IncompleteSalesTableCard({
   onFromChange: (from: string) => void
   onNumberChange: (number: string) => void
   onOpenDetail: (sale: IncompleteSalesOnlineShopItem) => void
+  onReload: () => void
   onReset: () => void
   onToChange: (to: string) => void
   onToggleAccepted: (isAccepted: boolean) => void
@@ -447,6 +434,11 @@ function IncompleteSalesTableCard({
           <Tooltip label={t('Скинути')}>
             <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={onReset}>
               <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon variant="light" color="gray" size={36} aria-label={t('Оновити')} onClick={onReload}>
+              <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
         </Group>

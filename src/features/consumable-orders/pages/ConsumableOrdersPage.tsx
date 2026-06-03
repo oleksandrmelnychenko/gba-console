@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Divider,
   Group,
@@ -161,18 +160,6 @@ export function ConsumableOrdersPage() {
           {filterError}
         </Alert>
       )}
-
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Завантажено')}: {orders.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Позицій')}: {rows.reduce((total, row) => total + row.itemCount, 0)}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Оплачено')}: {orders.filter((order) => order.IsPayed).length}
-        </Badge>
-      </Group>
 
       <DataTable
         columns={columns}
@@ -338,7 +325,7 @@ function useConsumableOrderColumns({
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 size="sm"
                 variant="subtle"
                 onClick={(event) => {

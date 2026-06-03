@@ -47,6 +47,7 @@ import {
   type MovementHistoryProduct,
 } from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getProductCapitalization } from '../../product-capitalizations/api/productCapitalizationsApi'
 import type { ProductCapitalization } from '../../product-capitalizations/types'
@@ -84,7 +85,7 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['fromDate', 'number', 'type'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
@@ -92,7 +93,7 @@ const ITEMS_TABLE_DEFAULT_LAYOUT = {
     left: ['vendorCode', 'productName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const REMAININGS_TABLE_DEFAULT_LAYOUT = {
@@ -100,7 +101,7 @@ const REMAININGS_TABLE_DEFAULT_LAYOUT = {
     left: ['storage', 'productCode', 'productName'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -171,11 +172,10 @@ function useProductIncomeDocumentsPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Сторінка')} {page}
-        {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
         {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [page, searchValue, t, total],
+    [page, searchValue, t],
   )
 
   const openOptions = useCallback(
@@ -761,7 +761,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             emptyText={t('Документів не знайдено')}
             getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
             isLoading={isLoading}
-            layoutVersion="product-income-documents-table-1"
+            layoutVersion="product-income-documents-table-2"
             loadingText={t('Завантаження документів')}
             maxHeight="calc(100vh - 330px)"
             minWidth={1440}
@@ -973,7 +973,7 @@ function ProductIncomeDocumentDrawer({
       {document && row && (
         <Stack gap="lg">
           <Group justify="space-between" align="start" gap="sm">
-            <Badge color="violet" variant="light">
+            <Badge color={CREATE_ACTION_COLOR} variant="light">
               {displayValue(row.type)}
             </Badge>
             <Group gap="xs">
@@ -1023,7 +1023,7 @@ function ProductIncomeDocumentDrawer({
           </SimpleGrid>
 
           {detailMode === 'view' && deferredOverviewNote && (
-            <Alert color="violet" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert color={CREATE_ACTION_COLOR} icon={<IconAlertCircle size={18} />} variant="light">
               {deferredOverviewNote}
             </Alert>
           )}
@@ -1060,7 +1060,7 @@ function ProductIncomeDocumentDrawer({
                 emptyText={t('Позицій не знайдено')}
                 getRowId={(item, index) => String(item.NetUid || item.Id || index)}
                 isLoading={isLoadingDocumentInfo}
-                layoutVersion="product-income-document-items-1"
+                layoutVersion="product-income-document-items-2"
                 loadingText={t('Завантаження позицій документа')}
                 maxHeight={320}
                 minWidth={720}
@@ -1091,7 +1091,7 @@ function ProductIncomeDocumentDrawer({
                   String(remaining.NetUid || `${remaining.Product?.VendorCode || ''}-${remaining.StorageName || ''}-${index}`)
                 }
                 isLoading={isLoadingRemainings}
-                layoutVersion="product-income-document-remainings-1"
+                layoutVersion="product-income-document-remainings-2"
                 loadingText={t('Завантаження залишків')}
                 maxHeight={360}
                 minWidth={1180}

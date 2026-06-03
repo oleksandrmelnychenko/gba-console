@@ -160,18 +160,6 @@ export function AccountableExpensesPage() {
         </Alert>
       )}
 
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Документів')}: {orders.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Рядків')}: {rows.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Оплачено')}: {orders.filter((order) => order.IsPayed).length}
-        </Badge>
-      </Group>
-
       <DataTable
         columns={columns}
         data={rows}

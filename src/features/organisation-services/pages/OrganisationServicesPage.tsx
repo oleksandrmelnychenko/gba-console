@@ -19,6 +19,7 @@ import {
 import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -43,7 +44,7 @@ const ORGANISATION_SERVICES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'serviceType', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const serviceCollections = [
@@ -311,7 +312,7 @@ export function OrganisationServicesPage() {
                 style={{ flex: '0 0 160px' }}
               />
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 loading={isLoadingTasks}
                 type="submit"
                 style={{ flex: '0 0 auto' }}
@@ -373,7 +374,7 @@ export function OrganisationServicesPage() {
             emptyText={lastSearchParams ? t('Взаєморозрахунків не знайдено') : t('Оберіть організацію і виконайте пошук')}
             getRowId={(row) => row.id}
             isLoading={isLoadingTasks}
-            layoutVersion="organisation-services-table-1"
+            layoutVersion="organisation-services-table-2"
             loadingText={t('Завантаження взаєморозрахунків')}
             maxHeight="calc(100vh - 420px)"
             minWidth={1080}
@@ -443,7 +444,7 @@ function useOrganisationServicesColumns(): DataTableColumn<PaymentTaskRow>[] {
         minWidth: 160,
         accessor: (row) => row.serviceTypeLabel,
         cell: (row) => (
-          <Badge color="violet" variant="light">
+          <Badge color={CREATE_ACTION_COLOR} variant="light">
             {row.serviceTypeLabel}
           </Badge>
         ),
