@@ -47,6 +47,7 @@ export type GeneralInfoFieldsProps = {
   isLoadingRegionCode?: boolean
   isUploadingDocuments?: boolean
   canSaveDocuments?: boolean
+  isNew?: boolean
   regionCodeError?: string
   onChange: <K extends keyof Client>(key: K, value: Client[K]) => void
   onRegionChange: (region: Region | null) => void
@@ -344,14 +345,16 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
         />
       )}
 
-      <ContractDocuments
-        canSave={props.canSaveDocuments !== false}
-        documents={client.ClientContractDocuments || []}
-        isUploading={props.isUploadingDocuments}
-        onAdd={props.onAddDocuments}
-        onRemove={props.onRemoveDocument}
-        onSave={props.onSaveDocuments}
-      />
+      {!props.isNew && (
+        <ContractDocuments
+          canSave={props.canSaveDocuments !== false}
+          documents={client.ClientContractDocuments || []}
+          isUploading={props.isUploadingDocuments}
+          onAdd={props.onAddDocuments}
+          onRemove={props.onRemoveDocument}
+          onSave={props.onSaveDocuments}
+        />
+      )}
     </Stack>
   )
 }

@@ -1117,8 +1117,8 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         header: 'Роль',
         width: 180,
         minWidth: 140,
-        accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
-        cell: (client) => displayValue(client.ClientInRole?.ClientTypeRole?.Name),
+        accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт'),
+        cell: (client) => client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт'),
       },
       {
         id: 'actions',

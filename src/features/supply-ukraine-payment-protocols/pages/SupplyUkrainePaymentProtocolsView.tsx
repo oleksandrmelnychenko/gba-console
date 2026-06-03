@@ -179,7 +179,6 @@ export function SupplyUkrainePaymentProtocolsView() {
         PayToDate: values.payToDate ? values.payToDate.toISOString() : undefined,
         User: values.responsible,
       },
-      User: values.responsible,
       Value: Number(values.value) || 0,
     }
 

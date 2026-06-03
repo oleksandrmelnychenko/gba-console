@@ -34,6 +34,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -700,7 +701,7 @@ function AgreementDrawer({
   onSubmit: (values: SupplyOrganizationAgreementFormValues) => void
 }) {
   const { t } = useI18n()
-  const [values, setValues] = useValueState(() => toAgreementFormValues(editor, ownerOrganizations, currencies))
+  const [values, setValues] = useValueState(() => toAgreementFormValues(editor, ownerOrganizations, currencies, t))
 
   function setField<K extends keyof SupplyOrganizationAgreementFormValues>(
     key: K,
@@ -751,12 +752,14 @@ function AgreementDrawer({
             />
             <TextInput
               label={t('Діє з')}
+              max={values.existTo || undefined}
               type="date"
               value={values.existFrom}
               onChange={(event) => setField('existFrom', event.currentTarget.value)}
             />
             <TextInput
               label={t('Діє до')}
+              min={values.existFrom || undefined}
               type="date"
               value={values.existTo}
               onChange={(event) => setField('existTo', event.currentTarget.value)}
@@ -931,6 +934,7 @@ function toAgreementFormValues(
   agreement: SupplyOrganizationAgreement | null,
   organizations: Organization[],
   currencies: Currency[],
+  t: TranslateFunction,
 ): SupplyOrganizationAgreementFormValues {
   const emptyAgreement = createEmptyAgreement()
 
@@ -939,7 +943,7 @@ function toAgreementFormValues(
     existFrom: normalizeDateInput(agreement?.ExistFrom) || emptyAgreement.ExistFrom || '',
     existTo: normalizeDateInput(agreement?.ExistTo) || emptyAgreement.ExistTo || '',
     files: [],
-    name: agreement?.Name || '',
+    name: agreement?.Name || (agreement?.Id ? '' : t('Основний договір')),
     number: agreement?.Number || '',
     organizationId: entityKey(agreement?.Organization) || entityKey(organizations[0]),
   }

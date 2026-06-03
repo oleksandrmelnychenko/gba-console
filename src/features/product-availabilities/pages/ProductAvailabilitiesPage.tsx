@@ -151,11 +151,11 @@ function useProductAvailabilitiesPageModel() {
 
       try {
         const response = await getProductAvailabilities({
-          from: dateFrom,
+          from: toDateFromBound(dateFrom),
           limit: pageSize,
           offset,
           storageNetId: selectedStorageNetId,
-          to: dateTo,
+          to: toDateToBound(dateTo),
           vendorCode: searchValue,
         })
 
@@ -208,9 +208,9 @@ function useProductAvailabilitiesPageModel() {
 
     try {
       const document = await exportProductAvailabilities({
-        from: dateFrom,
+        from: toDateFromBound(dateFrom),
         storageNetId: selectedStorageNetId,
-        to: dateTo,
+        to: toDateToBound(dateTo),
         vendorCode: searchValue,
       })
 
@@ -615,6 +615,18 @@ function formatDateInputValue(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+function toDateFromBound(value: string): string {
+  const date = new Date(`${value}T00:00:00.000`)
+
+  return date.toISOString()
+}
+
+function toDateToBound(value: string): string {
+  const date = new Date(`${value}T23:59:59.999`)
+
+  return date.toISOString()
 }
 
 function getFilterError(dateFrom: string, dateTo: string): string | null {

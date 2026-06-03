@@ -191,6 +191,7 @@ export function NewUkraineSaleReturnPage() {
     drafts,
     onEdit: openEditor,
     onRemove: removeDraft,
+    searchedVendorCode: saleSearch.trim(),
     t,
   })
   const detailColumns = useDetailColumns(t)
@@ -915,11 +916,13 @@ function useSaleItemColumns({
   drafts,
   onEdit,
   onRemove,
+  searchedVendorCode,
   t,
 }: {
   drafts: ReturnOrderItemDraft[]
   onEdit: (row: SaleItemRow) => void
   onRemove: (row: SaleItemRow) => void
+  searchedVendorCode: string
   t: (value: string) => string
 }): DataTableColumn<SaleItemRow>[] {
   return useMemo(
@@ -952,7 +955,14 @@ function useSaleItemColumns({
         id: 'vendorCode',
         header: t('Артикул'),
         accessor: (row) => row.item.Product?.VendorCode,
-        cell: (row) => displayValue(row.item.Product?.VendorCode),
+        cell: (row) =>
+          searchedVendorCode && row.item.Product?.VendorCode === searchedVendorCode ? (
+            <Text fw={600} bg="#78ff33" px={4}>
+              {displayValue(row.item.Product?.VendorCode)}
+            </Text>
+          ) : (
+            displayValue(row.item.Product?.VendorCode)
+          ),
         width: 140,
       },
       {
@@ -1021,7 +1031,7 @@ function useSaleItemColumns({
         width: 110,
       },
     ],
-    [drafts, onEdit, onRemove, t],
+    [drafts, onEdit, onRemove, searchedVendorCode, t],
   )
 }
 
@@ -1069,6 +1079,14 @@ function useDetailColumns(t: (value: string) => string): DataTableColumn<SalesRe
         header: t('Сума'),
         accessor: (item) => item.AmountLocal,
         cell: (item) => formatMoney(item.AmountLocal),
+        align: 'right',
+        width: 120,
+      },
+      {
+        id: 'vatAmount',
+        header: t('ПДВ'),
+        accessor: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? item.VatAmountLocal : undefined),
+        cell: (item) => (item.OrderItem?.Order?.Sale?.IsVatSale ? formatMoney(item.VatAmountLocal) : '—'),
         align: 'right',
         width: 120,
       },
