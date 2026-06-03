@@ -120,10 +120,19 @@ export type PreviewCartItem = {
 export type CartItemsParseConfiguration = {
   EndRow: number
   FromDateColumnNumber?: number
+  GrossWeightColumnNumber?: number
+  IsImportedProduct?: number
+  IsWeightPerItem?: boolean
   PriorityColumnNumber?: number
   QtyColumnNumber: number
+  SpecificationCodeColumnNumber?: number
   StartRow: number
   VendorCodeColumnNumber: number
+  WeightColumnNumber?: number
+  WithGrossWeight?: boolean
+  WithIsImportedProduct?: boolean
+  WithSpecificationCode?: boolean
+  WithWeight?: boolean
 }
 
 export type CartItemsTotals = {
@@ -197,8 +206,17 @@ export type BasketSupplyUploadForm = {
   endRow: number | ''
   file: File | null
   fromDateColumnNumber: number | ''
+  grossWeightColumnNumber: number | ''
+  isImportedProductColumnNumber: number | ''
+  isWeightPerItem: boolean
   priorityColumnNumber: number | ''
   qtyColumnNumber: number | ''
+  specificationCodeColumnNumber: number | ''
   startRow: number | ''
   vendorCodeColumnNumber: number | ''
+  weightColumnNumber: number | ''
+  withGrossWeight: boolean
+  withIsImportedProduct: boolean
+  withSpecificationCode: boolean
+  withWeight: boolean
 }

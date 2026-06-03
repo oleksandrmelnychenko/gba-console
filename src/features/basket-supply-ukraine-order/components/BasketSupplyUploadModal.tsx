@@ -1,4 +1,4 @@
-import { Alert, Button, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Button, Checkbox, FileInput, Group, NumberInput, SimpleGrid, Stack, Text } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
 import { IconAlertCircle, IconFileSpreadsheet, IconUpload } from '@tabler/icons-react'
 import { useState } from 'react'
@@ -22,10 +22,19 @@ const EMPTY_FORM: BasketSupplyUploadForm = {
   endRow: '',
   file: null,
   fromDateColumnNumber: '',
+  grossWeightColumnNumber: '',
+  isImportedProductColumnNumber: '',
+  isWeightPerItem: false,
   priorityColumnNumber: '',
   qtyColumnNumber: '',
+  specificationCodeColumnNumber: '',
   startRow: '',
   vendorCodeColumnNumber: '',
+  weightColumnNumber: '',
+  withGrossWeight: false,
+  withIsImportedProduct: false,
+  withSpecificationCode: false,
+  withWeight: false,
 }
 
 export function BasketSupplyUploadModal({
@@ -140,6 +149,96 @@ export function BasketSupplyUploadModal({
           )}
         </SimpleGrid>
 
+        {!isPreview && (
+          <Stack gap="xs">
+            <Text fw={600} size="sm">
+              {t('Додаткові колонки')}
+            </Text>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <Stack gap={4}>
+                <Checkbox
+                  checked={form.withWeight}
+                  disabled={isSubmitting}
+                  label={t('Вага нетто')}
+                  onChange={(event) => setForm((current) => ({ ...current, withWeight: event.currentTarget.checked }))}
+                />
+                {form.withWeight && (
+                  <NumberInput
+                    allowDecimal={false}
+                    disabled={isSubmitting}
+                    label={t('Колонка ваги нетто')}
+                    min={1}
+                    value={form.weightColumnNumber}
+                    onChange={(value) => setForm((current) => ({ ...current, weightColumnNumber: toPositiveNumber(value) }))}
+                  />
+                )}
+              </Stack>
+              <Stack gap={4}>
+                <Checkbox
+                  checked={form.withGrossWeight}
+                  disabled={isSubmitting}
+                  label={t('Вага брутто')}
+                  onChange={(event) => setForm((current) => ({ ...current, withGrossWeight: event.currentTarget.checked }))}
+                />
+                {form.withGrossWeight && (
+                  <NumberInput
+                    allowDecimal={false}
+                    disabled={isSubmitting}
+                    label={t('Колонка ваги брутто')}
+                    min={1}
+                    value={form.grossWeightColumnNumber}
+                    onChange={(value) => setForm((current) => ({ ...current, grossWeightColumnNumber: toPositiveNumber(value) }))}
+                  />
+                )}
+              </Stack>
+              <Stack gap={4}>
+                <Checkbox
+                  checked={form.withSpecificationCode}
+                  disabled={isSubmitting}
+                  label={t('Митний код')}
+                  onChange={(event) => setForm((current) => ({ ...current, withSpecificationCode: event.currentTarget.checked }))}
+                />
+                {form.withSpecificationCode && (
+                  <NumberInput
+                    allowDecimal={false}
+                    disabled={isSubmitting}
+                    label={t('Колонка митного коду')}
+                    min={1}
+                    value={form.specificationCodeColumnNumber}
+                    onChange={(value) => setForm((current) => ({ ...current, specificationCodeColumnNumber: toPositiveNumber(value) }))}
+                  />
+                )}
+              </Stack>
+              <Stack gap={4}>
+                <Checkbox
+                  checked={form.withIsImportedProduct}
+                  disabled={isSubmitting}
+                  label={t('Імпортний товар')}
+                  onChange={(event) => setForm((current) => ({ ...current, withIsImportedProduct: event.currentTarget.checked }))}
+                />
+                {form.withIsImportedProduct && (
+                  <NumberInput
+                    allowDecimal={false}
+                    disabled={isSubmitting}
+                    label={t('Колонка імпорту')}
+                    min={1}
+                    value={form.isImportedProductColumnNumber}
+                    onChange={(value) => setForm((current) => ({ ...current, isImportedProductColumnNumber: toPositiveNumber(value) }))}
+                  />
+                )}
+              </Stack>
+            </SimpleGrid>
+            {(form.withWeight || form.withGrossWeight) && (
+              <Checkbox
+                checked={form.isWeightPerItem}
+                disabled={isSubmitting}
+                label={t('Вага за одиницю')}
+                onChange={(event) => setForm((current) => ({ ...current, isWeightPerItem: event.currentTarget.checked }))}
+              />
+            )}
+          </Stack>
+        )}
+
         <Text c="dimmed" size="xs">
           {isPreview
             ? t('Файл буде перевірено перед додаванням у підбірку експорту.')
@@ -182,11 +281,40 @@ function toParseConfiguration(
     return null
   }
 
+  if (form.withWeight && !form.weightColumnNumber) {
+    return null
+  }
+
+  if (form.withGrossWeight && !form.grossWeightColumnNumber) {
+    return null
+  }
+
+  if (form.withSpecificationCode && !form.specificationCodeColumnNumber) {
+    return null
+  }
+
+  if (form.withIsImportedProduct && !form.isImportedProductColumnNumber) {
+    return null
+  }
+
   return {
     ...baseConfiguration,
     FromDateColumnNumber: form.fromDateColumnNumber,
+    GrossWeightColumnNumber: form.withGrossWeight ? numberOrZero(form.grossWeightColumnNumber) : 0,
+    IsImportedProduct: form.withIsImportedProduct ? numberOrZero(form.isImportedProductColumnNumber) : 0,
+    IsWeightPerItem: form.isWeightPerItem,
     PriorityColumnNumber: form.priorityColumnNumber,
+    SpecificationCodeColumnNumber: form.withSpecificationCode ? numberOrZero(form.specificationCodeColumnNumber) : 0,
+    WeightColumnNumber: form.withWeight ? numberOrZero(form.weightColumnNumber) : 0,
+    WithGrossWeight: form.withGrossWeight,
+    WithIsImportedProduct: form.withIsImportedProduct,
+    WithSpecificationCode: form.withSpecificationCode,
+    WithWeight: form.withWeight,
   }
+}
+
+function numberOrZero(value: number | ''): number {
+  return typeof value === 'number' ? value : 0
 }
 
 function hasRequiredNumbers(configuration: {
