@@ -313,7 +313,7 @@ function useVatReportColumns(indexMap: Map<VatReport, number>): DataTableColumn<
       },
       {
         id: 'amount',
-        header: t('Сума VAT'),
+        header: t('Сума в EUR (ПДВ)'),
         width: 150,
         minWidth: 130,
         align: 'right',

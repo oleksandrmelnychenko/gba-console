@@ -22,22 +22,24 @@ export type UserProfile = NamedEntity & {
   PhoneNumber?: string
 }
 
-export type ConsumableProduct = EntityFields & {
-  Article?: string
-  Currency?: NamedEntity | null
-  PricePerItem?: number
-  SpecificationQty?: number
-  Name?: string
-  TotalQty?: number
-  VendorCode?: string
-  WorthPrice?: number
-}
-
 export type PriceTotal = {
   Amount?: number
   Currency?: NamedEntity | null
   Qty?: number
   TotalPrice?: number
+}
+
+export type ConsumableProduct = EntityFields & {
+  Article?: string
+  Currency?: NamedEntity | null
+  MeasureUnit?: NamedEntity | null
+  PricePerItem?: number
+  PriceTotals?: PriceTotal[]
+  SpecificationQty?: number
+  Name?: string
+  TotalQty?: number
+  VendorCode?: string
+  WorthPrice?: number
 }
 
 export type SupplyOrganizationAgreement = EntityFields & {

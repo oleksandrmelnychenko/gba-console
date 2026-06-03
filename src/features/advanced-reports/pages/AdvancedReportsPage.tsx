@@ -444,7 +444,7 @@ export function AdvancedReportsPage() {
           clearable
           searchable
           data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-          label={t('Рахунок')}
+          label={t('Грошовий рахунок')}
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={260}
@@ -614,7 +614,7 @@ function useAdvancedReportColumns({
       },
       {
         id: 'paymentRegister',
-        header: t('Рахунок'),
+        header: t('Грошовий рахунок'),
         width: 210,
         minWidth: 160,
         accessor: (row) => row.paymentRegister,
@@ -1002,6 +1002,10 @@ function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportR
   const rows: AdvancedReportRow[] = []
 
   for (const order of orders) {
+    if (!order.AdvanceNumber) {
+      continue
+    }
+
     rows.push(toAdvancedReportRow(order, rows.length))
   }
 
@@ -1020,7 +1024,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     hasDocumentStructure: hasDocumentStructure(order),
     id: String(order.NetUid || order.Id || index),
     isUnderReport: order.IsUnderReport,
-    number: order.AdvanceNumber || order.Number || order.CustomNumber,
+    number: order.AdvanceNumber,
     order,
     organization: getEntityName(order.Organization),
     payedTo: getPayedTo(order),

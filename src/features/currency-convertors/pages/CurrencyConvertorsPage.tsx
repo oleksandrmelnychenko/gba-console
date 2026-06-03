@@ -248,6 +248,12 @@ function useCurrencyConvertorsPageModel() {
     }
 
     const updatedValue = parseAmount(editingValue)
+
+    if (!(updatedValue > 0)) {
+      setRatesError(t('Курс валют має бути більшим за нуль'))
+      return
+    }
+
     const nextRates = rates.map((rate) => (rate === editingRate ? { ...rate, ExchangeRate: updatedValue } : rate))
 
     const payload: CurrencyTraderPayload = {

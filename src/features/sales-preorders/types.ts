@@ -27,3 +27,10 @@ export type PreOrdersFilters = {
   limit: number
   offset: number
 }
+
+export type CreatePreorderRequest = {
+  productNetId: string
+  clientAgreementNetId: string
+  qty: number
+  comment: string
+}

@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { PreOrder, PreOrdersFilters } from '../types'
+import type { CreatePreorderRequest, PreOrder, PreOrdersFilters } from '../types'
 
 export async function getPreorders(filters: PreOrdersFilters): Promise<PreOrder[]> {
   const result = await apiRequest<unknown>('/preorders/all/filtered', {
@@ -10,6 +10,29 @@ export async function getPreorders(filters: PreOrdersFilters): Promise<PreOrder[
   })
 
   return normalizeArray(result) as PreOrder[]
+}
+
+export async function createPreorder(request: CreatePreorderRequest): Promise<string> {
+  const result = await apiRequest<unknown>('/preorders/new', {
+    query: {
+      productNetId: request.productNetId,
+      clientAgreementNetId: request.clientAgreementNetId,
+      qty: request.qty,
+      comment: request.comment,
+    },
+  })
+
+  if (typeof result === 'string') {
+    return result
+  }
+
+  if (result && typeof result === 'object') {
+    const message = (result as Record<string, unknown>).Message
+
+    return typeof message === 'string' ? message : ''
+  }
+
+  return ''
 }
 
 function normalizeArray(result: unknown): unknown[] {

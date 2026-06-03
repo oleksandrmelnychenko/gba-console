@@ -1,2 +1,5 @@
 export { PreordersInterestPage } from './pages/PreordersInterestPage'
+export { ProductInterestModal } from './components/ProductInterestModal'
+export type { ProductInterestModalProps } from './components/ProductInterestModal'
+export { createPreorder } from './api/salesPreordersApi'
 export * from './types'

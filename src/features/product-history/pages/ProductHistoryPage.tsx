@@ -671,7 +671,7 @@ function useProductHistoryColumns(
       },
       {
         id: 'reserved',
-        header: 'Продаж Україна',
+        header: 'В рахунках в Україні',
         width: 148,
         minWidth: 126,
         align: 'right',

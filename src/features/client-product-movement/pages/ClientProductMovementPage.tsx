@@ -156,10 +156,6 @@ export function ClientProductMovementPage() {
   useEffect(() => {
     const query = clientQuery.trim()
 
-    if (query.length < 2) {
-      return
-    }
-
     let cancelled = false
     const handle = setTimeout(async () => {
       try {
@@ -334,7 +330,7 @@ export function ClientProductMovementPage() {
               searchable
               data={clientSelectData}
               label={t('Клієнт')}
-              nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+              nothingFoundMessage={t('Нічого не знайдено')}
               placeholder={t('Пошук клієнта')}
               searchValue={clientQuery}
               value={filterDraft.clientNetId || null}

@@ -105,7 +105,6 @@ export function UserForm({
       <TextInput
         disabled={disabled}
         label={t('Телефон')}
-        maxLength={20}
         required
         value={user.PhoneNumber || ''}
         onChange={(event) => onFieldChange('PhoneNumber', event.currentTarget.value)}

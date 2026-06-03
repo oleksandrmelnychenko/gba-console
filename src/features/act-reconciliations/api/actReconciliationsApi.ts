@@ -18,12 +18,24 @@ export async function getActReconciliations(
 ): Promise<ActReconciliation[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/all/filtered', {
     query: {
-      from: params.from,
-      to: params.to,
+      from: toRangeStartIso(params.from),
+      to: toRangeEndIso(params.to),
     },
   })
 
   return normalizeReconciliations(result)
+}
+
+function toRangeStartIso(value: string): string {
+  const date = new Date(`${value}T00:00:00.000`)
+
+  return Number.isNaN(date.getTime()) ? value : date.toISOString()
+}
+
+function toRangeEndIso(value: string): string {
+  const date = new Date(`${value}T23:59:59.999`)
+
+  return Number.isNaN(date.getTime()) ? value : date.toISOString()
 }
 
 export async function getActReconciliationByNetId(netId: string): Promise<ActReconciliation | null> {

@@ -22,7 +22,7 @@ import {
   IconUpload,
 } from '@tabler/icons-react'
 import { type ChangeEvent, useMemo } from 'react'
-import { readSheet } from 'read-excel-file/browser'
+import readXlsxFile from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SpreadsheetCellValue, SpreadsheetSheet } from '../types'
@@ -281,9 +281,13 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   const extension = file.name.split('.').pop()?.toLowerCase()
 
   if (extension === 'xlsx') {
-    const rows = await readSheet(file)
+    const workbook = await readXlsxFile(file)
 
-    return buildSpreadsheetSheets(file.name, rows.map((row) => row.map(normalizeImportedCellValue)))
+    return workbook
+      .map((sheet) =>
+        buildSpreadsheetSheet(sheet.sheet, sheet.data.map((row) => row.map(normalizeImportedCellValue))),
+      )
+      .filter((sheet) => sheet.dataRows.length > 0 || sheet.columns.length > 0)
   }
 
   if (extension === 'xls') {
@@ -294,27 +298,26 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   const delimiter = detectDelimiter(text)
   const rows = parseDelimitedText(text, delimiter)
 
-  return buildSpreadsheetSheets(file.name, rows)
+  return [buildSpreadsheetSheet(file.name, rows)]
 }
 
-function buildSpreadsheetSheets(fileName: string, rows: SpreadsheetCellValue[][]): SpreadsheetSheet[] {
+function buildSpreadsheetSheet(name: string, rows: SpreadsheetCellValue[][]): SpreadsheetSheet {
   const firstDataRowIndex = rows.findIndex((row) => row.some((cell) => String(cell || '').trim()))
 
   if (firstDataRowIndex === -1) {
-    return [{ name: fileName, columns: [], dataRows: [], rows: [], totals: {} }]
+    return { name, columns: [], dataRows: [], rows: [], totals: {} }
   }
 
   const columns = rows[firstDataRowIndex].map((cell, index) => String(cell || `C${index + 1}`))
   const dataRows = rows.slice(firstDataRowIndex + 1)
-  const sheet = {
-    name: fileName,
+
+  return {
+    name,
     columns,
     dataRows,
     rows,
     totals: calculateTotals(columns, dataRows),
   }
-
-  return [sheet]
 }
 
 function detectDelimiter(text: string): ',' | '\t' | ';' {
