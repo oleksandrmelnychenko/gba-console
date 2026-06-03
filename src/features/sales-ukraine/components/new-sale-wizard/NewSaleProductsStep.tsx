@@ -7,6 +7,7 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
+import { ProductInterestModal } from '../../../sales-preorders'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
 import { FutureReservationModal } from './FutureReservationModal'
 import {
@@ -56,6 +57,7 @@ export function NewSaleProductsStep({
   const [isSearching, setSearching] = useState(false)
   const [busy, setBusy] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const [interestProduct, setInterestProduct] = useState<SalesUkraineProduct | null>(null)
   const [futureProduct, setFutureProduct] = useState<SalesUkraineProduct | null>(null)
   const [focusedItemNetUid, setFocusedItemNetUid] = useState<string | null>(null)
   const [cartFocused, setCartFocused] = useState(false)
@@ -412,6 +414,7 @@ export function NewSaleProductsStep({
         getMeta={getProductMeta}
         onPick={(product) => addProduct(product)}
         onOpenCard={setProductCardNetId}
+        onProductInterest={agreementNetId ? (product) => setInterestProduct(product) : undefined}
       />
 
       <Box
@@ -536,6 +539,14 @@ export function NewSaleProductsStep({
       </Box>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
+
+      <ProductInterestModal
+        clientAgreementNetId={agreementNetId ?? ''}
+        opened={Boolean(interestProduct?.NetUid && agreementNetId)}
+        productNetId={interestProduct?.NetUid ?? ''}
+        onClose={() => setInterestProduct(null)}
+        onCreated={() => setInterestProduct(null)}
+      />
 
       <FutureReservationModal
         clientNetId={clientNetId}

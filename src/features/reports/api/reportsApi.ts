@@ -99,6 +99,23 @@ export async function searchReportClients(params: ReportSearchParams): Promise<R
   return normalizeCollection(result, ['Items', 'Clients', 'Data'])
 }
 
+export async function getReportClientAgreements(netId: string): Promise<ReportEntity[]> {
+  if (!netId) {
+    return []
+  }
+
+  const result = await apiRequest<unknown>('/agreements/client/all', {
+    query: {
+      netId,
+    },
+  })
+
+  return normalizeCollection(result, ['Items', 'ClientAgreements', 'Agreements', 'Data', 'Collection']).map((clientAgreement) => ({
+    ...clientAgreement,
+    Name: getClientAgreementName(clientAgreement),
+  }))
+}
+
 export async function searchReportUsers(params: ReportSearchParams): Promise<ReportEntity[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
@@ -207,6 +224,20 @@ function getUserName(user: ReportEntity): string {
       || user.Id
       || '',
   )
+}
+
+function getClientAgreementName(clientAgreement: ReportEntity): string {
+  const agreement = clientAgreement.Agreement
+
+  if (agreement && typeof agreement === 'object') {
+    const agreementName = getName(agreement as ReportEntity)
+
+    if (agreementName) {
+      return agreementName
+    }
+  }
+
+  return getName(clientAgreement)
 }
 
 function getSaleNumber(sale: ReportEntity): string {
