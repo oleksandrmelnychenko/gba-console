@@ -120,7 +120,15 @@ export function SadPaymentFromSadModal({
       try {
         const [nextOrganizations, nextAgreements, nextRegisters, nextMovements] = await Promise.all([
           getIncomeCashflowOrganizations(),
-          client?.NetUid ? getIncomeCashflowClientAgreements(client.NetUid).catch(() => [] as ClientAgreement[]) : Promise.resolve([] as ClientAgreement[]),
+          client?.NetUid
+            ? getIncomeCashflowClientAgreements(client.NetUid).catch((agreementsError) => {
+                if (!cancelled) {
+                  setError(agreementsError instanceof Error ? agreementsError.message : t('Не вдалося завантажити договори'))
+                }
+
+                return [] as ClientAgreement[]
+              })
+            : Promise.resolve([] as ClientAgreement[]),
           isIncome ? searchIncomeCashflowPaymentRegisters('') : Promise.resolve([] as PaymentRegister[]),
           isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
         ])
