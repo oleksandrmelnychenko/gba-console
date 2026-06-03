@@ -28,7 +28,6 @@ import {
   IconExternalLink,
   IconFileUpload,
   IconInfoCircle,
-  IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useRef } from 'react'
@@ -118,13 +117,6 @@ type OutcomeOpenOptions = {
 
 type TaskDetailTab = 'cash-flow' | 'invoice' | 'payment' | 'transfer'
 
-type DeletedDocumentsByTaskId = Record<string, Record<string, boolean>>
-
-type DeletedDocumentsState = {
-  byTaskId: DeletedDocumentsByTaskId
-  scopeKey: string
-}
-
 type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
   source: AccountingCashFlowHeadItem
 }
@@ -135,8 +127,6 @@ const SEARCH_DEBOUNCE_MS = 300
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
-const EMPTY_DELETED_DOCUMENTS: Record<string, boolean> = {}
-const EMPTY_DELETED_DOCUMENTS_BY_TASK_ID: DeletedDocumentsByTaskId = {}
 
 export function AvailablePaymentsDetailDrawer({
   filesByTaskId,
@@ -152,16 +142,11 @@ export function AvailablePaymentsDetailDrawer({
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const deletedDocumentsScopeKey = getGroupedPaymentTaskKey(group)
   const models = useMemo(() => buildTaskModels(group, t), [group, t])
   const [expandedId, setExpandedId] = useValueState<string | null>(null)
   const [activeTabs, setActiveTabs] = useValueState<Record<string, TaskDetailTab>>({})
   const [cashFlows, setCashFlows] = useValueState<Record<string, CashFlowState>>({})
   const [cashFlowFiltersByTaskId, setCashFlowFiltersByTaskId] = useValueState<Record<string, CashFlowFilters>>({})
-  const [deletedDocumentsState, setDeletedDocumentsState] = useValueState<DeletedDocumentsState>(() => ({
-    byTaskId: EMPTY_DELETED_DOCUMENTS_BY_TASK_ID,
-    scopeKey: '',
-  }))
   const [selectedCashFlowItem, setSelectedCashFlowItem] = useValueState<AccountingCashFlowHeadItem | null>(null)
   const [outcomeModels, setOutcomeModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [outcomeRequiresDocuments, setOutcomeRequiresDocuments] = useValueState(true)
@@ -175,10 +160,6 @@ export function AvailablePaymentsDetailDrawer({
   const cashFlowRequestRef = useRef<Record<string, number>>({})
   const movementSearchRequestRef = useRef(0)
   const movementSearchTimeoutRef = useRef<number | null>(null)
-  const deletedDocumentsByTaskId =
-    deletedDocumentsState.scopeKey === deletedDocumentsScopeKey
-      ? deletedDocumentsState.byTaskId
-      : EMPTY_DELETED_DOCUMENTS_BY_TASK_ID
 
   useEffect(() => {
     if (outcomeModels.length === 0) {
@@ -320,7 +301,6 @@ export function AvailablePaymentsDetailDrawer({
     resetMovementSearchState()
     setOutcomeModels([])
     setOutcomeRequiresDocuments(true)
-    setDeletedDocumentsState({ byTaskId: EMPTY_DELETED_DOCUMENTS_BY_TASK_ID, scopeKey: '' })
     setForm(createInitialOutcomeForm())
     setMovements([])
     setRegisters([])
@@ -386,7 +366,9 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
-    const payableModels = nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done)
+    const payableModels = uniqueOutcomeModels(
+      nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done),
+    )
     const shouldRequireDocuments = options.requireDocuments ?? true
 
     if (payableModels.length === 0) {
@@ -403,7 +385,7 @@ export function AvailablePaymentsDetailDrawer({
 
     if (
       shouldRequireDocuments &&
-      payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]) === 0)
+      payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)
     ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
@@ -496,7 +478,7 @@ export function AvailablePaymentsDetailDrawer({
     }
 
     const localFiles = filesByTaskId[model.id] || []
-    const taskWithDocuments = buildTaskWithDocumentChanges(model, localFiles, deletedDocumentsByTaskId[model.id])
+    const taskWithDocuments = buildTaskWithDocumentChanges(model, localFiles)
 
     if (countActiveDocuments(taskWithDocuments.SupplyPaymentTaskDocuments) === 0) {
       setError(t('Додайте хоча б один документ'))
@@ -526,32 +508,6 @@ export function AvailablePaymentsDetailDrawer({
 
       setActiveTabs((current) => ({ ...current, [model.id]: nextTab }))
     }
-  }
-
-  function handleToggleExistingDocumentDeleted(
-    model: AvailablePaymentTaskModel,
-    document: AvailablePaymentDocument,
-    index: number,
-  ) {
-    const key = getDocumentKey(document, index)
-
-    setDeletedDocumentsState((current) => {
-      const byTaskId =
-        current.scopeKey === deletedDocumentsScopeKey ? current.byTaskId : EMPTY_DELETED_DOCUMENTS_BY_TASK_ID
-      const currentTaskDocuments = byTaskId[model.id] || EMPTY_DELETED_DOCUMENTS
-      const currentDeleted = isDocumentDeleted(document, index, currentTaskDocuments)
-
-      return {
-        byTaskId: {
-          ...byTaskId,
-          [model.id]: {
-            ...currentTaskDocuments,
-            [key]: !currentDeleted,
-          },
-        },
-        scopeKey: deletedDocumentsScopeKey,
-      }
-    })
   }
 
   function handleRedirectToSource(model: AvailablePaymentTaskModel) {
@@ -588,7 +544,7 @@ export function AvailablePaymentsDetailDrawer({
 
     if (
       outcomeRequiresDocuments &&
-      outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]) === 0)
+      outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)
     ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
@@ -597,7 +553,7 @@ export function AvailablePaymentsDetailDrawer({
     const documents = outcomeModels.flatMap((model) => filesByTaskId[model.id] || [])
     const modelsWithDocuments = outcomeModels.map((model) => ({
       ...model,
-      task: buildTaskWithDocumentChanges(model, filesByTaskId[model.id] || [], deletedDocumentsByTaskId[model.id]),
+      task: buildTaskWithDocumentChanges(model, filesByTaskId[model.id] || []),
     }))
 
     setSaving(true)
@@ -656,7 +612,6 @@ export function AvailablePaymentsDetailDrawer({
             markedModels={markedModels}
             markedTaskIds={markedTaskIds}
             models={models}
-            deletedDocumentsByTaskId={deletedDocumentsByTaskId}
             onCashFlowTab={handleCashFlowTab}
             onCashFlowFiltersChange={handleCashFlowFiltersChange}
             onCashFlowRowClick={(item) => setSelectedCashFlowItem(item)}
@@ -666,7 +621,6 @@ export function AvailablePaymentsDetailDrawer({
             onMoveToDone={handleMoveToDone}
             onRedirectToSource={handleRedirectToSource}
             onToggleExpanded={handleToggleExpanded}
-            onToggleExistingDocumentDeleted={handleToggleExistingDocumentDeleted}
             onToggleMarked={onToggleMarked}
           />
         )}
@@ -731,7 +685,6 @@ function AvailablePaymentTaskList({
   markedModels,
   markedTaskIds,
   models,
-  deletedDocumentsByTaskId,
   onCashFlowTab,
   onCashFlowFiltersChange,
   onCashFlowRowClick,
@@ -741,7 +694,6 @@ function AvailablePaymentTaskList({
   onMoveToDone,
   onRedirectToSource,
   onToggleExpanded,
-  onToggleExistingDocumentDeleted,
   onToggleMarked,
 }: {
   activeTabs: Record<string, TaskDetailTab>
@@ -753,7 +705,6 @@ function AvailablePaymentTaskList({
   markedModels: AvailablePaymentTaskModel[]
   markedTaskIds: string[]
   models: AvailablePaymentTaskModel[]
-  deletedDocumentsByTaskId: DeletedDocumentsByTaskId
   onCashFlowTab: (model: AvailablePaymentTaskModel, tab: string | null) => Promise<void>
   onCashFlowFiltersChange: (model: AvailablePaymentTaskModel, filters: CashFlowFilters) => void
   onCashFlowRowClick: (item: AccountingCashFlowHeadItem) => void
@@ -763,11 +714,6 @@ function AvailablePaymentTaskList({
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
   onToggleExpanded: (model: AvailablePaymentTaskModel) => void
-  onToggleExistingDocumentDeleted: (
-    model: AvailablePaymentTaskModel,
-    document: AvailablePaymentDocument,
-    index: number,
-  ) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
@@ -862,14 +808,12 @@ function AvailablePaymentTaskList({
               )}
               {activeTab === 'payment' && (
                 <PaymentTab
-                  deletedDocuments={deletedDocumentsByTaskId[model.id] || EMPTY_DELETED_DOCUMENTS}
                   files={filesByTaskId[model.id] || []}
                   isSaving={isSaving}
                   model={model}
                   onCreateOutcome={() => onCreateOutcome([model])}
                   onFilesChanged={(files) => onFilesChanged(model.id, files)}
                   onMoveToDone={() => void onMoveToDone(model)}
-                  onToggleExistingDocumentDeleted={(document, index) => onToggleExistingDocumentDeleted(model, document, index)}
                 />
               )}
               {activeTab === 'transfer' && <TransferTab model={model} />}
@@ -1402,23 +1346,19 @@ function stringOrUndefined(value: unknown): string | undefined {
 }
 
 function PaymentTab({
-  deletedDocuments,
   files,
   isSaving,
   model,
   onCreateOutcome,
   onFilesChanged,
   onMoveToDone,
-  onToggleExistingDocumentDeleted,
 }: {
-  deletedDocuments: Record<string, boolean>
   files: File[]
   isSaving: boolean
   model: AvailablePaymentTaskModel
   onCreateOutcome: () => void
   onFilesChanged: (files: File[]) => void
   onMoveToDone: () => void
-  onToggleExistingDocumentDeleted: (document: AvailablePaymentDocument, index: number) => void
 }) {
   const { t } = useI18n()
   const isDone = model.task.TaskStatus === TaskStatusValue.Done
@@ -1452,12 +1392,7 @@ function PaymentTab({
           )}
         </Group>
       </Group>
-      <DocumentsList
-        deletedDocuments={deletedDocuments}
-        disabled={isSaving}
-        documents={model.task.SupplyPaymentTaskDocuments || []}
-        onToggleDeleted={onToggleExistingDocumentDeleted}
-      />
+      <DocumentsList documents={model.task.SupplyPaymentTaskDocuments || []} />
       {files.length > 0 && (
         <>
           <Divider />
@@ -1586,17 +1521,7 @@ function RedirectToSourceButton({
   )
 }
 
-function DocumentsList({
-  deletedDocuments = EMPTY_DELETED_DOCUMENTS,
-  disabled = false,
-  documents,
-  onToggleDeleted,
-}: {
-  deletedDocuments?: Record<string, boolean>
-  disabled?: boolean
-  documents: AvailablePaymentDocument[]
-  onToggleDeleted?: (document: AvailablePaymentDocument, index: number) => void
-}) {
+function DocumentsList({ documents }: { documents: AvailablePaymentDocument[] }) {
   const { t } = useI18n()
 
   if (documents.length === 0) {
@@ -1613,7 +1538,7 @@ function DocumentsList({
         const key = getDocumentKey(document, index)
         const label = document.FileName || document.Name || t('Документ')
         const url = getDocumentUrl(document)
-        const isDeleted = isDocumentDeleted(document, index, deletedDocuments)
+        const isDeleted = Boolean(document.Deleted)
         const content = url && !isDeleted ? (
           <Anchor key={key} href={upgradeHttpToHttps(url)} rel="noreferrer" size="sm" target="_blank">
             {label}
@@ -1624,27 +1549,7 @@ function DocumentsList({
           </Text>
         )
 
-        if (!onToggleDeleted) {
-          return content
-        }
-
-        return (
-          <Group key={key} gap="xs" justify="space-between" wrap="nowrap">
-            <div>{content}</div>
-            <Tooltip label={isDeleted ? t('Відновити') : t('Видалити')}>
-              <ActionIcon
-                aria-label={isDeleted ? t('Відновити') : t('Видалити')}
-                color={isDeleted ? 'blue' : 'red'}
-                disabled={disabled}
-                size="sm"
-                variant="subtle"
-                onClick={() => onToggleDeleted(document, index)}
-              >
-                {isDeleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        )
+        return content
       })}
     </Stack>
   )
@@ -1685,15 +1590,11 @@ function getLocalFileKey(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`
 }
 
-function buildTaskWithDocumentChanges(
-  model: AvailablePaymentTaskModel,
-  files: File[],
-  deletedDocuments: Record<string, boolean> = EMPTY_DELETED_DOCUMENTS,
-): SupplyPaymentTask {
+function buildTaskWithDocumentChanges(model: AvailablePaymentTaskModel, files: File[]): SupplyPaymentTask {
   return {
     ...model.task,
     SupplyPaymentTaskDocuments: [
-      ...markDeletedDocuments(model.task.SupplyPaymentTaskDocuments || [], deletedDocuments),
+      ...(model.task.SupplyPaymentTaskDocuments || []),
       ...files.map((file) => ({
         ContentType: file.type,
         FileName: file.name,
@@ -1702,44 +1603,34 @@ function buildTaskWithDocumentChanges(
   }
 }
 
-function markDeletedDocuments(
-  documents: AvailablePaymentDocument[],
-  deletedDocuments: Record<string, boolean>,
-): AvailablePaymentDocument[] {
-  return documents.map((document, index) => ({
-    ...document,
-    Deleted: isDocumentDeleted(document, index, deletedDocuments),
-  }))
-}
-
-function isDocumentDeleted(
-  document: AvailablePaymentDocument,
-  index: number,
-  deletedDocuments: Record<string, boolean>,
-): boolean {
-  const key = getDocumentKey(document, index)
-
-  return key in deletedDocuments ? deletedDocuments[key] : Boolean(document.Deleted)
-}
-
-function getTaskDocumentCount(
-  model: AvailablePaymentTaskModel,
-  files: File[],
-  deletedDocuments: Record<string, boolean> = EMPTY_DELETED_DOCUMENTS,
-): number {
-  return countActiveDocuments(markDeletedDocuments(model.task.SupplyPaymentTaskDocuments || [], deletedDocuments)) + files.length
+function getTaskDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
+  return (
+    countActiveDocuments(model.task.SupplyPaymentTaskDocuments) +
+    countActiveDocuments(model.documents) +
+    files.length
+  )
 }
 
 function countActiveDocuments(documents: AvailablePaymentDocument[] = []): number {
   return documents.filter((document) => !document.Deleted).length
 }
 
-function getGroupedPaymentTaskKey(group: GroupedPaymentTask | null): string {
-  if (!group) {
-    return ''
+function uniqueOutcomeModels(models: AvailablePaymentTaskModel[]): AvailablePaymentTaskModel[] {
+  const modelsByTaskKey = new Map<string, AvailablePaymentTaskModel>()
+
+  for (const model of models) {
+    const taskKey = getOutcomeTaskKey(model)
+
+    if (!modelsByTaskKey.has(taskKey)) {
+      modelsByTaskKey.set(taskKey, model)
+    }
   }
 
-  return String(group.NetUid || group.Id || group.PayToDate || '')
+  return Array.from(modelsByTaskKey.values())
+}
+
+function getOutcomeTaskKey(model: AvailablePaymentTaskModel): string {
+  return String(model.task.NetUid || model.task.Id || model.id)
 }
 
 function getInvoiceRowKey(model: AvailablePaymentTaskModel, row: AvailablePaymentTaskRow, rowIndex: number): string {
@@ -1845,9 +1736,10 @@ function isRegisterForOrganization(
 
 function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): OutcomeFormState {
   const now = new Date()
+  const uniqueModels = uniqueOutcomeModels(models)
 
   return {
-    amount: models.reduce((total, model) => total + (model.grossPrice || 0), 0),
+    amount: uniqueModels.reduce((total, model) => total + (model.grossPrice || 0), 0),
     comment: '',
     customNumber: '',
     date: formatLocalDate(now),
@@ -1856,7 +1748,7 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
     isManagementAccounting: false,
     movementSearch: '',
     movementValue: '',
-    organizationValue: models[0]?.organization ? getEntityValue(models[0].organization) : '',
+    organizationValue: uniqueModels[0]?.organization ? getEntityValue(uniqueModels[0].organization) : '',
     paymentPurpose: '',
     registerValue: '',
     selectedCurrencyValue: '',

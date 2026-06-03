@@ -27,14 +27,20 @@ import {
   type TaxFreeAdvancePaymentPayload,
 } from '../api/taxFreeDocumentsApi'
 import type { TaxFreeDocument } from '../types'
-import { getTaxFreeClient } from '../utils'
+import { TAX_FREE_CURRENCY_CODE, formatTaxFreeAmountPl, getTaxFreeClient } from '../utils'
 
 const SEARCH_DEBOUNCE_MS = 300
+const POLAND_CULTURE = 'pl'
+const CASH_REGISTER_TYPE = 0
 
 export type TaxFreePaymentAction = 'advance' | 'income'
 
 type TaxFreePaymentRegister = PaymentRegister & {
   DefaultPaymentCurrencyRegister?: PaymentCurrencyRegister | null
+}
+
+type OrganizationWithCulture = Organization & {
+  Culture?: string
 }
 
 type NameLikeEntity = {
@@ -137,7 +143,7 @@ export function TaxFreePaymentFromTaxFreeModal({
                 return [] as ClientAgreement[]
               })
             : Promise.resolve([] as ClientAgreement[]),
-          isIncome ? searchIncomeCashflowPaymentRegisters('') as Promise<TaxFreePaymentRegister[]> : Promise.resolve([] as TaxFreePaymentRegister[]),
+          isIncome ? searchIncomeCashflowPaymentRegisters('') : Promise.resolve([] as PaymentRegister[]),
           isIncome ? getIncomeCashflowPaymentMovements() : Promise.resolve([] as PaymentMovement[]),
         ])
 
@@ -145,18 +151,19 @@ export function TaxFreePaymentFromTaxFreeModal({
           return
         }
 
-        const defaultOrganization = nextOrganizations[0] || null
+        const taxFreeRegisters = filterTaxFreeRegisters(nextRegisters)
+        const defaultOrganization = pickDefaultOrganization(nextOrganizations)
         const defaultAgreement = nextAgreements[0] || null
-        const defaultRegister = nextRegisters[0] || null
+        const defaultRegister = taxFreeRegisters[0] || null
         const defaultMovement = nextMovements[0] || null
 
         setOrganizations(nextOrganizations)
         setClientAgreements(nextAgreements)
-        setPaymentRegisters(nextRegisters)
+        setPaymentRegisters(taxFreeRegisters)
         setPaymentMovements(nextMovements)
         setForm({
           ...createInitialForm(),
-          amount: 0,
+          amount: activeDocument.VatAmountPl ?? 0,
           fromDate: getInitialPaymentDate(activeDocument, isIncome),
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
@@ -279,11 +286,10 @@ export function TaxFreePaymentFromTaxFreeModal({
           Currency: selectedCurrencyRegister?.Currency || undefined,
           FromDate: toIsoDate(form.fromDate),
           Organization: selectedOrganization,
-          PaymentCurrencyRegister: selectedCurrencyRegister,
           PaymentMovementOperation: {
             PaymentMovement: activeMovement,
           },
-          PaymentRegister: selectedRegister,
+          PaymentRegister: selectedCurrencyRegister?.PaymentRegister || undefined,
         }
 
         await createIncomePaymentFromTaxFree(document.NetUid, order)
@@ -321,6 +327,9 @@ export function TaxFreePaymentFromTaxFreeModal({
             </Text>
             <Text size="sm" c="dimmed">
               {t('Tax Free')}: {document.Number || document.NetUid}
+            </Text>
+            <Text size="sm">
+              {t('Сума')}: {formatTaxFreeAmountPl(document.VatAmountPl)}
             </Text>
           </Stack>
         ) : null}
@@ -550,6 +559,28 @@ function pickCurrencyRegister(register: TaxFreePaymentRegister | null) {
   }
 
   return register.DefaultPaymentCurrencyRegister || register.PaymentCurrencyRegisters?.[0] || null
+}
+
+function filterTaxFreeRegisters(registers: PaymentRegister[]): TaxFreePaymentRegister[] {
+  return registers
+    .filter(
+      (register) =>
+        register.Type === CASH_REGISTER_TYPE
+        && (register.PaymentCurrencyRegisters || []).some((currencyRegister) => currencyRegister.Currency?.Code === TAX_FREE_CURRENCY_CODE),
+    )
+    .map((register) => ({
+      ...register,
+      DefaultPaymentCurrencyRegister:
+        (register.PaymentCurrencyRegisters || []).find((currencyRegister) => currencyRegister.Currency?.Code === TAX_FREE_CURRENCY_CODE) || null,
+    }))
+}
+
+function pickDefaultOrganization(organizations: Organization[]): Organization | null {
+  return (
+    organizations.find((organization) => (organization as OrganizationWithCulture).Culture === POLAND_CULTURE)
+    || organizations[0]
+    || null
+  )
 }
 
 function getInitialPaymentDate(document: TaxFreeDocument, withBounds: boolean): string {

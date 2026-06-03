@@ -11,6 +11,7 @@ import {
   getSupplyOrderProductIncomeByNetId,
   getSupplyOrderUkraineProductIncomeByNetId,
 } from '../api/productIncomeDocumentsApi'
+import { getActiveProductIncomeItems } from '../productIncomeDocumentItems'
 import type {
   NamedEntity,
   ProductIncomeInfo,
@@ -132,7 +133,7 @@ function SupplyOrderProductPlacementContent({
     }
   }, [id, loadIncome, setError, setIncome, setLoading, t])
 
-  const rows = useMemo(() => mapRows(income?.ProductIncomeItems || []), [income?.ProductIncomeItems])
+  const rows = useMemo(() => mapRows(getActiveProductIncomeItems(income)), [income])
   const columns = usePlacementColumns(setPlacementDetailsRow)
   const firstPackingItem = rows[0]?.item.PackingListPackageOrderItem
   const firstUkraineItem = rows[0]?.item.SupplyOrderUkraineItem

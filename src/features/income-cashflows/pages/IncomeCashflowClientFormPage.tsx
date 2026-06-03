@@ -673,6 +673,14 @@ export function IncomeCashflowClientFormPage() {
       selectedRegister,
       selectedSupplyOrganization,
       t,
+    }) || validateDebtSelection({
+      autoAllocate: form.autoAllocate,
+      debtAmounts: form.debtAmounts,
+      isSupplierSearch,
+      operationType,
+      selectedDebtValues: form.selectedDebtValues,
+      t,
+      visibleDebts,
     })
 
     if (validationError) {
@@ -1113,6 +1121,7 @@ function buildIncomePaymentOrder({
   selectedSupplyAgreement: SupplyOrganizationAgreement | null
   selectedSupplyOrganization: SupplyOrganization | null
 }): IncomePaymentOrder {
+  const selectedClientDebts = form.autoAllocate ? debts : pickSelectedDebts(debts, form)
   const order: IncomePaymentOrder = {
     Amount: form.amount,
     ArrivalNumber: form.entranceNumber.trim(),
@@ -1143,7 +1152,7 @@ function buildIncomePaymentOrder({
     order.Client = {
       ...selectedClient,
       ClientAgreements: selectedClientAgreement ? [selectedClientAgreement] : selectedClient.ClientAgreements,
-      ClientInDebts: debts,
+      ClientInDebts: selectedClientDebts,
     }
     order.ClientAgreement = selectedClientAgreement || undefined
   }
@@ -1170,24 +1179,25 @@ function buildIncomePaymentOrderSales(debts: ClientInDebt[], form: FormState): I
     return []
   }
 
-  const sales: IncomePaymentOrderSale[] = []
-  const selectedDebtValueSet = form.selectedDebtValues.length ? new Set(form.selectedDebtValues) : null
-
-  for (const debt of debts) {
+  return pickSelectedDebts(debts, form).map((debt) => {
     const debtValue = getDebtValue(debt)
 
-    if (selectedDebtValueSet && !selectedDebtValueSet.has(debtValue)) {
-      continue
-    }
-
-    sales.push({
+    return {
       Amount: form.debtAmounts[debtValue] || 0,
       ReSale: debt.ReSale || undefined,
       Sale: debt.Sale || undefined,
-    })
+    }
+  })
+}
+
+function pickSelectedDebts(debts: ClientInDebt[], form: FormState): ClientInDebt[] {
+  if (!form.selectedDebtValues.length) {
+    return []
   }
 
-  return sales
+  const selectedDebtValueSet = new Set(form.selectedDebtValues)
+
+  return debts.filter((debt) => selectedDebtValueSet.has(getDebtValue(debt)))
 }
 
 function validateForm({
@@ -1236,6 +1246,39 @@ function validateForm({
   }
 
   return null
+}
+
+function validateDebtSelection({
+  autoAllocate,
+  debtAmounts,
+  isSupplierSearch,
+  operationType,
+  selectedDebtValues,
+  t,
+  visibleDebts,
+}: {
+  autoAllocate: boolean
+  debtAmounts: Record<string, number>
+  isSupplierSearch: boolean
+  operationType: IncomePaymentOperationType
+  selectedDebtValues: string[]
+  t: (value: string) => string
+  visibleDebts: ClientInDebt[]
+}): string | null {
+  if (isSupplierSearch || operationType !== IncomePaymentOperationType.ClientPayment || autoAllocate || !visibleDebts.length) {
+    return null
+  }
+
+  if (!selectedDebtValues.length) {
+    return t('Оберіть рахунок для оплати')
+  }
+
+  const visibleDebtValues = new Set(visibleDebts.map(getDebtValue))
+  const totalPayment = selectedDebtValues
+    .filter((debtValue) => visibleDebtValues.has(debtValue))
+    .reduce((sum, debtValue) => sum + (debtAmounts[debtValue] || 0), 0)
+
+  return totalPayment > 0 ? null : t('Сума платежу по рахунках має бути більшою за нуль')
 }
 
 function parseRegisterType(value: string | null): PaymentRegisterType {

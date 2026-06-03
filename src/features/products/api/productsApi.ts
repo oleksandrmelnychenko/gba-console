@@ -702,18 +702,21 @@ function ensureProduct(product: Product): Product {
 }
 
 function buildProductUpdatePayload(product: Product): Product {
-  return {
-    ...product,
-    BaseAnalogueProducts: undefined,
-    BaseSetProducts: undefined,
-    CalculatedPrices: undefined,
-    ComponentProducts: undefined,
-    ProductAvailabilities: undefined,
-    ProductImages: undefined,
-    ProductPricings: undefined,
-    ProductProductGroups: undefined,
-    ProductSpecifications: Array.isArray(product.ProductSpecifications) ? product.ProductSpecifications : undefined,
-  }
+  const payload = { ...product }
+
+  delete payload.AnalogueProducts
+  delete payload.BaseAnalogueProducts
+  delete payload.BaseSetProducts
+  delete payload.CalculatedPrices
+  delete payload.ComponentProducts
+  delete payload.ProductAvailabilities
+  delete payload.ProductImages
+  delete payload.ProductOriginalNumbers
+  delete payload.ProductPricings
+  delete payload.ProductProductGroups
+  delete payload.ProductSpecifications
+
+  return payload
 }
 
 function buildProductImageUpdatePayload(product: Product): Product {

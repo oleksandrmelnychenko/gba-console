@@ -505,7 +505,7 @@ function useProductRemainBatchesLoader({
         if (!cancelled) {
           setBatchRows((currentRows) => (currentOffset > 0 ? currentRows.concat(response.Collection) : response.Collection))
           setBatchTotals(response)
-          setBatchHasMore(response.Collection.length === pageSize)
+          setBatchHasMore(hasMoreCollectionPage(currentOffset, response, pageSize))
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -595,7 +595,7 @@ function useProductRemainProductsLoader({
         if (!cancelled) {
           setProductRows((currentRows) => (currentOffset > 0 ? currentRows.concat(response.Collection) : response.Collection))
           setProductTotals(response)
-          setProductHasMore(response.Collection.length === pageSize)
+          setProductHasMore(hasMoreCollectionPage(currentOffset, response, pageSize))
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -620,6 +620,20 @@ function useProductRemainProductsLoader({
       cancelled = true
     }
   }, [dateFrom, dateTo, filterError, pageSize, productOffset, productSearchValue, reloadKey, resetProductsForInvalidFilter, selectedSupplierNetId, setLoadingProducts, setProductError, setProductHasMore, setProductRows, setProductTotals, storageNetId, t])
+}
+
+function hasMoreCollectionPage<TItem>(
+  offset: number,
+  response: CollectionWithTotals<TItem>,
+  pageSize: number,
+): boolean {
+  const totalQty = response.TotalQtyFiltered ?? response.TotalQty
+
+  if (typeof totalQty === 'number') {
+    return offset + response.Collection.length < totalQty
+  }
+
+  return response.Collection.length === pageSize
 }
 
 export function ProductRemainsPage() {

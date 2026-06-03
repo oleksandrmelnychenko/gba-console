@@ -142,6 +142,24 @@ function getCurrentRootRelation(productGroup?: ProductGroup | null): ProductSubG
   return (
     productGroup?.RootProductGroups?.find(
       (rootProductGroup) => rootProductGroup.Deleted !== true && Boolean(rootProductGroup.RootProductGroup),
-    ) || null
+    ) || getFallbackRootRelation(productGroup)
   )
+}
+
+function getFallbackRootRelation(productGroup?: ProductGroup | null): ProductSubGroup | null {
+  if (!productGroup?.RootProductGroup || productGroup.RootProductGroup.Deleted) {
+    return null
+  }
+
+  return {
+    RootProductGroup: productGroup.RootProductGroup,
+    RootProductGroupId: productGroup.RootProductGroup.Id,
+    SubProductGroup: {
+      FullName: productGroup.FullName,
+      Id: productGroup.Id,
+      Name: productGroup.Name,
+      NetUid: productGroup.NetUid,
+    },
+    SubProductGroupId: productGroup.Id,
+  }
 }

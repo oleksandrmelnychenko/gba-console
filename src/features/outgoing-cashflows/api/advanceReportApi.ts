@@ -8,6 +8,8 @@ import type {
   SupplyOrganization,
 } from '../advanceReportTypes'
 
+const LOCAL_NET_UID_PREFIX = 'local-'
+
 export async function getAdvanceReportOrder(netId: string): Promise<AdvanceReportOrder | null> {
   const result = await apiRequest<unknown>(`/payments/orders/outcome/get?netId=${encodeURIComponent(netId)}`)
 
@@ -15,8 +17,9 @@ export async function getAdvanceReportOrder(netId: string): Promise<AdvanceRepor
 }
 
 export async function calculateAdvanceReportOrder(order: AdvanceReportOrder): Promise<AdvanceReportOrder | null> {
+  const payload = sanitizeAdvanceReportOrder(order)
   const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
-    body: order,
+    body: payload,
     method: 'POST',
   })
 
@@ -28,10 +31,12 @@ export async function updateAdvanceReportOrder(
   order: AdvanceReportOrder,
   documentFiles: File[] = [],
 ): Promise<AdvanceReportOrder | null> {
+  const payload = sanitizeAdvanceReportOrder(order)
+
   if (documentFiles.length > 0) {
     const formData = new FormData()
 
-    formData.append('order', JSON.stringify(order))
+    formData.append('order', JSON.stringify(payload))
     documentFiles.forEach((file) => formData.append('documents', file))
 
     const result = await apiRequest<unknown>('/payments/orders/outcome/upload/update', {
@@ -46,7 +51,7 @@ export async function updateAdvanceReportOrder(
   }
 
   const result = await apiRequest<unknown>('/payments/orders/outcome/update', {
-    body: order,
+    body: payload,
     method: 'POST',
     query: {
       auto: createIncomeAutomatically,
@@ -163,6 +168,37 @@ function normalizeSupplyOrganization(result: unknown): SupplyOrganization | null
       ? organization.SupplyOrganizationAgreements
       : [],
   }
+}
+
+function sanitizeAdvanceReportOrder(order: AdvanceReportOrder): AdvanceReportOrder {
+  return stripLocalNetUidFields(order)
+}
+
+function stripLocalNetUidFields<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripLocalNetUidFields(item)) as T
+  }
+
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+
+  const source = value as Record<string, unknown>
+  const sanitized: Record<string, unknown> = {}
+
+  for (const [key, item] of Object.entries(source)) {
+    if (key === 'NetUid' && isLocalNetUid(item)) {
+      continue
+    }
+
+    sanitized[key] = stripLocalNetUidFields(item)
+  }
+
+  return sanitized as T
+}
+
+function isLocalNetUid(value: unknown): boolean {
+  return typeof value === 'string' && value.startsWith(LOCAL_NET_UID_PREFIX)
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

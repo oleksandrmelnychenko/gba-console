@@ -111,6 +111,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION)
   const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canUploadSpecifications = hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(selectedInvoice)
+  const isActionBusy = isUploading || isSavingDocuments || isDownloading || isSavingSpecification || isInvoiceLoading
   const filteredPackingList = filterPackingListByVendorCode(packingList, vendorCodeFilter)
 
   useEffect(() => {
@@ -240,7 +241,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   }, [selectedPackListNetId, t])
 
   function selectInvoice(invoice: SupplyInvoice) {
-    if (isUploading || isSavingDocuments || isDownloading || isSavingSpecification) {
+    if (isActionBusy) {
       return
     }
 
@@ -256,7 +257,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   }
 
   function selectPackList(packList: { NetUid?: string }) {
-    if (isUploading || isSavingDocuments || isDownloading || isSavingSpecification) {
+    if (isActionBusy) {
       return
     }
 
@@ -584,6 +585,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
               { label: t('EUR'), value: 'eur' },
               { label: t('UAH'), value: 'uah' },
             ]}
+            disabled={isActionBusy}
             value={currencyIsEur ? 'eur' : 'uah'}
             onChange={(value) => setCurrencyIsEur(value === 'eur')}
           />
@@ -592,6 +594,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
               { label: 'УО', value: 'management' },
               { label: 'БО', value: 'base' },
             ]}
+            disabled={isActionBusy}
             value={withManagementServices ? 'management' : 'base'}
             onChange={(value) => setWithManagementServices(value === 'management')}
           />
@@ -610,29 +613,31 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
             <Group justify="flex-end" gap="xs">
-	              {canUploadSpecifications && (
+                {canUploadSpecifications && (
                 <Button
-                  disabled={isUploading || isSavingDocuments || isSavingSpecification}
+                  disabled={isActionBusy}
                   leftSection={<IconFileImport size={16} />}
+                  loading={isUploading}
                   variant="light"
                   onClick={() => setUploadOpen(true)}
                 >
                   {t('Завантаження митних кодів')}
                 </Button>
               )}
-	              {canUploadDocuments && (
+                {canUploadDocuments && (
                 <Button
-                  disabled={!selectedInvoice || isSavingDocuments || isUploading || isSavingSpecification}
+                  disabled={!selectedInvoice || isActionBusy}
                   leftSection={<IconFileImport size={16} />}
+                  loading={isSavingDocuments}
                   variant="light"
                   onClick={openDocuments}
                 >
                   {t('Завантаження документів доставки')}
                 </Button>
               )}
-	              {canDownload && (
+                {canDownload && (
                 <Button
-                  disabled={isDownloading || isSavingDocuments || isUploading || isSavingSpecification}
+                  disabled={isActionBusy}
                   leftSection={<IconDownload size={16} />}
                   loading={isDownloading}
                   variant="light"
@@ -648,7 +653,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
 	                <Button
 	                  key={invoice.NetUid || invoice.Id}
 	                  color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
-	                  disabled={isUploading || isSavingDocuments || isDownloading || isSavingSpecification}
+	                  disabled={isActionBusy}
 	                  loading={isInvoiceLoading && invoice.NetUid === selectedInvoiceNetId}
                   variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
                   onClick={() => selectInvoice(invoice)}
@@ -664,7 +669,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
 	                  <Button
 	                    key={packList.NetUid || packList.Id}
 	                    color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
-	                    disabled={isUploading || isSavingDocuments || isDownloading || isSavingSpecification}
+	                    disabled={isActionBusy}
 	                    size="xs"
                     variant={packList.NetUid === selectedPackListNetId ? 'outline' : 'subtle'}
                     onClick={() => selectPackList(packList)}
@@ -685,6 +690,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
               <TextInput
                 label={t('Пошук')}
                 placeholder={t('Код товару')}
+                disabled={isActionBusy}
                 value={vendorCodeFilter}
                 w={260}
                 onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}

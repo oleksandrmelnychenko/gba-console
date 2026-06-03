@@ -1,9 +1,10 @@
 import type { ProductIncomeDocument } from './types'
+import { getActiveProductIncomeItems } from './productIncomeDocumentItems'
 
 const ACT_RECONCILIATION_PATH = '/ukraine/act/reconcoliation'
 
 export function getProductIncomeDocumentSourceLink(document: ProductIncomeDocument): string | null {
-  const items = document.ProductIncomeItems || []
+  const items = getActiveProductIncomeItems(document)
 
   const actReconciliationNetUid = items.find((item) => item.ActReconciliationItem?.ActReconciliation?.NetUid)
     ?.ActReconciliationItem?.ActReconciliation?.NetUid
@@ -27,10 +28,6 @@ export function getProductIncomeDocumentSourceLink(document: ProductIncomeDocume
 
   if (capitalizationNetUid) {
     return `/products/capitalization?netId=${encodeURIComponent(capitalizationNetUid)}`
-  }
-
-  if (items.some((item) => item.SaleReturnItem !== null && typeof item.SaleReturnItem !== 'undefined')) {
-    return '/sales/return/client'
   }
 
   return null

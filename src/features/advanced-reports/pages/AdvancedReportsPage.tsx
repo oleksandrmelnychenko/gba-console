@@ -34,6 +34,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
+  calculateAdvancedReportOrder,
   getAdvancedReportCurrencies,
   getAdvancedReportPaymentMovements,
   getAdvancedReports,
@@ -100,15 +101,19 @@ export function AdvancedReportsPage() {
   const [isLoadingLookups, setLoadingLookups] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AdvancedReportRow | null>(null)
   const [structureRow, setStructureRow] = useValueState<AdvancedReportRow | null>(null)
+  const [structureCalculatedOrder, setStructureCalculatedOrder] = useValueState<OutcomePaymentOrder | null>(null)
+  const [structureCalculationError, setStructureCalculationError] = useValueState<string | null>(null)
+  const [isCalculatingStructure, setCalculatingStructure] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const filterError = getDateRangeError(fromDate, toDate)
   const lookupRequestRef = useRef(0)
+  const structureCalculationRequestRef = useRef(0)
 
   const offset = (page - 1) * pageSize
-  const totalRows = getTotalRows(reports.Collection)
+  const totalRows = getTotalRows(reports)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
 
   const activeFilters = useMemo<AdvancedReportsSearchParams>(
@@ -256,11 +261,65 @@ export function AdvancedReportsPage() {
     [openAdvanceReport, setSelectedRow],
   )
 
+  const openDocumentStructure = useCallback(
+    (row: AdvancedReportRow) => {
+      const orderToCalculate = getDocumentStructureOutcomeToCalculate(row.order)
+      const requestId = structureCalculationRequestRef.current + 1
+      structureCalculationRequestRef.current = requestId
+
+      setStructureRow(row)
+      setStructureCalculatedOrder(null)
+      setStructureCalculationError(null)
+
+      if (!orderToCalculate) {
+        setCalculatingStructure(false)
+        return
+      }
+
+      setCalculatingStructure(true)
+      void calculateAdvancedReportOrder(orderToCalculate)
+        .then((calculatedOrder) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setStructureCalculatedOrder(calculatedOrder)
+          }
+        })
+        .catch((calculationError: unknown) => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setStructureCalculationError(
+              calculationError instanceof Error
+                ? calculationError.message
+                : t('Не вдалося перерахувати структуру документів'),
+            )
+          }
+        })
+        .finally(() => {
+          if (structureCalculationRequestRef.current === requestId) {
+            setCalculatingStructure(false)
+          }
+        })
+    },
+    [
+      setCalculatingStructure,
+      setStructureCalculatedOrder,
+      setStructureCalculationError,
+      setStructureRow,
+      t,
+    ],
+  )
+
+  const closeDocumentStructure = useCallback(() => {
+    structureCalculationRequestRef.current += 1
+    setStructureRow(null)
+    setStructureCalculatedOrder(null)
+    setStructureCalculationError(null)
+    setCalculatingStructure(false)
+  }, [setCalculatingStructure, setStructureCalculatedOrder, setStructureCalculationError, setStructureRow])
+
   const rows = useMemo(() => buildAdvancedReportRows(reports.Collection), [reports.Collection])
   const columns = useAdvancedReportColumns({
     onEdit: openAdvanceReport,
     onOpen: setSelectedRow,
-    onOpenDocumentStructure: setStructureRow,
+    onOpenDocumentStructure: openDocumentStructure,
   })
   const isTableBusy = isLoading || isSearchSettling
 
@@ -461,7 +520,13 @@ export function AdvancedReportsPage() {
       )}
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
-      <AdvancedReportDocumentStructureDrawer row={structureRow} onClose={() => setStructureRow(null)} />
+      <AdvancedReportDocumentStructureDrawer
+        calculatedOrder={structureCalculatedOrder}
+        calculationError={structureCalculationError}
+        isCalculating={isCalculatingStructure}
+        row={structureRow}
+        onClose={closeDocumentStructure}
+      />
     </Stack>
   )
 }
@@ -728,24 +793,47 @@ function AdvancedReportDetailDrawer({ row, onClose }: { row: AdvancedReportRow |
 }
 
 function AdvancedReportDocumentStructureDrawer({
+  calculatedOrder,
+  calculationError,
+  isCalculating,
   onClose,
   row,
 }: {
+  calculatedOrder: OutcomePaymentOrder | null
+  calculationError: string | null
+  isCalculating: boolean
   onClose: () => void
   row: AdvancedReportRow | null
 }) {
   const { t } = useI18n()
-  const assignedOrders = row?.order.AssignedPaymentOrders || []
+  const assignedOrders = getActiveAssignedPaymentOrders(row?.order.AssignedPaymentOrders)
   const rootAssignedOrder = row?.order.RootAssignedPaymentOrder || null
+  const calculatedTotal = calculatedOrder?.Amount
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Структура документів')} onClose={onClose}>
       {row && (
         <Stack gap="md">
+          {isCalculating && (
+            <Alert color="blue" variant="light">
+              {t('Перерахунок структури документів...')}
+            </Alert>
+          )}
+
+          {calculationError && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {calculationError}
+            </Alert>
+          )}
+
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
+            <DetailItem
+              label={t('Перерахована сума')}
+              value={hasNumber(calculatedTotal) ? formatMoneyWithCurrency(calculatedTotal, row.currency) : displayValue(undefined)}
+            />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
             <DetailItem label={t('Курс')} value={displayValue(row.order.ExchangeRate)} />
             <DetailItem label={t('Сума в EUR')} value={hasNumber(row.order.AfterExchangeAmount) ? formatMoney(row.order.AfterExchangeAmount) : displayValue(undefined)} />
@@ -763,20 +851,24 @@ function AdvancedReportDocumentStructureDrawer({
 
           <Stack gap="sm">
             {rootAssignedOrder && !rootAssignedOrder.Deleted && (
-              <AssignedPaymentOrderBlock assignedPaymentOrder={rootAssignedOrder} parentOrder={row.order} title={t('Кореневий документ')} />
+              <AssignedPaymentOrderBlock
+                assignedPaymentOrder={rootAssignedOrder}
+                calculatedTotal={calculatedTotal}
+                parentOrder={row.order}
+                title={t('Кореневий документ')}
+              />
             )}
 
-            {assignedOrders.filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted).length > 0 ? (
-              assignedOrders
-                .filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted)
-                .map((assignedPaymentOrder, index) => (
-                  <AssignedPaymentOrderBlock
-                    key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
-                    assignedPaymentOrder={assignedPaymentOrder}
-                    parentOrder={row.order}
-                    title={`${t('Пов’язаний документ')} ${index + 1}`}
-                  />
-                ))
+            {assignedOrders.length > 0 ? (
+              assignedOrders.map((assignedPaymentOrder, index) => (
+                <AssignedPaymentOrderBlock
+                  key={getAssignedPaymentOrderKey(assignedPaymentOrder, index)}
+                  assignedPaymentOrder={assignedPaymentOrder}
+                  calculatedTotal={calculatedTotal}
+                  parentOrder={row.order}
+                  title={`${t('Пов’язаний документ')} ${index + 1}`}
+                />
+              ))
             ) : !rootAssignedOrder || rootAssignedOrder.Deleted ? (
               <Text c="dimmed" size="sm">
                 {t('Структура документів відсутня')}
@@ -791,10 +883,12 @@ function AdvancedReportDocumentStructureDrawer({
 
 function AssignedPaymentOrderBlock({
   assignedPaymentOrder,
+  calculatedTotal,
   parentOrder,
   title,
 }: {
   assignedPaymentOrder: AssignedPaymentOrder
+  calculatedTotal?: number
   parentOrder: OutcomePaymentOrder
   title: string
 }) {
@@ -810,6 +904,7 @@ function AssignedPaymentOrderBlock({
       </Group>
       <AdvanceReportStructureSummary
         assignedPaymentOrder={assignedPaymentOrder}
+        calculatedTotal={calculatedTotal}
         parentOrder={parentOrder}
       />
       {assignedOutcome && <AssignedOutcomeOrderView order={assignedOutcome} />}
@@ -825,9 +920,11 @@ function AssignedPaymentOrderBlock({
 
 function AdvanceReportStructureSummary({
   assignedPaymentOrder,
+  calculatedTotal,
   parentOrder,
 }: {
   assignedPaymentOrder: AssignedPaymentOrder
+  calculatedTotal?: number
   parentOrder: OutcomePaymentOrder
 }) {
   const { t } = useI18n()
@@ -839,12 +936,13 @@ function AdvanceReportStructureSummary({
     || assignedOutcome?.PaymentCurrencyRegister?.Currency?.Name
     || parentOrder.PaymentCurrencyRegister?.Currency?.Code
     || parentOrder.PaymentCurrencyRegister?.Currency?.Name
+  const advanceReportTotal = hasNumber(calculatedTotal) ? calculatedTotal : parentOrder.Amount
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2 }}>
       <DetailItem label={t('Авансовий звіт')} value={displayValue(parentOrder.AdvanceNumber)} />
       <DetailItem label={t('Дата авансового звіту')} value={formatDateTime(assignedOutcome?.Created || assignedOutcome?.FromDate || parentOrder.FromDate)} />
-      <DetailItem label={t('Сума авансового звіту')} value={formatMoneyWithCurrency(parentOrder.Amount, currency)} />
+      <DetailItem label={t('Сума авансового звіту')} value={formatMoneyWithCurrency(advanceReportTotal, currency)} />
       <DetailItem label={t('Сума зв’язки')} value={formatMoneyWithCurrency(assignedPaymentOrder.Amount, currency)} />
     </SimpleGrid>
   )
@@ -891,20 +989,16 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function getTotalRows(orders: OutcomePaymentOrder[]): number {
-  const total = orders[0]?.TotalRowsQty
+function getTotalRows(reports: AdvancedReportsResponse): number {
+  const total = reports.TotalRowsQty ?? reports.Collection[0]?.TotalRowsQty
 
-  return typeof total === 'number' && Number.isFinite(total) ? total : orders.length
+  return typeof total === 'number' && Number.isFinite(total) ? total : reports.Collection.length
 }
 
 function buildAdvancedReportRows(orders: OutcomePaymentOrder[]): AdvancedReportRow[] {
   const rows: AdvancedReportRow[] = []
 
   for (const order of orders) {
-    if (!order.AdvanceNumber?.trim()) {
-      continue
-    }
-
     rows.push(toAdvancedReportRow(order, rows.length))
   }
 
@@ -923,7 +1017,7 @@ function toAdvancedReportRow(order: OutcomePaymentOrder, index: number): Advance
     hasDocumentStructure: hasDocumentStructure(order),
     id: String(order.NetUid || order.Id || index),
     isUnderReport: order.IsUnderReport,
-    number: order.AdvanceNumber,
+    number: order.AdvanceNumber || order.Number || order.CustomNumber,
     order,
     organization: getEntityName(order.Organization),
     payedTo: getPayedTo(order),
@@ -975,8 +1069,29 @@ function getEntityName(entity?: NamedEntity | null): string | undefined {
 }
 
 function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
-  return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
+  return Boolean(order.IsUnderReport) ||
+    Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
     Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
+}
+
+function getDocumentStructureOutcomeToCalculate(order: OutcomePaymentOrder): OutcomePaymentOrder | null {
+  const rootOutcome = order.RootAssignedPaymentOrder?.AssignedOutcomePaymentOrder
+    || order.RootAssignedPaymentOrder?.RootOutcomePaymentOrder
+    || null
+
+  if (rootOutcome && !rootOutcome.Deleted) {
+    return rootOutcome
+  }
+
+  if (order.IsUnderReport || getActiveAssignedPaymentOrders(order.AssignedPaymentOrders).length > 0) {
+    return order
+  }
+
+  return null
+}
+
+function getActiveAssignedPaymentOrders(orders?: AssignedPaymentOrder[]): AssignedPaymentOrder[] {
+  return (orders || []).filter((assignedPaymentOrder) => !assignedPaymentOrder.Deleted)
 }
 
 function getActiveRelatedConsumableOrders(

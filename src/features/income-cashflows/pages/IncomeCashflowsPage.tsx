@@ -939,8 +939,10 @@ function IncomeDocumentStructure({
   structureCalculation: IncomeDocumentStructureCalculationState
 }) {
   const { t } = useI18n()
-  const rootAssignedOrder = income.RootAssignedPaymentOrder || null
-  const assignedOrders = income.AssignedPaymentOrders || []
+  const rootAssignedOrder = income.RootAssignedPaymentOrder && !income.RootAssignedPaymentOrder.Deleted
+    ? income.RootAssignedPaymentOrder
+    : null
+  const assignedOrders = getActiveIncomeAssignedPaymentOrders(income.AssignedPaymentOrders)
   const outcomeToCalculate = getIncomeDocumentStructureOutcomeToCalculate(income)
   const calculatedOutcomeKey = getOutcomeOrderKey(outcomeToCalculate)
   const calculatedTotal = structureCalculation.calculatedOutcome?.Amount
@@ -1353,7 +1355,7 @@ function buildIncomeCashflowRows(incomeOrders: IncomePaymentOrder[]): IncomeCash
       paymentMovement: income.PaymentMovementOperation?.PaymentMovement?.OperationName,
       paymentRegister: income.PaymentRegister?.Name,
       responsible: getEntityName(income.User),
-      rootAssigned: Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length),
+      rootAssigned: hasIncomeDocumentStructure(income),
     }))
 }
 
@@ -1391,7 +1393,10 @@ function getIncomeOperationTypeName(income: IncomePaymentOrder): string {
 }
 
 function hasIncomeDocumentStructure(income: IncomePaymentOrder): boolean {
-  return Boolean(income.RootAssignedPaymentOrder || income.AssignedPaymentOrders?.length)
+  return Boolean(
+    (income.RootAssignedPaymentOrder && !income.RootAssignedPaymentOrder.Deleted) ||
+    getActiveIncomeAssignedPaymentOrders(income.AssignedPaymentOrders).length > 0,
+  )
 }
 
 function getIncomeDocumentStructureOutcomeToCalculate(income: IncomePaymentOrder): OutcomePaymentOrder | null {

@@ -846,6 +846,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const canUpload =
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
   const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canOpenDeliveryDocuments = Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
   const canEditSpecification = hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
   const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
@@ -917,7 +918,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
                 {canUploadDocuments && (
                   <Button
                     color="gray"
-                    disabled={model.isActionBusy}
+                    disabled={!canOpenDeliveryDocuments || model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
                     loading={model.isSavingDocuments}
                     variant="light"

@@ -4,6 +4,7 @@ import {
   getClientGroups,
   getClientWorkplaces,
 } from './clientLookupsApi'
+import { prepareClientSavePayload } from './clientFormApi'
 import type {
   Client,
   ClientAgreement,
@@ -15,6 +16,7 @@ import type {
   DeliveryRecipient,
   DeliveryRecipientAddress,
   ServicePayer,
+  WorkplaceClientAgreement,
 } from '../types'
 
 export {
@@ -22,6 +24,9 @@ export {
   getClientGroups,
   getClientWorkplaces,
 }
+
+const WORKPLACE_SAVE_OMIT_KEYS = ['MainClient', 'WorkplaceClient', 'ClientGroup']
+const WORKPLACE_AGREEMENT_SAVE_OMIT_KEYS = ['Workplace', 'ClientAgreement']
 
 export async function createClientGroup(name: string, clientId: number): Promise<ClientGroup | null> {
   const result = await apiRequest<unknown>('/clients/new/group', {
@@ -57,7 +62,7 @@ export async function deleteClientGroup(group: ClientGroup): Promise<ClientGroup
 export async function createClientWorkplace(workplace: ClientWorkplace): Promise<ClientWorkplace | null> {
   const result = await apiRequest<unknown>('/clients/new/workplace', {
     method: 'POST',
-    body: workplace,
+    body: prepareClientWorkplaceSavePayload(workplace),
   })
 
   return normalizeCabinetItem<ClientWorkplace>(result)
@@ -66,7 +71,7 @@ export async function createClientWorkplace(workplace: ClientWorkplace): Promise
 export async function updateClientWorkplace(workplace: ClientWorkplace): Promise<ClientWorkplace | null> {
   const result = await apiRequest<unknown>('/clients/update/workplace', {
     method: 'POST',
-    body: workplace,
+    body: prepareClientWorkplaceSavePayload(workplace),
   })
 
   return normalizeCabinetItem<ClientWorkplace>(result)
@@ -207,7 +212,7 @@ export async function uploadClientContract(
     formData.append('documents', document)
   })
 
-  formData.append('client', JSON.stringify(client))
+  formData.append('client', JSON.stringify(prepareClientSavePayload(client)))
 
   const result = await apiRequest<unknown>('/clients/documents/upload/contracts', {
     method: 'POST',
@@ -215,6 +220,44 @@ export async function uploadClientContract(
   })
 
   return normalizeCabinetItem<Client>(result)
+}
+
+function prepareClientWorkplaceSavePayload(workplace: ClientWorkplace): ClientWorkplace {
+  const payload = omitKeys(workplace, WORKPLACE_SAVE_OMIT_KEYS)
+
+  return {
+    ...payload,
+    ClientGroupId: payload.ClientGroupId ?? getEntityId(workplace.ClientGroup),
+    MainClientId: payload.MainClientId ?? workplace.MainClient?.Id,
+    WorkplaceClientAgreements: Array.isArray(workplace.WorkplaceClientAgreements)
+      ? workplace.WorkplaceClientAgreements.map(prepareWorkplaceClientAgreementSavePayload)
+      : workplace.WorkplaceClientAgreements,
+  }
+}
+
+function prepareWorkplaceClientAgreementSavePayload(
+  agreement: WorkplaceClientAgreement,
+): WorkplaceClientAgreement {
+  const payload = omitKeys(agreement, WORKPLACE_AGREEMENT_SAVE_OMIT_KEYS)
+
+  return {
+    ...payload,
+    ClientAgreementId: payload.ClientAgreementId ?? agreement.ClientAgreement?.Id,
+  }
+}
+
+function getEntityId(value: unknown): number | string | undefined {
+  return value && typeof value === 'object' ? (value as { Id?: number | string }).Id : undefined
+}
+
+function omitKeys<T extends object>(value: T, keys: readonly string[]): T {
+  const payload = { ...(value as Record<string, unknown>) }
+
+  keys.forEach((key) => {
+    delete payload[key]
+  })
+
+  return payload as T
 }
 
 function normalizeCabinetList<T>(result: unknown): T[] {
