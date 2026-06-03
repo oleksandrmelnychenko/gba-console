@@ -191,12 +191,12 @@ export function ClientEditPage() {
   // paints) so the editor mounts directly at the step route once — avoids the
   // open → close → reopen flicker that a post-load redirect would cause.
   if (firstStep && !step) {
-    return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} state={location.state} replace />
+    return <Navigate to={`${basePath}/${netid}/${firstStep.value}${location.search}`} state={location.state} replace />
   }
 
   // Invalid/stale step in the URL once the client (and its real steps) loaded.
   if (!isLoading && client && firstStep && !activeStep) {
-    return <Navigate to={`${basePath}/${netid}/${firstStep.value}`} state={location.state} replace />
+    return <Navigate to={`${basePath}/${netid}/${firstStep.value}${location.search}`} state={location.state} replace />
   }
 
   function setField<K extends keyof Client>(key: K, value: Client[K]) {
@@ -513,7 +513,7 @@ export function ClientEditPage() {
   }
 
   function goToStep(nextStep: string) {
-    navigate(`${basePath}/${netid}/${nextStep}`, {
+    navigate(`${basePath}/${netid}/${nextStep}${location.search}`, {
       state: location.state,
     })
   }

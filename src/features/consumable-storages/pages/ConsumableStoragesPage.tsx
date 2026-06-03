@@ -76,9 +76,9 @@ import type {
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['name'],
-    right: ['delete', 'actions'],
+    right: ['products', 'actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
 
 const SEARCH_DEBOUNCE_MS = 350
@@ -277,7 +277,8 @@ export function ConsumableStoragesPage() {
             emptyText={t('Складів не знайдено')}
             getRowId={(storage) => String(storage.NetUid || storage.Id || storage.Name)}
             isLoading={isTableBusy}
-            layoutVersion="consumable-storages-1"
+            layoutVersion="consumable-storages-compact-2"
+            minWidth={960}
             tableId="consumable-storages"
             toolbarLeft={toolbarLeft}
             onRowClick={setSelectedStorage}
@@ -322,78 +323,54 @@ function useConsumableStorageColumns({
       {
         id: 'name',
         header: t('Назва'),
-        minWidth: 240,
+        width: 180,
+        minWidth: 160,
+        maxWidth: 220,
         accessor: (storage) => storage.Name,
-        cell: (storage) => <Text fw={600}>{displayValue(storage.Name)}</Text>,
+        cell: (storage) => <TruncatedCell fw={600} value={storage.Name} />,
       },
       {
         id: 'description',
         header: t('Опис'),
-        width: 260,
+        width: 230,
         minWidth: 180,
+        maxWidth: 300,
         accessor: (storage) => storage.Description,
-        cell: (storage) => displayValue(storage.Description),
+        cell: (storage) => <TruncatedCell value={storage.Description} />,
       },
       {
         id: 'responsible',
         header: t('Відповідальний'),
-        width: 190,
-        minWidth: 150,
+        width: 170,
+        minWidth: 140,
+        maxWidth: 220,
         accessor: (storage) => getEntityName(storage.ResponsibleUser),
-        cell: (storage) => displayValue(getEntityName(storage.ResponsibleUser)),
+        cell: (storage) => <TruncatedCell value={getEntityName(storage.ResponsibleUser)} />,
       },
       {
         id: 'organization',
         header: t('Організація'),
-        width: 210,
-        minWidth: 160,
+        width: 300,
+        minWidth: 220,
         accessor: (storage) => getEntityName(storage.Organization),
-        cell: (storage) => displayValue(getEntityName(storage.Organization)),
+        cell: (storage) => <TruncatedCell value={getEntityName(storage.Organization)} />,
       },
       {
         id: 'products',
         header: t('Позицій'),
-        width: 100,
-        minWidth: 90,
+        width: 82,
+        minWidth: 72,
+        maxWidth: 90,
         align: 'right',
         accessor: (storage) => storage.ConsumableProducts?.length || 0,
         cell: (storage) => String(storage.ConsumableProducts?.length || 0),
       },
       {
-        id: 'delete',
-        header: '',
-        width: 62,
-        minWidth: 58,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (storage) => (
-          <PermissionGate permissionKey={CONSUMABLE_STORAGE_DELETE_PERMISSION}>
-            <Tooltip label={t('Видалити')}>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                disabled={!storage.NetUid}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onDelete(storage)
-                }}
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </PermissionGate>
-        ),
-      },
-      {
         id: 'actions',
         header: '',
-        width: 96,
-        minWidth: 86,
+        width: 104,
+        minWidth: 104,
+        maxWidth: 112,
         align: 'right',
         enableSorting: false,
         enableHiding: false,
@@ -401,6 +378,23 @@ function useConsumableStorageColumns({
         enableReorder: false,
         cell: (storage) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
+            <PermissionGate permissionKey={CONSUMABLE_STORAGE_DELETE_PERMISSION}>
+              <Tooltip label={t('Видалити')}>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  disabled={!storage.NetUid}
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onDelete(storage)
+                  }}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            </PermissionGate>
             <Tooltip label={t('Деталі')}>
               <ActionIcon
                 aria-label={t('Деталі')}
@@ -437,6 +431,47 @@ function useConsumableStorageColumns({
       },
     ],
     [onDelete, onEdit, onOpen, t],
+  )
+}
+
+function TruncatedCell({ fw, value }: { fw?: number; value?: number | string | null }) {
+  const text = displayValue(value)
+  const hasTooltip = text && text !== '-'
+
+  return (
+    <Tooltip
+      disabled={!hasTooltip}
+      label={text}
+      maw={420}
+      multiline
+      openDelay={350}
+      position="top-start"
+      styles={{
+        tooltip: {
+          background: '#ffffff',
+          border: '1px solid var(--mantine-color-gray-2)',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.14)',
+          color: '#111827',
+          opacity: 1,
+        },
+      }}
+      withArrow
+    >
+      <Text
+        component="span"
+        fw={fw}
+        style={{
+          display: 'block',
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          width: '100%',
+        }}
+      >
+        {text}
+      </Text>
+    </Tooltip>
   )
 }
 

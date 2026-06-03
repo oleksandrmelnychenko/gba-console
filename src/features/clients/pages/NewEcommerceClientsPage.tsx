@@ -1,7 +1,7 @@
 import { Alert, Badge, Card, Stack, Text } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -24,6 +24,7 @@ const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
 
 export function NewEcommerceClientsPage() {
   const { t } = useI18n()
+  const location = useLocation()
   const navigate = useNavigate()
   const [clients, setClients] = useState<Client[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -142,8 +143,10 @@ export function NewEcommerceClientsPage() {
 
     navigate(`/clients/edit/${client.NetUid}`, {
       state: {
+        backgroundLocation: location,
         moduleTitle: t('Нові клієнти з e-commerce'),
         nodeTitle: getClientDisplayName(client),
+        returnPath: `${location.pathname}${location.search}`,
       },
     })
   }

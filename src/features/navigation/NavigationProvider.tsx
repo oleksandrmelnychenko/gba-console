@@ -12,6 +12,13 @@ import {
 } from './navigationUtils'
 import type { NavigationModule } from './types'
 
+type NavigationLocationState = {
+  backgroundLocation?: {
+    pathname: string
+    search: string
+  }
+}
+
 type NavigationState = {
   error: Error | null
   errorSessionKey: string | null
@@ -103,9 +110,12 @@ export function NavigationProvider({ children }: PropsWithChildren) {
   const isMenuReady = canLoadMenu && state.loadedSessionKey === sessionKey
   const currentError = state.errorSessionKey === sessionKey ? state.error : null
   const availableModules = useMemo(() => (isMenuReady ? state.modules : []), [isMenuReady, state.modules])
+  const routerLocationState = routerLocation.state as NavigationLocationState | null
+  const navigationLocation = routerLocationState?.backgroundLocation || routerLocation
+  const routerTarget = `${navigationLocation.pathname}${navigationLocation.search}`
   const activeMatch = useMemo(
-    () => findNavigationMatch(availableModules, routerLocation.pathname),
-    [availableModules, routerLocation.pathname],
+    () => findNavigationMatch(availableModules, routerTarget),
+    [availableModules, routerTarget],
   )
 
   const selectedModule = useMemo(() => {
@@ -132,10 +142,10 @@ export function NavigationProvider({ children }: PropsWithChildren) {
       selectedModule,
       selectedNode: activeMatch?.node || null,
       getNodePath: getNavigationNodePath,
-      isNodeActive: (node) => isNavigationNodeActive(node, routerLocation.pathname),
+      isNodeActive: (node) => isNavigationNodeActive(node, routerTarget),
       selectModule: (module) => dispatch({ type: 'moduleSelected', moduleKey: getModuleKey(module) }),
     }),
-    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, routerLocation.pathname, selectedModule],
+    [activeMatch, availableModules, canLoadMenu, currentError, isMenuReady, routerTarget, selectedModule],
   )
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>

@@ -1297,22 +1297,32 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
     }
   }
 
-  return (
-    <ResourcePanel section={section}>
+  const perfectClientAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl
+        isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
+        onRefresh={() => {
+          clientTypesState.reload()
+          perfectClientsState.reload()
+        }}
+      />
       <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            disabled={!selectedRole}
-            leftSection={<IconPlus size={16} />}
-            size="xs"
-            onClick={openCreatePerfectClient}
-          >
-            Новий параметр
-          </Button>
-        </PageHeaderActions>
+        <Button
+          color="violet"
+          disabled={!selectedRole}
+          leftSection={<IconPlus size={16} />}
+          size="xs"
+          onClick={openCreatePerfectClient}
+        >
+          Параметр
+        </Button>
       </PermissionGate>
-      <Group justify="space-between" align="flex-end" mb="md">
+    </Group>
+  )
+
+  return (
+    <ResourcePanel action={perfectClientAction} section={section}>
+      <Group align="flex-start" mb="md">
         <Select
           data={roleOptions}
           label={translate("Роль клієнта")}
@@ -1321,13 +1331,6 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
           onChange={setRoleId}
           placeholder={translate("Оберіть роль")}
           value={effectiveRoleId}
-        />
-        <RefreshControl
-          isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
-          onRefresh={() => {
-            clientTypesState.reload()
-            perfectClientsState.reload()
-          }}
         />
       </Group>
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
@@ -4274,20 +4277,30 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
     }
   }
 
+  const carrierAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl
+        isLoading={typesState.isLoading || transportersState.isLoading}
+        onRefresh={() => {
+          typesState.reload()
+          transportersState.reload()
+        }}
+      />
+      <Button
+        color="violet"
+        disabled={!selectedTransporterType}
+        leftSection={<IconPlus size={16} />}
+        size="xs"
+        onClick={openCreateTransporter}
+      >
+        Перевізник
+      </Button>
+    </Group>
+  )
+
   return (
-    <ResourcePanel section={section}>
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          disabled={!selectedTransporterType}
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          onClick={openCreateTransporter}
-        >
-          Новий перевізник
-        </Button>
-      </PageHeaderActions>
-      <Group justify="space-between" align="flex-end" mb="md">
+    <ResourcePanel action={carrierAction} section={section}>
+      <Group align="flex-start" mb="md">
         <Select
           data={typeOptions}
           label={translate("Тип перевізника")}
@@ -4296,13 +4309,6 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
           onChange={setTypeNetId}
           placeholder={translate("Оберіть тип")}
           value={effectiveTypeNetId}
-        />
-        <RefreshControl
-          isLoading={typesState.isLoading || transportersState.isLoading}
-          onRefresh={() => {
-            typesState.reload()
-            transportersState.reload()
-          }}
         />
       </Group>
       <Loadable state={typesState} emptyTitle="Типів перевізників не знайдено">

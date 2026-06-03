@@ -110,7 +110,7 @@ function useClientsPageModel() {
   const { t } = useI18n()
   const location = useLocation()
   const navigate = useNavigate()
-  const [urlSearchParams] = useSearchParams()
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams()
   const { hasPermission } = useAuth()
   const hasLoadedClientsRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -130,7 +130,8 @@ function useClientsPageModel() {
   const [reserveDays, setReserveDays] = useValueState(0)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readClientTablePageSize)
-  const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>('all')
+  const urlActiveFilter = useMemo(() => parseActiveFilterSearchParams(urlSearchParams), [urlSearchParams])
+  const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>(() => urlActiveFilter)
   const [roleFilter, setRoleFilter] = useValueState<string[]>(() => parseRoleFilterSearchParam(urlSearchParams.get('roleIds')))
   const [searchField, setSearchField] = useValueState(CLIENT_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
@@ -175,6 +176,24 @@ function useClientsPageModel() {
     setPageSize(nextPageSize)
     writeClientTablePageSize(nextPageSize)
   }, [setPage, setPageSize])
+  const setActiveFilterInUrl = useCallback((nextFilter: ActiveFilter) => {
+    setActiveFilter(nextFilter)
+    setUrlSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      nextParams.delete('active')
+      nextParams.delete('isActive')
+      nextParams.delete('status')
+
+      if (nextFilter === 'all') {
+        nextParams.delete('activeFilter')
+      } else {
+        nextParams.set('activeFilter', nextFilter)
+      }
+
+      return nextParams
+    }, { replace: true, state: location.state })
+  }, [location.state, setActiveFilter, setUrlSearchParams])
   const tableToolbarLeft = useMemo(
     () => (
       <ClientTableSummary
@@ -287,9 +306,13 @@ function useClientsPageModel() {
     searchInputRef.current?.focus()
   }, [])
 
+  useEffect(() => {
+    setActiveFilter(urlActiveFilter)
+  }, [setActiveFilter, urlActiveFilter])
+
   function resetSearch() {
     setPage(1)
-    setActiveFilter('all')
+    setActiveFilterInUrl('all')
     setRoleFilter([])
     setSearchField(CLIENT_SEARCH_SQL)
     setSearchValue('')
@@ -300,7 +323,7 @@ function useClientsPageModel() {
       return
     }
 
-    navigate(`/clients/edit/${client.NetUid}`, {
+    navigate(`/clients/edit/${client.NetUid}${location.search}`, {
       state: {
         backgroundLocation: location,
         moduleTitle: t('Клієнти'),
@@ -483,7 +506,7 @@ function useClientsPageModel() {
     openCreateClient,
     openReserveDays,
     resetSearch,
-    setActiveFilter,
+    setActiveFilter: setActiveFilterInUrl,
     setDownloadModalOpened,
     setPage,
     setReserveClient,
@@ -1306,6 +1329,40 @@ function writeClientTablePageSize(pageSize: number) {
   }
 
   window.localStorage.setItem(CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function parseActiveFilterSearchParams(params: URLSearchParams): ActiveFilter {
+  const explicitFilter = normalizeActiveFilterSearchValue(params.get('activeFilter') || params.get('status'))
+
+  if (explicitFilter) {
+    return explicitFilter
+  }
+
+  const activeValue = params.get('active') || params.get('isActive')
+
+  if (!activeValue) {
+    return 'all'
+  }
+
+  const normalizedActiveValue = activeValue.trim().toLowerCase()
+
+  if (['true', '1', 'active'].includes(normalizedActiveValue)) {
+    return 'active'
+  }
+
+  if (['false', '0', 'inactive', 'new'].includes(normalizedActiveValue)) {
+    return 'inactive'
+  }
+
+  return 'all'
+}
+
+function normalizeActiveFilterSearchValue(value: string | null): ActiveFilter | null {
+  if (value === 'all' || value === 'active' || value === 'inactive') {
+    return value
+  }
+
+  return null
 }
 
 function normalizeClientTablePageSize(value?: string | null) {
