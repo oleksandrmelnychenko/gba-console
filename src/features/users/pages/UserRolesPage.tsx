@@ -6,7 +6,8 @@ import {
   Button,
   Card,
   Group,
-  SimpleGrid,
+  ScrollArea,
+  Skeleton,
   Stack,
   Text,
   TextInput,
@@ -15,7 +16,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconChevronLeft,
   IconDeviceFloppy,
   IconPencil,
   IconPlus,
@@ -27,11 +27,12 @@ import {
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useNavigate } from 'react-router-dom'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Link } from 'react-router-dom'
+import {
+  CREATE_ACTION_COLOR,
+  PageContentHeader,
+} from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addPermissionToNode,
   changePermissionsToRole,
@@ -43,28 +44,33 @@ import {
   updateUserRole,
 } from '../api/usersApi'
 import { RoleFormModal } from '../components/RoleFormModal'
-import { RolePermissionModal, type RolePermissionSubmit } from '../components/RolePermissionModal'
+import {
+  RolePermissionModal,
+  type RolePermissionSubmit,
+} from '../components/RolePermissionModal'
 import { RolePermissionsEditor } from '../components/RolePermissionsEditor'
 import { UserRoleType } from '../../../shared/auth/types'
-import type { DashboardNode, DashboardNodeModule, UserPermission, UserRole } from '../types'
+import type {
+  DashboardNode,
+  DashboardNodeModule,
+  UserPermission,
+  UserRole,
+} from '../types'
 import {
   canDeleteUserRole,
   displayValue,
+  getDashboardModuleNodes,
+  getDashboardModulePermissions,
+  getDashboardNodePermissions,
+  getDashboardNodeTree,
   getUserRoleKey,
   getUserRoleName,
+  isNodeSelected,
+  isPermissionSelected,
   toggleAllPages,
-  toggleModuleNodes,
-  toggleNodeSelection,
   togglePermissionSelection,
-  toggleSubPermissions,
 } from '../utils'
-
-const ROLES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['name'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
+import './user-roles-page.css'
 
 type PermissionModalState = {
   node: DashboardNode | null
@@ -73,90 +79,48 @@ type PermissionModalState = {
 
 export function UserRolesPage() {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const [roles, setRoles] = useValueState<UserRole[]>([])
   const [modules, setModules] = useValueState<DashboardNodeModule[]>([])
-  const [selectedRoleKey, setSelectedRoleKey] = useValueState<string | null>(null)
+  const [selectedRoleKey, setSelectedRoleKey] = useValueState<string | null>(
+    null,
+  )
   const [selectedNodes, setSelectedNodes] = useValueState<DashboardNode[]>([])
-  const [selectedPermissions, setSelectedPermissions] = useValueState<UserPermission[]>([])
+  const [selectedPermissions, setSelectedPermissions] = useValueState<
+    UserPermission[]
+  >([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
-  const [roleModalState, setRoleModalState] = useValueState<{ open: boolean; role: UserRole | null }>({
+  const [roleModalState, setRoleModalState] = useValueState<{
+    open: boolean
+    role: UserRole | null
+  }>({
     open: false,
     role: null,
   })
-  const [permissionModalState, setPermissionModalState] = useValueState<PermissionModalState | null>(null)
+  const [permissionModalState, setPermissionModalState] =
+    useValueState<PermissionModalState | null>(null)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
-  const filteredRoles = useMemo(() => filterRoles(roles, searchValue), [roles, searchValue])
+  const filteredRoles = useMemo(
+    () => filterRoles(roles, searchValue),
+    [roles, searchValue],
+  )
   const selectedRole = useMemo(
-    () => roles.find((role) => getUserRoleKey(role) === selectedRoleKey) || null,
+    () =>
+      roles.find((role) => getUserRoleKey(role) === selectedRoleKey) || null,
     [roles, selectedRoleKey],
   )
   const visibleSelectedRole = useMemo(
-    () => (selectedRole && filteredRoles.some((role) => getUserRoleKey(role) === selectedRoleKey) ? selectedRole : null),
-    [filteredRoles, selectedRole, selectedRoleKey],
-  )
-  const columns = useMemo<DataTableColumn<UserRole>[]>(
-    () => [
-      {
-        id: 'name',
-        header: 'Назва',
-        width: 240,
-        minWidth: 180,
-        accessor: getUserRoleName,
-        cell: (role) => <Text fw={600}>{getUserRoleName(role)}</Text>,
-      },
-      {
-        id: 'dashboard',
-        header: 'Dashboard',
-        width: 180,
-        minWidth: 140,
-        accessor: (role) => role.Dashboard,
-        cell: (role) => displayValue(role.Dashboard),
-      },
-      {
-        id: 'type',
-        header: 'Тип',
-        width: 96,
-        minWidth: 84,
-        align: 'right',
-        accessor: (role) => role.UserRoleType,
-        cell: (role) => displayValue(role.UserRoleType),
-      },
-      {
-        id: 'pages',
-        header: 'Сторінки',
-        width: 112,
-        minWidth: 96,
-        align: 'right',
-        accessor: (role) => role.DashboardNodes?.length || 0,
-        cell: (role) => displayValue(role.DashboardNodes?.length || 0),
-      },
-      {
-        id: 'permissions',
-        header: 'Права',
-        width: 104,
-        minWidth: 92,
-        align: 'right',
-        accessor: (role) => role.Permissions?.length || 0,
-        cell: (role) => displayValue(role.Permissions?.length || 0),
-      },
-    ],
-    [],
-  )
-  const toolbarLeft = useMemo(
     () =>
-      searchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {searchValue}
-        </Text>
-      ) : null,
-    [searchValue, t],
+      selectedRole &&
+      filteredRoles.some((role) => getUserRoleKey(role) === selectedRoleKey)
+        ? selectedRole
+        : null,
+    [filteredRoles, selectedRole, selectedRoleKey],
   )
 
   useEffect(() => {
@@ -171,10 +135,18 @@ export function UserRolesPage() {
       setError(null)
 
       try {
-        const [nextRoles, nextModules] = await Promise.all([getUserRoles(), getDashboardModules()])
+        const [nextRoles, nextModules] = await Promise.all([
+          getUserRoles(),
+          getDashboardModules(),
+        ])
 
         if (!cancelled) {
-          const nextRole = nextRoles.find((role) => getUserRoleKey(role) === selectedRoleKeyRef.current) || nextRoles[0] || null
+          const nextRole =
+            nextRoles.find(
+              (role) => getUserRoleKey(role) === selectedRoleKeyRef.current,
+            ) ||
+            nextRoles[0] ||
+            null
           setRoles(nextRoles)
           setModules(nextModules)
           setSelectedRoleKey(nextRole ? getUserRoleKey(nextRole) : null)
@@ -185,7 +157,11 @@ export function UserRolesPage() {
           setRoles([])
           setModules([])
           setSelectedRoleKey(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити ролі'))
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити ролі'),
+          )
         }
       } finally {
         if (!cancelled) {
@@ -199,7 +175,17 @@ export function UserRolesPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, setError, setLoading, setModules, setRoles, setSelectedNodes, setSelectedPermissions, setSelectedRoleKey, t])
+  }, [
+    reloadKey,
+    setError,
+    setLoading,
+    setModules,
+    setRoles,
+    setSelectedNodes,
+    setSelectedPermissions,
+    setSelectedRoleKey,
+    t,
+  ])
 
   function updateSearch(nextSearchValue: string) {
     setSearchDraft(nextSearchValue)
@@ -217,7 +203,11 @@ export function UserRolesPage() {
   }
 
   function cancelSelection() {
-    applyRoleSelection(visibleSelectedRole, setSelectedNodes, setSelectedPermissions)
+    applyRoleSelection(
+      visibleSelectedRole,
+      setSelectedNodes,
+      setSelectedPermissions,
+    )
   }
 
   async function submitRoleForm(values: { Dashboard: string; Name: string }) {
@@ -226,7 +216,11 @@ export function UserRolesPage() {
 
     try {
       if (roleModalState.role) {
-        await updateUserRole({ ...roleModalState.role, Dashboard: values.Dashboard, Name: values.Name })
+        await updateUserRole({
+          ...roleModalState.role,
+          Dashboard: values.Dashboard,
+          Name: values.Name,
+        })
       } else {
         await createUserRole({
           Dashboard: values.Dashboard,
@@ -239,14 +233,21 @@ export function UserRolesPage() {
       setRoleModalState({ open: false, role: null })
       reload()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти'))
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : t('Не вдалося зберегти'),
+      )
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDeleteRole() {
-    if (!visibleSelectedRole?.NetUid || !canDeleteUserRole(visibleSelectedRole)) {
+    if (
+      !visibleSelectedRole?.NetUid ||
+      !canDeleteUserRole(visibleSelectedRole)
+    ) {
       return
     }
 
@@ -260,7 +261,11 @@ export function UserRolesPage() {
       setSelectedRoleKey(null)
       reload()
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити'))
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : t('Не вдалося видалити'),
+      )
     } finally {
       setSaving(false)
     }
@@ -283,10 +288,57 @@ export function UserRolesPage() {
       notifications.show({ color: 'green', message: t('Збережено') })
       reload()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти'))
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : t('Не вдалося зберегти'),
+      )
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleToggleModule(module: DashboardNodeModule) {
+    const nodes = getDashboardModuleNodes(module)
+    const permissions = getDashboardModulePermissions(module)
+    const allSelected =
+      nodes.length > 0 &&
+      nodes.every((node) => isNodeSelected(selectedNodes, node)) &&
+      permissions.every((permission) =>
+        isPermissionSelected(selectedPermissions, permission),
+      )
+
+    setSelectedNodes((current) =>
+      allSelected
+        ? removeNodes(current, nodes)
+        : addMissingNodes(current, nodes),
+    )
+    setSelectedPermissions((current) =>
+      allSelected
+        ? removePermissions(current, permissions)
+        : addMissingPermissions(current, permissions),
+    )
+  }
+
+  function handleToggleNode(node: DashboardNode) {
+    const nodes = getDashboardNodeTree(node)
+    const permissions = getDashboardNodePermissions(node)
+    const allSelected =
+      nodes.every((item) => isNodeSelected(selectedNodes, item)) &&
+      permissions.every((permission) =>
+        isPermissionSelected(selectedPermissions, permission),
+      )
+
+    setSelectedNodes((current) =>
+      allSelected
+        ? removeNodes(current, nodes)
+        : addMissingNodes(current, nodes),
+    )
+    setSelectedPermissions((current) =>
+      allSelected
+        ? removePermissions(current, permissions)
+        : addMissingPermissions(current, permissions),
+    )
   }
 
   async function submitPermission(values: RolePermissionSubmit) {
@@ -304,7 +356,11 @@ export function UserRolesPage() {
       setPermissionModalState(null)
       reload()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти'))
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : t('Не вдалося зберегти'),
+      )
     } finally {
       setSaving(false)
     }
@@ -312,29 +368,24 @@ export function UserRolesPage() {
 
   return (
     <Stack gap="lg">
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          leftSection={<IconPlus size={16} />}
-          onClick={() => setRoleModalState({ open: true, role: null })}
-        >
-          {t('Створити')}
-        </Button>
-      </PageHeaderActions>
-
-      <Group justify="space-between">
-        <Button
-          color="gray"
-          leftSection={<IconChevronLeft size={16} />}
-          variant="subtle"
-          size="sm"
-          px="xs"
-          onClick={() => navigate('/users')}
-        >
-          {t('Назад')}
-        </Button>
-      </Group>
+      <PageContentHeader>
+        <div className="user-roles-content-header">
+          <nav aria-label="breadcrumb" className="user-roles-breadcrumbs">
+            <Link className="user-roles-breadcrumb-link" to="/users">
+              {t('Користувачі')}
+            </Link>
+            <Text>{t('Ролі')}</Text>
+          </nav>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="xs"
+            leftSection={<IconPlus size={14} />}
+            onClick={() => setRoleModalState({ open: true, role: null })}
+          >
+            {t('Створити')}
+          </Button>
+        </div>
+      </PageContentHeader>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -342,10 +393,15 @@ export function UserRolesPage() {
         </Alert>
       )}
 
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+      <Box className="user-roles-layout">
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <Group
+              align="end"
+              gap="sm"
+              wrap="nowrap"
+              className="clients-filter-row"
+            >
               <TextInput
                 leftSection={<IconSearch size={16} />}
                 label={t('Пошук')}
@@ -381,20 +437,13 @@ export function UserRolesPage() {
               </Tooltip>
             </Group>
 
-            <DataTable
-              columns={columns}
-              data={filteredRoles}
-              defaultLayout={ROLES_TABLE_DEFAULT_LAYOUT}
-              emptyText="Ролей не знайдено"
-              getRowId={(role, index) => String(role.NetUid || role.Id || index)}
+            <RoleList
               isLoading={isLoading}
-              layoutVersion="user-roles-table-1"
-              loadingText="Завантаження ролей"
-              maxHeight="calc(100vh - 330px)"
-              minWidth={760}
-              tableId="user-roles"
-              toolbarLeft={toolbarLeft}
-              onRowClick={selectRole}
+              roles={filteredRoles}
+              searchValue={searchValue}
+              selectedRoleKey={selectedRoleKey}
+              totalRoles={roles.length}
+              onSelectRole={selectRole}
             />
           </Stack>
         </Card>
@@ -407,7 +456,8 @@ export function UserRolesPage() {
                   <Box>
                     <Text fw={700}>{getUserRoleName(visibleSelectedRole)}</Text>
                     <Badge color="gray" mt={4} variant="light">
-                      {t('Тип')} {displayValue(visibleSelectedRole.UserRoleType)}
+                      {t('Тип')}{' '}
+                      {displayValue(visibleSelectedRole.UserRoleType)}
                     </Badge>
                   </Box>
                   <Group gap="xs">
@@ -416,7 +466,12 @@ export function UserRolesPage() {
                         aria-label={t('Редагувати')}
                         color="gray"
                         variant="light"
-                        onClick={() => setRoleModalState({ open: true, role: visibleSelectedRole })}
+                        onClick={() =>
+                          setRoleModalState({
+                            open: true,
+                            role: visibleSelectedRole,
+                          })
+                        }
                       >
                         <IconPencil size={16} />
                       </ActionIcon>
@@ -437,7 +492,12 @@ export function UserRolesPage() {
                 </Group>
 
                 <Group justify="flex-end">
-                  <Button color="gray" disabled={isSaving} variant="subtle" onClick={cancelSelection}>
+                  <Button
+                    color="gray"
+                    disabled={isSaving}
+                    variant="subtle"
+                    onClick={cancelSelection}
+                  >
                     {t('Скасувати')}
                   </Button>
                   <Button
@@ -454,16 +514,23 @@ export function UserRolesPage() {
                   modules={modules}
                   selectedNodes={selectedNodes}
                   selectedPermissions={selectedPermissions}
-                  onAddPermission={(node) => setPermissionModalState({ node, permission: null })}
-                  onEditPermission={(node, permission) => setPermissionModalState({ node, permission })}
-                  onSelectAllPages={() => setSelectedNodes((current) => toggleAllPages(current, modules))}
-                  onSelectModule={(module) => setSelectedNodes((current) => toggleModuleNodes(current, module))}
-                  onSelectSubPermissions={(permissions) =>
-                    setSelectedPermissions((current) => toggleSubPermissions(current, permissions))
+                  onAddPermission={(node) =>
+                    setPermissionModalState({ node, permission: null })
                   }
-                  onToggleNode={(node) => setSelectedNodes((current) => toggleNodeSelection(current, node))}
+                  onEditPermission={(node, permission) =>
+                    setPermissionModalState({ node, permission })
+                  }
+                  onSelectAllPages={() =>
+                    setSelectedNodes((current) =>
+                      toggleAllPages(current, modules),
+                    )
+                  }
+                  onToggleModule={handleToggleModule}
+                  onToggleNode={handleToggleNode}
                   onTogglePermission={(permission) =>
-                    setSelectedPermissions((current) => togglePermissionSelection(current, permission))
+                    setSelectedPermissions((current) =>
+                      togglePermissionSelection(current, permission),
+                    )
                   }
                 />
               </>
@@ -472,11 +539,15 @@ export function UserRolesPage() {
             )}
           </Stack>
         </Card>
-      </SimpleGrid>
+      </Box>
 
       {roleModalState.open ? (
         <RoleFormModal
-          key={roleModalState.role ? getUserRoleKey(roleModalState.role) : 'new-role'}
+          key={
+            roleModalState.role
+              ? getUserRoleKey(roleModalState.role)
+              : 'new-role'
+          }
           isSaving={isSaving}
           opened={roleModalState.open}
           role={roleModalState.role}
@@ -487,7 +558,10 @@ export function UserRolesPage() {
 
       {permissionModalState ? (
         <RolePermissionModal
-          key={permissionModalState.permission?.NetUid || `new-${permissionModalState.node?.Id ?? ''}`}
+          key={
+            permissionModalState.permission?.NetUid ||
+            `new-${permissionModalState.node?.Id ?? ''}`
+          }
           isSaving={isSaving}
           node={permissionModalState.node}
           opened={Boolean(permissionModalState)}
@@ -497,22 +571,145 @@ export function UserRolesPage() {
         />
       ) : null}
 
-      <AppModal centered opened={deleteModalOpened} title={t('Видалити роль')} onClose={() => setDeleteModalOpened(false)}>
+      <AppModal
+        centered
+        opened={deleteModalOpened}
+        title={t('Видалити роль')}
+        onClose={() => setDeleteModalOpened(false)}
+      >
         <Stack gap="md">
           <Text size="sm">
-            {t('Ви впевнені, що хочете видалити?')} {visibleSelectedRole ? getUserRoleName(visibleSelectedRole) : ''}
+            {t('Ви впевнені, що хочете видалити?')}{' '}
+            {visibleSelectedRole ? getUserRoleName(visibleSelectedRole) : ''}
           </Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="subtle" onClick={() => setDeleteModalOpened(false)}>
+            <Button
+              color="gray"
+              disabled={isSaving}
+              variant="subtle"
+              onClick={() => setDeleteModalOpened(false)}
+            >
               {t('Ні')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isSaving} onClick={handleDeleteRole}>
+            <Button
+              color="red"
+              leftSection={<IconTrash size={16} />}
+              loading={isSaving}
+              onClick={handleDeleteRole}
+            >
               {t('Так')}
             </Button>
           </Group>
         </Stack>
       </AppModal>
     </Stack>
+  )
+}
+
+type RoleListProps = {
+  isLoading: boolean
+  roles: UserRole[]
+  searchValue: string
+  selectedRoleKey: string | null
+  totalRoles: number
+  onSelectRole: (role: UserRole) => void
+}
+
+function RoleList({
+  isLoading,
+  roles,
+  searchValue,
+  selectedRoleKey,
+  totalRoles,
+  onSelectRole,
+}: RoleListProps) {
+  const { t } = useI18n()
+
+  return (
+    <Box className="user-roles-list-panel">
+      <Group
+        className="user-roles-list-header"
+        justify="space-between"
+        wrap="nowrap"
+      >
+        <Box>
+          <Text className="user-roles-list-title">{t('Ролі')}</Text>
+          {searchValue ? (
+            <Text className="user-roles-list-search">
+              {t('Пошук')}: {searchValue}
+            </Text>
+          ) : null}
+        </Box>
+        <Badge color="gray" variant="light">
+          {roles.length}/{totalRoles}
+        </Badge>
+      </Group>
+
+      <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
+        {isLoading ? (
+          <Stack gap="xs" className="user-roles-list">
+            {Array.from({ length: 6 }, (_, index) => (
+              <RoleListSkeleton key={index} />
+            ))}
+          </Stack>
+        ) : roles.length > 0 ? (
+          <Stack gap="xs" className="user-roles-list">
+            {roles.map((role, index) => {
+              const roleKey = getUserRoleKey(role) || String(role.Id || index)
+              const isSelected = roleKey === selectedRoleKey
+              const pageCount = role.DashboardNodes?.length || 0
+              const permissionCount = role.Permissions?.length || 0
+
+              return (
+                <button
+                  key={roleKey}
+                  aria-pressed={isSelected}
+                  className={`user-role-list-item${isSelected ? ' is-selected' : ''}`}
+                  type="button"
+                  onClick={() => onSelectRole(role)}
+                >
+                  <span className="user-role-list-content">
+                    <Text className="user-role-list-name">
+                      {getUserRoleName(role)}
+                    </Text>
+                    <span className="user-role-list-meta">
+                      <span className="user-role-list-pill">
+                        <span>{t('Тип')}</span>
+                        <strong>{displayValue(role.UserRoleType)}</strong>
+                      </span>
+                      <span className="user-role-list-stat">
+                        <span>{t('Стор.')}</span>
+                        <strong>{pageCount}</strong>
+                      </span>
+                      <span className="user-role-list-stat">
+                        <span>{t('Прав')}</span>
+                        <strong>{permissionCount}</strong>
+                      </span>
+                    </span>
+                  </span>
+                </button>
+              )
+            })}
+          </Stack>
+        ) : (
+          <Box className="user-roles-list-empty">
+            <Text c="dimmed" size="sm">
+              {t('Ролей не знайдено')}
+            </Text>
+          </Box>
+        )}
+      </ScrollArea.Autosize>
+    </Box>
+  )
+}
+
+function RoleListSkeleton() {
+  return (
+    <Box className="user-role-list-skeleton">
+      <Box style={{ flex: 1 }}>
+        <Skeleton height={13} width="82%" />
+      </Box>
+    </Box>
   )
 }
 
@@ -525,6 +722,45 @@ function applyRoleSelection(
   setSelectedPermissions(role?.Permissions ? [...role.Permissions] : [])
 }
 
+function addMissingNodes(
+  current: DashboardNode[],
+  nodes: DashboardNode[],
+): DashboardNode[] {
+  const missing = nodes.filter((node) => !isNodeSelected(current, node))
+
+  return missing.length > 0 ? [...current, ...missing] : current
+}
+
+function removeNodes(
+  current: DashboardNode[],
+  nodes: DashboardNode[],
+): DashboardNode[] {
+  return current.filter(
+    (node) => !nodes.some((item) => item.NetUid === node.NetUid),
+  )
+}
+
+function addMissingPermissions(
+  current: UserPermission[],
+  permissions: UserPermission[],
+): UserPermission[] {
+  const missing = permissions.filter(
+    (permission) => !isPermissionSelected(current, permission),
+  )
+
+  return missing.length > 0 ? [...current, ...missing] : current
+}
+
+function removePermissions(
+  current: UserPermission[],
+  permissions: UserPermission[],
+): UserPermission[] {
+  return current.filter(
+    (permission) =>
+      !permissions.some((item) => item.NetUid === permission.NetUid),
+  )
+}
+
 function filterRoles(roles: UserRole[], value: string): UserRole[] {
   const normalizedValue = value.trim().toLocaleLowerCase('uk')
 
@@ -532,5 +768,7 @@ function filterRoles(roles: UserRole[], value: string): UserRole[] {
     return roles
   }
 
-  return roles.filter((role) => getUserRoleName(role).toLocaleLowerCase('uk').includes(normalizedValue))
+  return roles.filter((role) =>
+    getUserRoleName(role).toLocaleLowerCase('uk').includes(normalizedValue),
+  )
 }

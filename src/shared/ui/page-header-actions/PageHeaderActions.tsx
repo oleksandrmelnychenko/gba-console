@@ -12,12 +12,27 @@ export const CREATE_ACTION_COLOR = '#E8782E'
  * may also append a trailing breadcrumb segment (e.g. the active sub-tab) via
  * {@link usePageBreadcrumb}.
  */
-export function PageHeaderActionsProvider({ children }: { children: ReactNode }) {
+export function PageHeaderActionsProvider({
+  children,
+}: {
+  children: ReactNode
+}) {
   const [container, setContainer] = useState<HTMLElement | null>(null)
+  const [contentHeaderContainer, setContentHeaderContainer] =
+    useState<HTMLElement | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<string | null>(null)
 
   return (
-    <PageHeaderActionsContext value={{ container, setContainer, breadcrumb, setBreadcrumb }}>
+    <PageHeaderActionsContext
+      value={{
+        container,
+        contentHeaderContainer,
+        setContainer,
+        setContentHeaderContainer,
+        breadcrumb,
+        setBreadcrumb,
+      }}
+    >
       {children}
     </PageHeaderActionsContext>
   )
@@ -29,6 +44,17 @@ export function PageHeaderActionsSlot({ className }: { className?: string }) {
   const refCallback = useCallback(
     (element: HTMLDivElement | null) => setContainer(element),
     [setContainer],
+  )
+
+  return <div ref={refCallback} className={className} />
+}
+
+/** Render once above the page content frame. Pages can portal compact page-level navigation here. */
+export function PageContentHeaderSlot({ className }: { className?: string }) {
+  const { setContentHeaderContainer } = useContext(PageHeaderActionsContext)
+  const refCallback = useCallback(
+    (element: HTMLDivElement | null) => setContentHeaderContainer(element),
+    [setContentHeaderContainer],
   )
 
   return <div ref={refCallback} className={className} />
@@ -46,4 +72,15 @@ export function PageHeaderActions({ children }: { children: ReactNode }) {
   }
 
   return createPortal(children, container)
+}
+
+/** Portals content into the page-level strip above the main content frame. */
+export function PageContentHeader({ children }: { children: ReactNode }) {
+  const { contentHeaderContainer } = useContext(PageHeaderActionsContext)
+
+  if (!contentHeaderContainer) {
+    return null
+  }
+
+  return createPortal(children, contentHeaderContainer)
 }

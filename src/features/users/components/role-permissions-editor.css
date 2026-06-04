@@ -1,0 +1,367 @@
+.role-tree {
+  min-width: 0;
+}
+
+.role-tree-check {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 4px;
+  color: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background-color 110ms var(--tx-ease-smooth),
+    border-color 110ms var(--tx-ease-smooth),
+    color 110ms var(--tx-ease-smooth),
+    opacity 110ms var(--tx-ease-smooth);
+  width: 18px;
+}
+
+.role-tree-check:hover {
+  background: transparent;
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-gray-5);
+}
+
+.role-tree-check:focus-visible {
+  outline: 2px solid var(--mantine-color-gray-3);
+  outline-offset: 2px;
+}
+
+.role-tree-check.is-selected,
+.role-tree-check.is-indeterminate {
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-orange-6);
+}
+
+.role-tree-check:disabled {
+  background: transparent;
+  border-color: var(--mantine-color-gray-2);
+  cursor: default;
+  opacity: 0.35;
+}
+
+.role-tree-check svg {
+  stroke-width: 2.2;
+}
+
+.role-tree-check.is-sm {
+  height: 16px;
+  width: 16px;
+}
+
+.role-tree-toolbar {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  margin-bottom: 8px;
+  min-height: 34px;
+  padding-bottom: 8px;
+}
+
+.role-tree-toolbar-stats {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.role-tree-text-action {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.role-tree-text-action:hover,
+.role-tree-text-action:focus-visible {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-9);
+}
+
+.role-tree-modules {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.role-tree-module {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.role-tree-module-header {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 26px 24px 28px minmax(0, 1fr) auto;
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+.role-tree-disclosure {
+  color: var(--mantine-color-gray-6);
+}
+
+.role-tree-disclosure svg {
+  stroke-width: 1.7;
+  transition: transform 120ms var(--tx-ease-smooth);
+}
+
+.role-tree-module-icon,
+.role-tree-node-icon,
+.role-tree-permission-icon {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+}
+
+.role-tree-module-icon svg,
+.role-tree-node-icon svg,
+.role-tree-permission-icon svg,
+.role-tree-node-actions svg,
+.role-tree-permission-actions svg {
+  stroke-width: 1.7;
+}
+
+.role-tree-module-title,
+.role-tree-node-title {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.role-tree-node-title:disabled {
+  cursor: default;
+}
+
+.role-tree-module-name,
+.role-tree-node-name,
+.role-tree-permission-name {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-tree-module-description {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 11px;
+  line-height: 1.2;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-tree-module-stats {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.role-tree-node-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-tree-node {
+  border-top: 1px solid var(--mantine-color-gray-2);
+}
+
+.role-tree-node-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 26px 24px 26px minmax(0, 1fr) auto;
+  min-height: 44px;
+  padding: 6px 10px 6px calc(10px + var(--role-tree-indent, 0px));
+  transition: background-color 110ms var(--tx-ease-smooth);
+}
+
+.role-tree-node-row:hover,
+.role-tree-node.is-selected > .role-tree-node-row,
+.role-tree-node.is-mixed > .role-tree-node-row {
+  background: var(--mantine-color-gray-0);
+}
+
+.role-tree-node-title {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.role-tree-node-meta {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  flex-wrap: nowrap;
+  font-size: 11px;
+  gap: 8px;
+  line-height: 1.2;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.role-tree-route {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  gap: 3px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-tree-node-actions,
+.role-tree-permission-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.role-tree-child-nodes {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-tree-permissions {
+  background: var(--mantine-color-white);
+  border-top: 1px solid var(--mantine-color-gray-1);
+  padding: 2px 0 4px;
+}
+
+.role-tree-permission {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px 24px 24px minmax(0, 1fr) auto;
+  min-height: 40px;
+  padding: 4px 10px 4px calc(34px + var(--role-tree-indent, 0px));
+  position: relative;
+  transition: background-color 110ms var(--tx-ease-smooth);
+}
+
+.role-tree-permission:hover,
+.role-tree-permission.is-selected {
+  background: var(--mantine-color-gray-0);
+}
+
+.role-tree-permission.is-deleted {
+  opacity: 0.55;
+}
+
+.role-tree-connector {
+  align-self: stretch;
+  border-left: 1px solid var(--mantine-color-gray-3);
+  position: relative;
+}
+
+.role-tree-connector::after {
+  background: var(--mantine-color-gray-3);
+  content: '';
+  height: 1px;
+  left: -1px;
+  position: absolute;
+  top: 50%;
+  width: 18px;
+}
+
+.role-tree-permission-body {
+  min-width: 0;
+}
+
+.role-tree-permission-title-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.role-tree-permission-name {
+  font-weight: 500;
+}
+
+.role-tree-permission-meta {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  line-height: 1.2;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.role-tree-permission-meta span,
+.role-tree-permission-meta code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.role-tree-permission-meta code {
+  color: var(--mantine-color-gray-7);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .role-tree-module-header {
+    grid-template-columns: 26px 24px 28px minmax(0, 1fr);
+  }
+
+  .role-tree-module-stats {
+    grid-column: 4;
+    justify-self: start;
+  }
+
+  .role-tree-node-row {
+    grid-template-columns: 26px 24px 26px minmax(0, 1fr);
+  }
+
+  .role-tree-node-actions {
+    grid-column: 4;
+    justify-content: flex-start;
+  }
+
+  .role-tree-permission {
+    grid-template-columns: 28px 24px 24px minmax(0, 1fr);
+    padding-left: calc(18px + var(--role-tree-indent, 0px));
+  }
+
+  .role-tree-permission-actions {
+    grid-column: 4;
+    justify-content: flex-start;
+  }
+}
