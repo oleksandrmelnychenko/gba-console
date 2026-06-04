@@ -385,6 +385,7 @@ type PermissionRowProps = {
 
 function PermissionRow({ node, permission, selected, onEditPermission, onTogglePermission }: PermissionRowProps) {
   const { t } = useI18n()
+  const hasMeta = Boolean(permission.Description || permission.ControlId)
 
   return (
     <div className={`role-tree-permission${selected ? ' is-selected' : ''}${permission.Deleted ? ' is-deleted' : ''}`}>
@@ -394,18 +395,25 @@ function PermissionRow({ node, permission, selected, onEditPermission, onToggleP
         <IconShieldCheck size={14} />
       </ThemeIcon>
       <div className="role-tree-permission-body">
-        <div className="role-tree-permission-title-row">
-          <Text className="role-tree-permission-name">{permission.Name || t('Без назви')}</Text>
-          {permission.Deleted ? (
-            <Badge color="red" size="xs" variant="light">
-              {t('Видалено')}
-            </Badge>
+        <div className="role-tree-permission-copy">
+          <div className="role-tree-permission-title-row">
+            <Text className="role-tree-permission-name">{permission.Name || t('Без назви')}</Text>
+            {permission.Deleted ? (
+              <Badge color="red" size="xs" variant="light">
+                {t('Видалено')}
+              </Badge>
+            ) : null}
+          </div>
+          {hasMeta ? (
+            <div className="role-tree-permission-meta">
+              {permission.Description ? <span>{permission.Description}</span> : null}
+              {permission.ControlId ? <code>{permission.ControlId}</code> : null}
+            </div>
           ) : null}
         </div>
-        <div className="role-tree-permission-meta">
-          {permission.Description ? <span>{permission.Description}</span> : null}
-          {permission.ControlId ? <code>{permission.ControlId}</code> : null}
-        </div>
+        {hasMeta ? (
+          <span className="role-tree-permission-body-line" aria-hidden />
+        ) : null}
       </div>
       <div className="role-tree-permission-actions">
         {permission.ImageUrl ? (
