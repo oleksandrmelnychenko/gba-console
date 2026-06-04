@@ -23,7 +23,7 @@
 
 .product-assortment-carousel {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) 76px minmax(0, 1fr); /* rail / fixed centre slot / rail */
+  grid-template-rows: minmax(0, 1fr) 104px minmax(0, 1fr); /* rail / fixed centre slot (fits search input + mode selects) / rail */
   flex: 1; /* fills the column under the controls → drum centred in remaining space */
   min-height: 0;
   border: 0;
@@ -552,7 +552,7 @@
   }
 
   .product-assortment-carousel {
-    grid-template-rows: minmax(96px, 1fr) 76px minmax(96px, 1fr);
+    grid-template-rows: minmax(96px, 1fr) 104px minmax(96px, 1fr);
     flex: none;
     height: 60vh;
   }
