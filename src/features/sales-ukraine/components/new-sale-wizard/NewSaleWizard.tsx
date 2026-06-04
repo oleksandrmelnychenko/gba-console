@@ -3,12 +3,17 @@ import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
-import { createSale, getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import {
+  convertVatSaleAndGetPaymentDocument,
+  createSale,
+  getCurrentSaleCart,
+  getSaleById,
+  updateSaleFromData,
+} from '../../api/salesUkraineApi'
 import type { SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
-import { setSaleCarrier } from './newSaleWizardApi'
 import {
   canAdvanceToProducts,
   canAdvanceToReview,
@@ -20,6 +25,8 @@ import {
   type NewSaleReviewValue,
   type NewSaleWizardState,
 } from './newSaleWizardState'
+
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function NewSaleWizard({
   opened,
@@ -147,10 +154,25 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
           review.hasOwnTtn && review.ttnNumber ? { Number: review.ttnNumber } : state.sale.CustomersOwnTtn
       }
 
+      payload.BaseLifeCycleStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 }
+      payload.BaseSalePaymentStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 }
+      payload.IsPrintedPaymentInvoice = true
+
       const file = !selfCheckout && review.hasOwnTtn ? review.ttnFile : null
-      const updated = await setSaleCarrier(payload, file)
+
+      if (payload.IsVatSale) {
+        const document = await convertVatSaleAndGetPaymentDocument(payload, file)
+        const url = document.pdfUrl || document.excelUrl
+
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer')
+        }
+      } else {
+        await updateSaleFromData(payload, file)
+      }
+
       notifications.show({ color: 'green', message: t('Продаж створено') })
-      onCreated(updated ?? state.sale)
+      onCreated(state.sale)
       onClose()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
