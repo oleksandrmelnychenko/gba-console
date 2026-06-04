@@ -177,7 +177,6 @@ export function OnlineShopClientsPage() {
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
-                label={t('Пошук')}
                 placeholder={t('Клієнт, телефон або email')}
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.currentTarget.value)}

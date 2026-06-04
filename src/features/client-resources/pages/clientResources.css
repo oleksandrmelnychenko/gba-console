@@ -173,6 +173,65 @@
   background: #ffffff;
 }
 
+.client-resources-perfect-client-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.client-resources-perfect-client-column {
+  min-width: 0;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.client-resources-perfect-client-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 52px;
+  gap: 12px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  background: #ffffff;
+}
+
+.client-resources-perfect-client-row:hover {
+  background: #ffffff;
+  color: #000000;
+  box-shadow: inset 0 0 0 1px var(--mantine-color-violet-3);
+}
+
+.client-resources-perfect-client-row:hover .client-resources-perfect-client-name {
+  color: #000000;
+}
+
+.client-resources-perfect-client-text {
+  min-width: 0;
+}
+
+.client-resources-perfect-client-name {
+  overflow: hidden;
+  color: var(--mantine-color-gray-9);
+  font-size: 17px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-resources-perfect-client-description {
+  overflow: hidden;
+  color: var(--mantine-color-violet-7);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 860px) {
   .client-resources-page {
     padding: 12px;
@@ -189,5 +248,9 @@
 
   .client-resources-panel {
     padding: 14px;
+  }
+
+  .client-resources-perfect-client-grid {
+    grid-template-columns: 1fr;
   }
 }

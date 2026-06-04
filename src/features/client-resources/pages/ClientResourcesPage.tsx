@@ -1204,7 +1204,7 @@ function DeleteResourceModal({
 
 function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
   const clientTypesState = useResourceData<ClientResourceClientType[]>(getClientResourceClientTypes, [])
-  const [roleId, setRoleId] = useValueState<string | null>(null)
+  const [roleId] = useValueState<string | null>(null)
   const [editor, setEditor] = useValueState<PerfectClientEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
@@ -1328,21 +1328,10 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
 
   return (
     <ResourcePanel action={perfectClientAction} section={section}>
-      <Group align="flex-start" mb="md">
-        <Select
-          data={roleOptions}
-          label={translate("Роль клієнта")}
-          maw={360}
-          nothingFoundMessage={translate("Ролей не знайдено")}
-          onChange={setRoleId}
-          placeholder={translate("Оберіть роль")}
-          value={effectiveRoleId}
-        />
-      </Group>
       <Loadable state={clientTypesState} emptyTitle="Ролей клієнтів не знайдено">
         <Loadable state={perfectClientsState} emptyTitle="Параметрів для ролі не знайдено">
           {selectedRole ? (
-            <Stack gap="xl">
+            <Box className="client-resources-perfect-client-grid">
               <PerfectClientGroup
                 items={checkboxItems}
                 title={translate("Прапорці")}
@@ -1361,9 +1350,9 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
                 }}
                 onEdit={openEditPerfectClient}
               />
-            </Stack>
+            </Box>
           ) : (
-            <EmptyState title={translate("Оберіть роль клієнта")} />
+            <EmptyState title={translate("Параметрів немає")} />
           )}
         </Loadable>
       </Loadable>
@@ -1411,63 +1400,35 @@ function PerfectClientGroup({
   onEdit: (perfectClient: ClientResourcePerfectClient) => void
 }) {
   return (
-    <Box>
-      <Text fw={700} mb="xs">
-        {title}
-      </Text>
+    <Box className="client-resources-perfect-client-column" aria-label={title}>
       {items.length ? (
-        <ResourceDataTable
-          columns={[
-            {
-              id: 'name',
-              header: 'Назва',
-              accessor: (item) => displayTranslatedEntity(item.Name, item.PerfectClientTranslations),
-              cell: (item) => <TruncatedCell value={displayTranslatedEntity(item.Name, item.PerfectClientTranslations)} />,
-              maxWidth: 190,
-              width: 190,
-            },
-            {
-              id: 'label',
-              header: 'Мітка',
-              accessor: (item) => item.Lable,
-              cell: (item) => <TruncatedCell value={item.Lable} />,
-              maxWidth: 150,
-              width: 150,
-            },
-            {
-              id: 'value',
-              header: 'Значення',
-              accessor: (item) => item.Value,
-              cell: (item) => <TruncatedCell value={item.Value} />,
-              maxWidth: 130,
-              width: 130,
-            },
-            {
-              id: 'description',
-              header: 'Опис',
-              accessor: (item) => item.Description,
-              cell: (item) => <TruncatedCell value={item.Description} />,
-              maxWidth: 220,
-              width: 220,
-            },
-            {
-              id: 'actions',
-              header: '',
-              align: 'right',
-              width: 72,
-              enableHiding: false,
-              enableReorder: false,
-              enableResizing: false,
-              enableSorting: false,
-              cell: (item) => (
-                <Group gap={4} justify="flex-end" wrap="nowrap">
+        <Stack gap={0}>
+          {items.map((item) => {
+            const name = displayTranslatedEntity(item.Name, item.PerfectClientTranslations)
+            const description = item.Description?.trim() || displayValue(item.Lable)
+
+            return (
+              <Box className="client-resources-perfect-client-row" key={getEntityKey(item)}>
+                <Box className="client-resources-perfect-client-text">
+                  <Tooltip classNames={{ tooltip: 'client-resources-cell-tooltip' }} label={name} disabled={!name || name === '-'}>
+                    <Text className="client-resources-perfect-client-name">{name}</Text>
+                  </Tooltip>
+                  <Tooltip
+                    classNames={{ tooltip: 'client-resources-cell-tooltip' }}
+                    label={description}
+                    disabled={!description || description === '-'}
+                  >
+                    <Text className="client-resources-perfect-client-description">{description}</Text>
+                  </Tooltip>
+                </Box>
+                <Group gap={6} justify="flex-end" wrap="nowrap">
                   <PermissionGate permissionKey={PERFECT_CLIENT_EDIT_PERMISSION}>
                     <Tooltip label={translate("Редагувати")}>
                       <ActionIcon
                         aria-label={translate("Редагувати параметр")}
                         color="gray"
                         size="sm"
-                        variant="subtle"
+                        variant="default"
                         onClick={() => onEdit(item)}
                       >
                         <IconPencil size={16} />
@@ -1481,7 +1442,7 @@ function PerfectClientGroup({
                         color="red"
                         disabled={!item.NetUid}
                         size="sm"
-                        variant="subtle"
+                        variant="default"
                         onClick={() => onDelete(item)}
                       >
                         <IconTrash size={16} />
@@ -1489,15 +1450,10 @@ function PerfectClientGroup({
                     </Tooltip>
                   </PermissionGate>
                 </Group>
-              ),
-            },
-          ]}
-          data={items}
-          emptyText={translate("Записів немає")}
-          layoutVersion="client-resources-perfect-clients-table-2"
-          minWidth={762}
-          tableId={`perfect-clients-${title}`}
-        />
+              </Box>
+            )
+          })}
+        </Stack>
       ) : (
         <EmptyState title={translate("Записів немає")} />
       )}
@@ -1555,8 +1511,8 @@ function PerfectClientEditorModal({
           <Select
             allowDeselect={false}
             data={[
-              { value: String(PERFECT_CLIENT_CHECKBOX_TYPE), label: translate('Прапорець') },
-              { value: String(PERFECT_CLIENT_TOGGLE_TYPE), label: translate('Перемикач') },
+              { value: String(PERFECT_CLIENT_CHECKBOX_TYPE), label: translate('Не існує') },
+              { value: String(PERFECT_CLIENT_TOGGLE_TYPE), label: translate('Існує') },
             ]}
             label={translate("Тип")}
             value={values.Type}
