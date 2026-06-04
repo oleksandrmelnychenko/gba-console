@@ -296,7 +296,7 @@ export function ProductDetailPage() {
 
   const mainImage = useMemo(() => getProductMainImage(product), [product])
   const originalNumbers = useMemo(() => getProductOriginalNumbers(product).slice(0, 8), [product])
-  const prices = useMemo(() => product?.CalculatedPrices?.slice(0, 8) || [], [product])
+  const prices = useMemo(() => product?.CalculatedPrices ?? [], [product])
 
   const openPanel = useCallback(
     (panel: ProductDetailPanel) => {

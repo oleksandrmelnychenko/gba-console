@@ -100,6 +100,8 @@ function nextTempId(clientAgreements: ClientAgreement[]): number {
   return (used.length ? Math.max(...used) : 0) + 1
 }
 
+const RETAIL_CLIENT_TYPE_ROLE_ID = 6
+
 export function PricingPanel({
   client,
   isProvider,
@@ -124,6 +126,10 @@ export function PricingPanel({
   const discountDraftRef = useRef<DiscountsTreeDraft | null>(null)
 
   const clientAgreements = useMemo(() => client.ClientAgreements || [], [client.ClientAgreements])
+  const isRetailClient = useMemo(
+    () => client.ClientInRole?.ClientTypeRole?.Id === RETAIL_CLIENT_TYPE_ROLE_ID,
+    [client.ClientInRole],
+  )
   const servicePayers = useMemo(() => client.ServicePayers || [], [client.ServicePayers])
   const contractDocuments = useMemo(() => client.ClientContractDocuments || [], [client.ClientContractDocuments])
 
@@ -468,6 +474,7 @@ export function PricingPanel({
               exportDocument={exportDocument}
               isExporting={isExporting}
               isProvider={isProvider}
+              isRetailClient={isRetailClient}
               organizations={organizations}
               pricings={pricings}
               promotionalPricings={pricings}
