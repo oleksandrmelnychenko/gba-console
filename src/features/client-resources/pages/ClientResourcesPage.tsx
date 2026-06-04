@@ -788,98 +788,104 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
     openEditRegionCode, saveRegion, saveRegionCode, setDeleteTarget, setFormError, setRegionCodeEditor,
     setRegionEditor, setSearch, setSelectedRegionId,
   } = model
-  const createRegionAction = (
-    <PermissionGate permissionKey={REGION_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateRegion}>
-        Новий регіон
-      </Button>
-    </PermissionGate>
+  const regionHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={REGION_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateRegion}>
+          Новий регіон
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createRegionAction} section={section}>
-      <PanelToolbar
-        isLoading={state.isLoading}
-        onRefresh={state.reload}
-        onSearchChange={setSearch}
-        searchValue={search}
-      />
+    <ResourcePanel action={regionHeaderAction} section={section}>
       <Loadable state={state} emptyTitle="Регіонів не знайдено">
         {filteredRegions.length ? (
           <Box className="client-resources-regions-grid">
-            <Stack gap={8} className="client-resources-region-list">
-              {filteredRegions.map((region, index) => {
-                const key = getEntityKey(region, index)
-                const isActive = getEntityKey(selectedRegion) === key
+            <Stack gap={8} className="client-resources-region-master">
+              <TextInput
+                className="client-resources-region-search"
+                leftSection={<IconSearch size={16} stroke={1.8} />}
+                onChange={(event) => setSearch(event.currentTarget.value)}
+                placeholder={translate('Пошук')}
+                value={search}
+              />
+              <Stack gap={8} className="client-resources-region-list">
+                {filteredRegions.map((region, index) => {
+                  const key = getEntityKey(region, index)
+                  const isActive = getEntityKey(selectedRegion) === key
 
-                return (
-                  <button
-                    type="button"
-                    className={`client-resources-region-row${isActive ? ' is-active' : ''}`}
-                    key={key}
-                    onClick={() => setSelectedRegionId(key)}
-                  >
-                    <span>
-                      <Text fw={600}>{displayValue(region.Name)}</Text>
-                    </span>
-                    <Group gap={4} wrap="nowrap">
-                      <Badge variant="light" color={isActive ? CREATE_ACTION_COLOR : 'gray'}>
-                        {region.RegionCodes?.length || 0}
-                      </Badge>
-                      <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
-                        <Tooltip label={translate("Додати код")}>
-                          <ActionIcon
-                            aria-label={translate("Додати код регіону")}
-                            color={CREATE_ACTION_COLOR}
-                            size="sm"
-                            variant="subtle"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              openCreateRegionCode(region)
-                            }}
-                          >
-                            <IconPlus size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </PermissionGate>
-                      <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
-                        <Tooltip label={translate("Редагувати")}>
-                          <ActionIcon
-                            aria-label={translate("Редагувати регіон")}
-                            color="gray"
-                            size="sm"
-                            variant="subtle"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              openEditRegion(region)
-                            }}
-                          >
-                            <IconPencil size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </PermissionGate>
-                      <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
-                        <Tooltip label={translate("Видалити")}>
-                          <ActionIcon
-                            aria-label={translate("Видалити регіон")}
-                            color="red"
-                            disabled={!region.NetUid}
-                            size="sm"
-                            variant="subtle"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              setFormError(null)
-                              setDeleteTarget({ type: 'region', region })
-                            }}
-                          >
-                            <IconTrash size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                      </PermissionGate>
-                    </Group>
-                  </button>
-                )
-              })}
+                  return (
+                    <button
+                      type="button"
+                      className={`client-resources-region-row${isActive ? ' is-active' : ''}`}
+                      key={key}
+                      onClick={() => setSelectedRegionId(key)}
+                    >
+                      <span>
+                        <Text fw={600}>{displayValue(region.Name)}</Text>
+                      </span>
+                      <Group gap={4} wrap="nowrap">
+                        <Badge variant="light" color={isActive ? CREATE_ACTION_COLOR : 'gray'}>
+                          {region.RegionCodes?.length || 0}
+                        </Badge>
+                        <PermissionGate permissionKey={REGION_CODE_CREATE_PERMISSION}>
+                          <Tooltip label={translate("Додати код")}>
+                            <ActionIcon
+                              aria-label={translate("Додати код регіону")}
+                              color={CREATE_ACTION_COLOR}
+                              size="sm"
+                              variant="subtle"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                openCreateRegionCode(region)
+                              }}
+                            >
+                              <IconPlus size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </PermissionGate>
+                        <PermissionGate permissionKey={REGION_EDIT_PERMISSION}>
+                          <Tooltip label={translate("Редагувати")}>
+                            <ActionIcon
+                              aria-label={translate("Редагувати регіон")}
+                              color="gray"
+                              size="sm"
+                              variant="subtle"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                openEditRegion(region)
+                              }}
+                            >
+                              <IconPencil size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </PermissionGate>
+                        <PermissionGate permissionKey={REGION_DELETE_PERMISSION}>
+                          <Tooltip label={translate("Видалити")}>
+                            <ActionIcon
+                              aria-label={translate("Видалити регіон")}
+                              color="red"
+                              disabled={!region.NetUid}
+                              size="sm"
+                              variant="subtle"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setFormError(null)
+                                setDeleteTarget({ type: 'region', region })
+                              }}
+                            >
+                              <IconTrash size={16} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </PermissionGate>
+                      </Group>
+                    </button>
+                  )
+                })}
+              </Stack>
             </Stack>
             <Box className="client-resources-region-detail">
               <Group justify="space-between" mb="sm">
@@ -2280,20 +2286,23 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createOrganizationAction = (
-    <PermissionGate permissionKey={ORGANIZATION_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateOrganization}>
-        Нова організація
-      </Button>
-    </PermissionGate>
+  const organizationHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={ORGANIZATION_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateOrganization}>
+          Нова організація
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createOrganizationAction} section={section}>
+    <ResourcePanel action={organizationHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       {supportError ? (
@@ -2757,20 +2766,23 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createTaxInspectionAction = (
-    <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
-        Нова налогова інспекція
-      </Button>
-    </PermissionGate>
+  const taxInspectionHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={TAX_INSPECTION_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateTaxInspection}>
+          Нова налогова інспекція
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createTaxInspectionAction} section={section}>
+    <ResourcePanel action={taxInspectionHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       <Loadable state={state} emptyTitle="Налогових інспекцій не знайдено">
@@ -3067,27 +3079,30 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createPricingAction = (
-    <PermissionGate permissionKey={PRICING_CREATE_PERMISSION}>
-      <Button
-        color={CREATE_ACTION_COLOR}
-        disabled={isPricingSupportBlocked}
-        leftSection={<IconPlus size={16} />}
-        loading={isLoadingSupport}
-        size="xs"
-        onClick={openCreatePricing}
-      >
-        Нове правило
-      </Button>
-    </PermissionGate>
+  const pricingHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={PRICING_CREATE_PERMISSION}>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isPricingSupportBlocked}
+          leftSection={<IconPlus size={16} />}
+          loading={isLoadingSupport}
+          size="xs"
+          onClick={openCreatePricing}
+        >
+          Нове правило
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createPricingAction} section={section}>
+    <ResourcePanel action={pricingHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       {supportError ? (
@@ -3393,20 +3408,23 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createCurrencyAction = (
-    <PermissionGate permissionKey={CURRENCY_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateCurrency}>
-        Нова валюта
-      </Button>
-    </PermissionGate>
+  const currencyHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={CURRENCY_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateCurrency}>
+          Нова валюта
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createCurrencyAction} section={section}>
+    <ResourcePanel action={currencyHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       <Loadable state={state} emptyTitle="Валют не знайдено">
@@ -3615,20 +3633,23 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createStorageAction = (
-    <PermissionGate permissionKey={STORAGE_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateStorage}>
-        Новий склад
-      </Button>
-    </PermissionGate>
+  const storageHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={STORAGE_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateStorage}>
+          Новий склад
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createStorageAction} section={section}>
+    <ResourcePanel action={storageHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       {organizationsState.error ? (
@@ -3867,20 +3888,23 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
       setSaving(false)
     }
   }
-  const createMeasureUnitAction = (
-    <PermissionGate permissionKey={MEASURE_UNIT_CREATE_PERMISSION}>
-      <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
-        Нова одиниця
-      </Button>
-    </PermissionGate>
+  const measureUnitHeaderAction = (
+    <Group gap="xs" wrap="nowrap">
+      <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+      <PermissionGate permissionKey={MEASURE_UNIT_CREATE_PERMISSION}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openCreateMeasureUnit}>
+          Нова одиниця
+        </Button>
+      </PermissionGate>
+    </Group>
   )
 
   return (
-    <ResourcePanel action={createMeasureUnitAction} section={section}>
+    <ResourcePanel action={measureUnitHeaderAction} section={section}>
       <PanelToolbar
         isLoading={state.isLoading}
-        onRefresh={state.reload}
         onSearchChange={setSearch}
+        searchFullWidth
         searchValue={search}
       />
       <Loadable state={state} emptyTitle="Одиниць виміру не знайдено">
@@ -4043,8 +4067,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   }
 
   return (
-    <ResourcePanel section={section}>
-      <PanelToolbar isLoading={state.isLoading} onRefresh={state.reload} />
+    <ResourcePanel action={<RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />} section={section}>
       <Loadable state={state} emptyTitle="Ролей клієнтів не знайдено">
         {roles.length ? (
           <ResourceDataTable
@@ -4514,12 +4537,14 @@ function PanelToolbar({
   isLoading,
   onRefresh,
   onSearchChange,
+  searchFullWidth = false,
   searchValue,
 }: {
   action?: ReactNode
   isLoading: boolean
-  onRefresh: () => void
+  onRefresh?: () => void
   onSearchChange?: (value: string) => void
+  searchFullWidth?: boolean
   searchValue?: string
 }) {
   const { t } = useI18n()
@@ -4528,7 +4553,7 @@ function PanelToolbar({
     <Group justify="space-between" align="center" mb="md" gap="sm">
       {onSearchChange ? (
         <TextInput
-          className="client-resources-search"
+          className={`client-resources-search${searchFullWidth ? ' client-resources-search-full' : ''}`}
           leftSection={<IconSearch size={16} stroke={1.8} />}
           onChange={(event) => onSearchChange(event.currentTarget.value)}
           placeholder={t('Пошук')}
@@ -4538,7 +4563,7 @@ function PanelToolbar({
         <span />
       )}
       <Group gap="xs">
-        <RefreshControl isLoading={isLoading} onRefresh={onRefresh} />
+        {onRefresh ? <RefreshControl isLoading={isLoading} onRefresh={onRefresh} /> : null}
         {action}
       </Group>
     </Group>

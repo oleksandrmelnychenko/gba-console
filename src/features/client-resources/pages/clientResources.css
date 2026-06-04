@@ -57,6 +57,11 @@
   max-width: 520px;
 }
 
+.client-resources-search-full {
+  flex-basis: 100%;
+  max-width: none;
+}
+
 .client-resources-truncated-cell {
   display: block;
   width: 100%;
@@ -117,6 +122,14 @@
   display: grid;
   grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
   gap: 16px;
+}
+
+.client-resources-region-master {
+  min-width: 0;
+}
+
+.client-resources-region-search {
+  width: 100%;
 }
 
 .client-resources-region-list {

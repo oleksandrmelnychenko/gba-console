@@ -15,6 +15,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getSaleActProtocolEditDocument,
   getSalePrintDocument,
@@ -278,10 +279,7 @@ export function SalesTab() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
-          {t('Статус пакування')}
-        </Text>
+      <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -294,7 +292,11 @@ export function SalesTab() {
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-      </Group>
+      </PageHeaderActions>
+
+      <Text fw={700} size="lg">
+        {t('Статус пакування')}
+      </Text>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">

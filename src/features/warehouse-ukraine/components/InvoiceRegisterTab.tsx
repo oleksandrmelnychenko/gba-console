@@ -5,6 +5,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getInvoiceRegister, getInvoiceRegisterPrintDocument } from '../api/invoiceRegisterApi'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -296,10 +297,7 @@ export function InvoiceRegisterTab() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
-          {t('Реєстр накладних')}
-        </Text>
+      <PageHeaderActions>
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
             <ActionIcon
@@ -323,7 +321,11 @@ export function InvoiceRegisterTab() {
             {t('Роздрукувати')}
           </Button>
         </Group>
-      </Group>
+      </PageHeaderActions>
+
+      <Text fw={700} size="lg">
+        {t('Реєстр накладних')}
+      </Text>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">

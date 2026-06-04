@@ -142,34 +142,33 @@ export function CompanyCarsPage() {
   return (
     <Stack gap="md">
       <PageHeaderActions>
-        <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate(`${COMPANY_CARS_PATH}/new`, {
-                state: {
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Завести нову машину компанії')}
-          </Button>
-        </PermissionGate>
+        <Group gap="xs" wrap="nowrap">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              size="sm"
+              leftSection={<IconPlus size={16} />}
+              onClick={() =>
+                navigate(`${COMPANY_CARS_PATH}/new`, {
+                  state: {
+                    returnPath: `${location.pathname}${location.search}`,
+                  },
+                })
+              }
+            >
+              {t('Завести нову машину компанії')}
+            </Button>
+          </PermissionGate>
+        </Group>
       </PageHeaderActions>
 
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

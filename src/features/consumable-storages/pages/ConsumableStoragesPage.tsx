@@ -136,6 +136,14 @@ export function ConsumableStoragesPage() {
     [location, navigate],
   )
 
+  const openCreateStorage = useCallback(() => {
+    navigate('/accounting/storages/new', {
+      state: {
+        returnPath: `${location.pathname}${location.search}`,
+      },
+    })
+  }, [location, navigate])
+
   const columns = useConsumableStorageColumns({
     onDelete: setDeleteStorageTarget,
     onEdit: openEditor,
@@ -210,51 +218,26 @@ export function ConsumableStoragesPage() {
     <Stack gap="md">
       <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
         <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={() =>
-              navigate('/accounting/storages/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Новий склад')}
-          </Button>
+          <Group gap="xs" wrap="nowrap">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              size="sm"
+              leftSection={<IconPlus size={16} />}
+              onClick={openCreateStorage}
+            >
+              {t('Новий склад')}
+            </Button>
+          </Group>
         </PageHeaderActions>
       </PermissionGate>
 
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Group gap="xs">
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/storages/new', {
-                      state: {
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Новий склад')}
-                </Button>
-              </PermissionGate>
-            </Group>
-          </Group>
-
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

@@ -682,10 +682,7 @@ function AutoShipmentsPanel() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
-          {t('Відвантаження')}
-        </Text>
+      <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -698,7 +695,11 @@ function AutoShipmentsPanel() {
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-      </Group>
+      </PageHeaderActions>
+
+      <Text fw={700} size="lg">
+        {t('Відвантаження')}
+      </Text>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
@@ -1220,25 +1221,24 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   return (
     <Stack gap="md">
       <PageHeaderActions>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
-          {t('Створити')}
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={isLoading}
+              size={38}
+              variant="light"
+              onClick={refreshList}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
+            {t('Створити')}
+          </Button>
+        </Group>
       </PageHeaderActions>
-
-      <Group justify="flex-end" align="center">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={refreshList}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
