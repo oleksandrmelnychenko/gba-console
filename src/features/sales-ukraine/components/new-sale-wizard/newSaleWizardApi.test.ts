@@ -10,7 +10,6 @@ import {
   getSubClients,
   newDeliveryRecipient,
   newDeliveryRecipientAddress,
-  setSaleCarrier,
   updateSaleDeliveryRecipient,
   updateSaleDeliveryRecipientAddress,
 } from './newSaleWizardApi'
@@ -65,20 +64,6 @@ describe('new sale wizard pricing API contracts', () => {
         productNetId: 'product-1',
       },
     })
-  })
-
-  it('sends sale carrier as multipart FormData and unwraps nested sale response', async () => {
-    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'sale-1' } })
-
-    const result = await setSaleCarrier({ NetUid: 'sale-1' }, null)
-    const [, options] = apiRequestMock.mock.calls[0]
-    const body = options?.body as FormData
-
-    expect(result).toEqual({ NetUid: 'sale-1' })
-    expect(apiRequestMock).toHaveBeenCalledWith('/sales/set/change', expect.objectContaining({ method: 'POST' }))
-    expect(body).toBeInstanceOf(FormData)
-    expect(JSON.parse(String(body.get('sale')))).toEqual({ NetUid: 'sale-1' })
-    expect(body.has('file')).toBe(false)
   })
 
   it('requests and creates delivery recipients with legacy endpoint shapes', async () => {

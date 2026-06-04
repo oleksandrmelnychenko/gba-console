@@ -119,24 +119,6 @@ function asNumber(result: unknown): number | null {
   return null
 }
 
-// --- Carrier (review confirm) ---------------------------------------------
-
-export async function setSaleCarrier(sale: SalesUkraineSale, file: File | null): Promise<SalesUkraineSale | null> {
-  const formData = new FormData()
-  formData.append('sale', JSON.stringify(sale))
-
-  if (file) {
-    formData.append('file', file)
-  }
-
-  const result = await apiRequest<unknown>('/sales/set/change', {
-    body: formData,
-    method: 'POST',
-  })
-
-  return asSale(result)
-}
-
 // --- Delivery recipients ---------------------------------------------------
 
 export async function getClientDeliveryRecipients(clientNetId: string): Promise<WizardDeliveryRecipient[]> {
