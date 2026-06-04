@@ -157,6 +157,9 @@ export function ConsumableOrderPayPage() {
         const defaultRegister = nextRegisters[0] || null
         const defaultCurrencyRegister = defaultRegister?.PaymentCurrencyRegisters?.[0] || null
         const totalAmount = calculation?.Total || calculatedOrder.TotalAmount || calculateLocalTotal(calculatedOrder.ConsumablesOrderItems || [])
+        const paidAmount = nextOrder.TotalPaidAmount || 0
+        const remainingAmount = totalAmount - paidAmount
+        const defaultAmount = paidAmount > 0 && remainingAmount > 0 ? remainingAmount : totalAmount
 
         setOrder(calculatedOrder)
         setOrganizations(includeEntity(nextOrganizations, defaultOrganization))
@@ -164,7 +167,7 @@ export function ConsumableOrderPayPage() {
         setPaymentMovements(nextMovements)
         setForm((current) => ({
           ...current,
-          amount: totalAmount,
+          amount: defaultAmount,
           organizationValue: defaultOrganization ? getEntityValue(defaultOrganization) : '',
           paymentRegisterValue: defaultRegister ? getEntityValue(defaultRegister) : '',
           selectedCurrencyRegisterValue: defaultCurrencyRegister ? getEntityValue(defaultCurrencyRegister) : '',
