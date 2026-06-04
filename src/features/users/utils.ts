@@ -8,7 +8,7 @@ export const USER_REGION_POLAND = 'pl'
 const nameMaxLength = 20
 const emailMaxLength = 50
 const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i
-const passwordPattern = /^.*(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=[$&+,:;=?@#|'<>._^*()%!-]).*$/
+const passwordPattern = /^(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$&+,:;=?@#|'<>._^*()%!-]).*$/
 const phonePattern = /^(\d{9,10})$/i
 
 export function createEmptyUserProfile(): UserProfile {
