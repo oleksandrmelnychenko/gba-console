@@ -59,16 +59,17 @@ export function AgreementForm({
   const { user } = useAuth()
   const roleType = user?.UserRole?.UserRoleType
   const isAdmin = roleType === UserRoleType.Administrator || roleType === UserRoleType.GBA
+  const isPriceTypeBypassRole = roleType === UserRoleType.Administrator
 
   const [providerPricingEditorOpened, setProviderPricingEditorOpened] = useState(false)
   const [providerPricingName, setProviderPricingName] = useState('')
 
   const visiblePricings = useMemo(
     () =>
-      isProvider || (isAdmin && isRetailClient)
+      isProvider || (isPriceTypeBypassRole && isRetailClient)
         ? pricings
         : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting)),
-    [isProvider, isAdmin, isRetailClient, pricings, agreement.WithVATAccounting],
+    [isProvider, isPriceTypeBypassRole, isRetailClient, pricings, agreement.WithVATAccounting],
   )
   const organizationOptions = useMemo(() => toOptions(organizations), [organizations])
   const currencyOptions = useMemo(() => toOptions(currencies), [currencies])
