@@ -1,5 +1,6 @@
 .role-tree {
   min-width: 0;
+  --role-tree-link-color: var(--mantine-color-gray-2);
 }
 
 .role-tree-check {
@@ -307,15 +308,24 @@
 
 .role-tree-connector {
   align-self: stretch;
-  border-left: 1px solid var(--mantine-color-gray-3);
   position: relative;
 }
 
+.role-tree-connector::before {
+  background: var(--role-tree-link-color);
+  bottom: -4px;
+  content: '';
+  left: 18px;
+  position: absolute;
+  top: -4px;
+  width: 1px;
+}
+
 .role-tree-connector::after {
-  background: var(--mantine-color-gray-3);
+  background: var(--role-tree-link-color);
   content: '';
   height: 1px;
-  left: -1px;
+  left: 18px;
   position: absolute;
   top: 50%;
   width: 18px;
@@ -337,7 +347,7 @@
 }
 
 .role-tree-permission-body-line {
-  background: var(--mantine-color-gray-2);
+  background: var(--role-tree-link-color);
   display: block;
   height: 1px;
   min-width: 24px;
