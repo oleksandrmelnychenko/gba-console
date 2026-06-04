@@ -23,7 +23,7 @@ export async function getSalesUkraine(filters: SalesUkraineFilters): Promise<Sal
     query: {
       clientId: filters.clientId || undefined,
       fastEcommerce: false,
-      forEcommerce: false,
+      forEcommerce: filters.forEcommerce,
       from: filters.from,
       fromShipments: false,
       limit: filters.limit,

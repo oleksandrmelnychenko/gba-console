@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Divider,
   Group,
   Menu,
@@ -84,6 +85,7 @@ import type {
 
 type FilterDraft = {
   clientId: string
+  forEcommerce: boolean
   from: string
   onlyMine: boolean
   organisationIds: string[]
@@ -176,6 +178,7 @@ export function SalesUkrainePage() {
   const initialDraft = useMemo<FilterDraft>(
     () => ({
       clientId: '',
+      forEcommerce: false,
       from: today,
       onlyMine: false,
       organisationIds: [],
@@ -220,6 +223,7 @@ export function SalesUkrainePage() {
   const activeFilters = useMemo<SalesUkraineFilters>(
     () => ({
       clientId: activeDraft.clientId,
+      forEcommerce: activeDraft.forEcommerce,
       from: activeDraft.from,
       limit: pageSize,
       offset,
@@ -642,6 +646,12 @@ export function SalesUkrainePage() {
               w={240}
               onChange={(value) => applyFilters({ ...filterDraft, clientId: value || '' })}
               onSearchChange={setClientQuery}
+            />
+            <Checkbox
+              checked={filterDraft.forEcommerce}
+              label={t('Інтернет-магазин')}
+              mb={8}
+              onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
             />
             <TextInput
               flex={1}
