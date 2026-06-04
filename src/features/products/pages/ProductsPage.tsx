@@ -1849,9 +1849,9 @@ function ProductUploadDocumentToolbar({
       <PermissionGate permissionKey={PRODUCT_UPLOAD_DOCUMENT_PERMISSION}>
         <Menu position="bottom-start" shadow="md" width={260} withinPortal>
           <Menu.Target>
-            <Button size="xs" variant="light" leftSection={<IconUpload size={16} />}>
-              {t('Завантажити')}
-            </Button>
+            <ActionIcon variant="default" size={36} aria-label={t('Завантажити')}>
+              <ExcelIcon size={22} />
+            </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Label>{t('Асортимент')}</Menu.Label>
