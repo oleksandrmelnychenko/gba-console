@@ -129,7 +129,7 @@ function SaleDiscountForm({
       )}
       {isReadOnly && (
         <Alert color="gray" variant="light">
-          {t('Знижку можна змінити лише для нового продажу, пакування або запакованого')}
+          {t('Знижку можна змінити лише для нового продажу')}
         </Alert>
       )}
       <NumberInput

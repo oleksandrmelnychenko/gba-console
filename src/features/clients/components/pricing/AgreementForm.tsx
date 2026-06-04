@@ -24,6 +24,7 @@ import {
   PRICING_NAME_PURCHASE,
 } from './pricingNames'
 import type { Agreement, Currency, Organization, Pricing, ProviderPricing } from '../../types'
+import { organizationHasVat } from './organizationVat'
 
 export type AgreementFormProps = {
   agreement: Agreement
@@ -34,6 +35,7 @@ export type AgreementFormProps = {
   pricings: Pricing[]
   promotionalPricings: Pricing[]
   isVatAccountingHidden: boolean
+  isRetailClient?: boolean
   errors?: { name?: string }
   onChange: (patch: Partial<Agreement>) => void
 }
@@ -49,6 +51,7 @@ export function AgreementForm({
   pricings,
   promotionalPricings,
   isVatAccountingHidden,
+  isRetailClient = false,
   errors,
   onChange,
 }: AgreementFormProps) {
@@ -61,8 +64,11 @@ export function AgreementForm({
   const [providerPricingName, setProviderPricingName] = useState('')
 
   const visiblePricings = useMemo(
-    () => (isProvider ? pricings : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting))),
-    [isProvider, pricings, agreement.WithVATAccounting],
+    () =>
+      isProvider || (isAdmin && isRetailClient)
+        ? pricings
+        : pricings.filter((pricing) => Boolean(pricing.ForVat) === Boolean(agreement.WithVATAccounting)),
+    [isProvider, isAdmin, isRetailClient, pricings, agreement.WithVATAccounting],
   )
   const organizationOptions = useMemo(() => toOptions(organizations), [organizations])
   const currencyOptions = useMemo(() => toOptions(currencies), [currencies])
@@ -429,18 +435,6 @@ export function AgreementForm({
       PromotionalPricing: findByName(promotionalPricings, PRICING_NAME_BULK_TWO),
     })
   }
-}
-
-function organizationHasVat(organization?: Organization): boolean {
-  if (!organization) {
-    return false
-  }
-
-  if (organization.VatRate) {
-    return Boolean(organization.VatRate.Value)
-  }
-
-  return Boolean(organization.VatRateId) || Boolean(organization.IsVatAgreements)
 }
 
 function toOptions(items: Array<{ Id?: number; Name?: string }>): Array<{ label: string; value: string }> {

@@ -288,17 +288,10 @@ export function DiscountsTree({
 
     setPercent('')
     setSelectedNetId('')
-    updateDiscountMap((previous) => {
-      const nextSelected = !previous[netId]?.isSelected
-
-      return Object.values(previous).reduce<DiscountMap>((accumulator, currentNode) => {
-        accumulator[currentNode.netId] = isSameOrDescendant(currentNode, netId, previous)
-          ? { ...currentNode, isSelected: nextSelected }
-          : currentNode
-
-        return accumulator
-      }, {})
-    })
+    updateDiscountMap((previous) => ({
+      ...previous,
+      [netId]: { ...previous[netId], isSelected: !previous[netId]?.isSelected },
+    }))
   }
 
   function handleToggleActive(netId: string) {

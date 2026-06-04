@@ -29,7 +29,8 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
-import { PRICING_NAME_BULK_TWO } from './pricingNames'
+import { organizationHasVat } from './organizationVat'
+import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
 import type {
   Agreement,
   ClientAgreement,
@@ -49,6 +50,7 @@ export type ClientAgreementsPanelProps = {
   currencies: Currency[]
   pricings: Pricing[]
   promotionalPricings: Pricing[]
+  isRetailClient?: boolean
   isLoading?: boolean
   isSaving?: boolean
   isDeleting?: boolean
@@ -130,6 +132,7 @@ export function ClientAgreementsPanel({
   currencies,
   pricings,
   promotionalPricings,
+  isRetailClient = false,
   isLoading = false,
   isSaving = false,
   isDeleting = false,
@@ -305,6 +308,7 @@ export function ClientAgreementsPanel({
               errors={formError ? { name: !formDraft.Name?.trim() ? '*' : undefined } : undefined}
               isEdit={formIsEdit}
               isProvider={isProvider}
+              isRetailClient={isRetailClient}
               isVatAccountingHidden={isVatAccountingHidden}
               organizations={organizations}
               pricings={pricings}
@@ -630,14 +634,16 @@ function createAgreementDraft(
     draft.IsPayForDelivery = false
     draft.ProviderPricing = undefined
   } else {
-    const defaultPricing = pricings.find((pricing) => pricing.Name === PRICING_NAME_BULK_TWO) || pricings[0]
+    const hasVat = organizationHasVat(organizations[0])
+    const pricingName = hasVat ? PRICING_NAME_BULK_TWO_VAT : PRICING_NAME_BULK_TWO
+    const defaultPricing = pricings.find((pricing) => pricing.Name === pricingName) || pricings[0]
     draft.Pricing = defaultPricing
     draft.PromotionalPricing = defaultPricing
-    draft.IsManagementAccounting = true
-    draft.IsAccounting = false
-    draft.WithVATAccounting = false
+    draft.IsManagementAccounting = !hasVat
+    draft.IsAccounting = hasVat
+    draft.WithVATAccounting = hasVat
     draft.ForReSale = false
-    draft.WithAgreementLine = false
+    draft.WithAgreementLine = true
   }
 
   return draft
