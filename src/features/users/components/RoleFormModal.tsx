@@ -1,5 +1,5 @@
 import { Button, Group, NumberInput, Stack, TextInput } from '@mantine/core'
-import { IconDeviceFloppy } from '@tabler/icons-react'
+import { IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -10,14 +10,24 @@ import type { UserRole } from '../types'
 const DEFAULT_DASHBOARD = '/dashboard'
 
 type RoleFormModalProps = {
+  canDelete?: boolean
   isSaving: boolean
   opened: boolean
   role: UserRole | null
   onClose: () => void
+  onDelete?: () => void
   onSubmit: (values: { Dashboard: string; Name: string }) => void
 }
 
-export function RoleFormModal({ isSaving, opened, role, onClose, onSubmit }: RoleFormModalProps) {
+export function RoleFormModal({
+  canDelete = false,
+  isSaving,
+  opened,
+  role,
+  onClose,
+  onDelete,
+  onSubmit,
+}: RoleFormModalProps) {
   const { t } = useI18n()
   const [name, setName] = useValueState(role?.Name || '')
   const [dashboard] = useValueState(role?.Dashboard || DEFAULT_DASHBOARD)
@@ -54,13 +64,37 @@ export function RoleFormModal({ isSaving, opened, role, onClose, onSubmit }: Rol
           />
           <TextInput disabled label="Dashboard" value={dashboard} />
           <NumberInput disabled label={t('Тип')} value={roleType} />
-          <Group justify="flex-end">
-            <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
-              {role ? t('Редагувати') : t('Зберегти')}
-            </Button>
+          <Group justify={role && canDelete ? 'space-between' : 'flex-end'}>
+            {role && canDelete ? (
+              <Button
+                color="red"
+                disabled={isSaving}
+                leftSection={<IconTrash size={16} />}
+                type="button"
+                variant="subtle"
+                onClick={onDelete}
+              >
+                {t('Видалити')}
+              </Button>
+            ) : null}
+            <Group gap="xs">
+              <Button
+                color="gray"
+                disabled={isSaving}
+                variant="subtle"
+                onClick={onClose}
+              >
+                {t('Скасувати')}
+              </Button>
+              <Button
+                color="violet"
+                leftSection={<IconDeviceFloppy size={16} />}
+                loading={isSaving}
+                type="submit"
+              >
+                {role ? t('Редагувати') : t('Зберегти')}
+              </Button>
+            </Group>
           </Group>
         </Stack>
       </form>

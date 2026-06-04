@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Box,
   Button,
   Card,
@@ -58,7 +57,6 @@ import type {
 } from '../types'
 import {
   canDeleteUserRole,
-  displayValue,
   getDashboardModuleNodes,
   getDashboardModulePermissions,
   getDashboardNodePermissions,
@@ -102,7 +100,8 @@ export function UserRolesPage() {
   })
   const [permissionModalState, setPermissionModalState] =
     useValueState<PermissionModalState | null>(null)
-  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const [deleteRoleTarget, setDeleteRoleTarget] =
+    useValueState<UserRole | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const selectedRoleKeyRef = useRef<string | null>(null)
   const filteredRoles = useMemo(
@@ -244,21 +243,32 @@ export function UserRolesPage() {
   }
 
   async function handleDeleteRole() {
+    const roleToDelete = deleteRoleTarget
+
     if (
-      !visibleSelectedRole?.NetUid ||
-      !canDeleteUserRole(visibleSelectedRole)
+      !roleToDelete?.NetUid ||
+      !canDeleteUserRole(roleToDelete)
     ) {
       return
     }
+
+    const deleteRoleKey = getUserRoleKey(roleToDelete)
 
     setSaving(true)
     setError(null)
 
     try {
-      await deleteUserRole(visibleSelectedRole.NetUid)
+      await deleteUserRole(roleToDelete.NetUid)
       notifications.show({ color: 'green', message: t('Видалено') })
-      setDeleteModalOpened(false)
-      setSelectedRoleKey(null)
+      setDeleteRoleTarget(null)
+      setRoleModalState({ open: false, role: null })
+
+      if (deleteRoleKey === selectedRoleKey) {
+        setSelectedRoleKey(null)
+        setSelectedNodes([])
+        setSelectedPermissions([])
+      }
+
       reload()
     } catch (deleteError) {
       setError(
@@ -478,70 +488,29 @@ export function UserRolesPage() {
         <Card withBorder radius="md" padding="md">
           <Stack gap="md">
             {visibleSelectedRole ? (
-              <>
-                <Group justify="space-between" align="start">
-                  <Box>
-                    <Text fw={700}>{getUserRoleName(visibleSelectedRole)}</Text>
-                    <Badge color="gray" mt={4} variant="light">
-                      {t('Тип')}{' '}
-                      {displayValue(visibleSelectedRole.UserRoleType)}
-                    </Badge>
-                  </Box>
-                  <Group gap="xs">
-                    <Tooltip label={t('Редагувати')}>
-                      <ActionIcon
-                        aria-label={t('Редагувати')}
-                        color="gray"
-                        variant="light"
-                        onClick={() =>
-                          setRoleModalState({
-                            open: true,
-                            role: visibleSelectedRole,
-                          })
-                        }
-                      >
-                        <IconPencil size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                    {canDeleteUserRole(visibleSelectedRole) ? (
-                      <Tooltip label={t('Видалити')}>
-                        <ActionIcon
-                          aria-label={t('Видалити')}
-                          color="red"
-                          variant="light"
-                          onClick={() => setDeleteModalOpened(true)}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    ) : null}
-                  </Group>
-                </Group>
-
-                <RolePermissionsEditor
-                  modules={modules}
-                  selectedNodes={selectedNodes}
-                  selectedPermissions={selectedPermissions}
-                  onAddPermission={(node) =>
-                    setPermissionModalState({ node, permission: null })
-                  }
-                  onEditPermission={(node, permission) =>
-                    setPermissionModalState({ node, permission })
-                  }
-                  onSelectAllPages={() =>
-                    setSelectedNodes((current) =>
-                      toggleAllPages(current, modules),
-                    )
-                  }
-                  onToggleModule={handleToggleModule}
-                  onToggleNode={handleToggleNode}
-                  onTogglePermission={(permission) =>
-                    setSelectedPermissions((current) =>
-                      togglePermissionSelection(current, permission),
-                    )
-                  }
-                />
-              </>
+              <RolePermissionsEditor
+                modules={modules}
+                selectedNodes={selectedNodes}
+                selectedPermissions={selectedPermissions}
+                onAddPermission={(node) =>
+                  setPermissionModalState({ node, permission: null })
+                }
+                onEditPermission={(node, permission) =>
+                  setPermissionModalState({ node, permission })
+                }
+                onSelectAllPages={() =>
+                  setSelectedNodes((current) =>
+                    toggleAllPages(current, modules),
+                  )
+                }
+                onToggleModule={handleToggleModule}
+                onToggleNode={handleToggleNode}
+                onTogglePermission={(permission) =>
+                  setSelectedPermissions((current) =>
+                    togglePermissionSelection(current, permission),
+                  )
+                }
+              />
             ) : (
               <Text c="dimmed">{t('Оберіть роль зі списку')}</Text>
             )}
@@ -559,7 +528,15 @@ export function UserRolesPage() {
           isSaving={isSaving}
           opened={roleModalState.open}
           role={roleModalState.role}
+          canDelete={Boolean(
+            roleModalState.role && canDeleteUserRole(roleModalState.role),
+          )}
           onClose={() => setRoleModalState({ open: false, role: null })}
+          onDelete={() => {
+            if (roleModalState.role) {
+              setDeleteRoleTarget(roleModalState.role)
+            }
+          }}
           onSubmit={submitRoleForm}
         />
       ) : null}
@@ -581,21 +558,21 @@ export function UserRolesPage() {
 
       <AppModal
         centered
-        opened={deleteModalOpened}
+        opened={Boolean(deleteRoleTarget)}
         title={t('Видалити роль')}
-        onClose={() => setDeleteModalOpened(false)}
+        onClose={() => setDeleteRoleTarget(null)}
       >
         <Stack gap="md">
           <Text size="sm">
             {t('Ви впевнені, що хочете видалити?')}{' '}
-            {visibleSelectedRole ? getUserRoleName(visibleSelectedRole) : ''}
+            {deleteRoleTarget ? getUserRoleName(deleteRoleTarget) : ''}
           </Text>
           <Group justify="flex-end">
             <Button
               color="gray"
               disabled={isSaving}
               variant="subtle"
-              onClick={() => setDeleteModalOpened(false)}
+              onClick={() => setDeleteRoleTarget(null)}
             >
               {t('Ні')}
             </Button>
