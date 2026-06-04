@@ -10,6 +10,7 @@ export type SalesUkraineUserFilter = 'All' | 'Self'
 
 export type SalesUkraineFilters = {
   clientId: string
+  forEcommerce: boolean
   from: string
   limit: number
   offset: number
