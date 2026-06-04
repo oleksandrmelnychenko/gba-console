@@ -370,13 +370,42 @@ export function UserRolesPage() {
     <Stack gap="lg">
       <PageContentHeader>
         <div className="user-roles-content-header">
-          <nav aria-label="breadcrumb" className="user-roles-breadcrumbs">
-            <Link className="user-roles-breadcrumb-link" to="/users">
-              {t('Користувачі')}
-            </Link>
-            <Text>{t('Ролі')}</Text>
-          </nav>
+          <div className="user-roles-breadcrumbs">
+            <nav aria-label="breadcrumb" className="user-roles-breadcrumb-trail">
+              <Link className="user-roles-breadcrumb-link" to="/users">
+                {t('Користувачі')}
+              </Link>
+              <Text>{t('Ролі')}</Text>
+            </nav>
+            <div className="user-roles-breadcrumb-actions">
+              {visibleSelectedRole ? (
+                <>
+                  <Button
+                    color="gray"
+                    className="user-roles-cancel-action"
+                    disabled={isSaving}
+                    size="xs"
+                    variant="subtle"
+                    onClick={cancelSelection}
+                  >
+                    {t('Скасувати')}
+                  </Button>
+                  <Button
+                    color={CREATE_ACTION_COLOR}
+                    leftSection={<IconDeviceFloppy size={14} />}
+                    loading={isSaving}
+                    size="xs"
+                    variant="subtle"
+                    onClick={handleSavePermissions}
+                  >
+                    {t('Зберегти')}
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
           <Button
+            className="user-roles-create-action"
             color={CREATE_ACTION_COLOR}
             size="xs"
             leftSection={<IconPlus size={14} />}
@@ -404,8 +433,7 @@ export function UserRolesPage() {
             >
               <TextInput
                 leftSection={<IconSearch size={16} />}
-                label={t('Пошук')}
-                placeholder={t('Назва ролі')}
+                label={t('Пошук ролі')}
                 value={searchDraft}
                 onChange={(event) => updateSearch(event.currentTarget.value)}
                 style={{ flex: '1 1 auto', minWidth: 160 }}
@@ -440,9 +468,8 @@ export function UserRolesPage() {
             <RoleList
               isLoading={isLoading}
               roles={filteredRoles}
-              searchValue={searchValue}
               selectedRoleKey={selectedRoleKey}
-              totalRoles={roles.length}
+              onEditRole={(role) => setRoleModalState({ open: true, role })}
               onSelectRole={selectRole}
             />
           </Stack>
@@ -489,25 +516,6 @@ export function UserRolesPage() {
                       </Tooltip>
                     ) : null}
                   </Group>
-                </Group>
-
-                <Group justify="flex-end">
-                  <Button
-                    color="gray"
-                    disabled={isSaving}
-                    variant="subtle"
-                    onClick={cancelSelection}
-                  >
-                    {t('Скасувати')}
-                  </Button>
-                  <Button
-                    color="violet"
-                    leftSection={<IconDeviceFloppy size={16} />}
-                    loading={isSaving}
-                    onClick={handleSavePermissions}
-                  >
-                    {t('Зберегти')}
-                  </Button>
                 </Group>
 
                 <RolePermissionsEditor
@@ -609,42 +617,22 @@ export function UserRolesPage() {
 type RoleListProps = {
   isLoading: boolean
   roles: UserRole[]
-  searchValue: string
   selectedRoleKey: string | null
-  totalRoles: number
+  onEditRole: (role: UserRole) => void
   onSelectRole: (role: UserRole) => void
 }
 
 function RoleList({
   isLoading,
   roles,
-  searchValue,
   selectedRoleKey,
-  totalRoles,
+  onEditRole,
   onSelectRole,
 }: RoleListProps) {
   const { t } = useI18n()
 
   return (
     <Box className="user-roles-list-panel">
-      <Group
-        className="user-roles-list-header"
-        justify="space-between"
-        wrap="nowrap"
-      >
-        <Box>
-          <Text className="user-roles-list-title">{t('Ролі')}</Text>
-          {searchValue ? (
-            <Text className="user-roles-list-search">
-              {t('Пошук')}: {searchValue}
-            </Text>
-          ) : null}
-        </Box>
-        <Badge color="gray" variant="light">
-          {roles.length}/{totalRoles}
-        </Badge>
-      </Group>
-
       <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
         {isLoading ? (
           <Stack gap="xs" className="user-roles-list">
@@ -661,33 +649,57 @@ function RoleList({
               const permissionCount = role.Permissions?.length || 0
 
               return (
-                <button
+                <div
                   key={roleKey}
-                  aria-pressed={isSelected}
                   className={`user-role-list-item${isSelected ? ' is-selected' : ''}`}
-                  type="button"
-                  onClick={() => onSelectRole(role)}
                 >
-                  <span className="user-role-list-content">
-                    <Text className="user-role-list-name">
-                      {getUserRoleName(role)}
-                    </Text>
-                    <span className="user-role-list-meta">
-                      <span className="user-role-list-pill">
-                        <span>{t('Тип')}</span>
-                        <strong>{displayValue(role.UserRoleType)}</strong>
+                  <button
+                    aria-pressed={isSelected}
+                    className="user-role-list-select"
+                    type="button"
+                    onClick={() => onSelectRole(role)}
+                  >
+                    <span className="user-role-list-content">
+                      <span className="user-role-list-index">
+                        {String(index + 1).padStart(2, '0')}
                       </span>
-                      <span className="user-role-list-stat">
-                        <span>{t('Стор.')}</span>
-                        <strong>{pageCount}</strong>
+                      <span className="user-role-list-main">
+                        <Text className="user-role-list-name">
+                          {getUserRoleName(role)}
+                        </Text>
                       </span>
-                      <span className="user-role-list-stat">
-                        <span>{t('Прав')}</span>
-                        <strong>{permissionCount}</strong>
+                      <span
+                        aria-label={`${t('Сторінки')}: ${pageCount}, ${t('Права')}: ${permissionCount}`}
+                        className="user-role-list-details"
+                      >
+                        <span className="user-role-list-metric">
+                          <strong>{pageCount}</strong>
+                          <span>{t('стор.')}</span>
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="user-role-list-metric-divider"
+                        />
+                        <span className="user-role-list-metric">
+                          <strong>{permissionCount}</strong>
+                          <span>{t('прав')}</span>
+                        </span>
                       </span>
                     </span>
-                  </span>
-                </button>
+                  </button>
+                  <Tooltip label={t('Редагувати')}>
+                    <ActionIcon
+                      aria-label={t('Редагувати')}
+                      className="user-role-list-edit"
+                      color="gray"
+                      size="sm"
+                      variant="subtle"
+                      onClick={() => onEditRole(role)}
+                    >
+                      <IconPencil size={16} />
+                    </ActionIcon>
+                  </Tooltip>
+                </div>
               )
             })}
           </Stack>
