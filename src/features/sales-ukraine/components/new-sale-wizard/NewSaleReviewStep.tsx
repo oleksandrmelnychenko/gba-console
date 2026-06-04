@@ -5,6 +5,7 @@ import { getSaleTransporterTypes, getSaleTransportersByType } from '../../api/sa
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineTransporterType } from '../../types'
 import { getClientDeliveryRecipients, type WizardDeliveryRecipient } from './newSaleWizardApi'
 import { isSelfCheckout, type NewSaleReviewValue } from './newSaleWizardState'
+import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
@@ -26,8 +27,11 @@ export function NewSaleReviewStep({
   const [recipients, setRecipients] = useState<WizardDeliveryRecipient[]>([])
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
-  const total = getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
+  const useEurToUah = isNonVatEurSale(sale)
+  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
+  const total = useEurToUah
+    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+    : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
   const selfCheckout = isSelfCheckout(value.transporter)
 
   useEffect(() => {

@@ -9,6 +9,7 @@ import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { ProductInterestModal } from '../../../sales-preorders'
 import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
+import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 import { FutureReservationModal } from './FutureReservationModal'
 import {
   getProductCalculatedPricingsByAgreement,
@@ -84,13 +85,15 @@ export function NewSaleProductsStep({
   const cartCount = orderItems.length
   const focusedIndexByNetUid = focusedItemNetUid ? orderItems.findIndex((item) => item.NetUid === focusedItemNetUid) : -1
   const focusedRow = cartCount === 0 ? -1 : focusedIndexByNetUid >= 0 ? focusedIndexByNetUid : 0
-  const localCurrencyCode = sale?.ClientAgreement?.Agreement?.Currency?.Code || ''
   const isVatSale = Boolean(sale?.IsVatSale)
+  const useEurToUah = isNonVatEurSale(sale)
+  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
   const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
   const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
-  const totalLocal =
-    getNumber(sale?.Order?.TotalAmountLocal) ??
-    orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0), 0)
+  const totalLocal = useEurToUah
+    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+    : getNumber(sale?.Order?.TotalAmountLocal) ??
+      orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0), 0)
   const totalVat = getNumber(sale?.Order?.TotalVat) ?? 0
 
   const cartNetIdRef = useRef<string | undefined>(undefined)
@@ -505,7 +508,10 @@ export function NewSaleProductsStep({
                       />
                     </Table.Td>
                     <Table.Td ta="right">
-                      {amountFormatter.format(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0)} {localCurrencyCode}
+                      {amountFormatter.format(
+                        (useEurToUah ? getNumber(item.TotalAmountEurToUah) : getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)) ?? 0,
+                      )}{' '}
+                      {localCurrencyCode}
                     </Table.Td>
                     <Table.Td>
                       <Tooltip label={t('Видалити')}>

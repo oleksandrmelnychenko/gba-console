@@ -54,6 +54,7 @@ import {
 } from '../api/salesUkraineApi'
 import { getSaleReviewIssues, type SaleReviewIssueCode } from '../saleReviewGuards'
 import { getVisibleOrderItemBaseDiscount } from '../saleDiscounts'
+import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../saleMoney'
 import { isStatusType } from '../saleStatus'
 import { MergedSalesDrawer } from './MergedSalesDrawer'
 import { SaleDetailsDrawer } from './SaleDetailsDrawer'
@@ -206,7 +207,12 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
 
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const isEditable = !sale.IsLocked
-  const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem })
+  const useEurToUah = isNonVatEurSale(sale)
+  const editorCurrencyCode = getSaleLocalCurrencyCode(sale)
+  const headerTotal = useEurToUah
+    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+    : getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount) ?? 0
+  const itemColumns = useItemColumns({ canEdit: isEditable, onDelete: setDeletingItem, onEditQty: setEditingItem, useEurToUah })
   const reviewIssues = getSaleReviewIssues(sale, { isRetailPaymentLoading, retailPaymentStatus })
 
   async function confirmDelete() {
@@ -336,8 +342,7 @@ function SaleEditorContent({ initialSale }: { initialSale: SalesUkraineSale }) {
               {isLoading && <Loader size="xs" />}
             </Group>
             <Text fw={700} size="lg">
-              {amountFormatter.format(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount) ?? 0)}{' '}
-              {sale.ClientAgreement?.Agreement?.Currency?.Code || ''}
+              {amountFormatter.format(headerTotal)} {editorCurrencyCode}
             </Text>
             <Text size="xs" c="dimmed">
               {t('ПДВ')}: {amountFormatter.format(getNumber(sale.Order?.TotalVat) ?? 0)}
@@ -578,10 +583,12 @@ function useItemColumns({
   canEdit,
   onDelete,
   onEditQty,
+  useEurToUah,
 }: {
   canEdit: boolean
   onDelete: (item: SalesUkraineOrderItem) => void
   onEditQty: (item: SalesUkraineOrderItem) => void
+  useEurToUah: boolean
 }): DataTableColumn<SalesUkraineOrderItem>[] {
   const { t } = useI18n()
 
@@ -637,8 +644,8 @@ function useItemColumns({
       header: t('Сума'),
       width: 130,
       align: 'right',
-      accessor: (item) => getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount),
-      cell: (item) => formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)),
+      accessor: (item) => (useEurToUah ? getNumber(item.TotalAmountEurToUah) : getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)),
+      cell: (item) => formatAmount(useEurToUah ? getNumber(item.TotalAmountEurToUah) : getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)),
     },
     {
       id: 'actions',
