@@ -28,6 +28,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   deleteTaxFreePackList,
   exportTaxFreePackLists,
@@ -213,23 +214,18 @@ export function TaxFreePackListsPage() {
 
   return (
     <Stack gap="md">
-      <Group justify="flex-end" align="center">
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              variant="light"
-              size={36}
-              aria-label={t('Оновити')}
-              onClick={() => dispatchList({ type: 'reloadRequested' })}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={exportPackLists}>
-            {t('Завантажити')}
-          </Button>
-        </Group>
-      </Group>
+      <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            variant="light"
+            size={36}
+            aria-label={t('Оновити')}
+            onClick={() => dispatchList({ type: 'reloadRequested' })}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PageHeaderActions>
 
       <Card withBorder radius="md">
         <Stack>
@@ -255,6 +251,15 @@ export function TaxFreePackListsPage() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
+            <Button
+              leftSection={<IconDownload size={16} />}
+              loading={isExporting}
+              style={{ marginLeft: 'auto' }}
+              variant="light"
+              onClick={exportPackLists}
+            >
+              {t('Завантажити')}
+            </Button>
           </Group>
 
           {(error || filterError) && (

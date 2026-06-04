@@ -45,6 +45,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createSupplyOrderUkraineDeliveryExpense,
   deleteDirectSupplyUkraineOrder,
@@ -72,6 +73,7 @@ import type {
   SupplyUkraineOrdersFilter,
   SupplyUkraineOrdersResponse,
 } from '../types'
+import './supply-ukraine-orders.css'
 
 const FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
 const DEFAULT_PAGE_SIZE = 20
@@ -380,10 +382,10 @@ export function SupplyUkraineOrdersPage() {
     setFilterDraft((current) => ({ ...current, ...patch }))
   }
 
-  function applyFilters() {
+  function refreshOrders() {
     setActiveFilters(filterDraft)
     setExpandedDirectOrders(new Set())
-    setPage(1)
+    reload()
   }
 
   function resetFilters() {
@@ -501,49 +503,35 @@ export function SupplyUkraineOrdersPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Group align="flex-start" justify="space-between">
-        <Stack gap={2}>
-          <Text fw={700} size="xl">{t('Замовлення постачання в Україну')}</Text>
-        </Stack>
-        <Group gap="xs" justify="flex-end">
-          {canCreateToUkraine && (
-            <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>
-              {t('Поставка в Україну')}
-            </Button>
-          )}
-          {canCreateDirect && (
-            <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new')}>
-              {t('Замовлення Україна')}
-            </Button>
-          )}
-          {canPrint && (
-            <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={downloadPrintDocument}>
-              {t('Завантажити')}
-            </Button>
-          )}
-        </Group>
-      </Group>
+    <Stack gap="sm" className="supply-ukraine-orders-page">
+      <PageHeaderActions>
+        <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} size="sm" onClick={refreshOrders}>
+          {t('Оновити')}
+        </Button>
+      </PageHeaderActions>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="flex-end" gap="sm" wrap="wrap">
+      <Card withBorder radius="md" padding="sm" className="supply-ukraine-orders-card">
+        <Stack gap="xs" className="supply-ukraine-orders-card-stack">
+          <Group align="flex-end" gap="xs" wrap="wrap" className="supply-ukraine-orders-filters">
             <TextInput
               label={t('Від')}
               type="date"
               value={filterDraft.from}
+              w={150}
               onChange={(event) => updateFilterDraft({ from: event.currentTarget.value })}
             />
             <TextInput
               label={t('До')}
               type="date"
               value={filterDraft.to}
+              w={150}
               onChange={(event) => updateFilterDraft({ to: event.currentTarget.value })}
             />
             <TextInput
               label={t('Постачальник')}
               placeholder={t('Назва постачальника')}
               value={filterDraft.supplier}
+              w={205}
               onChange={(event) => updateFilterDraft({ supplier: event.currentTarget.value })}
             />
             <Select
@@ -553,6 +541,7 @@ export function SupplyUkraineOrdersPage() {
               placeholder={t('Усі')}
               searchable
               value={filterDraft.currencyId || null}
+              w={160}
               onChange={(value) => updateFilterDraft({ currencyId: value || '' })}
             />
             <Select
@@ -560,19 +549,24 @@ export function SupplyUkraineOrdersPage() {
               data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
               label={t('Тип')}
               value={filterDraft.type}
+              w={210}
               onChange={(value) => updateFilterDraft({ type: (value as SupplyUkraineOrderKind) || 'all' })}
             />
-            <Select
-              allowDeselect={false}
-              data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
-              label={t('Рядків')}
-              value={String(pageSize)}
-              w={92}
-              onChange={changePageSize}
-            />
-            <Button leftSection={<IconRefresh size={16} />} onClick={applyFilters}>
-              {t('Оновити')}
-            </Button>
+            {canCreateToUkraine && (
+              <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>
+                {t('Поставка в Україну')}
+              </Button>
+            )}
+            {canCreateDirect && (
+              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new')}>
+                {t('Замовлення Україна')}
+              </Button>
+            )}
+            {canPrint && (
+              <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={downloadPrintDocument}>
+                {t('Завантажити')}
+              </Button>
+            )}
             <Tooltip label={t('Скинути фільтри')}>
               <ActionIcon aria-label={t('Скинути фільтри')} size="lg" variant="light" onClick={resetFilters}>
                 <IconRestore size={18} />
@@ -592,28 +586,42 @@ export function SupplyUkraineOrdersPage() {
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={filterError ? [] : rows}
-            defaultLayout={TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Замовлень не знайдено')}
-            getRowId={getRowId}
-            isLoading={state.isLoading}
-            layoutVersion="supply-ukraine-orders-table-1"
-            loadingText={t('Завантаження замовлень')}
-            maxHeight="calc(100vh - 360px)"
-            minWidth={1680}
-            rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
-            tableId="supply-ukraine-orders"
-            toolbarLeft={toolbarLeft}
-            onRowClick={openRow}
-          />
+          <div className="supply-ukraine-orders-table">
+            <DataTable
+              columns={columns}
+              data={filterError ? [] : rows}
+              defaultLayout={TABLE_DEFAULT_LAYOUT}
+              emptyText={t('Замовлень не знайдено')}
+              getRowId={getRowId}
+              height="100%"
+              isLoading={state.isLoading}
+              layoutVersion="supply-ukraine-orders-table-1"
+              loadingText={t('Завантаження замовлень')}
+              minWidth={1680}
+              rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
+              tableId="supply-ukraine-orders"
+              toolbarLeft={toolbarLeft}
+              onRowClick={openRow}
+            />
+          </div>
 
-          {totalPages > 1 && (
-            <Group justify="flex-end">
-              <Pagination total={totalPages} value={Math.min(page, totalPages)} onChange={setPage} />
+          <Group justify="flex-end" className="supply-ukraine-orders-pagination">
+            <Group gap={6}>
+              <Text c="dimmed" size="xs">{t('Рядків')}</Text>
+              <Select
+                allowDeselect={false}
+                aria-label={t('Рядків')}
+                data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
+                size="xs"
+                value={String(pageSize)}
+                w={82}
+                onChange={changePageSize}
+              />
             </Group>
-          )}
+            {totalPages > 1 && (
+              <Pagination total={totalPages} value={Math.min(page, totalPages)} onChange={setPage} />
+            )}
+          </Group>
         </Stack>
       </Card>
 
