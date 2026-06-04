@@ -8,7 +8,7 @@ export const USER_REGION_POLAND = 'pl'
 const nameMaxLength = 20
 const emailMaxLength = 50
 const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i
-const passwordPattern = /^.*(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=[$&+,:;=?@#|'<>._^*()%!-]).*$/
+const passwordPattern = /^(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[$&+,:;=?@#|'<>._^*()%!-]).*$/
 const phonePattern = /^(\d{9,10})$/i
 
 export function createEmptyUserProfile(): UserProfile {
@@ -199,22 +199,41 @@ export function togglePermissionSelection(selectedPermissions: UserPermission[],
     : [...selectedPermissions, permission]
 }
 
-function getModuleNodes(modules: DashboardNodeModule[]): DashboardNode[] {
-  return modules.reduce<DashboardNode[]>((nodes, module) => [...(module.Children || []), ...nodes], [])
+export function getDashboardNodeTree(node: DashboardNode): DashboardNode[] {
+  return [node, ...(node.Children || []).flatMap(getDashboardNodeTree)]
+}
+
+export function getDashboardModuleNodes(module: DashboardNodeModule): DashboardNode[] {
+  return (module.Children || []).flatMap(getDashboardNodeTree)
+}
+
+export function getDashboardModulesNodes(modules: DashboardNodeModule[]): DashboardNode[] {
+  return modules.flatMap(getDashboardModuleNodes)
+}
+
+export function getDashboardNodePermissions(node: DashboardNode): UserPermission[] {
+  return [...(node.Permissions || []), ...(node.Children || []).flatMap(getDashboardNodePermissions)]
+}
+
+export function getDashboardModulePermissions(module: DashboardNodeModule): UserPermission[] {
+  return (module.Children || []).flatMap(getDashboardNodePermissions)
 }
 
 export function toggleAllPages(selectedNodes: DashboardNode[], modules: DashboardNodeModule[]): DashboardNode[] {
-  const allNodes = getModuleNodes(modules)
+  const allNodes = getDashboardModulesNodes(modules)
+  const allSelected = allNodes.length > 0 && allNodes.every((node) => isNodeSelected(selectedNodes, node))
 
-  if (selectedNodes.length === 0 || selectedNodes.length < allNodes.length) {
-    return allNodes
+  if (allSelected) {
+    return selectedNodes.filter((node) => !allNodes.some((item) => item.NetUid === node.NetUid))
   }
 
-  return []
+  const missing = allNodes.filter((node) => !isNodeSelected(selectedNodes, node))
+
+  return [...selectedNodes, ...missing]
 }
 
 export function toggleModuleNodes(selectedNodes: DashboardNode[], module: DashboardNodeModule): DashboardNode[] {
-  const children = module.Children || []
+  const children = getDashboardModuleNodes(module)
   const allSelected = children.length > 0 && children.every((child) => isNodeSelected(selectedNodes, child))
 
   if (allSelected) {
