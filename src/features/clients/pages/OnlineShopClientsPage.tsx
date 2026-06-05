@@ -26,6 +26,7 @@ import { OnlineShopSalesFilter } from '../components/OnlineShopSalesFilter'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
 import { getRetailItemTotal } from '../onlineShopDisplay'
 import type { RetailCartItem, RetailClient } from '../onlineShopTypes'
+import './online-shop-clients-page.css'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -36,8 +37,17 @@ const ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const ONLINE_SHOP_CLIENT_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 export function OnlineShopClientsPage() {
   const { t } = useI18n()
@@ -163,17 +173,12 @@ export function OnlineShopClientsPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="online-shop-clients-page" gap={6}>
       <Box
-        style={{
-          alignItems: 'start',
-          display: 'grid',
-          gap: 'var(--mantine-spacing-lg)',
-          gridTemplateColumns: 'minmax(0, 7fr) minmax(320px, 3fr)',
-        }}
+        className="online-shop-clients-page__layout"
       >
-        <Card withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
-          <Stack gap="md">
+        <div className="online-shop-clients-page__left">
+          <Stack gap="md" className="online-shop-clients-page__left-stack">
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
@@ -201,12 +206,13 @@ export function OnlineShopClientsPage() {
               defaultLayout={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT}
               emptyText={t('Клієнтів інтернет-магазину не знайдено')}
               getRowId={(client, index) => getRetailClientRowKey(client, index)}
-              height="calc(100vh - 282px)"
+              height="100%"
               isLoading={isTableBusy}
-              layoutVersion="online-shop-clients-table-default-freeze-1"
+              layoutVersion="online-shop-clients-table-default-freeze-2"
               loadingText={isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
               minWidth={880}
               rowClassName={(client) => (isSameRetailClient(client, selectedClient) ? 'is-selected' : undefined)}
+              showLayoutControls={false}
               tableId="online-shop-clients"
               toolbarLeft={tableToolbarLeft}
               onRowClick={(client) => {
@@ -214,7 +220,7 @@ export function OnlineShopClientsPage() {
               }}
             />
           </Stack>
-        </Card>
+        </div>
 
         <Card withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
           <Stack gap="md">
@@ -285,15 +291,15 @@ function useRetailClientColumns(): DataTableColumn<RetailClient>[] {
         id: 'client',
         header: 'Клієнт',
         accessor: getRetailClientName,
-        cell: (client) => <Text fw={700}>{displayValue(getRetailClientName(client))}</Text>,
+        cell: (client) => <OnlineShopClientTableValue fw={600} value={displayValue(getRetailClientName(client))} />,
         minWidth: 220,
-        width: 300,
+        width: 260,
       },
       {
         id: 'phone',
         header: 'Телефон',
         accessor: getRetailClientPhone,
-        cell: (client) => displayValue(getRetailClientPhone(client)),
+        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientPhone(client))} />,
         minWidth: 140,
         width: 160,
       },
@@ -301,7 +307,7 @@ function useRetailClientColumns(): DataTableColumn<RetailClient>[] {
         id: 'email',
         header: 'Email',
         accessor: getRetailClientEmail,
-        cell: (client) => displayValue(getRetailClientEmail(client)),
+        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientEmail(client))} />,
         minWidth: 180,
         width: 240,
       },
@@ -309,12 +315,22 @@ function useRetailClientColumns(): DataTableColumn<RetailClient>[] {
         id: 'city',
         header: 'Місто',
         accessor: getRetailClientCity,
-        cell: (client) => displayValue(getRetailClientCity(client)),
+        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientCity(client))} />,
         minWidth: 150,
         width: 180,
       },
     ],
     [],
+  )
+}
+
+function OnlineShopClientTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={ONLINE_SHOP_CLIENT_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 
