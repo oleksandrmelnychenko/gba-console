@@ -68,6 +68,7 @@ export function DataTable<TData>({
   emptyText,
   loadingText,
   labels: labelsOverride,
+  showLayoutControls = true,
   toolbarLeft,
   toolbarRight,
   onRowClick,
@@ -337,16 +338,19 @@ export function DataTable<TData>({
 
   return (
     <div className={`data-table data-table-density-${normalizedLayout.density}`}>
-      <DataTableToolbar
-        columnTitles={columnTitles}
-        density={normalizedLayout.density}
-        labels={labels}
-        table={table}
-        toolbarLeft={toolbarLeft}
-        toolbarRight={toolbarRight}
-        onDensityChange={handleDensityChange}
-        onResetLayout={handleResetLayout}
-      />
+      {showLayoutControls || toolbarLeft || toolbarRight ? (
+        <DataTableToolbar
+          columnTitles={columnTitles}
+          density={normalizedLayout.density}
+          labels={labels}
+          showLayoutControls={showLayoutControls}
+          table={table}
+          toolbarLeft={toolbarLeft}
+          toolbarRight={toolbarRight}
+          onDensityChange={handleDensityChange}
+          onResetLayout={handleResetLayout}
+        />
+      ) : null}
 
       <div ref={setScrollNode} className="data-table-scroll" style={scrollStyle}>
         <DndContext
@@ -383,6 +387,7 @@ export function DataTable<TData>({
                         isFillColumn={header.column.id === fillColumnId}
                         labels={labels}
                         pinnedStyle={getPinnedStyle(header.column, 3, expandColumnWidth)}
+                        showLayoutControls={showLayoutControls}
                       />
                     ))}
                   </SortableContext>

@@ -70,6 +70,7 @@ export type DataTableProps<TData> = {
   emptyText?: ReactNode
   loadingText?: ReactNode
   labels?: DataTableLabels
+  showLayoutControls?: boolean
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
   onRowClick?: (row: TData) => void

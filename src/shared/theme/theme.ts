@@ -1,4 +1,4 @@
-import { createTheme, Drawer, Loader, Modal, type MantineColorsTuple } from '@mantine/core'
+import { createTheme, Drawer, Loader, Modal, Tooltip, type MantineColorsTuple } from '@mantine/core'
 import { IosLoader } from '../ui/IosLoader'
 
 const violet: MantineColorsTuple = [
@@ -51,6 +51,18 @@ export const theme = createTheme({
         overlayProps: {
           backgroundOpacity: 0.25,
           blur: 2,
+        },
+      },
+    }),
+    Tooltip: Tooltip.extend({
+      styles: {
+        tooltip: {
+          backgroundColor: '#fff',
+          border: '1px solid #000',
+          color: '#000',
+        },
+        arrow: {
+          backgroundColor: '#fff',
         },
       },
     }),

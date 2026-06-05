@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Autocomplete,
-  Badge,
   Button,
   Card,
   Checkbox,
@@ -81,10 +80,6 @@ export function ConsumableProductsPage() {
   const [productEditor, setProductEditor] = useValueState<ProductEditor | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<DeleteTarget | null>(null)
   const requestRef = useRef(0)
-  const totalProducts = useMemo(
-    () => categories.reduce((total, category) => total + (category.ConsumableProducts?.length || 0), 0),
-    [categories],
-  )
 
   useEffect(() => {
     const requestId = requestRef.current + 1
@@ -95,9 +90,7 @@ export function ConsumableProductsPage() {
 
       async function loadCategories() {
         try {
-          const nextCategories = hasSearchInput
-            ? await searchConsumableProductCategories(searchValue)
-            : await getConsumableProductCategories()
+          const nextCategories = await requestCategories(searchValue, hasSearchInput)
 
           if (requestRef.current === requestId) {
             setCategories(nextCategories)
@@ -129,9 +122,7 @@ export function ConsumableProductsPage() {
     setError(null)
 
     try {
-      const nextCategories = hasSearchInput
-        ? await searchConsumableProductCategories(searchValue)
-        : await getConsumableProductCategories()
+      const nextCategories = await requestCategories(searchValue, hasSearchInput, Date.now())
 
       if (requestRef.current === requestId) {
         setCategories(applySupplyServiceCategoryExclusivity(nextCategories, options.serviceCategory))
@@ -298,15 +289,6 @@ export function ConsumableProductsPage() {
         </Alert>
       )}
 
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Категорій')}: {categories.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Товарів')}: {totalProducts}
-        </Badge>
-      </Group>
-
       <Stack gap="md">
         {categories.map((category) => (
           <ConsumableCategoryPanel
@@ -375,14 +357,7 @@ function ConsumableCategoryPanel({
       <Stack gap="md">
         <Group justify="space-between" align="flex-start" gap="sm">
           <Stack gap={4}>
-            <Group gap="xs">
-              <Text fw={700}>{displayValue(category.Name)}</Text>
-              {category.IsSupplyServiceCategory && (
-                <Badge color="teal" variant="light">
-                  {t('Послуги')}
-                </Badge>
-              )}
-            </Group>
+            <Text fw={700}>{displayValue(category.Name)}</Text>
             <Text c="dimmed" size="sm">
               {t('Товарів')}: {products.length}
             </Text>
@@ -416,7 +391,8 @@ function ConsumableCategoryPanel({
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
           layoutVersion="consumable-products-category-products-1"
           maxHeight={360}
-          minWidth={760}
+          minWidth={640}
+          showLayoutControls={false}
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
         />
       </Stack>
@@ -455,15 +431,6 @@ function useConsumableProductColumns(
         minWidth: 140,
         accessor: (product) => product.MeasureUnit?.Name,
         cell: (product) => displayValue(product.MeasureUnit?.Name),
-      },
-      {
-        id: 'qty',
-        header: t('Залишок'),
-        width: 120,
-        minWidth: 104,
-        align: 'right',
-        accessor: (product) => product.TotalQty,
-        cell: (product) => displayValue(product.TotalQty),
       },
       {
         id: 'actions',
@@ -734,6 +701,21 @@ function getCategoryKey(category: ConsumableProductCategory): string {
 
 function getProductKey(product: ConsumableProduct): string {
   return String(product.NetUid || product.Id || product.Name || 'product')
+}
+
+function requestCategories(
+  searchValue: string,
+  hasSearchInput: boolean,
+  refreshToken?: number,
+): Promise<ConsumableProductCategory[]> {
+  const normalizedSearchValue = searchValue.trim()
+  const requestOptions = { refreshToken }
+
+  if (hasSearchInput && normalizedSearchValue) {
+    return searchConsumableProductCategories(normalizedSearchValue, requestOptions)
+  }
+
+  return getConsumableProductCategories(requestOptions)
 }
 
 function DeleteModal({

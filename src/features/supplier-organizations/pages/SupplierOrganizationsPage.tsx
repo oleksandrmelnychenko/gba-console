@@ -58,6 +58,15 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const SUPPLIER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
+
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
@@ -165,9 +174,17 @@ export function SupplierOrganizationsPage() {
     onOpenCashFlow: (organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`),
     onOpenEdit: (organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`),
   })
+  const tableToolbarLeft = useMemo(
+    () => (
+      <Badge color="violet" variant="light">
+        {t('Постачальників')}: {organizations.length}
+      </Badge>
+    ),
+    [organizations.length, t],
+  )
 
   return (
-    <Stack gap="md">
+    <Stack gap={6}>
       <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
         <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
@@ -179,7 +196,6 @@ export function SupplierOrganizationsPage() {
       <Group justify="space-between" align="end" gap="sm">
         <TextInput
           leftSection={<IconSearch size={16} />}
-          label={t('Пошук')}
           placeholder={t('Назва, код, телефон або email')}
           value={searchValue}
           style={{ flex: '1 1 320px' }}
@@ -213,12 +229,6 @@ export function SupplierOrganizationsPage() {
         </Alert>
       )}
 
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Постачальників')}: {organizations.length}
-        </Badge>
-      </Group>
-
       <DataTable
         columns={columns}
         data={organizations}
@@ -227,9 +237,11 @@ export function SupplierOrganizationsPage() {
         getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
         isLoading={isLoading}
         layoutVersion="supplier-organizations-1"
-        maxHeight="calc(100vh - 260px)"
+        maxHeight="calc(100vh - 292px)"
         minWidth={1450}
+        showLayoutControls={false}
         tableId="supplier-organizations"
+        toolbarLeft={tableToolbarLeft}
         onRowClick={setSelectedOrganization}
       />
 
@@ -266,11 +278,11 @@ function useSupplierOrganizationColumns({
     () => [
       {
         id: 'created',
-        header: t('Створено'),
-        width: 145,
-        minWidth: 130,
+        header: t('Дата створення'),
+        width: 130,
+        minWidth: 116,
         accessor: (organization) => organization.Created,
-        cell: (organization) => formatDateTime(organization.Created),
+        cell: (organization) => <SupplierTableValue value={formatDateTime(organization.Created)} />,
       },
       {
         id: 'name',
@@ -278,7 +290,7 @@ function useSupplierOrganizationColumns({
         width: 260,
         minWidth: 220,
         accessor: (organization) => organization.Name,
-        cell: (organization) => <Text fw={600}>{displayValue(organization.Name)}</Text>,
+        cell: (organization) => <SupplierTableValue fw={600} value={displayValue(organization.Name)} />,
       },
       {
         id: 'organization',
@@ -286,88 +298,88 @@ function useSupplierOrganizationColumns({
         width: 180,
         minWidth: 150,
         accessor: (organization) => getAgreementOrganizations(organization),
-        cell: (organization) => displayValue(getAgreementOrganizations(organization)),
+        cell: (organization) => <SupplierTableValue value={displayValue(getAgreementOrganizations(organization))} />,
       },
       {
         id: 'tin',
         header: t('ІПН'),
-        width: 120,
-        minWidth: 100,
+        width: 108,
+        minWidth: 92,
         accessor: (organization) => organization.TIN,
-        cell: (organization) => displayValue(organization.TIN),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.TIN)} />,
       },
       {
         id: 'vat',
-        header: t('ПДВ'),
-        width: 120,
-        minWidth: 100,
+        header: t('Номер свідоцтва'),
+        width: 116,
+        minWidth: 96,
         accessor: (organization) => organization.SROI,
-        cell: (organization) => displayValue(organization.SROI),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.SROI)} />,
       },
       {
         id: 'usreou',
-        header: t('ЄДРПОУ'),
+        header: t('Код по ЄДРПОУ'),
         width: 120,
-        minWidth: 100,
+        minWidth: 102,
         accessor: (organization) => organization.USREOU,
-        cell: (organization) => displayValue(organization.USREOU),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.USREOU)} />,
       },
       {
         id: 'currency',
         header: t('Валюта'),
-        width: 110,
-        minWidth: 90,
+        width: 82,
+        minWidth: 72,
         accessor: (organization) => getAgreementCurrencies(organization),
-        cell: (organization) => displayValue(getAgreementCurrencies(organization)),
+        cell: (organization) => <SupplierTableValue value={displayValue(getAgreementCurrencies(organization))} />,
       },
       {
         id: 'balance',
         header: t('Баланс EUR'),
-        width: 130,
-        minWidth: 110,
+        width: 116,
+        minWidth: 100,
         align: 'right',
         accessor: (organization) => organization.TotalAgreementsCurrentEuroAmount,
-        cell: (organization) => formatMoney(organization.TotalAgreementsCurrentEuroAmount),
+        cell: (organization) => <SupplierTableValue value={formatMoney(organization.TotalAgreementsCurrentEuroAmount)} />,
       },
       {
         id: 'contact',
-        header: t('Контакт'),
-        width: 170,
-        minWidth: 130,
+        header: t('Контактна особа'),
+        width: 150,
+        minWidth: 118,
         accessor: (organization) => organization.ContactPersonName,
-        cell: (organization) => displayValue(organization.ContactPersonName),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.ContactPersonName)} />,
       },
       {
         id: 'phone',
         header: t('Телефон'),
-        width: 150,
-        minWidth: 120,
+        width: 136,
+        minWidth: 108,
         accessor: (organization) => organization.PhoneNumber || organization.ContactPersonPhone,
-        cell: (organization) => displayValue(organization.PhoneNumber || organization.ContactPersonPhone),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.PhoneNumber || organization.ContactPersonPhone)} />,
       },
       {
         id: 'address',
         header: t('Адреса'),
-        width: 260,
-        minWidth: 180,
+        width: 220,
+        minWidth: 150,
         accessor: (organization) => organization.Address,
-        cell: (organization) => displayValue(organization.Address),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.Address)} />,
       },
       {
         id: 'resident',
-        header: t('Нерезидент'),
-        width: 120,
-        minWidth: 105,
+        header: t('Не являється резидентом'),
+        width: 132,
+        minWidth: 112,
         accessor: (organization) => organization.IsNotResident,
-        cell: (organization) => (organization.IsNotResident ? t('Так') : t('Ні')),
+        cell: (organization) => <SupplierTableValue value={organization.IsNotResident ? t('Так') : t('Ні')} />,
       },
       {
         id: 'bankDetails',
-        header: t('Банк'),
+        header: t('Банківські реквізити'),
         width: 170,
-        minWidth: 130,
+        minWidth: 132,
         accessor: (organization) => organization.Requisites || organization.Bank,
-        cell: (organization) => displayValue(organization.Requisites || organization.Bank),
+        cell: (organization) => <SupplierTableValue value={displayValue(organization.Requisites || organization.Bank)} />,
       },
       {
         id: 'actions',
@@ -476,6 +488,16 @@ function SupplierOrganizationActionModal({
         </PermissionGate>
       </Stack>
     </AppModal>
+  )
+}
+
+function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={SUPPLIER_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

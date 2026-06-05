@@ -27,6 +27,7 @@ type DataTableHeaderCellProps<TData> = {
   isFillColumn: boolean
   labels: Required<DataTableLabels>
   pinnedStyle: CSSProperties
+  showLayoutControls: boolean
 }
 
 export function DataTableHeaderCell<TData>({
@@ -35,9 +36,10 @@ export function DataTableHeaderCell<TData>({
   isFillColumn,
   labels,
   pinnedStyle,
+  showLayoutControls,
 }: DataTableHeaderCellProps<TData>) {
   const meta = header.column.columnDef.meta as DataTableColumnMeta | undefined
-  const canReorder = meta?.enableReorder !== false
+  const canReorder = showLayoutControls && meta?.enableReorder !== false
   const canSort = header.column.getCanSort()
   const sorted = header.column.getIsSorted()
   const pinned = header.column.getIsPinned()
@@ -93,7 +95,7 @@ export function DataTableHeaderCell<TData>({
           <span className="data-table-header-label">
             {flexRender(header.column.columnDef.header, header.getContext())}
           </span>
-          {pinned ? (
+          {showLayoutControls && pinned ? (
             <span
               aria-label={labels.pinnedColumn}
               className="data-table-pinned-icon"
@@ -115,52 +117,54 @@ export function DataTableHeaderCell<TData>({
           ) : null}
         </UnstyledButton>
 
-        <Menu width={180} position="bottom-end" withArrow withinPortal>
-          <Menu.Target>
-            <ActionIcon
-              aria-label={labels.columns}
-              className="data-table-column-menu"
-              size="xs"
-              variant="subtle"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <IconDotsVertical size={14} stroke={1.8} />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            {header.column.getCanPin() ? (
-              <>
-                <Menu.Item
-                  leftSection={<IconPinned size={15} stroke={1.8} />}
-                  onClick={() => header.column.pin('left')}
-                >
-                  {labels.pinLeft}
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconPinned size={15} stroke={1.8} />}
-                  onClick={() => header.column.pin('right')}
-                >
-                  {labels.pinRight}
-                </Menu.Item>
-                <Menu.Item
-                  leftSection={<IconPinnedOff size={15} stroke={1.8} />}
-                  onClick={() => header.column.pin(false)}
-                >
-                  {labels.unpin}
-                </Menu.Item>
-              </>
-            ) : null}
-            {header.column.getCanHide() ? (
-              <Menu.Item
-                color="red"
-                leftSection={<IconEyeOff size={15} stroke={1.8} />}
-                onClick={() => header.column.toggleVisibility(false)}
+        {showLayoutControls ? (
+          <Menu width={180} position="bottom-end" withArrow withinPortal>
+            <Menu.Target>
+              <ActionIcon
+                aria-label={labels.columns}
+                className="data-table-column-menu"
+                size="xs"
+                variant="subtle"
+                onClick={(event) => event.stopPropagation()}
               >
-                {labels.hideColumn}
-              </Menu.Item>
-            ) : null}
-          </Menu.Dropdown>
-        </Menu>
+                <IconDotsVertical size={14} stroke={1.8} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {header.column.getCanPin() ? (
+                <>
+                  <Menu.Item
+                    leftSection={<IconPinned size={15} stroke={1.8} />}
+                    onClick={() => header.column.pin('left')}
+                  >
+                    {labels.pinLeft}
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconPinned size={15} stroke={1.8} />}
+                    onClick={() => header.column.pin('right')}
+                  >
+                    {labels.pinRight}
+                  </Menu.Item>
+                  <Menu.Item
+                    leftSection={<IconPinnedOff size={15} stroke={1.8} />}
+                    onClick={() => header.column.pin(false)}
+                  >
+                    {labels.unpin}
+                  </Menu.Item>
+                </>
+              ) : null}
+              {header.column.getCanHide() ? (
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconEyeOff size={15} stroke={1.8} />}
+                  onClick={() => header.column.toggleVisibility(false)}
+                >
+                  {labels.hideColumn}
+                </Menu.Item>
+              ) : null}
+            </Menu.Dropdown>
+          </Menu>
+        ) : null}
       </Group>
 
       {header.column.getCanResize() ? (

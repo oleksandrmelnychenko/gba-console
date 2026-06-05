@@ -5,15 +5,29 @@ import type {
   MeasureUnit,
 } from '../types'
 
-export async function getConsumableProductCategories(): Promise<ConsumableProductCategory[]> {
-  const result = await apiRequest<unknown>('/consumables/categories/all')
+type ConsumableCategoriesRequestOptions = {
+  refreshToken?: number
+}
+
+export async function getConsumableProductCategories(
+  options: ConsumableCategoriesRequestOptions = {},
+): Promise<ConsumableProductCategory[]> {
+  const result = await apiRequest<unknown>('/consumables/categories/all', {
+    query: {
+      refreshToken: options.refreshToken,
+    },
+  })
 
   return normalizeConsumableProductCategories(result)
 }
 
-export async function searchConsumableProductCategories(value: string): Promise<ConsumableProductCategory[]> {
+export async function searchConsumableProductCategories(
+  value: string,
+  options: ConsumableCategoriesRequestOptions = {},
+): Promise<ConsumableProductCategory[]> {
   const result = await apiRequest<unknown>('/consumables/categories/search', {
     query: {
+      refreshToken: options.refreshToken,
       value,
     },
   })
