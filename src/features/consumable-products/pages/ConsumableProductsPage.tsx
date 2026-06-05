@@ -255,13 +255,18 @@ export function ConsumableProductsPage() {
 
   return (
     <Stack gap="lg">
-      <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
-        <PageHeaderActions>
+      <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
             {t('Додати категорію')}
           </Button>
-        </PageHeaderActions>
-      </PermissionGate>
+        </PermissionGate>
+      </PageHeaderActions>
 
       <Group justify="space-between" align="end" gap="sm">
         <TextInput
@@ -276,11 +281,6 @@ export function ConsumableProductsPage() {
             setCategories([])
           }}
         />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
       </Group>
 
       {error && (

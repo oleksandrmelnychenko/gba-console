@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Group,
   Select,
   Stack,
@@ -28,12 +27,14 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   archiveTransporter,
   getTransportersByType,
   getTransporterTypes,
 } from '../api/transportersApi'
 import type { Transporter, TransporterType } from '../types'
+import './transporters-page.css'
 
 const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -46,6 +47,15 @@ const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
 const archiveDisabledCssClass = 'self_checkout_item_class'
 
 type TransporterStatusFilter = 'active' | 'all' | 'archived'
+
+const TRANSPORTER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 export function TransportersPage() {
   const { t } = useI18n()
@@ -86,37 +96,6 @@ export function TransportersPage() {
       </Text>
     ),
     [selectedTransporterType, t],
-  )
-  const tableToolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Фільтр статусу')}
-          data={[
-            { value: 'active', label: t('Активні') },
-            { value: 'all', label: t('Усі') },
-            { value: 'archived', label: t('Архів') },
-          ]}
-          size="xs"
-          value={statusFilter}
-          w={112}
-          onChange={(value) => setStatusFilter((value as TransporterStatusFilter | null) || 'active')}
-        />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoadingTypes || isLoadingTransporters}
-            size="sm"
-            variant="subtle"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [isLoadingTransporters, isLoadingTypes, setStatusFilter, statusFilter, t],
   )
 
   useEffect(() => {
@@ -234,73 +213,86 @@ export function TransportersPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group justify="space-between" gap="sm" wrap="nowrap" align="center">
-            {usableTransporterTypes.length > 0 ? (
-              <div className="pill-tabs">
-                {usableTransporterTypes.map((transporterType) => {
-                  const value = transporterType.NetUid || ''
-                  return (
-                    <button
-                      key={transporterType.NetUid}
-                      type="button"
-                      className={`pill-tab${selectedTypeNetId === value ? ' is-active' : ''}`}
-                      aria-pressed={selectedTypeNetId === value}
-                      onClick={() => setSelectedTypeNetId(value)}
-                    >
-                      {getTransporterTypeName(transporterType)}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : isLoadingTypes ? (
-              <Text c="dimmed" size="sm">
-                {t('Завантаження типів перевізників')}
-              </Text>
-            ) : (
-              <Text c="dimmed" size="sm">
-                {t('Типів перевізників не знайдено')}
-              </Text>
-            )}
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoadingTypes || isLoadingTransporters}
-                size={36}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+    <Stack className="transporters-page" gap={6}>
+      <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoadingTypes || isLoadingTransporters}
+            size={38}
+            variant="light"
+            onClick={() => reload()}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </PageHeaderActions>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      <Group justify="space-between" gap="sm" wrap="nowrap" align="center">
+        {usableTransporterTypes.length > 0 ? (
+          <div className="pill-tabs">
+            {usableTransporterTypes.map((transporterType) => {
+              const value = transporterType.NetUid || ''
+              return (
+                <button
+                  key={transporterType.NetUid}
+                  type="button"
+                  className={`pill-tab${selectedTypeNetId === value ? ' is-active' : ''}`}
+                  aria-pressed={selectedTypeNetId === value}
+                  onClick={() => setSelectedTypeNetId(value)}
+                >
+                  {getTransporterTypeName(transporterType)}
+                </button>
+              )
+            })}
+          </div>
+        ) : isLoadingTypes ? (
+          <Text c="dimmed" size="sm">
+            {t('Завантаження типів перевізників')}
+          </Text>
+        ) : (
+          <Text c="dimmed" size="sm">
+            {t('Типів перевізників не знайдено')}
+          </Text>
+        )}
+        <Select
+          aria-label={t('Фільтр статусу')}
+          data={[
+            { value: 'active', label: t('Активні') },
+            { value: 'all', label: t('Усі') },
+            { value: 'archived', label: t('Архів') },
+          ]}
+          size="xs"
+          value={statusFilter}
+          w={112}
+          onChange={(value) => setStatusFilter((value as TransporterStatusFilter | null) || 'active')}
+        />
+      </Group>
 
-          <DataTable
-            columns={columns}
-            data={visibleTransporters}
-            defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
-            emptyText={isLoadingTypes ? t('Завантаження типів перевізників') : selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
-            getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
-            isLoading={isLoadingTypes || isLoadingTransporters}
-            layoutVersion="transporters-table-1"
-            loadingText={t('Завантаження перевізників')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={1000}
-            tableId="transporters"
-            toolbarLeft={tableToolbarLeft}
-            toolbarRight={tableToolbarRight}
-          />
-        </Stack>
-      </Card>
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+
+      <div className="transporters-page__table">
+        <DataTable
+          columns={columns}
+          data={visibleTransporters}
+          defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
+          emptyText={isLoadingTypes ? t('Завантаження типів перевізників') : selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
+          getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
+          isLoading={isLoadingTypes || isLoadingTransporters}
+          layoutVersion="transporters-table-1"
+          loadingText={t('Завантаження перевізників')}
+          height="100%"
+          minWidth={1000}
+          showLayoutControls={false}
+          tableId="transporters"
+          toolbarLeft={tableToolbarLeft}
+        />
+      </div>
 
       <AppModal
         centered
@@ -379,9 +371,7 @@ function useTransporterColumns(
         width: 260,
         minWidth: 220,
         accessor: getTransporterName,
-        cell: (transporter) => (
-          <Text fw={600}>{getTransporterName(transporter)}</Text>
-        ),
+        cell: (transporter) => <TransporterTableValue fw={600} value={getTransporterName(transporter)} />,
       },
       {
         id: 'type',
@@ -390,7 +380,7 @@ function useTransporterColumns(
         minWidth: 140,
         accessor: (transporter) => transporter.TransporterType?.Name || selectedTransporterType?.Name,
         cell: (transporter) =>
-          displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name),
+          <TransporterTableValue value={displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)} />,
       },
       {
         id: 'cssClass',
@@ -398,7 +388,7 @@ function useTransporterColumns(
         width: 220,
         minWidth: 160,
         accessor: (transporter) => transporter.CssClass,
-        cell: (transporter) => displayValue(transporter.CssClass),
+        cell: (transporter) => <TransporterTableValue value={displayValue(transporter.CssClass)} />,
       },
       {
         id: 'priority',
@@ -407,7 +397,7 @@ function useTransporterColumns(
         minWidth: 104,
         align: 'right',
         accessor: (transporter) => transporter.Priority,
-        cell: (transporter) => displayValue(transporter.Priority),
+        cell: (transporter) => <TransporterTableValue value={displayValue(transporter.Priority)} />,
       },
       {
         id: 'actions',
@@ -438,6 +428,16 @@ function useTransporterColumns(
       },
     ],
     [selectedTransporterType?.Name, setArchiveTarget, t],
+  )
+}
+
+function TransporterTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={TRANSPORTER_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

@@ -33,6 +33,7 @@ import type {
   OutcomePaymentOrderConsumablesOrder,
   OutcomePaymentOrder,
 } from '../types'
+import './accountable-expenses-page.css'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -55,6 +56,15 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+
+const ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 export function AccountableExpensesPage() {
   const { t } = useI18n()
@@ -114,7 +124,7 @@ export function AccountableExpensesPage() {
   const columns = useAccountableExpenseColumns(setSelectedRow)
 
   return (
-    <Stack gap="md">
+    <Stack className="accountable-expenses-page" gap={6}>
       <Group justify="space-between" align="end" gap="sm">
         <Group align="end" gap="sm">
           <TextInput
@@ -160,19 +170,22 @@ export function AccountableExpensesPage() {
         </Alert>
       )}
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        emptyText={t('Підзвітних витрат не знайдено')}
-        getRowId={(row) => row.id}
-        isLoading={isLoading}
-        layoutVersion="accountable-expenses-1"
-        maxHeight="calc(100vh - 285px)"
-        minWidth={1480}
-        tableId="accountable-expenses"
-        onRowClick={setSelectedRow}
-      />
+      <div className="accountable-expenses-page__table">
+        <DataTable
+          columns={columns}
+          data={rows}
+          defaultLayout={TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Підзвітних витрат не знайдено')}
+          getRowId={(row) => row.id}
+          isLoading={isLoading}
+          layoutVersion="accountable-expenses-1"
+          height="100%"
+          minWidth={1480}
+          showLayoutControls={false}
+          tableId="accountable-expenses"
+          onRowClick={setSelectedRow}
+        />
+      </div>
 
       <ExpenseDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </Stack>
@@ -190,7 +203,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 145,
         minWidth: 130,
         accessor: (row) => row.created,
-        cell: (row) => formatDateTime(row.created),
+        cell: (row) => <AccountableExpenseTableValue value={formatDateTime(row.created)} />,
       },
       {
         id: 'advanceNumber',
@@ -198,7 +211,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 175,
         minWidth: 145,
         accessor: (row) => row.advanceNumber,
-        cell: (row) => <Text fw={600}>{displayValue(row.advanceNumber)}</Text>,
+        cell: (row) => <AccountableExpenseTableValue fw={600} value={displayValue(row.advanceNumber)} />,
       },
       {
         id: 'organization',
@@ -206,7 +219,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 150,
         minWidth: 120,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.organization)} />,
       },
       {
         id: 'payedTo',
@@ -214,7 +227,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 160,
         minWidth: 130,
         accessor: (row) => row.payedTo,
-        cell: (row) => displayValue(row.payedTo),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.payedTo)} />,
       },
       {
         id: 'vendorCode',
@@ -222,7 +235,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 110,
         minWidth: 90,
         accessor: (row) => row.vendorCode,
-        cell: (row) => displayValue(row.vendorCode),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.vendorCode)} />,
       },
       {
         id: 'product',
@@ -230,7 +243,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 210,
         minWidth: 170,
         accessor: (row) => row.productName,
-        cell: (row) => displayValue(row.productName),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.productName)} />,
       },
       {
         id: 'type',
@@ -251,7 +264,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         minWidth: 90,
         align: 'right',
         accessor: (row) => row.qty,
-        cell: (row) => formatAmount(row.qty),
+        cell: (row) => <AccountableExpenseTableValue value={formatAmount(row.qty)} />,
       },
       {
         id: 'price',
@@ -260,7 +273,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.pricePerItem,
-        cell: (row) => formatMoney(row.pricePerItem),
+        cell: (row) => <AccountableExpenseTableValue value={formatMoney(row.pricePerItem)} />,
       },
       {
         id: 'amount',
@@ -269,7 +282,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <AccountableExpenseTableValue value={formatMoney(row.amount)} />,
       },
       {
         id: 'currency',
@@ -277,7 +290,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.currency)} />,
       },
       {
         id: 'responsible',
@@ -285,7 +298,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 155,
         minWidth: 120,
         accessor: (row) => row.responsible,
-        cell: (row) => displayValue(row.responsible),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.responsible)} />,
       },
       {
         id: 'status',
@@ -305,7 +318,7 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
         width: 220,
         minWidth: 160,
         accessor: (row) => row.comment,
-        cell: (row) => displayValue(row.comment),
+        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.comment)} />,
       },
       {
         id: 'actions',
@@ -336,6 +349,16 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
       },
     ],
     [onOpen, t],
+  )
+}
+
+function AccountableExpenseTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

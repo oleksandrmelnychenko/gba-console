@@ -3,7 +3,6 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Group,
   Select,
   Stack,
@@ -29,10 +28,12 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getActProvidingServices } from '../api/actProvidingServicesApi'
 import type { ActProvidingService } from '../types'
 import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel } from '../utils'
+import './act-providing-services-page.css'
 
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
@@ -55,6 +56,15 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+
+const ACT_PROVIDING_SERVICE_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 type ActProvidingServiceRow = ActProvidingServiceDisplayModel & {
   act: ActProvidingService
@@ -235,8 +245,8 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
   } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end">
+    <Stack className="act-providing-services-page" gap={6}>
+      <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -249,83 +259,44 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+      </PageHeaderActions>
+
+      <Group align="end" gap="sm" wrap="nowrap">
+        <TextInput
+          label={t('Від')}
+          type="date"
+          value={dateFrom}
+          w={150}
+          onChange={(event) => {
+            setPage(1)
+            setDateFrom(event.currentTarget.value)
+          }}
+        />
+        <TextInput
+          label={t('До')}
+          type="date"
+          value={dateTo}
+          w={150}
+          onChange={(event) => {
+            setPage(1)
+            setDateTo(event.currentTarget.value)
+          }}
+        />
+        <Tooltip label={t('Скинути')}>
+          <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+            <IconRestore size={18} />
+          </ActionIcon>
+        </Tooltip>
       </Group>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={dateFrom}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateFrom(event.currentTarget.value)
-              }}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={dateTo}
-              w={150}
-              onChange={(event) => {
-                setPage(1)
-                setDateTo(event.currentTarget.value)
-              }}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+      {(error || filterError) && (
+        <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError || error}
+        </Alert>
+      )}
 
-          {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="flex-end" gap="sm">
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
-                  setPage(1)
-                  setPageSize(Number(value || PAGE_SIZE))
-                }}
-              />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBackward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" ta="center" w={34}>
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
-          </Group>
-
-          <DataTable
+      <div className="act-providing-services-page__table">
+        <DataTable
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
@@ -334,14 +305,52 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             isLoading={isLoading}
             layoutVersion="act-providing-services-table-2"
             loadingText={t('Завантаження актів надання послуг')}
-            maxHeight="calc(100vh - 310px)"
+            height="100%"
             minWidth={1320}
+            showLayoutControls={false}
             tableId="act-providing-services"
             toolbarLeft={toolbarLeft}
             onRowClick={openSelectedRow}
           />
-        </Stack>
-      </Card>
+      </div>
+
+      <Group className="act-providing-services-page__pagination" justify="flex-end" gap="sm">
+        <Group gap="xs">
+          <Select
+            aria-label={t('Розмір сторінки')}
+            data={pageSizeOptions}
+            value={String(pageSize)}
+            w={84}
+            onChange={(value) => {
+              setPage(1)
+              setPageSize(Number(value || PAGE_SIZE))
+            }}
+          />
+          <ActionIcon
+            aria-label={t('Попередня сторінка')}
+            color="gray"
+            disabled={!canMoveBackward || isLoading}
+            size={36}
+            variant="light"
+            onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+          >
+            <IconChevronLeft size={18} />
+          </ActionIcon>
+          <Text size="sm" ta="center" w={34}>
+            {page}
+          </Text>
+          <ActionIcon
+            aria-label={t('Наступна сторінка')}
+            color="gray"
+            disabled={!canMoveForward || isLoading}
+            size={36}
+            variant="light"
+            onClick={() => setPage((currentPage) => currentPage + 1)}
+          >
+            <IconChevronRight size={18} />
+          </ActionIcon>
+        </Group>
+      </Group>
 
       <ActProvidingServiceOptionsModal row={selectedRow} onClose={closeSelectedRow} />
     </Stack>
@@ -440,7 +449,7 @@ function useActProvidingServiceColumns(
         width: 58,
         minWidth: 52,
         accessor: (row) => row.managementMarker,
-        cell: (row) => <Text fw={700}>{row.managementMarker}</Text>,
+        cell: (row) => <ActProvidingServiceTableValue fw={700} value={displayValue(row.managementMarker)} />,
       },
       {
         id: 'accounting',
@@ -448,7 +457,7 @@ function useActProvidingServiceColumns(
         width: 58,
         minWidth: 52,
         accessor: (row) => row.accountingMarker,
-        cell: (row) => <Text fw={700}>{row.accountingMarker}</Text>,
+        cell: (row) => <ActProvidingServiceTableValue fw={700} value={displayValue(row.accountingMarker)} />,
       },
       {
         id: 'date',
@@ -456,7 +465,7 @@ function useActProvidingServiceColumns(
         width: 150,
         minWidth: 132,
         accessor: (row) => row.date,
-        cell: (row) => formatDateTime(row.date),
+        cell: (row) => <ActProvidingServiceTableValue value={formatDateTime(row.date)} />,
       },
       {
         id: 'number',
@@ -464,7 +473,7 @@ function useActProvidingServiceColumns(
         width: 150,
         minWidth: 120,
         accessor: (row) => row.number,
-        cell: (row) => <Text fw={700}>{displayValue(row.number)}</Text>,
+        cell: (row) => <ActProvidingServiceTableValue fw={700} value={displayValue(row.number)} />,
       },
       {
         id: 'invDate',
@@ -472,7 +481,7 @@ function useActProvidingServiceColumns(
         width: 150,
         minWidth: 132,
         accessor: (row) => row.invDate,
-        cell: (row) => formatDateTime(row.invDate),
+        cell: (row) => <ActProvidingServiceTableValue value={formatDateTime(row.invDate)} />,
       },
       {
         id: 'invNumber',
@@ -480,7 +489,7 @@ function useActProvidingServiceColumns(
         width: 180,
         minWidth: 140,
         accessor: (row) => row.invNumber,
-        cell: (row) => displayValue(row.invNumber),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.invNumber)} />,
       },
       {
         id: 'amount',
@@ -489,7 +498,7 @@ function useActProvidingServiceColumns(
         minWidth: 104,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <ActProvidingServiceTableValue value={formatMoney(row.amount)} />,
       },
       {
         id: 'currency',
@@ -497,7 +506,7 @@ function useActProvidingServiceColumns(
         width: 92,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.currency)} />,
       },
       {
         id: 'supplier',
@@ -505,11 +514,7 @@ function useActProvidingServiceColumns(
         width: 220,
         minWidth: 180,
         accessor: (row) => row.serviceOrganization,
-        cell: (row) => (
-          <Text lineClamp={2} size="sm">
-            {displayValue(row.serviceOrganization)}
-          </Text>
-        ),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.serviceOrganization)} />,
       },
       {
         id: 'organization',
@@ -517,7 +522,7 @@ function useActProvidingServiceColumns(
         width: 220,
         minWidth: 180,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.organization)} />,
       },
       {
         id: 'responsible',
@@ -525,7 +530,7 @@ function useActProvidingServiceColumns(
         width: 160,
         minWidth: 132,
         accessor: (row) => row.responsible,
-        cell: (row) => displayValue(row.responsible),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.responsible)} />,
       },
       {
         id: 'comment',
@@ -533,11 +538,7 @@ function useActProvidingServiceColumns(
         width: 240,
         minWidth: 180,
         accessor: (row) => row.comment,
-        cell: (row) => (
-          <Text lineClamp={2} size="sm">
-            {displayValue(row.comment)}
-          </Text>
-        ),
+        cell: (row) => <ActProvidingServiceTableValue value={displayValue(row.comment)} />,
       },
       {
         id: 'actions',
@@ -568,6 +569,16 @@ function useActProvidingServiceColumns(
       },
     ],
     [onOpen, t],
+  )
+}
+
+function ActProvidingServiceTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={ACT_PROVIDING_SERVICE_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

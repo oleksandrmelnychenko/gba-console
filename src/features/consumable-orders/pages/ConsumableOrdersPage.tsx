@@ -32,6 +32,7 @@ import type {
   NamedEntity,
   OutcomePaymentOrderConsumablesOrder,
 } from '../types'
+import './consumable-orders-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
 
@@ -56,6 +57,15 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+
+const CONSUMABLE_ORDER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 export function ConsumableOrdersPage() {
   const { t } = useI18n()
@@ -120,15 +130,19 @@ export function ConsumableOrdersPage() {
   const isTableBusy = isLoading || isSearchSettling
 
   return (
-    <Stack gap="md">
+    <Stack className="consumable-orders-page" gap={6}>
       <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { returnPath: '/accounting/consumable-orders' } })}>
           {t('Додати')}
         </Button>
       </PageHeaderActions>
 
-      <Group justify="space-between" align="end" gap="sm">
-        <Group align="end" gap="sm">
+      <Group align="end" gap="sm" wrap="nowrap">
           <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
           <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
           <TextInput
@@ -136,17 +150,9 @@ export function ConsumableOrdersPage() {
             label={t('Пошук')}
             placeholder={t('Номер, постачальник, склад або коментар')}
             value={searchValue}
-            w={340}
+            style={{ flex: '1 1 auto' }}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-        </Group>
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
       </Group>
 
       {error && (
@@ -161,19 +167,22 @@ export function ConsumableOrdersPage() {
         </Alert>
       )}
 
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        emptyText={t('Прибуткових накладних не знайдено')}
-        getRowId={(row) => row.id}
-        isLoading={isTableBusy}
-        layoutVersion="consumable-orders-1"
-        maxHeight="calc(100vh - 285px)"
-        minWidth={1540}
-        tableId="consumable-orders"
-        onRowClick={setSelectedRow}
-      />
+      <div className="consumable-orders-page__table">
+        <DataTable
+          columns={columns}
+          data={rows}
+          defaultLayout={TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Прибуткових накладних не знайдено')}
+          getRowId={(row) => row.id}
+          isLoading={isTableBusy}
+          layoutVersion="consumable-orders-1"
+          height="100%"
+          minWidth={1540}
+          showLayoutControls={false}
+          tableId="consumable-orders"
+          onRowClick={setSelectedRow}
+        />
+      </div>
 
       <ConsumableOrderDetailDrawer
         row={selectedRow}
@@ -204,7 +213,7 @@ function useConsumableOrderColumns({
         width: 145,
         minWidth: 130,
         accessor: (row) => row.created,
-        cell: (row) => formatDateTime(row.created),
+        cell: (row) => <ConsumableOrderTableValue value={formatDateTime(row.created)} />,
       },
       {
         id: 'number',
@@ -212,7 +221,7 @@ function useConsumableOrderColumns({
         width: 145,
         minWidth: 120,
         accessor: (row) => row.order.Number,
-        cell: (row) => <Text fw={600}>{displayValue(row.order.Number)}</Text>,
+        cell: (row) => <ConsumableOrderTableValue fw={600} value={displayValue(row.order.Number)} />,
       },
       {
         id: 'organizationFromDate',
@@ -220,7 +229,7 @@ function useConsumableOrderColumns({
         width: 145,
         minWidth: 130,
         accessor: (row) => row.organizationFromDate,
-        cell: (row) => formatDateTime(row.organizationFromDate),
+        cell: (row) => <ConsumableOrderTableValue value={formatDateTime(row.organizationFromDate)} />,
       },
       {
         id: 'organizationNumber',
@@ -228,7 +237,7 @@ function useConsumableOrderColumns({
         width: 150,
         minWidth: 120,
         accessor: (row) => row.organizationNumber,
-        cell: (row) => displayValue(row.organizationNumber),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.organizationNumber)} />,
       },
       {
         id: 'serviceOrganization',
@@ -236,7 +245,7 @@ function useConsumableOrderColumns({
         width: 220,
         minWidth: 170,
         accessor: (row) => row.serviceOrganization,
-        cell: (row) => displayValue(row.serviceOrganization),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.serviceOrganization)} />,
       },
       {
         id: 'organization',
@@ -244,7 +253,7 @@ function useConsumableOrderColumns({
         width: 170,
         minWidth: 130,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.organization)} />,
       },
       {
         id: 'totalAmountWithoutVat',
@@ -253,7 +262,7 @@ function useConsumableOrderColumns({
         minWidth: 100,
         align: 'right',
         accessor: (row) => row.totalAmountWithoutVat,
-        cell: (row) => formatMoney(row.totalAmountWithoutVat),
+        cell: (row) => <ConsumableOrderTableValue value={formatMoney(row.totalAmountWithoutVat)} />,
       },
       {
         id: 'amount',
@@ -262,7 +271,7 @@ function useConsumableOrderColumns({
         minWidth: 110,
         align: 'right',
         accessor: (row) => row.amount,
-        cell: (row) => formatMoney(row.amount),
+        cell: (row) => <ConsumableOrderTableValue value={formatMoney(row.amount)} />,
       },
       {
         id: 'currency',
@@ -270,7 +279,7 @@ function useConsumableOrderColumns({
         width: 90,
         minWidth: 80,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.currency)} />,
       },
       {
         id: 'storage',
@@ -278,7 +287,7 @@ function useConsumableOrderColumns({
         width: 150,
         minWidth: 120,
         accessor: (row) => row.storage,
-        cell: (row) => displayValue(row.storage),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.storage)} />,
       },
       {
         id: 'responsible',
@@ -286,7 +295,7 @@ function useConsumableOrderColumns({
         width: 165,
         minWidth: 130,
         accessor: (row) => row.responsible,
-        cell: (row) => displayValue(row.responsible),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.responsible)} />,
       },
       {
         id: 'comment',
@@ -294,7 +303,7 @@ function useConsumableOrderColumns({
         width: 240,
         minWidth: 170,
         accessor: (row) => row.comment,
-        cell: (row) => displayValue(row.comment),
+        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.comment)} />,
       },
       {
         id: 'actions',
@@ -357,6 +366,16 @@ function useConsumableOrderColumns({
       },
     ],
     [onOpen, onPay, onView, t],
+  )
+}
+
+function ConsumableOrderTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={CONSUMABLE_ORDER_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

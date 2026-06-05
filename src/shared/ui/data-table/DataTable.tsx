@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Table } from '@mantine/core'
+import { Group, Loader, Table } from '@mantine/core'
 import {
   closestCenter,
   DndContext,
@@ -282,6 +282,7 @@ export function DataTable<TData>({
   )
   const normalizedEmptyText = typeof emptyText === 'string' ? t(emptyText) : emptyText
   const normalizedLoadingText = typeof loadingText === 'string' ? t(loadingText) : loadingText
+  const isEmpty = !isLoading && table.getRowModel().rows.length === 0
 
   const expandConfig = useMemo(
     () =>
@@ -395,13 +396,10 @@ export function DataTable<TData>({
               ))}
             </Table.Thead>
             <DataTableBody
-              emptyText={normalizedEmptyText}
               columnWidths={columnWidths}
               expand={expandConfig}
               fillColumnId={fillColumnId}
               isLoading={isLoading}
-              labels={labels}
-              loadingText={normalizedLoadingText}
               pinnedLeftOffset={expandColumnWidth}
               table={table}
               visibleColumnCount={visibleColumnCount}
@@ -410,6 +408,21 @@ export function DataTable<TData>({
             />
           </Table>
         </DndContext>
+        {isLoading ? (
+          <div className="data-table-loading-overlay">
+            <Group className="data-table-loading-content" gap={8} justify="center">
+              <Loader color="violet" size="sm" />
+              <span>{normalizedLoadingText ?? labels.loadingData}</span>
+            </Group>
+          </div>
+        ) : null}
+        {isEmpty ? (
+          <div className="data-table-empty-overlay">
+            <div className="data-table-empty-content">
+              {normalizedEmptyText ?? labels.noData}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

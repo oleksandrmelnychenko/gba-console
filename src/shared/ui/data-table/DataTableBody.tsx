@@ -1,9 +1,9 @@
 import { Fragment, type ReactNode } from 'react'
-import { ActionIcon, Group, Loader, Table } from '@mantine/core'
+import { ActionIcon, Table } from '@mantine/core'
 import { IconChevronRight } from '@tabler/icons-react'
 import { flexRender, type Table as TableInstance } from '@tanstack/react-table'
 import { getPinnedStyle } from './dataTablePinning'
-import type { DataTableColumnMeta, DataTableLabels } from './types'
+import type { DataTableColumnMeta } from './types'
 
 type DataTableExpandConfig<TData> = {
   canExpandRow: (row: TData) => boolean
@@ -16,12 +16,9 @@ type DataTableExpandConfig<TData> = {
 
 type DataTableBodyProps<TData> = {
   columnWidths: ReadonlyMap<string, number>
-  emptyText?: ReactNode
   expand?: DataTableExpandConfig<TData>
   fillColumnId?: string
   isLoading: boolean
-  labels: Required<DataTableLabels>
-  loadingText?: ReactNode
   pinnedLeftOffset?: number
   table: TableInstance<TData>
   visibleColumnCount: number
@@ -31,12 +28,9 @@ type DataTableBodyProps<TData> = {
 
 export function DataTableBody<TData>({
   columnWidths,
-  emptyText,
   expand,
   fillColumnId,
   isLoading,
-  labels,
-  loadingText,
   pinnedLeftOffset = 0,
   table,
   visibleColumnCount,
@@ -46,30 +40,11 @@ export function DataTableBody<TData>({
   const totalColumnCount = visibleColumnCount + (expand ? 1 : 0)
 
   if (isLoading) {
-    return (
-      <Table.Tbody>
-        <Table.Tr>
-          <Table.Td className="data-table-empty" colSpan={totalColumnCount}>
-            <Group gap={8} justify="center">
-              <Loader color="violet" size="sm" />
-              <span>{loadingText ?? labels.loadingData}</span>
-            </Group>
-          </Table.Td>
-        </Table.Tr>
-      </Table.Tbody>
-    )
+    return <Table.Tbody />
   }
 
   if (!table.getRowModel().rows.length) {
-    return (
-      <Table.Tbody>
-        <Table.Tr>
-          <Table.Td className="data-table-empty" colSpan={totalColumnCount}>
-            {emptyText ?? labels.noData}
-          </Table.Td>
-        </Table.Tr>
-      </Table.Tbody>
-    )
+    return <Table.Tbody />
   }
 
   return (

@@ -37,6 +37,7 @@ import {
   searchSupplyOrganizations,
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization, SupplyOrganizationDocumentExport } from '../types'
+import './supplier-organizations-page.css'
 
 const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
 
@@ -184,7 +185,7 @@ export function SupplierOrganizationsPage() {
   )
 
   return (
-    <Stack gap={6}>
+    <Stack className="supplier-organizations-page" gap={6}>
       <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
         <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
@@ -229,21 +230,23 @@ export function SupplierOrganizationsPage() {
         </Alert>
       )}
 
-      <DataTable
-        columns={columns}
-        data={organizations}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        emptyText={t('Постачальників послуг не знайдено')}
-        getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
-        isLoading={isLoading}
-        layoutVersion="supplier-organizations-1"
-        maxHeight="calc(100vh - 292px)"
-        minWidth={1450}
-        showLayoutControls={false}
-        tableId="supplier-organizations"
-        toolbarLeft={tableToolbarLeft}
-        onRowClick={setSelectedOrganization}
-      />
+      <div className="supplier-organizations-page__table">
+        <DataTable
+          columns={columns}
+          data={organizations}
+          defaultLayout={TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Постачальників послуг не знайдено')}
+          getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
+          isLoading={isLoading}
+          layoutVersion="supplier-organizations-1"
+          height="100%"
+          minWidth={1450}
+          showLayoutControls={false}
+          tableId="supplier-organizations"
+          toolbarLeft={tableToolbarLeft}
+          onRowClick={setSelectedOrganization}
+        />
+      </div>
 
       <SupplierOrganizationActionModal
         organization={selectedOrganization}
