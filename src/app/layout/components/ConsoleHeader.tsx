@@ -1,27 +1,17 @@
-import { ActionIcon, AppShell, Badge, Box, Group, Title, Text, Tooltip } from '@mantine/core'
-import { IconBell, IconChevronRight, IconLogout } from '@tabler/icons-react'
-import { Fragment } from 'react'
+import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
+import { IconBell, IconCalendarEvent, IconLogout } from '@tabler/icons-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
-import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
-import { BlurTextSwap } from '../../../shared/transitions/BlurTextSwap'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { PageHeaderActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { usePageBreadcrumbLabel } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { ConsoleNav } from './ConsoleNav'
 
 export function ConsoleHeader() {
   const { logout, session, user } = useAuth()
   const { t } = useI18n()
   const navigate = useNavigate()
-  const { selectedModule, selectedNode } = useNavigation()
-  const pageCrumb = usePageBreadcrumbLabel()
-
-  const crumbs = [selectedModule?.Module, selectedNode?.Module, pageCrumb].filter(
-    (value): value is string => Boolean(value),
-  )
 
   const displayName =
     user?.FullName ||
@@ -29,10 +19,15 @@ export function ConsoleHeader() {
     session?.userNetUid ||
     t('Робочий простір')
   const roleName = user?.UserRole?.Name?.trim()
+  const currentDateLabel = new Intl.DateTimeFormat('uk-UA', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+  }).format(new Date())
 
   return (
     <AppShell.Header className="console-header">
-      <Group className="console-header-main" h={60} px="md" justify="space-between" wrap="nowrap">
+      <Box className="console-header-main">
         <Group gap="xs" wrap="nowrap" className="console-header-brand">
           <button type="button" className="console-brand-button" onClick={() => navigate('/dashboard')}>
             <img className="console-brand-logo" src={gbaLogo} alt="GBA" />
@@ -42,50 +37,16 @@ export function ConsoleHeader() {
               </Title>
             </Box>
           </button>
-          {crumbs.length > 0 && (
-            <>
-              <Box className="console-header-divider" aria-hidden="true" />
-              <Group gap={4} wrap="nowrap" className="console-header-crumbs">
-                {crumbs.map((label, index) => {
-                  const isCurrent = index === crumbs.length - 1
-                  const crumb = (
-                    <BlurTextSwap
-                      className={`console-header-crumb${isCurrent ? ' is-current' : ''}`}
-                      text={label}
-                    />
-                  )
-
-                  return (
-                    <Fragment key={index}>
-                      {index > 0 && (
-                        <IconChevronRight size={14} stroke={1.8} className="console-header-crumb-sep" />
-                      )}
-                      {isCurrent && label.length >= 40 ? (
-                        <Tooltip label={label} withArrow openDelay={400}>
-                          {crumb}
-                        </Tooltip>
-                      ) : (
-                        crumb
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </Group>
-            </>
-          )}
-          <PageHeaderActionsSlot className="console-header-page-actions" />
+          <Box className="console-header-divider" aria-hidden="true" />
         </Group>
 
+        <Box className="console-header-top-nav">
+          <ConsoleNav mode="modules" />
+        </Box>
+
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
+          <PageHeaderActionsSlot className="console-header-page-actions" />
           <HeaderActionBar />
-          <Text className="console-header-user" visibleFrom="xs" size="sm" fw={600}>
-            {displayName}
-          </Text>
-          {roleName && (
-            <Badge className="console-header-role" color="orange" radius="xl" size="sm" variant="light" visibleFrom="xs">
-              {roleName}
-            </Badge>
-          )}
           <Box className="console-bell">
             <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Сповіщення')}>
               <IconBell size={24} stroke={1.7} />
@@ -96,8 +57,27 @@ export function ConsoleHeader() {
             <IconLogout size={24} stroke={1.7} />
           </ActionIcon>
         </Group>
-      </Group>
-      <ConsoleNav />
+
+        <Group gap={6} wrap="nowrap" className="console-header-date">
+          <IconCalendarEvent size={15} stroke={1.7} />
+          <Text size="sm">{currentDateLabel}</Text>
+        </Group>
+
+        <Box className="console-header-bottom-nav">
+          <ConsoleNav mode="items" />
+        </Box>
+
+        <Group gap="xs" wrap="nowrap" className="console-header-user-panel">
+          <Text className="console-header-user" visibleFrom="xs" size="sm" fw={600}>
+            {displayName}
+          </Text>
+          {roleName && (
+            <Badge className="console-header-role" color="orange" radius="xl" size="sm" variant="light" visibleFrom="xs">
+              {roleName}
+            </Badge>
+          )}
+        </Group>
+      </Box>
     </AppShell.Header>
   )
 }
