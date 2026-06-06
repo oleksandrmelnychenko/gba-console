@@ -129,6 +129,7 @@ export function ConsumableStoragesPage() {
       navigate(`/accounting/storages/edit/${storage.NetUid}`, {
         state: {
           nodeTitle: storage.Name,
+          backgroundLocation: location,
           returnPath: `${location.pathname}${location.search}`,
         },
       })
@@ -139,6 +140,7 @@ export function ConsumableStoragesPage() {
   const openCreateStorage = useCallback(() => {
     navigate('/accounting/storages/new', {
       state: {
+        backgroundLocation: location,
         returnPath: `${location.pathname}${location.search}`,
       },
     })

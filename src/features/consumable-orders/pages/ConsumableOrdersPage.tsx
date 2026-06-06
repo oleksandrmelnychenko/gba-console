@@ -13,7 +13,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconCreditCard, IconEye, IconPencil, IconPlus, IconRefresh, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, type NavigateFunction } from 'react-router-dom'
+import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -70,6 +70,7 @@ const CONSUMABLE_ORDER_TABLE_CELL_STYLE = {
 export function ConsumableOrdersPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
@@ -124,8 +125,8 @@ export function ConsumableOrdersPage() {
   const rows = useMemo(() => buildConsumableOrderRows(orders), [orders])
   const columns = useConsumableOrderColumns({
     onOpen: setSelectedRow,
-    onPay: (row) => navigateToPay(navigate, row),
-    onView: (row) => navigateToEdit(navigate, row),
+    onPay: (row) => navigateToPay(navigate, row, location),
+    onView: (row) => navigateToEdit(navigate, row, location),
   })
   const isTableBusy = isLoading || isSearchSettling
 
@@ -137,7 +138,7 @@ export function ConsumableOrdersPage() {
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { returnPath: '/accounting/consumable-orders' } })}>
+        <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}>
           {t('Додати')}
         </Button>
       </PageHeaderActions>
@@ -187,8 +188,8 @@ export function ConsumableOrdersPage() {
       <ConsumableOrderDetailDrawer
         row={selectedRow}
         onClose={() => setSelectedRow(null)}
-        onPay={(row) => navigateToPay(navigate, row)}
-        onView={(row) => navigateToEdit(navigate, row)}
+        onPay={(row) => navigateToPay(navigate, row, location)}
+        onView={(row) => navigateToEdit(navigate, row, location)}
       />
     </Stack>
   )
@@ -539,24 +540,24 @@ function buildConsumableOrderRows(orders: ConsumablesOrder[]): ConsumableOrderRo
   }))
 }
 
-function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow) {
+function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {
   const netId = row.order.NetUid || row.id
 
   if (!netId) {
     return
   }
 
-  navigate(`/accounting/consumable-orders/edit/${netId}`, { state: { returnPath: '/accounting/consumable-orders' } })
+  navigate(`/accounting/consumable-orders/edit/${netId}`, { state: { backgroundLocation, returnPath: '/accounting/consumable-orders' } })
 }
 
-function navigateToPay(navigate: NavigateFunction, row: ConsumableOrderRow) {
+function navigateToPay(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {
   const netId = row.order.NetUid || row.id
 
   if (!netId) {
     return
   }
 
-  navigate(`/accounting/consumable-orders/pay/${netId}`, { state: { returnPath: '/accounting/consumable-orders' } })
+  navigate(`/accounting/consumable-orders/pay/${netId}`, { state: { backgroundLocation, returnPath: '/accounting/consumable-orders' } })
 }
 
 function getItemName(item: ConsumablesOrderItem): string | undefined {

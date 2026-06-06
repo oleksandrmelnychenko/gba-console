@@ -598,6 +598,7 @@ export function SalesUkrainePage() {
           <Group align="end" gap="sm" wrap="wrap">
             <TextInput
               label={t('З')}
+              size="sm"
               max={filterDraft.to || undefined}
               type="date"
               value={filterDraft.from}
@@ -605,6 +606,7 @@ export function SalesUkrainePage() {
             />
             <TextInput
               label={t('По')}
+              size="sm"
               min={filterDraft.from || undefined}
               type="date"
               value={filterDraft.to}
@@ -614,6 +616,7 @@ export function SalesUkrainePage() {
               allowDeselect={false}
               data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
               label={t('Статус')}
+              size="sm"
               value={filterDraft.status}
               w={180}
               onChange={(value) => applyFilters({ ...filterDraft, status: (value as SalesUkraineStatusFilter | null) || 'all' })}
@@ -625,6 +628,7 @@ export function SalesUkrainePage() {
                 { value: 'Self', label: t('Тільки мої') },
               ]}
               label={t('Менеджер')}
+              size="sm"
               value={filterDraft.onlyMine ? 'Self' : 'All'}
               w={150}
               onChange={(value) =>
@@ -636,6 +640,7 @@ export function SalesUkrainePage() {
               searchable
               data={organizationOptions}
               label={t('Організація')}
+              size="sm"
               placeholder={filterDraft.organisationIds.length ? undefined : t('Усі')}
               value={filterDraft.organisationIds}
               w={230}
@@ -646,6 +651,7 @@ export function SalesUkrainePage() {
               searchable
               data={clientSelectData}
               label={t('Клієнт')}
+              size="sm"
               nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
               placeholder={t('Пошук клієнта')}
               searchValue={clientQuery}
@@ -657,12 +663,14 @@ export function SalesUkrainePage() {
             <Checkbox
               checked={filterDraft.forEcommerce}
               label={t('Інтернет-магазин')}
+              size="sm"
               mb={8}
               onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
             />
             <TextInput
               flex={1}
               label={t('Пошук')}
+              size="sm"
               leftSection={<IconSearch size={16} />}
               miw={140}
               placeholder={t('Товар або номер продажу')}
@@ -670,7 +678,7 @@ export function SalesUkrainePage() {
               onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
             />
             <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={resetFilters}>
+              <ActionIcon variant="light" color="gray" size="sm" aria-label={t('Скинути')} onClick={resetFilters}>
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>

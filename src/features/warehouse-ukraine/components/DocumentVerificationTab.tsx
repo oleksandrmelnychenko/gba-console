@@ -4,13 +4,13 @@ import {
   Button,
   Card,
   Group,
-  MultiSelect,
   Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -418,10 +418,7 @@ export function DocumentVerificationTab() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Text fw={700} size="lg">
-          {t('Звірка')}
-        </Text>
+      <Group justify="flex-end" align="center">
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
             <ActionIcon
@@ -450,11 +447,9 @@ export function DocumentVerificationTab() {
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">
-            <MultiSelect
-              clearable
+            <CheckboxMultiSelect
               data={model.storageOptions}
               label={t('Організація')}
-              searchable
               value={model.selectedStorageIds}
               w={320}
               onChange={model.setSelectedStorageIds}

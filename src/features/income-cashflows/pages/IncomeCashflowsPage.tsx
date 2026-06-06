@@ -18,7 +18,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconChevronDown, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -97,6 +97,7 @@ const INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE: IncomeDocumentStructureCalcula
 export function IncomeCashflowsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const [incomeOrders, setIncomeOrders] = useValueState<IncomePaymentOrder[]>([])
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
@@ -347,40 +348,40 @@ export function IncomeCashflowsPage() {
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Label>{t('Каса')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=0', { state: { backgroundLocation: location } })}>
               {t('Інший касовий прихід')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=0', { state: { backgroundLocation: location } })}>
               {t('Оплата покупця')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=1', { state: { backgroundLocation: location } })}>
               {t('Повернення постачальника')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=0&operationType=2', { state: { backgroundLocation: location } })}>
               {t('Інші з контрагентами')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('Банк')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/conversion?type=2', { state: { backgroundLocation: location } })}>
               {t('Інші надходження на рахунок')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=0', { state: { backgroundLocation: location } })}>
               {t('Оплата покупця')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=1', { state: { backgroundLocation: location } })}>
               {t('Повернення постачальника')}
             </Menu.Item>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/client?type=2&operationType=2', { state: { backgroundLocation: location } })}>
               {t('Інші з контрагентами')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('Колеги')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/user', { state: { backgroundLocation: location } })}>
               {t('Повернення від колеги')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Label>{t('Магазин')}</Menu.Label>
-            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop')}>
+            <Menu.Item onClick={() => navigate('/accounting/income-cashflows/new/shop', { state: { backgroundLocation: location } })}>
               {t('Оплата магазину')}
             </Menu.Item>
           </Menu.Dropdown>

@@ -16,7 +16,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -75,6 +75,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
 export function OutgoingCashflowsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
     Collection: [],
@@ -361,7 +362,7 @@ export function OutgoingCashflowsPage() {
           color={CREATE_ACTION_COLOR}
           size="sm"
           leftSection={<IconPlus size={16} />}
-          onClick={() => navigate('/accounting/outgoing-cashflow/new')}
+          onClick={() => navigate('/accounting/outgoing-cashflow/new', { state: { backgroundLocation: location } })}
         >
           {t('Новий')}
         </Button>

@@ -294,13 +294,9 @@ export function SalesTab() {
         </Tooltip>
       </PageHeaderActions>
 
-      <Text fw={700} size="lg">
-        {t('Статус пакування')}
-      </Text>
-
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+          <Group align="end" gap="sm" wrap="nowrap">
             <TextInput
               label={t('Пошук по товару')}
               value={model.filterDraft.value}
@@ -325,16 +321,7 @@ export function SalesTab() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
-          </Group>
-
-          {(model.error || model.filterError) && (
-            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {model.filterError || model.error}
-            </Alert>
-          )}
-
-          <Group justify="flex-end" gap="xs">
-            <Group gap={4} wrap="nowrap">
+            <Group gap={4} wrap="nowrap" style={{ marginLeft: 'auto' }}>
               <Select
                 aria-label={t('Кількість рядків')}
                 data={PAGE_SIZE_OPTIONS}
@@ -369,6 +356,12 @@ export function SalesTab() {
               </ActionIcon>
             </Group>
           </Group>
+
+          {(model.error || model.filterError) && (
+            <Alert color={model.filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+              {model.filterError || model.error}
+            </Alert>
+          )}
 
           <DataTable
             columns={model.columns}

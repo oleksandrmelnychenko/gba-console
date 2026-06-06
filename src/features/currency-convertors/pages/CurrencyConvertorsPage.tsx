@@ -2,7 +2,7 @@ import { ActionIcon, Alert, Box, Button, Card, Group, Stack, Text, Tooltip } fro
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconPencil, IconPlus, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -41,6 +41,7 @@ function createNewRateDraft(): NewRateDraft {
 function useCurrencyConvertorsPageModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { hasPermission } = useAuth()
   const canCreate = hasPermission(CURRENCY_CONVERTOR_CREATE_PERMISSION)
   const canEdit = hasPermission(CURRENCY_CONVERTOR_EDIT_PERMISSION)
@@ -282,12 +283,12 @@ function useCurrencyConvertorsPageModel() {
   }
 
   function goToCreate() {
-    navigate(`${CONVERTORS_PATH}/new`)
+    navigate(`${CONVERTORS_PATH}/new`, { state: { backgroundLocation: location } })
   }
 
   function goToEdit(trader: CurrencyTrader) {
     if (trader.NetUid) {
-      navigate(`${CONVERTORS_PATH}/edit/${trader.NetUid}`)
+      navigate(`${CONVERTORS_PATH}/edit/${trader.NetUid}`, { state: { backgroundLocation: location } })
     }
   }
 

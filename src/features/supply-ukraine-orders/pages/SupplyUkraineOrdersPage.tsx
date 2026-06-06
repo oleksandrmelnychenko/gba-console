@@ -36,7 +36,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -208,6 +208,7 @@ function currenciesReducer(_state: CurrenciesState, action: CurrenciesAction): C
 export function SupplyUkraineOrdersPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { hasPermission } = useAuth()
   const defaultFilters = useMemo(() => createDefaultFilters(), [])
   const [filterDraft, setFilterDraft] = useState<SupplyUkraineOrdersFilter>(() => readSavedFilters(defaultFilters))
@@ -558,7 +559,7 @@ export function SupplyUkraineOrdersPage() {
               </Button>
             )}
             {canCreateDirect && (
-              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new')}>
+              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new', { state: { backgroundLocation: location } })}>
                 {t('Замовлення Україна')}
               </Button>
             )}

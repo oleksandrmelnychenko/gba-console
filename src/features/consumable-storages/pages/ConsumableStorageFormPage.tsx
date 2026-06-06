@@ -13,6 +13,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -230,6 +231,7 @@ export function ConsumableStorageFormPage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <form onSubmit={handleSubmit}>
@@ -325,6 +327,7 @@ export function ConsumableStorageFormPage() {
         </form>
       </Card>
     </Stack>
+    </AppDrawer>
   )
 }
 

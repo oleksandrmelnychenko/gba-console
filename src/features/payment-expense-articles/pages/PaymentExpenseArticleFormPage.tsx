@@ -11,6 +11,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -201,6 +202,7 @@ export function PaymentExpenseArticleFormPage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <form onSubmit={handleSubmit}>
@@ -298,6 +300,7 @@ export function PaymentExpenseArticleFormPage() {
         </Stack>
       </AppModal>
     </Stack>
+    </AppDrawer>
   )
 }
 

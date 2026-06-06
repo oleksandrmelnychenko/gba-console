@@ -1,6 +1,7 @@
 import { Anchor, Breadcrumbs, Stack } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { OutgoingCashOrderForm } from '../components/OutgoingCashOrderForm'
@@ -65,6 +66,7 @@ export function OutgoingCashflowCreatePage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="standard" onClose={() => navigate(OUTGOING_CASHFLOWS_PATH)}>
     <Stack gap="md">
       <Breadcrumbs>
         <Anchor onClick={() => navigate(OUTGOING_CASHFLOWS_PATH)}>{t('Створення видаткової статті бюджету')}</Anchor>
@@ -72,6 +74,7 @@ export function OutgoingCashflowCreatePage() {
 
       {activeMode ? renderActiveForm(activeMode) : <OutgoingCreateModeSelector onSelect={handleSelectMode} />}
     </Stack>
+    </AppDrawer>
   )
 }
 

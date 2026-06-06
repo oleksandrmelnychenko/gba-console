@@ -24,7 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
@@ -59,6 +59,7 @@ const EXPORT_COLUMNS: TaxFreeCarrierExportColumn[] = [
 function useTaxFreeCarriersPageModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { hasPermission } = useAuth()
   const canManage = hasPermission(TAX_FREE_CARRIER_MANAGE_PERMISSION)
   const canPrint = hasPermission(TAX_FREE_CARRIER_PRINT_PERMISSION)
@@ -89,12 +90,12 @@ function useTaxFreeCarriersPageModel() {
   }
 
   function openCreate() {
-    navigate('/tax-free/carriers/new')
+    navigate('/tax-free/carriers/new', { state: { backgroundLocation: location } })
   }
 
   function openEdit(carrier: TaxFreeCarrier) {
     if (carrier.NetUid) {
-      navigate(`/tax-free/carriers/edit/${carrier.NetUid}`)
+      navigate(`/tax-free/carriers/edit/${carrier.NetUid}`, { state: { backgroundLocation: location } })
     }
   }
 

@@ -72,6 +72,7 @@ export function PaymentAccountsPage() {
       navigate(`/accounting/payment-accounts/edit/${account.NetUid}`, {
         state: {
           nodeTitle: account.Name,
+          backgroundLocation: location,
           returnPath: `${location.pathname}${location.search}`,
         },
       })
@@ -242,6 +243,7 @@ export function PaymentAccountsPage() {
                   onClick={() =>
                     navigate('/accounting/payment-accounts/new', {
                       state: {
+                        backgroundLocation: location,
                         returnPath: `${location.pathname}${location.search}`,
                       },
                     })

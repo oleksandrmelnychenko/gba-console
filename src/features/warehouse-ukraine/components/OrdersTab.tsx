@@ -264,10 +264,6 @@ export function OrdersTab() {
         </Tooltip>
       </PageHeaderActions>
 
-      <Text fw={700} size="lg">
-        {t('Замовлення на Україну')}
-      </Text>
-
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">

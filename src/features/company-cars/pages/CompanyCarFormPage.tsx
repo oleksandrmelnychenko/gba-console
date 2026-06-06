@@ -1,18 +1,17 @@
 import {
   Alert,
   Button,
-  Card,
   Group,
   Select,
   SimpleGrid,
   Stack,
-  Text,
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -215,121 +214,119 @@ export function CompanyCarFormPage() {
   }
 
   return (
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <Text fw={700} size="xl">
-                {isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
-              </Text>
-
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-                  {t('Назад')}
-                </Button>
-                {isEditMode && (
-                  <Button
-                    color="red"
-                    disabled={isLoading || !companyCar.NetUid}
-                    leftSection={<IconTrash size={16} />}
-                    loading={isDeleting}
-                    type="button"
-                    variant="light"
-                    onClick={handleDelete}
-                  >
-                    {t('Видалити')}
-                  </Button>
-                )}
-                <Button
-                  color="violet"
-                  disabled={isLoading || !canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
-
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
+              {t('Назад')}
+            </Button>
+            {isEditMode && (
+              <Button
+                color="red"
+                disabled={isLoading || !companyCar.NetUid}
+                leftSection={<IconTrash size={16} />}
+                loading={isDeleting}
+                type="button"
+                variant="light"
+                onClick={handleDelete}
+              >
+                {t('Видалити')}
+              </Button>
             )}
+            <Button
+              color="violet"
+              disabled={isLoading || !canSave}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-            {!canSave && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Немає прав для збереження автомобіля компанії')}
-              </Alert>
-            )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            <Select
-              clearable
-              searchable
-              data={organizationOptions}
+          {!canSave && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Немає прав для збереження автомобіля компанії')}
+            </Alert>
+          )}
+
+          <Select
+            clearable
+            searchable
+            data={organizationOptions}
+            disabled={isLoading || isSaving}
+            label={t('Організація')}
+            placeholder={t('Оберіть організацію')}
+            value={form.organizationNetUid || null}
+            onChange={(value) => updateForm({ organizationNetUid: value || '' })}
+          />
+
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <TextInput
               disabled={isLoading || isSaving}
-              label={t('Організація')}
-              placeholder={t('Оберіть організацію')}
-              value={form.organizationNetUid || null}
-              onChange={(value) => updateForm({ organizationNetUid: value || '' })}
+              label={t('Марка автомобіля')}
+              value={form.carBrand}
+              onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
             />
-
-            <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Марка автомобіля')}
-                value={form.carBrand}
-                onChange={(event) => updateForm({ carBrand: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('№ Авто')}
-                value={form.licensePlate}
-                onChange={(event) => updateForm({ licensePlate: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Вмістимість баку')}
-                value={form.tankCapacity}
-                onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Кількість пального')}
-                value={form.fuelAmount}
-                onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Показники одометра')}
-                value={form.mileage}
-                onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Розхід по місту на 100 км')}
-                value={form.inCityConsumption}
-                onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Розхід по трасі на 100 км')}
-                value={form.outsideCityConsumption}
-                onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Змішаний розхід')}
-                value={form.mixedModeConsumption}
-                onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
-              />
-            </SimpleGrid>
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('№ Авто')}
+              value={form.licensePlate}
+              onChange={(event) => updateForm({ licensePlate: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Вмістимість баку')}
+              value={form.tankCapacity}
+              onChange={(event) => updateForm({ tankCapacity: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Кількість пального')}
+              value={form.fuelAmount}
+              onChange={(event) => updateForm({ fuelAmount: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Показники одометра')}
+              value={form.mileage}
+              onChange={(event) => updateForm({ mileage: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Розхід по місту на 100 км')}
+              value={form.inCityConsumption}
+              onChange={(event) => updateForm({ inCityConsumption: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Розхід по трасі на 100 км')}
+              value={form.outsideCityConsumption}
+              onChange={(event) => updateForm({ outsideCityConsumption: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Змішаний розхід')}
+              value={form.mixedModeConsumption}
+              onChange={(event) => updateForm({ mixedModeConsumption: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+        </Stack>
+      </form>
+    </AppDrawer>
   )
 }
 

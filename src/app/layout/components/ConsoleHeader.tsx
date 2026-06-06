@@ -5,7 +5,6 @@ import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { PageHeaderActionsSlot } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ConsoleNav } from './ConsoleNav'
 
 export function ConsoleHeader() {
@@ -45,7 +44,6 @@ export function ConsoleHeader() {
         </Box>
 
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
-          <PageHeaderActionsSlot className="console-header-page-actions" />
           <HeaderActionBar />
           <Box className="console-bell">
             <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Сповіщення')}>

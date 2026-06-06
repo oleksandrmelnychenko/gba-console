@@ -34,6 +34,7 @@ import {
 } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -649,6 +650,7 @@ export function ConsumableOrderFormPage() {
   const documentRows = order.ConsumablesOrderDocuments || []
 
   return (
+    <AppDrawer opened position="right" size="wide" onClose={handleCancel}>
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <form onSubmit={handleSubmit}>
@@ -1067,6 +1069,7 @@ export function ConsumableOrderFormPage() {
         </Stack>
       </AppModal>
     </Stack>
+    </AppDrawer>
   )
 }
 

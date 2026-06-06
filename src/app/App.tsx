@@ -4,11 +4,25 @@ import {
   ClientEditPage,
   ClientNewPage,
   CompanyCarFormPage,
+  ConsumableOrderFormPage,
+  ConsumableOrderPayPage,
+  ConsumableStorageFormPage,
+  CurrencyConvertorFormPage,
+  IncomeCashflowClientFormPage,
+  IncomeCashflowConversionFormPage,
+  IncomeCashflowShopFormPage,
+  IncomeCashflowUserFormPage,
   NewResalePage,
   OrganizationClientEditPage,
   OrganizationClientNewPage,
+  OutgoingCashflowCreatePage,
+  PaymentAccountFormPage,
+  PaymentCashflowArticleFormPage,
+  PaymentExpenseArticleFormPage,
   ProductGroupDetailPage,
   SupplierOrganizationEditPage,
+  SupplyUkraineDirectOrderCreatePage,
+  TaxFreeCarrierFormPage,
   UserEditPage,
   UserNewPage,
 } from './routes/lazyConsolePages'
@@ -58,6 +72,31 @@ export function App() {
             <Route path="/accounting/supplier-organizations/edit/:id" element={lazyRoute(<SupplierOrganizationEditPage />)} />
             <Route path="/accounting/company-cars/new" element={lazyRoute(<CompanyCarFormPage />)} />
             <Route path="/accounting/company-cars/edit/:id" element={lazyRoute(<CompanyCarFormPage />)} />
+            <Route path="/accounting/consumable-orders/new" element={lazyRoute(<ConsumableOrderFormPage />)} />
+            <Route path="/accounting/consumable-orders/edit/:id" element={lazyRoute(<ConsumableOrderFormPage />)} />
+            <Route path="/accounting/consumable-orders/pay/:id" element={lazyRoute(<ConsumableOrderPayPage />)} />
+            <Route path="/accounting/storages/new" element={lazyRoute(<ConsumableStorageFormPage />)} />
+            <Route path="/accounting/storages/edit/:id" element={lazyRoute(<ConsumableStorageFormPage />)} />
+            <Route path="/accounting/currency-convertors/new" element={lazyRoute(<CurrencyConvertorFormPage />)} />
+            <Route path="/accounting/currency-convertors/edit/:id" element={lazyRoute(<CurrencyConvertorFormPage />)} />
+            <Route path="/accounting/income-cashflows/new/client" element={lazyRoute(<IncomeCashflowClientFormPage />)} />
+            <Route path="/accounting/income-cashflows/new/conversion" element={lazyRoute(<IncomeCashflowConversionFormPage />)} />
+            <Route path="/accounting/income-cashflows/new/shop" element={lazyRoute(<IncomeCashflowShopFormPage />)} />
+            <Route path="/accounting/income-cashflows/new/user" element={lazyRoute(<IncomeCashflowUserFormPage />)} />
+            <Route path="/accounting/outgoing-cashflow/new" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/outgoing-cashflow/new/simple" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/outgoing-cashflow/new/supplier" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/outgoing-cashflow/new/client-return" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/outgoing-cashflow/new/group" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/payment-accounts/new" element={lazyRoute(<PaymentAccountFormPage />)} />
+            <Route path="/accounting/payment-accounts/edit/:id" element={lazyRoute(<PaymentAccountFormPage />)} />
+            <Route path="/accounting/payment-cashflow-articles/new" element={lazyRoute(<PaymentCashflowArticleFormPage />)} />
+            <Route path="/accounting/payment-cashflow-articles/edit/:id" element={lazyRoute(<PaymentCashflowArticleFormPage />)} />
+            <Route path="/accounting/payment-expense-articles/new" element={lazyRoute(<PaymentExpenseArticleFormPage />)} />
+            <Route path="/accounting/payment-expense-articles/edit/:id" element={lazyRoute(<PaymentExpenseArticleFormPage />)} />
+            <Route path="/tax-free/carriers/new" element={lazyRoute(<TaxFreeCarrierFormPage />)} />
+            <Route path="/tax-free/carriers/edit/:id" element={lazyRoute(<TaxFreeCarrierFormPage />)} />
+            <Route path="/orders/ukraine/all/new" element={lazyRoute(<SupplyUkraineDirectOrderCreatePage />)} />
             <Route path="/product-groups/:id" element={lazyRoute(<ProductGroupDetailPage />)} />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />
             <Route path="/users/new" element={lazyRoute(<UserNewPage />)} />

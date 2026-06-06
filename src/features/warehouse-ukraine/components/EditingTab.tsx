@@ -1,4 +1,4 @@
-import { Badge, Box, Group, Stack, Text } from '@mantine/core'
+import { Badge, Box, Group, Stack } from '@mantine/core'
 import { useEffect, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -50,10 +50,6 @@ export function EditingTab() {
 
   return (
     <Stack gap="md">
-      <Text fw={700} size="lg">
-        {t('Протокол актів редагування накладних')}
-      </Text>
-
       <div className="pill-tabs" style={{ width: 'fit-content' }}>
         <button
           type="button"

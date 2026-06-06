@@ -23,6 +23,7 @@ import {
 } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -185,6 +186,7 @@ export function TaxFreeCarrierFormPage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <form onSubmit={handleSubmit}>
@@ -275,6 +277,7 @@ export function TaxFreeCarrierFormPage() {
         onSubmit={submitPassport}
       />
     </Stack>
+    </AppDrawer>
   )
 }
 

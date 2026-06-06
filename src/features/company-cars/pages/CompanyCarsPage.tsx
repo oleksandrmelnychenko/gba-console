@@ -73,6 +73,7 @@ export function CompanyCarsPage() {
 
       navigate(`${COMPANY_CARS_PATH}/edit/${companyCar.NetUid}`, {
         state: {
+          backgroundLocation: location,
           returnPath: `${location.pathname}${location.search}`,
         },
       })
@@ -156,6 +157,7 @@ export function CompanyCarsPage() {
               onClick={() =>
                 navigate(`${COMPANY_CARS_PATH}/new`, {
                   state: {
+                    backgroundLocation: location,
                     returnPath: `${location.pathname}${location.search}`,
                   },
                 })

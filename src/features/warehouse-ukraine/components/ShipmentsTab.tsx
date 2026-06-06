@@ -697,10 +697,6 @@ function AutoShipmentsPanel() {
         </Tooltip>
       </PageHeaderActions>
 
-      <Text fw={700} size="lg">
-        {t('Відвантаження')}
-      </Text>
-
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">

@@ -24,6 +24,7 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -305,6 +306,7 @@ export function SupplyUkraineDirectOrderCreatePage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="wide" onClose={() => navigate('/orders/ukraine/all')}>
     <Stack gap="lg">
       <Group justify="space-between">
         <Stack gap={2}>
@@ -478,6 +480,7 @@ export function SupplyUkraineDirectOrderCreatePage() {
         </form>
       </Card>
     </Stack>
+    </AppDrawer>
   )
 }
 

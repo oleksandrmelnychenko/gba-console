@@ -5,7 +5,7 @@
 .console-frame {
   background: #ffffff;
   min-height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 8px);
-  margin: 8px 0 0 0;
+  margin: 6px 0 0 0;
   padding: 8px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -18,6 +18,69 @@
 }
 
 .console-content-header-slot:empty {
+  display: none;
+}
+
+/* Default page content header: breadcrumb (left) + page actions (right) */
+.console-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px; /* fixed so the row never jumps when a tab has no action button */
+  margin-top: 6px; /* match the frame's 6px below → equal spacing above/below the bar */
+  padding: 0 16px;
+}
+
+.console-content-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.console-content-crumb {
+  color: var(--mantine-color-gray-6);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.console-content-crumb.is-current {
+  color: var(--mantine-color-gray-9);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console-content-crumb-sep {
+  flex: 0 0 auto;
+  color: var(--mantine-color-gray-4);
+}
+
+.console-content-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* Keep page action controls compact & uniform so the fixed-height bar fits them */
+.console-content-header-actions .mantine-Button-root {
+  height: 30px;
+}
+
+.console-content-header-actions .mantine-ActionIcon-root {
+  --ai-size: 30px !important;
+}
+
+/* Hide the default content header when a page supplies a fully custom one */
+.console-content:has(.console-content-header-slot:not(:empty)) .console-content-header {
+  display: none;
+}
+
+/* Hide the default bar entirely when it has neither crumbs nor actions */
+.console-content-header:not(:has(.console-content-crumb)):has(.console-content-header-actions:empty) {
   display: none;
 }
 
@@ -74,10 +137,10 @@
   --console-header-brand-width: 188px;
   display: grid;
   grid-template-columns: var(--console-header-brand-width) minmax(0, 1fr) minmax(240px, auto);
-  grid-template-rows: 64px 42px;
+  grid-template-rows: 56px 38px;
   column-gap: 16px;
-  height: 106px;
-  min-height: 106px;
+  height: 94px;
+  min-height: 94px;
   align-items: center;
   padding: 0 20px;
   position: relative;
@@ -91,7 +154,7 @@
   pointer-events: none;
   position: absolute;
   right: 20px;
-  top: 64px;
+  top: 56px;
   z-index: 3;
 }
 
@@ -102,7 +165,7 @@
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  height: 64px;
+  height: 56px;
   gap: var(--mantine-spacing-xs);
 }
 
@@ -182,6 +245,8 @@
   align-self: stretch;
   display: flex;
   align-items: center;
+  background: transparent; /* don't paint over the header's bottom border in the centre */
+  border-top: 0; /* the row divider (::before) already draws this line */
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
   width: 100%;
@@ -612,6 +677,8 @@
   padding: 4px;
   border-radius: 999px;
   background: var(--mantine-color-gray-1);
+  width: fit-content;
+  margin-inline: auto; /* centre every tab row consistently */
 }
 
 .pill-tab {

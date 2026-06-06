@@ -130,7 +130,7 @@ export function WarehouseUkrainePage() {
 
   return (
     <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content' }}>
+      <div className="pill-tabs" style={{ width: 'fit-content', margin: '0 auto' }}>
         {visibleTabs.map((tab) => {
           const isActive = tab.value === activeTabItem?.value
 

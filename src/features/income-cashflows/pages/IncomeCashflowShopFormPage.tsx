@@ -20,6 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -615,6 +616,7 @@ export function IncomeCashflowShopFormPage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="wide" onClose={() => navigate(INCOME_CASHFLOWS_PATH)}>
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
         <form onSubmit={handleSubmit}>
@@ -886,6 +888,7 @@ export function IncomeCashflowShopFormPage() {
         </Card>
       )}
     </Stack>
+    </AppDrawer>
   )
 }
 

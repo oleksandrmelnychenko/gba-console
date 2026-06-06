@@ -20,6 +20,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPencil, IconRefresh, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -430,6 +431,7 @@ export function PaymentAccountFormPage() {
   }
 
   return (
+    <AppDrawer opened position="right" size="wide" onClose={handleCancel}>
     <Stack gap="md">
       <PaymentAccountFormCard
         state={{
@@ -502,6 +504,7 @@ export function PaymentAccountFormPage() {
         </Stack>
       </AppModal>
     </Stack>
+    </AppDrawer>
   )
 }
 
