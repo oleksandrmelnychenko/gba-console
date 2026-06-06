@@ -19,6 +19,8 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconBaselineDensityMedium,
+  IconBaselineDensitySmall,
   IconCash,
   IconChevronLeft,
   IconChevronRight,
@@ -47,6 +49,7 @@ import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
+  DataTableDensity,
   DataTableSortingState,
 } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
@@ -102,9 +105,10 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnVisibility: {
     actions: false,
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
+const CLIENT_TABLE_DENSITY_STORAGE_KEY = 'gba-data-table:clients:density'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 30
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
 const CLIENT_TABLE_CELL_STYLE = {
@@ -140,6 +144,7 @@ function useClientsPageModel() {
   const [reserveDays, setReserveDays] = useValueState(0)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readClientTablePageSize)
+  const [density, setDensity] = useValueState<DataTableDensity>(readClientTableDensity)
   const urlActiveFilter = useMemo(() => parseActiveFilterSearchParams(urlSearchParams), [urlSearchParams])
   const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>(() => urlActiveFilter)
   const [roleFilter, setRoleFilter] = useValueState<string[]>(() => parseRoleFilterSearchParam(urlSearchParams.get('roleIds')))
@@ -186,6 +191,13 @@ function useClientsPageModel() {
     setPageSize(nextPageSize)
     writeClientTablePageSize(nextPageSize)
   }, [setPage, setPageSize])
+  const changeDensity = useCallback((nextDensity: DataTableDensity) => {
+    setDensity(nextDensity)
+    writeClientTableDensity(nextDensity)
+  }, [setDensity])
+  const toggleDensity = useCallback(() => {
+    changeDensity(density === 'compact' ? 'normal' : 'compact')
+  }, [changeDensity, density])
   const setActiveFilterInUrl = useCallback((nextFilter: ActiveFilter) => {
     setActiveFilter(nextFilter)
     setUrlSearchParams((currentParams) => {
@@ -516,6 +528,9 @@ function useClientsPageModel() {
     openCreateClient,
     openReserveDays,
     resetSearch,
+    changeDensity,
+    density,
+    toggleDensity,
     setActiveFilter: setActiveFilterInUrl,
     setDownloadModalOpened,
     setPage,
@@ -573,6 +588,9 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openCreateClient,
     openReserveDays,
     resetSearch,
+    changeDensity,
+    density,
+    toggleDensity,
     setActiveFilter,
     setDownloadModalOpened,
     setPage,
@@ -599,9 +617,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
       <ClientsFilterToolbar
         activeFilter={activeFilter}
         clientTypes={clientTypes}
+        density={density}
         isExporting={clientAction === 'export'}
         isTableBusy={isTableBusy}
         roleFilter={roleFilter}
+        onToggleDensity={toggleDensity}
         searchField={searchField}
         searchFieldOptions={searchFieldOptions}
         searchInputRef={searchInputRef}
@@ -626,11 +646,13 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             columns={clientColumns.filter((column) => column.id !== 'actions')}
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
+            density={density}
+            onDensityChange={changeDensity}
             emptyText={t('Клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-compact-6"
+            layoutVersion="clients-table-7"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1450}
@@ -799,6 +821,7 @@ function ClientActionsModal({
 function ClientsFilterToolbar({
   activeFilter,
   clientTypes,
+  density,
   isExporting,
   isTableBusy,
   roleFilter,
@@ -813,9 +836,11 @@ function ClientsFilterToolbar({
   onSetRoleFilter,
   onSetSearchField,
   onSetSearchValue,
+  onToggleDensity,
 }: {
   activeFilter: ActiveFilter
   clientTypes: ClientType[]
+  density: DataTableDensity
   isExporting: boolean
   isTableBusy: boolean
   roleFilter: string[]
@@ -830,6 +855,7 @@ function ClientsFilterToolbar({
   onSetRoleFilter: (value: string[]) => void
   onSetSearchField: (value: string) => void
   onSetSearchValue: (value: string) => void
+  onToggleDensity: () => void
 }) {
   const { t } = useI18n()
 
@@ -837,6 +863,7 @@ function ClientsFilterToolbar({
     <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
       <TextInput
         ref={searchInputRef}
+        size="sm"
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
@@ -846,19 +873,21 @@ function ClientsFilterToolbar({
           onSetPage(1)
           onSetSearchValue(event.currentTarget.value)
         }}
-        style={{ flex: '1 1 auto', minWidth: 160 }}
+        style={{ flex: '1 1 auto', minWidth: 140 }}
       />
       <Select
+        size="sm"
         label={t('Поле')}
         data={searchFieldOptions}
         value={searchField}
-        style={{ flex: '0 0 180px' }}
+        style={{ flex: '0 0 150px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetSearchField(value || CLIENT_SEARCH_SQL)
         }}
       />
       <Select
+        size="sm"
         label={t('Статус')}
         data={[
           { value: 'all', label: t('Усі') },
@@ -866,7 +895,7 @@ function ClientsFilterToolbar({
           { value: 'inactive', label: t('Неактивні') },
         ]}
         value={activeFilter}
-        style={{ flex: '0 0 130px' }}
+        style={{ flex: '0 0 110px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
@@ -880,6 +909,18 @@ function ClientsFilterToolbar({
           onSetRoleFilter(value)
         }}
       />
+      <Tooltip label={density === 'compact' ? t('Звичайні рядки') : t('Компактні рядки')}>
+        <ActionIcon
+          variant="light"
+          color="gray"
+          size={36}
+          aria-label={t('Щільність рядків')}
+          onClick={onToggleDensity}
+          style={{ flex: '0 0 auto' }}
+        >
+          {density === 'compact' ? <IconBaselineDensitySmall size={18} /> : <IconBaselineDensityMedium size={18} />}
+        </ActionIcon>
+      </Tooltip>
       <Tooltip label={t('Скинути')}>
         <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
           <IconRestore size={18} />
@@ -1073,6 +1114,7 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         header: 'Клієнт',
         width: 260,
         minWidth: 220,
+        fill: true,
         accessor: getClientDisplayName,
         cell: (client) => <ClientTableValue fw={600} value={getClientDisplayName(client)} />,
       },
@@ -1344,6 +1386,24 @@ function writeClientTablePageSize(pageSize: number) {
   }
 
   window.localStorage.setItem(CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function readClientTableDensity(): DataTableDensity {
+  if (typeof window === 'undefined') {
+    return 'normal'
+  }
+
+  const stored = window.localStorage.getItem(CLIENT_TABLE_DENSITY_STORAGE_KEY)
+
+  return stored === 'compact' || stored === 'normal' ? stored : 'normal'
+}
+
+function writeClientTableDensity(density: DataTableDensity) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(CLIENT_TABLE_DENSITY_STORAGE_KEY, density)
 }
 
 function parseActiveFilterSearchParams(params: URLSearchParams): ActiveFilter {

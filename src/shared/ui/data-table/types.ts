@@ -27,6 +27,8 @@ export type DataTableColumn<TData> = {
   maxWidth?: number
   align?: 'left' | 'center' | 'right'
   className?: string
+  /** When true, this column absorbs the extra horizontal space so the table fills its container. */
+  fill?: boolean
   enableSorting?: boolean
   enableHiding?: boolean
   enablePinning?: boolean
@@ -71,6 +73,9 @@ export type DataTableProps<TData> = {
   loadingText?: ReactNode
   labels?: DataTableLabels
   showLayoutControls?: boolean
+  /** Controlled row density. When set, overrides the stored/default layout density. */
+  density?: DataTableDensity
+  onDensityChange?: (density: DataTableDensity) => void
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
   onRowClick?: (row: TData) => void
@@ -92,4 +97,5 @@ export type DataTableColumnMeta = {
   align?: 'left' | 'center' | 'right'
   className?: string
   enableReorder?: boolean
+  fill?: boolean
 }

@@ -69,6 +69,8 @@ export function DataTable<TData>({
   loadingText,
   labels: labelsOverride,
   showLayoutControls = true,
+  density: controlledDensity,
+  onDensityChange,
   toolbarLeft,
   toolbarRight,
   onRowClick,
@@ -139,6 +141,7 @@ export function DataTable<TData>({
         align: column.align ?? 'left',
         className: column.className,
         enableReorder: column.enableReorder !== false,
+        fill: column.fill,
       }
 
       return {
@@ -215,11 +218,18 @@ export function DataTable<TData>({
   }
 
   function handleDensityChange(density: NormalizedDataTableLayout['density']) {
+    if (onDensityChange) {
+      onDensityChange(density)
+      return
+    }
+
     updateLayout((currentLayout) => ({
       ...currentLayout,
       density,
     }))
   }
+
+  const effectiveDensity = controlledDensity ?? normalizedLayout.density
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -338,11 +348,11 @@ export function DataTable<TData>({
   }
 
   return (
-    <div className={`data-table data-table-density-${normalizedLayout.density}`}>
+    <div className={`data-table data-table-density-${effectiveDensity}`}>
       {showLayoutControls || toolbarLeft || toolbarRight ? (
         <DataTableToolbar
           columnTitles={columnTitles}
-          density={normalizedLayout.density}
+          density={effectiveDensity}
           labels={labels}
           showLayoutControls={showLayoutControls}
           table={table}

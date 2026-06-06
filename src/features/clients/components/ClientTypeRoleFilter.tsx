@@ -54,12 +54,13 @@ export function ClientTypeRoleFilter({ clientTypes, disabled, value, onChange }:
     <Popover withinPortal position="bottom-start" shadow="md" disabled={isDisabled}>
       <Popover.Target>
         <Button
+          size="sm"
           variant="default"
           color="gray"
           disabled={isDisabled}
           justify="space-between"
           rightSection={<IconChevronDown size={16} />}
-          style={{ flex: '0 0 220px' }}
+          style={{ flex: '0 0 180px' }}
         >
           <Text size="sm" truncate>
             {triggerLabel}

@@ -1,4 +1,5 @@
 import type { Column } from '@tanstack/react-table'
+import type { DataTableColumnMeta } from './types'
 
 export function getFillColumnId<TData>(
   columns: Column<TData, unknown>[],
@@ -9,9 +10,14 @@ export function getFillColumnId<TData>(
     return undefined
   }
 
+  // A column may opt in as the fill target via meta.fill even when pinned;
+  // otherwise the last non-pinned column absorbs the extra width.
+  const preferred = columns.find(
+    (column) => (column.columnDef.meta as DataTableColumnMeta | undefined)?.fill,
+  )
   const stretchableColumns = columns.filter((column) => !column.getIsPinned())
 
-  return stretchableColumns.at(-1)?.id
+  return (preferred ?? stretchableColumns.at(-1))?.id
 }
 
 export function createRenderedColumnWidths<TData>(
