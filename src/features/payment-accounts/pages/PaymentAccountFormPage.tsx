@@ -431,7 +431,13 @@ export function PaymentAccountFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="wide" onClose={handleCancel}>
+    <AppDrawer
+      opened
+      position="right"
+      size="wide"
+      title={isEditMode ? t('Редагування рахунку') : t('Новий рахунок')}
+      onClose={handleCancel}
+    >
     <Stack gap="md">
       <PaymentAccountFormCard
         state={{
@@ -659,97 +665,95 @@ function PaymentAccountFormCard({
   } = state
 
   return (
-    <Card withBorder radius="md" shadow="sm">
-      <form onSubmit={onSubmit}>
-        <Stack gap="md">
-          <PaymentAccountFormHeader
-            state={headerState}
-            onCancel={onCancel}
-            onCancelEdit={onCancelEdit}
-            onEdit={onEdit}
-            onOpenDelete={onOpenDelete}
+    <form onSubmit={onSubmit}>
+      <Stack gap="md">
+        <PaymentAccountFormHeader
+          state={headerState}
+          onCancel={onCancel}
+          onCancelEdit={onCancelEdit}
+          onEdit={onEdit}
+          onOpenDelete={onOpenDelete}
+        />
+
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        {!canSave && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {t('Немає прав для збереження рахунку')}
+          </Alert>
+        )}
+
+        <SegmentedControl
+          data={[
+            { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+            { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
+            { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+          ]}
+          disabled={isLoading || isSaving || isDeleting || isEditMode}
+          value={String(form.type)}
+          onChange={onSetAccountType}
+        />
+
+        <SimpleGrid cols={{ base: 1, md: 2 }}>
+          <TextInput
+            disabled={isFormDisabled}
+            label={t('Назва')}
+            required
+            value={form.name}
+            onChange={(event) => onChangeForm({ name: event.currentTarget.value })}
           />
-
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          {!canSave && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {t('Немає прав для збереження рахунку')}
-            </Alert>
-          )}
-
-          <SegmentedControl
-            data={[
-              { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-              { label: t('Банківська картка'), value: String(PaymentRegisterType.Card) },
-              { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
-            ]}
-            disabled={isLoading || isSaving || isDeleting || isEditMode}
-            value={String(form.type)}
-            onChange={onSetAccountType}
+          <Select
+            data={organizationOptions}
+            disabled={isFormDisabled || (isEditMode && form.type !== PaymentRegisterType.Bank)}
+            label={t('Організація')}
+            required
+            searchable
+            value={form.organizationNetId || null}
+            onChange={(value) => onChangeForm({ organizationNetId: value || '' })}
           />
+        </SimpleGrid>
 
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <TextInput
-              disabled={isFormDisabled}
-              label={t('Назва')}
-              required
-              value={form.name}
-              onChange={(event) => onChangeForm({ name: event.currentTarget.value })}
-            />
-            <Select
-              data={organizationOptions}
-              disabled={isFormDisabled || (isEditMode && form.type !== PaymentRegisterType.Bank)}
-              label={t('Організація')}
-              required
-              searchable
-              value={form.organizationNetId || null}
-              onChange={(value) => onChangeForm({ organizationNetId: value || '' })}
-            />
+        {form.type === PaymentRegisterType.Bank && (
+          <BankFields
+            banks={banks}
+            bankOptions={bankOptions}
+            disabled={isFormDisabled}
+            form={form}
+            onChange={onChangeForm}
+          />
+        )}
+
+        {form.type === PaymentRegisterType.Card && (
+          <CardFields
+            bankOptions={bankOptions}
+            disabled={isFormDisabled}
+            form={form}
+            onChange={onChangeForm}
+          />
+        )}
+
+        <Divider />
+        <CurrencySelector
+          drafts={currencyDrafts}
+          isEditMode={isEditMode}
+          isSingle={form.type !== PaymentRegisterType.Cash}
+          isDisabled={isLoading || isSaving || isDeleting}
+          onChange={onChangeCurrency}
+          onOpenCurrencyActivity={onOpenCurrencyActivity}
+        />
+        {isEditMode && (
+          <SimpleGrid cols={{ base: 1, sm: 3 }}>
+            <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
+            <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
+            <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
           </SimpleGrid>
-
-          {form.type === PaymentRegisterType.Bank && (
-            <BankFields
-              banks={banks}
-              bankOptions={bankOptions}
-              disabled={isFormDisabled}
-              form={form}
-              onChange={onChangeForm}
-            />
-          )}
-
-          {form.type === PaymentRegisterType.Card && (
-            <CardFields
-              bankOptions={bankOptions}
-              disabled={isFormDisabled}
-              form={form}
-              onChange={onChangeForm}
-            />
-          )}
-
-          <Divider />
-          <CurrencySelector
-            drafts={currencyDrafts}
-            isEditMode={isEditMode}
-            isSingle={form.type !== PaymentRegisterType.Cash}
-            isDisabled={isLoading || isSaving || isDeleting}
-            onChange={onChangeCurrency}
-            onOpenCurrencyActivity={onOpenCurrencyActivity}
-          />
-          {isEditMode && (
-            <SimpleGrid cols={{ base: 1, sm: 3 }}>
-              <InfoCell label={t('Всього в EUR')} value={formatMoney(account.TotalEuroAmount)} />
-              <InfoCell label={t('Тип')} value={getPaymentRegisterTypeLabel(form.type, t)} />
-              <InfoCell label={t('Статус')} value={form.isActive ? t('Основний') : t('Звичайний')} />
-            </SimpleGrid>
-          )}
-        </Stack>
-      </form>
-    </Card>
+        )}
+      </Stack>
+    </form>
   )
 }
 
@@ -770,58 +774,50 @@ function PaymentAccountFormHeader({
   const { canSave, isDeleting, isEditing, isEditMode, isLoading, isSaving } = state
 
   return (
-    <Group justify="space-between" wrap="wrap">
-      <div>
-        <Text fw={700} size="xl">
-          {isEditMode ? t('Редагування рахунку') : t('Новий рахунок')}
-        </Text>
-      </div>
-
-      <Group gap="xs">
-        <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
-          {t('Назад')}
+    <Group justify="flex-end" gap="xs" wrap="wrap">
+      <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={onCancel}>
+        {t('Назад')}
+      </Button>
+      {isEditMode && canSave && !isEditing && (
+        <Button
+          color="violet"
+          disabled={isLoading || isSaving || isDeleting}
+          leftSection={<IconPencil size={16} />}
+          type="button"
+          onClick={onEdit}
+        >
+          {t('Редагувати')}
         </Button>
-        {isEditMode && canSave && !isEditing && (
-          <Button
-            color="violet"
-            disabled={isLoading || isSaving || isDeleting}
-            leftSection={<IconPencil size={16} />}
-            type="button"
-            onClick={onEdit}
-          >
-            {t('Редагувати')}
-          </Button>
-        )}
-        {isEditMode && canSave && isEditing && (
-          <Button
-            color="red"
-            disabled={isLoading || isSaving}
-            leftSection={<IconTrash size={16} />}
-            loading={isDeleting}
-            type="button"
-            variant="light"
-            onClick={onOpenDelete}
-          >
-            {t('Видалити')}
-          </Button>
-        )}
-        {isEditMode && isEditing && (
-          <Button color="gray" disabled={isLoading || isSaving || isDeleting} type="button" variant="light" onClick={onCancelEdit}>
-            {t('Скасувати')}
-          </Button>
-        )}
-        {(!isEditMode || isEditing) && (
-          <Button
-            color="violet"
-            disabled={isLoading || !canSave}
-            leftSection={<IconDeviceFloppy size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Зберегти')}
-          </Button>
-        )}
-      </Group>
+      )}
+      {isEditMode && canSave && isEditing && (
+        <Button
+          color="red"
+          disabled={isLoading || isSaving}
+          leftSection={<IconTrash size={16} />}
+          loading={isDeleting}
+          type="button"
+          variant="light"
+          onClick={onOpenDelete}
+        >
+          {t('Видалити')}
+        </Button>
+      )}
+      {isEditMode && isEditing && (
+        <Button color="gray" disabled={isLoading || isSaving || isDeleting} type="button" variant="light" onClick={onCancelEdit}>
+          {t('Скасувати')}
+        </Button>
+      )}
+      {(!isEditMode || isEditing) && (
+        <Button
+          color="violet"
+          disabled={isLoading || !canSave}
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      )}
     </Group>
   )
 }

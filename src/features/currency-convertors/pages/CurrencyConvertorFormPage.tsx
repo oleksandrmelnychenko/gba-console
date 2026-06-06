@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useReducer } from 'react'
@@ -137,79 +137,76 @@ export function CurrencyConvertorFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <Text fw={700} size="xl">
-                {isEditMode ? t('Редагування валютного трейдера') : t('Створення валютного трейдера')}
-              </Text>
-              <Group gap="xs">
-                <Button
-                  color="gray"
-                  leftSection={<IconArrowLeft size={16} />}
-                  type="button"
-                  variant="light"
-                  onClick={handleCancel}
-                >
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
-                  disabled={isLoading || !canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={isEditMode ? t('Редагування валютного трейдера') : t('Створення валютного трейдера')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button
+              color="gray"
+              leftSection={<IconArrowLeft size={16} />}
+              type="button"
+              variant="light"
+              onClick={handleCancel}
+            >
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={isLoading || !canSave}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            {!canSave && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Немає прав для збереження валютного трейдера')}
-              </Alert>
-            )}
+          {!canSave && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Немає прав для збереження валютного трейдера')}
+            </Alert>
+          )}
 
-            <SimpleGrid cols={{ base: 1, md: 2 }}>
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t("Ім'я")}
-                value={form.firstName}
-                onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Прізвище')}
-                value={form.lastName}
-                onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('По батькові')}
-                value={form.middleName}
-                onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Телефон')}
-                value={form.phoneNumber}
-                onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}
-              />
-            </SimpleGrid>
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+          <SimpleGrid cols={{ base: 1, md: 2 }}>
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t("Ім'я")}
+              value={form.firstName}
+              onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Прізвище')}
+              value={form.lastName}
+              onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('По батькові')}
+              value={form.middleName}
+              onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Телефон')}
+              value={form.phoneNumber}
+              onChange={(event) => updateForm({ phoneNumber: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+        </Stack>
+      </form>
     </AppDrawer>
   )
 }

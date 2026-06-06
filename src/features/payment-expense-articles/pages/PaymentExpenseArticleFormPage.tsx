@@ -1,7 +1,6 @@
 import {
   Alert,
   Button,
-  Card,
   Group,
   Stack,
   Text,
@@ -202,77 +201,72 @@ export function PaymentExpenseArticleFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Text fw={700} size="xl">
-                  {isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
-                </Text>
-              </div>
-
-              <Group gap="xs">
-                <Button
-                  color="gray"
-                  leftSection={<IconArrowLeft size={16} />}
-                  type="button"
-                  variant="light"
-                  onClick={handleCancel}
-                >
-                  {t('Назад')}
-                </Button>
-                {isEditMode && canDelete && (
-                  <Button
-                    color="red"
-                    disabled={isLoading}
-                    leftSection={<IconTrash size={16} />}
-                    loading={isDeleting}
-                    type="button"
-                    variant="light"
-                    onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: true }))}
-                  >
-                    {t('Видалити')}
-                  </Button>
-                )}
-                {canSave && (
-                  <Button
-                    color="violet"
-                    disabled={isLoading}
-                    leftSection={<IconDeviceFloppy size={16} />}
-                    loading={isSaving}
-                    type="submit"
-                  >
-                    {t('Зберегти')}
-                  </Button>
-                )}
-              </Group>
-            </Group>
-
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button
+              color="gray"
+              leftSection={<IconArrowLeft size={16} />}
+              type="button"
+              variant="light"
+              onClick={handleCancel}
+            >
+              {t('Назад')}
+            </Button>
+            {isEditMode && canDelete && (
+              <Button
+                color="red"
+                disabled={isLoading}
+                leftSection={<IconTrash size={16} />}
+                loading={isDeleting}
+                type="button"
+                variant="light"
+                onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: true }))}
+              >
+                {t('Видалити')}
+              </Button>
             )}
+            {canSave && (
+              <Button
+                color="violet"
+                disabled={isLoading}
+                leftSection={<IconDeviceFloppy size={16} />}
+                loading={isSaving}
+                type="submit"
+              >
+                {t('Зберегти')}
+              </Button>
+            )}
+          </Group>
 
-            <TextInput
-              disabled={isLoading || isSaving || isDeleting}
-              label={t('Назва')}
-              placeholder={t('Вкажіть назву')}
-              required
-              value={operationName}
-              onChange={(event) =>
-                setFormState((current) => ({
-                  ...current,
-                  operationName: event.currentTarget.value,
-                }))
-              }
-            />
-          </Stack>
-        </form>
-      </Card>
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          <TextInput
+            disabled={isLoading || isSaving || isDeleting}
+            label={t('Назва')}
+            placeholder={t('Вкажіть назву')}
+            required
+            value={operationName}
+            onChange={(event) =>
+              setFormState((current) => ({
+                ...current,
+                operationName: event.currentTarget.value,
+              }))
+            }
+          />
+        </Stack>
+      </form>
 
       <AppModal
         centered
@@ -299,7 +293,6 @@ export function PaymentExpenseArticleFormPage() {
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
     </AppDrawer>
   )
 }

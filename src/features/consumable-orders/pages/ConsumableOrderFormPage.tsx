@@ -5,7 +5,6 @@ import {
   Autocomplete,
   Badge,
   Button,
-  Card,
   Checkbox,
   Divider,
   FileInput,
@@ -650,160 +649,154 @@ export function ConsumableOrderFormPage() {
   const documentRows = order.ConsumablesOrderDocuments || []
 
   return (
-    <AppDrawer opened position="right" size="wide" onClose={handleCancel}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Group gap="xs">
-                  <Text fw={700} size="xl">
-                    {isEditMode ? t('Редагування прибуткової накладної') : t('Нова прибуткова накладна')}
-                  </Text>
-                  {isPaid && (
-                    <Badge color="green" variant="light">
-                      {t('Оплачено')}
-                    </Badge>
-                  )}
-                </Group>
-                <Text c="dimmed" size="sm">
-                  {order.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна ще не має внутрішнього номера')}
-                </Text>
-              </div>
+    <AppDrawer
+      opened
+      position="right"
+      size="wide"
+      title={isEditMode ? t('Редагування прибуткової накладної') : t('Нова прибуткова накладна')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={!canSave}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving || isCalculating}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
-                  disabled={!canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving || isCalculating}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
-
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
+          <Group gap="xs" wrap="wrap">
+            {isPaid && (
+              <Badge color="green" variant="light">
+                {t('Оплачено')}
+              </Badge>
             )}
+            <Text c="dimmed" size="sm">
+              {order.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна ще не має внутрішнього номера')}
+            </Text>
+          </Group>
 
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <Autocomplete
+              data={supplierOptions}
+              disabled={isFormLocked}
+              label={t('Постачальник послуг')}
+              placeholder={t('Почніть вводити назву')}
+              value={form.supplierSearch}
+              onChange={(value) => updateForm({ selectedSupplierValue: '', supplierSearch: value })}
+              onOptionSubmit={handleSupplierSubmit}
+            />
+            <Select
+              data={agreementOptions}
+              disabled={!selectedSupplier || isFormLocked}
+              label={t('Договір')}
+              placeholder={t('Оберіть договір')}
+              searchable
+              value={form.selectedAgreementValue || null}
+              onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
+            />
+            <TextInput
+              disabled
+              label={t('Організація')}
+              value={getEntityLabel(selectedAgreement?.Organization) || ''}
+            />
+            <TextInput
+              disabled={isFormLocked}
+              label={t('Номер накладної')}
+              value={form.invoiceNumber}
+              onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isFormLocked}
+              label={t('Дата входу')}
+              type="date"
+              value={form.invoiceDate}
+              onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isFormLocked}
+              label={t('Час')}
+              type="time"
+              value={form.invoiceTime}
+              onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
+            />
+            <Autocomplete
+              data={storageOptions}
+              disabled={isFormLocked}
+              label={t('Склад')}
+              placeholder={t('Почніть вводити склад')}
+              value={form.storageSearch}
+              onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
+              onOptionSubmit={handleStorageSubmit}
+            />
+            <FileInput
+              clearable
+              disabled={isFormLocked}
+              label={t('Файли')}
+              leftSection={<IconUpload size={16} />}
+              multiple
+              placeholder={t('Додати документи')}
+              onChange={handleFilesAdded}
+            />
+            <Textarea
+              autosize
+              disabled={isFormLocked}
+              label={t('Коментар')}
+              minRows={1}
+              value={form.comment}
+              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+
+          <Checkbox
+            checked={form.paymentTaskEnabled}
+            disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
+            label={t('Новий платіжний протокол')}
+            onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
+          />
+
+          {form.paymentTaskEnabled && (
             <SimpleGrid cols={{ base: 1, md: 3 }}>
-              <Autocomplete
-                data={supplierOptions}
+              <TextInput
                 disabled={isFormLocked}
-                label={t('Постачальник послуг')}
-                placeholder={t('Почніть вводити назву')}
-                value={form.supplierSearch}
-                onChange={(value) => updateForm({ selectedSupplierValue: '', supplierSearch: value })}
-                onOptionSubmit={handleSupplierSubmit}
+                label={t('Сплатити до')}
+                type="date"
+                value={form.paymentTaskPayToDate}
+                onChange={(event) => updateForm({ paymentTaskPayToDate: event.currentTarget.value })}
               />
               <Select
-                data={agreementOptions}
-                disabled={!selectedSupplier || isFormLocked}
-                label={t('Договір')}
-                placeholder={t('Оберіть договір')}
+                data={responsibleOptions}
+                disabled={isFormLocked}
+                label={t('Відповідальний')}
                 searchable
-                value={form.selectedAgreementValue || null}
-                onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
-              />
-              <TextInput
-                disabled
-                label={t('Організація')}
-                value={getEntityLabel(selectedAgreement?.Organization) || ''}
+                value={form.responsibleUserValue || null}
+                onChange={(value) => updateForm({ responsibleUserValue: value || '' })}
               />
               <TextInput
                 disabled={isFormLocked}
-                label={t('Номер накладної')}
-                value={form.invoiceNumber}
-                onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isFormLocked}
-                label={t('Дата входу')}
-                type="date"
-                value={form.invoiceDate}
-                onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isFormLocked}
-                label={t('Час')}
-                type="time"
-                value={form.invoiceTime}
-                onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
-              />
-              <Autocomplete
-                data={storageOptions}
-                disabled={isFormLocked}
-                label={t('Склад')}
-                placeholder={t('Почніть вводити склад')}
-                value={form.storageSearch}
-                onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
-                onOptionSubmit={handleStorageSubmit}
-              />
-              <FileInput
-                clearable
-                disabled={isFormLocked}
-                label={t('Файли')}
-                leftSection={<IconUpload size={16} />}
-                multiple
-                placeholder={t('Додати документи')}
-                onChange={handleFilesAdded}
-              />
-              <Textarea
-                autosize
-                disabled={isFormLocked}
-                label={t('Коментар')}
-                minRows={1}
-                value={form.comment}
-                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+                label={t('Коментар до платежу')}
+                value={form.paymentTaskComment}
+                onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
               />
             </SimpleGrid>
+          )}
 
-            <Checkbox
-              checked={form.paymentTaskEnabled}
-              disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
-              label={t('Новий платіжний протокол')}
-              onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
-            />
+          <Divider />
 
-            {form.paymentTaskEnabled && (
-              <SimpleGrid cols={{ base: 1, md: 3 }}>
-                <TextInput
-                  disabled={isFormLocked}
-                  label={t('Сплатити до')}
-                  type="date"
-                  value={form.paymentTaskPayToDate}
-                  onChange={(event) => updateForm({ paymentTaskPayToDate: event.currentTarget.value })}
-                />
-                <Select
-                  data={responsibleOptions}
-                  disabled={isFormLocked}
-                  label={t('Відповідальний')}
-                  searchable
-                  value={form.responsibleUserValue || null}
-                  onChange={(value) => updateForm({ responsibleUserValue: value || '' })}
-                />
-                <TextInput
-                  disabled={isFormLocked}
-                  label={t('Коментар до платежу')}
-                  value={form.paymentTaskComment}
-                  onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
-                />
-              </SimpleGrid>
-            )}
-          </Stack>
-        </form>
-      </Card>
-
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="sm">
           <Group justify="space-between">
             <Group gap="xs">
               <Text fw={700}>{t('Позиції')}</Text>
@@ -811,7 +804,7 @@ export function ConsumableOrderFormPage() {
                 {visibleItems.length}
               </Badge>
             </Group>
-            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} variant="light" onClick={openNewItemEditor}>
+            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} type="button" variant="light" onClick={openNewItemEditor}>
               {t('Додати')}
             </Button>
           </Group>
@@ -911,45 +904,44 @@ export function ConsumableOrderFormPage() {
               {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
             </Badge>
           </Group>
+
+          {documentRows.length > 0 && (
+            <>
+              <Divider />
+              <Text fw={700}>{t('Документи')}</Text>
+              {documentRows.map((document, index) => {
+                const documentUrl = getDocumentUrl(document)
+
+                return (
+                  <Group key={getDocumentKey(document, index)} justify="space-between" opacity={document.Deleted ? 0.45 : 1}>
+                    <div>
+                      {documentUrl && !document.Deleted ? (
+                        <Anchor href={upgradeHttpToHttps(documentUrl)} rel="noreferrer" size="sm" target="_blank">
+                          {displayValue(document.FileName || document.Name)}
+                        </Anchor>
+                      ) : (
+                        <Text size="sm">{displayValue(document.FileName || document.Name)}</Text>
+                      )}
+                      <Text c="dimmed" size="xs">
+                        {document.ContentType || t('Файл')}
+                      </Text>
+                    </div>
+                    <ActionIcon
+                      aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
+                      color={document.Deleted ? 'green' : 'red'}
+                      disabled={isMutationLocked}
+                      variant="subtle"
+                      onClick={() => toggleDocumentDeleted(document)}
+                    >
+                      {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+                    </ActionIcon>
+                  </Group>
+                )
+              })}
+            </>
+          )}
         </Stack>
-      </Card>
-
-      {documentRows.length > 0 && (
-        <Card withBorder radius="md" shadow="sm">
-          <Stack gap="sm">
-            <Text fw={700}>{t('Документи')}</Text>
-            {documentRows.map((document, index) => {
-              const documentUrl = getDocumentUrl(document)
-
-              return (
-                <Group key={getDocumentKey(document, index)} justify="space-between" opacity={document.Deleted ? 0.45 : 1}>
-                  <div>
-                    {documentUrl && !document.Deleted ? (
-                      <Anchor href={upgradeHttpToHttps(documentUrl)} rel="noreferrer" size="sm" target="_blank">
-                        {displayValue(document.FileName || document.Name)}
-                      </Anchor>
-                    ) : (
-                      <Text size="sm">{displayValue(document.FileName || document.Name)}</Text>
-                    )}
-                    <Text c="dimmed" size="xs">
-                      {document.ContentType || t('Файл')}
-                    </Text>
-                  </div>
-                  <ActionIcon
-                    aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
-                    color={document.Deleted ? 'green' : 'red'}
-                    disabled={isMutationLocked}
-                    variant="subtle"
-                    onClick={() => toggleDocumentDeleted(document)}
-                  >
-                    {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-                  </ActionIcon>
-                </Group>
-              )
-            })}
-          </Stack>
-        </Card>
-      )}
+      </form>
 
       <AppModal centered opened={itemEditor.opened} size="xl" title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')} onClose={closeItemEditor}>
         <Stack gap="md">
@@ -1068,7 +1060,6 @@ export function ConsumableOrderFormPage() {
           </Group>
         </Stack>
       </AppModal>
-    </Stack>
     </AppDrawer>
   )
 }

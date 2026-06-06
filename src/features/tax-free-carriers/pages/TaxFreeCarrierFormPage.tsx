@@ -186,87 +186,85 @@ export function TaxFreeCarrierFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <Text fw={700} size="xl">
-                {isEditMode ? t('Редагування Перевізника') : t('Новий Перевізник')}
-              </Text>
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
-                  disabled={isLoading || !canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={isEditMode ? t('Редагування Перевізника') : t('Новий Перевізник')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={isLoading || !canSave}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            {!canSave && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Немає прав для збереження перевізника')}
-              </Alert>
-            )}
+          {!canSave && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Немає прав для збереження перевізника')}
+            </Alert>
+          )}
 
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Прізвище')}
-                maxLength={40}
-                required
-                value={form.lastName}
-                onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t("Ім'я")}
-                maxLength={40}
-                required
-                value={form.firstName}
-                onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('По батькові')}
-                maxLength={40}
-                value={form.middleName}
-                onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
-              />
-            </SimpleGrid>
-
-            <PassportsSection
-              canAdd={!isEditMode || !passports.some(isUnsavedPassport)}
+          <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <TextInput
               disabled={isLoading || isSaving}
-              passports={passports}
-              onAdd={openNewPassport}
-              onEdit={openEditPassport}
-              onRemove={removePassport}
+              label={t('Прізвище')}
+              maxLength={40}
+              required
+              value={form.lastName}
+              onChange={(event) => updateForm({ lastName: event.currentTarget.value })}
             />
-
-            <CarsSection
-              cars={cars}
+            <TextInput
               disabled={isLoading || isSaving}
-              onAdd={() => setCarModalOpen(true)}
-              onRemove={removeCar}
+              label={t("Ім'я")}
+              maxLength={40}
+              required
+              value={form.firstName}
+              onChange={(event) => updateForm({ firstName: event.currentTarget.value })}
             />
-          </Stack>
-        </form>
-      </Card>
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('По батькові')}
+              maxLength={40}
+              value={form.middleName}
+              onChange={(event) => updateForm({ middleName: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+
+          <PassportsSection
+            canAdd={!isEditMode || !passports.some(isUnsavedPassport)}
+            disabled={isLoading || isSaving}
+            passports={passports}
+            onAdd={openNewPassport}
+            onEdit={openEditPassport}
+            onRemove={removePassport}
+          />
+
+          <CarsSection
+            cars={cars}
+            disabled={isLoading || isSaving}
+            onAdd={() => setCarModalOpen(true)}
+            onRemove={removeCar}
+          />
+        </Stack>
+      </form>
 
       <TaxFreeCarrierCarModal opened={isCarModalOpen} onClose={() => setCarModalOpen(false)} onSubmit={addCar} />
 
@@ -276,7 +274,6 @@ export function TaxFreeCarrierFormPage() {
         onClose={closePassportDrawer}
         onSubmit={submitPassport}
       />
-    </Stack>
     </AppDrawer>
   )
 }

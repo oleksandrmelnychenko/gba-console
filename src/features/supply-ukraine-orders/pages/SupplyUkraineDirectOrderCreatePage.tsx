@@ -3,7 +3,6 @@ import {
   Anchor,
   Badge,
   Button,
-  Card,
   FileInput,
   Group,
   NumberInput,
@@ -18,7 +17,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconFileSpreadsheet,
   IconUpload,
 } from '@tabler/icons-react'
@@ -306,180 +304,174 @@ export function SupplyUkraineDirectOrderCreatePage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="wide" onClose={() => navigate('/orders/ukraine/all')}>
-    <Stack gap="lg">
-      <Group justify="space-between">
-        <Stack gap={2}>
-          <Text fw={700} size="xl">{t('Нове замовлення Україна')}</Text>
+    <AppDrawer
+      opened
+      position="right"
+      size="wide"
+      title={t('Нове замовлення Україна')}
+      onClose={() => navigate('/orders/ukraine/all')}
+    >
+      <form onSubmit={submitForm}>
+        <Stack gap="md">
           <Text c="dimmed" size="sm">{t('Створення приходу від постачальника')}</Text>
+
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          {uploadResponse?.HasError && (
+            <UploadErrorsAlert response={uploadResponse} />
+          )}
+
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+            <Stack gap="sm">
+              <Text fw={600}>{t('Замовлення')}</Text>
+              <TextInput
+                disabled={isLoading || isSaving}
+                label={t('Дата')}
+                type="datetime-local"
+                value={form.dateFrom}
+                onChange={(event) => updateForm({ dateFrom: event.currentTarget.value })}
+              />
+              <SegmentedControl
+                data={SUPPLY_TRANSPORTATION_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
+                disabled={isLoading || isSaving}
+                fullWidth
+                value={form.transportationType}
+                onChange={(value) => updateForm({ transportationType: value })}
+              />
+              <Select
+                data={supplierOptions}
+                disabled={isLoading || isSaving}
+                label={t('Постачальник')}
+                nothingFoundMessage={t('Нічого не знайдено')}
+                searchable
+                searchValue={supplierSearch}
+                value={form.supplierKey || null}
+                onChange={changeSupplier}
+                onSearchChange={setSupplierSearch}
+              />
+              <Select
+                data={organizationOptions}
+                disabled={isLoading || isSaving || !selectedSupplier}
+                label={t('Організація')}
+                searchable
+                value={form.organizationKey || null}
+                onChange={changeOrganization}
+              />
+              <Select
+                data={agreementOptions}
+                disabled={isLoading || isSaving || !selectedSupplier}
+                label={t('Договір')}
+                searchable
+                value={form.clientAgreementKey || null}
+                onChange={(value) => updateForm({ clientAgreementKey: value || '' })}
+              />
+              {selectedClientAgreement?.Agreement?.Currency && (
+                <Badge color="violet" variant="light">
+                  {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
+                </Badge>
+              )}
+              <Textarea
+                autosize
+                disabled={isSaving}
+                label={t('Коментар')}
+                minRows={3}
+                value={form.comment}
+                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+              />
+            </Stack>
+
+            <Stack gap="sm">
+              <Text fw={600}>{t('Імпорт')}</Text>
+              <FileInput
+                clearable
+                accept=".xls,.xlsx"
+                disabled={isSaving}
+                label={t('Файл')}
+                leftSection={<IconFileSpreadsheet size={16} />}
+                placeholder={t('Оберіть файл')}
+                value={form.file}
+                onChange={(file) => {
+                  updateForm({ file })
+                  setUploadResponse(null)
+                }}
+              />
+              <SegmentedControl
+                data={[
+                  { label: t('Ціна'), value: 'unit' },
+                  { label: t('Сума'), value: 'total' },
+                ]}
+                disabled={isSaving}
+                fullWidth
+                value={parseForm.withTotalAmount ? 'total' : 'unit'}
+                onChange={(value) => updateParseForm({ withTotalAmount: value === 'total' })}
+              />
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving}
+                  label={t('Код товару')}
+                  min={1}
+                  value={parseForm.vendorCodeColumnNumber}
+                  onChange={(value) => updateParseForm({ vendorCodeColumnNumber: toPositiveNumber(value) })}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving}
+                  label={t('Кількість')}
+                  min={1}
+                  value={parseForm.qtyColumnNumber}
+                  onChange={(value) => updateParseForm({ qtyColumnNumber: toPositiveNumber(value) })}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving}
+                  label={t('З рядка')}
+                  min={1}
+                  value={parseForm.startRow}
+                  onChange={(value) => updateParseForm({ startRow: toPositiveNumber(value) })}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving}
+                  label={t('До рядка')}
+                  min={1}
+                  value={parseForm.endRow}
+                  onChange={(value) => updateParseForm({ endRow: toPositiveNumber(value) })}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving || parseForm.withTotalAmount}
+                  label={t('Колонка ціни')}
+                  min={1}
+                  value={parseForm.unitPriceColumnNumber}
+                  onChange={(value) => updateParseForm({ unitPriceColumnNumber: toPositiveNumber(value) })}
+                />
+                <NumberInput
+                  allowDecimal={false}
+                  disabled={isSaving || !parseForm.withTotalAmount}
+                  label={t('Колонка суми')}
+                  min={1}
+                  value={parseForm.totalAmountColumnNumber}
+                  onChange={(value) => updateParseForm({ totalAmountColumnNumber: toPositiveNumber(value) })}
+                />
+              </SimpleGrid>
+            </Stack>
+          </SimpleGrid>
+
+          <Group justify="flex-end">
+            <Button disabled={isSaving} variant="subtle" onClick={() => navigate('/orders/ukraine/all')}>
+              {t('Скасувати')}
+            </Button>
+            <Button leftSection={<IconUpload size={16} />} loading={isSaving} type="submit">
+              {t('Створити')}
+            </Button>
+          </Group>
         </Stack>
-        <Button leftSection={<IconArrowLeft size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all')}>
-          {t('До списку')}
-        </Button>
-      </Group>
-
-      <Card withBorder radius="md" padding="lg">
-        <form onSubmit={submitForm}>
-          <Stack gap="md">
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
-
-            {uploadResponse?.HasError && (
-              <UploadErrorsAlert response={uploadResponse} />
-            )}
-
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
-              <Stack gap="sm">
-                <Text fw={600}>{t('Замовлення')}</Text>
-                <TextInput
-                  disabled={isLoading || isSaving}
-                  label={t('Дата')}
-                  type="datetime-local"
-                  value={form.dateFrom}
-                  onChange={(event) => updateForm({ dateFrom: event.currentTarget.value })}
-                />
-                <SegmentedControl
-                  data={SUPPLY_TRANSPORTATION_TYPES.map((item) => ({ ...item, label: t(item.label) }))}
-                  disabled={isLoading || isSaving}
-                  fullWidth
-                  value={form.transportationType}
-                  onChange={(value) => updateForm({ transportationType: value })}
-                />
-                <Select
-                  data={supplierOptions}
-                  disabled={isLoading || isSaving}
-                  label={t('Постачальник')}
-                  nothingFoundMessage={t('Нічого не знайдено')}
-                  searchable
-                  searchValue={supplierSearch}
-                  value={form.supplierKey || null}
-                  onChange={changeSupplier}
-                  onSearchChange={setSupplierSearch}
-                />
-                <Select
-                  data={organizationOptions}
-                  disabled={isLoading || isSaving || !selectedSupplier}
-                  label={t('Організація')}
-                  searchable
-                  value={form.organizationKey || null}
-                  onChange={changeOrganization}
-                />
-                <Select
-                  data={agreementOptions}
-                  disabled={isLoading || isSaving || !selectedSupplier}
-                  label={t('Договір')}
-                  searchable
-                  value={form.clientAgreementKey || null}
-                  onChange={(value) => updateForm({ clientAgreementKey: value || '' })}
-                />
-                {selectedClientAgreement?.Agreement?.Currency && (
-                  <Badge color="violet" variant="light">
-                    {t('Валюта')}: {selectedClientAgreement.Agreement.Currency.Code || selectedClientAgreement.Agreement.Currency.Name || '-'}
-                  </Badge>
-                )}
-                <Textarea
-                  autosize
-                  disabled={isSaving}
-                  label={t('Коментар')}
-                  minRows={3}
-                  value={form.comment}
-                  onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-                />
-              </Stack>
-
-              <Stack gap="sm">
-                <Text fw={600}>{t('Імпорт')}</Text>
-                <FileInput
-                  clearable
-                  accept=".xls,.xlsx"
-                  disabled={isSaving}
-                  label={t('Файл')}
-                  leftSection={<IconFileSpreadsheet size={16} />}
-                  placeholder={t('Оберіть файл')}
-                  value={form.file}
-                  onChange={(file) => {
-                    updateForm({ file })
-                    setUploadResponse(null)
-                  }}
-                />
-                <SegmentedControl
-                  data={[
-                    { label: t('Ціна'), value: 'unit' },
-                    { label: t('Сума'), value: 'total' },
-                  ]}
-                  disabled={isSaving}
-                  fullWidth
-                  value={parseForm.withTotalAmount ? 'total' : 'unit'}
-                  onChange={(value) => updateParseForm({ withTotalAmount: value === 'total' })}
-                />
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving}
-                    label={t('Код товару')}
-                    min={1}
-                    value={parseForm.vendorCodeColumnNumber}
-                    onChange={(value) => updateParseForm({ vendorCodeColumnNumber: toPositiveNumber(value) })}
-                  />
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving}
-                    label={t('Кількість')}
-                    min={1}
-                    value={parseForm.qtyColumnNumber}
-                    onChange={(value) => updateParseForm({ qtyColumnNumber: toPositiveNumber(value) })}
-                  />
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving}
-                    label={t('З рядка')}
-                    min={1}
-                    value={parseForm.startRow}
-                    onChange={(value) => updateParseForm({ startRow: toPositiveNumber(value) })}
-                  />
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving}
-                    label={t('До рядка')}
-                    min={1}
-                    value={parseForm.endRow}
-                    onChange={(value) => updateParseForm({ endRow: toPositiveNumber(value) })}
-                  />
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving || parseForm.withTotalAmount}
-                    label={t('Колонка ціни')}
-                    min={1}
-                    value={parseForm.unitPriceColumnNumber}
-                    onChange={(value) => updateParseForm({ unitPriceColumnNumber: toPositiveNumber(value) })}
-                  />
-                  <NumberInput
-                    allowDecimal={false}
-                    disabled={isSaving || !parseForm.withTotalAmount}
-                    label={t('Колонка суми')}
-                    min={1}
-                    value={parseForm.totalAmountColumnNumber}
-                    onChange={(value) => updateParseForm({ totalAmountColumnNumber: toPositiveNumber(value) })}
-                  />
-                </SimpleGrid>
-              </Stack>
-            </SimpleGrid>
-
-            <Group justify="flex-end">
-              <Button disabled={isSaving} variant="subtle" onClick={() => navigate('/orders/ukraine/all')}>
-                {t('Скасувати')}
-              </Button>
-              <Button leftSection={<IconUpload size={16} />} loading={isSaving} type="submit">
-                {t('Створити')}
-              </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+      </form>
     </AppDrawer>
   )
 }

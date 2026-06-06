@@ -3,7 +3,6 @@ import {
   Autocomplete,
   Badge,
   Button,
-  Card,
   Checkbox,
   Divider,
   Group,
@@ -375,208 +374,203 @@ export function IncomeCashflowConversionFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="standard" onClose={() => navigate(INCOME_CASHFLOWS_PATH)}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Group gap="xs">
-                  <Text fw={700} size="xl">
-                    {title}
-                  </Text>
-                  <Badge color={isBankIncome ? 'indigo' : 'green'} variant="light">
-                    {isBankIncome ? t('Банк') : t('Каса')}
-                  </Badge>
-                </Group>
-                <Text c="dimmed" size="sm">
-                  {t('Новий прибутковий ордер')}
-                </Text>
-              </div>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={title}
+      onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <SegmentedControl
+              data={[
+                { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
+                { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+              ]}
+              disabled={isLoading || isSaving}
+              value={String(registerType)}
+              onChange={handleModeChanged}
+            />
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={isLoading || isSaving}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-              <Group gap="xs">
+          <Group gap="xs">
+            <Badge color={isBankIncome ? 'indigo' : 'green'} variant="light">
+              {isBankIncome ? t('Банк') : t('Каса')}
+            </Badge>
+            <Text c="dimmed" size="sm">
+              {t('Новий прибутковий ордер')}
+            </Text>
+          </Group>
+
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          {isBankIncome && (
+            <>
+              <SimpleGrid cols={{ base: 1, md: 2 }}>
                 <SegmentedControl
                   data={[
-                    { label: t('Каса'), value: String(PaymentRegisterType.Cash) },
-                    { label: t('Банк'), value: String(PaymentRegisterType.Bank) },
+                    { label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) },
+                    { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
+                    { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
                   ]}
                   disabled={isLoading || isSaving}
-                  value={String(registerType)}
-                  onChange={handleModeChanged}
+                  value={String(form.searchType)}
+                  onChange={handleSearchTypeChanged}
                 />
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
+                <Autocomplete
+                  data={counterpartyOptions}
                   disabled={isLoading || isSaving}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
+                  label={t('Платник')}
+                  placeholder={t('Почніть вводити назву')}
+                  value={form.counterpartySearch}
+                  onChange={(value) => updateForm({ counterpartySearch: value, counterpartyValue: '' })}
+                  onOptionSubmit={handleCounterpartySubmit}
+                />
+              </SimpleGrid>
+              <Divider />
+            </>
+          )}
 
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
-
-            {isBankIncome && (
-              <>
-                <SimpleGrid cols={{ base: 1, md: 2 }}>
-                  <SegmentedControl
-                    data={[
-                      { label: t('Клієнти'), value: String(IncomeCounterpartySearchType.Client) },
-                      { label: t('Постачальники'), value: String(IncomeCounterpartySearchType.Supplier) },
-                      { label: t('Виробники'), value: String(IncomeCounterpartySearchType.Manufacturer) },
-                    ]}
-                    disabled={isLoading || isSaving}
-                    value={String(form.searchType)}
-                    onChange={handleSearchTypeChanged}
-                  />
-                  <Autocomplete
-                    data={counterpartyOptions}
-                    disabled={isLoading || isSaving}
-                    label={t('Платник')}
-                    placeholder={t('Почніть вводити назву')}
-                    value={form.counterpartySearch}
-                    onChange={(value) => updateForm({ counterpartySearch: value, counterpartyValue: '' })}
-                    onOptionSubmit={handleCounterpartySubmit}
-                  />
-                </SimpleGrid>
-                <Divider />
-              </>
-            )}
-
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Дата')}
-                type="date"
-                value={form.date}
-                onChange={(event) => updateForm({ date: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Час')}
-                type="time"
-                value={form.time}
-                onChange={(event) => updateForm({ time: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Вхідний номер')}
-                value={form.entranceNumber}
-                onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
-              />
-              <Select
-                data={organizationOptions}
-                disabled={isLoading || isSaving}
-                label={t('Організація')}
-                searchable
-                value={form.organizationValue || null}
-                onChange={handleOrganizationChanged}
-              />
-              <Select
-                data={registerOptions}
-                disabled={!selectedOrganization || isLoading || isSaving}
-                label={t('Каса / рахунок')}
-                searchable
-                value={form.paymentRegisterValue || null}
-                onChange={handleRegisterChanged}
-              />
-              <Select
-                data={currencyOptions}
-                disabled={!selectedRegister || isLoading || isSaving}
-                label={t('Валюта')}
-                searchable
-                value={form.selectedCurrencyValue || null}
-                onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isLoading || isSaving}
-                label={t('Сума')}
-                min={0}
-                value={form.amount}
-                onChange={handleAmountChanged}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isLoading || isSaving}
-                label={t('Ставка ПДВ')}
-                min={0}
-                value={form.vatRate}
-                onChange={handleVatRateChanged}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isLoading || isSaving}
-                label={t('Сума ПДВ')}
-                min={0}
-                value={form.vatAmount}
-                onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
-              />
-              <Autocomplete
-                data={movementOptions}
-                disabled={isLoading || isSaving}
-                label={t('Стаття руху коштів')}
-                value={form.movementSearch}
-                onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
-                onOptionSubmit={handleMovementSubmit}
-              />
-              <Button
-                disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
-                leftSection={<IconPlus size={16} />}
-                mt={24}
-                type="button"
-                variant="light"
-                onClick={() => void handleCreateMovement()}
-              >
-                {t('Створити статтю')}
-              </Button>
-              <TextInput
-                disabled={isLoading || isSaving}
-                label={t('Призначення платежу')}
-                value={form.paymentPurpose}
-                onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
-              />
-            </SimpleGrid>
-
-            <Group gap="lg">
-              <Checkbox
-                checked={form.isManagementAccounting}
-                disabled={isLoading || isSaving}
-                label={t('Управлінський облік')}
-                onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
-              />
-              <Checkbox
-                checked={form.isAccounting}
-                disabled={isLoading || isSaving}
-                label={t('Бухгалтерський облік')}
-                onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
-              />
-            </Group>
-
-            <Textarea
+          <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <TextInput
               disabled={isLoading || isSaving}
-              label={t('Коментар')}
-              minRows={3}
-              value={form.comment}
-              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+              label={t('Дата')}
+              type="date"
+              value={form.date}
+              onChange={(event) => updateForm({ date: event.currentTarget.value })}
             />
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Час')}
+              type="time"
+              value={form.time}
+              onChange={(event) => updateForm({ time: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Вхідний номер')}
+              value={form.entranceNumber}
+              onChange={(event) => updateForm({ entranceNumber: event.currentTarget.value })}
+            />
+            <Select
+              data={organizationOptions}
+              disabled={isLoading || isSaving}
+              label={t('Організація')}
+              searchable
+              value={form.organizationValue || null}
+              onChange={handleOrganizationChanged}
+            />
+            <Select
+              data={registerOptions}
+              disabled={!selectedOrganization || isLoading || isSaving}
+              label={t('Каса / рахунок')}
+              searchable
+              value={form.paymentRegisterValue || null}
+              onChange={handleRegisterChanged}
+            />
+            <Select
+              data={currencyOptions}
+              disabled={!selectedRegister || isLoading || isSaving}
+              label={t('Валюта')}
+              searchable
+              value={form.selectedCurrencyValue || null}
+              onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading || isSaving}
+              label={t('Сума')}
+              min={0}
+              value={form.amount}
+              onChange={handleAmountChanged}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading || isSaving}
+              label={t('Ставка ПДВ')}
+              min={0}
+              value={form.vatRate}
+              onChange={handleVatRateChanged}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading || isSaving}
+              label={t('Сума ПДВ')}
+              min={0}
+              value={form.vatAmount}
+              onChange={(value) => updateForm({ vatAmount: toNumber(value) })}
+            />
+            <Autocomplete
+              data={movementOptions}
+              disabled={isLoading || isSaving}
+              label={t('Стаття руху коштів')}
+              value={form.movementSearch}
+              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onOptionSubmit={handleMovementSubmit}
+            />
+            <Button
+              disabled={Boolean(activeMovement) || !form.movementSearch.trim() || isLoading}
+              leftSection={<IconPlus size={16} />}
+              mt={24}
+              type="button"
+              variant="light"
+              onClick={() => void handleCreateMovement()}
+            >
+              {t('Створити статтю')}
+            </Button>
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Призначення платежу')}
+              value={form.paymentPurpose}
+              onChange={(event) => updateForm({ paymentPurpose: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+
+          <Group gap="lg">
+            <Checkbox
+              checked={form.isManagementAccounting}
+              disabled={isLoading || isSaving}
+              label={t('Управлінський облік')}
+              onChange={(event) => updateForm({ isManagementAccounting: event.currentTarget.checked })}
+            />
+            <Checkbox
+              checked={form.isAccounting}
+              disabled={isLoading || isSaving}
+              label={t('Бухгалтерський облік')}
+              onChange={(event) => updateForm({ isAccounting: event.currentTarget.checked })}
+            />
+          </Group>
+
+          <Textarea
+            disabled={isLoading || isSaving}
+            label={t('Коментар')}
+            minRows={3}
+            value={form.comment}
+            onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+          />
+        </Stack>
+      </form>
     </AppDrawer>
   )
 }

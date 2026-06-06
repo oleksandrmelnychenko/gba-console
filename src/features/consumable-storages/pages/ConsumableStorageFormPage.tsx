@@ -1,11 +1,9 @@
 import {
   Alert,
   Button,
-  Card,
   Group,
   Select,
   Stack,
-  Text,
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
@@ -231,102 +229,96 @@ export function ConsumableStorageFormPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="standard" onClose={handleCancel}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Text fw={700} size="xl">
-                  {isEditMode ? t('Редагування складу') : t('Новий склад')}
-                </Text>
-              </div>
+    <AppDrawer
+      opened
+      position="right"
+      size="standard"
+      title={isEditMode ? t('Редагування складу') : t('Новий склад')}
+      onClose={handleCancel}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={isLoading || !canSave}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          </Group>
 
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
-                  disabled={isLoading || !canSave}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Group>
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
+          {!canSave && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Немає прав для збереження складу')}
+            </Alert>
+          )}
 
-            {!canSave && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Немає прав для збереження складу')}
-              </Alert>
-            )}
-
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Назва')}
-              placeholder={t('Вкажіть назву')}
-              required
-              value={form.name}
-              onChange={(event) =>
-                dispatchPageState({
-                  form: { ...form, name: event.currentTarget.value },
-                })
-              }
-            />
-            <TextInput
-              disabled={isLoading || isSaving}
-              label={t('Опис')}
-              placeholder={t('Вкажіть опис')}
-              value={form.description}
-              onChange={(event) =>
-                dispatchPageState({
-                  form: { ...form, description: event.currentTarget.value },
-                })
-              }
-            />
-            <Select
-              clearable
-              searchable
-              data={userOptions}
-              disabled={isLoading || isSaving}
-              label={t('Відповідальний')}
-              placeholder={t('Оберіть відповідального')}
-              searchValue={userSearchValue}
-              value={form.responsibleUserNetUid || null}
-              onChange={(value) =>
-                dispatchPageState({
-                  form: { ...form, responsibleUserNetUid: value || '' },
-                })
-              }
-              onSearchChange={setUserSearchValue}
-            />
-            <Select
-              data={organizationOptions}
-              disabled={isLoading || isSaving || isEditMode}
-              label={t('Організація')}
-              placeholder={t('Оберіть організацію')}
-              required
-              value={form.organizationNetUid || null}
-              onChange={(value) =>
-                dispatchPageState({
-                  form: { ...form, organizationNetUid: value || '' },
-                })
-              }
-            />
-          </Stack>
-        </form>
-      </Card>
-    </Stack>
+          <TextInput
+            disabled={isLoading || isSaving}
+            label={t('Назва')}
+            placeholder={t('Вкажіть назву')}
+            required
+            value={form.name}
+            onChange={(event) =>
+              dispatchPageState({
+                form: { ...form, name: event.currentTarget.value },
+              })
+            }
+          />
+          <TextInput
+            disabled={isLoading || isSaving}
+            label={t('Опис')}
+            placeholder={t('Вкажіть опис')}
+            value={form.description}
+            onChange={(event) =>
+              dispatchPageState({
+                form: { ...form, description: event.currentTarget.value },
+              })
+            }
+          />
+          <Select
+            clearable
+            searchable
+            data={userOptions}
+            disabled={isLoading || isSaving}
+            label={t('Відповідальний')}
+            placeholder={t('Оберіть відповідального')}
+            searchValue={userSearchValue}
+            value={form.responsibleUserNetUid || null}
+            onChange={(value) =>
+              dispatchPageState({
+                form: { ...form, responsibleUserNetUid: value || '' },
+              })
+            }
+            onSearchChange={setUserSearchValue}
+          />
+          <Select
+            data={organizationOptions}
+            disabled={isLoading || isSaving || isEditMode}
+            label={t('Організація')}
+            placeholder={t('Оберіть організацію')}
+            required
+            value={form.organizationNetUid || null}
+            onChange={(value) =>
+              dispatchPageState({
+                form: { ...form, organizationNetUid: value || '' },
+              })
+            }
+          />
+        </Stack>
+      </form>
     </AppDrawer>
   )
 }

@@ -320,179 +320,176 @@ export function ConsumableOrderPayPage() {
   }
 
   return (
-    <AppDrawer opened position="right" size="wide" onClose={() => navigate(returnPath, { replace: true })}>
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <Group justify="space-between" wrap="wrap">
-              <div>
-                <Group gap="xs">
-                  <Text fw={700} size="xl">
-                    {t('Оплата прибуткової накладної')}
-                  </Text>
-                  {order?.IsPayed && (
-                    <Badge color="green" variant="light">
-                      {t('Вже оплачено')}
-                    </Badge>
-                  )}
-                </Group>
-                <Text c="dimmed" size="sm">
-                  {order?.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна без внутрішнього номера')}
-                </Text>
-              </div>
-
-              <Group gap="xs">
-                <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(returnPath, { replace: true })}>
-                  {t('Назад')}
-                </Button>
-                <Button
-                  color="violet"
-                  disabled={isLoading || isSaving || isOrderPaid}
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={isSaving}
-                  type="submit"
-                >
-                  {t('Створити оплату')}
-                </Button>
-              </Group>
-            </Group>
-
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
-
-            {isOrderPaid && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Накладна вже оплачена. Повторна оплата недоступна.')}
-              </Alert>
-            )}
-
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
-              <TextInput
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Дата')}
-                type="date"
-                value={form.date}
-                onChange={(event) => updateForm({ date: event.currentTarget.value })}
-              />
-              <TextInput
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Час')}
-                type="time"
-                value={form.time}
-                onChange={(event) => updateForm({ time: event.currentTarget.value })}
-              />
-              <NumberInput
-                allowNegative={false}
-                decimalScale={2}
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Сума')}
-                min={0}
-                value={form.amount}
-                onChange={(value) => updateForm({ amount: toNumber(value) })}
-              />
-              <Select
-                data={organizationOptions}
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Організація')}
-                searchable
-                value={form.organizationValue || null}
-                onChange={(value) => updateForm({ organizationValue: value || '' })}
-              />
-              <Select
-                data={registerOptions}
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Каса / рахунок')}
-                searchable
-                value={form.paymentRegisterValue || null}
-                onChange={handleRegisterChanged}
-              />
-              <Select
-                data={currencyOptions}
-                disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
-                label={t('Валюта')}
-                searchable
-                value={form.selectedCurrencyRegisterValue || null}
-                onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
-              />
-              <Autocomplete
-                data={movementOptions}
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Стаття руху коштів')}
-                value={form.movementSearch}
-                onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
-                onOptionSubmit={handleMovementSubmit}
-              />
-              <Button
-                disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving || isOrderPaid}
-                leftSection={<IconPlus size={16} />}
-                mt={24}
-                type="button"
-                variant="light"
-                onClick={() => void handleCreateMovement()}
-              >
-                {t('Створити статтю')}
-              </Button>
-              <TextInput
-                disabled={isLoading || isSaving || isOrderPaid}
-                label={t('Коментар')}
-                value={form.comment}
-                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-              />
-            </SimpleGrid>
-          </Stack>
-        </form>
-      </Card>
-
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="sm">
-          <Group justify="space-between">
-            <Text fw={700}>{t('Позиції накладної')}</Text>
-            <Badge color="blue" variant="light">
-              {t('Разом')}: {formatMoney(order?.TotalAmount || calculateLocalTotal(items))}
-            </Badge>
+    <AppDrawer
+      opened
+      position="right"
+      size="wide"
+      title={t('Оплата прибуткової накладної')}
+      onClose={() => navigate(returnPath, { replace: true })}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Group justify="flex-end" gap="xs" wrap="wrap">
+            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(returnPath, { replace: true })}>
+              {t('Назад')}
+            </Button>
+            <Button
+              color="violet"
+              disabled={isLoading || isSaving || isOrderPaid}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Створити оплату')}
+            </Button>
           </Group>
 
-          <Table.ScrollContainer minWidth={820}>
-            <Table highlightOnHover verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('Артикул')}</Table.Th>
-                  <Table.Th>{t('Назва')}</Table.Th>
-                  <Table.Th>{t('Кількість')}</Table.Th>
-                  <Table.Th>{t('Ціна')}</Table.Th>
-                  <Table.Th>{t('Разом')}</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {items.length > 0 ? (
-                  items.map((item, index) => (
-                    <Table.Tr key={getItemKey(item, index)}>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)}</Table.Td>
-                      <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
-                      <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
+          <div>
+            <Group gap="xs">
+              {order?.IsPayed && (
+                <Badge color="green" variant="light">
+                  {t('Вже оплачено')}
+                </Badge>
+              )}
+            </Group>
+            <Text c="dimmed" size="sm">
+              {order?.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна без внутрішнього номера')}
+            </Text>
+          </div>
+
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          {isOrderPaid && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Накладна вже оплачена. Повторна оплата недоступна.')}
+            </Alert>
+          )}
+
+          <SimpleGrid cols={{ base: 1, md: 3 }}>
+            <TextInput
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Дата')}
+              type="date"
+              value={form.date}
+              onChange={(event) => updateForm({ date: event.currentTarget.value })}
+            />
+            <TextInput
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Час')}
+              type="time"
+              value={form.time}
+              onChange={(event) => updateForm({ time: event.currentTarget.value })}
+            />
+            <NumberInput
+              allowNegative={false}
+              decimalScale={2}
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Сума')}
+              min={0}
+              value={form.amount}
+              onChange={(value) => updateForm({ amount: toNumber(value) })}
+            />
+            <Select
+              data={organizationOptions}
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Організація')}
+              searchable
+              value={form.organizationValue || null}
+              onChange={(value) => updateForm({ organizationValue: value || '' })}
+            />
+            <Select
+              data={registerOptions}
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Каса / рахунок')}
+              searchable
+              value={form.paymentRegisterValue || null}
+              onChange={handleRegisterChanged}
+            />
+            <Select
+              data={currencyOptions}
+              disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
+              label={t('Валюта')}
+              searchable
+              value={form.selectedCurrencyRegisterValue || null}
+              onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
+            />
+            <Autocomplete
+              data={movementOptions}
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Стаття руху коштів')}
+              value={form.movementSearch}
+              onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
+              onOptionSubmit={handleMovementSubmit}
+            />
+            <Button
+              disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving || isOrderPaid}
+              leftSection={<IconPlus size={16} />}
+              mt={24}
+              type="button"
+              variant="light"
+              onClick={() => void handleCreateMovement()}
+            >
+              {t('Створити статтю')}
+            </Button>
+            <TextInput
+              disabled={isLoading || isSaving || isOrderPaid}
+              label={t('Коментар')}
+              value={form.comment}
+              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+            />
+          </SimpleGrid>
+
+          <Card withBorder radius="md" shadow="sm">
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Text fw={700}>{t('Позиції накладної')}</Text>
+                <Badge color="blue" variant="light">
+                  {t('Разом')}: {formatMoney(order?.TotalAmount || calculateLocalTotal(items))}
+                </Badge>
+              </Group>
+
+              <Table.ScrollContainer minWidth={820}>
+                <Table highlightOnHover verticalSpacing="xs">
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>{t('Артикул')}</Table.Th>
+                      <Table.Th>{t('Назва')}</Table.Th>
+                      <Table.Th>{t('Кількість')}</Table.Th>
+                      <Table.Th>{t('Ціна')}</Table.Th>
+                      <Table.Th>{t('Разом')}</Table.Th>
                     </Table.Tr>
-                  ))
-                ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={5}>
-                      <Text c="dimmed" ta="center">
-                        {t('Позицій немає')}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
-                )}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {items.length > 0 ? (
+                      items.map((item, index) => (
+                        <Table.Tr key={getItemKey(item, index)}>
+                          <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
+                          <Table.Td>{displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)}</Table.Td>
+                          <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
+                          <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
+                          <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
+                        </Table.Tr>
+                      ))
+                    ) : (
+                      <Table.Tr>
+                        <Table.Td colSpan={5}>
+                          <Text c="dimmed" ta="center">
+                            {t('Позицій немає')}
+                          </Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    )}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Stack>
+          </Card>
         </Stack>
-      </Card>
-    </Stack>
+      </form>
     </AppDrawer>
   )
 }
