@@ -1,0 +1,50 @@
+.online-shop-clients-page {
+  height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 24px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.online-shop-clients-page__layout {
+  align-items: stretch;
+  display: grid;
+  flex: 1 1 auto;
+  gap: var(--mantine-spacing-lg);
+  grid-template-columns: minmax(0, 7fr) minmax(320px, 3fr);
+  min-height: 0;
+}
+
+.online-shop-clients-page__left {
+  min-height: 0;
+  min-width: 0;
+}
+
+.online-shop-clients-page__left-stack {
+  height: 100%;
+  min-height: 0;
+}
+
+.online-shop-clients-page__left-stack .clients-filter-row {
+  flex: 0 0 auto;
+  overflow-y: visible;
+}
+
+.online-shop-clients-page__left-stack .data-table {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.online-shop-clients-page__left-stack .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.online-shop-clients-page__left-stack .data-table-cell .mantine-Text-root {
+  display: block;
+  line-height: 18px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

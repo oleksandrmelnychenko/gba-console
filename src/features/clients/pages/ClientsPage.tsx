@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Divider,
   Group,
   Loader,
@@ -61,6 +60,7 @@ import {
   updateClientOrderExpireDays,
 } from '../api/clientsApi'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
+import './clients-page.css'
 
 const pageSizeOptions = ['15', '30', '50']
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
@@ -98,13 +98,23 @@ const CLIENT_SORT_COLUMNS: Record<string, string> = {
 const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['status', 'regionCode', 'client'],
-    right: ['actions'],
+  },
+  columnVisibility: {
+    actions: false,
   },
   density: 'compact',
 } satisfies DataTableDefaultLayout
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 30
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
+const CLIENT_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 function useClientsPageModel() {
   const { t } = useI18n()
@@ -577,7 +587,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack className="clients-page" gap={6}>
       {canCreateClient && (
         <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openCreateClient}>
@@ -586,45 +596,45 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         </PageHeaderActions>
       )}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <ClientsFilterToolbar
-            activeFilter={activeFilter}
-            clientTypes={clientTypes}
-            isExporting={clientAction === 'export'}
-            isTableBusy={isTableBusy}
-            roleFilter={roleFilter}
-            searchField={searchField}
-            searchFieldOptions={searchFieldOptions}
-            searchInputRef={searchInputRef}
-            searchValue={searchValue}
-            onExport={handleExport}
-            onReset={resetSearch}
-            onSetActiveFilter={setActiveFilter}
-            onSetPage={setPage}
-            onSetRoleFilter={setRoleFilter}
-            onSetSearchField={setSearchField}
-            onSetSearchValue={setSearchValue}
-          />
+      <ClientsFilterToolbar
+        activeFilter={activeFilter}
+        clientTypes={clientTypes}
+        isExporting={clientAction === 'export'}
+        isTableBusy={isTableBusy}
+        roleFilter={roleFilter}
+        searchField={searchField}
+        searchFieldOptions={searchFieldOptions}
+        searchInputRef={searchInputRef}
+        searchValue={searchValue}
+        onExport={handleExport}
+        onReset={resetSearch}
+        onSetActiveFilter={setActiveFilter}
+        onSetPage={setPage}
+        onSetRoleFilter={setRoleFilter}
+        onSetSearchField={setSearchField}
+        onSetSearchValue={setSearchValue}
+      />
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
+      <div className="clients-page__table">
           <DataTable
-            columns={clientColumns}
+            columns={clientColumns.filter((column) => column.id !== 'actions')}
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
-            height="calc(100vh - 240px)"
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-compact-3"
+            layoutVersion="clients-table-compact-6"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
-            minWidth={1120}
+            minWidth={1450}
+            showLayoutControls={false}
             tableId="clients"
             sorting={sorting}
             toolbarLeft={tableToolbarLeft}
@@ -635,8 +645,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
               setSorting(nextSorting)
             }}
           />
-        </Stack>
-      </Card>
+      </div>
 
       <ClientActionsModal
         canOpenCashFlow={canOpenCashFlow}
@@ -1057,58 +1066,54 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         width: 82,
         minWidth: 76,
         accessor: (client) => client.RegionCode?.Value,
-        cell: (client) => displayValue(client.RegionCode?.Value),
+        cell: (client) => <ClientTableValue value={displayValue(client.RegionCode?.Value)} />,
       },
       {
         id: 'client',
         header: 'Клієнт',
-        width: 210,
-        minWidth: 170,
+        width: 260,
+        minWidth: 220,
         accessor: getClientDisplayName,
-        cell: (client) => <Text fw={600}>{getClientDisplayName(client)}</Text>,
+        cell: (client) => <ClientTableValue fw={600} value={getClientDisplayName(client)} />,
       },
       {
         id: 'tin',
         header: 'ІПН',
-        width: 112,
-        minWidth: 100,
+        width: 108,
+        minWidth: 92,
         accessor: (client) => client.TIN,
-        cell: (client) => displayValue(client.TIN),
+        cell: (client) => <ClientTableValue value={displayValue(client.TIN)} />,
       },
       {
         id: 'sroi',
         header: 'SROI',
-        width: 90,
-        minWidth: 80,
+        width: 116,
+        minWidth: 96,
         accessor: (client) => client.SROI,
-        cell: (client) => displayValue(client.SROI),
+        cell: (client) => <ClientTableValue value={displayValue(client.SROI)} />,
       },
       {
         id: 'usreou',
         header: 'ЄДРПОУ',
-        width: 108,
-        minWidth: 94,
+        width: 120,
+        minWidth: 102,
         accessor: (client) => client.USREOU,
-        cell: (client) => displayValue(client.USREOU),
+        cell: (client) => <ClientTableValue value={displayValue(client.USREOU)} />,
       },
       {
         id: 'reserve',
         header: 'Резерв',
-        width: 78,
-        minWidth: 70,
+        width: 82,
+        minWidth: 72,
         align: 'right',
         accessor: (client) => client.OrderExpireDays,
-        cell: (client) => (
-          <Text span inherit style={{ fontVariantNumeric: 'tabular-nums' }}>
-            {displayValue(client.OrderExpireDays)}
-          </Text>
-        ),
+        cell: (client) => <ClientTableValue value={displayValue(client.OrderExpireDays)} />,
       },
       {
         id: 'location',
         header: 'Місто / район',
-        width: 140,
-        minWidth: 120,
+        width: 180,
+        minWidth: 150,
         accessor: (client) => [client.RegionCode?.City, client.RegionCode?.District].filter(Boolean).join(' '),
         cell: (client) => (
           <Text size="sm">
@@ -1128,7 +1133,7 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         width: 120,
         minWidth: 110,
         accessor: getClientPhone,
-        cell: (client) => displayValue(getClientPhone(client)),
+        cell: (client) => <ClientTableValue value={displayValue(getClientPhone(client))} />,
       },
       {
         id: 'email',
@@ -1136,7 +1141,7 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         width: 168,
         minWidth: 150,
         accessor: (client) => client.EmailAddress,
-        cell: (client) => displayValue(client.EmailAddress),
+        cell: (client) => <ClientTableValue value={displayValue(client.EmailAddress)} />,
       },
       {
         id: 'role',
@@ -1183,6 +1188,16 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
       },
     ],
     [onOpenActions, t],
+  )
+}
+
+function ClientTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={CLIENT_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

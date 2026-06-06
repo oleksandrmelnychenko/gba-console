@@ -1,4 +1,4 @@
-import { Alert, Badge, Card, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -7,6 +7,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getNewEcommerceClients } from '../api/ecommerceClientsApi'
 import type { Client } from '../types'
+import './new-ecommerce-clients-page.css'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   day: '2-digit',
@@ -17,10 +18,20 @@ const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
 })
 const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
-    left: ['created', 'status', 'fullName'],
+    left: [],
+    right: [],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const NEW_ECOMMERCE_CLIENT_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 export function NewEcommerceClientsPage() {
   const { t } = useI18n()
@@ -70,7 +81,7 @@ export function NewEcommerceClientsPage() {
         width: 160,
         minWidth: 140,
         accessor: (client) => getDateTime(client.Created),
-        cell: (client) => displayValue(formatDateTime(client.Created)),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(formatDateTime(client.Created))} />,
       },
       {
         id: 'status',
@@ -87,10 +98,10 @@ export function NewEcommerceClientsPage() {
       {
         id: 'fullName',
         header: 'Повна назва',
-        width: 240,
-        minWidth: 180,
+        width: 260,
+        minWidth: 220,
         accessor: getClientDisplayName,
-        cell: (client) => <Text fw={600}>{displayValue(getClientDisplayName(client))}</Text>,
+        cell: (client) => <NewEcommerceClientTableValue fw={600} value={displayValue(getClientDisplayName(client))} />,
       },
       {
         id: 'lastName',
@@ -98,7 +109,7 @@ export function NewEcommerceClientsPage() {
         width: 160,
         minWidth: 120,
         accessor: (client) => client.LastName,
-        cell: (client) => displayValue(client.LastName),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.LastName)} />,
       },
       {
         id: 'firstName',
@@ -106,7 +117,7 @@ export function NewEcommerceClientsPage() {
         width: 140,
         minWidth: 110,
         accessor: (client) => client.FirstName,
-        cell: (client) => displayValue(client.FirstName),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.FirstName)} />,
       },
       {
         id: 'phone',
@@ -114,7 +125,7 @@ export function NewEcommerceClientsPage() {
         width: 150,
         minWidth: 130,
         accessor: getClientPhone,
-        cell: (client) => displayValue(getClientPhone(client)),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(getClientPhone(client))} />,
       },
       {
         id: 'email',
@@ -122,7 +133,7 @@ export function NewEcommerceClientsPage() {
         width: 220,
         minWidth: 160,
         accessor: (client) => client.EmailAddress,
-        cell: (client) => displayValue(client.EmailAddress),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.EmailAddress)} />,
       },
       {
         id: 'role',
@@ -130,7 +141,7 @@ export function NewEcommerceClientsPage() {
         width: 180,
         minWidth: 140,
         accessor: (client) => client.ClientInRole?.ClientTypeRole?.Name,
-        cell: (client) => displayValue(client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт')),
+        cell: (client) => <NewEcommerceClientTableValue value={displayValue(client.ClientInRole?.ClientTypeRole?.Name || t('Новий клієнт'))} />,
       },
     ],
     [t],
@@ -152,32 +163,42 @@ export function NewEcommerceClientsPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+    <Stack className="new-ecommerce-clients-page" gap={6}>
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={clients}
+      <div className="new-ecommerce-clients-page__table">
+        <DataTable
+          key="new-ecommerce-clients-table-default-freeze-4"
+          columns={columns}
+          data={clients}
             defaultLayout={NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Нових e-commerce клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
-            height="calc(100vh - 220px)"
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="new-ecommerce-clients-table-default-freeze-1"
+            layoutVersion="new-ecommerce-clients-table-default-freeze-4"
             loadingText={t('Завантаження клієнтів')}
             minWidth={1280}
+            showLayoutControls={false}
             tableId="new-ecommerce-clients"
             onRowClick={openClient}
-          />
-        </Stack>
-      </Card>
+        />
+      </div>
     </Stack>
+  )
+}
+
+function NewEcommerceClientTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={NEW_ECOMMERCE_CLIENT_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 
