@@ -72,7 +72,7 @@ export function CompanyCarFormPage() {
   const { companyCar, error, form, isLoading, organizations } = pageState
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
-  const canSave = hasPermission(COMPANY_CAR_CREATE_PERMISSION)
+  const canSave = isEditMode || hasPermission(COMPANY_CAR_CREATE_PERMISSION)
 
   useEffect(() => {
     const controller = new AbortController()

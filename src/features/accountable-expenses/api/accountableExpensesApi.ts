@@ -3,6 +3,7 @@ import type {
   AccountableExpensesSearchParams,
   ConsumablesOrder,
   ConsumablesOrderItem,
+  OutcomePaymentOrderConsumablesOrder,
 } from '../types'
 
 export async function getAccountableExpenses(params: AccountableExpensesSearchParams): Promise<ConsumablesOrder[]> {
@@ -10,15 +11,21 @@ export async function getAccountableExpenses(params: AccountableExpensesSearchPa
     query: {
       from: params.from,
       to: params.to,
+      value: '',
     },
   })
 
   return normalizeConsumablesOrders(result)
 }
 
-export async function searchAccountableExpenses(value: string): Promise<ConsumablesOrder[]> {
-  const result = await apiRequest<unknown>('/consumables/orders/search', {
+export async function searchAccountableExpenses(
+  value: string,
+  params: AccountableExpensesSearchParams,
+): Promise<ConsumablesOrder[]> {
+  const result = await apiRequest<unknown>('/consumables/orders/all/services', {
     query: {
+      from: params.from,
+      to: params.to,
       value,
     },
   })
@@ -27,7 +34,7 @@ export async function searchAccountableExpenses(value: string): Promise<Consumab
 }
 
 function normalizeConsumablesOrders(result: unknown): ConsumablesOrder[] {
-  return readArrayPayload(result, ['Items', 'ConsumablesOrders', 'ConsumableServices', 'Data'])
+  return readArrayPayload(result, ['Collection', 'Items', 'ConsumablesOrders', 'Data'])
     .map(normalizeConsumablesOrder)
     .filter((order): order is ConsumablesOrder => Boolean(order))
 }
@@ -48,8 +55,18 @@ function normalizeConsumablesOrder(result: unknown): ConsumablesOrder | null {
       : [],
     OutcomePaymentOrderConsumablesOrders: Array.isArray(order.OutcomePaymentOrderConsumablesOrders)
       ? order.OutcomePaymentOrderConsumablesOrders
+          .map(normalizeOutcomeConsumablesOrderLink)
+          .filter((link): link is OutcomePaymentOrderConsumablesOrder => Boolean(link))
       : [],
   }
+}
+
+function normalizeOutcomeConsumablesOrderLink(result: unknown): OutcomePaymentOrderConsumablesOrder | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  return result as OutcomePaymentOrderConsumablesOrder
 }
 
 function normalizeConsumablesOrderItem(result: unknown): ConsumablesOrderItem | null {

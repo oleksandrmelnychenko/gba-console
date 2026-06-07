@@ -14,7 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconPlus, IconRefresh, IconRestore, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -32,6 +32,7 @@ import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFor
 import type { CompanyCar, CompanyCarRoadList } from '../types'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
+const DEFAULT_LOOKBACK_MONTHS = 36
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -79,7 +80,7 @@ export function CompanyCarRoadListsPage() {
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
   const [loadState, dispatchLoadState] = useReducer(roadListsReducer, initialRoadListsState)
   const { companyCar, error, isLoading, roadLists } = loadState
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
+  const [fromDate, setFromDate] = useValueState(() => shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
@@ -108,8 +109,8 @@ export function CompanyCarRoadListsPage() {
       getCompanyCar(id),
       getCompanyCarRoadLists({
         companyCarNetId: id,
-        from: toLegacyDateString(fromDate),
-        to: toLegacyDateString(toDate),
+        from: formatDateInputForQuery(fromDate),
+        to: formatDateInputForQuery(toDate),
       }),
     ])
       .then(([nextCompanyCar, nextRoadLists]) => {
@@ -162,7 +163,7 @@ export function CompanyCarRoadListsPage() {
   }
 
   function resetFilters() {
-    setFromDate(shiftDate(-7))
+    setFromDate(shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
     setToDate(formatLocalDate(new Date()))
   }
 
@@ -469,9 +470,9 @@ function getDriversLabel(roadList: CompanyCarRoadList): string {
     .join(' ')
 }
 
-function shiftDate(days: number): string {
+function shiftMonth(months: number): string {
   const date = new Date()
-  date.setDate(date.getDate() + days)
+  date.setMonth(date.getMonth() + months)
 
   return formatLocalDate(date)
 }
@@ -486,12 +487,6 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
   }
 
   return null
-}
-
-function toLegacyDateString(value: string): string {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? value : date.toDateString()
 }
 
 function formatDateTime(value?: string): string {

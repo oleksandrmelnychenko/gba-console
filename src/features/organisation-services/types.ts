@@ -6,7 +6,7 @@ export type EntityFields = {
   Updated?: string
 }
 
-export type ServiceOrganizationTypeValue = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
+export type ServiceOrganizationTypeValue = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export type ServiceOrganizationTypeOption = {
   label: string
@@ -23,6 +23,7 @@ export const SERVICE_ORGANIZATION_TYPES = [
   { value: 6, label: 'Портові роботи' },
   { value: 7, label: 'Доставка з порту' },
   { value: 8, label: 'Автодоставка' },
+  { value: 9, label: 'Об’єднаний сервіс' },
 ] satisfies ServiceOrganizationTypeOption[]
 
 export type ServiceOrganization = {
@@ -48,7 +49,9 @@ export type BillOfLadingDocument = BaseDocument & {
 export type ServiceItem = EntityFields & {
   AccountingGrossPrice?: number
   AccountingNetPrice?: number
+  ActProvidingServiceDocumentId?: number
   BillOfLadingDocument?: BillOfLadingDocument | null
+  BillOfLadingDocumentId?: number
   BillOfLadingDocuments?: BillOfLadingDocument[]
   FromDate?: string
   GrossPrice?: number
@@ -58,6 +61,7 @@ export type ServiceItem = EntityFields & {
   Number?: string
   ServiceNumber?: string
   SupplyCustomType?: 0 | 1
+  SupplyServiceAccountDocumentId?: number
 }
 
 export type TaskStatus = 0 | 1 | 2

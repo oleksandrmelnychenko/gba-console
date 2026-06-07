@@ -45,6 +45,8 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
+const DEFAULT_LOOKBACK_DAYS = 90
+
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -71,7 +73,7 @@ const ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE = {
 export function AccountableExpensesPage() {
   const { t } = useI18n()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
+  const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
@@ -96,7 +98,7 @@ export function AccountableExpensesPage() {
 
     try {
       const nextOrders = searchValue
-        ? await searchAccountableExpenses(searchValue)
+        ? await searchAccountableExpenses(searchValue, { from: fromDate, to: toDate })
         : await getAccountableExpenses({ from: fromDate, to: toDate })
 
       if (requestRef.current === requestId) {
@@ -470,22 +472,25 @@ function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpenseRow[] {
     const items = order.ConsumablesOrderItems?.length ? order.ConsumablesOrderItems : [{}]
 
     items.forEach((item, itemIndex) => {
+      const amount = item.TotalPriceWithVAT ?? order.TotalAmount ?? outcome?.Amount
+
       rows.push({
         advanceNumber: outcome?.AdvanceNumber,
-        amount: item.TotalPriceWithVAT,
-        comment: order.Comment,
-        created: order.Created,
+        amount,
+        comment: order.Comment || outcome?.Comment || outcome?.PaymentPurpose,
+        created: order.OrganizationFromDate || outcome?.FromDate || order.Created,
         currency: outcome?.PaymentCurrencyRegister?.Currency?.Code || outcome?.PaymentCurrencyRegister?.Currency?.Name,
         id: String(item.NetUid || item.Id || `${order.NetUid || order.Id || orderIndex}-${itemIndex}`),
-        isPayed: order.IsPayed,
+        isPayed: order.IsPayed ?? outcome?.IsUnderReportDone,
         item,
         order,
         organization: outcome?.Organization?.Name,
         payedTo: outcome?.Colleague?.LastName || outcome?.Colleague?.FullName || outcome?.Colleague?.Name,
-        pricePerItem: item.PricePerItem,
-        productName: item.ConsumableProduct?.Name,
+        pricePerItem: item.PricePerItem ?? amount,
+        productName: item.ConsumableProduct?.Name || outcome?.PaymentMovementOperation?.PaymentMovement?.OperationName,
         qty: item.Qty,
-        responsible: order.User?.LastName || order.User?.FullName || order.User?.Name,
+        responsible: order.User?.LastName || order.User?.FullName || order.User?.Name
+          || outcome?.User?.LastName || outcome?.User?.FullName || outcome?.User?.Name,
         vendorCode: item.ConsumableProduct?.VendorCode,
       })
     })

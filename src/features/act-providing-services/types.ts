@@ -55,6 +55,9 @@ export type BillOfLadingService = EntityFields & {
 
 export type MergedService = BillOfLadingService & {
   ConsumableProduct?: ServiceProduct | null
+  SupplyOrderUkraine?: (EntityFields & {
+    Organization?: NamedEntity | null
+  }) | null
 }
 
 export type DeliveryExpense = EntityFields & {

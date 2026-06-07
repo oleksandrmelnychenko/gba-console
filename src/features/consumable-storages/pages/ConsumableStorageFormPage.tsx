@@ -197,6 +197,11 @@ export function ConsumableStorageFormPage() {
       return
     }
 
+    if (!selectedUser) {
+      dispatchPageState({ error: t('Оберіть відповідального') })
+      return
+    }
+
     const payload: ConsumablesStoragePayload = {
       ...storage,
       Description: form.description.trim(),
@@ -265,61 +270,69 @@ export function ConsumableStorageFormPage() {
             </Alert>
           )}
 
-          <TextInput
-            disabled={isLoading || isSaving}
-            label={t('Назва')}
-            placeholder={t('Вкажіть назву')}
-            required
-            value={form.name}
-            onChange={(event) =>
-              dispatchPageState({
-                form: { ...form, name: event.currentTarget.value },
-              })
-            }
-          />
-          <TextInput
-            disabled={isLoading || isSaving}
-            label={t('Опис')}
-            placeholder={t('Вкажіть опис')}
-            value={form.description}
-            onChange={(event) =>
-              dispatchPageState({
-                form: { ...form, description: event.currentTarget.value },
-              })
-            }
-          />
-          <Select
-            clearable
-            searchable
-            data={userOptions}
-            disabled={isLoading || isSaving}
-            label={t('Відповідальний')}
-            placeholder={t('Оберіть відповідального')}
-            searchValue={userSearchValue}
-            value={form.responsibleUserNetUid || null}
-            onChange={(value) =>
-              dispatchPageState({
-                form: { ...form, responsibleUserNetUid: value || '' },
-              })
-            }
-            onSearchChange={setUserSearchValue}
-          />
-          <Select
-            data={organizationOptions}
-            disabled={isLoading || isSaving || isEditMode}
-            label={t('Організація')}
-            placeholder={t('Оберіть організацію')}
-            required
-            value={form.organizationNetUid || null}
-            onChange={(value) =>
-              dispatchPageState({
-                form: { ...form, organizationNetUid: value || '' },
-              })
-            }
-          />
-        </Stack>
-      </form>
-    </AppDrawer>
+            {!canSave && (
+              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+                {t('Немає прав для збереження складу')}
+              </Alert>
+            )}
+
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Назва')}
+              placeholder={t('Вкажіть назву')}
+              required
+              value={form.name}
+              onChange={(event) =>
+                dispatchPageState({
+                  form: { ...form, name: event.currentTarget.value },
+                })
+              }
+            />
+            <TextInput
+              disabled={isLoading || isSaving}
+              label={t('Опис')}
+              placeholder={t('Вкажіть опис')}
+              value={form.description}
+              onChange={(event) =>
+                dispatchPageState({
+                  form: { ...form, description: event.currentTarget.value },
+                })
+              }
+            />
+            <Select
+              clearable
+              searchable
+              data={userOptions}
+              disabled={isLoading || isSaving}
+              label={t('Відповідальний')}
+              placeholder={t('Оберіть відповідального')}
+              required
+              searchValue={userSearchValue}
+              value={form.responsibleUserNetUid || null}
+              onChange={(value) =>
+                dispatchPageState({
+                  form: { ...form, responsibleUserNetUid: value || '' },
+                })
+              }
+              onSearchChange={setUserSearchValue}
+            />
+            <Select
+              data={organizationOptions}
+              disabled={isLoading || isSaving || isEditMode}
+              label={t('Організація')}
+              placeholder={t('Оберіть організацію')}
+              required
+              value={form.organizationNetUid || null}
+              onChange={(value) =>
+                dispatchPageState({
+                  form: { ...form, organizationNetUid: value || '' },
+                })
+              }
+            />
+          </Stack>
+        </form>
+      </Card>
+    </Stack>
   )
 }
 

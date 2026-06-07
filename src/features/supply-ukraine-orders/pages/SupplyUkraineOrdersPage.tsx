@@ -1301,7 +1301,7 @@ function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow 
     isPlaced: Boolean(order.IsPlaced),
     kind: 'toUkraine',
     netUid: order.NetUid,
-    number: order.Number,
+    number: getToUkraineOrderDisplayNumber(order),
     order,
     orderDate: order.FromDate,
     organization: order.Organization?.Name,
@@ -1326,7 +1326,7 @@ function mapDirectOrderRow(order: DirectSupplyOrder): SupplyUkraineOrderRow {
     isPlaced: Boolean(order.IsFullyPlaced),
     kind: 'direct',
     netUid: order.NetUid,
-    number: order.SupplyOrderNumber?.Number,
+    number: getDirectOrderDisplayNumber(order),
     orderDate: order.DateFrom,
     organization: order.Organization?.Name,
     qty: positiveNumber(order.TotalQuantity),
@@ -1424,6 +1424,31 @@ function isDateInputValue(value: unknown): value is string {
 
 function isOrderKind(value: unknown): value is SupplyUkraineOrderKind {
   return value === 'all' || value === 'direct' || value === 'toUkraine'
+}
+
+function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefined {
+  const orderNumber = normalizeDisplayNumber(order.SupplyOrderNumber?.Number)
+  const proFormNumber = normalizeDisplayNumber(order.SupplyProForm?.Number)
+  const invoiceNumber = normalizeDisplayNumber(order.SupplyInvoices?.find((invoice) => normalizeDisplayNumber(invoice.Number))?.Number)
+
+  return orderNumber || proFormNumber || invoiceNumber
+}
+
+function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
+  const orderNumber = normalizeDisplayNumber(order.Number)
+  const invoiceNumber = normalizeDisplayNumber(order.InvNumber)
+
+  return orderNumber || invoiceNumber || order.NetUid
+}
+
+function normalizeDisplayNumber(value?: string | null): string | undefined {
+  const normalizedValue = value?.trim()
+
+  if (!normalizedValue || /^0+$/.test(normalizedValue)) {
+    return undefined
+  }
+
+  return normalizedValue
 }
 
 function getRowId(row: SupplyUkraineOrderRow): string {

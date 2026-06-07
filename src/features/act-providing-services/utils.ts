@@ -81,6 +81,7 @@ export function toActProvidingServiceDisplayModel(
       protocolNetId: source.value.DeliveryProductProtocol?.NetUid,
       responsible: getEntityName(source.value.User || act.User),
       serviceOrganization: getEntityName(source.value.SupplyOrganization),
+      supplyOrderUkraineNetUid: source.value.SupplyOrderUkraine?.NetUid,
       totalWithVat: source.isAccounting ? source.value.AccountingGrossPrice : source.value.GrossPrice,
     }
   }

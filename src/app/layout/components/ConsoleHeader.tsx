@@ -1,16 +1,54 @@
-import { ActionIcon, AppShell, Badge, Box, Group, Title, Text } from '@mantine/core'
-import { IconBell, IconCalendarEvent, IconLogout } from '@tabler/icons-react'
+import { ActionIcon, AppShell, Badge, Box, Group, Title, Text, Tooltip } from '@mantine/core'
+import { IconBell, IconChevronRight, IconLayoutSidebar, IconLogout } from '@tabler/icons-react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/useAuth'
 import { HeaderActionBar } from '../../../features/header-actions/components/HeaderActionBar'
+import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
+import { getCockpitCount } from '../../../features/sales-cockpit'
 import gbaLogo from '../../../assets/brand/gba-logo.svg'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { ConsoleNav } from './ConsoleNav'
 
-export function ConsoleHeader() {
+const COCKPIT_COUNT_POLL_MS = 60000
+
+type ConsoleHeaderProps = {
+  navOpened: boolean
+  onToggleNav: () => void
+}
+
+export function ConsoleHeader({ navOpened, onToggleNav }: ConsoleHeaderProps) {
   const { logout, session, user } = useAuth()
   const { t } = useI18n()
   const navigate = useNavigate()
+  const { selectedModule, selectedNode } = useNavigation()
+  const [cockpitCount, setCockpitCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadCockpitCount() {
+      try {
+        const count = await getCockpitCount()
+
+        if (!cancelled) {
+          setCockpitCount(count.active_count)
+        }
+      } catch {
+        if (!cancelled) {
+          setCockpitCount(0)
+        }
+      }
+    }
+
+    void loadCockpitCount()
+    const intervalId = window.setInterval(loadCockpitCount, COCKPIT_COUNT_POLL_MS)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [])
 
   const displayName =
     user?.FullName ||
@@ -46,10 +84,18 @@ export function ConsoleHeader() {
         <Group gap="xs" wrap="nowrap" className="console-header-actions">
           <HeaderActionBar />
           <Box className="console-bell">
-            <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Сповіщення')}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
+              aria-label={t('Кокпіт продажів')}
+              onClick={() => navigate('/sales/cockpit')}
+            >
               <IconBell size={24} stroke={1.7} />
             </ActionIcon>
-            <span className="console-bell-badge tx-spring-pop" aria-hidden="true" />
+            {cockpitCount > 0 && (
+              <span className="console-bell-badge tx-spring-pop" aria-hidden="true" />
+            )}
           </Box>
           <ActionIcon variant="subtle" color="gray" size="lg" aria-label={t('Вийти')} onClick={logout}>
             <IconLogout size={24} stroke={1.7} />
