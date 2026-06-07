@@ -138,6 +138,23 @@ export async function updatePackingLists(invoice: SupplyInvoice): Promise<Supply
   return normalizeSupplyInvoice(result)
 }
 
+export async function uploadPackingListDocuments(packingList: PackingList, documents: File[]): Promise<PackingList | null> {
+  const formData = new FormData()
+
+  formData.append('entity', JSON.stringify(packingList))
+
+  for (const document of documents) {
+    formData.append('documents', document)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/packinglists/upload/documents', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizePackingList(result)
+}
+
 export async function uploadSupplyInvoiceFile({
   file,
   invoice,

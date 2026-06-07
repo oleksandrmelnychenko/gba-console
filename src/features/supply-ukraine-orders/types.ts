@@ -166,6 +166,9 @@ export type SupplyInvoiceDeliveryDocument = EntityFields & {
   Deleted?: boolean
   DocumentUrl?: string
   FileName?: string
+  GeneratedName?: string
+  PackingListId?: number
+  SupplyInvoiceId?: number
 }
 
 export type SupplyOrderUkraineDocument = EntityFields & {

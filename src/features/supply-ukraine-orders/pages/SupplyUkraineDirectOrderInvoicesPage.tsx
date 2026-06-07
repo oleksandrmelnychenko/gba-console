@@ -1,10 +1,12 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Button,
   Card,
   Checkbox,
+  Divider,
   FileInput,
   Group,
   Loader,
@@ -21,17 +23,22 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconArrowBackUp,
   IconArrowLeft,
   IconDeviceFloppy,
+  IconEdit,
   IconFileImport,
+  IconFileUpload,
   IconPackage,
   IconRefresh,
   IconTrash,
+  IconX,
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
@@ -45,6 +52,7 @@ import {
   getSupplyOrderItems,
   updatePackingLists,
   updateSupplyInvoiceItems,
+  uploadPackingListDocuments,
   uploadPackingListFile,
   uploadSupplyInvoiceFile,
 } from '../api/supplyUkraineOrdersApi'
@@ -54,6 +62,7 @@ import type {
   PackingListDocumentParseConfiguration,
   PackingListPackageOrderItem,
   SupplyInvoice,
+  SupplyInvoiceDeliveryDocument,
   SupplyInvoiceOrderItem,
   SupplyOrderDocumentParseConfiguration,
   SupplyOrderInvoiceTotals,
@@ -102,6 +111,20 @@ type InvoiceBalanceRow = QuantityBalanceRow & {
 type PackListBalanceRow = QuantityBalanceRow & {
   invoiceItem: SupplyInvoiceOrderItem
 }
+type PackListEditorState = {
+  packList: PackingList | null
+}
+type PackListMetadataForm = {
+  comment: string
+  dateFrom: string
+  documents: SupplyInvoiceDeliveryDocument[]
+  files: File[]
+  invNo: string
+  markNumber: string
+  no: string
+  plNo: string
+  refNo: string
+}
 type PageState = {
   deleteInvoiceCandidate: SupplyInvoice | null
   deletePackListCandidate: PackingList | null
@@ -113,6 +136,7 @@ type PageState = {
   isSaving: boolean
   order: DirectSupplyOrder | null
   orderItems: SupplyOrderItem[]
+  packListEditor: PackListEditorState | null
   packListUploadOpen: boolean
   selectedInvoiceNetId: string | null
   selectedPackListNetId: string | null
@@ -131,6 +155,7 @@ const INITIAL_PAGE_STATE: PageState = {
   isSaving: false,
   order: null,
   orderItems: [],
+  packListEditor: null,
   packListUploadOpen: false,
   selectedInvoiceNetId: null,
   selectedPackListNetId: null,
@@ -206,6 +231,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     isSaving,
     order,
     orderItems,
+    packListEditor,
     packListUploadOpen,
     selectedInvoiceNetId,
     selectedPackListNetId,
@@ -670,6 +696,51 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     }
   }
 
+  async function savePackListMetadata(form: PackListMetadataForm) {
+    if (!selectedInvoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+      return
+    }
+
+    if (!form.invNo.trim()) {
+      notifications.show({ color: 'red', message: t('Вкажіть INV.NO') })
+      return
+    }
+
+    const draft = createPackListMetadataDraft(packListEditor?.packList, form)
+    const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, draft)
+
+    setPageState({ isSaving: true })
+
+    try {
+      const updatedInvoice = await updatePackingLists(toPackingListsPayload(invoiceForMetadata))
+      const invoiceAfterMetadata = updatedInvoice || selectedInvoice
+      const savedPackList = findSavedPackList(invoiceAfterMetadata, draft)
+
+      if (form.files.length > 0) {
+        if (!savedPackList) {
+          throw new Error(t('Не вдалося знайти збережений пак лист для документів'))
+        }
+
+        await uploadPackingListDocuments({
+          ...savedPackList,
+          InvoiceDocuments: [
+            ...(savedPackList.InvoiceDocuments || []),
+            ...createNewInvoiceDocuments(form.files),
+          ],
+        }, form.files)
+      }
+
+      notifications.show({ color: 'green', message: t('Пак лист збережено') })
+      setPageState({ packListEditor: null })
+      await reloadOrder(invoiceAfterMetadata.NetUid || selectedInvoice.NetUid)
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти пак лист') })
+    } finally {
+      setPageState({ isSaving: false })
+    }
+  }
+
   return {
     canAddInvoice,
     canRemoveInvoice,
@@ -698,9 +769,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     packListBalanceByInvoiceItemKey,
     packListBalanceRows,
     packListItemColumns,
+    packListEditor,
     packListUploadOpen,
     reloadOrder,
     saveInvoiceItems,
+    savePackListMetadata,
     savePackingLists,
     selectedInvoice,
     selectedInvoiceItems,
@@ -953,6 +1026,14 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
           />
           <Group justify="flex-end">
             <Button
+              disabled={model.isBusy || !model.selectedInvoice}
+              leftSection={<IconPackage size={16} />}
+              variant="light"
+              onClick={() => model.setPageState({ packListEditor: { packList: null } })}
+            >
+              {t('Новий пак лист')}
+            </Button>
+            <Button
               disabled={model.isBusy || !model.selectedInvoice || !model.selectedPackList || model.packListBalanceRows.some((row) => row.isError)}
               leftSection={<IconDeviceFloppy size={16} />}
               loading={model.isSaving}
@@ -996,6 +1077,17 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
           >
             {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
           </Button>
+          <Tooltip label={t('Редагувати')}>
+            <ActionIcon
+              aria-label={t('Редагувати')}
+              disabled={model.isBusy}
+              size="xs"
+              variant="subtle"
+              onClick={() => model.setPageState({ packListEditor: { packList } })}
+            >
+              <IconEdit size={14} />
+            </ActionIcon>
+          </Tooltip>
           {model.canRemovePackList && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
@@ -1032,6 +1124,12 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
         opened={model.packListUploadOpen}
         onClose={() => model.setPageState({ packListUploadOpen: false })}
         onSubmit={model.submitPackList}
+      />
+      <PackListMetadataModal
+        editor={model.packListEditor}
+        isSaving={model.isSaving}
+        onClose={() => model.setPageState({ packListEditor: null })}
+        onSubmit={model.savePackListMetadata}
       />
       <DeleteModal
         isSaving={model.isSaving}
@@ -1202,6 +1300,185 @@ function PackListUploadModal({
         </Group>
       </Stack>
     </AppModal>
+  )
+}
+
+function PackListMetadataModal({
+  editor,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  editor: PackListEditorState | null
+  isSaving: boolean
+  onClose: () => void
+  onSubmit: (form: PackListMetadataForm) => void
+}) {
+  const { t } = useI18n()
+  const opened = Boolean(editor)
+
+  return (
+    <AppModal centered opened={opened} size="lg" title={editor?.packList ? t('Редагувати пак лист') : t('Новий пак лист')} onClose={onClose}>
+      {editor && (
+        <PackListMetadataModalBody
+          key={editor.packList?.NetUid || editor.packList?.Id || 'new'}
+          editor={editor}
+          isSaving={isSaving}
+          onClose={onClose}
+          onSubmit={onSubmit}
+        />
+      )}
+    </AppModal>
+  )
+}
+
+function PackListMetadataModalBody({
+  editor,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  editor: PackListEditorState
+  isSaving: boolean
+  onClose: () => void
+  onSubmit: (form: PackListMetadataForm) => void
+}) {
+  const { t } = useI18n()
+  const [form, setForm] = useState<PackListMetadataForm>(() => createPackListMetadataForm(editor.packList))
+
+  function addFiles(files: File[] | null) {
+    if (!files?.length) {
+      return
+    }
+
+    setForm((current) => ({
+      ...current,
+      documents: [
+        ...current.documents,
+        ...createNewInvoiceDocuments(files),
+      ],
+      files: [...current.files, ...files],
+    }))
+  }
+
+  function removeDocument(document: SupplyInvoiceDeliveryDocument, index: number) {
+    setForm((current) => {
+      const documents = [...current.documents]
+
+      if (document.Id) {
+        documents[index] = { ...document, Deleted: true }
+      } else {
+        documents.splice(index, 1)
+      }
+
+      return {
+        ...current,
+        documents,
+        files: document.Id
+          ? current.files
+          : current.files.filter((file) => file.name !== document.FileName),
+      }
+    })
+  }
+
+  function restoreDocument(document: SupplyInvoiceDeliveryDocument, index: number) {
+    setForm((current) => {
+      const documents = [...current.documents]
+
+      documents[index] = { ...document, Deleted: false }
+
+      return { ...current, documents }
+    })
+  }
+
+  return (
+    <Stack gap="md">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+          <TextInput disabled={isSaving} label="INV.NO" value={form.invNo} onChange={(event) => setForm((current) => ({ ...current, invNo: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label="REF.NO" value={form.refNo} onChange={(event) => setForm((current) => ({ ...current, refNo: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label="PL.NO" value={form.plNo} onChange={(event) => setForm((current) => ({ ...current, plNo: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label="Mark" value={form.markNumber} onChange={(event) => setForm((current) => ({ ...current, markNumber: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label="No" value={form.no} onChange={(event) => setForm((current) => ({ ...current, no: event.currentTarget.value }))} />
+          <TextInput disabled={isSaving} label={t('Дата')} type="datetime-local" value={form.dateFrom} onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))} />
+        </SimpleGrid>
+        <Textarea
+          autosize
+          disabled={isSaving}
+          label={t('Коментар')}
+          minRows={2}
+          value={form.comment}
+          onChange={(event) => setForm((current) => ({ ...current, comment: event.currentTarget.value }))}
+        />
+        <FileInput
+          clearable
+          multiple
+          disabled={isSaving}
+          label={t('Документи')}
+          leftSection={<IconFileUpload size={16} />}
+          value={[]}
+          onChange={addFiles}
+        />
+        <PackListDocumentsList
+          documents={form.documents}
+          onRemove={removeDocument}
+          onRestore={restoreDocument}
+        />
+        <Divider />
+        <Group justify="flex-end">
+          <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+        </Group>
+    </Stack>
+  )
+}
+
+function PackListDocumentsList({
+  documents,
+  onRemove,
+  onRestore,
+}: {
+  documents: SupplyInvoiceDeliveryDocument[]
+  onRemove: (document: SupplyInvoiceDeliveryDocument, index: number) => void
+  onRestore: (document: SupplyInvoiceDeliveryDocument, index: number) => void
+}) {
+  const { t } = useI18n()
+
+  if (documents.length === 0) {
+    return <Text c="dimmed" size="sm">{t('Документів немає')}</Text>
+  }
+
+  return (
+    <Stack gap="xs">
+      {documents.map((document, index) => (
+        <Group key={document.NetUid || document.Id || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
+          <Stack gap={0}>
+            {document.DocumentUrl && !document.Deleted ? (
+              <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
+                {document.FileName || document.GeneratedName || t('Документ')}
+              </Anchor>
+            ) : (
+              <Text c={document.Deleted ? 'dimmed' : undefined} size="sm" td={document.Deleted ? 'line-through' : undefined}>
+                {document.FileName || document.GeneratedName || t('Документ')}
+              </Text>
+            )}
+            {document.Deleted && <Text c="red" size="xs">{t('Буде видалено')}</Text>}
+          </Stack>
+          {document.Deleted ? (
+            <Tooltip label={t('Відновити')}>
+              <ActionIcon aria-label={t('Відновити')} color="gray" variant="subtle" onClick={() => onRestore(document, index)}>
+                <IconArrowBackUp size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon aria-label={t('Видалити')} color="red" variant="subtle" onClick={() => onRemove(document, index)}>
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      ))}
+    </Stack>
   )
 }
 
@@ -1718,6 +1995,76 @@ function createPackListOrderItem(invoiceItem: SupplyInvoiceOrderItem, qty: numbe
     TotalNetPrice: (invoiceItem.UnitPrice || 0) * qty,
     UnitPrice: invoiceItem.UnitPrice,
   }
+}
+
+function createPackListMetadataForm(packList: PackingList | null): PackListMetadataForm {
+  return {
+    comment: packList?.Comment || '',
+    dateFrom: formatDateTimeInput(packList?.FromDate ? new Date(packList.FromDate) : new Date()),
+    documents: (packList?.InvoiceDocuments || []).map((document) => ({ ...document })),
+    files: [],
+    invNo: packList?.InvNo || '',
+    markNumber: packList?.MarkNumber || '',
+    no: packList?.No || '',
+    plNo: packList?.PlNo || '',
+    refNo: packList?.RefNo || '',
+  }
+}
+
+function createPackListMetadataDraft(
+  source: PackingList | null | undefined,
+  form: PackListMetadataForm,
+): PackingList {
+  return {
+    ...(source || {}),
+    Comment: form.comment.trim(),
+    FromDate: normalizeDateTimeInput(form.dateFrom),
+    InvNo: form.invNo.trim(),
+    InvoiceDocuments: form.documents,
+    MarkNumber: form.markNumber.trim(),
+    No: form.no.trim(),
+    PackingListBoxes: source?.PackingListBoxes || [],
+    PackingListPackageOrderItems: source?.PackingListPackageOrderItems || [],
+    PackingListPallets: source?.PackingListPallets || [],
+    PlNo: form.plNo.trim(),
+    RefNo: form.refNo.trim(),
+  }
+}
+
+function createNewInvoiceDocuments(files: File[]): SupplyInvoiceDeliveryDocument[] {
+  return files.map((file) => ({
+    ContentType: file.type,
+    Deleted: false,
+    FileName: file.name,
+  }))
+}
+
+function upsertPackListMetadata(invoice: SupplyInvoice, packList: PackingList): SupplyInvoice {
+  const packLists = invoice.PackingLists || []
+  const index = packLists.findIndex((item) => isSameEntity(item, packList))
+  const nextPackLists = [...packLists]
+
+  if (index >= 0) {
+    nextPackLists[index] = {
+      ...nextPackLists[index],
+      ...packList,
+    }
+  } else {
+    nextPackLists.push(packList)
+  }
+
+  return {
+    ...invoice,
+    PackingLists: nextPackLists,
+  }
+}
+
+function findSavedPackList(invoice: SupplyInvoice, draft: PackingList): PackingList | null {
+  return (invoice.PackingLists || []).find((packList) =>
+    isSameEntity(packList, draft)
+    || (draft.InvNo && packList.InvNo === draft.InvNo)
+    || (draft.No && packList.No === draft.No),
+  ) || null
 }
 
 function updatePackListOrderItemQty(
