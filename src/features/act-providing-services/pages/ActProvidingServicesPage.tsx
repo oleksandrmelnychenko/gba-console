@@ -38,7 +38,7 @@ import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel
 import './act-providing-services-page.css'
 
 const PAGE_SIZE = 20
-const DEFAULT_LOOKBACK_DAYS = 30
+const DEFAULT_LOOKBACK_DAYS = 1
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'

@@ -38,6 +38,26 @@ export function formatDateInputForQuery(value: string): string {
   return Number.isNaN(date.getTime()) ? value : formatDateForQuery(date)
 }
 
+export function toDateTimeQuery(value: string, boundary: 'start' | 'end'): string {
+  const trimmedValue = value.trim()
+
+  if (!trimmedValue) {
+    return ''
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return formatDateInputForQuery(value)
+  }
+
+  if (!isValidDateInputValue(trimmedValue)) {
+    return value
+  }
+
+  const time = boundary === 'start' ? 'T00:00:00.000' : 'T23:59:59.999'
+
+  return `${trimmedValue}${time}`
+}
+
 export function formatLocalDateTime(date: Date): string {
   const datePart = formatLocalDate(date)
   const hours = String(date.getHours()).padStart(2, '0')

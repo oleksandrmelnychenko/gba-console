@@ -13,7 +13,7 @@ describe('productStoragesApi', () => {
     apiRequestMock.mockReset()
   })
 
-  it('loads current storage availability without date filters', async () => {
+  it('loads storage availability with the same date filters as export', async () => {
     apiRequestMock.mockResolvedValueOnce({
       Items: [
         {
@@ -46,9 +46,11 @@ describe('productStoragesApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/storages/all/available/filtered', {
       query: {
+        from: '2026-06-01',
         limit: 20,
         netId: 'storage-net-id',
         offset: 40,
+        to: '2026-06-30',
         value: 'PR-1',
       },
     })

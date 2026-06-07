@@ -147,7 +147,7 @@ function normalizeProductCapitalizationsResponse(result: unknown): ProductCapita
 
   return {
     Items: items.map(normalizeProductCapitalization).filter((item): item is ProductCapitalization => Boolean(item)),
-    Total: readNumber(payload.Total, items.length),
+    Total: readOptionalNumber(payload.Total),
   }
 }
 
@@ -218,7 +218,7 @@ function readString(value: unknown): string {
   return typeof value === 'string' ? value : ''
 }
 
-function readNumber(value: unknown, fallback: number): number {
+function readOptionalNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
   }
@@ -231,5 +231,5 @@ function readNumber(value: unknown, fallback: number): number {
     }
   }
 
-  return fallback
+  return null
 }

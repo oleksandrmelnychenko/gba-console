@@ -290,11 +290,16 @@ export function UserRolesPage() {
     setError(null)
 
     try {
-      await changePermissionsToRole({
+      const savedRole = await changePermissionsToRole({
         ...visibleSelectedRole,
         DashboardNodes: selectedNodes,
         Permissions: selectedPermissions,
       })
+
+      if (!savedRole) {
+        throw new Error(t('Не вдалося зберегти'))
+      }
+
       notifications.show({ color: 'green', message: t('Збережено') })
       reload()
     } catch (saveError) {

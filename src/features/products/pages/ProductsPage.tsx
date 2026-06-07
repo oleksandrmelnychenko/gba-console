@@ -108,6 +108,7 @@ import {
   getProductTitle,
   getRelatedProductRowColor,
   isProductRealtimePayloadForProduct,
+  splitProductSearchResults,
 } from '../utils'
 import {
   buildProductUploadPriceConfigurations,
@@ -375,10 +376,10 @@ export function ProductsPage() {
         return
       }
 
-      const halfLength = Math.ceil(nextProducts.length / 2)
+      const nextRails = splitProductSearchResults(nextProducts)
 
-      setTopProducts(nextProducts.slice(0, halfLength))
-      setBottomProducts(nextProducts.slice(halfLength))
+      setTopProducts(nextRails.topProducts)
+      setBottomProducts(nextRails.bottomProducts)
       setSelectedProduct(null)
       setCarouselMode('search')
     },

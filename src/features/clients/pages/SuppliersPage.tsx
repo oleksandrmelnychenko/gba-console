@@ -231,7 +231,7 @@ function useSuppliersPageModel() {
       return
     }
 
-    navigate(`/clients/edit/${supplier.NetUid}`, {
+    navigate(`/suppliers/edit/${supplier.NetUid}`, {
       state: {
         backgroundLocation: location,
         moduleTitle: t('Постачальники'),

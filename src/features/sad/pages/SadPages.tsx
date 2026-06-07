@@ -304,19 +304,21 @@ export function AllSadsPage() {
                 <IconEye size={16} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Створити видатковий ордер')}>
-              <ActionIcon
-                aria-label={t('Створити видатковий ордер')}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setOutcomeSource(buildSadOutcomeSource(sad))
-                }}
-              >
-                <IconCash size={16} />
-              </ActionIcon>
-            </Tooltip>
+            {sad.IsSend && sad.Client ? (
+              <Tooltip label={t('Створити видатковий ордер')}>
+                <ActionIcon
+                  aria-label={t('Створити видатковий ордер')}
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setOutcomeSource(buildSadOutcomeSource(sad))
+                  }}
+                >
+                  <IconCash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
             <Tooltip label={sad.IsSend ? t('Проведений SAD не можна видалити') : t('Видалити')}>
               <ActionIcon
                 aria-label={t('Видалити')}
@@ -640,6 +642,10 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       setError(null)
 
       try {
+        if (ignore) {
+          return
+        }
+
         const loadedSad = await getSad(netId)
 
         if (ignore) {
@@ -654,6 +660,11 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
         const agreementsPromise = loadedSad.Client?.NetUid
           ? getClientAgreements(loadedSad.Client.NetUid)
           : Promise.resolve<SadClientAgreement[] | null>(null)
+
+        if (ignore) {
+          return
+        }
+
         const [loadedOrganizations, agreements] = await Promise.all([getOrganizations(), agreementsPromise])
 
         if (ignore) {

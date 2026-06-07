@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   ActProvidingService,
   ActProvidingServicesResponse,
@@ -13,11 +14,11 @@ export async function getActProvidingServices(
 
   const result = await apiRequest<unknown>('/act/providing/services/all', {
     query: {
-      from: params.from,
+      from: toDateTimeQuery(params.from, 'start'),
       isFiltered: params.isFiltered,
       limit: requestLimit,
       offset: params.offset,
-      to: params.to,
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 

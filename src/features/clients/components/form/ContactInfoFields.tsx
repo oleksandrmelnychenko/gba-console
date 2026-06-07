@@ -56,8 +56,8 @@ export function ContactInfoFields({ client, errors, role, onChange }: ContactInf
         {role.isProvider && (
           <TextInput
             label={t("Ім'я")}
-            value={client.SupplierName || ''}
-            onChange={(event) => onChange('SupplierName', event.currentTarget.value)}
+            value={client.SupplierContactName || ''}
+            onChange={(event) => onChange('SupplierContactName', event.currentTarget.value)}
           />
         )}
       </SimpleGrid>

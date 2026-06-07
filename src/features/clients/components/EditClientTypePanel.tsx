@@ -30,6 +30,9 @@ export function EditClientTypePanel({
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
+  const selectableClientTypes = currentTypeNetUid
+    ? clientTypes.filter((clientType) => isSameType(clientType.NetUid, currentTypeNetUid))
+    : clientTypes
 
   useEffect(() => {
     if (!opened) {
@@ -85,7 +88,7 @@ export function EditClientTypePanel({
           </Group>
         ) : (
           <Stack gap="lg">
-            {clientTypes.map((clientType) => {
+            {selectableClientTypes.map((clientType) => {
               const roles = (clientType.ClientTypeRoles || []).filter((clientRole) =>
                 canSelectRole(clientType, clientRole, hasPermission),
               )

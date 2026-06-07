@@ -45,7 +45,7 @@ import {
 } from '@tabler/icons-react'
 import { type ComponentType, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -1208,17 +1208,20 @@ function DeleteResourceModal({
 }
 
 function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
+  const [searchParams, setSearchParams] = useSearchParams()
   const clientTypesState = useResourceData<ClientResourceClientType[]>(getClientResourceClientTypes, [])
-  const [roleId] = useValueState<string | null>(null)
   const [editor, setEditor] = useValueState<PerfectClientEditorState | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
-  const roleOptions = useMemo(() => getRoleSelectOptions(getBuyerRoles(clientTypesState.data)), [clientTypesState.data])
-  const effectiveRoleId = roleId || roleOptions[0]?.value || null
+  const buyerRoles = useMemo(() => getBuyerRoles(clientTypesState.data), [clientTypesState.data])
+  const roleOptions = useMemo(() => getRoleSelectOptions(buyerRoles), [buyerRoles])
+  const queryRoleId = searchParams.get('id')
+  const roleOptionExists = roleOptions.some((option) => option.value === queryRoleId)
+  const effectiveRoleId = roleOptionExists ? queryRoleId : roleOptions[0]?.value || null
   const selectedRole = useMemo(
-    () => getBuyerRoles(clientTypesState.data).find((role) => String(role.Id) === effectiveRoleId),
-    [clientTypesState.data, effectiveRoleId],
+    () => buyerRoles.find((role) => String(role.Id) === effectiveRoleId),
+    [buyerRoles, effectiveRoleId],
   )
   const loadPerfectClients = useCallback(() => {
     const numericRoleId = Number(effectiveRoleId)
@@ -1232,6 +1235,26 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
   const perfectClientsState = useResourceData<ClientResourcePerfectClient[]>(loadPerfectClients, [])
   const checkboxItems = perfectClientsState.data.filter((item) => item.Type === PERFECT_CLIENT_CHECKBOX_TYPE)
   const toggleItems = perfectClientsState.data.filter((item) => item.Type === PERFECT_CLIENT_TOGGLE_TYPE)
+
+  function selectRole(nextRoleId: string | null) {
+    const normalizedRoleId = nextRoleId || roleOptions[0]?.value || null
+
+    setFormError(null)
+    setEditor(null)
+    setDeleteTarget(null)
+
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams)
+
+      if (normalizedRoleId) {
+        nextParams.set('id', normalizedRoleId)
+      } else {
+        nextParams.delete('id')
+      }
+
+      return nextParams
+    })
+  }
 
   function openCreatePerfectClient() {
     setFormError(null)
@@ -1310,6 +1333,16 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
 
   const perfectClientAction = (
     <Group gap="xs" wrap="nowrap">
+      <Select
+        allowDeselect={false}
+        data={roleOptions}
+        disabled={!roleOptions.length || clientTypesState.isLoading}
+        placeholder={translate("Оберіть роль")}
+        size="xs"
+        value={effectiveRoleId}
+        w={220}
+        onChange={selectRole}
+      />
       <RefreshControl
         isLoading={clientTypesState.isLoading || perfectClientsState.isLoading}
         onRefresh={() => {
@@ -4907,19 +4940,18 @@ function buildPerfectClientPayload(
     Type: type,
     Value: isToggle ? '' : values.Value.trim(),
     Values: isToggle
-      ? buildPerfectClientValues(perfectClient?.Values, values.ToggleValueLeft, values.ToggleValueRight)
+      ? buildPerfectClientValues(perfectClient?.Values, values)
       : [],
   }
 }
 
 function buildPerfectClientValues(
   currentValues: ClientResourcePerfectClientValue[] | undefined,
-  leftValue: string,
-  rightValue: string,
+  values: PerfectClientFormValues,
 ): ClientResourcePerfectClientValue[] {
   return [
-    buildPerfectClientValue(currentValues?.[0], leftValue.trim()),
-    buildPerfectClientValue(currentValues?.[1], rightValue.trim()),
+    buildPerfectClientValue(currentValues?.[0], values.ToggleValueLeft.trim()),
+    buildPerfectClientValue(currentValues?.[1], values.ToggleValueRight.trim()),
   ]
 }
 
@@ -4941,7 +4973,7 @@ function buildValueTranslations(
   const currentTranslations = translations || []
   const ukTranslation = currentTranslations.find((translation) => translation.CultureCode === UKRAINE_CULTURE)
   const otherTranslations = currentTranslations.filter(
-    (translation) => translation.CultureCode && translation.CultureCode !== UKRAINE_CULTURE,
+    (translation) => Boolean(translation.CultureCode) && translation.CultureCode !== UKRAINE_CULTURE,
   )
 
   return [
@@ -4956,7 +4988,7 @@ function buildValueTranslations(
 
 function getPerfectClientValueFormText(value?: ClientResourcePerfectClientValue): string {
   return (
-    value?.PerfectClientValueTranslations?.find((translation) => translation.CultureCode === UKRAINE_CULTURE)?.Value
+    value?.PerfectClientValueTranslations?.find((translation) => translation.CultureCode === UKRAINE_CULTURE)?.Value?.trim()
     || value?.Value
     || ''
   )
@@ -5235,7 +5267,7 @@ function buildNameTranslations(
   const currentTranslations = translations || []
   const ukTranslation = currentTranslations.find((translation) => translation.CultureCode === UKRAINE_CULTURE)
   const otherTranslations = currentTranslations.filter(
-    (translation) => translation.CultureCode && translation.CultureCode !== UKRAINE_CULTURE,
+    (translation) => Boolean(translation.CultureCode) && translation.CultureCode !== UKRAINE_CULTURE,
   )
 
   return [
@@ -5276,7 +5308,7 @@ function organizationToFormValues(
     TaxInspectionId: toOptionalEntityId(
       organization?.TaxInspectionId ?? organization?.TaxInspection?.Id,
     ),
-    TranslationName: getAlternativeTranslation(organization)?.Name || '',
+    TranslationName: getAlternativeTranslation(organization)?.Name?.trim() || '',
     TypeTaxation: String(organization?.TypeTaxation ?? 0),
     USREOU: organization?.USREOU || '',
     VatRateId: toOptionalEntityId(organization?.VatRateId ?? organization?.VatRate?.Id),
@@ -5347,7 +5379,7 @@ function buildOrganizationTranslations(
   const ukTranslation = currentTranslations.find((translation) => translation.CultureCode === UKRAINE_CULTURE)
   const alternativeTranslation = getAlternativeTranslation(organization)
   const otherTranslations = currentTranslations.filter(
-    (translation) => translation.CultureCode && translation.CultureCode !== UKRAINE_CULTURE,
+    (translation) => Boolean(translation.CultureCode) && translation.CultureCode !== UKRAINE_CULTURE,
   )
   const nextTranslations: ClientResourceTranslation[] = [
     {

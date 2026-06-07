@@ -8,6 +8,7 @@ import { prepareClientSavePayload } from './clientFormApi'
 import type {
   Client,
   ClientAgreement,
+  ClientContractDocument,
   ClientGroup,
   ClientOrderedProduct,
   ClientSubClient,
@@ -212,7 +213,7 @@ export async function uploadClientContract(
     formData.append('documents', document)
   })
 
-  formData.append('client', JSON.stringify(prepareClientSavePayload(client)))
+  formData.append('client', JSON.stringify(prepareClientContractUploadPayload(client)))
 
   const result = await apiRequest<unknown>('/clients/documents/upload/contracts', {
     method: 'POST',
@@ -220,6 +221,25 @@ export async function uploadClientContract(
   })
 
   return normalizeCabinetItem<Client>(result)
+}
+
+function prepareClientContractUploadPayload(client: Client): Client {
+  return {
+    ...prepareClientSavePayload(client),
+    ClientContractDocuments: (client.ClientContractDocuments || []).map(prepareClientContractDocumentPayload),
+  }
+}
+
+function prepareClientContractDocumentPayload(document: ClientContractDocument): ClientContractDocument {
+  return {
+    ContentType: document.ContentType,
+    Deleted: document.Deleted,
+    DocumentUrl: document.DocumentUrl,
+    FileName: document.FileName,
+    GeneratedName: document.GeneratedName,
+    Id: document.Id,
+    NetUid: document.NetUid,
+  }
 }
 
 function prepareClientWorkplaceSavePayload(workplace: ClientWorkplace): ClientWorkplace {

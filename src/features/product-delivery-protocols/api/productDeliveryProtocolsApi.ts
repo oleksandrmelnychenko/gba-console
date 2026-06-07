@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   CreateProtocolPayload,
   DeliveryProductProtocol,
@@ -12,12 +13,12 @@ import type {
 export async function getProtocols(params: ProtocolsSearchParams): Promise<DeliveryProductProtocolListResult> {
   const result = await apiRequest<unknown>('/delivery/product/protocol/all', {
     query: {
-      from: params.from,
       limit: params.limit,
       offset: params.offset,
       organization: params.organization || undefined,
       supplier: params.supplier || undefined,
-      to: params.to,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 
@@ -58,7 +59,10 @@ export async function exportProtocolsDocument(
   const result = await apiRequest<unknown>('/delivery/product/protocol/print/documents', {
     method: 'POST',
     body: columns,
-    query: { from, to },
+    query: {
+      from: toDateTimeQuery(from, 'start'),
+      to: toDateTimeQuery(to, 'end'),
+    },
   })
 
   return normalizeExportDocument(result)

@@ -39,11 +39,11 @@ describe('actProvidingServicesApi', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/act/providing/services/all', {
       query: {
-        from: '2026-06-01',
+        from: expect.stringContaining('T00:00:00.000'),
         isFiltered: true,
         limit: 3,
         offset: 0,
-        to: '2026-06-30',
+        to: expect.stringContaining('T23:59:59.999'),
       },
     })
   })

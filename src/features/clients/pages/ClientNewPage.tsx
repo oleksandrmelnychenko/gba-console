@@ -219,13 +219,33 @@ export function ClientNewPage() {
   }
 
   function setRole(clientType: ClientType, nextRole: ClientTypeRole) {
-    setDraft((currentDraft) => ({
-      ...currentDraft,
-      ClientInRole: {
-        ClientType: clientType,
-        ClientTypeRole: nextRole,
-      },
-    }))
+    setDraft((currentDraft) => {
+      const isTypeChanged = !isSameClientType(currentDraft.ClientInRole.ClientType, clientType)
+
+      if (isTypeChanged) {
+        pendingDocumentsRef.current = []
+        pendingDiscountDraftRef.current = null
+        setPricingValid(false)
+      }
+
+      return {
+        ...currentDraft,
+        ...(isTypeChanged
+          ? {
+              ClientAgreements: [],
+              ClientBankDetails: undefined,
+              ClientContractDocuments: [],
+              ClientManagers: [],
+              PerfectClients: [],
+              ServicePayers: [],
+            }
+          : {}),
+        ClientInRole: {
+          ClientType: clientType,
+          ClientTypeRole: nextRole,
+        },
+      }
+    })
   }
 
   function setDraftClient(updatedClient: Client) {
@@ -926,6 +946,22 @@ function isSameRole(currentRole: ClientTypeRole | undefined, nextRole: ClientTyp
   }
 
   return Boolean(currentRole.NetUid && currentRole.NetUid === nextRole.NetUid)
+}
+
+function isSameClientType(currentType: ClientType | undefined, nextType: ClientType): boolean {
+  if (!currentType) {
+    return false
+  }
+
+  if (typeof currentType.Id === 'number' && typeof nextType.Id === 'number') {
+    return currentType.Id === nextType.Id
+  }
+
+  if (currentType.NetUid && nextType.NetUid) {
+    return currentType.NetUid === nextType.NetUid
+  }
+
+  return currentType.Type === nextType.Type
 }
 
 function normalizeStep(step?: string): NewClientStep | null {

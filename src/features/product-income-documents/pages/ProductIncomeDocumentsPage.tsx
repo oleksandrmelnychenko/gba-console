@@ -33,7 +33,7 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -175,10 +175,11 @@ function useProductIncomeDocumentsPageModel() {
     () => (
       <Text size="xs" c="dimmed">
         {t('Сторінка')} {page}
+        {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
         {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
       </Text>
     ),
-    [page, searchValue, t],
+    [page, searchValue, t, total],
   )
 
   const openOptions = useCallback(
@@ -2128,12 +2129,6 @@ function getFilterError(dateFrom: string, dateTo: string): string | null {
   }
 
   return null
-}
-
-function toDateTimeQuery(dateValue: string, boundary: 'start' | 'end'): string {
-  const time = boundary === 'start' ? 'T00:00:00.000' : 'T23:59:59.999'
-
-  return new Date(`${dateValue}${time}`).toISOString()
 }
 
 function readStoredFilters(): { from: string; to: string; value: string } {

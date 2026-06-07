@@ -164,7 +164,12 @@ function useOrdersTabModel() {
             type: 'loadSucceeded',
             orders: result.items,
             totalQty: result.totalQty,
-            hasMore: result.items.length === pageSize,
+            hasMore: getOrdersHasMore({
+              offset: 0,
+              itemsLength: result.items.length,
+              pageSize,
+              totalQty: result.totalQty,
+            }),
           })
         }
       } catch (loadError) {
@@ -203,7 +208,12 @@ function useOrdersTabModel() {
           type: 'loadMoreSucceeded',
           orders: result.items,
           totalQty: result.totalQty,
-          hasMore: result.items.length === pageSize,
+          hasMore: getOrdersHasMore({
+            offset: requestOffset,
+            itemsLength: result.items.length,
+            pageSize,
+            totalQty: result.totalQty,
+          }),
           requestOffset,
         })
       }
@@ -448,6 +458,24 @@ function buildIndexMap(orders: SupplyOrderUkraine[]): Map<SupplyOrderUkraine, nu
 
     return indexMap
   }, new Map<SupplyOrderUkraine, number>())
+}
+
+function getOrdersHasMore({
+  offset,
+  itemsLength,
+  pageSize,
+  totalQty,
+}: {
+  offset: number
+  itemsLength: number
+  pageSize: number
+  totalQty?: number | null
+}): boolean {
+  if (typeof totalQty === 'number' && Number.isFinite(totalQty)) {
+    return offset + itemsLength < totalQty && itemsLength > 0
+  }
+
+  return itemsLength === pageSize
 }
 
 function getFilterError(from: string, to: string): string | null {

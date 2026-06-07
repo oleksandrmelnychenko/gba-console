@@ -18,6 +18,7 @@ export async function getWarehouseUkraineOrders(
       from: params.from,
       to: params.to,
       limit: params.limit,
+      nonPlaced: params.placed !== true,
       offset: params.offset,
       placed: params.placed,
     },

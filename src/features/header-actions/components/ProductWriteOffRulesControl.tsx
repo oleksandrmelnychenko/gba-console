@@ -4,6 +4,7 @@ import { IconPackage, IconX } from '@tabler/icons-react'
 import { useEffect, useReducer } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getProductWriteOffRuleLocaleLabel } from '../../products/utils'
 import { deleteProductWriteOffRule, getProductWriteOffBaseRules } from '../api/productWriteOffRulesApi'
 import type { ProductWriteOffRule } from '../types'
 
@@ -210,15 +211,8 @@ export function ProductWriteOffRulesControl() {
   )
 }
 
-function parseRuleLocale(locale: string | undefined, t: (key: 'Україна' | 'Польща' | 'Невідома зона') => string): string {
-  switch (locale) {
-    case 'pl':
-      return t('Україна')
-    case 'uk':
-      return t('Польща')
-    default:
-      return t('Невідома зона')
-  }
+function parseRuleLocale(locale: string | undefined, t: (key: 'Україна' | 'Польща' | 'Невідомий регіон') => string): string {
+  return t(getProductWriteOffRuleLocaleLabel(locale))
 }
 
 function parseRuleType(

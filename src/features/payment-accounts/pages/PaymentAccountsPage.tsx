@@ -240,22 +240,6 @@ export function PaymentAccountsPage() {
                 </ActionIcon>
               </Tooltip>
               <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-              <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/payment-accounts/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Новий рахунок')}
-                </Button>
-              </PermissionGate>
             </Group>
           </Group>
 

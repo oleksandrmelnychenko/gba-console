@@ -37,7 +37,7 @@ import type {
 import './consumable-orders-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
-const DEFAULT_LOOKBACK_DAYS = 30
+const DEFAULT_LOOKBACK_DAYS = 7
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {

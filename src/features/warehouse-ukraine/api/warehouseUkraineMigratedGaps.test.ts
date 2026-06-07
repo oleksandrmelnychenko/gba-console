@@ -15,7 +15,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     apiRequestMock.mockReset()
   })
 
-  it('passes explicit placed state to the orders endpoint', async () => {
+  it('passes placed state and legacy non-placed filter to the orders endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce({ Items: [], TotalRowsQty: 0 })
 
     await getWarehouseUkraineOrders({
@@ -31,8 +31,32 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         from: '2026-06-01T00:00:00',
         to: '2026-06-08T00:00:00',
         limit: 20,
+        nonPlaced: false,
         offset: 0,
         placed: true,
+      },
+    })
+  })
+
+  it('keeps the old default non-placed orders filter when placed is false', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Items: [], TotalRowsQty: 0 })
+
+    await getWarehouseUkraineOrders({
+      from: '2026-06-01T00:00:00',
+      to: '2026-06-08T00:00:00',
+      limit: 20,
+      offset: 0,
+      placed: false,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/all/filtered', {
+      query: {
+        from: '2026-06-01T00:00:00',
+        to: '2026-06-08T00:00:00',
+        limit: 20,
+        nonPlaced: true,
+        offset: 0,
+        placed: false,
       },
     })
   })

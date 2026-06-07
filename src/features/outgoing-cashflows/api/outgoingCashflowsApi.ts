@@ -78,7 +78,11 @@ function normalizeOutgoingCashflowsResponse(result: unknown): OutgoingCashflowsR
     Collection: collection,
     NegativeDifferenceAmount: readNumber(payload.NegativeDifferenceAmount),
     PositiveDifferenceAmount: readNumber(payload.PositiveDifferenceAmount),
-    TotalRowsQty: readNumber(payload.TotalRowsQty) || readNumber(collection[0]?.TotalRowsQty),
+    TotalRowsQty:
+      readOptionalNumber(payload.TotalRowsQty)
+      ?? readOptionalNumber(payload.TotalQty)
+      ?? readOptionalNumber(collection[0]?.TotalRowsQty)
+      ?? readOptionalNumber(collection[0]?.TotalQty),
   }
 }
 
@@ -169,4 +173,17 @@ function readNumber(value: unknown): number {
   }
 
   return 0
+}
+
+function readOptionalNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  return undefined
 }

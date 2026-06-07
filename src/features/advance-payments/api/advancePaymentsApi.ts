@@ -1,11 +1,12 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type { AdvancePayment, AdvancePaymentsSearchParams } from '../types'
 
 export async function getAdvancePayments(params: AdvancePaymentsSearchParams): Promise<AdvancePayment[]> {
   const result = await apiRequest<unknown>('/payments/advance/all', {
     query: {
-      from: params.from,
-      to: params.to,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 

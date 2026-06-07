@@ -75,6 +75,24 @@ export function getProductMainImage(product?: Product | null): ProductImage | nu
   )
 }
 
+export function getProductWriteOffRuleLocaleLabel(locale: string | undefined): 'Україна' | 'Польща' | 'Невідомий регіон' {
+  switch (locale) {
+    case 'uk':
+      return 'Україна'
+    case 'pl':
+      return 'Польща'
+    default:
+      return 'Невідомий регіон'
+  }
+}
+
+export function splitProductSearchResults<T>(products: T[]): { bottomProducts: T[]; topProducts: T[] } {
+  return {
+    bottomProducts: products,
+    topProducts: [],
+  }
+}
+
 function getProductShopImageUrl(product?: Product | null): string {
   const vendorCode = product?.VendorCode?.trim()
 

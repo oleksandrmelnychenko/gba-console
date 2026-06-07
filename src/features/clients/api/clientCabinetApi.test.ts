@@ -86,7 +86,7 @@ describe('client cabinet API contracts', () => {
     })
   })
 
-  it('uploads client contracts with a compact serialized client payload', async () => {
+  it('uploads client contracts with compact serialized contract documents', async () => {
     const client: Client = {
       ClientAgreements: [
         {
@@ -100,7 +100,21 @@ describe('client cabinet API contracts', () => {
           NetUid: 'client-agreement-1',
         },
       ],
-      ClientContractDocuments: [{ FileName: 'old.pdf' }],
+      ClientContractDocuments: [
+        {
+          ContentType: 'application/pdf',
+          FileName: 'contract.pdf',
+          Source: { recursive: true },
+        },
+        {
+          Deleted: true,
+          DocumentUrl: 'https://example.test/old.pdf',
+          FileName: 'old.pdf',
+          GeneratedName: 'generated-old.pdf',
+          Id: 10,
+          NetUid: 'document-1',
+        },
+      ],
       ClientInDebts: [{ NetUid: 'debt-1' }],
       FullName: 'Client',
       NetUid: 'client-1',
@@ -122,7 +136,21 @@ describe('client cabinet API contracts', () => {
     )
     expect(body.getAll('documents')).toEqual([document])
     expect(payload).toMatchObject({ FullName: 'Client', NetUid: 'client-1' })
-    expect(payload).not.toHaveProperty('ClientContractDocuments')
+    expect(payload.ClientContractDocuments).toEqual([
+      {
+        ContentType: 'application/pdf',
+        FileName: 'contract.pdf',
+      },
+      {
+        Deleted: true,
+        DocumentUrl: 'https://example.test/old.pdf',
+        FileName: 'old.pdf',
+        GeneratedName: 'generated-old.pdf',
+        Id: 10,
+        NetUid: 'document-1',
+      },
+    ])
+    expect(payload.ClientContractDocuments?.[0]).not.toHaveProperty('Source')
     expect(payload).not.toHaveProperty('ClientInDebts')
     expect(payload).not.toHaveProperty('SubClients')
     expect(payload.ClientAgreements?.[0]).not.toHaveProperty('Client')

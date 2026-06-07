@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   Client,
   ClientAgreement,
@@ -16,10 +17,10 @@ import { normalizePackList, normalizeTaxFree } from '../utils'
 export async function getTaxFreePackLists(params: TaxFreePackListsSearchParams): Promise<TaxFreePackListsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/taxfree/all/filtered', {
     query: {
-      from: params.from,
+      from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
       offset: params.offset,
-      to: params.to,
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 
@@ -142,8 +143,8 @@ export async function exportTaxFreePackLists(params: {
     body: params.columns,
     method: 'POST',
     query: {
-      from: params.from,
-      to: params.to,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 

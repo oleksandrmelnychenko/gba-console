@@ -30,7 +30,7 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, toDateTimeQuery } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -60,13 +60,13 @@ type ProductCapitalizationsListState = {
   capitalizations: ProductCapitalization[]
   hasNextPage: boolean
   isLoading: boolean
-  total: number
+  total: number | null
 }
 
 type ProductCapitalizationsListAction =
   | { type: 'blocked' }
   | { type: 'failed' }
-  | { type: 'loaded'; items: ProductCapitalization[]; pageSize: number; total: number }
+  | { type: 'loaded'; items: ProductCapitalization[]; pageSize: number; total: number | null }
   | { type: 'loading' }
 
 const DEFAULT_PAGE_SIZE = 20
@@ -102,7 +102,7 @@ const initialListState: ProductCapitalizationsListState = {
   capitalizations: [],
   hasNextPage: false,
   isLoading: false,
-  total: 0,
+  total: null,
 }
 
 function productCapitalizationsListReducer(
@@ -257,7 +257,7 @@ function useProductCapitalizationsPageModel() {
   )
   const itemColumns = useProductCapitalizationItemColumns(detailItems)
   const canMoveBack = page > 1
-  const canMoveForward = total ? page * pageSize < total : hasNextPage
+  const canMoveForward = total !== null ? page * pageSize < total : hasNextPage
 
   useEffect(() => {
     if (!sourceCapitalizationNetId) {
@@ -471,7 +471,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
           <Group justify="space-between" gap="sm">
             <Text size="sm" c="dimmed">
               {t('Сторінка')} {page}
-              {total ? `, ${t('усього')}: ${total}` : ''}
+              {total !== null ? `, ${t('усього')}: ${total}` : ''}
             </Text>
             <Group gap="xs">
               <Select
@@ -947,12 +947,6 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
-}
-
-function toDateTimeQuery(dateValue: string, boundary: 'start' | 'end'): string {
-  const time = boundary === 'start' ? 'T00:00:00.000' : 'T23:59:59.999'
-
-  return new Date(`${dateValue}${time}`).toISOString()
 }
 
 function getResponsibleName(capitalization: ProductCapitalization): string | undefined {

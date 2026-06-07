@@ -4,6 +4,8 @@ import {
   getProductMainImage,
   getProductMainOriginalNumber,
   getProductOriginalNumbers,
+  getProductWriteOffRuleLocaleLabel,
+  splitProductSearchResults,
 } from './utils'
 import type { Product } from './types'
 
@@ -29,5 +31,25 @@ describe('product utils', () => {
     expect(getProductMainImage(product)?.ImageUrl).toBe('https://example.test/active.jpg')
     expect(getProductMainOriginalNumber(product)).toBe('ACTIVE')
     expect(getProductOriginalNumbers(product)).toHaveLength(1)
+  })
+
+  it('keeps write-off rule locale labels aligned with stored locale codes', () => {
+    expect(getProductWriteOffRuleLocaleLabel('uk')).toBe('Україна')
+    expect(getProductWriteOffRuleLocaleLabel('pl')).toBe('Польща')
+    expect(getProductWriteOffRuleLocaleLabel(undefined)).toBe('Невідомий регіон')
+  })
+
+  it('keeps searched products in next-selection order for the assortment drum', () => {
+    const products = [
+      { VendorCode: 'A' },
+      { VendorCode: 'B' },
+      { VendorCode: 'C' },
+      { VendorCode: 'D' },
+    ] as Product[]
+
+    expect(splitProductSearchResults(products)).toEqual({
+      topProducts: [],
+      bottomProducts: products,
+    })
   })
 })

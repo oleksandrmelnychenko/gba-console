@@ -260,10 +260,12 @@ function useAvailablePaymentsDetailDrawerModel({
     [form.movementValue, movements],
   )
 
-  const targetCurrency = selectedCurrencyRegister?.Currency || outcomeModels[0]?.currency || null
+  const sourceCurrency = selectedCurrencyRegister?.Currency || null
+  const targetCurrency = outcomeModels[0]?.currency || null
+  const sourceCurrencyNetUid = sourceCurrency?.NetUid || ''
+  const sourceCurrencyCode = sourceCurrency?.Code || ''
   const targetCurrencyNetUid = targetCurrency?.NetUid || ''
   const targetCurrencyCode = targetCurrency?.Code || ''
-  const uahCurrencyNetUid = useMemo(() => findUahCurrencyNetUid(registers, outcomeModels), [outcomeModels, registers])
   const organizationName = selectedOrganization?.Name || outcomeModels[0]?.organization?.Name || ''
   const exchangeFromDate = form.date
 
@@ -272,7 +274,12 @@ function useAvailablePaymentsDetailDrawerModel({
       return
     }
 
-    if (!uahCurrencyNetUid || !targetCurrencyNetUid || uahCurrencyNetUid === targetCurrencyNetUid || targetCurrencyCode === 'UAH') {
+    if (
+      !sourceCurrencyNetUid
+      || !targetCurrencyNetUid
+      || sourceCurrencyNetUid === targetCurrencyNetUid
+      || (Boolean(sourceCurrencyCode) && sourceCurrencyCode === targetCurrencyCode)
+    ) {
       setForm((current) => (current.exchangeRate === 0 ? current : { ...current, exchangeRate: 0 }))
       return
     }
@@ -280,7 +287,7 @@ function useAvailablePaymentsDetailDrawerModel({
     let cancelled = false
 
     void getAvailablePaymentExchangeRate({
-      fromCurrencyNetId: uahCurrencyNetUid,
+      fromCurrencyNetId: sourceCurrencyNetUid,
       fromDate: toQueryDate(exchangeFromDate),
       organizationName,
       toCurrencyNetId: targetCurrencyNetUid,
@@ -300,9 +307,10 @@ function useAvailablePaymentsDetailDrawerModel({
     organizationName,
     outcomeModels.length,
     setForm,
+    sourceCurrencyCode,
+    sourceCurrencyNetUid,
     targetCurrencyCode,
     targetCurrencyNetUid,
-    uahCurrencyNetUid,
   ])
 
   function updateForm(patch: Partial<OutcomeFormState>) {
@@ -2009,27 +2017,6 @@ function readFiniteNumber(value: unknown): number | undefined {
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {
   return String(entity?.NetUid || entity?.Id || '')
-}
-
-function findUahCurrencyNetUid(
-  registers: AvailablePaymentRegister[],
-  models: AvailablePaymentTaskModel[],
-): string {
-  for (const register of registers) {
-    for (const currencyRegister of register.PaymentCurrencyRegisters || []) {
-      if (currencyRegister.Currency?.Code === 'UAH' && currencyRegister.Currency.NetUid) {
-        return currencyRegister.Currency.NetUid
-      }
-    }
-  }
-
-  for (const model of models) {
-    if (model.currency?.Code === 'UAH' && model.currency.NetUid) {
-      return model.currency.NetUid
-    }
-  }
-
-  return ''
 }
 
 function toQueryDate(value: string): string {

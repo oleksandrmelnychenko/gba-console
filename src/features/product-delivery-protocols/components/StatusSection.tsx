@@ -21,10 +21,7 @@ export function StatusSection({
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [confirmOpen, setConfirmOpen] = useValueState(false)
-
-  if (!canEdit || !hasPermission(CHANGE_STATUS_PERMISSION)) {
-    return null
-  }
+  const canChangeStatus = canEdit && hasPermission(CHANGE_STATUS_PERMISSION) && !protocol.IsCompleted
 
   let statusLabel = t('В дорозі')
 
@@ -41,18 +38,22 @@ export function StatusSection({
       <Card withBorder radius="md" padding="md">
         <Button
           color="violet"
-          disabled={protocol.IsCompleted}
+          disabled={!canChangeStatus}
           fullWidth
-          loading={isUpdating}
+          loading={canChangeStatus && isUpdating}
           variant="light"
-          onClick={() => setConfirmOpen(true)}
+          onClick={() => {
+            if (canChangeStatus) {
+              setConfirmOpen(true)
+            }
+          }}
         >
           {statusLabel}
         </Button>
       </Card>
 
       <AppModal
-        opened={confirmOpen}
+        opened={confirmOpen && canChangeStatus}
         title={t('Підтвердити зміну статусу')}
         onClose={() => setConfirmOpen(false)}
       >

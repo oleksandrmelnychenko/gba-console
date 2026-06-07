@@ -1,7 +1,7 @@
 import { Alert, Button, Group, Select, Stack, Textarea, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDateTime, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import type { CreateProtocolPayload, ProtocolOrganization } from '../types'
@@ -28,7 +28,7 @@ type NewProductDeliveryProtocolFormState = {
 function createInitialFormState(): NewProductDeliveryProtocolFormState {
   return {
     comment: '',
-    fromDate: formatLocalDate(new Date()),
+    fromDate: formatLocalDateTime(new Date()).slice(0, 16),
     organizationId: null,
     submitted: false,
     transportationType: String(SupplyTransportationType.Vehicle),
@@ -120,7 +120,7 @@ function NewProductDeliveryProtocolForm({
 
     onCreate({
       Comment: comment.trim() || undefined,
-      FromDate: fromDate,
+      FromDate: formatLocalInputDateTime(fromDate),
       Organization: organization,
       TransportationType: Number(transportationType) as SupplyTransportationType,
     })
@@ -161,7 +161,7 @@ function NewProductDeliveryProtocolForm({
         <TextInput
           error={dateMissing ? t('Вкажіть дату') : undefined}
           label={t('Від якої дати')}
-          type="date"
+          type="datetime-local"
           value={fromDate}
           onChange={(event) => { const nextValue = event.currentTarget.value; setForm((current) => ({ ...current, fromDate: nextValue })) }}
         />

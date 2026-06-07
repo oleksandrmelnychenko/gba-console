@@ -47,7 +47,7 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
-const DEFAULT_LOOKBACK_DAYS = 30
+const DEFAULT_LOOKBACK_DAYS = 7
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -140,7 +140,7 @@ export function AccountableExpensesPage() {
       navigate(`/accounting/consumable-orders/pay/${String(netId)}`, {
         state: {
           backgroundLocation: location,
-          returnPath: '/accounting/consumable-services',
+          returnPath: `${location.pathname}${location.search}`,
         },
       })
     },

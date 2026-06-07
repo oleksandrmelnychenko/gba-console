@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   Sad,
   SadClient,
@@ -29,10 +30,10 @@ export type SadAdvancePaymentPayload = {
 export async function getSads(params: SadSearchParams): Promise<Sad[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/packlists/sad/all/filtered', {
     query: {
-      from: params.from,
+      from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
       offset: params.offset,
-      to: params.to,
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 

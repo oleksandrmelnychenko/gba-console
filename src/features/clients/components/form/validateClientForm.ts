@@ -9,13 +9,10 @@ type MaxLengthRule = {
   max: number
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
 export function validateClientForm(
   client: Client,
   role: ClientFormRole,
   tooManyMessage: string,
-  invalidEmailMessage = 'Некоректний email',
 ): ClientFormErrors {
   const rules: MaxLengthRule[] = [
     { field: 'FullName', value: client.FullName, max: 100 },
@@ -53,12 +50,6 @@ export function validateClientForm(
       errors[rule.field] = tooManyMessage
     }
   })
-
-  const emailValue = client.EmailAddress?.trim()
-
-  if (!errors.EmailAddress && emailValue && !EMAIL_PATTERN.test(emailValue)) {
-    errors.EmailAddress = invalidEmailMessage
-  }
 
   return errors
 }

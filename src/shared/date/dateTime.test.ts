@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateInputForQuery } from './dateTime'
+import { formatDateInputForQuery, toDateTimeQuery } from './dateTime'
 
 describe('formatDateInputForQuery', () => {
   it('keeps date-only input as a local date without UTC conversion', () => {
@@ -13,5 +13,17 @@ describe('formatDateInputForQuery', () => {
   it('passes invalid non-empty values through for server-side validation', () => {
     expect(formatDateInputForQuery('not-a-date')).toBe('not-a-date')
     expect(formatDateInputForQuery('2026-02-31')).toBe('2026-02-31')
+  })
+})
+
+describe('toDateTimeQuery', () => {
+  it('expands date-only inputs to full-day DateTime boundaries', () => {
+    expect(toDateTimeQuery('2026-06-01', 'start')).toContain('T')
+    expect(toDateTimeQuery('2026-06-01', 'start')).toContain('00:00:00.000')
+    expect(toDateTimeQuery('2026-06-01', 'end')).toContain('23:59:59.999')
+  })
+
+  it('passes invalid date-only inputs through for server-side validation', () => {
+    expect(toDateTimeQuery('2026-02-31', 'end')).toBe('2026-02-31')
   })
 })

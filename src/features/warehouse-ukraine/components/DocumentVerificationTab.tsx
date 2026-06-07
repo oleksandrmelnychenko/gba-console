@@ -205,6 +205,7 @@ function useDocumentVerificationModel() {
   const storageFilterError = storagesReady && selectedStorageIds.length === 0
     ? t('Виберіть хоча б один склад')
     : null
+  const exportError = filterError || storageFilterError
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${selectedStorageIds.join(',')}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
@@ -226,13 +227,7 @@ function useDocumentVerificationModel() {
           return
         }
 
-        const defaults = nextStorages.reduce<string[]>((selectedIds, storage) => {
-          if (typeof storage.Id === 'number' && Number.isFinite(storage.Id)) {
-            selectedIds.push(String(storage.Id))
-          }
-
-          return selectedIds
-        }, [])
+        const defaults = getDefaultSelectedStorageIds(nextStorages)
         dispatchState({ type: 'storagesLoadSucceeded', storages: nextStorages, selectedStorageIds: defaults })
       } catch (loadError) {
         if (!cancelled) {
@@ -346,6 +341,11 @@ function useDocumentVerificationModel() {
   }, [])
 
   async function exportDocument() {
+    if (exportError) {
+      dispatchState({ type: 'downloadFailed', error: exportError })
+      return
+    }
+
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
     dispatchState({ type: 'downloadStarted' })
@@ -412,6 +412,7 @@ function useDocumentVerificationModel() {
     columns,
     density,
     exportDocument,
+    exportError,
     filterError,
     loadMoreItems,
     reload,
@@ -447,6 +448,7 @@ export function DocumentVerificationTab() {
           <Button
             color="gray"
             leftSection={<IconDownload size={16} />}
+            disabled={Boolean(model.exportError) || !model.storagesReady}
             loading={model.isDownloading}
             variant="light"
             onClick={model.exportDocument}
@@ -623,6 +625,41 @@ function buildIndexMap(items: DocumentVerificationItem[]): Map<DocumentVerificat
 
     return indexMap
   }, new Map<DocumentVerificationItem, number>())
+}
+
+function getDefaultSelectedStorageIds(storages: WarehouseUkraineStorage[]): string[] {
+  const validStorageIds: string[] = []
+  const preferredStorageIds: string[] = []
+
+  storages.forEach((storage) => {
+    const storageId = getValidStorageId(storage)
+
+    if (!storageId) {
+      return
+    }
+
+    validStorageIds.push(storageId)
+
+    if (isDefaultDocumentVerificationStorage(storage)) {
+      preferredStorageIds.push(storageId)
+    }
+  })
+
+  return preferredStorageIds.length > 0 ? preferredStorageIds : validStorageIds
+}
+
+function getValidStorageId(storage: WarehouseUkraineStorage): string | null {
+  if (typeof storage.Id !== 'number' || !Number.isFinite(storage.Id)) {
+    return null
+  }
+
+  return String(storage.Id)
+}
+
+function isDefaultDocumentVerificationStorage(storage: WarehouseUkraineStorage): boolean {
+  const normalizedName = storage.Name?.trim().toLowerCase().replace(/\s+/g, ' ')
+
+  return Boolean(normalizedName && /^(?:склад|warehouse)[\s_-]*(?:1|3)$/.test(normalizedName))
 }
 
 function toFiniteNumbers(values: string[]): number[] {

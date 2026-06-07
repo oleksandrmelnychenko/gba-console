@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
+import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -84,6 +85,7 @@ function useSalesTabModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-sales', TABLE_DEFAULT_LAYOUT.density)
   const downloadRequestRef = useRef(0)
+  const realtimeReloadRef = useRef<number | null>(null)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const saleIndexMap = useMemo(() => buildIndexMap(salesState.sales), [salesState.sales])
 
@@ -93,6 +95,29 @@ function useSalesTabModel() {
     },
     [],
   )
+
+  const scheduleRealtimeReload = useCallback(() => {
+    if (realtimeReloadRef.current !== null) {
+      window.clearTimeout(realtimeReloadRef.current)
+    }
+
+    realtimeReloadRef.current = window.setTimeout(() => {
+      realtimeReloadRef.current = null
+      reload()
+    }, 800)
+  }, [reload])
+
+  useEffect(
+    () => () => {
+      if (realtimeReloadRef.current !== null) {
+        window.clearTimeout(realtimeReloadRef.current)
+      }
+    },
+    [],
+  )
+
+  useRealtimeEvent(realtimeEvents.saleAdded, scheduleRealtimeReload)
+  useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeReload)
 
   useEffect(() => {
     if (filterError) {

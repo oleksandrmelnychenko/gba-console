@@ -62,7 +62,7 @@ export type ProductCapitalizationsSearchParams = {
 
 export type ProductCapitalizationsResponse = {
   Items: ProductCapitalization[]
-  Total: number
+  Total: number | null
 }
 
 export type ProductCapitalizationsExportDocument = {

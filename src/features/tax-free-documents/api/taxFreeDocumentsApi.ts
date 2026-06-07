@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { PRINTER_API_BASE_URL } from '../../../shared/config/env'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   IncomePaymentOrder,
 } from '../../income-cashflows/types'
@@ -25,12 +26,12 @@ export type TaxFreeAdvancePaymentPayload = {
 export async function getTaxFreeDocuments(params: TaxFreeDocumentsSearchParams): Promise<TaxFreeDocumentsResponse> {
   const result = await apiRequest<unknown>('/supplies/ukraine/order/taxfree/all/filtered', {
     query: {
-      from: params.from,
+      from: toDateTimeQuery(params.from, 'start'),
       limit: params.limit,
       offset: params.offset,
       status: params.status,
       stathamNetId: params.stathamNetId || '',
-      to: params.to,
+      to: toDateTimeQuery(params.to, 'end'),
       value: params.value?.trim() || '',
     },
   })

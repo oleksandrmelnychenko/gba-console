@@ -1,10 +1,11 @@
-import { Alert, Anchor, Badge, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Anchor, Badge, Group, Image, Loader, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconExternalLink } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { getProductByNetId } from '../api/productsApi'
 import type { Product } from '../types'
+import { getProductMainImage, getProductTitle } from '../utils'
 import { ShopImageGallery } from './ShopImageGallery'
 
 const numberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3, minimumFractionDigits: 0 })
@@ -90,6 +91,17 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
   const name = product.NameUA || product.Name || ''
   const description = product.DescriptionUA || product.Description
   const notes = product.NotesUA || product.Notes
+  const mainImage = getProductMainImage(product)
+  const persistedImageUrls = product.ProductImages?.filter((image) => image.ImageUrl && !image.Deleted)
+    .reduce<string[]>((urls, image) => {
+      const imageUrl = image.ImageUrl?.trim()
+
+      if (imageUrl && !urls.includes(imageUrl)) {
+        urls.push(imageUrl)
+      }
+
+      return urls
+    }, mainImage?.ImageUrl ? [mainImage.ImageUrl] : []) || []
 
   return (
     <Stack gap="md">
@@ -122,12 +134,35 @@ function ProductCardContent({ productNetId }: { productNetId: string }) {
         )}
       </Group>
 
-      {product.VendorCode && (
-        <ShopImageGallery
-          vendorCode={product.VendorCode}
-          onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
-        />
-      )}
+      {mainImage?.ImageUrl ? (
+        <button
+          type="button"
+          className="product-inline-image"
+          onClick={() => window.open(mainImage.ImageUrl, '_blank', 'noopener,noreferrer')}
+        >
+          <Image src={mainImage.ImageUrl} alt={getProductTitle(product)} fit="contain" h="100%" w="100%" />
+        </button>
+      ) : null}
+
+      {persistedImageUrls.length > 1 ? (
+        <Group gap={6} className="product-inline-thumbs">
+          {persistedImageUrls.slice(0, 8).map((imageUrl, index) => (
+            <button
+              type="button"
+              className="product-inline-thumb"
+              key={imageUrl}
+              onClick={() => window.open(imageUrl, '_blank', 'noopener,noreferrer')}
+            >
+              <Image src={imageUrl} alt={`${getProductTitle(product)} ${index + 1}`} fit="cover" h="100%" w="100%" />
+            </button>
+          ))}
+        </Group>
+      ) : null}
+
+      <ShopImageGallery
+        vendorCode={product.VendorCode}
+        onImageClick={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+      />
 
       <Stack gap={4}>
         <DetailRow label={t('Доступно (UA)')} value={formatNumber(product.AvailableQtyUk)} />
