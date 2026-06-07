@@ -102,7 +102,14 @@ export function SalesByClientChart() {
   }, [from, to, netId, typePeriod, setError, setIsLoading, setPoints, t])
 
   const clientOptions = useMemo(
-    () => clients.map((client) => ({ netId: client.NetUid || '', value: clientLabel(client) })).filter((option) => option.netId && option.value),
+    () =>
+      clients.reduce<{ netId: string; value: string }[]>((acc, client) => {
+        const option = { netId: client.NetUid || '', value: clientLabel(client) }
+        if (option.netId && option.value) {
+          acc.push(option)
+        }
+        return acc
+      }, []),
     [clients],
   )
 

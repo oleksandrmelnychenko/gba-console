@@ -136,10 +136,14 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
         />
         <Select
           clearable
-          data={carriers.map((carrier) => ({
-            label: getStathamLabel(carrier),
-            value: carrier.NetUid || String(carrier.Id || ''),
-          })).filter((item) => item.value)}
+          data={carriers.reduce<{ label: string; value: string }[]>((acc, carrier) => {
+            const item = {
+              label: getStathamLabel(carrier),
+              value: carrier.NetUid || String(carrier.Id || ''),
+            }
+            if (item.value) acc.push(item)
+            return acc
+          }, [])}
           label={t('Перевізник')}
           nothingFoundMessage={isLoading ? t('Завантаження') : t('Нічого не знайдено')}
           value={selectedCarrierNetId}
@@ -152,10 +156,14 @@ export function TaxFreeCarrierModal({ opened, taxFree, onClose, onUpdated }: Tax
         {selectedCarrier && (
           <Select
             clearable
-            data={(selectedCarrier.StathamPassports || []).map((passport) => ({
-              label: getPassportLabel(passport) || t('Паспорт'),
-              value: passport.NetUid || String(passport.Id || ''),
-            })).filter((item) => item.value)}
+            data={(selectedCarrier.StathamPassports || []).reduce<{ label: string; value: string }[]>((acc, passport) => {
+              const item = {
+                label: getPassportLabel(passport) || t('Паспорт'),
+                value: passport.NetUid || String(passport.Id || ''),
+              }
+              if (item.value) acc.push(item)
+              return acc
+            }, [])}
             label={t('Паспорт перевізника')}
             value={selectedPassportNetId}
             onChange={setSelectedPassportNetId}

@@ -94,9 +94,13 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
 
   const merges = Array.isArray(mergedSale?.InputSaleMerges) ? mergedSale.InputSaleMerges : []
   const clientFilters = buildClientFilters(merges)
-  const visibleMerges = merges
-    .map((merge, index) => ({ index, merge }))
-    .filter(({ merge }) => clientFilter === 'all' || getClientNetUid(merge) === clientFilter)
+  const visibleMerges = merges.reduce<Array<{ index: number; merge: SalesUkraineSaleMerged }>>((acc, merge, index) => {
+    if (clientFilter === 'all' || getClientNetUid(merge) === clientFilter) {
+      acc.push({ index, merge })
+    }
+
+    return acc
+  }, [])
 
   function updateSaleDraft(sale: SalesUkraineSale, index: number, updater: (draft: MergedSaleInvoiceDraft) => MergedSaleInvoiceDraft) {
     const key = getMergedSaleKey(sale, index)

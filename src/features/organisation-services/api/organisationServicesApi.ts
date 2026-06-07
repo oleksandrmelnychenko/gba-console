@@ -47,12 +47,18 @@ export async function getOrganizationPaymentTasks(
 function normalizeServiceOrganizations(result: unknown): ServiceOrganization[] {
   const organizations = readList<ServiceOrganization>(result)
 
-  return organizations
-    .map((organization) => ({
+  return organizations.reduce<ServiceOrganization[]>((acc, organization) => {
+    const normalized: ServiceOrganization = {
       ...organization,
       ServiceOrganizationTypes: normalizeServiceOrganizationTypes(organization.ServiceOrganizationTypes),
-    }))
-    .filter((organization) => Boolean(organization.Name?.trim()))
+    }
+
+    if (normalized.Name?.trim()) {
+      acc.push(normalized)
+    }
+
+    return acc
+  }, [])
 }
 
 function normalizeOrganizationPaymentTasks(result: unknown): OrganizationPaymentTasks {
@@ -95,9 +101,15 @@ function normalizeServiceOrganizationTypes(types: unknown): ServiceOrganizationT
     return []
   }
 
-  const normalizedTypes = types
-    .map((type) => Number(type))
-    .filter(isServiceOrganizationTypeValue)
+  const normalizedTypes = types.reduce<ServiceOrganizationTypeValue[]>((acc, type) => {
+    const value = Number(type)
+
+    if (isServiceOrganizationTypeValue(value)) {
+      acc.push(value)
+    }
+
+    return acc
+  }, [])
 
   return Array.from(new Set(normalizedTypes))
 }

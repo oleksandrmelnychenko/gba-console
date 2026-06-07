@@ -1028,9 +1028,13 @@ function ReassignSaleForm({
     value: String(client.NetUid ?? client.Id ?? ''),
   }))
 
-  const agreementOptions = agreements
-    .filter((item) => item.NetUid)
-    .map((item) => ({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' }))
+  const agreementOptions = agreements.reduce<{ label: string; value: string }[]>((acc, item) => {
+    if (item.NetUid) {
+      acc.push({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' })
+    }
+
+    return acc
+  }, [])
 
   async function reassign() {
     if (!sale.NetUid || !selectedAgreement) {
@@ -1134,9 +1138,13 @@ function ClientTab({ canEdit, sale, onSwitched }: { canEdit: boolean; onSwitched
     }
   }, [clientNetUid, setAgreements, setDebt])
 
-  const agreementOptions = agreements
-    .filter((item) => item.NetUid)
-    .map((item) => ({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' }))
+  const agreementOptions = agreements.reduce<{ label: string; value: string }[]>((acc, item) => {
+    if (item.NetUid) {
+      acc.push({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' })
+    }
+
+    return acc
+  }, [])
 
   async function switchAgreement() {
     if (!sale.NetUid || !selectedAgreement || selectedAgreement === currentAgreementNetUid) {

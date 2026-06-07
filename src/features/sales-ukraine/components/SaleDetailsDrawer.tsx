@@ -175,9 +175,12 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     }
   }
 
-  const transporterData = transporters
-    .filter((item) => item.Name)
-    .map((item) => ({ label: item.Name || '', value: getTransporterValue(item) }))
+  const transporterData = transporters.reduce<Array<{ label: string; value: string }>>((acc, item) => {
+    if (item.Name) {
+      acc.push({ label: item.Name || '', value: getTransporterValue(item) })
+    }
+    return acc
+  }, [])
 
   return (
     <Stack gap="md">

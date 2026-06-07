@@ -281,10 +281,12 @@ export function createDefaultMeasurementGroups(): ReportMeasurementGroup[] {
 
 export function flattenCheckedMeasurements(groups: ReportMeasurementGroup[]): ReportMeasurementSelection[] {
   return groups.flatMap((group) =>
-    group.SubList.filter((item) => item.IsChecked).map((item) => ({
-      ...item,
-      parentName: group.Name,
-    })),
+    group.SubList.reduce<ReportMeasurementSelection[]>((acc, item) => {
+      if (item.IsChecked) {
+        acc.push({ ...item, parentName: group.Name })
+      }
+      return acc
+    }, []),
   )
 }
 

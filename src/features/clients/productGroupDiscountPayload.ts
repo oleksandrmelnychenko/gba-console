@@ -13,14 +13,16 @@ export function compactChangedProductGroupDiscounts(
 ): ProductGroupDiscount[] {
   const baselineByKey = buildDiscountByKey(baselineDiscounts)
 
-  return flattenDiscounts(currentDiscounts)
-    .filter((discount) => {
-      const key = getDiscountKey(discount)
-      const baseline = key ? baselineByKey.get(key) : undefined
+  return flattenDiscounts(currentDiscounts).reduce<ProductGroupDiscount[]>((acc, discount) => {
+    const key = getDiscountKey(discount)
+    const baseline = key ? baselineByKey.get(key) : undefined
 
-      return !baseline || hasDiscountChanged(discount, baseline)
-    })
-    .map(toSaveDiscount)
+    if (!baseline || hasDiscountChanged(discount, baseline)) {
+      acc.push(toSaveDiscount(discount))
+    }
+
+    return acc
+  }, [])
 }
 
 export function toSaveDiscount(discount: ProductGroupDiscount): ProductGroupDiscount {

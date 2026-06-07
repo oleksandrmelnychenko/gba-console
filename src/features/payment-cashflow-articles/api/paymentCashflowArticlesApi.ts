@@ -59,9 +59,15 @@ export async function deletePaymentCashflowArticle(netId: string): Promise<void>
 }
 
 function normalizeArticles(result: unknown): PaymentCashflowArticle[] {
-  return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data', 'Collection'])
-    .map(normalizeArticle)
-    .filter(isArticle)
+  return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data', 'Collection']).reduce<
+    PaymentCashflowArticle[]
+  >((acc, item) => {
+    const article = normalizeArticle(item)
+    if (isArticle(article)) {
+      acc.push(article)
+    }
+    return acc
+  }, [])
 }
 
 function normalizeArticle(result: unknown): PaymentCashflowArticle | null {

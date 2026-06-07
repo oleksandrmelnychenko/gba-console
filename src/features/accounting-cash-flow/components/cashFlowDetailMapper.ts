@@ -272,15 +272,20 @@ function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailV
 }
 
 function collectSupplyPaymentTaskServices(task: Record<string, unknown>): unknown[] {
-  return SUPPLY_PAYMENT_TASK_SERVICE_FIELDS.flatMap((field) => {
+  const result: unknown[] = []
+
+  for (const field of SUPPLY_PAYMENT_TASK_SERVICE_FIELDS) {
     const value = task[field]
+    const services = Array.isArray(value) ? value : value ? [value] : []
 
-    if (Array.isArray(value)) {
-      return value
+    for (const service of services) {
+      if (toRecord(service)?.Deleted !== true) {
+        result.push(service)
+      }
     }
+  }
 
-    return value ? [value] : []
-  }).filter((service) => toRecord(service)?.Deleted !== true)
+  return result
 }
 
 function collectServiceDocuments(service: Record<string, unknown>): CashFlowDetailDocument[] {

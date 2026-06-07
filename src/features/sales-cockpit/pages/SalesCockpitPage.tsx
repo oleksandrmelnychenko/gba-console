@@ -95,7 +95,7 @@ export function SalesCockpitPage() {
         (!urgencyFilter || task.urgency === urgencyFilter),
     )
 
-    return [...filtered].sort(inboxOrder)
+    return filtered.toSorted(inboxOrder)
   }, [tasks, taskTypeFilter, urgencyFilter])
 
   const handleDone = useCallback(

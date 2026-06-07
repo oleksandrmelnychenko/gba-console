@@ -133,7 +133,12 @@ export function NewSaleReviewStep({
         <Select
           searchable
           clearable
-          data={types.filter((item) => item.NetUid).map((item) => ({ label: item.Name || '', value: item.NetUid || '' }))}
+          data={types.reduce<{ label: string; value: string }[]>((acc, item) => {
+            if (item.NetUid) {
+              acc.push({ label: item.Name || '', value: item.NetUid || '' })
+            }
+            return acc
+          }, [])}
           label={t('Тип перевізника')}
           placeholder={t('Оберіть тип')}
           value={typeNetId}
@@ -146,7 +151,12 @@ export function NewSaleReviewStep({
         <Select
           searchable
           clearable
-          data={transporters.filter((item) => item.NetUid).map((item) => ({ label: item.Name || item.Title || '', value: item.NetUid || '' }))}
+          data={transporters.reduce<{ label: string; value: string }[]>((acc, item) => {
+            if (item.NetUid) {
+              acc.push({ label: item.Name || item.Title || '', value: item.NetUid || '' })
+            }
+            return acc
+          }, [])}
           disabled={!typeNetId}
           label={t('Перевізник')}
           placeholder={t('Оберіть перевізника')}
@@ -161,7 +171,12 @@ export function NewSaleReviewStep({
             <Select
               searchable
               clearable
-              data={recipients.filter((item) => item.NetUid).map((item) => ({ label: getRecipientLabel(item), value: item.NetUid || '' }))}
+              data={recipients.reduce<{ label: string; value: string }[]>((acc, item) => {
+                if (item.NetUid) {
+                  acc.push({ label: getRecipientLabel(item), value: item.NetUid || '' })
+                }
+                return acc
+              }, [])}
               label={t('Отримувач')}
               placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
               value={value.recipient?.NetUid ?? null}
@@ -173,7 +188,12 @@ export function NewSaleReviewStep({
             <Select
               searchable
               clearable
-              data={addresses.filter((item) => item.NetUid).map((item) => ({ label: getAddressLabel(item), value: item.NetUid || '' }))}
+              data={addresses.reduce<{ label: string; value: string }[]>((acc, item) => {
+                if (item.NetUid) {
+                  acc.push({ label: getAddressLabel(item), value: item.NetUid || '' })
+                }
+                return acc
+              }, [])}
               disabled={!value.recipient}
               label={t('Адреса доставки')}
               placeholder={t('Оберіть адресу')}

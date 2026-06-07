@@ -13,7 +13,9 @@ export function CurrencyRatesFooter() {
   const { data, error, isLoading, refresh } = useExchangeRates()
   const { t } = useI18n()
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
-  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const buttonRefsRef = useRef<Map<string, HTMLButtonElement> | null>(null)
+  if (buttonRefsRef.current === null) buttonRefsRef.current = new Map()
+  const buttonRefs = buttonRefsRef.current
   const [panelStyle, setPanelStyle] = useState<CSSProperties | null>(null)
 
   const groups = useMemo(
@@ -34,7 +36,7 @@ export function CurrencyRatesFooter() {
   const selectedGroup = groups.find((group) => group.id === selectedGroupId) || null
 
   const computePanelStyle = useCallback((id: string): CSSProperties | null => {
-    const btn = buttonRefs.current.get(id)
+    const btn = buttonRefs.get(id)
     if (!btn) return null
     const rect = btn.getBoundingClientRect()
     const left = Math.max(12, Math.min(rect.left, window.innerWidth - PANEL_WIDTH - 12))
@@ -43,7 +45,7 @@ export function CurrencyRatesFooter() {
       right: 'auto',
       bottom: window.innerHeight - rect.top + PANEL_GAP,
     }
-  }, [])
+  }, [buttonRefs])
   const recomputePanelStyle = useEffectEvent((id: string) => computePanelStyle(id))
 
   const toggleGroup = useCallback(
@@ -107,8 +109,8 @@ export function CurrencyRatesFooter() {
             isSelected={selectedGroupId === group.id}
             onClick={() => toggleGroup(group)}
             buttonRef={(el) => {
-              if (el) buttonRefs.current.set(group.id, el)
-              else buttonRefs.current.delete(group.id)
+              if (el) buttonRefs.set(group.id, el)
+              else buttonRefs.delete(group.id)
             }}
           />
         ))}

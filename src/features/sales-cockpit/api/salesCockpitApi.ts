@@ -64,7 +64,13 @@ export async function regenerateCockpit(asOfDate?: string): Promise<Record<strin
 
 function normalizeInbox(result: unknown): CockpitInbox {
   const payload = result && typeof result === 'object' ? (result as Partial<CockpitInbox>) : {}
-  const tasks = Array.isArray(payload.tasks) ? payload.tasks.map(normalizeTask).filter(isTask) : []
+  const tasks = Array.isArray(payload.tasks)
+    ? payload.tasks.reduce<CockpitTask[]>((acc, value) => {
+        const task = normalizeTask(value)
+        if (isTask(task)) acc.push(task)
+        return acc
+      }, [])
+    : []
 
   return {
     ...payload,

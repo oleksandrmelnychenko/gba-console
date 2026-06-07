@@ -241,19 +241,31 @@ function NewOfferForm({
     }
   }, [productQuery])
 
-  const clientData = clientOptions
-    .filter((client) => client.NetUid)
-    .map((client) => ({ label: getClientLabel(client), value: client.NetUid ?? '' }))
+  const clientData = clientOptions.reduce<{ label: string; value: string }[]>((acc, client) => {
+    if (client.NetUid) {
+      acc.push({ label: getClientLabel(client), value: client.NetUid ?? '' })
+    }
+
+    return acc
+  }, [])
   const subClientData = subClients
     .map((link) => link.SubClient)
     .filter((sub): sub is OffersClientOption => Boolean(sub?.NetUid) && Boolean(sub?.IsSubClient || sub?.IsTradePoint))
     .map((sub) => ({ label: getClientLabel(sub), value: sub.NetUid ?? '' }))
-  const agreementData = agreements
-    .filter((item) => item.NetUid)
-    .map((item) => ({ label: item.Agreement?.Name ?? item.NetUid ?? '', value: item.NetUid ?? '' }))
-  const productData = productOptions
-    .filter((product) => product.NetUid)
-    .map((product) => ({ label: getProductLabel(product), value: product.NetUid ?? '' }))
+  const agreementData = agreements.reduce<{ label: string; value: string }[]>((acc, item) => {
+    if (item.NetUid) {
+      acc.push({ label: item.Agreement?.Name ?? item.NetUid ?? '', value: item.NetUid ?? '' })
+    }
+
+    return acc
+  }, [])
+  const productData = productOptions.reduce<{ label: string; value: string }[]>((acc, product) => {
+    if (product.NetUid) {
+      acc.push({ label: getProductLabel(product), value: product.NetUid ?? '' })
+    }
+
+    return acc
+  }, [])
 
   async function addProduct(netUid: string | null) {
     if (!netUid || !agreementNetId) {

@@ -1047,7 +1047,14 @@ function SalesWorkflowTab() {
   }
 
   function toggleAllSourceSales() {
-    const sourceClientIds = Array.from(new Set(sourceSales.map(getBasketSaleClientId).filter(Boolean)))
+    const sourceClientIds = Array.from(
+      new Set(
+        sourceSales.flatMap((sale) => {
+          const clientId = getBasketSaleClientId(sale)
+          return clientId ? [clientId] : []
+        }),
+      ),
+    )
 
     if (!clientScopeId && sourceClientIds.length > 1) {
       notifications.show({ color: 'yellow', message: t('Спочатку оберіть одну фактуру клієнта') })
@@ -1081,9 +1088,13 @@ function SalesWorkflowTab() {
 
   function moveSelectedSalesLeft() {
     const selectedIds = new Set(
-      destinationSales
-        .filter((sale) => selectedDestinationSaleIds.has(getBasketSaleKey(sale)))
-        .map(getBasketSaleKey),
+      destinationSales.reduce<string[]>((acc, sale) => {
+        const saleKey = getBasketSaleKey(sale)
+        if (selectedDestinationSaleIds.has(saleKey)) {
+          acc.push(saleKey)
+        }
+        return acc
+      }, []),
     )
 
     if (!selectedIds.size) {

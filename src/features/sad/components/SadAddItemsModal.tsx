@@ -40,8 +40,11 @@ export function SadAddItemsModal({ onAdd, onClose, opened, sad }: SadAddItemsMod
 
   const existingCartItemKeys = useMemo(() => new Set(
     (sad?.SadItems || [])
-      .map((item) => getCartItemKey(item.SupplyOrderUkraineCartItem))
-      .filter(Boolean),
+      .flatMap((item) => {
+        const key = getCartItemKey(item.SupplyOrderUkraineCartItem)
+
+        return key ? [key] : []
+      }),
   ), [sad?.SadItems])
 
   const filteredItems = useMemo(() => {

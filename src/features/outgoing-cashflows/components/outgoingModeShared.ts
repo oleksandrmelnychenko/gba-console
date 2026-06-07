@@ -24,60 +24,75 @@ export function getEntityName(entity?: NamedEntity | null): string {
 }
 
 export function toEntityOptions<T extends NamedEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
+  return entities.reduce<{ label: string; value: string }[]>((acc, entity) => {
+    const option = {
       label: getEntityName(entity) || getEntityValue(entity),
       value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+    }
+
+    if (option.value) {
+      acc.push(option)
+    }
+
+    return acc
+  }, [])
 }
 
 export function toCurrencyOptions(register?: PaymentRegister | null) {
-  return (register?.PaymentCurrencyRegisters || [])
-    .map((currencyRegister) => {
-      const currency = currencyRegister.Currency
-      const value = getEntityValue(currency)
-      const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
+  return (register?.PaymentCurrencyRegisters || []).reduce<{ label: string; value: string }[]>((acc, currencyRegister) => {
+    const currency = currencyRegister.Currency
+    const value = getEntityValue(currency)
+    const balance = typeof currencyRegister.Amount === 'number' ? ` (${moneyFormatter.format(currencyRegister.Amount)})` : ''
 
-      return {
+    if (value) {
+      acc.push({
         label: `${currency?.Code || currency?.Name || value}${balance}`,
         value,
-      }
-    })
-    .filter((option) => option.value)
+      })
+    }
+
+    return acc
+  }, [])
 }
 
 export function toClientAgreementOptions(agreements: ClientAgreement[]) {
-  return agreements
-    .map((clientAgreement) => {
-      const agreement = clientAgreement.Agreement
-      const currency = agreement?.Currency
-      const value = getEntityValue(agreement)
+  return agreements.reduce<{ label: string; value: string }[]>((acc, clientAgreement) => {
+    const agreement = clientAgreement.Agreement
+    const currency = agreement?.Currency
+    const value = getEntityValue(agreement)
 
-      return {
+    if (value) {
+      acc.push({
         label: [agreement?.Name || agreement?.Number || value, currency?.Code || currency?.Name].filter(Boolean).join(' '),
         value,
-      }
-    })
-    .filter((option) => option.value)
+      })
+    }
+
+    return acc
+  }, [])
 }
 
 export function toSupplyAgreementOptions(agreements: SupplyOrganizationAgreement[]) {
-  return agreements
-    .map((agreement) => {
-      const currency = agreement.Currency
-      const value = getEntityValue(agreement)
+  return agreements.reduce<{ label: string; value: string }[]>((acc, agreement) => {
+    const currency = agreement.Currency
+    const value = getEntityValue(agreement)
 
-      return {
+    if (value) {
+      acc.push({
         label: [agreement.Name || agreement.Number || value, currency?.Code || currency?.Name].filter(Boolean).join(' '),
         value,
-      }
-    })
-    .filter((option) => option.value)
+      })
+    }
+
+    return acc
+  }, [])
 }
 
 export function toUniqueLabels<T extends NamedEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  return Array.from(new Set(entities.flatMap((entity) => {
+    const name = getEntityName(entity)
+    return name ? [name] : []
+  })))
 }
 
 export function includeEntity<T extends NamedEntity>(entities: T[], entity: T): T[] {

@@ -1066,12 +1066,18 @@ function DeprecatedConsumableOrderEditorModal({
   const consumableOrders = useMemo(() => storage.ConsumablesOrders || [], [storage.ConsumablesOrders])
   const productOptions = useMemo(
     () =>
-      products
-        .map((product) => ({
+      products.reduce<Array<{ label: string; value: string }>>((acc, product) => {
+        const option = {
           label: getProductLabel(product),
           value: getEntityValue(product),
-        }))
-        .filter((option) => option.value),
+        }
+
+        if (option.value) {
+          acc.push(option)
+        }
+
+        return acc
+      }, []),
     [products],
   )
 
@@ -1871,20 +1877,40 @@ function toEntityOptions<T extends NamedEntity>(
   entities: T[],
   selectedEntity?: T | null,
 ): Array<{ label: string; value: string }> {
-  return mergeEntities(selectedEntity ? [...entities, selectedEntity] : entities, []).map((entity) => ({
-    label: getEntityName(entity) || getEntityValue(entity),
-    value: getEntityValue(entity),
-  })).filter((option) => option.value)
+  return mergeEntities(selectedEntity ? [...entities, selectedEntity] : entities, []).reduce<
+    Array<{ label: string; value: string }>
+  >((acc, entity) => {
+    const option = {
+      label: getEntityName(entity) || getEntityValue(entity),
+      value: getEntityValue(entity),
+    }
+
+    if (option.value) {
+      acc.push(option)
+    }
+
+    return acc
+  }, [])
 }
 
 function toPaymentCostMovementOptions(
   movements: PaymentCostMovement[],
   selectedMovement?: PaymentCostMovement | null,
 ): Array<{ label: string; value: string }> {
-  return mergeEntities(selectedMovement ? [...movements, selectedMovement] : movements, []).map((movement) => ({
-    label: movement.OperationName || getEntityValue(movement),
-    value: getEntityValue(movement),
-  })).filter((option) => option.value)
+  return mergeEntities(selectedMovement ? [...movements, selectedMovement] : movements, []).reduce<
+    Array<{ label: string; value: string }>
+  >((acc, movement) => {
+    const option = {
+      label: movement.OperationName || getEntityValue(movement),
+      value: getEntityValue(movement),
+    }
+
+    if (option.value) {
+      acc.push(option)
+    }
+
+    return acc
+  }, [])
 }
 
 function findEntityByValue<T extends NamedEntity>(

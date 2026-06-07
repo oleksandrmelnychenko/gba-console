@@ -321,25 +321,34 @@ async function parseSpreadsheetFile(file: File): Promise<SpreadsheetSheet[]> {
   if (extension === 'xlsx') {
     const workbook = await readXlsxFile(file)
 
-    return workbook
-      .map((sheet) =>
-        buildSpreadsheetSheet(sheet.sheet, sheet.data.map((row) => row.map(normalizeImportedCellValue))),
+    return workbook.reduce<SpreadsheetSheet[]>((acc, sheet) => {
+      const built = buildSpreadsheetSheet(
+        sheet.sheet,
+        sheet.data.map((row) => row.map(normalizeImportedCellValue)),
       )
-      .filter((sheet) => sheet.dataRows.length > 0 || sheet.columns.length > 0)
+      if (built.dataRows.length > 0 || built.columns.length > 0) {
+        acc.push(built)
+      }
+      return acc
+    }, [])
   }
 
   if (extension === 'xls') {
     const { read, utils } = await import('xlsx')
     const workbook = read(new Uint8Array(await file.arrayBuffer()), { type: 'array' })
 
-    return workbook.SheetNames.map((sheetName) => {
+    return workbook.SheetNames.reduce<SpreadsheetSheet[]>((acc, sheetName) => {
       const worksheet = workbook.Sheets[sheetName]
       const rows = utils
         .sheet_to_json<unknown[]>(worksheet, { blankrows: false, header: 1 })
         .map((row) => (Array.isArray(row) ? row.map(normalizeImportedCellValue) : []))
 
-      return buildSpreadsheetSheet(sheetName, rows)
-    }).filter((sheet) => sheet.dataRows.length > 0 || sheet.columns.length > 0)
+      const built = buildSpreadsheetSheet(sheetName, rows)
+      if (built.dataRows.length > 0 || built.columns.length > 0) {
+        acc.push(built)
+      }
+      return acc
+    }, [])
   }
 
   const text = await file.text()

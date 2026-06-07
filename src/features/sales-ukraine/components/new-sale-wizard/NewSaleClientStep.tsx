@@ -88,13 +88,19 @@ export function NewSaleClientStep({
     }
   }, [clientNetId])
 
-  const clientData = clients
-    .filter((client) => client.NetUid)
-    .map((client) => ({ label: getClientLabel(client), value: client.NetUid || '' }))
+  const clientData = clients.reduce<{ label: string; value: string }[]>((acc, client) => {
+    if (client.NetUid) {
+      acc.push({ label: getClientLabel(client), value: client.NetUid || '' })
+    }
+    return acc
+  }, [])
 
-  const agreementData = agreements
-    .filter((item) => item.NetUid)
-    .map((item) => ({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' }))
+  const agreementData = agreements.reduce<{ label: string; value: string }[]>((acc, item) => {
+    if (item.NetUid) {
+      acc.push({ label: item.Agreement?.Name || item.NetUid || '', value: item.NetUid || '' })
+    }
+    return acc
+  }, [])
 
   return (
     <Stack gap="md">

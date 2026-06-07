@@ -1324,9 +1324,10 @@ function validateCreatePayload(drafts: ReturnOrderItemDraft[], t: (value: string
   }
 
   const clientNetIds = new Set(
-    drafts
-      .map((draft) => draft.orderItem.Order?.Sale?.ClientAgreement?.Client?.NetUid)
-      .filter(Boolean),
+    drafts.flatMap((draft) => {
+      const netUid = draft.orderItem.Order?.Sale?.ClientAgreement?.Client?.NetUid
+      return netUid ? [netUid] : []
+    }),
   )
 
   if (clientNetIds.size > 1) {

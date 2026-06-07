@@ -97,12 +97,22 @@ export function ManagerSalesByTopView() {
   }, [from, to, netIdManager, netIdOrganization, setError, setIsLoading, setReport, t])
 
   const managerOptions = useMemo(
-    () => managers.map((manager) => ({ label: managerLabel(manager), value: manager.NetUid || '' })).filter((option) => option.value),
+    () =>
+      managers.reduce<{ label: string; value: string }[]>((acc, manager) => {
+        const option = { label: managerLabel(manager), value: manager.NetUid || '' }
+        if (option.value) acc.push(option)
+        return acc
+      }, []),
     [managers],
   )
 
   const organizationOptions = useMemo(
-    () => organizations.map((organization) => ({ label: organization.Name || '', value: organization.NetUid || '' })).filter((option) => option.value),
+    () =>
+      organizations.reduce<{ label: string; value: string }[]>((acc, organization) => {
+        const option = { label: organization.Name || '', value: organization.NetUid || '' }
+        if (option.value) acc.push(option)
+        return acc
+      }, []),
     [organizations],
   )
 

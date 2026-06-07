@@ -48,9 +48,13 @@ export function MoveTaxFreeItemsModal({ items, opened, packList, onClose, onSubm
       return
     }
 
-    const normalizedItems = draftItems
-      .map((item) => ({ ...item, Qty: item.ChangedQty ?? item.Qty ?? 0, IsSelected: false }))
-      .filter((item) => (item.Qty || 0) > 0)
+    const normalizedItems = draftItems.reduce<TaxFreeItem[]>((acc, item) => {
+      const normalized = { ...item, Qty: item.ChangedQty ?? item.Qty ?? 0, IsSelected: false }
+      if ((normalized.Qty || 0) > 0) {
+        acc.push(normalized)
+      }
+      return acc
+    }, [])
 
     if (normalizedItems.length === 0) {
       setError(t('Оберіть кількість для перенесення'))

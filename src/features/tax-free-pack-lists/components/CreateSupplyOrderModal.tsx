@@ -133,10 +133,13 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
         />
         <Select
           searchable
-          data={filteredSuppliers.map((supplier) => ({
-            label: getClientLabel(supplier),
-            value: supplier.NetUid || String(supplier.Id || ''),
-          })).filter((item) => item.value)}
+          data={filteredSuppliers.reduce<{ label: string; value: string }[]>((acc, supplier) => {
+            const value = supplier.NetUid || String(supplier.Id || '')
+            if (value) {
+              acc.push({ label: getClientLabel(supplier), value })
+            }
+            return acc
+          }, [])}
           disabled={isLoading}
           label={t('Постачальник')}
           value={selectedSupplierNetUid}
@@ -148,20 +151,26 @@ export function CreateSupplyOrderModal({ opened, packList, onClose, onCreated }:
         />
         <Select
           searchable
-          data={organizations.map((organization) => ({
-            label: organization.Name || organization.FullName || t('Організація'),
-            value: organization.NetUid || String(organization.Id || ''),
-          })).filter((item) => item.value)}
+          data={organizations.reduce<{ label: string; value: string }[]>((acc, organization) => {
+            const value = organization.NetUid || String(organization.Id || '')
+            if (value) {
+              acc.push({ label: organization.Name || organization.FullName || t('Організація'), value })
+            }
+            return acc
+          }, [])}
           disabled={isLoading}
           label={t('Організація')}
           value={selectedOrganizationNetUid}
           onChange={setSelectedOrganizationNetUid}
         />
         <Select
-          data={agreements.map((agreement) => ({
-            label: getClientAgreementLabel(agreement),
-            value: agreement.NetUid || String(agreement.Id || agreement.AgreementId || ''),
-          })).filter((item) => item.value)}
+          data={agreements.reduce<{ label: string; value: string }[]>((acc, agreement) => {
+            const value = agreement.NetUid || String(agreement.Id || agreement.AgreementId || '')
+            if (value) {
+              acc.push({ label: getClientAgreementLabel(agreement), value })
+            }
+            return acc
+          }, [])}
           disabled={!selectedSupplier || isLoading}
           label={t('Договір')}
           value={selectedAgreementNetUid || agreements[0]?.NetUid || null}

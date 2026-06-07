@@ -83,16 +83,22 @@ export function SalesDebtorsPage() {
 
   const managerOptions = useMemo(
     () =>
-      managers
-        .filter((manager) => manager.NetUid)
-        .map((manager) => ({ label: getManagerLabel(manager), value: String(manager.NetUid) })),
+      managers.reduce<{ label: string; value: string }[]>((acc, manager) => {
+        if (manager.NetUid) {
+          acc.push({ label: getManagerLabel(manager), value: String(manager.NetUid) })
+        }
+        return acc
+      }, []),
     [managers],
   )
   const organizationSelectOptions = useMemo(
     () =>
-      organizations
-        .filter((organization) => organization.NetUid && organization.Name)
-        .map((organization) => ({ label: organization.Name || '', value: String(organization.NetUid) })),
+      organizations.reduce<{ label: string; value: string }[]>((acc, organization) => {
+        if (organization.NetUid && organization.Name) {
+          acc.push({ label: organization.Name || '', value: String(organization.NetUid) })
+        }
+        return acc
+      }, []),
     [organizations],
   )
 

@@ -260,22 +260,20 @@ function readExplicitColumns(result: unknown): string[] {
 
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) {
-      return candidate
-        .map((item) => {
-          if (typeof item === 'string') {
-            return item
-          }
+      return candidate.flatMap((item) => {
+        if (typeof item === 'string') {
+          return item ? [item] : []
+        }
 
-          if (item && typeof item === 'object') {
-            const column = item as Record<string, unknown>
-            const value = column.key || column.field || column.name || column.title || column.label
+        if (item && typeof item === 'object') {
+          const column = item as Record<string, unknown>
+          const value = column.key || column.field || column.name || column.title || column.label
 
-            return typeof value === 'string' ? value : ''
-          }
+          return typeof value === 'string' && value ? [value] : []
+        }
 
-          return ''
-        })
-        .filter(Boolean)
+        return []
+      })
     }
   }
 

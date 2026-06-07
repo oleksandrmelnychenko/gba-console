@@ -101,9 +101,8 @@ function buildModelsFromTask(
     ),
   )
 
-  readArray(record.BrokerServices)
-    .filter((service) => asRecord(service.ExciseDutyOrganization) || asRecord(service.CustomOrganization))
-    .forEach((service) => {
+  for (const service of readArray(record.BrokerServices)) {
+    if (asRecord(service.ExciseDutyOrganization) || asRecord(service.CustomOrganization)) {
       const exciseOrganization = asRecord(service.ExciseDutyOrganization)
       const organization = exciseOrganization || asRecord(service.CustomOrganization)
 
@@ -115,13 +114,14 @@ function buildModelsFromTask(
           supplyOrderNetUid: readString(asRecord(service.SupplyOrder), ['NetUid']),
         }),
       )
-    })
+    }
+  }
 
-  readArray(record.PaymentDeliveryProtocols)
-    .filter((service) => asRecord(service.SupplyProForm) || asRecord(service.SupplyInvoice))
-    .forEach((service) =>
-      models.push(buildPaymentDeliveryProtocolModel(service, next())),
-    )
+  for (const service of readArray(record.PaymentDeliveryProtocols)) {
+    if (asRecord(service.SupplyProForm) || asRecord(service.SupplyInvoice)) {
+      models.push(buildPaymentDeliveryProtocolModel(service, next()))
+    }
+  }
 
   readArray(record.PortWorkServices).forEach((service) =>
     models.push(

@@ -29,6 +29,11 @@ const hubPaths = {
 
 const reconnectDelays = [0, 2_000, 5_000, 10_000, 30_000]
 
+const amountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
 export function RealtimeProvider({ children }: PropsWithChildren) {
   const { isAuthenticated, isLoading, user } = useAuth()
   const { t } = useI18n()
@@ -275,8 +280,5 @@ function formatAmount(value: unknown): string {
     return ''
   }
 
-  return new Intl.NumberFormat('uk-UA', {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 2,
-  }).format(amount)
+  return amountFormatter.format(amount)
 }

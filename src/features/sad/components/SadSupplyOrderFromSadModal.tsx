@@ -179,10 +179,16 @@ export function SadSupplyOrderFromSadModal({
         />
 
         <Select
-          data={filteredSuppliers.map((supplier) => ({
-            label: getClientLabel(supplier),
-            value: getEntityValue(supplier),
-          })).filter((option) => option.value)}
+          data={filteredSuppliers.reduce<{ label: string; value: string }[]>((acc, supplier) => {
+            const option = {
+              label: getClientLabel(supplier),
+              value: getEntityValue(supplier),
+            }
+            if (option.value) {
+              acc.push(option)
+            }
+            return acc
+          }, [])}
           disabled={isLoading}
           label={t('Постачальник')}
           searchable
@@ -197,10 +203,16 @@ export function SadSupplyOrderFromSadModal({
         />
 
         <Select
-          data={organizations.map((organization) => ({
-            label: getEntityName(organization) || t('Організація'),
-            value: getEntityValue(organization),
-          })).filter((option) => option.value)}
+          data={organizations.reduce<{ label: string; value: string }[]>((acc, organization) => {
+            const option = {
+              label: getEntityName(organization) || t('Організація'),
+              value: getEntityValue(organization),
+            }
+            if (option.value) {
+              acc.push(option)
+            }
+            return acc
+          }, [])}
           disabled={isLoading}
           label={t('Організація')}
           searchable
@@ -212,10 +224,16 @@ export function SadSupplyOrderFromSadModal({
         />
 
         <Select
-          data={agreements.map((agreement) => ({
-            label: getClientAgreementLabel(agreement),
-            value: getEntityValue(agreement),
-          })).filter((option) => option.value)}
+          data={agreements.reduce<{ label: string; value: string }[]>((acc, agreement) => {
+            const option = {
+              label: getClientAgreementLabel(agreement),
+              value: getEntityValue(agreement),
+            }
+            if (option.value) {
+              acc.push(option)
+            }
+            return acc
+          }, [])}
           disabled={!selectedSupplier || isLoading}
           label={t('Договір')}
           value={effectiveAgreementNetUid}

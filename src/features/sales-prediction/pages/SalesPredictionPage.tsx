@@ -216,12 +216,20 @@ export function SalesPredictionPage() {
     }
   }, [clientNetId, productNetId, setCombined, setLoadingCombined])
 
-  const clientData = clientOptions
-    .filter((client) => client.NetUid)
-    .map((client) => ({ label: getClientLabel(client), value: client.NetUid || '' }))
-  const productData = productOptions
-    .filter((product) => product.NetUid)
-    .map((product) => ({ label: getProductLabel(product), value: product.NetUid || '' }))
+  const clientData = clientOptions.reduce<{ label: string; value: string }[]>((acc, client) => {
+    if (client.NetUid) {
+      acc.push({ label: getClientLabel(client), value: client.NetUid || '' })
+    }
+
+    return acc
+  }, [])
+  const productData = productOptions.reduce<{ label: string; value: string }[]>((acc, product) => {
+    if (product.NetUid) {
+      acc.push({ label: getProductLabel(product), value: product.NetUid || '' })
+    }
+
+    return acc
+  }, [])
 
   return (
     <Stack gap="lg">

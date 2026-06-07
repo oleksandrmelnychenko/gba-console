@@ -133,7 +133,13 @@ export async function getPaymentAccountCurrencyActivity(params: {
 function normalizePaymentAccountsResponse(result: unknown): PaymentAccountsResponse {
   if (Array.isArray(result)) {
     return {
-      paymentRegisters: result.map(normalizePaymentAccount).filter(isPaymentAccount),
+      paymentRegisters: result.reduce<PaymentAccount[]>((acc, item) => {
+        const account = normalizePaymentAccount(item)
+        if (isPaymentAccount(account)) {
+          acc.push(account)
+        }
+        return acc
+      }, []),
       totalEuroAmount: 0,
     }
   }
@@ -149,7 +155,13 @@ function normalizePaymentAccountsResponse(result: unknown): PaymentAccountsRespo
   const rows = readArrayPayload(result, ['PaymentRegisters', 'Items', 'Collection', 'Data'])
 
   return {
-    paymentRegisters: rows.map(normalizePaymentAccount).filter(isPaymentAccount),
+    paymentRegisters: rows.reduce<PaymentAccount[]>((acc, item) => {
+      const account = normalizePaymentAccount(item)
+      if (isPaymentAccount(account)) {
+        acc.push(account)
+      }
+      return acc
+    }, []),
     totalEuroAmount: readNumber(payload.TotalEuroAmount),
   }
 }

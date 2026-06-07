@@ -497,33 +497,51 @@ function pickCurrencyRegister(register: PaymentRegister | null) {
 }
 
 function toEntityOptions<T extends NameLikeEntity>(entities: T[]) {
-  return entities
-    .map((entity) => ({
+  return entities.reduce<{ label: string; value: string }[]>((acc, entity) => {
+    const option = {
       label: getEntityName(entity) || getEntityValue(entity),
       value: getEntityValue(entity),
-    }))
-    .filter((option) => option.value)
+    }
+
+    if (option.value) {
+      acc.push(option)
+    }
+
+    return acc
+  }, [])
 }
 
 function toAgreementOptions(agreements: ClientAgreement[]) {
-  return agreements
-    .map((clientAgreement) => {
-      const agreement = clientAgreement.Agreement
-      const currency = agreement?.Currency
-      const value = getEntityValue(agreement)
+  return agreements.reduce<{ label: string; value: string }[]>((acc, clientAgreement) => {
+    const agreement = clientAgreement.Agreement
+    const currency = agreement?.Currency
+    const value = getEntityValue(agreement)
 
-      return {
-        label: [agreement?.Name || agreement?.Number || clientAgreement.Name || value, currency?.Code || currency?.Name]
-          .filter(Boolean)
-          .join(' '),
-        value,
-      }
-    })
-    .filter((option) => option.value)
+    const option = {
+      label: [agreement?.Name || agreement?.Number || clientAgreement.Name || value, currency?.Code || currency?.Name]
+        .filter(Boolean)
+        .join(' '),
+      value,
+    }
+
+    if (option.value) {
+      acc.push(option)
+    }
+
+    return acc
+  }, [])
 }
 
 function toUniqueLabels<T extends NameLikeEntity>(entities: T[]): string[] {
-  return Array.from(new Set(entities.map(getEntityName).filter(Boolean)))
+  return Array.from(
+    new Set(
+      entities.flatMap((entity) => {
+        const name = getEntityName(entity)
+
+        return name ? [name] : []
+      }),
+    ),
+  )
 }
 
 function includeEntity<T extends NameLikeEntity>(entities: T[], entity: T): T[] {

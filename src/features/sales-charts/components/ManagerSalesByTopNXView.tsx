@@ -165,8 +165,8 @@ function flattenReport(report: SalesByProductTopReport, totalLabel: string): Sal
       values: { [manager.NetId]: manager.TotalManagerSold },
     })
 
-    report.Products.filter((product) => typeof product.ManagersSoldProduct[manager.NetId] !== 'undefined').forEach(
-      (product) => {
+    for (const product of report.Products) {
+      if (typeof product.ManagersSoldProduct[manager.NetId] !== 'undefined') {
         rows.push({
           isManager: false,
           isTotal: false,
@@ -175,8 +175,8 @@ function flattenReport(report: SalesByProductTopReport, totalLabel: string): Sal
           total: product.TotalValueSoldProduct,
           values: { [manager.NetId]: product.TotalValueSoldProduct },
         })
-      },
-    )
+      }
+    }
   })
 
   const totalValues: Record<string, number> = {}

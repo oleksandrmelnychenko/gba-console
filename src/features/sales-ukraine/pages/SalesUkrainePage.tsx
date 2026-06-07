@@ -241,7 +241,15 @@ export function SalesUkrainePage() {
       from: activeDraft.from,
       limit: pageSize,
       offset,
-      organisationIds: activeDraft.organisationIds.map(Number).filter(Number.isFinite),
+      organisationIds: activeDraft.organisationIds.reduce<number[]>((acc, id) => {
+        const parsed = Number(id)
+
+        if (Number.isFinite(parsed)) {
+          acc.push(parsed)
+        }
+
+        return acc
+      }, []),
       status: activeDraft.status,
       to: activeDraft.to,
       type: activeDraft.onlyMine ? 'Self' : 'All',
@@ -524,9 +532,13 @@ export function SalesUkrainePage() {
 
   const organizationOptions = useMemo(
     () =>
-      organizations
-        .filter((organization) => typeof organization.Id === 'number' && organization.Name)
-        .map((organization) => ({ label: organization.Name || '', value: String(organization.Id) })),
+      organizations.reduce<Array<{ label: string; value: string }>>((acc, organization) => {
+        if (typeof organization.Id === 'number' && organization.Name) {
+          acc.push({ label: organization.Name || '', value: String(organization.Id) })
+        }
+
+        return acc
+      }, []),
     [organizations],
   )
 
