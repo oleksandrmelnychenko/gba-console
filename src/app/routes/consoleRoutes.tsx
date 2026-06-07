@@ -80,6 +80,7 @@ import {
   ResalePage,
   ResalesPage,
   SadSpecificationsPage,
+  SalesCockpitPage,
   SalesReturnClientPage,
   RetailClientSalesPage,
   RetailIncompleteSalePage,
@@ -172,6 +173,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/transporters', element: lazyRoute(<TransportersPage />) },
   { path: '/warehouse/ukraine', element: lazyRoute(<WarehouseUkrainePage />) },
   { path: '/warehouse/ukraine/orders/:id/placements', element: lazyRoute(<WarehouseUkraineOrderPlacementsPage />) },
+  { path: '/sales/cockpit', element: lazyRoute(<SalesCockpitPage />) },
 ]
 
 const clientMigrationRoutes: ConsoleRoute[] = [

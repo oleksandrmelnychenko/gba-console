@@ -123,3 +123,4 @@ export const AvailablePaymentsPage = lazy(() => import('../../features/available
 export const OutgoingCashflowCreatePage = lazy(() => import('../../features/outgoing-cashflows/pages/OutgoingCashflowCreatePage').then((module) => ({ default: module.OutgoingCashflowCreatePage })))
 export const AdvanceReportViewPage = lazy(() => import('../../features/outgoing-cashflows/pages/AdvanceReportViewPage').then((module) => ({ default: module.AdvanceReportViewPage })))
 export const DashboardPage = lazy(() => import('../../pages/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
+export const SalesCockpitPage = lazy(() => import('../../features/sales-cockpit').then((module) => ({ default: module.SalesCockpitPage })))
