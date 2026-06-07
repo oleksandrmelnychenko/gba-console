@@ -73,6 +73,7 @@ export type CompanyCarRoadList = EntityFields & {
   Mileage?: number
   MixedModeKilometers?: number
   OutcomePaymentOrder?: OutcomePaymentOrder | null
+  OutcomePaymentOrderId?: number
   OutsideCityKilometers?: number
   Responsible?: UserProfile | null
   TotalKilometers?: number

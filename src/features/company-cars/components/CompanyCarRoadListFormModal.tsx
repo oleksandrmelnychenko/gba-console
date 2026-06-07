@@ -97,6 +97,7 @@ export function CompanyCarRoadListFormModal({
     isMileageOnly,
     isMixedDisabled,
     isSaving,
+    outcomeError,
     outcomeOptions,
     selectedOutcomeNetUid,
     userOptions,
@@ -127,9 +128,11 @@ export function CompanyCarRoadListFormModal({
 
         <Select
           data={outcomeOptions}
+          error={outcomeError}
           label={t('Виберіть вихідну статтю бюджету')}
           placeholder={t('Видаткова стаття бюджету')}
           value={selectedOutcomeNetUid || null}
+          withAsterisk={isEditMode}
           onChange={selectOutcome}
         />
 
@@ -155,7 +158,13 @@ export function CompanyCarRoadListFormModal({
           onSearchChange={setUserSearchValue}
         />
 
-        <RoadListFormFooter calculated={calculated} isSaving={isSaving} onClose={onClose} onSave={handleSave} />
+        <RoadListFormFooter
+          calculated={calculated}
+          isSaveDisabled={Boolean(outcomeError)}
+          isSaving={isSaving}
+          onClose={onClose}
+          onSave={handleSave}
+        />
       </Stack>
     </AppModal>
   )
@@ -201,6 +210,11 @@ function useRoadListFormModel({
   const companyCarNetUid = effectiveCompanyCar.NetUid || ''
   const isMileageOnly = parseDecimal(form.mixedModeKilometers) !== 0
   const isMixedDisabled = parseDecimal(form.inCityKilometers) !== 0 || parseDecimal(form.outsideCityKilometers) !== 0
+  const selectedOutcomeOrder = useMemo(
+    () => resolveSelectedOutcomeOrder(outcomeOrders, selectedOutcomeNetUid, editedRoadList?.OutcomePaymentOrder),
+    [editedRoadList, outcomeOrders, selectedOutcomeNetUid],
+  )
+  const outcomeError = isEditMode && !selectedOutcomeOrder ? t('Виберіть вихідну статтю бюджету') : null
 
   useEffect(() => {
     if (!opened) {
@@ -294,7 +308,7 @@ function useRoadListFormModel({
         companyCar,
         drivers,
         form: debouncedForm,
-        outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
+        outcomeOrder: selectedOutcomeOrder,
         responsible: effectiveResponsible,
       }),
     )
@@ -315,7 +329,7 @@ function useRoadListFormModel({
     return () => {
       cancelled = true
     }
-  }, [companyCar, companyCarNetUid, debouncedForm, drivers, editedRoadList, effectiveCompanyCar, effectiveResponsible, isEditMode, opened, outcomeOrders, selectedOutcomeNetUid, t])
+  }, [companyCar, companyCarNetUid, debouncedForm, drivers, editedRoadList, effectiveCompanyCar, effectiveResponsible, isEditMode, opened, selectedOutcomeOrder, t])
 
   const outcomeOptions = useMemo(
     () => toSelectOptions(outcomeOrders, (order) => order.Number),
@@ -368,6 +382,11 @@ function useRoadListFormModel({
       return
     }
 
+    if (outcomeError) {
+      dispatchState({ error: outcomeError, type: 'failed' })
+      return
+    }
+
     dispatchState({ type: 'started-saving' })
 
     try {
@@ -377,7 +396,7 @@ function useRoadListFormModel({
         companyCar: effectiveCompanyCar,
         drivers,
         form,
-        outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
+        outcomeOrder: selectedOutcomeOrder,
         responsible: effectiveResponsible,
       })
       const saved = isEditMode ? await updateCompanyCarRoadList(payload) : await createCompanyCarRoadList(payload)
@@ -407,6 +426,7 @@ function useRoadListFormModel({
     isMileageOnly,
     isMixedDisabled,
     isSaving,
+    outcomeError,
     outcomeOptions,
     selectedOutcomeNetUid,
     userOptions,
@@ -540,11 +560,13 @@ function RoadListDriversEditor({
 
 function RoadListFormFooter({
   calculated,
+  isSaveDisabled,
   isSaving,
   onClose,
   onSave,
 }: {
   calculated: CompanyCarRoadList | null
+  isSaveDisabled: boolean
   isSaving: boolean
   onClose: () => void
   onSave: () => void
@@ -560,7 +582,7 @@ function RoadListFormFooter({
         <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
+        <Button color="violet" disabled={isSaveDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
           {t('Зберегти')}
         </Button>
       </Group>
@@ -591,7 +613,7 @@ function createRoadListModalStateFrom(roadList: CompanyCarRoadList | null): Road
     form: createFormFromRoadList(roadList),
     isSaving: false,
     outcomeOrders: roadList?.OutcomePaymentOrder ? [roadList.OutcomePaymentOrder] : [],
-    selectedOutcomeNetUid: getEntityValue(roadList?.OutcomePaymentOrder),
+    selectedOutcomeNetUid: getRoadListOutcomeValue(roadList),
     userSearchValue: '',
     users: [],
   }
@@ -624,7 +646,8 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
       return {
         ...state,
         outcomeOrders: action.outcomeOrders,
-        selectedOutcomeNetUid: state.selectedOutcomeNetUid || getEntityValue(action.outcomeOrders[0]) || '',
+        selectedOutcomeNetUid:
+          resolveOutcomeSelection(state.selectedOutcomeNetUid, action.outcomeOrders) || getEntityValue(action.outcomeOrders[0]) || '',
       }
     case 'loaded-users':
       return {
@@ -859,6 +882,39 @@ function mergeOutcomeOrders(current: OutcomePaymentOrder | null | undefined, out
   }
 
   return merged
+}
+
+function resolveSelectedOutcomeOrder(
+  outcomeOrders: OutcomePaymentOrder[],
+  selectedOutcomeNetUid: string,
+  current: OutcomePaymentOrder | null | undefined,
+): OutcomePaymentOrder | null {
+  return (
+    outcomeOrders.find((order) => isMatchingEntityValue(order, selectedOutcomeNetUid)) ||
+    (current && (!selectedOutcomeNetUid || isMatchingEntityValue(current, selectedOutcomeNetUid)) ? current : null)
+  )
+}
+
+function resolveOutcomeSelection(selectedOutcomeNetUid: string, outcomeOrders: OutcomePaymentOrder[]): string {
+  if (!selectedOutcomeNetUid) {
+    return ''
+  }
+
+  const selectedOutcomeOrder = outcomeOrders.find((order) => isMatchingEntityValue(order, selectedOutcomeNetUid))
+
+  return selectedOutcomeOrder ? getEntityValue(selectedOutcomeOrder) : selectedOutcomeNetUid
+}
+
+function getRoadListOutcomeValue(roadList: CompanyCarRoadList | null): string {
+  return getEntityValue(roadList?.OutcomePaymentOrder) || (typeof roadList?.OutcomePaymentOrderId === 'number' ? String(roadList.OutcomePaymentOrderId) : '')
+}
+
+function isMatchingEntityValue(entity: { Id?: number; NetUid?: string } | null | undefined, value: string): boolean {
+  if (!entity || !value) {
+    return false
+  }
+
+  return getEntityValue(entity) === value || (typeof entity.Id === 'number' && String(entity.Id) === value)
 }
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {
