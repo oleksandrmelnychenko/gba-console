@@ -2,7 +2,15 @@ import type { NavigationMatch, NavigationModule, NavigationNode } from './types'
 
 const wildcardRouteSegments = new Set(['all', 'edit', 'new'])
 const removedNavigationNodeNetUids = new Set(['d27584ab-ac29-4994-b1d1-016af5f073b1'])
-const removedNavigationLabelPatterns = [/перевізник.*польщ|польщ.*перевізник/i]
+const removedNavigationLabelPatterns = [/allegro/i, /poland/i, /польщ/i]
+const removedNavigationRoutePatterns = [
+  /^\/?orders\/poland(?:\/|$)/i,
+  /^\/?products\/income\/poland(?:\/|$)/i,
+  /^\/?products\/pl-income-order(?:\/|$)/i,
+  /^\/?sales\/allegro(?:\/|$)/i,
+  /^\/?sales\/poland(?:\/|$)/i,
+  /^\/?warehouse\/poland(?:\/|$)/i,
+]
 
 export function normalizeNavigation(modules: NavigationModule[] | null | undefined): NavigationModule[] {
   const normalizedModules: NavigationModule[] = []
@@ -12,9 +20,15 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
       continue
     }
 
+    const children = normalizeNavigationNodes(module.Children)
+
+    if (children.length === 0) {
+      continue
+    }
+
     normalizedModules.push({
       ...module,
-      Children: normalizeNavigationNodes(module.Children),
+      Children: children,
     })
   }
 
@@ -113,7 +127,7 @@ function isRemovedNavigationModule(module: NavigationModule): boolean {
 }
 
 function isRemovedNavigationNode(node: NavigationNode): boolean {
-  return hasRemovedNavigationNetUid(node.NetUid) || hasRemovedNavigationLabel(node.Module)
+  return hasRemovedNavigationNetUid(node.NetUid) || hasRemovedNavigationLabel(node.Module) || hasRemovedNavigationRoute(node.Route)
 }
 
 function hasRemovedNavigationNetUid(netUid: string | undefined): boolean {
@@ -122,6 +136,10 @@ function hasRemovedNavigationNetUid(netUid: string | undefined): boolean {
 
 function hasRemovedNavigationLabel(label: string | undefined): boolean {
   return Boolean(label && removedNavigationLabelPatterns.some((pattern) => pattern.test(label)))
+}
+
+function hasRemovedNavigationRoute(route: string | undefined): boolean {
+  return Boolean(route && removedNavigationRoutePatterns.some((pattern) => pattern.test(normalizePath(route))))
 }
 
 function normalizeNavigationTarget(path: string): string {
