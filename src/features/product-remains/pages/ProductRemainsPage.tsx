@@ -27,7 +27,7 @@ import {
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -151,9 +151,11 @@ function useProductRemainsPageModel() {
   const [exportingTab, setExportingTab] = useValueState<ProductRemainsTab | null>(null)
 
   const filterError = getFilterError(dateFrom, dateTo)
-  const storageNetId = selectedStorageValue === ALL_STORAGES_VALUE ? undefined : selectedStorageValue
+  const isAllStoragesSelected = selectedStorageValue === ALL_STORAGES_VALUE
+  const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue
+  const isProductStorageSelectionInvalid = !isAllStoragesSelected && !storageNetId
   const productStorageError =
-    activeTab === 'products' && !storageNetId ? t('Для залишків за товарами оберіть конкретний склад') : null
+    activeTab === 'products' && isProductStorageSelectionInvalid ? t('Для залишків за товарами оберіть склад або всі склади') : null
   const selectedSupplierNetId = supplierNetId || undefined
   const exportScopeKey = [
     activeTab,
@@ -247,6 +249,7 @@ function useProductRemainsPageModel() {
     productSearchValue,
     reloadKey,
     resetProductsForInvalidFilter,
+    isStorageSelectionInvalid: isProductStorageSelectionInvalid,
     selectedSupplierNetId,
     setLoadingProducts,
     setProductError,
@@ -316,7 +319,7 @@ function useProductRemainsPageModel() {
   }
 
   async function handleExport() {
-    if (exportingTab || filterError || (activeTab === 'products' && !storageNetId)) {
+    if (exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid)) {
       return
     }
 
@@ -373,9 +376,10 @@ function useProductRemainsPageModel() {
   return {
     activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
+    isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedStorageValue, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
@@ -574,6 +578,7 @@ function useProductRemainProductsLoader({
   productSearchValue,
   reloadKey,
   resetProductsForInvalidFilter,
+  isStorageSelectionInvalid,
   selectedSupplierNetId,
   setLoadingProducts,
   setProductError,
@@ -590,6 +595,7 @@ function useProductRemainProductsLoader({
   productSearchValue: string
   reloadKey: number
   resetProductsForInvalidFilter: () => void
+  isStorageSelectionInvalid: boolean
   selectedSupplierNetId?: string
   setLoadingProducts: (value: boolean) => void
   setProductError: (value: string | null) => void
@@ -601,14 +607,14 @@ function useProductRemainProductsLoader({
   const { t } = useI18n()
 
   useEffect(() => {
-    if (filterError || !storageNetId) {
+    if (filterError || isStorageSelectionInvalid) {
       resetProductsForInvalidFilter()
       return
     }
 
     let cancelled = false
     const currentOffset = productOffset
-    const productStorageNetId = storageNetId
+    const productStorageNetId = storageNetId ?? ''
 
     async function loadProducts() {
       setLoadingProducts(true)
@@ -652,7 +658,7 @@ function useProductRemainProductsLoader({
     return () => {
       cancelled = true
     }
-  }, [dateFrom, dateTo, filterError, pageSize, productOffset, productSearchValue, reloadKey, resetProductsForInvalidFilter, selectedSupplierNetId, setLoadingProducts, setProductError, setProductHasMore, setProductRows, setProductTotals, storageNetId, t])
+  }, [dateFrom, dateTo, filterError, isStorageSelectionInvalid, pageSize, productOffset, productSearchValue, reloadKey, resetProductsForInvalidFilter, selectedSupplierNetId, setLoadingProducts, setProductError, setProductHasMore, setProductRows, setProductTotals, storageNetId, t])
 }
 
 function hasMoreCollectionPage<TItem>(
@@ -680,9 +686,10 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const {
     activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
+    isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedStorageValue, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
@@ -697,7 +704,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               <ActionIcon
                 aria-label={t('Експорт')}
                 color="gray"
-                disabled={Boolean(exportingTab || filterError || (activeTab === 'products' && !storageNetId))}
+                disabled={Boolean(exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid))}
                 loading={exportingTab === activeTab}
                 size={38}
               variant="light"
@@ -871,7 +878,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   data={productRows}
                   defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
                   density={productDensity}
-                  emptyText={storageNetId ? t('Залишків за товарами не знайдено') : t('Оберіть склад для перегляду товарів')}
+                  emptyText={isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : t('Залишків за товарами не знайдено')}
                   getRowId={getProductRowId}
                   isLoading={isLoadingProducts}
                   layoutVersion="product-remains-products-table-1"
@@ -883,7 +890,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   onRowClick={openMovement}
                 />
                 <TableFooter
-                  canLoadMore={productHasMore && !filterError && Boolean(storageNetId)}
+                  canLoadMore={productHasMore && !filterError && !isProductStorageSelectionInvalid}
                   isLoading={isLoadingProducts}
                   loaded={productRows.length}
                   onLoadMore={() => setProductOffset(productRows.length)}
@@ -978,14 +985,10 @@ function exportCurrentProductRemains({
   storageNetId?: string
   to: string
 }): Promise<ProductRemainsExportDocument> {
-  if (!storageNetId) {
-    return Promise.resolve({})
-  }
-
   return exportProductRemains({
     from,
     searchValue: productSearchValue,
-    storageNetId,
+    storageNetId: storageNetId ?? '',
     supplierNetId: selectedSupplierNetId,
     to,
   })
@@ -1454,15 +1457,32 @@ function BatchDetails({
   )
 }
 
+type ProductRemainMovementsState = {
+  dateFrom: string
+  dateTo: string
+  error: string | null
+  isLoading: boolean
+  reloadKey: number
+  rows: ProductRemainMovement[]
+}
+
+type ProductRemainMovementsAction =
+  | { type: 'dateFromChanged'; value: string }
+  | { type: 'dateToChanged'; value: string }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; rows: ProductRemainMovement[] }
+  | { type: 'reloadRequested' }
+
 function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
   const { t } = useI18n()
   const consignmentItemNetId = row.ConsignmentItemNetId?.trim()
-  const [dateFrom, setDateFrom] = useState(getDefaultDateTo)
-  const [dateTo, setDateTo] = useState(getDefaultDateTo)
-  const [rows, setRows] = useState<ProductRemainMovement[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(Boolean(consignmentItemNetId))
-  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [state, dispatch] = useReducer(
+    productRemainMovementsReducer,
+    Boolean(consignmentItemNetId),
+    createInitialProductRemainMovementsState,
+  )
+  const { dateFrom, dateTo, error, isLoading, reloadKey, rows } = state
   const columns = useProductRemainMovementColumns()
   const filterError = getFilterError(dateFrom, dateTo)
   const missingNetIdError = consignmentItemNetId ? null : t('У рядку немає ConsignmentItemNetId для завантаження руху')
@@ -1477,8 +1497,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
     const netId = consignmentItemNetId
 
     async function loadMovements() {
-      setLoading(true)
-      setError(null)
+      dispatch({ type: 'loadStarted' })
 
       try {
         const nextRows = await getProductRemainMovements({
@@ -1488,16 +1507,14 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
         })
 
         if (!cancelled) {
-          setRows(nextRows)
+          dispatch({ rows: nextRows, type: 'loadSucceeded' })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setRows([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух товару'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatch({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух товару'),
+            type: 'loadFailed',
+          })
         }
       }
     }
@@ -1523,14 +1540,14 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
           type="date"
           value={dateFrom}
           w={150}
-          onChange={(event) => setDateFrom(event.currentTarget.value)}
+          onChange={(event) => dispatch({ type: 'dateFromChanged', value: event.currentTarget.value })}
         />
         <TextInput
           label={t('По')}
           type="date"
           value={dateTo}
           w={150}
-          onChange={(event) => setDateTo(event.currentTarget.value)}
+          onChange={(event) => dispatch({ type: 'dateToChanged', value: event.currentTarget.value })}
         />
         <Button
           color="gray"
@@ -1538,7 +1555,7 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
           leftSection={<IconRefresh size={18} />}
           loading={isLoading}
           variant="light"
-          onClick={() => reload()}
+          onClick={() => dispatch({ type: 'reloadRequested' })}
         >
           {t('Оновити')}
         </Button>
@@ -1565,6 +1582,37 @@ function ProductRemainMovementsPanel({ row }: { row: RemainingConsignment }) {
       )}
     </Stack>
   )
+}
+
+function createInitialProductRemainMovementsState(hasConsignmentItemNetId: boolean): ProductRemainMovementsState {
+  return {
+    dateFrom: getDefaultDateTo(),
+    dateTo: getDefaultDateTo(),
+    error: null,
+    isLoading: hasConsignmentItemNetId,
+    reloadKey: 0,
+    rows: [],
+  }
+}
+
+function productRemainMovementsReducer(
+  state: ProductRemainMovementsState,
+  action: ProductRemainMovementsAction,
+): ProductRemainMovementsState {
+  switch (action.type) {
+    case 'dateFromChanged':
+      return { ...state, dateFrom: action.value }
+    case 'dateToChanged':
+      return { ...state, dateTo: action.value }
+    case 'loadFailed':
+      return { ...state, error: action.error, isLoading: false, rows: [] }
+    case 'loadStarted':
+      return { ...state, error: null, isLoading: true }
+    case 'loadSucceeded':
+      return { ...state, error: null, isLoading: false, rows: action.rows }
+    case 'reloadRequested':
+      return { ...state, reloadKey: state.reloadKey + 1 }
+  }
 }
 
 function useProductRemainMovementColumns() {
