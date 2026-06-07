@@ -37,6 +37,7 @@ import type {
 import './consumable-orders-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
+const DEFAULT_LOOKBACK_DAYS = 30
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -74,7 +75,7 @@ export function ConsumableOrdersPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
+  const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)

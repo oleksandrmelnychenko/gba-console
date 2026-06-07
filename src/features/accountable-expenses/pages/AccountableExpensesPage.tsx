@@ -47,7 +47,7 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
-const DEFAULT_LOOKBACK_DAYS = 7
+const DEFAULT_LOOKBACK_DAYS = 30
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
