@@ -80,6 +80,7 @@ export type PlacementOrderItem = EntityFields & {
 
 export type PlacementSupplyOrder = EntityFields & {
   Number?: string
+  InvNumber?: string
   FromDate?: Date | string
   IsPlaced?: boolean
   TotalNetWeight?: number
