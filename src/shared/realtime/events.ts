@@ -85,5 +85,9 @@ export function useRealtimeEvent<TEvent extends RealtimeEventName>(
   eventName: TEvent,
   listener: RealtimeListener<RealtimeEventPayloads[TEvent]>,
 ): void {
-  useEffect(() => realtimeBus.on(eventName, listener), [eventName, listener])
+  useEffect(() => {
+    const unsubscribe = realtimeBus.on(eventName, listener)
+
+    return unsubscribe
+  }, [eventName, listener])
 }

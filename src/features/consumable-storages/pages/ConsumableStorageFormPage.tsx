@@ -331,8 +331,7 @@ export function ConsumableStorageFormPage() {
             />
           </Stack>
         </form>
-      </Card>
-    </Stack>
+    </AppDrawer>
   )
 }
 
