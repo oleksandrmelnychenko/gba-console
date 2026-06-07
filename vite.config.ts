@@ -1,9 +1,23 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+function stripSignalRPureAnnotations() {
+  return {
+    name: 'strip-signalr-pure-annotations',
+    enforce: 'pre' as const,
+    transform(code: string, id: string) {
+      if (!id.includes('@microsoft/signalr/dist/esm/Utils.js')) {
+        return null
+      }
+
+      return code.replaceAll('/*#__PURE__*/ function ', 'function ')
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [stripSignalRPureAnnotations(), react()],
   build: {
     rolldownOptions: {
       output: {
@@ -18,6 +32,7 @@ export default defineConfig({
               name: 'vendor-mantine',
               test: /node_modules[\\/]@mantine[\\/]/,
               priority: 40,
+              maxSize: 240 * 1024,
             },
             {
               name: 'vendor-table',

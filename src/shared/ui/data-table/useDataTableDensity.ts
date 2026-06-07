@@ -43,7 +43,7 @@ export function useDataTableDensity(tableId: string, fallback: DataTableDensity 
       }
       return next
     })
-  }, [])
+  }, [tableId])
 
   return { density, setDensity, toggleDensity }
 }

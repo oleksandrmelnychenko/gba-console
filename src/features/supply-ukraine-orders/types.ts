@@ -371,6 +371,25 @@ export type SupplyOrderDocumentParseConfiguration = {
   WithTotalAmount: boolean
 }
 
+export type UkraineOrderFromSupplierParseConfiguration = {
+  EndRow: number
+  GrossWeightColumnNumber: number
+  IsImportedProduct: number
+  IsPricePerItem: boolean
+  IsWeightPerItem: boolean
+  QtyColumnNumber: number
+  SpecificationCodeColumnNumber: number
+  StartRow: number
+  TotalAmountColumnNumber: number
+  UnitPriceColumnNumber: number
+  VendorCodeColumnNumber: number
+  WeightColumnNumber: number
+  WithGrossWeight: boolean
+  WithIsImportedProduct: boolean
+  WithSpecificationCode: boolean
+  WithWeight: boolean
+}
+
 export type PackingListDocumentParseConfiguration = {
   EndRow: number
   GrossWeightColumnNumber: number
@@ -395,11 +414,29 @@ export type DirectSupplyOrderCreatePayload = {
   TransportationType: SupplyTransportationTypeValue
 }
 
+export type SupplyOrderUkraineSupplierCreatePayload = {
+  ClientAgreement: ClientAgreement
+  Comment?: string
+  FromDate: string
+  InvDate: string
+  InvNumber?: string
+  IsDirectFromSupplier: boolean
+  Organization: Organization
+  Supplier: Client
+}
+
 export type SupplyOrderFromFileResponse = {
   HasError?: boolean
   MissingVendorCodes?: string[]
   MissingVendorCodesFileUrl?: string
   SupplyOrder?: DirectSupplyOrder | null
+}
+
+export type SupplyOrderUkraineFromFileResponse = {
+  HasError?: boolean
+  MissingVendorCodes?: string[]
+  MissingVendorCodesFileUrl?: string
+  SupplyOrderUkraine?: SupplyOrderUkraine | null
 }
 
 export type SupplyOrderInvoiceTotals = {

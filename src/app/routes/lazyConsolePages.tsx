@@ -99,6 +99,7 @@ export const VatReportsPage = lazy(() => import('../../features/vat-reports').th
 export const ProductSpecificationCodesPage = lazy(() => import('../../features/product-specification-codes/pages/ProductSpecificationCodesPage').then((module) => ({ default: module.ProductSpecificationCodesPage })))
 export const SupplyReturnsPage = lazy(() => import('../../features/supply-returns').then((module) => ({ default: module.SupplyReturnsPage })))
 export const SupplyUkraineDirectOrderCreatePage = lazy(() => import('../../features/supply-ukraine-orders').then((module) => ({ default: module.SupplyUkraineDirectOrderCreatePage })))
+export const SupplyUkraineToUkraineOrderCreatePage = lazy(() => import('../../features/supply-ukraine-orders').then((module) => ({ default: module.SupplyUkraineToUkraineOrderCreatePage })))
 export const SupplyUkraineDirectOrderDetailPage = lazy(() => import('../../features/supply-ukraine-orders').then((module) => ({ default: module.SupplyUkraineDirectOrderDetailPage })))
 export const SupplyUkraineDirectOrderInvoicesPage = lazy(() => import('../../features/supply-ukraine-orders').then((module) => ({ default: module.SupplyUkraineDirectOrderInvoicesPage })))
 export const SupplyUkraineDirectOrderProductIncomePage = lazy(() => import('../../features/product-delivery-protocols').then((module) => ({ default: module.SupplyUkraineDirectOrderProductIncomePage })))

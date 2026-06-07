@@ -1,5 +1,5 @@
 export { SupplyUkraineOrderOverviewPage } from './pages/SupplyUkraineOrderOverviewPage'
-export { SupplyUkraineDirectOrderCreatePage } from './pages/SupplyUkraineDirectOrderCreatePage'
+export { SupplyUkraineDirectOrderCreatePage, SupplyUkraineToUkraineOrderCreatePage } from './pages/SupplyUkraineDirectOrderCreatePage'
 export { SupplyUkraineDirectOrderDetailPage } from './pages/SupplyUkraineDirectOrderDetailPage'
 export { SupplyUkraineDirectOrderInvoicesPage } from './pages/SupplyUkraineDirectOrderInvoicesPage'
 export { SupplyUkraineDirectOrderSpecificationsPage } from './pages/SupplyUkraineDirectOrderSpecificationsPage'

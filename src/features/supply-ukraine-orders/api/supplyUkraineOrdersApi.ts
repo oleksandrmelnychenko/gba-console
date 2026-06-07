@@ -18,11 +18,14 @@ import type {
   SupplyOrderUkraineItem,
   SupplyOrderDocumentParseConfiguration,
   SupplyOrderFromFileResponse,
+  SupplyOrderUkraineFromFileResponse,
   SupplyOrderPrintColumn,
   SupplyOrderPrintDocument,
   SupplyOrderUkraine,
   SupplyUkraineOrdersResponse,
   SupplyUkraineOrdersSearchParams,
+  SupplyOrderUkraineSupplierCreatePayload,
+  UkraineOrderFromSupplierParseConfiguration,
 } from '../types'
 
 const TARGET_ORGANIZATION_CULTURE_PREFIX = 'uk'
@@ -388,6 +391,29 @@ export async function uploadDirectSupplyOrderFromFile({
   return normalizeSupplyOrderFromFileResponse(result)
 }
 
+export async function uploadSupplyOrderUkraineFromSupplierFile({
+  file,
+  parseConfiguration,
+  orderUkraine,
+}: {
+  file: File
+  parseConfiguration: UkraineOrderFromSupplierParseConfiguration
+  orderUkraine: SupplyOrderUkraineSupplierCreatePayload
+}): Promise<SupplyOrderUkraineFromFileResponse> {
+  const formData = new FormData()
+
+  formData.append('file', file)
+  formData.append('parseConfiguration', JSON.stringify(parseConfiguration))
+  formData.append('orderUkraine', JSON.stringify(orderUkraine))
+
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/supplier/file', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizeSupplyOrderUkraineFromFileResponse(result)
+}
+
 function buildSearchQuery(params: SupplyUkraineOrdersSearchParams) {
   return {
     currencyId: params.currencyId ? Number(params.currencyId) : undefined,
@@ -516,6 +542,22 @@ function normalizeSupplyOrderFromFileResponse(result: unknown): SupplyOrderFromF
     ...response,
     MissingVendorCodes: Array.isArray(response.MissingVendorCodes) ? response.MissingVendorCodes : [],
     SupplyOrder: response.SupplyOrder || null,
+  }
+}
+
+function normalizeSupplyOrderUkraineFromFileResponse(result: unknown): SupplyOrderUkraineFromFileResponse {
+  const payload = parseJsonPayload(result)
+
+  if (!payload || typeof payload !== 'object') {
+    return {}
+  }
+
+  const response = payload as SupplyOrderUkraineFromFileResponse
+
+  return {
+    ...response,
+    MissingVendorCodes: Array.isArray(response.MissingVendorCodes) ? response.MissingVendorCodes : [],
+    SupplyOrderUkraine: response.SupplyOrderUkraine ? normalizeSupplyUkraineOrder(response.SupplyOrderUkraine) : null,
   }
 }
 

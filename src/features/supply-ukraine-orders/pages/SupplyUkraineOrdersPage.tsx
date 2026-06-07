@@ -35,7 +35,7 @@ import {
   IconRoute,
   IconTrash,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, type MouseEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -158,6 +158,45 @@ type OrderActionsPermissions = {
   canOpenToUkraineView: boolean
 }
 
+type OrderCreatePermissions = {
+  canCreateDirect: boolean
+  canCreateToUkraine: boolean
+  canPrint: boolean
+}
+
+type OrdersUiState = {
+  activeFilters: SupplyUkraineOrdersFilter
+  deleteCandidate: SupplyUkraineOrderRow | null
+  downloadDocument: SupplyOrderPrintDocument | null
+  downloadError: string | null
+  downloadOpened: boolean
+  expandedDirectOrders: Set<string>
+  filterDraft: SupplyUkraineOrdersFilter
+  isDeleting: boolean
+  isDownloading: boolean
+  officialCostsRow: SupplyUkraineOrderRow | null
+  page: number
+  pageSize: number
+  selectedRow: SupplyUkraineOrderRow | null
+}
+
+type OrdersUiAction =
+  | { patch: Partial<SupplyUkraineOrdersFilter>; type: 'patchFilterDraft' }
+  | { filters: SupplyUkraineOrdersFilter; type: 'setActiveFilters' }
+  | { filters: SupplyUkraineOrdersFilter; type: 'resetFilters' }
+  | { page: number; type: 'setPage' }
+  | { pageSize: number; type: 'setPageSize' }
+  | { orderKey: string; type: 'toggleDirectOrder' }
+  | { row: SupplyUkraineOrderRow | null; type: 'setSelectedRow' }
+  | { row: SupplyUkraineOrderRow | null; type: 'setDeleteCandidate' }
+  | { row: SupplyUkraineOrderRow | null; type: 'setOfficialCostsRow' }
+  | { isDeleting: boolean; type: 'setDeleting' }
+  | { type: 'openDownload' }
+  | { document: SupplyOrderPrintDocument | null; type: 'setDownloadDocument' }
+  | { error: string | null; type: 'setDownloadError' }
+  | { isDownloading: boolean; type: 'setDownloading' }
+  | { type: 'closeDownload' }
+
 const initialState: OrdersState = {
   directOrders: [],
   directTotal: 0,
@@ -206,28 +245,117 @@ function currenciesReducer(_state: CurrenciesState, action: CurrenciesAction): C
   }
 }
 
-export function SupplyUkraineOrdersPage() {
+function createInitialOrdersUiState(defaultFilters: SupplyUkraineOrdersFilter): OrdersUiState {
+  const savedFilters = readSavedFilters(defaultFilters)
+
+  return {
+    activeFilters: savedFilters,
+    deleteCandidate: null,
+    downloadDocument: null,
+    downloadError: null,
+    downloadOpened: false,
+    expandedDirectOrders: new Set(),
+    filterDraft: savedFilters,
+    isDeleting: false,
+    isDownloading: false,
+    officialCostsRow: null,
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE,
+    selectedRow: null,
+  }
+}
+
+function ordersUiReducer(state: OrdersUiState, action: OrdersUiAction): OrdersUiState {
+  switch (action.type) {
+    case 'patchFilterDraft':
+      return { ...state, filterDraft: { ...state.filterDraft, ...action.patch } }
+    case 'setActiveFilters':
+      return {
+        ...state,
+        activeFilters: action.filters,
+        expandedDirectOrders: new Set(),
+      }
+    case 'resetFilters':
+      return {
+        ...state,
+        activeFilters: action.filters,
+        expandedDirectOrders: new Set(),
+        filterDraft: action.filters,
+        page: 1,
+      }
+    case 'setPage':
+      return { ...state, page: action.page }
+    case 'setPageSize':
+      return { ...state, page: 1, pageSize: action.pageSize }
+    case 'toggleDirectOrder': {
+      const expandedDirectOrders = new Set(state.expandedDirectOrders)
+
+      if (expandedDirectOrders.has(action.orderKey)) {
+        expandedDirectOrders.delete(action.orderKey)
+      } else {
+        expandedDirectOrders.add(action.orderKey)
+      }
+
+      return { ...state, expandedDirectOrders }
+    }
+    case 'setSelectedRow':
+      return { ...state, selectedRow: action.row }
+    case 'setDeleteCandidate':
+      return { ...state, deleteCandidate: action.row }
+    case 'setOfficialCostsRow':
+      return { ...state, officialCostsRow: action.row }
+    case 'setDeleting':
+      return { ...state, isDeleting: action.isDeleting }
+    case 'openDownload':
+      return {
+        ...state,
+        downloadDocument: null,
+        downloadError: null,
+        downloadOpened: true,
+        isDownloading: true,
+      }
+    case 'setDownloadDocument':
+      return { ...state, downloadDocument: action.document }
+    case 'setDownloadError':
+      return { ...state, downloadError: action.error }
+    case 'setDownloading':
+      return { ...state, isDownloading: action.isDownloading }
+    case 'closeDownload':
+      return {
+        ...state,
+        downloadDocument: null,
+        downloadError: null,
+        downloadOpened: false,
+        isDownloading: false,
+      }
+  }
+}
+
+function useSupplyUkraineOrdersPageController() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuth()
   const defaultFilters = useMemo(() => createDefaultFilters(), [])
-  const [filterDraft, setFilterDraft] = useState<SupplyUkraineOrdersFilter>(() => readSavedFilters(defaultFilters))
-  const [activeFilters, setActiveFilters] = useState<SupplyUkraineOrdersFilter>(() => readSavedFilters(defaultFilters))
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [uiState, dispatchUi] = useReducer(ordersUiReducer, defaultFilters, createInitialOrdersUiState)
   const [state, dispatchOrders] = useReducer(ordersReducer, initialState)
   const [currenciesState, dispatchCurrencies] = useReducer(currenciesReducer, initialCurrenciesState)
-  const [expandedDirectOrders, setExpandedDirectOrders] = useState<Set<string>>(() => new Set())
-  const [selectedRow, setSelectedRow] = useState<SupplyUkraineOrderRow | null>(null)
-  const [deleteCandidate, setDeleteCandidate] = useState<SupplyUkraineOrderRow | null>(null)
-  const [officialCostsRow, setOfficialCostsRow] = useState<SupplyUkraineOrderRow | null>(null)
-  const [isDeleting, setDeleting] = useState(false)
-  const [downloadOpened, setDownloadOpened] = useState(false)
-  const [downloadDocument, setDownloadDocument] = useState<SupplyOrderPrintDocument | null>(null)
-  const [downloadError, setDownloadError] = useState<string | null>(null)
-  const [isDownloading, setDownloading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const {
+    activeFilters,
+    deleteCandidate,
+    downloadDocument,
+    downloadError,
+    downloadOpened,
+    expandedDirectOrders,
+    filterDraft,
+    isDeleting,
+    isDownloading,
+    officialCostsRow,
+    page,
+    pageSize,
+    selectedRow,
+  } = uiState
   const requestIdRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters)
@@ -376,32 +504,30 @@ export function SupplyUkraineOrdersPage() {
   )
   const columns = useSupplyUkraineOrdersColumns({
     expandedDirectOrders,
-    onDelete: setDeleteCandidate,
+    onDelete: (row) => dispatchUi({ row, type: 'setDeleteCandidate' }),
     onToggleDirectOrder: toggleDirectOrder,
   })
 
   function updateFilterDraft(patch: Partial<SupplyUkraineOrdersFilter>) {
-    setFilterDraft((current) => ({ ...current, ...patch }))
+    dispatchUi({ patch, type: 'patchFilterDraft' })
   }
 
   function refreshOrders() {
-    setActiveFilters(filterDraft)
-    setExpandedDirectOrders(new Set())
+    dispatchUi({ filters: filterDraft, type: 'setActiveFilters' })
     reload()
   }
 
   function resetFilters() {
-    setFilterDraft(defaultFilters)
-    setActiveFilters(defaultFilters)
-    setExpandedDirectOrders(new Set())
-    setPage(1)
+    dispatchUi({ filters: defaultFilters, type: 'resetFilters' })
     saveFilters(defaultFilters)
   }
 
   function changePageSize(value: string | null) {
     const nextPageSize = Number(value || DEFAULT_PAGE_SIZE)
-    setPageSize(Number.isFinite(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE)
-    setPage(1)
+    dispatchUi({
+      pageSize: Number.isFinite(nextPageSize) ? nextPageSize : DEFAULT_PAGE_SIZE,
+      type: 'setPageSize',
+    })
   }
 
   function toggleDirectOrder(order: DirectSupplyOrder) {
@@ -411,42 +537,32 @@ export function SupplyUkraineOrdersPage() {
       return
     }
 
-    setExpandedDirectOrders((current) => {
-      const next = new Set(current)
-
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-
-      return next
-    })
+    dispatchUi({ orderKey: key, type: 'toggleDirectOrder' })
   }
 
   function openRow(row: SupplyUkraineOrderRow) {
     if (row.kind !== 'invoice') {
-      setSelectedRow(row)
+      dispatchUi({ row, type: 'setSelectedRow' })
     }
   }
 
   function navigateFromModal(path: string) {
-    setSelectedRow(null)
+    dispatchUi({ row: null, type: 'setSelectedRow' })
     navigate(path)
   }
 
   function openOfficialCosts(row: SupplyUkraineOrderRow) {
-    setSelectedRow(null)
-    setOfficialCostsRow(row)
+    dispatchUi({ row: null, type: 'setSelectedRow' })
+    dispatchUi({ row, type: 'setOfficialCostsRow' })
   }
 
   async function confirmDelete() {
     if (!deleteCandidate?.netUid) {
-      setDeleteCandidate(null)
+      dispatchUi({ row: null, type: 'setDeleteCandidate' })
       return
     }
 
-    setDeleting(true)
+    dispatchUi({ isDeleting: true, type: 'setDeleting' })
 
     try {
       if (deleteCandidate.kind === 'toUkraine') {
@@ -459,7 +575,7 @@ export function SupplyUkraineOrdersPage() {
         color: 'green',
         message: t('Замовлення видалено'),
       })
-      setDeleteCandidate(null)
+      dispatchUi({ row: null, type: 'setDeleteCandidate' })
       reload()
     } catch (error) {
       notifications.show({
@@ -467,42 +583,127 @@ export function SupplyUkraineOrdersPage() {
         message: error instanceof Error ? error.message : t('Не вдалося видалити замовлення'),
       })
     } finally {
-      setDeleting(false)
+      dispatchUi({ isDeleting: false, type: 'setDeleting' })
     }
   }
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
-    setDownloadOpened(false)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(false)
+    dispatchUi({ type: 'closeDownload' })
   }, [])
 
   async function downloadPrintDocument() {
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
-    setDownloadOpened(true)
-    setDownloadDocument(null)
-    setDownloadError(null)
-    setDownloading(true)
+    dispatchUi({ type: 'openDownload' })
 
     try {
       const document = await printSupplyOrdersDocument(activeFilters.from, activeFilters.to, buildPrintColumns(t))
 
       if (downloadRequestRef.current === requestId) {
-        setDownloadDocument(document)
+        dispatchUi({ document, type: 'setDownloadDocument' })
       }
     } catch (error) {
       if (downloadRequestRef.current === requestId) {
-        setDownloadError(error instanceof Error ? error.message : t('Документ недоступний для завантаження'))
+        dispatchUi({
+          error: error instanceof Error ? error.message : t('Документ недоступний для завантаження'),
+          type: 'setDownloadError',
+        })
       }
     } finally {
       if (downloadRequestRef.current === requestId) {
-        setDownloading(false)
+        dispatchUi({ isDownloading: false, type: 'setDownloading' })
       }
     }
   }
+
+  return {
+    changePage: (nextPage: number) => dispatchUi({ page: nextPage, type: 'setPage' }),
+    changePageSize,
+    closeDelete: () => dispatchUi({ row: null, type: 'setDeleteCandidate' }),
+    closeDownload,
+    closeOfficialCosts: () => dispatchUi({ row: null, type: 'setOfficialCostsRow' }),
+    closeRow: () => dispatchUi({ row: null, type: 'setSelectedRow' }),
+    columns,
+    confirmDelete,
+    createDirect: () => navigate('/orders/ukraine/all/new', { state: { backgroundLocation: location } }),
+    createPermissions: { canCreateDirect, canCreateToUkraine, canPrint },
+    createToUkraine: () => navigate('/orders/ukraine/to-ukraine/new', { state: { backgroundLocation: location } }),
+    currenciesState,
+    currencyOptions,
+    deleteCandidate,
+    downloadDocument,
+    downloadError,
+    downloadOpened,
+    downloadPrintDocument,
+    filterDraft,
+    filterError,
+    isDeleting,
+    isDownloading,
+    navigateFromModal,
+    officialCostsRow,
+    officialCostsSaved: () => {
+      dispatchUi({ row: null, type: 'setOfficialCostsRow' })
+      reload()
+    },
+    openOfficialCosts,
+    openRow,
+    orderActionsPermissions,
+    page,
+    pageSize,
+    refreshOrders,
+    resetFilters,
+    rows,
+    selectedRow,
+    state,
+    toolbarLeft,
+    totalPages,
+    updateFilterDraft,
+  }
+}
+
+export function SupplyUkraineOrdersPage() {
+  const { t } = useI18n()
+  const {
+    changePage,
+    changePageSize,
+    closeDelete,
+    closeDownload,
+    closeOfficialCosts,
+    closeRow,
+    columns,
+    confirmDelete,
+    createDirect,
+    createPermissions,
+    createToUkraine,
+    currenciesState,
+    currencyOptions,
+    deleteCandidate,
+    downloadDocument,
+    downloadError,
+    downloadOpened,
+    downloadPrintDocument,
+    filterDraft,
+    filterError,
+    isDeleting,
+    isDownloading,
+    navigateFromModal,
+    officialCostsRow,
+    officialCostsSaved,
+    openOfficialCosts,
+    openRow,
+    orderActionsPermissions,
+    page,
+    pageSize,
+    refreshOrders,
+    resetFilters,
+    rows,
+    selectedRow,
+    state,
+    toolbarLeft,
+    totalPages,
+    updateFilterDraft,
+  } = useSupplyUkraineOrdersPageController()
 
   return (
     <Stack gap="sm" className="supply-ukraine-orders-page">
@@ -512,151 +713,353 @@ export function SupplyUkraineOrdersPage() {
         </Button>
       </PageHeaderActions>
 
-      <Card withBorder radius="md" padding="sm" className="supply-ukraine-orders-card">
-        <Stack gap="xs" className="supply-ukraine-orders-card-stack">
-          <Group align="flex-end" gap="xs" wrap="wrap" className="supply-ukraine-orders-filters">
-            <TextInput
-              label={t('Від')}
-              type="date"
-              value={filterDraft.from}
-              w={150}
-              onChange={(event) => updateFilterDraft({ from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До')}
-              type="date"
-              value={filterDraft.to}
-              w={150}
-              onChange={(event) => updateFilterDraft({ to: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('Постачальник')}
-              placeholder={t('Назва постачальника')}
-              value={filterDraft.supplier}
-              w={205}
-              onChange={(event) => updateFilterDraft({ supplier: event.currentTarget.value })}
-            />
-            <Select
-              clearable
-              data={currencyOptions}
-              label={t('Валюта')}
-              placeholder={t('Усі')}
-              searchable
-              value={filterDraft.currencyId || null}
-              w={160}
-              onChange={(value) => updateFilterDraft({ currencyId: value || '' })}
-            />
-            <Select
-              allowDeselect={false}
-              data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-              label={t('Тип')}
-              value={filterDraft.type}
-              w={210}
-              onChange={(value) => updateFilterDraft({ type: (value as SupplyUkraineOrderKind) || 'all' })}
-            />
-            {canCreateToUkraine && (
-              <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={() => navigate('/basket-supply-ukraine-order')}>
-                {t('Поставка в Україну')}
-              </Button>
-            )}
-            {canCreateDirect && (
-              <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={() => navigate('/orders/ukraine/all/new', { state: { backgroundLocation: location } })}>
-                {t('Замовлення Україна')}
-              </Button>
-            )}
-            {canPrint && (
-              <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={downloadPrintDocument}>
-                {t('Завантажити')}
-              </Button>
-            )}
-            <Tooltip label={t('Скинути фільтри')}>
-              <ActionIcon aria-label={t('Скинути фільтри')} size="lg" variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+      <OrdersListCard
+        columns={columns}
+        createPermissions={createPermissions}
+        currenciesError={currenciesState.error}
+        currencyOptions={currencyOptions}
+        filterDraft={filterDraft}
+        filterError={filterError}
+        isDownloading={isDownloading}
+        orderError={state.error}
+        page={page}
+        pageSize={pageSize}
+        rows={filterError ? [] : rows}
+        state={state}
+        toolbarLeft={toolbarLeft}
+        totalPages={totalPages}
+        onChangePage={changePage}
+        onChangePageSize={changePageSize}
+        onCreateDirect={createDirect}
+        onCreateToUkraine={createToUkraine}
+        onDownload={downloadPrintDocument}
+        onFilterDraftChange={updateFilterDraft}
+        onResetFilters={resetFilters}
+        onRowClick={openRow}
+      />
 
-          {currenciesState.error && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {currenciesState.error}
-            </Alert>
-          )}
-
-          {(state.error || filterError) && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || state.error}
-            </Alert>
-          )}
-
-          <div className="supply-ukraine-orders-table">
-            <DataTable
-              columns={columns}
-              data={filterError ? [] : rows}
-              defaultLayout={TABLE_DEFAULT_LAYOUT}
-              emptyText={t('Замовлень не знайдено')}
-              getRowId={getRowId}
-              height="100%"
-              isLoading={state.isLoading}
-              layoutVersion="supply-ukraine-orders-table-1"
-              loadingText={t('Завантаження замовлень')}
-              minWidth={1680}
-              rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
-              tableId="supply-ukraine-orders"
-              toolbarLeft={toolbarLeft}
-              onRowClick={openRow}
-            />
-          </div>
-
-          <Group justify="flex-end" className="supply-ukraine-orders-pagination">
-            <Group gap={6}>
-              <Text c="dimmed" size="xs">{t('Рядків')}</Text>
-              <Select
-                allowDeselect={false}
-                aria-label={t('Рядків')}
-                data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
-                size="xs"
-                value={String(pageSize)}
-                w={82}
-                onChange={changePageSize}
-              />
-            </Group>
-            {totalPages > 1 && (
-              <Pagination total={totalPages} value={Math.min(page, totalPages)} onChange={setPage} />
-            )}
-          </Group>
-        </Stack>
-      </Card>
-
-      <OrderActionsModal
+      <OrdersPageModals
+        deleteCandidate={deleteCandidate}
+        downloadDocument={downloadDocument}
+        downloadError={downloadError}
+        downloadOpened={downloadOpened}
+        isDeleting={isDeleting}
+        isDownloading={isDownloading}
+        officialCostsRow={officialCostsRow}
         permissions={orderActionsPermissions}
-        row={selectedRow}
-        onClose={() => setSelectedRow(null)}
-        onOpenOfficialCosts={openOfficialCosts}
+        selectedRow={selectedRow}
+        onCloseDelete={closeDelete}
+        onCloseDownload={closeDownload}
+        onCloseOfficialCosts={closeOfficialCosts}
+        onCloseRow={closeRow}
+        onConfirmDelete={confirmDelete}
         onNavigate={navigateFromModal}
+        onOpenOfficialCosts={openOfficialCosts}
+        onOfficialCostsSaved={officialCostsSaved}
+      />
+    </Stack>
+  )
+}
+
+function OrdersListCard({
+  columns,
+  createPermissions,
+  currenciesError,
+  currencyOptions,
+  filterDraft,
+  filterError,
+  isDownloading,
+  orderError,
+  page,
+  pageSize,
+  rows,
+  state,
+  toolbarLeft,
+  totalPages,
+  onChangePage,
+  onChangePageSize,
+  onCreateDirect,
+  onCreateToUkraine,
+  onDownload,
+  onFilterDraftChange,
+  onResetFilters,
+  onRowClick,
+}: {
+  columns: DataTableColumn<SupplyUkraineOrderRow>[]
+  createPermissions: OrderCreatePermissions
+  currenciesError: string | null
+  currencyOptions: Array<{ label: string, value: string }>
+  filterDraft: SupplyUkraineOrdersFilter
+  filterError: string | null
+  isDownloading: boolean
+  orderError: string | null
+  page: number
+  pageSize: number
+  rows: SupplyUkraineOrderRow[]
+  state: OrdersState
+  toolbarLeft: ReactNode
+  totalPages: number
+  onChangePage: (page: number) => void
+  onChangePageSize: (value: string | null) => void
+  onCreateDirect: () => void
+  onCreateToUkraine: () => void
+  onDownload: () => void
+  onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
+  onResetFilters: () => void
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Card withBorder radius="md" padding="sm" className="supply-ukraine-orders-card">
+      <Stack gap="xs" className="supply-ukraine-orders-card-stack">
+        <OrdersFilterToolbar
+          createPermissions={createPermissions}
+          currencyOptions={currencyOptions}
+          filterDraft={filterDraft}
+          isDownloading={isDownloading}
+          onCreateDirect={onCreateDirect}
+          onCreateToUkraine={onCreateToUkraine}
+          onDownload={onDownload}
+          onFilterDraftChange={onFilterDraftChange}
+          onResetFilters={onResetFilters}
+        />
+
+        {currenciesError && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {currenciesError}
+          </Alert>
+        )}
+
+        {(orderError || filterError) && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError || orderError}
+          </Alert>
+        )}
+
+        <div className="supply-ukraine-orders-table">
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Замовлень не знайдено')}
+            getRowId={getRowId}
+            height="100%"
+            isLoading={state.isLoading}
+            layoutVersion="supply-ukraine-orders-table-1"
+            loadingText={t('Завантаження замовлень')}
+            minWidth={1680}
+            rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
+            tableId="supply-ukraine-orders"
+            toolbarLeft={toolbarLeft}
+            onRowClick={onRowClick}
+          />
+        </div>
+
+        <OrdersPagination
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onChangePage={onChangePage}
+          onChangePageSize={onChangePageSize}
+        />
+      </Stack>
+    </Card>
+  )
+}
+
+function OrdersFilterToolbar({
+  createPermissions,
+  currencyOptions,
+  filterDraft,
+  isDownloading,
+  onCreateDirect,
+  onCreateToUkraine,
+  onDownload,
+  onFilterDraftChange,
+  onResetFilters,
+}: {
+  createPermissions: OrderCreatePermissions
+  currencyOptions: Array<{ label: string, value: string }>
+  filterDraft: SupplyUkraineOrdersFilter
+  isDownloading: boolean
+  onCreateDirect: () => void
+  onCreateToUkraine: () => void
+  onDownload: () => void
+  onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
+  onResetFilters: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group align="flex-end" gap="xs" wrap="wrap" className="supply-ukraine-orders-filters">
+      <TextInput
+        label={t('Від')}
+        type="date"
+        value={filterDraft.from}
+        w={150}
+        onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
+      />
+      <TextInput
+        label={t('До')}
+        type="date"
+        value={filterDraft.to}
+        w={150}
+        onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
+      />
+      <TextInput
+        label={t('Постачальник')}
+        placeholder={t('Назва постачальника')}
+        value={filterDraft.supplier}
+        w={205}
+        onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
+      />
+      <Select
+        clearable
+        data={currencyOptions}
+        label={t('Валюта')}
+        placeholder={t('Усі')}
+        searchable
+        value={filterDraft.currencyId || null}
+        w={160}
+        onChange={(value) => onFilterDraftChange({ currencyId: value || '' })}
+      />
+      <Select
+        allowDeselect={false}
+        data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+        label={t('Тип')}
+        value={filterDraft.type}
+        w={210}
+        onChange={(value) => onFilterDraftChange({ type: (value as SupplyUkraineOrderKind) || 'all' })}
+      />
+      {createPermissions.canCreateToUkraine && (
+        <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={onCreateToUkraine}>
+          {t('Поставка в Україну')}
+        </Button>
+      )}
+      {createPermissions.canCreateDirect && (
+        <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={onCreateDirect}>
+          {t('Замовлення Україна')}
+        </Button>
+      )}
+      {createPermissions.canPrint && (
+        <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={onDownload}>
+          {t('Завантажити')}
+        </Button>
+      )}
+      <Tooltip label={t('Скинути фільтри')}>
+        <ActionIcon aria-label={t('Скинути фільтри')} size="lg" variant="light" onClick={onResetFilters}>
+          <IconRestore size={18} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  )
+}
+
+function OrdersPagination({
+  page,
+  pageSize,
+  totalPages,
+  onChangePage,
+  onChangePageSize,
+}: {
+  page: number
+  pageSize: number
+  totalPages: number
+  onChangePage: (page: number) => void
+  onChangePageSize: (value: string | null) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group justify="flex-end" className="supply-ukraine-orders-pagination">
+      <Group gap={6}>
+        <Text c="dimmed" size="xs">{t('Рядків')}</Text>
+        <Select
+          allowDeselect={false}
+          aria-label={t('Рядків')}
+          data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
+          size="xs"
+          value={String(pageSize)}
+          w={82}
+          onChange={onChangePageSize}
+        />
+      </Group>
+      {totalPages > 1 && (
+        <Pagination total={totalPages} value={Math.min(page, totalPages)} onChange={onChangePage} />
+      )}
+    </Group>
+  )
+}
+
+function OrdersPageModals({
+  deleteCandidate,
+  downloadDocument,
+  downloadError,
+  downloadOpened,
+  isDeleting,
+  isDownloading,
+  officialCostsRow,
+  permissions,
+  selectedRow,
+  onCloseDelete,
+  onCloseDownload,
+  onCloseOfficialCosts,
+  onCloseRow,
+  onConfirmDelete,
+  onNavigate,
+  onOpenOfficialCosts,
+  onOfficialCostsSaved,
+}: {
+  deleteCandidate: SupplyUkraineOrderRow | null
+  downloadDocument: SupplyOrderPrintDocument | null
+  downloadError: string | null
+  downloadOpened: boolean
+  isDeleting: boolean
+  isDownloading: boolean
+  officialCostsRow: SupplyUkraineOrderRow | null
+  permissions: OrderActionsPermissions
+  selectedRow: SupplyUkraineOrderRow | null
+  onCloseDelete: () => void
+  onCloseDownload: () => void
+  onCloseOfficialCosts: () => void
+  onCloseRow: () => void
+  onConfirmDelete: () => void
+  onNavigate: (path: string) => void
+  onOpenOfficialCosts: (row: SupplyUkraineOrderRow) => void
+  onOfficialCostsSaved: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      <OrderActionsModal
+        permissions={permissions}
+        row={selectedRow}
+        onClose={onCloseRow}
+        onOpenOfficialCosts={onOpenOfficialCosts}
+        onNavigate={onNavigate}
       />
 
       {officialCostsRow && (
         <OfficialCostsModal
           key={officialCostsRow.netUid || officialCostsRow.index}
           row={officialCostsRow}
-          onClose={() => setOfficialCostsRow(null)}
-          onSaved={() => {
-            setOfficialCostsRow(null)
-            reload()
-          }}
+          onClose={onCloseOfficialCosts}
+          onSaved={onOfficialCostsSaved}
         />
       )}
 
-      <AppModal centered opened={Boolean(deleteCandidate)} title={t('Видалити замовлення')} onClose={() => setDeleteCandidate(null)}>
+      <AppModal centered opened={Boolean(deleteCandidate)} title={t('Видалити замовлення')} onClose={onCloseDelete}>
         <Stack gap="md">
           <Text>
             {t('Видалити')} <Text span fw={700}>{getRowTitle(deleteCandidate)}</Text>?
           </Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isDeleting} variant="light" onClick={() => setDeleteCandidate(null)}>
+            <Button color="gray" disabled={isDeleting} variant="light" onClick={onCloseDelete}>
               {t('Скасувати')}
             </Button>
-            <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={confirmDelete}>
+            <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} onClick={onConfirmDelete}>
               {t('Видалити')}
             </Button>
           </Group>
@@ -668,9 +1071,9 @@ export function SupplyUkraineOrdersPage() {
         error={downloadError}
         isLoading={isDownloading}
         opened={downloadOpened}
-        onClose={closeDownload}
+        onClose={onCloseDownload}
       />
-    </Stack>
+    </>
   )
 }
 
@@ -988,6 +1391,61 @@ type OfficialCostsForm = {
   vatPercent: number | ''
 }
 
+type OfficialCostsState = {
+  error: string | null
+  form: OfficialCostsForm
+  isLoading: boolean
+  isSaving: boolean
+  organizations: SupplyServiceOrganization[]
+  products: SupplyServiceConsumableProduct[]
+}
+
+type OfficialCostsAction =
+  | { type: 'loadStart' }
+  | {
+    organizations: SupplyServiceOrganization[]
+    products: SupplyServiceConsumableProduct[]
+    type: 'loadSuccess'
+  }
+  | { error: string; type: 'loadFailure' }
+  | { patch: Partial<OfficialCostsForm>; type: 'patchForm' }
+  | { error: string | null; type: 'setError' }
+  | { isSaving: boolean; type: 'setSaving' }
+
+function createInitialOfficialCostsState(expense: ProductDeliveryExpense | null): OfficialCostsState {
+  return {
+    error: null,
+    form: createOfficialCostsForm(expense),
+    isLoading: true,
+    isSaving: false,
+    organizations: [],
+    products: [],
+  }
+}
+
+function officialCostsReducer(state: OfficialCostsState, action: OfficialCostsAction): OfficialCostsState {
+  switch (action.type) {
+    case 'loadStart':
+      return { ...state, error: null, isLoading: true }
+    case 'loadSuccess':
+      return {
+        ...state,
+        error: null,
+        isLoading: false,
+        organizations: action.organizations,
+        products: action.products,
+      }
+    case 'loadFailure':
+      return { ...state, error: action.error, isLoading: false }
+    case 'patchForm':
+      return { ...state, form: { ...state.form, ...action.patch } }
+    case 'setError':
+      return { ...state, error: action.error }
+    case 'setSaving':
+      return { ...state, isSaving: action.isSaving }
+  }
+}
+
 function OfficialCostsModal({
   row,
   onClose,
@@ -999,19 +1457,14 @@ function OfficialCostsModal({
 }) {
   const { t } = useI18n()
   const expense = row.order?.DeliveryExpenses?.[0] || null
-  const [organizations, setOrganizations] = useState<SupplyServiceOrganization[]>([])
-  const [products, setProducts] = useState<SupplyServiceConsumableProduct[]>([])
-  const [form, setForm] = useState<OfficialCostsForm>(() => createOfficialCostsForm(expense))
-  const [isLoading, setLoading] = useState(true)
-  const [isSaving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(officialCostsReducer, expense, createInitialOfficialCostsState)
+  const { error, form, isLoading, isSaving, organizations, products } = state
 
   useEffect(() => {
     let cancelled = false
 
     async function loadDictionaries() {
-      setLoading(true)
-      setError(null)
+      dispatch({ type: 'loadStart' })
 
       try {
         const [nextOrganizations, nextProducts] = await Promise.all([
@@ -1020,16 +1473,18 @@ function OfficialCostsModal({
         ])
 
         if (!cancelled) {
-          setOrganizations(addSelectedOrganization(nextOrganizations, expense?.SupplyOrganization || null))
-          setProducts(addSelectedProduct(nextProducts, expense?.ConsumableProduct || null))
+          dispatch({
+            organizations: addSelectedOrganization(nextOrganizations, expense?.SupplyOrganization || null),
+            products: addSelectedProduct(nextProducts, expense?.ConsumableProduct || null),
+            type: 'loadSuccess',
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити довідники'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatch({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити довідники'),
+            type: 'loadFailure',
+          })
         }
       }
     }
@@ -1067,7 +1522,7 @@ function OfficialCostsModal({
   )
 
   function updateForm(patch: Partial<OfficialCostsForm>) {
-    setForm((current) => ({ ...current, ...patch }))
+    dispatch({ patch, type: 'patchForm' })
   }
 
   function changeOrganization(value: string | null) {
@@ -1082,17 +1537,17 @@ function OfficialCostsModal({
 
   async function saveOfficialCosts() {
     if (!row.order?.Id) {
-      setError(t('Поставка не завантажена'))
+      dispatch({ error: t('Поставка не завантажена'), type: 'setError' })
       return
     }
 
     if (!selectedOrganization || !selectedAgreement || !selectedProduct || !form.invoiceNumber.trim()) {
-      setError(t('Заповніть організацію, договір, тип і номер інвойса'))
+      dispatch({ error: t('Заповніть організацію, договір, тип і номер інвойса'), type: 'setError' })
       return
     }
 
-    setSaving(true)
-    setError(null)
+    dispatch({ isSaving: true, type: 'setSaving' })
+    dispatch({ error: null, type: 'setError' })
 
     const payload: ProductDeliveryExpense = {
       ...expense,
@@ -1121,9 +1576,12 @@ function OfficialCostsModal({
       notifications.show({ color: 'green', message: t('Офіційні витрати доставки збережено') })
       onSaved()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти офіційні витрати доставки'))
+      dispatch({
+        error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти офіційні витрати доставки'),
+        type: 'setError',
+      })
     } finally {
-      setSaving(false)
+      dispatch({ isSaving: false, type: 'setSaving' })
     }
   }
 

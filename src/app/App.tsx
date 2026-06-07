@@ -22,6 +22,7 @@ import {
   ProductGroupDetailPage,
   SupplierOrganizationEditPage,
   SupplyUkraineDirectOrderCreatePage,
+  SupplyUkraineToUkraineOrderCreatePage,
   TaxFreeCarrierFormPage,
   UserEditPage,
   UserNewPage,
@@ -97,6 +98,7 @@ export function App() {
             <Route path="/tax-free/carriers/new" element={lazyRoute(<TaxFreeCarrierFormPage />)} />
             <Route path="/tax-free/carriers/edit/:id" element={lazyRoute(<TaxFreeCarrierFormPage />)} />
             <Route path="/orders/ukraine/all/new" element={lazyRoute(<SupplyUkraineDirectOrderCreatePage />)} />
+            <Route path="/orders/ukraine/to-ukraine/new" element={lazyRoute(<SupplyUkraineToUkraineOrderCreatePage />)} />
             <Route path="/product-groups/:id" element={lazyRoute(<ProductGroupDetailPage />)} />
             <Route path="/resales/new" element={lazyRoute(<NewResalePage />)} />
             <Route path="/users/new" element={lazyRoute(<UserNewPage />)} />
