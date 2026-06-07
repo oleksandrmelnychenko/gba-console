@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import type {
   ProductIncomeDocument,
   ProductIncomeDocumentsExportDocument,
@@ -6,6 +7,7 @@ import type {
   ProductIncomeDocumentsSearchParams,
   ProductIncomeInfo,
   ProductIncomeItem,
+  ProductIncomePackingList,
   RemainingConsignment,
 } from '../types'
 
@@ -107,12 +109,81 @@ function normalizeProductIncomeInfo(result: unknown): ProductIncomeInfo | null {
 
   return {
     ...info,
-    ProductIncomeItems: normalizeProductIncomeItems(info.ProductIncomeItems),
+    PackingList: normalizeProductIncomePackingList(info.PackingList),
+    ProductIncomeItems: normalizeProductIncomeItems(info.ProductIncomeItems).map(normalizeProductIncomeItem),
   }
 }
 
 function normalizeProductIncomeItems(items?: ProductIncomeItem[]): ProductIncomeItem[] {
   return Array.isArray(items) ? items : []
+}
+
+function normalizeProductIncomeItem(item: ProductIncomeItem): ProductIncomeItem {
+  return {
+    ...item,
+    PackingListPackageOrderItem: item.PackingListPackageOrderItem
+      ? {
+          ...item.PackingListPackageOrderItem,
+          PackingList: normalizeProductIncomePackingList(item.PackingListPackageOrderItem.PackingList),
+        }
+      : item.PackingListPackageOrderItem,
+    SupplyOrderUkraineItem: item.SupplyOrderUkraineItem
+      ? {
+          ...item.SupplyOrderUkraineItem,
+          SupplyOrderUkraine: normalizeSupplyOrderUkraineNumber(item.SupplyOrderUkraineItem.SupplyOrderUkraine),
+        }
+      : item.SupplyOrderUkraineItem,
+  }
+}
+
+function normalizeProductIncomePackingList(
+  packingList?: ProductIncomePackingList | null,
+): ProductIncomePackingList | null | undefined {
+  if (!packingList) {
+    return packingList
+  }
+
+  const invoice = packingList.SupplyInvoice
+  const order = invoice?.SupplyOrder
+
+  return {
+    ...packingList,
+    SupplyInvoice: invoice
+      ? {
+          ...invoice,
+          SupplyOrder: order
+            ? {
+                ...order,
+                SupplyOrderNumber: normalizeNumberObject(order.SupplyOrderNumber),
+              }
+            : order,
+        }
+      : invoice,
+  }
+}
+
+function normalizeSupplyOrderUkraineNumber<T extends { InvNumber?: string; Number?: string } | null | undefined>(
+  order: T,
+): T {
+  if (!order) {
+    return order
+  }
+
+  return {
+    ...order,
+    Number: normalizeDisplayNumber(order.Number) || normalizeDisplayNumber(order.InvNumber),
+  }
+}
+
+function normalizeNumberObject<T extends { Number?: string | null } | null | undefined>(value: T): T {
+  if (!value) {
+    return value
+  }
+
+  return {
+    ...value,
+    Number: normalizeDisplayNumber(value.Number),
+  }
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

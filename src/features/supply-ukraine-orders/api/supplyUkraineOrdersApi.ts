@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import type {
   Client,
   Currency,
@@ -42,8 +43,12 @@ export async function getDirectSupplyUkraineOrders(
   const result = await apiRequest<unknown>('/supplies/orders/all/uk/filtered', {
     query: buildSearchQuery(params),
   })
+  const response = normalizeOrdersResponse<DirectSupplyOrder>(result, ['Items', 'SupplyOrders', 'Orders', 'Data'])
 
-  return normalizeOrdersResponse<DirectSupplyOrder>(result, ['Items', 'SupplyOrders', 'Orders', 'Data'])
+  return {
+    ...response,
+    items: response.items.map(normalizeDirectSupplyOrderObject),
+  }
 }
 
 export async function deleteSupplyUkraineOrder(netId: string): Promise<void> {
@@ -437,12 +442,28 @@ function normalizeDirectSupplyOrder(result: unknown): DirectSupplyOrder | null {
 
   const order = result as DirectSupplyOrder
 
+  return normalizeDirectSupplyOrderObject(order)
+}
+
+function normalizeDirectSupplyOrderObject(order: DirectSupplyOrder): DirectSupplyOrder {
   return {
     ...order,
     CreditNoteDocuments: Array.isArray(order.CreditNoteDocuments) ? order.CreditNoteDocuments : [],
     SupplyInvoices: Array.isArray(order.SupplyInvoices) ? order.SupplyInvoices.map(ensureSupplyInvoice) : [],
     SupplyOrderDeliveryDocuments: Array.isArray(order.SupplyOrderDeliveryDocuments) ? order.SupplyOrderDeliveryDocuments : [],
     SupplyOrderItems: Array.isArray(order.SupplyOrderItems) ? order.SupplyOrderItems : [],
+    SupplyOrderNumber: normalizeNumberObject(order.SupplyOrderNumber),
+  }
+}
+
+function normalizeNumberObject<T extends { Number?: string | null } | null | undefined>(value: T): T {
+  if (!value) {
+    return value
+  }
+
+  return {
+    ...value,
+    Number: normalizeDisplayNumber(value.Number),
   }
 }
 
