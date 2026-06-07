@@ -99,6 +99,7 @@ export type ActProvidingServicesSearchParams = {
 }
 
 export type ActProvidingServicesResponse = {
+  HasMore?: boolean
   Items: ActProvidingService[]
   Total?: number
 }

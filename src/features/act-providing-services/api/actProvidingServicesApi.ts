@@ -8,17 +8,20 @@ import type {
 export async function getActProvidingServices(
   params: ActProvidingServicesSearchParams,
 ): Promise<ActProvidingServicesResponse> {
+  const responseLimit = params.limit
+  const requestLimit = responseLimit + 1
+
   const result = await apiRequest<unknown>('/act/providing/services/all', {
     query: {
       from: params.from,
       isFiltered: params.isFiltered,
-      limit: params.limit,
+      limit: requestLimit,
       offset: params.offset,
       to: params.to,
     },
   })
 
-  return normalizeActProvidingServicesResponse(result)
+  return normalizeActProvidingServicesResponse(result, responseLimit)
 }
 
 export async function getActProvidingService(netId: string): Promise<ActProvidingService | null> {
@@ -40,15 +43,17 @@ export async function updateActProvidingService(act: ActProvidingService): Promi
   return normalizeActProvidingService(result)
 }
 
-function normalizeActProvidingServicesResponse(result: unknown): ActProvidingServicesResponse {
-  const items = readArrayPayload(result, ['Items', 'ActProvidingServices', 'Data']).map((item) =>
+function normalizeActProvidingServicesResponse(result: unknown, limit: number): ActProvidingServicesResponse {
+  const receivedItems = readArrayPayload(result, ['Items', 'ActProvidingServices', 'Data']).map((item) =>
     normalizeActProvidingService(item),
   ).filter((item): item is ActProvidingService => Boolean(item))
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
+  const total = readNumber(payload.Total, readNumber(payload.TotalRowQty, readNumber(payload.TotalRowsQty)))
 
   return {
-    Items: items,
-    Total: readNumber(payload.Total, readNumber(payload.TotalRowQty, readNumber(payload.TotalRowsQty))),
+    HasMore: typeof total === 'number' ? undefined : receivedItems.length > limit,
+    Items: receivedItems.slice(0, limit),
+    Total: total,
   }
 }
 

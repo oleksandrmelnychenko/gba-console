@@ -76,6 +76,7 @@ type ActProvidingServiceRow = ActProvidingServiceDisplayModel & {
 type ActProvidingServicesLoadState = {
   acts: ActProvidingService[]
   error: string | null
+  hasMore: boolean
   isLoading: boolean
   total: number | undefined
 }
@@ -83,6 +84,7 @@ type ActProvidingServicesLoadState = {
 const EMPTY_ACT_PROVIDING_SERVICES_LOAD_STATE: ActProvidingServicesLoadState = {
   acts: [],
   error: null,
+  hasMore: false,
   isLoading: false,
   total: undefined,
 }
@@ -99,7 +101,7 @@ function useActProvidingServicesPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('act-providing-services', TABLE_DEFAULT_LAYOUT.density)
   const requestRef = useRef(0)
-  const { acts, error, isLoading, total } = loadState
+  const { acts, error, hasMore, isLoading, total } = loadState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const rows = useMemo(
@@ -107,7 +109,7 @@ function useActProvidingServicesPageModel() {
     [acts, t],
   )
   const canMoveBackward = page > 1
-  const canMoveForward = typeof total === 'number' ? page * pageSize < total : acts.length === pageSize
+  const canMoveForward = typeof total === 'number' ? page * pageSize < total : hasMore
   const toolbarLeft = useMemo(
     () => (
       <Text c="dimmed" size="xs">
@@ -160,6 +162,7 @@ function useActProvidingServicesPageModel() {
         setLoadState({
           acts: response.Items,
           error: null,
+          hasMore: Boolean(response.HasMore),
           isLoading: false,
           total: response.Total,
         })
@@ -169,6 +172,7 @@ function useActProvidingServicesPageModel() {
           setLoadState({
             acts: [],
             error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити акти надання послуг'),
+            hasMore: false,
             isLoading: false,
             total: undefined,
           })
