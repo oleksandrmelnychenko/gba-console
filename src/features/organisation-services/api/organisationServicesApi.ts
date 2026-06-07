@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { formatDateInputForQuery } from '../../../shared/date/dateTime'
 import type {
   OrganizationPaymentTasks,
   OrganizationPaymentTasksParams,
@@ -35,8 +36,8 @@ export async function getOrganizationPaymentTasks(
     query: {
       organizationName: params.organizationName,
       serviceTypes: params.serviceTypes,
-      from: params.from,
-      to: params.to,
+      from: formatDateInputForQuery(params.from),
+      to: formatDateInputForQuery(params.to),
     },
     ...(signal ? { signal } : {}),
   })

@@ -69,6 +69,8 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+const DATE_INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
+const ALL_SERVICE_ORGANIZATION_TYPE_VALUES = SERVICE_ORGANIZATION_TYPES.map((option) => option.value)
 
 type ServiceCollectionKey =
   | 'BrokerServices'
@@ -95,6 +97,12 @@ const EMPTY_ORGANIZATION_SEARCH_STATE: OrganizationSearchState = {
 }
 
 export function OrganisationServicesPage() {
+  const model = useOrganisationServicesPageModel()
+
+  return <OrganisationServicesPageView model={model} />
+}
+
+function useOrganisationServicesPageModel() {
   const { t } = useI18n()
   const [organizationSearch, setOrganizationSearch] = useValueState('')
   const [organizationSearchState, setOrganizationSearchState] = useValueState<OrganizationSearchState>(EMPTY_ORGANIZATION_SEARCH_STATE)
@@ -177,7 +185,9 @@ export function OrganisationServicesPage() {
   )
 
   useEffect(() => {
-    if (selectedOrganization || organizationSearch.trim().length < 2) {
+    const normalizedOrganizationSearch = organizationSearch.trim()
+
+    if (selectedOrganization || !normalizedOrganizationSearch) {
       setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
       return
     }
@@ -190,7 +200,7 @@ export function OrganisationServicesPage() {
         isLoading: true,
       }))
 
-      searchServiceOrganizations(organizationSearch, controller.signal)
+      searchServiceOrganizations(normalizedOrganizationSearch, controller.signal)
         .then((organizations) => {
           if (!controller.signal.aborted) {
             setOrganizationSearchState({ error: null, isLoading: false, suggestions: organizations })
@@ -221,7 +231,7 @@ export function OrganisationServicesPage() {
   function selectOrganization(organization: ServiceOrganization) {
     const serviceTypes = organization.ServiceOrganizationTypes?.length
       ? organization.ServiceOrganizationTypes
-      : SERVICE_ORGANIZATION_TYPES.map((option) => option.value)
+      : ALL_SERVICE_ORGANIZATION_TYPE_VALUES
 
     setSelectedOrganization(organization)
     setOrganizationSearch(organization.Name || '')
@@ -265,7 +275,8 @@ export function OrganisationServicesPage() {
   function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const validationError = validateSearch(selectedOrganization, selectedServiceTypes, dateFrom, dateTo)
+    const serviceTypes = getEffectiveServiceTypes(selectedServiceTypes, selectedOrganization)
+    const validationError = validateSearch(selectedOrganization, serviceTypes, dateFrom, dateTo)
 
     if (validationError) {
       setError(validationError)
@@ -274,7 +285,7 @@ export function OrganisationServicesPage() {
 
     const params = {
       organizationName: selectedOrganization?.Name?.trim() || '',
-      serviceTypes: selectedServiceTypes.map(Number) as ServiceOrganizationTypeValue[],
+      serviceTypes,
       from: dateFrom,
       to: dateTo,
     }
@@ -282,6 +293,67 @@ export function OrganisationServicesPage() {
     setLastSearchParams(params)
     void loadPaymentTasks(params)
   }
+
+  return {
+    availableServiceOptions,
+    columns,
+    dateFrom,
+    dateTo,
+    documentFilters,
+    isLoadingTasks,
+    lastSearchParams,
+    organizationSearch,
+    organizationSearchState,
+    paymentTasks,
+    rows,
+    selectedOrganization,
+    selectedServiceTypes,
+    toolbarLeft,
+    toolbarRight,
+    visibleError,
+    clearOrganization,
+    resetFilters,
+    selectOrganization,
+    setDateFrom,
+    setDateTo,
+    setDocumentFilters,
+    setSelectedServiceTypes,
+    submitSearch,
+    updateOrganizationSearch,
+  }
+}
+
+type OrganisationServicesPageModel = ReturnType<typeof useOrganisationServicesPageModel>
+
+function OrganisationServicesPageView({ model }: { model: OrganisationServicesPageModel }) {
+  const { t } = useI18n()
+  const {
+    availableServiceOptions,
+    columns,
+    dateFrom,
+    dateTo,
+    documentFilters,
+    isLoadingTasks,
+    lastSearchParams,
+    organizationSearch,
+    organizationSearchState,
+    paymentTasks,
+    rows,
+    selectedOrganization,
+    selectedServiceTypes,
+    toolbarLeft,
+    toolbarRight,
+    visibleError,
+    clearOrganization,
+    resetFilters,
+    selectOrganization,
+    setDateFrom,
+    setDateTo,
+    setDocumentFilters,
+    setSelectedServiceTypes,
+    submitSearch,
+    updateOrganizationSearch,
+  } = model
 
   return (
     <Stack gap="lg">
@@ -506,7 +578,7 @@ function flattenPaymentTasks(tasks: SupplyPaymentTask[]): PaymentTaskRow[] {
           ].join(':'),
           isPayed: task.IsPayed === true || task.TaskStatus === 1,
           number: service.Number || service.ServiceNumber,
-          serviceName: service.Name || service.ServiceNumber,
+          serviceName: getServiceName(service, serviceTypeLabel),
           serviceType,
           serviceTypeLabel,
           status: task.TaskStatus,
@@ -565,6 +637,10 @@ function getDocumentName(
     || (documentId ? String(documentId) : undefined)
 }
 
+function getServiceName(service: ServiceItem, serviceTypeLabel: string): string | undefined {
+  return service.Name?.trim() || serviceTypeLabel || service.ServiceNumber
+}
+
 function readAmount(service: ServiceItem, task: SupplyPaymentTask): number | undefined {
   return service.GrossPrice ?? service.AccountingGrossPrice ?? task.GrossPrice
 }
@@ -583,7 +659,7 @@ function getServiceType(
 function buildServiceOptions(serviceTypes: ServiceOrganizationTypeValue[]) {
   const usableTypes = serviceTypes.length
     ? serviceTypes
-    : SERVICE_ORGANIZATION_TYPES.map((option) => option.value)
+    : ALL_SERVICE_ORGANIZATION_TYPE_VALUES
 
   return SERVICE_ORGANIZATION_TYPES.reduce<Array<{ label: string; value: string }>>((options, option) => {
     if (!usableTypes.includes(option.value)) {
@@ -599,9 +675,49 @@ function buildServiceOptions(serviceTypes: ServiceOrganizationTypeValue[]) {
   }, [])
 }
 
+function getEffectiveServiceTypes(
+  selectedServiceTypes: string[],
+  organization: ServiceOrganization | null,
+): ServiceOrganizationTypeValue[] {
+  const normalizedSelectedTypes = normalizeSelectedServiceTypes(selectedServiceTypes)
+
+  if (normalizedSelectedTypes.length) {
+    return normalizedSelectedTypes
+  }
+
+  if (organization?.ServiceOrganizationTypes?.length) {
+    return organization.ServiceOrganizationTypes
+  }
+
+  return ALL_SERVICE_ORGANIZATION_TYPE_VALUES
+}
+
+function normalizeSelectedServiceTypes(selectedServiceTypes: string[]): ServiceOrganizationTypeValue[] {
+  const serviceTypes = selectedServiceTypes.reduce<ServiceOrganizationTypeValue[]>((types, selectedServiceType) => {
+    const normalizedSelectedServiceType = selectedServiceType.trim()
+
+    if (!normalizedSelectedServiceType) {
+      return types
+    }
+
+    const serviceType = Number(normalizedSelectedServiceType)
+    if (isServiceOrganizationTypeValue(serviceType)) {
+      types.push(serviceType)
+    }
+
+    return types
+  }, [])
+
+  return Array.from(new Set(serviceTypes))
+}
+
+function isServiceOrganizationTypeValue(value: number): value is ServiceOrganizationTypeValue {
+  return SERVICE_ORGANIZATION_TYPES.some((option) => option.value === value)
+}
+
 function validateSearch(
   organization: ServiceOrganization | null,
-  selectedServiceTypes: string[],
+  serviceTypes: ServiceOrganizationTypeValue[],
   dateFrom: string,
   dateTo: string,
 ): string | null {
@@ -617,7 +733,7 @@ function validateSearch(
     return 'Дата від не може бути пізніше дати до'
   }
 
-  if (selectedServiceTypes.length === 0) {
+  if (serviceTypes.length === 0) {
     return 'Оберіть хоча б один тип послуги'
   }
 
@@ -648,17 +764,36 @@ function toDateInputValue(date: Date): string {
 }
 
 function displayDate(value?: string): string {
-  if (!value) {
+  const normalizedValue = (value || '').trim()
+
+  if (!normalizedValue) {
     return '-'
+  }
+
+  const date = parseDisplayDate(normalizedValue)
+
+  if (!date) {
+    return normalizedValue
+  }
+
+  return date.toLocaleDateString('uk-UA')
+}
+
+function parseDisplayDate(value: string): Date | null {
+  const dateInputMatch = DATE_INPUT_PATTERN.exec(value)
+
+  if (dateInputMatch) {
+    const year = Number(dateInputMatch[1])
+    const month = Number(dateInputMatch[2])
+    const day = Number(dateInputMatch[3])
+    const date = new Date(year, month - 1, day)
+
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
   }
 
   const date = new Date(value)
 
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toLocaleDateString('uk-UA')
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 function displayMoney(value?: number): string {

@@ -15,7 +15,7 @@ import {
 import { IconAlertCircle, IconListDetails, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -30,6 +30,7 @@ import {
   getGroupedPaymentTasks,
 } from '../api/availablePaymentsApi'
 import { AvailablePaymentsDetailDrawer } from '../components/AvailablePaymentsDetailDrawer'
+import { getAvailablePaymentSelectionError } from '../models/availablePaymentSelection'
 import {
   AccountingTypeValue,
   TaskStatusValue,
@@ -37,6 +38,7 @@ import {
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
   type PriceTotal,
+  type SupplyPaymentTask,
 } from '../types'
 
 type FilterDraft = {
@@ -103,6 +105,7 @@ function useAvailablePaymentsPageModel() {
   const listRequestKeyRef = useRef(listRequestKey)
   const groupsRef = useRef(groups)
   const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
+  const markedTaskIds = useMemo(() => markedModels.map((model) => model.id), [markedModels])
   const hasPendingFiles = useMemo(() => Object.values(filesByTaskId).some((files) => files.length > 0), [filesByTaskId])
 
   useEffect(() => {
@@ -253,31 +256,10 @@ function useAvailablePaymentsPageModel() {
           return current.filter((item) => item.id !== model.id)
         }
 
-        const currentOrganizationNetUid = current[0]?.organizationNetUid
+        const selectionError = getAvailablePaymentSelectionError(current, model, t)
 
-        if (currentOrganizationNetUid && currentOrganizationNetUid !== model.organizationNetUid) {
-          setError(t('Можна обрати платіжні задачі тільки одного контрагента'))
-          return current
-        }
-
-        const currentCurrencyCode = current[0]?.currencyCode
-
-        if (currentCurrencyCode && currentCurrencyCode !== model.currencyCode) {
-          setError(t('Можна обрати платіжні задачі тільки в одній валюті'))
-          return current
-        }
-
-        const currentAgreementNetId = current[0]?.serviceAgreementNetId
-
-        if (currentAgreementNetId && model.serviceAgreementNetId && currentAgreementNetId !== model.serviceAgreementNetId) {
-          setError(t('Можна обрати платіжні задачі тільки однієї угоди'))
-          return current
-        }
-
-        const currentIsAccounting = Boolean(current[0]?.task.IsAccounting)
-
-        if (current.length > 0 && currentIsAccounting !== Boolean(model.task.IsAccounting)) {
-          setError(t('Можна обрати платіжні задачі тільки одного типу обліку'))
+        if (selectionError) {
+          setError(selectionError)
           return current
         }
 
@@ -299,7 +281,7 @@ function useAvailablePaymentsPageModel() {
     [setFilesByTaskId],
   )
 
-  const columns = useAvailablePaymentsColumns(groupIndexMap, openDetail)
+  const columns = useAvailablePaymentsColumns(groupIndexMap, markedModels, openDetail)
 
   const totalsByCurrency = useMemo(() => buildCurrencyTotals(priceTotals), [priceTotals])
 
@@ -332,7 +314,7 @@ function useAvailablePaymentsPageModel() {
     isLoadingMore,
     loadMoreGroups,
     markedModels,
-    markedTaskIds: markedModels.map((model) => model.id),
+    markedTaskIds,
     openDetail,
     organizations,
     organizationsError,
@@ -760,6 +742,7 @@ function TotalCell({ label, strong, value }: { label: string; strong?: boolean; 
 
 function useAvailablePaymentsColumns(
   indexMap: Map<GroupedPaymentTask, number>,
+  markedModels: AvailablePaymentTaskModel[],
   onOpen: (group: GroupedPaymentTask) => void,
 ) {
   const { t } = useI18n()
@@ -797,7 +780,7 @@ function useAvailablePaymentsColumns(
         align: 'right',
         enableSorting: false,
         accessor: (group) => countNotDone(group),
-        cell: (group) => renderTasksCell(group),
+        cell: (group) => renderTasksCell(group, markedModels),
       },
       {
         id: 'eur',
@@ -874,14 +857,15 @@ function useAvailablePaymentsColumns(
         ),
       },
     ],
-    [indexMap, onOpen, t],
+    [indexMap, markedModels, onOpen, t],
   )
 }
 
-function renderTasksCell(group: GroupedPaymentTask) {
+function renderTasksCell(group: GroupedPaymentTask, markedModels: AvailablePaymentTaskModel[]) {
   const tasks = group.SupplyPaymentTasks || []
   const notDone = countNotDone(group)
   const done = tasks.length - notDone
+  const marked = countMarkedModels(group, markedModels)
 
   return (
     <Group gap={4} justify="flex-end" wrap="nowrap">
@@ -891,8 +875,32 @@ function renderTasksCell(group: GroupedPaymentTask) {
       <Badge color="gray" variant="light">
         {notDone}
       </Badge>
+      {marked > 0 && (
+        <Badge color="violet" variant="light">
+          {marked}
+        </Badge>
+      )}
     </Group>
   )
+}
+
+function countMarkedModels(group: GroupedPaymentTask, markedModels: AvailablePaymentTaskModel[]): number {
+  const tasks = group.SupplyPaymentTasks || []
+  const taskKeys = new Set(tasks.flatMap((task) => {
+    const taskKey = getSupplyPaymentTaskKey(task)
+
+    return taskKey ? [taskKey] : []
+  }))
+
+  return markedModels.filter((model) => {
+    const taskKey = getSupplyPaymentTaskKey(model.task)
+
+    return tasks.includes(model.task) || Boolean(taskKey && taskKeys.has(taskKey))
+  }).length
+}
+
+function getSupplyPaymentTaskKey(task: SupplyPaymentTask): string {
+  return String(task.NetUid || task.Id || '')
 }
 
 function buildIndexMap(groups: GroupedPaymentTask[]): Map<GroupedPaymentTask, number> {
@@ -967,13 +975,7 @@ function getDateShiftedByDays(days: number): string {
 }
 
 function toQueryDate(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? value : date.toDateString()
+  return formatDateInputForQuery(value)
 }
 
 function getDateTime(value: unknown): number {

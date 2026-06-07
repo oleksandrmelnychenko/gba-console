@@ -43,6 +43,10 @@ import { getAccountingCashFlowPaymentStatus } from '../../accounting-cash-flow/a
 import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
+import {
+  getAvailablePaymentSelectionError,
+  validateAvailablePaymentSelection,
+} from '../models/availablePaymentSelection'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   createAvailablePaymentOutcome,
@@ -128,7 +132,13 @@ const SEARCH_DEBOUNCE_MS = 300
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 
-export function AvailablePaymentsDetailDrawer({
+export function AvailablePaymentsDetailDrawer(props: AvailablePaymentsDetailDrawerProps) {
+  const model = useAvailablePaymentsDetailDrawerModel(props)
+
+  return <AvailablePaymentsDetailDrawerView model={model} />
+}
+
+function useAvailablePaymentsDetailDrawerModel({
   filesByTaskId,
   group,
   markedModels,
@@ -366,9 +376,7 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
-    const payableModels = uniqueOutcomeModels(
-      nextModels.filter((model) => model.task.TaskStatus !== TaskStatusValue.Done),
-    )
+    const payableModels = uniqueOutcomeModels(nextModels)
     const shouldRequireDocuments = options.requireDocuments ?? true
 
     if (payableModels.length === 0) {
@@ -376,7 +384,7 @@ export function AvailablePaymentsDetailDrawer({
       return
     }
 
-    const groupValidationError = validateOutcomeModelsGroup(payableModels, t)
+    const groupValidationError = validateAvailablePaymentSelection(payableModels, t)
 
     if (groupValidationError) {
       setError(groupValidationError)
@@ -588,6 +596,96 @@ export function AvailablePaymentsDetailDrawer({
   }
 
   const title = group ? `${t('Наявні платежі')} - ${formatDate(group.PayToDate)}` : t('Наявні платежі')
+
+  return {
+    activeTabs,
+    cashFlowFiltersByTaskId,
+    cashFlows,
+    confirmCloseOutcomeOpen,
+    error,
+    expandedId,
+    filesByTaskId,
+    filteredRegisters,
+    form,
+    group,
+    isLoadingDictionaries,
+    isSaving,
+    markedModels,
+    markedTaskIds,
+    models,
+    movements,
+    outcomeModels,
+    registers,
+    selectedCashFlowItem,
+    selectedOrganization,
+    selectedRegister,
+    title,
+    closeOutcomeForm,
+    confirmDrawerClose,
+    handleCashFlowFiltersChange,
+    handleCashFlowTab,
+    handleCreateOutcome,
+    handleMovementSearchChange,
+    handleMoveToDone,
+    handleRedirectToSource,
+    handleToggleExpanded,
+    onClearMarked,
+    onFilesChanged,
+    onToggleMarked,
+    openOutcomeForm,
+    requestDrawerClose,
+    setConfirmCloseOutcomeOpen,
+    setSelectedCashFlowItem,
+    updateForm,
+  }
+}
+
+type AvailablePaymentsDetailDrawerModel = ReturnType<typeof useAvailablePaymentsDetailDrawerModel>
+
+function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePaymentsDetailDrawerModel }) {
+  const { t } = useI18n()
+  const {
+    activeTabs,
+    cashFlowFiltersByTaskId,
+    cashFlows,
+    confirmCloseOutcomeOpen,
+    error,
+    expandedId,
+    filesByTaskId,
+    filteredRegisters,
+    form,
+    group,
+    isLoadingDictionaries,
+    isSaving,
+    markedModels,
+    markedTaskIds,
+    models,
+    movements,
+    outcomeModels,
+    registers,
+    selectedCashFlowItem,
+    selectedOrganization,
+    selectedRegister,
+    title,
+    closeOutcomeForm,
+    confirmDrawerClose,
+    handleCashFlowFiltersChange,
+    handleCashFlowTab,
+    handleCreateOutcome,
+    handleMovementSearchChange,
+    handleMoveToDone,
+    handleRedirectToSource,
+    handleToggleExpanded,
+    onClearMarked,
+    onFilesChanged,
+    onToggleMarked,
+    openOutcomeForm,
+    requestDrawerClose,
+    setConfirmCloseOutcomeOpen,
+    setSelectedCashFlowItem,
+    updateForm,
+  } = model
+
   return (
     <AppDrawer opened={Boolean(group)} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
       <Stack gap="md">
@@ -741,6 +839,9 @@ function AvailablePaymentTaskList({
       {models.map((model) => {
         const activeTab = resolveTaskDetailTab(model, activeTabs[model.id])
         const tabs = getTaskDetailTabs(model)
+        const isMarked = markedTaskIds.includes(model.id)
+        const selectionError = isMarked ? null : getAvailablePaymentSelectionError(markedModels, model, t)
+        const isMarkingDisabled = isSaving || Boolean(selectionError)
 
         return (
         <Stack key={model.id} gap={0}>
@@ -751,14 +852,16 @@ function AvailablePaymentTaskList({
             style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}
           >
             <Group gap="sm" wrap="nowrap">
-              {model.task.TaskStatus !== TaskStatusValue.Done && (
-                <Checkbox
-                  checked={markedTaskIds.includes(model.id)}
-                  aria-label={t('Вибрати платіжну задачу')}
-                  disabled={isSaving}
-                  onChange={() => onToggleMarked(model)}
-                />
-              )}
+              <Tooltip disabled={!selectionError} label={selectionError}>
+                <span>
+                  <Checkbox
+                    checked={isMarked}
+                    aria-label={t('Вибрати платіжну задачу')}
+                    disabled={isMarkingDisabled}
+                    onChange={() => onToggleMarked(model)}
+                  />
+                </span>
+              </Tooltip>
               <Stack gap={2}>
                 <Group gap="xs">
                   <TaskStatusBadge task={model.task} />
@@ -1810,45 +1913,6 @@ function validateOutcomeForm({
   }
 
   return null
-}
-
-function validateOutcomeModelsGroup(
-  models: AvailablePaymentTaskModel[],
-  t: (key: string) => string,
-): string | null {
-  const firstModel = models[0]
-
-  if (!firstModel) {
-    return t('Виберіть платіжні задачі')
-  }
-
-  return models.slice(1).reduce<string | null>((error, model) => {
-    if (error) {
-      return error
-    }
-
-    if (firstModel.organizationNetUid !== model.organizationNetUid) {
-      return t('Можна обрати платіжні задачі тільки одного контрагента')
-    }
-
-    if (firstModel.currencyCode !== model.currencyCode) {
-      return t('Можна обрати платіжні задачі тільки в одній валюті')
-    }
-
-    if (
-      firstModel.serviceAgreementNetId &&
-      model.serviceAgreementNetId &&
-      firstModel.serviceAgreementNetId !== model.serviceAgreementNetId
-    ) {
-      return t('Можна обрати платіжні задачі тільки однієї угоди')
-    }
-
-    if (Boolean(firstModel.task.IsAccounting) !== Boolean(model.task.IsAccounting)) {
-      return t('Можна обрати платіжні задачі тільки одного типу обліку')
-    }
-
-    return null
-  }, null)
 }
 
 function extractCashFlowRows(data: AvailablePaymentAccountingCashFlow | null): DataRecord[] {
