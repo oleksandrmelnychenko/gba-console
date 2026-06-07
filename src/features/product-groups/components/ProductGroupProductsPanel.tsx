@@ -291,7 +291,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
 
       <Group justify="space-between">
         <Text size="xs" c="dimmed">
-          {t('Усього')}: {totalQty}
+          {t('Показано')}: {totalFilteredQty}; {t('Усього')}: {totalQty}
         </Text>
         <Button
           color="gray"

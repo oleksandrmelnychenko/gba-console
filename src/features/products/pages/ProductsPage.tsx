@@ -497,6 +497,9 @@ export function ProductsPage() {
 
     searchRequestRef.current += 1
     detailRequestRef.current += 1
+    setLoading(true)
+    setVirtualLoad(false)
+    setError(null)
 
     async function loadRouteProduct() {
       if (requestId !== routeProductRequestRef.current) {

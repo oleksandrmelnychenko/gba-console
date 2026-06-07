@@ -3,6 +3,29 @@ import { buildRootProductGroupChanges } from './utils'
 import type { ProductGroup } from './types'
 
 describe('product group utils', () => {
+  it('preserves current root relation when root group is unchanged', () => {
+    const currentRoot = {
+      Id: 1,
+      Name: 'Current root',
+      NetUid: 'root-current',
+    }
+    const productGroup: ProductGroup = {
+      Id: 10,
+      Name: 'Filters',
+      NetUid: 'group-10',
+      RootProductGroups: [
+        {
+          Id: 100,
+          RootProductGroup: currentRoot,
+          RootProductGroupId: 1,
+          SubProductGroupId: 10,
+        },
+      ],
+    }
+
+    expect(buildRootProductGroupChanges(productGroup, currentRoot)).toEqual(productGroup.RootProductGroups)
+  })
+
   it('marks fallback root relation as deleted when changing root group', () => {
     const productGroup: ProductGroup = {
       Id: 10,

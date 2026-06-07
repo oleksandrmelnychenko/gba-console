@@ -37,7 +37,6 @@ import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableD
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { useAuth } from '../../auth/useAuth'
 import {
   exportGroupedProductRemains,
   exportProductRemains,
@@ -71,7 +70,6 @@ type ProductRemainsTab = 'batches' | 'products'
 
 const ALL_STORAGES_VALUE = '__all_storages__'
 const LOCAL_CURRENCY_CODE = 'UAH'
-const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const PAGE_SIZE = 25
 const pageSizeOptions = ['25', '50', '100']
 
@@ -110,7 +108,6 @@ function getProductRemainsInitialTab(routeTab: string | undefined): ProductRemai
 
 function useProductRemainsPageModel() {
   const { t } = useI18n()
-  const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { tab: routeTab } = useParams()
   const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>(() => getProductRemainsInitialTab(routeTab))
@@ -153,9 +150,8 @@ function useProductRemainsPageModel() {
   const filterError = getFilterError(dateFrom, dateTo)
   const isAllStoragesSelected = selectedStorageValue === ALL_STORAGES_VALUE
   const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue.trim() || undefined
-  const isProductStorageSelectionInvalid = !storageNetId
-  const productStorageError =
-    activeTab === 'products' && isProductStorageSelectionInvalid ? t('Для залишків за товарами оберіть склад') : null
+  const isProductStorageSelectionInvalid = false
+  const productStorageError = null
   const selectedSupplierNetId = supplierNetId || undefined
   const exportScopeKey = [
     activeTab,
@@ -168,14 +164,11 @@ function useProductRemainsPageModel() {
   const exportScopeKeyRef = useRef(exportScopeKey)
   const exportRequestRef = useRef(0)
   const resourceError = storageResourceError || supplierResourceError
-  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
-  const batchStorageOptions = useMemo(() => buildStorageOptions(storages, true), [storages])
-  const productStorageOptions = useMemo(() => buildStorageOptions(storages, false), [storages])
-  const storageOptions = activeTab === 'products' ? productStorageOptions : batchStorageOptions
-  const storageSelectValue = activeTab === 'products' && isAllStoragesSelected ? null : selectedStorageValue || null
+  const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
+  const storageSelectValue = selectedStorageValue || null
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
-  const productColumns = useProductRemainProductColumns(canOpenProductMovement, openMovement)
+  const productColumns = useProductRemainProductColumns(openMovement)
   const { density: batchDensity, toggleDensity: toggleBatchDensity } = useDataTableDensity(
     'product-remains-batches',
     BATCHES_TABLE_DEFAULT_LAYOUT.density,
@@ -314,7 +307,7 @@ function useProductRemainsPageModel() {
   }
 
   function openMovement(row: RemainingConsignment) {
-    if (!canOpenProductMovement || !row.ConsignmentItemNetId) {
+    if (!row.ConsignmentItemNetId) {
       return
     }
 
@@ -745,7 +738,6 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               data={storageOptions}
               disabled={isLoadingStorages}
               label={t('Склад')}
-              placeholder={activeTab === 'products' ? t('Оберіть склад') : undefined}
               value={selectedStorageValue}
               w={280}
               onChange={(value) => {
@@ -1086,10 +1078,7 @@ function useProductRemainBatchColumns() {
   )
 }
 
-function useProductRemainProductColumns(
-  canOpenProductMovement: boolean,
-  onOpenMovement: (row: RemainingConsignment) => void,
-) {
+function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignment) => void) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<RemainingConsignment>[]>(
@@ -1207,17 +1196,11 @@ function useProductRemainProductColumns(
       minWidth: 64,
       enableSorting: false,
       cell: (row) => (
-        <Tooltip
-          label={
-            canOpenProductMovement
-              ? row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')
-              : t('Недостатньо прав')
-          }
-        >
+        <Tooltip label={row.ConsignmentItemNetId ? t('Рух товару') : t('Немає ConsignmentItemNetId')}>
           <ActionIcon
             aria-label={t('Рух товару')}
             color="gray"
-            disabled={!canOpenProductMovement || !row.ConsignmentItemNetId}
+            disabled={!row.ConsignmentItemNetId}
             size="sm"
             variant="subtle"
             onClick={(event) => {
@@ -1231,7 +1214,7 @@ function useProductRemainProductColumns(
       ),
     },
     ],
-    [canOpenProductMovement, onOpenMovement, t],
+    [onOpenMovement, t],
   )
 }
 
@@ -1767,15 +1750,13 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function buildStorageOptions(storages: ProductRemainStorage[], includeAllStorages: boolean): { label: string; value: string }[] {
-  const options: { label: string; value: string }[] = includeAllStorages
-    ? [
-        {
-          label: translate('Всі склади'),
-          value: ALL_STORAGES_VALUE,
-        },
-      ]
-    : []
+function buildStorageOptions(storages: ProductRemainStorage[]): { label: string; value: string }[] {
+  const options: { label: string; value: string }[] = [
+    {
+      label: translate('Всі склади'),
+      value: ALL_STORAGES_VALUE,
+    },
+  ]
 
   storages.forEach((storage) => {
     if (storage.NetUid) {

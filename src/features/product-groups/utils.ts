@@ -47,7 +47,7 @@ export function buildRootProductGroupChanges(
   const selectedRootNetUid = selectedRootProductGroup?.NetUid || null
 
   if (currentRootNetUid === selectedRootNetUid) {
-    return []
+    return currentRootRelation ? [currentRootRelation] : []
   }
 
   const changes: ProductSubGroup[] = []
