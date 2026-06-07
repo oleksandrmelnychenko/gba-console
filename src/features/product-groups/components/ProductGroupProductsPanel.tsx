@@ -15,7 +15,6 @@ import { IconAlertCircle, IconRefresh, IconRestore, IconSearch } from '@tabler/i
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -40,7 +39,6 @@ type ProductGroupProductsPanelProps = {
 
 export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupProductsPanelProps) {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const [productLinks, setProductLinks] = useValueState<ProductProductGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
@@ -66,14 +64,26 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         return
       }
 
+      const productWindow = window.open('about:blank', '_blank')
+
+      if (productWindow) {
+        productWindow.opener = null
+      }
+
       setRedirecting(true)
 
       try {
         const product = await getRedirectedProductByNetId(productNetId)
         const targetNetId = product?.NetUid?.trim() || productNetId
+        const targetUrl = `/products?netId=${encodeURIComponent(targetNetId)}`
 
-        navigate(`/products?netId=${encodeURIComponent(targetNetId)}`)
+        if (productWindow) {
+          productWindow.location.href = targetUrl
+        } else {
+          window.open(targetUrl, '_blank', 'noopener,noreferrer')
+        }
       } catch (redirectError) {
+        productWindow?.close()
         notifications.show({
           color: 'red',
           message: redirectError instanceof Error ? redirectError.message : t('Не вдалося відкрити товар'),
@@ -82,7 +92,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         setRedirecting(false)
       }
     },
-    [isRedirecting, navigate, setRedirecting, t],
+    [isRedirecting, setRedirecting, t],
   )
   const columns = useMemo<DataTableColumn<ProductProductGroup>[]>(
     () => [

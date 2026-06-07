@@ -8,22 +8,18 @@ import {
   Text,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
-import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconCheck,
   IconChevronLeft,
   IconDeviceFloppy,
   IconRestore,
-  IconTrash,
 } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  deleteProductGroup,
   getProductGroupWithRoot,
   getRootProductGroups,
   updateProductGroup,
@@ -35,7 +31,6 @@ import type { ProductGroup } from '../types'
 import {
   buildRootProductGroupChanges,
   getCurrentRootProductGroup,
-  getProductGroupName,
   normalizeProductGroupForSave,
   validateProductGroup,
 } from '../utils'
@@ -61,9 +56,7 @@ export function ProductGroupDetailPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
-  const [isDeleting, setDeleting] = useValueState(false)
   const [isLoadingRootGroups, setLoadingRootGroups] = useValueState(true)
-  const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
   const rootGroupsForForm = useMemo(() => {
     const currentRootProductGroup = getCurrentRootProductGroup(productGroup)
 
@@ -200,31 +193,8 @@ export function ProductGroupDetailPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!productGroup?.NetUid) {
-      return
-    }
-
-    setDeleting(true)
-    setError(null)
-
-    try {
-      await deleteProductGroup(productGroup.NetUid)
-      notifications.show({
-        color: 'green',
-        message: t('Групу товарів видалено'),
-      })
-      navigate(returnPath, { replace: true })
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити групу товарів'))
-    } finally {
-      setDeleting(false)
-      setDeleteModalOpened(false)
-    }
-  }
-
   function closeSheet() {
-    if (isSaving || isDeleting) {
+    if (isSaving) {
       return
     }
 
@@ -234,7 +204,7 @@ export function ProductGroupDetailPage() {
   return (
     <AppDrawer
       opened
-      closeOnClickOutside={!isSaving && !isDeleting}
+      closeOnClickOutside={!isSaving}
       keepMounted={false}
       position="right"
       size="min(900px, 100vw)"
@@ -254,19 +224,8 @@ export function ProductGroupDetailPage() {
             {t('Закрити')}
           </Button>
           <Button
-            color="red"
-            disabled={!productGroup}
-            leftSection={<IconTrash size={16} />}
-            loading={isDeleting}
-            type="button"
-            variant="light"
-            onClick={() => setDeleteModalOpened(true)}
-          >
-            {t('Видалити')}
-          </Button>
-          <Button
             color="gray"
-            disabled={!isEdited || isSaving || isDeleting}
+            disabled={!isEdited || isSaving}
             leftSection={<IconRestore size={16} />}
             type="button"
             variant="light"
@@ -306,7 +265,7 @@ export function ProductGroupDetailPage() {
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
           <Card withBorder radius="md" padding="md">
             <ProductGroupForm
-              disabled={isSaving || isDeleting}
+              disabled={isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
               productGroup={formProductGroup}
               rootGroups={rootGroupsForForm}
@@ -346,24 +305,6 @@ export function ProductGroupDetailPage() {
         </Card>
       )}
 
-      <AppModal
-        centered
-        opened={deleteModalOpened}
-        title={t('Видалити групу товарів')}
-        onClose={() => setDeleteModalOpened(false)}
-      >
-        <Stack gap="md">
-          <Text size="sm">{t('Підтвердити видалення')}: {productGroup ? getProductGroupName(productGroup) : ''}</Text>
-          <Group justify="flex-end">
-            <Button color="gray" type="button" variant="subtle" onClick={() => setDeleteModalOpened(false)}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="red" leftSection={<IconCheck size={16} />} loading={isDeleting} type="button" onClick={handleDelete}>
-              {t('Видалити')}
-            </Button>
-          </Group>
-        </Stack>
-      </AppModal>
     </Stack>
     </AppDrawer>
   )

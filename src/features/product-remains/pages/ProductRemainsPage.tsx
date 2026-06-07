@@ -152,10 +152,10 @@ function useProductRemainsPageModel() {
 
   const filterError = getFilterError(dateFrom, dateTo)
   const isAllStoragesSelected = selectedStorageValue === ALL_STORAGES_VALUE
-  const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue
-  const isProductStorageSelectionInvalid = !isAllStoragesSelected && !storageNetId
+  const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue.trim() || undefined
+  const isProductStorageSelectionInvalid = !storageNetId
   const productStorageError =
-    activeTab === 'products' && isProductStorageSelectionInvalid ? t('Для залишків за товарами оберіть склад або всі склади') : null
+    activeTab === 'products' && isProductStorageSelectionInvalid ? t('Для залишків за товарами оберіть склад') : null
   const selectedSupplierNetId = supplierNetId || undefined
   const exportScopeKey = [
     activeTab,
@@ -169,7 +169,10 @@ function useProductRemainsPageModel() {
   const exportRequestRef = useRef(0)
   const resourceError = storageResourceError || supplierResourceError
   const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
-  const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
+  const batchStorageOptions = useMemo(() => buildStorageOptions(storages, true), [storages])
+  const productStorageOptions = useMemo(() => buildStorageOptions(storages, false), [storages])
+  const storageOptions = activeTab === 'products' ? productStorageOptions : batchStorageOptions
+  const storageSelectValue = activeTab === 'products' && isAllStoragesSelected ? null : selectedStorageValue || null
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
   const productColumns = useProductRemainProductColumns(canOpenProductMovement, openMovement)
@@ -379,7 +382,7 @@ function useProductRemainsPageModel() {
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
@@ -614,7 +617,7 @@ function useProductRemainProductsLoader({
 
     let cancelled = false
     const currentOffset = productOffset
-    const productStorageNetId = storageNetId ?? ''
+    const productStorageNetId = storageNetId?.trim() || ''
 
     async function loadProducts() {
       setLoadingProducts(true)
@@ -742,6 +745,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               data={storageOptions}
               disabled={isLoadingStorages}
               label={t('Склад')}
+              placeholder={activeTab === 'products' ? t('Оберіть склад') : undefined}
               value={selectedStorageValue}
               w={280}
               onChange={(value) => {
@@ -1763,13 +1767,15 @@ function DetailItem({ label, value }: { label: string; value: string }) {
   )
 }
 
-function buildStorageOptions(storages: ProductRemainStorage[]): { label: string; value: string }[] {
-  const options: { label: string; value: string }[] = [
-    {
-      label: translate('Всі склади'),
-      value: ALL_STORAGES_VALUE,
-    },
-  ]
+function buildStorageOptions(storages: ProductRemainStorage[], includeAllStorages: boolean): { label: string; value: string }[] {
+  const options: { label: string; value: string }[] = includeAllStorages
+    ? [
+        {
+          label: translate('Всі склади'),
+          value: ALL_STORAGES_VALUE,
+        },
+      ]
+    : []
 
   storages.forEach((storage) => {
     if (storage.NetUid) {

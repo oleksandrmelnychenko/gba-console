@@ -326,6 +326,7 @@ export function ProductsPage() {
   const searchRequestRef = useRef(0)
   const detailRequestRef = useRef(0)
   const routeProductRequestRef = useRef(0)
+  const hasRouteSeededProductsRef = useRef(false)
   const selectedProductNetUid = selectedProduct?.NetUid?.trim() || ''
   const productForView = detailState.product || selectedProduct
   const canMoveBack = topProducts.length > 0
@@ -351,6 +352,7 @@ export function ProductsPage() {
     (nextProducts: Product[]) => {
       setActivePanel(null)
       dispatchDetail({ type: 'clear' })
+      hasRouteSeededProductsRef.current = false
 
       if (nextProducts.length === 0) {
         setTopProducts([])
@@ -441,6 +443,7 @@ export function ProductsPage() {
           dispatchDetail({ type: 'clear' })
           setCarouselMode('search')
           setLoadedProductsCount(0)
+          hasRouteSeededProductsRef.current = false
           setVirtualLoad(false)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товари'))
         }
@@ -514,14 +517,18 @@ export function ProductsPage() {
             setActivePanel(null)
             setCarouselMode('search')
             setLoadedProductsCount(0)
+            hasRouteSeededProductsRef.current = false
             setHasRequestedProducts(false)
             setSearchDraft('')
             setSearchValue('')
             setError(t('Товар не знайдено'))
           } else {
+            const nextSearchedProducts = getNextSearchedProducts(nextProduct)
+
             setTopProducts([])
-            setBottomProducts(getNextSearchedProducts(nextProduct))
-            setLoadedProductsCount(1)
+            setBottomProducts(nextSearchedProducts)
+            setLoadedProductsCount(1 + nextSearchedProducts.length)
+            hasRouteSeededProductsRef.current = nextSearchedProducts.length > 0
             setSelectedProduct(nextProduct)
             dispatchDetail({ type: 'clear' })
             setActivePanel(null)
@@ -541,6 +548,7 @@ export function ProductsPage() {
           setActivePanel(null)
           setCarouselMode('search')
           setLoadedProductsCount(0)
+          hasRouteSeededProductsRef.current = false
           setHasRequestedProducts(false)
           setSearchDraft('')
           setSearchValue('')
@@ -621,6 +629,7 @@ export function ProductsPage() {
 
   function updateSearchDraft(nextValue: string) {
     clearRouteProductParam()
+    hasRouteSeededProductsRef.current = false
     setSearchDraft(nextValue)
     setSearchValue(nextValue.trim())
     setHasRequestedProducts(true)
@@ -632,6 +641,7 @@ export function ProductsPage() {
 
   function commitSearch() {
     clearRouteProductParam()
+    hasRouteSeededProductsRef.current = false
     setSearchValue(searchDraft.trim())
     setHasRequestedProducts(true)
     reload()
@@ -647,6 +657,7 @@ export function ProductsPage() {
     setError(null)
     setLoading(false)
     setVirtualLoad(false)
+    hasRouteSeededProductsRef.current = false
     setLoadedProductsCount(0)
     setHasRequestedProducts(false)
     setCarouselMode('search')
@@ -656,7 +667,7 @@ export function ProductsPage() {
   }
 
   function loadMoreProducts() {
-    if (!hasRequestedProducts || isLoading || isVirtualLoad) {
+    if ((!hasRequestedProducts && !hasRouteSeededProductsRef.current) || isLoading || isVirtualLoad) {
       return
     }
 
@@ -695,6 +706,7 @@ export function ProductsPage() {
 
     const nextProduct = { ...product, NetUid: netUid } as Product
 
+    hasRouteSeededProductsRef.current = false
     setTopProducts([])
     setBottomProducts(getNextSearchedProducts(nextProduct))
     setLoadedProductsCount(1)
@@ -751,6 +763,7 @@ export function ProductsPage() {
 
   function returnToSearchMode() {
     clearRouteProductParam()
+    hasRouteSeededProductsRef.current = false
     setCarouselMode('search')
     setSearchDraft('')
     setSelectedProduct(null)
@@ -791,6 +804,7 @@ export function ProductsPage() {
   }
 
   function handleAssortmentUploadSuccess() {
+    hasRouteSeededProductsRef.current = false
     setHasRequestedProducts(true)
     reload()
 
