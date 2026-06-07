@@ -524,7 +524,7 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 
 function buildConsumableOrderRows(orders: ConsumablesOrder[]): ConsumableOrderRow[] {
   return orders.map((order, index) => ({
-    amount: order.ConsumableProductOrganization ? order.TotalAmount : 0,
+    amount: order.TotalAmount,
     comment: order.Comment,
     created: order.Created,
     currency: order.ConsumableProductOrganization

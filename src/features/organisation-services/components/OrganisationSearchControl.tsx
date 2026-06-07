@@ -13,6 +13,7 @@ import type { ServiceOrganization } from '../types'
 
 type OrganisationSearchControlProps = {
   isLoading: boolean
+  onAutoSelect: () => void
   onChange: (value: string) => void
   onClear: () => void
   onSelect: (organization: ServiceOrganization) => void
@@ -21,8 +22,36 @@ type OrganisationSearchControlProps = {
   value: string
 }
 
+const CONTROL_STYLE = {
+  flex: '1 1 280px',
+  minWidth: 220,
+  position: 'relative',
+} as const
+
+const SUGGESTIONS_PANEL_STYLE = {
+  border: '1px solid var(--mantine-color-gray-3)',
+  borderRadius: 6,
+  boxShadow: 'var(--mantine-shadow-md)',
+  overflowY: 'auto',
+  zIndex: 20,
+} as const
+
+const SUGGESTION_BUTTON_STYLE = {
+  alignItems: 'center',
+  background: 'transparent',
+  border: 0,
+  borderBottom: '1px solid var(--mantine-color-gray-2)',
+  cursor: 'pointer',
+  display: 'flex',
+  justifyContent: 'space-between',
+  padding: '10px 12px',
+  textAlign: 'left',
+  width: '100%',
+} as const
+
 export function OrganisationSearchControl({
   isLoading,
+  onAutoSelect,
   onChange,
   onClear,
   onSelect,
@@ -34,7 +63,19 @@ export function OrganisationSearchControl({
   const showSuggestions = !selectedOrganization && Boolean(value.trim()) && (organizations.length > 0 || isLoading)
 
   return (
-    <Stack gap={6} style={{ flex: '1 1 280px', minWidth: 220, position: 'relative' }}>
+    <Stack
+      gap={6}
+      style={CONTROL_STYLE}
+      onBlur={(event) => {
+        const nextTarget = event.relatedTarget
+
+        if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+          return
+        }
+
+        onAutoSelect()
+      }}
+    >
       <TextInput
         label={t('Організація')}
         leftSection={<IconBuilding size={16} />}
@@ -53,32 +94,16 @@ export function OrganisationSearchControl({
           left={0}
           right={0}
           mt={4}
-          style={{
-            border: '1px solid var(--mantine-color-gray-3)',
-            borderRadius: 6,
-            boxShadow: 'var(--mantine-shadow-md)',
-            overflowY: 'auto',
-            zIndex: 20,
-          }}
+          style={SUGGESTIONS_PANEL_STYLE}
         >
           {organizations.length > 0 ? (
             organizations.map((organization) => (
               <button
                 key={`${organization.Name}-${organization.ServiceOrganizationTypes?.join('-')}`}
                 type="button"
+                onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onSelect(organization)}
-                style={{
-                  alignItems: 'center',
-                  background: 'transparent',
-                  border: 0,
-                  borderBottom: '1px solid var(--mantine-color-gray-2)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
-                  textAlign: 'left',
-                  width: '100%',
-                }}
+                style={SUGGESTION_BUTTON_STYLE}
               >
                 <Text fw={600} size="sm">
                   {organization.Name}

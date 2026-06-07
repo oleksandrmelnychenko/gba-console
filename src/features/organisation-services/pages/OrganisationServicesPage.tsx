@@ -27,6 +27,10 @@ import {
   searchServiceOrganizations,
 } from '../api/organisationServicesApi'
 import { OrganisationSearchControl } from '../components/OrganisationSearchControl'
+import {
+  findAutoSelectableOrganization,
+  isOrganizationSearchResultForValue,
+} from '../components/organisationSearchSelection'
 import type {
   DocumentFilter,
   OrganizationPaymentTasks,
@@ -87,12 +91,14 @@ type ServiceCollectionKey =
 type OrganizationSearchState = {
   error: string | null
   isLoading: boolean
+  query: string
   suggestions: ServiceOrganization[]
 }
 
 const EMPTY_ORGANIZATION_SEARCH_STATE: OrganizationSearchState = {
   error: null,
   isLoading: false,
+  query: '',
   suggestions: [],
 }
 
@@ -115,6 +121,7 @@ function useOrganisationServicesPageModel() {
   const [lastSearchParams, setLastSearchParams] = useValueState<OrganizationPaymentTasksParams | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingTasks, setLoadingTasks] = useValueState(false)
+  const organizationSearchRequestRef = useRef(0)
   const paymentTasksRequestRef = useRef(0)
   const availableServiceOptions = useMemo(
     () => buildServiceOptions(selectedOrganization?.ServiceOrganizationTypes || []),
@@ -193,24 +200,33 @@ function useOrganisationServicesPageModel() {
     }
 
     const controller = new AbortController()
+    const requestId = organizationSearchRequestRef.current + 1
+    organizationSearchRequestRef.current = requestId
     const timeoutId = window.setTimeout(() => {
       setOrganizationSearchState((current) => ({
         ...current,
         error: null,
         isLoading: true,
+        query: normalizedOrganizationSearch,
       }))
 
       searchServiceOrganizations(normalizedOrganizationSearch, controller.signal)
         .then((organizations) => {
-          if (!controller.signal.aborted) {
-            setOrganizationSearchState({ error: null, isLoading: false, suggestions: organizations })
+          if (!controller.signal.aborted && organizationSearchRequestRef.current === requestId) {
+            setOrganizationSearchState({
+              error: null,
+              isLoading: false,
+              query: normalizedOrganizationSearch,
+              suggestions: organizations,
+            })
           }
         })
         .catch((searchError) => {
-          if (!controller.signal.aborted) {
+          if (!controller.signal.aborted && organizationSearchRequestRef.current === requestId) {
             setOrganizationSearchState({
               error: searchError instanceof Error ? searchError.message : t('Не вдалося знайти організації'),
               isLoading: false,
+              query: normalizedOrganizationSearch,
               suggestions: [],
             })
           }
@@ -229,19 +245,20 @@ function useOrganisationServicesPageModel() {
   ])
 
   function selectOrganization(organization: ServiceOrganization) {
-    const serviceTypes = organization.ServiceOrganizationTypes?.length
-      ? organization.ServiceOrganizationTypes
-      : ALL_SERVICE_ORGANIZATION_TYPE_VALUES
+    const serviceTypes = getDefaultServiceTypes(organization)
 
+    organizationSearchRequestRef.current += 1
     setSelectedOrganization(organization)
     setOrganizationSearch(organization.Name || '')
     setSelectedServiceTypes(serviceTypes.map(String))
     setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setError(null)
   }
 
   function clearOrganization() {
+    organizationSearchRequestRef.current += 1
     paymentTasksRequestRef.current += 1
     setSelectedOrganization(null)
     setOrganizationSearch('')
@@ -249,17 +266,102 @@ function useOrganisationServicesPageModel() {
     setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setError(null)
     setLoadingTasks(false)
   }
 
   function updateOrganizationSearch(value: string) {
+    organizationSearchRequestRef.current += 1
     paymentTasksRequestRef.current += 1
     setOrganizationSearch(value)
     setSelectedOrganization(null)
     setSelectedServiceTypes([])
+    setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setError(null)
     setLoadingTasks(false)
+  }
+
+  function updateSelectedServiceTypes(values: string[]) {
+    if (selectedOrganization && values.length === 0) {
+      setError(t('Залиште хоча б один тип послуги'))
+      return
+    }
+
+    setSelectedServiceTypes(values)
+    setError(null)
+  }
+
+  async function autoSelectOrganization(fetchIfNeeded: boolean): Promise<ServiceOrganization | null> {
+    if (selectedOrganization) {
+      return selectedOrganization
+    }
+
+    const normalizedOrganizationSearch = organizationSearch.trim()
+
+    if (!normalizedOrganizationSearch) {
+      return null
+    }
+
+    const currentSuggestions = isOrganizationSearchResultForValue(
+      organizationSearchState.query,
+      normalizedOrganizationSearch,
+    )
+      ? organizationSearchState.suggestions
+      : []
+    const suggestedOrganization = findAutoSelectableOrganization(currentSuggestions, normalizedOrganizationSearch)
+
+    if (suggestedOrganization) {
+      selectOrganization(suggestedOrganization)
+      return suggestedOrganization
+    }
+
+    if (!fetchIfNeeded) {
+      return null
+    }
+
+    const requestId = organizationSearchRequestRef.current + 1
+    organizationSearchRequestRef.current = requestId
+    setOrganizationSearchState({
+      error: null,
+      isLoading: true,
+      query: normalizedOrganizationSearch,
+      suggestions: currentSuggestions,
+    })
+
+    try {
+      const organizations = await searchServiceOrganizations(normalizedOrganizationSearch)
+      let fetchedOrganization: ServiceOrganization | null = null
+
+      if (organizationSearchRequestRef.current === requestId) {
+        fetchedOrganization = findAutoSelectableOrganization(organizations, normalizedOrganizationSearch)
+
+        if (fetchedOrganization) {
+          selectOrganization(fetchedOrganization)
+        } else {
+          setOrganizationSearchState({
+            error: null,
+            isLoading: false,
+            query: normalizedOrganizationSearch,
+            suggestions: organizations,
+          })
+        }
+      }
+
+      return fetchedOrganization
+    } catch (searchError) {
+      if (organizationSearchRequestRef.current === requestId) {
+        setOrganizationSearchState({
+          error: searchError instanceof Error ? searchError.message : t('Не вдалося знайти організації'),
+          isLoading: false,
+          query: normalizedOrganizationSearch,
+          suggestions: [],
+        })
+      }
+    }
+
+    return null
   }
 
   function resetFilters() {
@@ -272,11 +374,29 @@ function useOrganisationServicesPageModel() {
     setError(null)
   }
 
-  function submitSearch(event: FormEvent<HTMLFormElement>) {
+  async function submitSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const serviceTypes = getEffectiveServiceTypes(selectedServiceTypes, selectedOrganization)
-    const validationError = validateSearch(selectedOrganization, serviceTypes, dateFrom, dateTo)
+    if (!selectedOrganization && !organizationSearch.trim()) {
+      setError(t('Оберіть організацію'))
+      return
+    }
+
+    const dateValidationError = validateSearchDates(dateFrom, dateTo)
+
+    if (dateValidationError) {
+      setError(dateValidationError)
+      return
+    }
+
+    const organizationForSearch = selectedOrganization || await autoSelectOrganization(true)
+    const selectedServiceTypesForSearch = selectedOrganization
+      ? selectedServiceTypes
+      : organizationForSearch
+        ? getDefaultServiceTypes(organizationForSearch).map(String)
+        : selectedServiceTypes
+    const serviceTypes = normalizeSelectedServiceTypes(selectedServiceTypesForSearch)
+    const validationError = validateSearchSelection(organizationForSearch, serviceTypes)
 
     if (validationError) {
       setError(validationError)
@@ -284,7 +404,7 @@ function useOrganisationServicesPageModel() {
     }
 
     const params = {
-      organizationName: selectedOrganization?.Name?.trim() || '',
+      organizationName: organizationForSearch?.Name?.trim() || '',
       serviceTypes,
       from: dateFrom,
       to: dateTo,
@@ -311,13 +431,14 @@ function useOrganisationServicesPageModel() {
     toolbarLeft,
     toolbarRight,
     visibleError,
+    autoSelectOrganization,
     clearOrganization,
     resetFilters,
     selectOrganization,
     setDateFrom,
     setDateTo,
     setDocumentFilters,
-    setSelectedServiceTypes,
+    updateSelectedServiceTypes,
     submitSearch,
     updateOrganizationSearch,
   }
@@ -344,13 +465,14 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
     toolbarLeft,
     toolbarRight,
     visibleError,
+    autoSelectOrganization,
     clearOrganization,
     resetFilters,
     selectOrganization,
     setDateFrom,
     setDateTo,
     setDocumentFilters,
-    setSelectedServiceTypes,
+    updateSelectedServiceTypes,
     submitSearch,
     updateOrganizationSearch,
   } = model
@@ -366,6 +488,9 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
                 organizations={organizationSearchState.suggestions}
                 selectedOrganization={selectedOrganization}
                 value={organizationSearch}
+                onAutoSelect={() => {
+                  void autoSelectOrganization(true)
+                }}
                 onChange={updateOrganizationSearch}
                 onClear={clearOrganization}
                 onSelect={selectOrganization}
@@ -414,7 +539,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
                 placeholder={selectedOrganization ? t('Оберіть типи') : t('Оберіть організацію')}
                 searchable
                 value={selectedServiceTypes}
-                onChange={setSelectedServiceTypes}
+                onChange={updateSelectedServiceTypes}
                 style={{ flex: '1 1 320px', minWidth: 240 }}
               />
               <MultiSelect
@@ -675,21 +800,10 @@ function buildServiceOptions(serviceTypes: ServiceOrganizationTypeValue[]) {
   }, [])
 }
 
-function getEffectiveServiceTypes(
-  selectedServiceTypes: string[],
-  organization: ServiceOrganization | null,
-): ServiceOrganizationTypeValue[] {
-  const normalizedSelectedTypes = normalizeSelectedServiceTypes(selectedServiceTypes)
-
-  if (normalizedSelectedTypes.length) {
-    return normalizedSelectedTypes
-  }
-
-  if (organization?.ServiceOrganizationTypes?.length) {
-    return organization.ServiceOrganizationTypes
-  }
-
-  return ALL_SERVICE_ORGANIZATION_TYPE_VALUES
+function getDefaultServiceTypes(organization: ServiceOrganization): ServiceOrganizationTypeValue[] {
+  return organization.ServiceOrganizationTypes?.length
+    ? organization.ServiceOrganizationTypes
+    : ALL_SERVICE_ORGANIZATION_TYPE_VALUES
 }
 
 function normalizeSelectedServiceTypes(selectedServiceTypes: string[]): ServiceOrganizationTypeValue[] {
@@ -715,22 +829,24 @@ function isServiceOrganizationTypeValue(value: number): value is ServiceOrganiza
   return SERVICE_ORGANIZATION_TYPES.some((option) => option.value === value)
 }
 
-function validateSearch(
-  organization: ServiceOrganization | null,
-  serviceTypes: ServiceOrganizationTypeValue[],
-  dateFrom: string,
-  dateTo: string,
-): string | null {
-  if (!organization?.Name?.trim()) {
-    return 'Оберіть організацію'
-  }
-
+function validateSearchDates(dateFrom: string, dateTo: string): string | null {
   if (!dateFrom || !dateTo) {
     return 'Оберіть період'
   }
 
   if (dateFrom > dateTo) {
     return 'Дата від не може бути пізніше дати до'
+  }
+
+  return null
+}
+
+function validateSearchSelection(
+  organization: ServiceOrganization | null,
+  serviceTypes: ServiceOrganizationTypeValue[],
+): string | null {
+  if (!organization?.Name?.trim()) {
+    return 'Оберіть організацію'
   }
 
   if (serviceTypes.length === 0) {
