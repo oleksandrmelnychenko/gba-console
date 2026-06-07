@@ -916,7 +916,6 @@ export function WarehouseUkraineOrderPlacementsPage() {
             data={model.gridRows}
             density={model.density}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
-            density={model.density}
             emptyText={t('Замовлень не знайдено')}
             getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
             isLoading={model.isLoading}
