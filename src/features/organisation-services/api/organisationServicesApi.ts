@@ -103,7 +103,7 @@ function normalizeServiceOrganizationTypes(types: unknown): ServiceOrganizationT
 }
 
 function isServiceOrganizationTypeValue(value: number): value is ServiceOrganizationTypeValue {
-  return Number.isInteger(value) && value >= 0 && value <= 8
+  return Number.isInteger(value) && value >= 0 && value <= 9
 }
 
 function readList<T>(result: unknown): T[] {

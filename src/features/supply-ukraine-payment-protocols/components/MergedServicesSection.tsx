@@ -54,6 +54,10 @@ function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService
     service.ActProvidingService = {}
   }
 
+  if (Number(values.grossPriceAccounting) > 0) {
+    service.AccountingActProvidingService = {}
+  }
+
   const paymentTask: SupplyPaymentTask = {
     Comment: values.comment,
     PayToDate: values.payToDate ? values.payToDate.toISOString() : undefined,

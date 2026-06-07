@@ -29,6 +29,7 @@ import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFor
 import type { CompanyCar, CompanyCarRoadList } from '../types'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
+const DEFAULT_LOOKBACK_MONTHS = 36
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -76,7 +77,7 @@ export function CompanyCarRoadListsPage() {
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
   const [loadState, dispatchLoadState] = useReducer(roadListsReducer, initialRoadListsState)
   const { companyCar, error, isLoading, roadLists } = loadState
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
+  const [fromDate, setFromDate] = useValueState(() => shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
@@ -158,7 +159,7 @@ export function CompanyCarRoadListsPage() {
   }
 
   function resetFilters() {
-    setFromDate(shiftDate(-7))
+    setFromDate(shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
     setToDate(formatLocalDate(new Date()))
   }
 
@@ -467,9 +468,9 @@ function getDriversLabel(roadList: CompanyCarRoadList): string {
     .join(' ')
 }
 
-function shiftDate(days: number): string {
+function shiftMonth(months: number): string {
   const date = new Date()
-  date.setDate(date.getDate() + days)
+  date.setMonth(date.getMonth() + months)
 
   return formatLocalDate(date)
 }

@@ -44,17 +44,21 @@ export type OutcomePaymentOrder = EntityFields & {
   Colleague?: NamedEntity | null
   Comment?: string
   CustomNumber?: string
+  DifferenceAmount?: number
   FromDate?: string
   IsUnderReport?: boolean
   IsUnderReportDone?: boolean
   Number?: string
   Organization?: NamedEntity | null
+  OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentPurpose?: string
+  User?: NamedEntity | null
 }
 
 export type OutcomePaymentOrderConsumablesOrder = EntityFields & {
+  ConsumablesOrder?: ConsumablesOrder | null
   ConsumablesOrderId?: number
   OutcomePaymentOrder?: OutcomePaymentOrder | null
 }

@@ -35,6 +35,7 @@ import type { ActProvidingService } from '../types'
 import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel } from '../utils'
 
 const PAGE_SIZE = 20
+const DEFAULT_LOOKBACK_MONTHS = 36
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
@@ -620,7 +621,7 @@ function getDefaultFilters(): { from: string; to: string } {
   const to = new Date()
   const from = new Date()
 
-  from.setDate(from.getDate() - 1)
+  from.setMonth(from.getMonth() - DEFAULT_LOOKBACK_MONTHS)
 
   return {
     from: formatLocalDate(from),

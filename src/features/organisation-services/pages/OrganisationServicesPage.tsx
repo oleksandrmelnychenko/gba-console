@@ -56,6 +56,7 @@ const serviceCollections = [
   { key: 'TransportationServices', serviceType: 7 },
   { key: 'VehicleDeliveryServices', serviceType: 8 },
   { key: 'VehicleServices', serviceType: 8 },
+  { key: 'MergedServices', serviceType: 9 },
 ] satisfies { key: ServiceCollectionKey; serviceType: ServiceOrganizationTypeValue }[]
 
 const documentFilterOptions = [
@@ -72,6 +73,7 @@ type ServiceCollectionKey =
   | 'BrokerServices'
   | 'ContainerServices'
   | 'CustomAgencyServices'
+  | 'MergedServices'
   | 'PlaneDeliveryServices'
   | 'PortCustomAgencyServices'
   | 'PortWorkServices'
