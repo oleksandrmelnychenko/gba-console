@@ -270,12 +270,6 @@ export function ConsumableStorageFormPage() {
             </Alert>
           )}
 
-            {!canSave && (
-              <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-                {t('Немає прав для збереження складу')}
-              </Alert>
-            )}
-
             <TextInput
               disabled={isLoading || isSaving}
               label={t('Назва')}
