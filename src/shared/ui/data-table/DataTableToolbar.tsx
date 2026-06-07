@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react'
 import { ActionIcon, Checkbox, Group, Menu, Tooltip } from '@mantine/core'
-import { IconCheck, IconColumns3, IconRestore } from '@tabler/icons-react'
+import {
+  IconBaselineDensityMedium,
+  IconBaselineDensitySmall,
+  IconCheck,
+  IconColumns3,
+  IconRestore,
+} from '@tabler/icons-react'
 import type { Column, Table as TableInstance } from '@tanstack/react-table'
 import type { DataTableDensity, DataTableLabels } from './types'
 
@@ -9,6 +15,7 @@ type DataTableToolbarProps<TData> = {
   density: DataTableDensity
   labels: Required<DataTableLabels>
   showLayoutControls: boolean
+  showDensityToggle: boolean
   table: TableInstance<TData>
   toolbarLeft?: ReactNode
   toolbarRight?: ReactNode
@@ -21,6 +28,7 @@ export function DataTableToolbar<TData>({
   density,
   labels,
   showLayoutControls,
+  showDensityToggle,
   table,
   toolbarLeft,
   toolbarRight,
@@ -96,6 +104,23 @@ export function DataTableToolbar<TData>({
       </Group>
       <Group className="data-table-toolbar-right" gap={6} wrap="nowrap">
         {toolbarRight}
+        {showDensityToggle ? (
+          <Tooltip label={density === 'compact' ? labels.normalDensity : labels.compactDensity} withArrow>
+            <ActionIcon
+              aria-label={labels.density}
+              size="sm"
+              variant="subtle"
+              color="gray"
+              onClick={() => onDensityChange(density === 'compact' ? 'normal' : 'compact')}
+            >
+              {density === 'compact' ? (
+                <IconBaselineDensitySmall size={17} stroke={1.8} />
+              ) : (
+                <IconBaselineDensityMedium size={17} stroke={1.8} />
+              )}
+            </ActionIcon>
+          </Tooltip>
+        ) : null}
       </Group>
     </Group>
   )

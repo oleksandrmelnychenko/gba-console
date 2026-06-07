@@ -10,14 +10,31 @@ export function getFillColumnId<TData>(
     return undefined
   }
 
-  // A column may opt in as the fill target via meta.fill even when pinned;
-  // otherwise the last non-pinned column absorbs the extra width.
+  // A column may opt in as the fill target via meta.fill even when pinned.
   const preferred = columns.find(
     (column) => (column.columnDef.meta as DataTableColumnMeta | undefined)?.fill,
   )
+
+  if (preferred) {
+    return preferred.id
+  }
+
   const stretchableColumns = columns.filter((column) => !column.getIsPinned())
 
-  return (preferred ?? stretchableColumns.at(-1))?.id
+  if (stretchableColumns.length === 0) {
+    return undefined
+  }
+
+  // Prefer data columns (sortable ⇒ they have an accessor) so the extra width
+  // lands on a real content column, not on an actions/index/checkbox column.
+  const dataColumns = stretchableColumns.filter((column) => column.getCanSort())
+  const pool = dataColumns.length > 0 ? dataColumns : stretchableColumns
+
+  // The widest column in the pool (usually the name/description column) absorbs
+  // the extra width, so the table fills its container without dead space.
+  return pool.reduce((widest, column) =>
+    column.getSize() > widest.getSize() ? column : widest,
+  ).id
 }
 
 export function createRenderedColumnWidths<TData>(

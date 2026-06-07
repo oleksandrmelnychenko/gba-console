@@ -648,6 +648,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
             density={density}
             onDensityChange={changeDensity}
+            showDensityToggle={false}
             emptyText={t('Клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"

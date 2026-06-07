@@ -69,6 +69,7 @@ export function DataTable<TData>({
   loadingText,
   labels: labelsOverride,
   showLayoutControls = true,
+  showDensityToggle = true,
   density: controlledDensity,
   onDensityChange,
   toolbarLeft,
@@ -349,12 +350,13 @@ export function DataTable<TData>({
 
   return (
     <div className={`data-table data-table-density-${effectiveDensity}`}>
-      {showLayoutControls || toolbarLeft || toolbarRight ? (
+      {showLayoutControls || showDensityToggle || toolbarLeft || toolbarRight ? (
         <DataTableToolbar
           columnTitles={columnTitles}
           density={effectiveDensity}
           labels={labels}
           showLayoutControls={showLayoutControls}
+          showDensityToggle={showDensityToggle}
           table={table}
           toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}

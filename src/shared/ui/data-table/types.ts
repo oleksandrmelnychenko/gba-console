@@ -73,6 +73,8 @@ export type DataTableProps<TData> = {
   loadingText?: ReactNode
   labels?: DataTableLabels
   showLayoutControls?: boolean
+  /** Shows a built-in compact/normal density toggle in the toolbar. Defaults to true. */
+  showDensityToggle?: boolean
   /** Controlled row density. When set, overrides the stored/default layout density. */
   density?: DataTableDensity
   onDensityChange?: (density: DataTableDensity) => void
