@@ -212,6 +212,7 @@ export function SupplyUkrainePaymentProtocolsView() {
         PayToDate: values.payToDate ? values.payToDate.toISOString() : undefined,
         User: values.responsible,
       },
+      Discount: Number(values.discount) || 0,
       Value: Number(values.value) || 0,
     }
 
@@ -296,6 +297,7 @@ export function SupplyUkrainePaymentProtocolsView() {
               isSaving={isSaving}
               protocolKeys={protocolKeys}
               protocols={order.SupplyOrderUkrainePaymentDeliveryProtocols || []}
+              totalGrossPriceLocal={order.TotalGrossPriceLocal || 0}
               users={users}
               onCreateProtocol={handleCreateProtocol}
               onRemoveProtocol={handleRemoveProtocol}

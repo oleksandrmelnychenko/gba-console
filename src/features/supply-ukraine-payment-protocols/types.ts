@@ -93,6 +93,7 @@ export type SupplyOrderUkrainePaymentDeliveryProtocolKey = EntityFields & {
 }
 
 export type SupplyOrderUkrainePaymentDeliveryProtocol = EntityFields & {
+  Discount?: number
   IsAccounting?: boolean
   SupplyOrderUkrainePaymentDeliveryProtocolKey?: SupplyOrderUkrainePaymentDeliveryProtocolKey | null
   SupplyPaymentTask?: SupplyPaymentTask | null
@@ -104,6 +105,9 @@ export type SupplyOrderUkraine = EntityFields & {
   MergedServices?: MergedService[]
   Number?: string
   SupplyOrderUkrainePaymentDeliveryProtocols?: SupplyOrderUkrainePaymentDeliveryProtocol[]
+  TotalGrossPriceLocal?: number
+  TotalProtocolsDiscount?: number
+  TotalProtocolsValue?: number
 }
 
 export type NewMergedServiceFormValues = {
@@ -134,6 +138,7 @@ export type NewMergedServiceFormValues = {
 
 export type NewPaymentProtocolFormValues = {
   comment: string
+  discount: string
   isAccounting: boolean
   payToDate: Date | null
   protocolKey: SupplyOrderUkrainePaymentDeliveryProtocolKey | null
