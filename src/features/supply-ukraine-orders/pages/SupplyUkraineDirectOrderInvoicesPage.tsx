@@ -702,11 +702,6 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       return
     }
 
-    if (!form.invNo.trim()) {
-      notifications.show({ color: 'red', message: t('Вкажіть INV.NO') })
-      return
-    }
-
     const draft = createPackListMetadataDraft(packListEditor?.packList, form)
     const invoiceForMetadata = upsertPackListMetadata(selectedInvoice, draft)
 
@@ -722,13 +717,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
           throw new Error(t('Не вдалося знайти збережений пак лист для документів'))
         }
 
-        await uploadPackingListDocuments({
-          ...savedPackList,
-          InvoiceDocuments: [
-            ...(savedPackList.InvoiceDocuments || []),
-            ...createNewInvoiceDocuments(form.files),
-          ],
-        }, form.files)
+        await uploadPackingListDocuments(savedPackList, form.files)
       }
 
       notifications.show({ color: 'green', message: t('Пак лист збережено') })
