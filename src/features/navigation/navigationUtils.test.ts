@@ -41,6 +41,48 @@ describe('normalizeNavigation', () => {
 
     expect(ordersModule.Children.map((node) => node.Module)).toEqual(['Активний розділ'])
   })
+
+  it('removes unsupported marketplace and Poland navigation entries from API menu', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Продажі',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Продажі Україна',
+            Route: '/sales/ukraine/all',
+          },
+          {
+            Id: 12,
+            Module: 'Allegro',
+            Route: '/sales/allegro',
+          },
+          {
+            Id: 13,
+            Module: 'Продажі Польща',
+            Route: '/sales/poland/all',
+          },
+        ],
+      },
+      {
+        Id: 2,
+        Module: 'Постачання',
+        Children: [
+          {
+            Id: 21,
+            Module: 'Замовлення',
+            Route: '/orders/poland/all',
+          },
+        ],
+      },
+    ]
+
+    const normalizedModules = normalizeNavigation(modules)
+
+    expect(normalizedModules.map((module) => module.Module)).toEqual(['Продажі'])
+    expect(normalizedModules[0].Children.map((node) => node.Module)).toEqual(['Продажі Україна'])
+  })
 })
 
 describe('getNavigationNodePath', () => {

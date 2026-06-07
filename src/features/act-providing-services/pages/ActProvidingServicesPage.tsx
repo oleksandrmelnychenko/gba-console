@@ -378,7 +378,7 @@ function ActProvidingServiceOptionsModal({
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
-  const canOpenViewOption = hasPermission(PERMISSION_VIEW_OPTION)
+  const canOpenViewOption = Boolean(row?.netId && (row.sourceKind === 'deliveryExpense' || hasPermission(PERMISSION_VIEW_OPTION)))
   const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)

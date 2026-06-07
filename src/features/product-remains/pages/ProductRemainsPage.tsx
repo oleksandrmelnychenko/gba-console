@@ -28,6 +28,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -103,10 +104,16 @@ const BATCH_DETAILS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+function getProductRemainsInitialTab(routeTab: string | undefined): ProductRemainsTab {
+  return routeTab === 'products' ? 'products' : 'batches'
+}
+
 function useProductRemainsPageModel() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
-  const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>('batches')
+  const navigate = useNavigate()
+  const { tab: routeTab } = useParams()
+  const [activeTab, setActiveTab] = useValueState<ProductRemainsTab>(() => getProductRemainsInitialTab(routeTab))
   const [storages, setStorages] = useValueState<ProductRemainStorage[]>([])
   const [selectedStorageValue, setSelectedStorageValue] = useValueState(ALL_STORAGES_VALUE)
   const [supplierOptions, setSupplierOptions] = useValueState<ProductRemainSupplier[]>([])
@@ -177,6 +184,15 @@ function useProductRemainsPageModel() {
     () => <TableStatus searchValue={productSearchValue} totals={productTotals} />,
     [productSearchValue, productTotals],
   )
+
+  useEffect(() => {
+    const nextActiveTab = getProductRemainsInitialTab(routeTab)
+
+    setActiveTab((currentTab) => (currentTab === nextActiveTab ? currentTab : nextActiveTab))
+    setSelectedBatch(null)
+    setSelectedMovementRow(null)
+  }, [routeTab, setActiveTab, setSelectedBatch, setSelectedMovementRow])
+
   const resetBatchesForInvalidFilter = useCallback(() => {
     setBatchRows([])
     setBatchTotals(null)
@@ -284,6 +300,13 @@ function useProductRemainsPageModel() {
     reload()
   }
 
+  function selectActiveTab(nextTab: ProductRemainsTab) {
+    setSelectedBatch(null)
+    setSelectedMovementRow(null)
+    setActiveTab(nextTab)
+    navigate(`/products/storages/incomes/${nextTab}`, { replace: true })
+  }
+
   function openMovement(row: RemainingConsignment) {
     if (!canOpenProductMovement || !row.ConsignmentItemNetId) {
       return
@@ -353,8 +376,8 @@ function useProductRemainsPageModel() {
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, toggleBatchDensity, toggleProductDensity,
-    setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
+    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
+    toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   }
@@ -660,8 +683,8 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, toggleBatchDensity, toggleProductDensity,
-    setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
+    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
+    toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
@@ -791,9 +814,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
                   aria-pressed={activeTab === tab.value}
                   onClick={() => {
-                    setSelectedBatch(null)
-                    setSelectedMovementRow(null)
-                    setActiveTab(tab.value)
+                    selectActiveTab(tab.value)
                   }}
                 >
                   {tab.label}
