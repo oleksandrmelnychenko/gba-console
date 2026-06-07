@@ -52,7 +52,6 @@ import {
   getConsumableStorage,
   getDeprecatedConsumableOrders,
   getConsumableStorages,
-  searchConsumableStorages,
   searchConsumableStorageUsers,
   updateDeprecatedConsumableOrder,
 } from '../api/consumableStoragesApi'
@@ -121,6 +120,10 @@ export function ConsumableStoragesPage() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
+  const visibleStorages = useMemo(
+    () => filterConsumableStorages(storages, normalizedSearchValue),
+    [normalizedSearchValue, storages],
+  )
 
   const openEditor = useCallback(
     (storage: ConsumablesStorage) => {
@@ -162,9 +165,7 @@ export function ConsumableStoragesPage() {
       setError(null)
 
       try {
-        const nextStorages = normalizedSearchValue
-          ? await searchConsumableStorages(normalizedSearchValue)
-          : await getConsumableStorages()
+        const nextStorages = await getConsumableStorages()
 
         if (!controller.signal.aborted) {
           setStorages(nextStorages)
@@ -183,7 +184,7 @@ export function ConsumableStoragesPage() {
     void loadStorages()
 
     return () => controller.abort()
-  }, [normalizedSearchValue, reloadKey, setError, setLoading, setStorages, t])
+  }, [reloadKey, setError, setLoading, setStorages, t])
 
   const toolbarLeft = useMemo(
     () => (
@@ -220,14 +221,14 @@ export function ConsumableStoragesPage() {
 
   return (
     <Stack gap="md">
-      <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-        <PageHeaderActions>
-          <Group gap="xs" wrap="nowrap">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
+      <PageHeaderActions>
+        <Group gap="xs" wrap="nowrap">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
             <Button
               color={CREATE_ACTION_COLOR}
               size="sm"
@@ -236,9 +237,9 @@ export function ConsumableStoragesPage() {
             >
               {t('Новий склад')}
             </Button>
-          </Group>
-        </PageHeaderActions>
-      </PermissionGate>
+          </PermissionGate>
+        </Group>
+      </PageHeaderActions>
 
       <Card withBorder radius="md" shadow="sm">
         <Stack gap="md">
@@ -250,16 +251,16 @@ export function ConsumableStoragesPage() {
 
           <Group gap="xs">
             <Badge color="blue" variant="light">
-              {t('Складів')}: {storages.length}
+              {t('Складів')}: {visibleStorages.length}
             </Badge>
             <Badge color="gray" variant="light">
-              {t('Позицій')}: {storages.reduce((total, storage) => total + (storage.ConsumableProducts?.length || 0), 0)}
+              {t('Позицій')}: {visibleStorages.reduce((total, storage) => total + (storage.ConsumableProducts?.length || 0), 0)}
             </Badge>
           </Group>
 
           <DataTable
             columns={columns}
-            data={storages}
+            data={visibleStorages}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             emptyText={t('Складів не знайдено')}
             getRowId={(storage) => String(storage.NetUid || storage.Id || storage.Name)}
@@ -1595,6 +1596,23 @@ function DetailItem({ label, value }: { label: string; value: string }) {
 
 function getEntityName(entity?: NamedEntity | null): string | undefined {
   return entity?.LastName || entity?.FullName || entity?.Name || entity?.Code
+}
+
+function filterConsumableStorages(storages: ConsumablesStorage[], value: string): ConsumablesStorage[] {
+  const normalizedValue = value.trim().toLowerCase()
+
+  if (!normalizedValue) {
+    return storages
+  }
+
+  return storages.filter((storage) =>
+    [
+      storage.Name,
+      storage.Description,
+      getEntityName(storage.ResponsibleUser),
+      getEntityName(storage.Organization),
+    ].some((field) => field?.toLowerCase().includes(normalizedValue)),
+  )
 }
 
 function flattenDeprecatedConsumableOrders(orders: DeprecatedConsumableOrder[]): DeprecatedConsumableOrderRow[] {
