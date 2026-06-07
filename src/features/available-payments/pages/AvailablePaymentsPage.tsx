@@ -30,7 +30,14 @@ import {
   getGroupedPaymentTasks,
 } from '../api/availablePaymentsApi'
 import { AvailablePaymentsDetailDrawer } from '../components/AvailablePaymentsDetailDrawer'
-import { getAvailablePaymentSelectionError } from '../models/availablePaymentSelection'
+import {
+  getAvailablePaymentSelectionError,
+  validateAvailablePaymentSelection,
+} from '../models/availablePaymentSelection'
+import {
+  isOutcomePaymentTasksMode,
+  parseAvailablePaymentsAccountingType,
+} from '../models/availablePaymentsSearchParams'
 import {
   AccountingTypeValue,
   TaskStatusValue,
@@ -48,9 +55,13 @@ type FilterDraft = {
   type: AccountingTypeValue
 }
 
+type OutcomeRequest = {
+  key: number
+  models: AvailablePaymentTaskModel[]
+}
+
 const DEFAULT_PAGE_SIZE = 10
 const PAGE_SIZE_OPTIONS = ['10', '20', '40', '60']
-const OUTCOME_PAYMENT_TASKS_OPERATION_TYPE = '4'
 
 const CURRENCY_CODES = ['EUR', 'USD', 'PLN', 'UAH'] as const
 
@@ -66,8 +77,8 @@ const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 function useAvailablePaymentsPageModel() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
-  const isOutcomePaymentTasksMode = searchParams.get('operationType') === OUTCOME_PAYMENT_TASKS_OPERATION_TYPE
-  const initialAccountingType = parseAccountingType(searchParams.get('type'))
+  const isOutcomeMode = isOutcomePaymentTasksMode(searchParams)
+  const initialAccountingType = parseAvailablePaymentsAccountingType(searchParams)
   const initialFilters = useMemo<FilterDraft>(
     () => ({
       from: getDateShiftedByDays(-30),
@@ -88,6 +99,7 @@ function useAvailablePaymentsPageModel() {
   const [selectedGroup, setSelectedGroup] = useValueState<GroupedPaymentTask | null>(null)
   const [pendingDetailGroup, setPendingDetailGroup] = useValueState<GroupedPaymentTask | null>(null)
   const [markedModels, setMarkedModels] = useValueState<AvailablePaymentTaskModel[]>([])
+  const [outcomeRequest, setOutcomeRequest] = useValueState<OutcomeRequest | null>(null)
   const [filesByTaskId, setFilesByTaskId] = useValueState<Record<string, File[]>>({})
   const [confirmCloseDetailOpen, setConfirmCloseDetailOpen] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -101,7 +113,7 @@ function useAvailablePaymentsPageModel() {
     AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT.density,
   )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${isOutcomePaymentTasksMode}`
+  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${isOutcomeMode}`
   const listRequestKeyRef = useRef(listRequestKey)
   const groupsRef = useRef(groups)
   const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
@@ -143,7 +155,7 @@ function useAvailablePaymentsPageModel() {
   useAvailablePaymentsLoader({
     activeFilters,
     filterError,
-    isOutcomePaymentTasksMode,
+    isOutcomePaymentTasksMode: isOutcomeMode,
     pageSize,
     reloadKey,
     resetGroups,
@@ -183,7 +195,7 @@ function useAvailablePaymentsPageModel() {
         from: toQueryDate(activeFilters.from),
         limit: pageSize,
         offset: requestOffset,
-        onlyAvailableForPayment: isOutcomePaymentTasksMode,
+        onlyAvailableForPayment: isOutcomeMode,
         organizationNetId: activeFilters.organizationNetId || undefined,
         to: toQueryDate(activeFilters.to),
         typePaymentTask: activeFilters.type,
@@ -249,6 +261,16 @@ function useAvailablePaymentsPageModel() {
     setMarkedModels([])
     setFilesByTaskId({})
   }, [setFilesByTaskId, setMarkedModels])
+  const openMarkedOutcome = useCallback(() => {
+    const selectionError = validateAvailablePaymentSelection(markedModels, t)
+
+    if (selectionError) {
+      setError(selectionError)
+      return
+    }
+
+    setOutcomeRequest({ key: Date.now(), models: markedModels })
+  }, [markedModels, setError, setOutcomeRequest, t])
   const toggleMarked = useCallback(
     (model: AvailablePaymentTaskModel) => {
       setMarkedModels((current) => {
@@ -309,13 +331,15 @@ function useAvailablePaymentsPageModel() {
     filesByTaskId,
     groups,
     hasMore,
-    isOutcomePaymentTasksMode,
+    isOutcomePaymentTasksMode: isOutcomeMode,
     isLoading,
     isLoadingMore,
     loadMoreGroups,
     markedModels,
     markedTaskIds,
     openDetail,
+    openMarkedOutcome,
+    outcomeRequest,
     organizations,
     organizationsError,
     pageSize,
@@ -487,6 +511,7 @@ export function AvailablePaymentsPage() {
         filesByTaskId={model.filesByTaskId}
         markedModels={model.markedModels}
         markedTaskIds={model.markedTaskIds}
+        outcomeRequest={model.outcomeRequest}
         typePaymentTask={model.activeFilters.type}
         onChanged={model.handlePaymentChanged}
         onClearMarked={model.clearMarked}
@@ -531,6 +556,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     isLoadingMore,
     loadMoreGroups,
     markedModels,
+    openMarkedOutcome,
     openDetail,
     organizations,
     organizationsError,
@@ -649,9 +675,14 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
               <Text size="sm">
                 {t('Вибрано платіжних задач')}: {markedModels.length}
               </Text>
-              <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
-                {t('Очистити')}
-              </Button>
+              <Group gap="xs">
+                <Button size="xs" variant="light" onClick={openMarkedOutcome}>
+                  {t('Створити видатковий')}
+                </Button>
+                <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
+                  {t('Очистити')}
+                </Button>
+              </Group>
             </Group>
           </Alert>
         )}
@@ -951,20 +982,6 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
-}
-
-function parseAccountingType(value: string | null): AccountingTypeValue {
-  const numericValue = Number(value)
-
-  if (
-    numericValue === AccountingTypeValue.ManagementAccounting ||
-    numericValue === AccountingTypeValue.Accounting ||
-    numericValue === AccountingTypeValue.All
-  ) {
-    return numericValue
-  }
-
-  return AccountingTypeValue.All
 }
 
 function getDateShiftedByDays(days: number): string {

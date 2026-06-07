@@ -30,7 +30,7 @@ import {
   IconInfoCircle,
   IconTrash,
 } from '@tabler/icons-react'
-import { type FormEvent, type ReactNode, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -84,6 +84,10 @@ type AvailablePaymentsDetailDrawerProps = {
   group: GroupedPaymentTask | null
   markedModels: AvailablePaymentTaskModel[]
   markedTaskIds: string[]
+  outcomeRequest: {
+    key: number
+    models: AvailablePaymentTaskModel[]
+  } | null
   typePaymentTask: AccountingTypeValue
   onChanged: () => void
   onClearMarked: () => void
@@ -148,6 +152,7 @@ function useAvailablePaymentsDetailDrawerModel({
   group,
   markedModels,
   markedTaskIds,
+  outcomeRequest,
   typePaymentTask,
   onChanged,
   onClearMarked,
@@ -173,6 +178,7 @@ function useAvailablePaymentsDetailDrawerModel({
   const [error, setError] = useValueState<string | null>(null)
   const [confirmCloseOutcomeOpen, setConfirmCloseOutcomeOpen] = useValueState(false)
   const cashFlowRequestRef = useRef<Record<string, number>>({})
+  const handledOutcomeRequestKeyRef = useRef<number | null>(null)
   const movementSearchRequestRef = useRef(0)
   const movementSearchTimeoutRef = useRef<number | null>(null)
 
@@ -303,14 +309,14 @@ function useAvailablePaymentsDetailDrawerModel({
     setForm((current) => ({ ...current, ...patch }))
   }
 
-  function resetMovementSearchState() {
+  const resetMovementSearchState = useCallback(() => {
     movementSearchRequestRef.current += 1
 
     if (movementSearchTimeoutRef.current) {
       window.clearTimeout(movementSearchTimeoutRef.current)
       movementSearchTimeoutRef.current = null
     }
-  }
+  }, [])
 
   function closeOutcomeForm() {
     resetMovementSearchState()
@@ -376,7 +382,7 @@ function useAvailablePaymentsDetailDrawerModel({
     }, SEARCH_DEBOUNCE_MS)
   }
 
-  function openOutcomeForm(nextModels: AvailablePaymentTaskModel[], options: OutcomeOpenOptions = {}) {
+  const openOutcomeForm = useCallback((nextModels: AvailablePaymentTaskModel[], options: OutcomeOpenOptions = {}) => {
     if (isSaving) {
       return
     }
@@ -409,7 +415,25 @@ function useAvailablePaymentsDetailDrawerModel({
     setOutcomeRequiresDocuments(shouldRequireDocuments)
     setForm(createInitialOutcomeForm(payableModels))
     setError(null)
-  }
+  }, [
+    filesByTaskId,
+    isSaving,
+    resetMovementSearchState,
+    setError,
+    setForm,
+    setOutcomeModels,
+    setOutcomeRequiresDocuments,
+    t,
+  ])
+
+  useEffect(() => {
+    if (!outcomeRequest || handledOutcomeRequestKeyRef.current === outcomeRequest.key) {
+      return
+    }
+
+    handledOutcomeRequestKeyRef.current = outcomeRequest.key
+    openOutcomeForm(outcomeRequest.models, { requireDocuments: false })
+  }, [openOutcomeForm, outcomeRequest])
 
   async function loadCashFlow(model: AvailablePaymentTaskModel, filters: CashFlowFilters) {
     if (!model.serviceAgreementNetId) {
@@ -611,7 +635,11 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }
 
-  const title = group ? `${t('Наявні платежі')} - ${formatDate(group.PayToDate)}` : t('Наявні платежі')
+  const title = group
+    ? `${t('Наявні платежі')} - ${formatDate(group.PayToDate)}`
+    : outcomeModels.length > 0
+      ? t('Створити видатковий')
+      : t('Наявні платежі')
 
   return {
     activeTabs,
@@ -705,7 +733,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
   } = model
 
   return (
-    <AppDrawer opened={Boolean(group)} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
+    <AppDrawer opened={Boolean(group) || outcomeModels.length > 0} position="right" size="80vw" title={title} onClose={requestDrawerClose}>
       <Stack gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -713,32 +741,34 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
           </Alert>
         )}
 
-        {models.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            {t('Платіжних задач не знайдено')}
-          </Text>
-        ) : (
-          <AvailablePaymentTaskList
-            activeTabs={activeTabs}
-            cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
-            cashFlows={cashFlows}
-            expandedId={expandedId}
-            filesByTaskId={filesByTaskId}
-            isSaving={isSaving}
-            markedModels={markedModels}
-            markedTaskIds={markedTaskIds}
-            models={models}
-            onCashFlowTab={handleCashFlowTab}
-            onCashFlowFiltersChange={handleCashFlowFiltersChange}
-            onCashFlowRowClick={handleCashFlowRowClick}
-            onClearMarked={onClearMarked}
-            onCreateOutcome={openOutcomeForm}
-            onFilesChanged={onFilesChanged}
-            onMoveToDone={handleMoveToDone}
-            onRedirectToSource={handleRedirectToSource}
-            onToggleExpanded={handleToggleExpanded}
-            onToggleMarked={onToggleMarked}
-          />
+        {group && (
+          models.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {t('Платіжних задач не знайдено')}
+            </Text>
+          ) : (
+            <AvailablePaymentTaskList
+              activeTabs={activeTabs}
+              cashFlowFiltersByTaskId={cashFlowFiltersByTaskId}
+              cashFlows={cashFlows}
+              expandedId={expandedId}
+              filesByTaskId={filesByTaskId}
+              isSaving={isSaving}
+              markedModels={markedModels}
+              markedTaskIds={markedTaskIds}
+              models={models}
+              onCashFlowTab={handleCashFlowTab}
+              onCashFlowFiltersChange={handleCashFlowFiltersChange}
+              onCashFlowRowClick={handleCashFlowRowClick}
+              onClearMarked={onClearMarked}
+              onCreateOutcome={openOutcomeForm}
+              onFilesChanged={onFilesChanged}
+              onMoveToDone={handleMoveToDone}
+              onRedirectToSource={handleRedirectToSource}
+              onToggleExpanded={handleToggleExpanded}
+              onToggleMarked={onToggleMarked}
+            />
+          )
         )}
 
         {outcomeModels.length > 0 && (
