@@ -31,6 +31,9 @@ type SelectOption = {
   value: string
 }
 
+const MONEY_PRECISION = 2
+const PERCENT_MAX = 100
+
 function ProtocolRow({
   onRemove,
   protocol,
@@ -59,6 +62,14 @@ function ProtocolRow({
           </Text>
           <Text fw={500} size="sm">
             {formatMoney(protocol.Value)}
+          </Text>
+        </Group>
+        <Group justify="space-between">
+          <Text c="dimmed" size="sm">
+            {t('Відсоток')}
+          </Text>
+          <Text fw={500} size="sm">
+            {formatPercent(protocol.Discount)}
           </Text>
         </Group>
         <Group justify="space-between">
@@ -94,6 +105,7 @@ export function PaymentDeliveryProtocolsSection({
   onRemoveProtocol,
   protocolKeys,
   protocols,
+  totalGrossPriceLocal,
   users,
 }: {
   isSaving: boolean
@@ -101,12 +113,14 @@ export function PaymentDeliveryProtocolsSection({
   onRemoveProtocol: (protocol: SupplyOrderUkrainePaymentDeliveryProtocol) => Promise<void>
   protocolKeys: SupplyOrderUkrainePaymentDeliveryProtocolKey[]
   protocols: SupplyOrderUkrainePaymentDeliveryProtocol[]
+  totalGrossPriceLocal: number
   users: ProtocolUser[]
 }) {
   const { t } = useI18n()
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [removeTarget, setRemoveTarget] = useValueState<SupplyOrderUkrainePaymentDeliveryProtocol | null>(null)
   const [value, setValue] = useValueState('')
+  const [discount, setDiscount] = useValueState('')
   const [protocolKey, setProtocolKey] = useValueState<SupplyOrderUkrainePaymentDeliveryProtocolKey | null>(null)
   const [responsible, setResponsible] = useValueState<ProtocolUser | null>(null)
   const [payToDate, setPayToDate] = useValueState<Date | null>(new Date())
@@ -116,10 +130,13 @@ export function PaymentDeliveryProtocolsSection({
   const [prevOpened, setPrevOpened] = useValueState(isFormOpen)
 
   if (isFormOpen !== prevOpened) {
-    setPrevOpened(isFormOpen)
+      setPrevOpened(isFormOpen)
 
     if (isFormOpen) {
-      setValue('')
+      const initialValues = getInitialProtocolValues(protocols, totalGrossPriceLocal)
+
+      setValue(initialValues.value)
+      setDiscount(initialValues.discount)
       setProtocolKey(protocolKeys[0] || null)
       setResponsible(users[0] || null)
       setPayToDate(new Date())
@@ -132,10 +149,55 @@ export function PaymentDeliveryProtocolsSection({
   const visibleProtocols = protocols.filter((protocol) => !protocol.Deleted)
   const keyOptions = toProtocolKeyOptions(protocolKeys)
   const userOptions = toProtocolUserOptions(users)
+  const currentValue = readPositiveNumber(value)
+  const currentDiscount = readPositiveNumber(discount)
+  const existingValue = sumProtocolValues(visibleProtocols, 'Value')
+  const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
+
+  function updateDiscount(nextValue: string) {
+    const numericDiscount = clampNumber(readNumberInput(nextValue) || 0, 0, PERCENT_MAX)
+    const nextDiscount = formatInputNumber(numericDiscount)
+    const nextAmount = totalGrossPriceLocal > 0 ? roundNumber(totalGrossPriceLocal * (numericDiscount / 100)) : 0
+
+    setDiscount(nextDiscount)
+    setValue(formatInputNumber(nextAmount))
+  }
+
+  function updateValue(nextValue: string) {
+    const numericValue = clampNumber(readNumberInput(nextValue) || 0, 0, totalGrossPriceLocal)
+    const nextDiscount = totalGrossPriceLocal > 0 ? roundNumber((numericValue / totalGrossPriceLocal) * 100) : 0
+
+    setValue(formatInputNumber(numericValue))
+    setDiscount(formatInputNumber(nextDiscount))
+  }
 
   async function handleSubmit() {
-    if (!value || Number(value) <= 0) {
+    if (!protocolKey?.Key) {
+      setValidationError(t('Оберіть форму платежу'))
+
+      return
+    }
+
+    if (!currentValue) {
       setValidationError(t('Введіть вартість брутто'))
+
+      return
+    }
+
+    if (!currentDiscount) {
+      setValidationError(t('Введіть відсоток'))
+
+      return
+    }
+
+    if (roundNumber(existingValue + currentValue) > roundNumber(totalGrossPriceLocal)) {
+      setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
+
+      return
+    }
+
+    if (roundNumber(existingDiscount + currentDiscount) > PERCENT_MAX) {
+      setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
 
       return
     }
@@ -143,6 +205,7 @@ export function PaymentDeliveryProtocolsSection({
     setValidationError(null)
     await onCreateProtocol({
       comment,
+      discount,
       isAccounting,
       payToDate,
       protocolKey,
@@ -203,7 +266,15 @@ export function PaymentDeliveryProtocolsSection({
             label={t('Вартість Брутто')}
             type="number"
             value={value}
-            onChange={(event) => setValue(event.currentTarget.value)}
+            onChange={(event) => updateValue(event.currentTarget.value)}
+          />
+          <TextInput
+            label={t('Відсоток')}
+            max={PERCENT_MAX}
+            min={0}
+            type="number"
+            value={discount}
+            onChange={(event) => updateDiscount(event.currentTarget.value)}
           />
           <Checkbox
             checked={isAccounting}
@@ -285,4 +356,73 @@ function toProtocolUserOptions(users: ProtocolUser[]): SelectOption[] {
   }
 
   return options
+}
+
+function getInitialProtocolValues(
+  protocols: SupplyOrderUkrainePaymentDeliveryProtocol[],
+  totalGrossPriceLocal: number,
+): { discount: string; value: string } {
+  const visibleProtocols = protocols.filter((protocol) => !protocol.Deleted)
+  const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
+  const existingValue = sumProtocolValues(visibleProtocols, 'Value')
+  const remainingDiscount = clampNumber(roundNumber(PERCENT_MAX - existingDiscount), 0, PERCENT_MAX)
+  const remainingValue = clampNumber(roundNumber(totalGrossPriceLocal - existingValue), 0, totalGrossPriceLocal)
+
+  return {
+    discount: formatInputNumber(remainingDiscount),
+    value: formatInputNumber(remainingValue),
+  }
+}
+
+function sumProtocolValues(
+  protocols: SupplyOrderUkrainePaymentDeliveryProtocol[],
+  key: 'Discount' | 'Value',
+): number {
+  return roundNumber(protocols.reduce((total, protocol) => total + (readNumberInput(protocol[key]) || 0), 0))
+}
+
+function readPositiveNumber(value: string): number {
+  return Math.max(0, readNumberInput(value) || 0)
+}
+
+function readNumberInput(value: string | number | null | undefined): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalized = value.trim().replace(',', '.')
+
+  if (!normalized) {
+    return null
+  }
+
+  const parsed = Number(normalized)
+
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function roundNumber(value: number): number {
+  const multiplier = 10 ** MONEY_PRECISION
+
+  return Math.round(value * multiplier) / multiplier
+}
+
+function formatInputNumber(value: number): string {
+  return value ? String(roundNumber(value)) : ''
+}
+
+function formatPercent(value: number | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '-'
+  }
+
+  return `${roundNumber(value)} %`
 }
