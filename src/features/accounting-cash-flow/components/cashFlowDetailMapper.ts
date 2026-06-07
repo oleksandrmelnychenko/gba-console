@@ -103,9 +103,11 @@ const JOIN_SERVICE_TYPE = {
 
 const BASE_SERVICE_FIELD_BY_TYPE: Partial<Record<number, keyof AccountingCashFlowHeadItem>> = {
   [JOIN_SERVICE_TYPE.ContainerService]: 'ContainerService',
+  [JOIN_SERVICE_TYPE.AccountingContainerService]: 'ContainerService',
   [JOIN_SERVICE_TYPE.CustomService]: 'CustomService',
   [JOIN_SERVICE_TYPE.AccountingCustomService]: 'CustomService',
   [JOIN_SERVICE_TYPE.PortWorkService]: 'PortWorkService',
+  [JOIN_SERVICE_TYPE.AccountingPortWorkService]: 'PortWorkService',
   [JOIN_SERVICE_TYPE.PortCustomAgencyService]: 'PortCustomAgencyService',
   [JOIN_SERVICE_TYPE.AccountingPortCustomAgencyService]: 'PortCustomAgencyService',
   [JOIN_SERVICE_TYPE.CustomAgencyService]: 'CustomAgencyService',
@@ -131,7 +133,11 @@ export function mapItemToDetailViewModel(item: AccountingCashFlowHeadItem): Cash
     }
 
     if (item.Type === JOIN_SERVICE_TYPE.SupplyPaymentTask) {
-      return mapSupplyPaymentTask(item)
+      return mapSupplyPaymentTask(item, 'SupplyPaymentTask')
+    }
+
+    if (item.Type === JOIN_SERVICE_TYPE.AccountingContainerPaymentTask) {
+      return mapSupplyPaymentTask(item, 'AccountingContainerPaymentTask')
     }
 
     const serviceField = BASE_SERVICE_FIELD_BY_TYPE[item.Type]
@@ -212,8 +218,11 @@ function getRowsFromBaseService(
   ]
 }
 
-function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailViewModel | null {
-  const task = toRecord(item.SupplyPaymentTask)
+function mapSupplyPaymentTask(
+  item: AccountingCashFlowHeadItem,
+  taskField: keyof AccountingCashFlowHeadItem,
+): CashFlowDetailViewModel | null {
+  const task = toRecord(item[taskField])
 
   if (!task) {
     return null
@@ -221,6 +230,7 @@ function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailV
 
   const services = collectSupplyPaymentTaskServices(task)
   const taskDocuments = collectServiceDocuments(task)
+  const taskPaymentStatus = getAccountingCashFlowRecordPaymentStatus(task) || getAccountingCashFlowPaymentStatus(item)
 
   const rows = services.map((serviceItem) => {
     const service = toRecord(serviceItem)
@@ -254,7 +264,7 @@ function mapSupplyPaymentTask(item: AccountingCashFlowHeadItem): CashFlowDetailV
         stringValue(nestedProForm?.Number) ||
         stringValue(nestedInvoice?.Number) ||
         stringValue(nestedUkraineOrder?.InvNumber),
-      PaymentStatus: getAccountingCashFlowRecordPaymentStatus(service) || getAccountingCashFlowPaymentStatus(item),
+      PaymentStatus: getAccountingCashFlowRecordPaymentStatus(service) || taskPaymentStatus,
       ServiceNumber: stringValue(service?.ServiceNumber) || stringValue(nestedUkraineOrder?.Number),
     }
   })
