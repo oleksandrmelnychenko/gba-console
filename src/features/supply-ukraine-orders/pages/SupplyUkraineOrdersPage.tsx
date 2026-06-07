@@ -40,11 +40,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createSupplyOrderUkraineDeliveryExpense,
   deleteDirectSupplyUkraineOrder,
@@ -1429,20 +1430,7 @@ function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefin
 }
 
 function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
-  const orderNumber = normalizeDisplayNumber(order.Number)
-  const invoiceNumber = normalizeDisplayNumber(order.InvNumber)
-
-  return orderNumber || invoiceNumber || order.NetUid
-}
-
-function normalizeDisplayNumber(value?: string | null): string | undefined {
-  const normalizedValue = value?.trim()
-
-  if (!normalizedValue || /^0+$/.test(normalizedValue)) {
-    return undefined
-  }
-
-  return normalizedValue
+  return getSupplyUkraineOrderDisplayNumber(order)
 }
 
 function getRowId(row: SupplyUkraineOrderRow): string {

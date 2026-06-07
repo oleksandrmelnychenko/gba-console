@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import {
   getResponsibleUsers,
   getSupplyOrderUkraineById,
@@ -257,7 +258,7 @@ export function SupplyUkrainePaymentProtocolsView() {
               {t('Замовлення на Україну')}
             </Text>
             <Text fw={600} size="sm">
-              {order?.Number || netid}
+              {getSupplyUkraineOrderDisplayNumber(order) || netid}
             </Text>
           </Group>
         </Stack>

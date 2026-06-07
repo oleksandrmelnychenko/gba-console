@@ -119,6 +119,7 @@ export type SupplyOrderUkraineItem = EntityFields & Record<string, unknown>
 
 export type SupplyOrderUkraine = EntityFields & {
   Number?: string
+  InvNumber?: string
   FromDate?: Date | string
   Supplier?: WarehouseUkraineSupplier | null
   ClientAgreement?: WarehouseUkraineClientAgreement | null

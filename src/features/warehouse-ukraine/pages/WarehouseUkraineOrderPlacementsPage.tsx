@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -809,9 +810,9 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Button>
         <Group gap="sm" justify="flex-end">
           <Text fw={700} size="lg">
-            {`${t('Замовлення на поставку в Україну')} #${model.order?.Number || ''} ${t('Від')} ${formatDate(
-              model.order?.FromDate,
-            )}`}
+            {`${t('Замовлення на поставку в Україну')} #${getSupplyUkraineOrderDisplayNumber(model.order) || ''} ${t(
+              'Від',
+            )} ${formatDate(model.order?.FromDate)}`}
           </Text>
           {model.order && (
             <Badge color={model.order.IsPlaced ? 'green' : 'gray'} variant="light">

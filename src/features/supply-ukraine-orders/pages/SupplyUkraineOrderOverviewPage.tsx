@@ -29,6 +29,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -422,7 +423,7 @@ export function SupplyUkraineOrderOverviewPage() {
         <Group justify="flex-end">
           <Stack gap={2} align="flex-end">
             <Text fw={700} size="xl">{t('Огляд поставки в Україну')}</Text>
-            <Text c="dimmed" size="sm">{order?.Number || id}</Text>
+            <Text c="dimmed" size="sm">{getSupplyUkraineOrderDisplayNumber(order) || id}</Text>
           </Stack>
           {canManageDocuments && order && (
             <Button
@@ -463,7 +464,7 @@ export function SupplyUkraineOrderOverviewPage() {
           </Group>
 
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-            <DetailValue label={t('Номер')} value={order?.Number} />
+            <DetailValue label={t('Номер')} value={getSupplyUkraineOrderDisplayNumber(order)} />
             <DetailValue label={t('Дата')} value={formatDateTime(order?.FromDate)} />
             <DetailValue label={t('Інвойс')} value={order?.InvNumber} />
             <DetailValue label={t('Дата інвойсу')} value={formatDateTime(order?.InvDate)} />

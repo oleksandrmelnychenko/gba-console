@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -369,8 +370,8 @@ function useOrdersColumns(indexMap: Map<SupplyOrderUkraine, number>) {
         header: t('Номер'),
         width: 200,
         minWidth: 150,
-        accessor: (order) => order.Number,
-        cell: (order) => <Text fw={700}>{displayValue(order.Number)}</Text>,
+        accessor: (order) => getSupplyUkraineOrderDisplayNumber(order),
+        cell: (order) => <Text fw={700}>{displayValue(getSupplyUkraineOrderDisplayNumber(order))}</Text>,
       },
       {
         id: 'supplier',

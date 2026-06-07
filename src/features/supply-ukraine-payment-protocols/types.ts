@@ -102,6 +102,7 @@ export type SupplyOrderUkrainePaymentDeliveryProtocol = EntityFields & {
 }
 
 export type SupplyOrderUkraine = EntityFields & {
+  InvNumber?: string
   MergedServices?: MergedService[]
   Number?: string
   SupplyOrderUkrainePaymentDeliveryProtocols?: SupplyOrderUkrainePaymentDeliveryProtocol[]
