@@ -23,11 +23,9 @@ export async function getAvailableProductsByStorage(
 ): Promise<ProductStorageAvailabilitiesResponse> {
   const result = await apiRequest<unknown>('/storages/all/available/filtered', {
     query: {
-      from: params.from || '',
       limit: params.limit,
       netId: params.storageNetId,
       offset: params.offset,
-      to: params.to || '',
       value: params.value?.trim() || '',
     },
   })

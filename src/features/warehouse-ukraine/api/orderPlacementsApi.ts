@@ -1,5 +1,11 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { PlacementProduct, PlacementStorage, PlacementSupplyOrder } from '../placementsTypes'
+import type {
+  DynamicProductPlacementColumn,
+  DynamicProductPlacementRow,
+  PlacementProduct,
+  PlacementStorage,
+  PlacementSupplyOrder,
+} from '../placementsTypes'
 
 function normalizeOrder(result: unknown): PlacementSupplyOrder {
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
@@ -10,8 +16,24 @@ function normalizeOrder(result: unknown): PlacementSupplyOrder {
       ? (payload.SupplyOrderUkraineItems as PlacementSupplyOrder['SupplyOrderUkraineItems'])
       : [],
     DynamicProductPlacementColumns: Array.isArray(payload.DynamicProductPlacementColumns)
-      ? (payload.DynamicProductPlacementColumns as PlacementSupplyOrder['DynamicProductPlacementColumns'])
+      ? (payload.DynamicProductPlacementColumns as DynamicProductPlacementColumn[]).map(normalizePlacementColumn)
       : [],
+  }
+}
+
+function normalizePlacementColumn(column: DynamicProductPlacementColumn): DynamicProductPlacementColumn {
+  return {
+    ...column,
+    DynamicProductPlacementRows: Array.isArray(column.DynamicProductPlacementRows)
+      ? column.DynamicProductPlacementRows.map(normalizePlacementRow)
+      : [],
+  }
+}
+
+function normalizePlacementRow(row: DynamicProductPlacementRow): DynamicProductPlacementRow {
+  return {
+    ...row,
+    DynamicProductPlacements: Array.isArray(row.DynamicProductPlacements) ? row.DynamicProductPlacements : [],
   }
 }
 

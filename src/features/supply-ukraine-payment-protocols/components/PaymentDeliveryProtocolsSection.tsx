@@ -153,22 +153,24 @@ export function PaymentDeliveryProtocolsSection({
   const currentDiscount = readPositiveNumber(discount)
   const existingValue = sumProtocolValues(visibleProtocols, 'Value')
   const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
+  const hasKnownTotal = totalGrossPriceLocal > 0
 
   function updateDiscount(nextValue: string) {
     const numericDiscount = clampNumber(readNumberInput(nextValue) || 0, 0, PERCENT_MAX)
     const nextDiscount = formatInputNumber(numericDiscount)
-    const nextAmount = totalGrossPriceLocal > 0 ? roundNumber(totalGrossPriceLocal * (numericDiscount / 100)) : 0
+    const nextAmount = hasKnownTotal ? roundNumber(totalGrossPriceLocal * (numericDiscount / 100)) : currentValue
 
     setDiscount(nextDiscount)
-    setValue(formatInputNumber(nextAmount))
+    setValue(nextAmount ? formatInputNumber(nextAmount) : '')
   }
 
   function updateValue(nextValue: string) {
-    const numericValue = clampNumber(readNumberInput(nextValue) || 0, 0, totalGrossPriceLocal)
-    const nextDiscount = totalGrossPriceLocal > 0 ? roundNumber((numericValue / totalGrossPriceLocal) * 100) : 0
+    const rawValue = readNumberInput(nextValue) || 0
+    const numericValue = hasKnownTotal ? clampNumber(rawValue, 0, totalGrossPriceLocal) : Math.max(rawValue, 0)
+    const nextDiscount = hasKnownTotal ? roundNumber((numericValue / totalGrossPriceLocal) * 100) : currentDiscount
 
     setValue(formatInputNumber(numericValue))
-    setDiscount(formatInputNumber(nextDiscount))
+    setDiscount(nextDiscount ? formatInputNumber(nextDiscount) : '')
   }
 
   async function handleSubmit() {
@@ -184,19 +186,19 @@ export function PaymentDeliveryProtocolsSection({
       return
     }
 
-    if (!currentDiscount) {
+    if (hasKnownTotal && !currentDiscount) {
       setValidationError(t('Введіть відсоток'))
 
       return
     }
 
-    if (roundNumber(existingValue + currentValue) > roundNumber(totalGrossPriceLocal)) {
+    if (hasKnownTotal && roundNumber(existingValue + currentValue) > roundNumber(totalGrossPriceLocal)) {
       setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
 
       return
     }
 
-    if (roundNumber(existingDiscount + currentDiscount) > PERCENT_MAX) {
+    if (hasKnownTotal && roundNumber(existingDiscount + currentDiscount) > PERCENT_MAX) {
       setValidationError(t('Сума платежів не може бути більшою за суму замовлення'))
 
       return
@@ -362,6 +364,13 @@ function getInitialProtocolValues(
   protocols: SupplyOrderUkrainePaymentDeliveryProtocol[],
   totalGrossPriceLocal: number,
 ): { discount: string; value: string } {
+  if (totalGrossPriceLocal <= 0) {
+    return {
+      discount: '',
+      value: '',
+    }
+  }
+
   const visibleProtocols = protocols.filter((protocol) => !protocol.Deleted)
   const existingDiscount = sumProtocolValues(visibleProtocols, 'Discount')
   const existingValue = sumProtocolValues(visibleProtocols, 'Value')

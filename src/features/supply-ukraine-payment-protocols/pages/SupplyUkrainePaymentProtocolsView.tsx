@@ -131,7 +131,7 @@ export function SupplyUkrainePaymentProtocolsView() {
     const nextOrder: SupplyOrderUkraine = {
       ...order,
       MergedServices: (order.MergedServices || []).map((item) =>
-        item.NetUid === service.NetUid ? { ...item, Deleted: true } : item,
+        isSameEntity(item, service) ? { ...item, Deleted: true } : item,
       ),
     }
 
@@ -156,7 +156,7 @@ export function SupplyUkrainePaymentProtocolsView() {
     const nextOrder: SupplyOrderUkraine = {
       ...order,
       MergedServices: (order.MergedServices || []).map((item) => {
-        if (item.NetUid !== service.NetUid) {
+        if (!isSameEntity(item, service)) {
           return item
         }
 
@@ -179,17 +179,17 @@ export function SupplyUkrainePaymentProtocolsView() {
     const nextOrder: SupplyOrderUkraine = {
       ...order,
       MergedServices: (order.MergedServices || []).map((item) => {
-        if (item.NetUid !== service.NetUid) {
+        if (!isSameEntity(item, service)) {
           return item
         }
 
         const next: MergedService = { ...item }
 
-        if (item.SupplyPaymentTask && item.SupplyPaymentTask.NetUid === task.NetUid) {
+        if (isSameEntity(item.SupplyPaymentTask, task)) {
           next.SupplyPaymentTask = { ...item.SupplyPaymentTask, Deleted: true }
         }
 
-        if (item.AccountingPaymentTask && item.AccountingPaymentTask.NetUid === task.NetUid) {
+        if (isSameEntity(item.AccountingPaymentTask, task)) {
           next.AccountingPaymentTask = { ...item.AccountingPaymentTask, Deleted: true }
         }
 
@@ -236,7 +236,7 @@ export function SupplyUkrainePaymentProtocolsView() {
     const nextOrder: SupplyOrderUkraine = {
       ...order,
       SupplyOrderUkrainePaymentDeliveryProtocols: (order.SupplyOrderUkrainePaymentDeliveryProtocols || []).map((item) =>
-        item.NetUid === protocol.NetUid ? { ...item, Deleted: true } : item,
+        isSameEntity(item, protocol) ? { ...item, Deleted: true } : item,
       ),
     }
 
@@ -314,6 +314,25 @@ export function SupplyUkrainePaymentProtocolsView() {
       )}
     </Stack>
   )
+}
+
+function isSameEntity<T extends { Id?: number; NetUid?: string }>(
+  left: T | null | undefined,
+  right: T | null | undefined,
+): boolean {
+  if (!left || !right) {
+    return false
+  }
+
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  if (left.Id && right.Id) {
+    return left.Id === right.Id
+  }
+
+  return left === right
 }
 
 export const SupplyUkrainePaymentProtocolsPage = SupplyUkrainePaymentProtocolsView

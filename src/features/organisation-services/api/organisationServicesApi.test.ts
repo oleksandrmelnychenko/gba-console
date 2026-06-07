@@ -55,4 +55,36 @@ describe('organisationServicesApi', () => {
       },
     })
   })
+
+  it('reads payment tasks from collection-shaped responses', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Collection: [
+        {
+          NetUid: 'task-1',
+          GrossPrice: 120,
+          MergedServices: [{ Id: 1 }],
+        },
+      ],
+      Total: 1,
+      TotalByRange: 1,
+    })
+
+    await expect(getOrganizationPaymentTasks({
+      organizationName: 'Carrier LTD',
+      serviceTypes: [4],
+      from: '2026-06-01',
+      to: '2026-06-30',
+    })).resolves.toMatchObject({
+      SupplyPaymentTasks: [
+        {
+          NetUid: 'task-1',
+          GrossPrice: 120,
+          MergedServices: [{ Id: 1 }],
+          SupplyPaymentTaskDocuments: [],
+        },
+      ],
+      Total: 1,
+      TotalByRange: 1,
+    })
+  })
 })

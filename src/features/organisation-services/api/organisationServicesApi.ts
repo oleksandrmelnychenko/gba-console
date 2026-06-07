@@ -68,9 +68,7 @@ function normalizeOrganizationPaymentTasks(result: unknown): OrganizationPayment
   }
 
   const payload = result as Record<string, unknown>
-  const tasks = Array.isArray(payload.SupplyPaymentTasks)
-    ? (payload.SupplyPaymentTasks as SupplyPaymentTask[])
-    : []
+  const tasks = readArrayPayload<SupplyPaymentTask>(payload, ['SupplyPaymentTasks', 'Items', 'Collection', 'Data'])
 
   return {
     SupplyPaymentTasks: tasks.map(ensurePaymentTaskLists),
@@ -126,6 +124,16 @@ function readList<T>(result: unknown): T[] {
 
   if (result && typeof result === 'object' && 'Items' in result && Array.isArray(result.Items)) {
     return result.Items as T[]
+  }
+
+  return []
+}
+
+function readArrayPayload<T>(payload: Record<string, unknown>, keys: string[]): T[] {
+  for (const key of keys) {
+    if (Array.isArray(payload[key])) {
+      return payload[key] as T[]
+    }
   }
 
   return []

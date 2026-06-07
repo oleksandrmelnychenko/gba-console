@@ -44,7 +44,7 @@ export async function updateActProvidingService(act: ActProvidingService): Promi
 }
 
 function normalizeActProvidingServicesResponse(result: unknown, limit: number): ActProvidingServicesResponse {
-  const receivedItems = readArrayPayload(result, ['Items', 'ActProvidingServices', 'Data']).map((item) =>
+  const receivedItems = readArrayPayload(result, ['Items', 'ActProvidingServices', 'Collection', 'Data']).map((item) =>
     normalizeActProvidingService(item),
   ).filter((item): item is ActProvidingService => Boolean(item))
   const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
