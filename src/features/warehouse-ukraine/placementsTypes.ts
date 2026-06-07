@@ -5,7 +5,16 @@ export type PlacementProduct = {
   VendorCode?: string
   Name?: string
   NameUA?: string
+  MeasureUnit?: PlacementMeasureUnit | null
   ProductPlacements?: PlacementProductPlacement[]
+}
+
+export type PlacementMeasureUnit = EntityFields & {
+  Name?: string
+}
+
+export type PlacementProductSpecification = EntityFields & {
+  SpecificationCode?: string
 }
 
 export type PlacementProductPlacement = EntityFields & {
@@ -45,12 +54,26 @@ export type DynamicProductPlacementColumn = EntityFields & {
 }
 
 export type PlacementOrderItem = EntityFields & {
+  AccountingDeliveryExpenseAmount?: number
+  AccountingGrossPriceLocal?: number
+  DeliveryExpenseAmount?: number
+  GrossPriceLocal?: number
+  GrossWeight?: number
   IsFullyPlaced?: boolean
+  ManagementCost?: number
+  NetPriceLocal?: number
   Qty?: number
   PlacedQty?: number
   NotOrdered?: boolean
   NetWeight?: number
+  ProductIsImported?: boolean
+  ProductSpecification?: PlacementProductSpecification | null
+  TotalGrossWeight?: number
+  TotalNetWeight?: number
   UnitPrice?: number
+  UnitPriceLocal?: number
+  VatAmountLocal?: number
+  VatPercent?: number
   ProductId?: number
   Product?: PlacementProduct | null
 }
