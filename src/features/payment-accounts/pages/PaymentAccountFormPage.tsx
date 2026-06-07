@@ -708,7 +708,7 @@ function PaymentAccountFormCard({
           />
           <Select
             data={organizationOptions}
-            disabled={isFormDisabled || (isEditMode && form.type !== PaymentRegisterType.Bank)}
+            disabled={isFormDisabled || isEditMode}
             label={t('Організація')}
             required
             searchable
@@ -1644,6 +1644,8 @@ function toPayload(
   hiddenCurrencyRegisters: PaymentCurrencyRegister[],
   isEditMode: boolean,
 ): PaymentAccountPayload {
+  const payloadOrganization = isEditMode && account.Organization ? account.Organization : organization
+
   return {
     ...account,
     AccountNumber: form.accountNumber.trim(),
@@ -1655,7 +1657,7 @@ function toPayload(
     IsActive: form.isActive,
     IsForRetail: form.isForRetail,
     Name: form.name.trim(),
-    Organization: organization,
+    Organization: payloadOrganization,
     PaymentCurrencyRegisters: isEditMode
       ? account.PaymentCurrencyRegisters || []
       : [
