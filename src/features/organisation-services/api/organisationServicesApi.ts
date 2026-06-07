@@ -32,13 +32,17 @@ export async function getOrganizationPaymentTasks(
   params: OrganizationPaymentTasksParams,
   signal?: AbortSignal,
 ): Promise<OrganizationPaymentTasks> {
+  const query = {
+    organizationName: params.organizationName,
+    serviceTypes: params.serviceTypes,
+    from: formatDateInputForQuery(params.from),
+    to: formatDateInputForQuery(params.to),
+    ...(params.organizationId ? { organizationId: params.organizationId } : {}),
+    ...(params.organizationNetUid ? { organizationNetUid: params.organizationNetUid } : {}),
+  }
+
   const result = await apiRequest<unknown>('/supplies/services/search/organizations/paymenttasks/all', {
-    query: {
-      organizationName: params.organizationName,
-      serviceTypes: params.serviceTypes,
-      from: formatDateInputForQuery(params.from),
-      to: formatDateInputForQuery(params.to),
-    },
+    query,
     ...(signal ? { signal } : {}),
   })
 

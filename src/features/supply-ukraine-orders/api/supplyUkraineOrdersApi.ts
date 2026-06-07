@@ -14,6 +14,7 @@ import type {
   SupplyInvoice,
   SupplyOrderInvoiceTotals,
   SupplyOrderItem,
+  SupplyProForm,
   SupplyOrderUkraineDocument,
   SupplyOrderUkraineItem,
   SupplyOrderDocumentParseConfiguration,
@@ -92,6 +93,36 @@ export async function uploadSupplyOrderDocument(formData: FormData): Promise<Dir
   })
 
   return normalizeDirectSupplyOrder(result)
+}
+
+export async function uploadSupplyOrderProformDocuments({
+  files,
+  orderNetId,
+  proForm,
+}: {
+  files: File[]
+  orderNetId: string
+  proForm: SupplyProForm
+}): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  files.forEach((file) => formData.append('proFormFiles', file))
+  formData.append('proForm', JSON.stringify(proForm))
+
+  const result = await apiRequest<unknown>('/supplies/proforms/upload/documents', {
+    body: formData,
+    method: 'POST',
+    query: { netId: orderNetId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export async function deleteSupplyProformDocument(netId: string): Promise<void> {
+  await apiRequest<unknown>('/supplies/proforms/delete/document', {
+    method: 'DELETE',
+    query: { netId },
+  })
 }
 
 export async function createSupplyCreditNote(supplyOrderNetId: string, formData: FormData): Promise<DirectSupplyOrder | null> {
@@ -479,6 +510,18 @@ function normalizeDirectSupplyOrderObject(order: DirectSupplyOrder): DirectSuppl
     SupplyOrderDeliveryDocuments: Array.isArray(order.SupplyOrderDeliveryDocuments) ? order.SupplyOrderDeliveryDocuments : [],
     SupplyOrderItems: Array.isArray(order.SupplyOrderItems) ? order.SupplyOrderItems : [],
     SupplyOrderNumber: normalizeNumberObject(order.SupplyOrderNumber),
+    SupplyProForm: normalizeSupplyProForm(order.SupplyProForm),
+  }
+}
+
+function normalizeSupplyProForm(proForm: SupplyProForm | null | undefined): SupplyProForm | null {
+  if (!proForm) {
+    return null
+  }
+
+  return {
+    ...proForm,
+    ProFormDocuments: Array.isArray(proForm.ProFormDocuments) ? proForm.ProFormDocuments : [],
   }
 }
 

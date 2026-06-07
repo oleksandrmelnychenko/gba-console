@@ -150,8 +150,9 @@ function useProductRemainsPageModel() {
   const filterError = getFilterError(dateFrom, dateTo)
   const isAllStoragesSelected = selectedStorageValue === ALL_STORAGES_VALUE
   const storageNetId = isAllStoragesSelected ? undefined : selectedStorageValue.trim() || undefined
-  const isProductStorageSelectionInvalid = false
-  const productStorageError = null
+  const productStorageNetId = storageNetId
+  const isProductStorageSelectionInvalid = !productStorageNetId
+  const productStorageError = isProductStorageSelectionInvalid ? t('Оберіть склад для перегляду товарів') : null
   const selectedSupplierNetId = supplierNetId || undefined
   const exportScopeKey = [
     activeTab,
@@ -330,21 +331,28 @@ function useProductRemainsPageModel() {
     setProductError(null)
 
     try {
-      const document =
-        tabToExport === 'batches'
-          ? await exportGroupedProductRemains({
-              from: dateFrom,
-              storageNetId,
-              supplierNetId: selectedSupplierNetId,
-              to: dateTo,
-            })
-          : await exportCurrentProductRemains({
-              from: dateFrom,
-              productSearchValue,
-              selectedSupplierNetId,
-              storageNetId,
-              to: dateTo,
-            })
+      let document: ProductRemainsExportDocument
+
+      if (tabToExport === 'batches') {
+        document = await exportGroupedProductRemains({
+          from: dateFrom,
+          storageNetId,
+          supplierNetId: selectedSupplierNetId,
+          to: dateTo,
+        })
+      } else {
+        if (!productStorageNetId) {
+          return
+        }
+
+        document = await exportCurrentProductRemains({
+          from: dateFrom,
+          productSearchValue,
+          selectedSupplierNetId,
+          storageNetId: productStorageNetId,
+          to: dateTo,
+        })
+      }
 
       if (isCurrentExport()) {
         setDownloadDocument(document)
@@ -610,7 +618,14 @@ function useProductRemainProductsLoader({
 
     let cancelled = false
     const currentOffset = productOffset
-    const productStorageNetId = storageNetId?.trim() || ''
+    const productStorageNetId = storageNetId?.trim()
+
+    if (!productStorageNetId) {
+      resetProductsForInvalidFilter()
+      return
+    }
+
+    const concreteProductStorageNetId = productStorageNetId
 
     async function loadProducts() {
       setLoadingProducts(true)
@@ -622,7 +637,7 @@ function useProductRemainProductsLoader({
           limit: pageSize,
           offset: currentOffset,
           searchValue: productSearchValue,
-          storageNetId: productStorageNetId,
+          storageNetId: concreteProductStorageNetId,
           supplierNetId: selectedSupplierNetId,
           to: dateTo,
         })
@@ -691,6 +706,8 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
   } = model
+  const alertMessage = filterError || resourceError || activeError
+  const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
 
   return (
     <Stack gap="lg">
@@ -799,9 +816,9 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
             </Tooltip>
           </Group>
 
-          {(filterError || resourceError || activeError) && (
-            <Alert color={filterError || productStorageError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || resourceError || activeError}
+          {alertMessage && (
+            <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+              {alertMessage}
             </Alert>
           )}
 
@@ -978,13 +995,13 @@ function exportCurrentProductRemains({
   from: string
   productSearchValue: string
   selectedSupplierNetId?: string
-  storageNetId?: string
+  storageNetId: string
   to: string
 }): Promise<ProductRemainsExportDocument> {
   return exportProductRemains({
     from,
     searchValue: productSearchValue,
-    storageNetId: storageNetId ?? '',
+    storageNetId,
     supplierNetId: selectedSupplierNetId,
     to,
   })

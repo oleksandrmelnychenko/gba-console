@@ -26,7 +26,7 @@ export const SERVICE_ORGANIZATION_TYPES = [
   { value: 9, label: 'Об’єднаний сервіс' },
 ] satisfies ServiceOrganizationTypeOption[]
 
-export type ServiceOrganization = {
+export type ServiceOrganization = EntityFields & {
   Name?: string
   ServiceOrganizationTypes?: ServiceOrganizationTypeValue[]
 }
@@ -97,7 +97,9 @@ export type OrganizationPaymentTasks = {
 
 export type OrganizationPaymentTasksParams = {
   from: string
+  organizationId?: number
   organizationName: string
+  organizationNetUid?: string
   serviceTypes: ServiceOrganizationTypeValue[]
   to: string
 }

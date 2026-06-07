@@ -7,6 +7,7 @@ export type SupplyOrdersSearchParams = {
   to: string
   limit: number
   offset: number
+  placed?: boolean
 }
 
 export async function getWarehouseUkraineOrders(
@@ -18,7 +19,7 @@ export async function getWarehouseUkraineOrders(
       to: params.to,
       limit: params.limit,
       offset: params.offset,
-      nonPlaced: true,
+      placed: params.placed,
     },
   })
 

@@ -28,9 +28,11 @@ export async function getConsumableOrders(params: ConsumableOrdersSearchParams):
   return normalizeConsumablesOrders(result)
 }
 
-export async function searchConsumableOrders(value: string): Promise<ConsumablesOrder[]> {
+export async function searchConsumableOrders(value: string, params?: ConsumableOrdersSearchParams): Promise<ConsumablesOrder[]> {
   const result = await apiRequest<unknown>('/consumables/orders/search', {
     query: {
+      from: params?.from,
+      to: params?.to,
       value,
     },
   })

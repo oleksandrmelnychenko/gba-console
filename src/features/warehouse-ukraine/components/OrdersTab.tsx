@@ -26,6 +26,7 @@ const TABLE_DEFAULT_LAYOUT = {
 type FilterDraft = {
   from: string
   to: string
+  placed: boolean
 }
 
 type OrdersTabState = {
@@ -115,7 +116,7 @@ function useOrdersTabModel() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
+    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), placed: false }),
     [],
   )
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
@@ -124,7 +125,7 @@ function useOrdersTabModel() {
   const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-orders', TABLE_DEFAULT_LAYOUT.density)
   const { activeFilters, orders, pageSize } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
+  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.placed}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const orderIndexMap = useMemo(() => buildIndexMap(orders), [orders])
   const reloadFromRealtime = useCallback(() => {
@@ -155,6 +156,7 @@ function useOrdersTabModel() {
           to: toIsoString(activeFilters.to),
           limit: pageSize,
           offset: 0,
+          placed: activeFilters.placed,
         })
 
         if (!cancelled) {
@@ -193,6 +195,7 @@ function useOrdersTabModel() {
         to: toIsoString(activeFilters.to),
         limit: pageSize,
         offset: requestOffset,
+        placed: activeFilters.placed,
       })
 
       if (listRequestKeyRef.current === requestKey) {
@@ -286,6 +289,17 @@ export function OrdersTab() {
               type="date"
               value={model.filterDraft.to}
               onChange={(event) => model.applyFilters({ ...model.filterDraft, to: event.currentTarget.value })}
+            />
+            <Select
+              allowDeselect={false}
+              data={[
+                { value: 'false', label: t('Не оприбутковані') },
+                { value: 'true', label: t('Оприбутковані') },
+              ]}
+              label={t('Статус')}
+              value={String(model.filterDraft.placed)}
+              w={190}
+              onChange={(value) => model.applyFilters({ ...model.filterDraft, placed: value === 'true' })}
             />
             <Tooltip label={t('Скинути')}>
               <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>

@@ -30,7 +30,6 @@ import { displayValue, getDateShiftedByDays, toDateString } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150']
-const DEFAULT_STORAGE_NAMES = ['СКЛАД -1', 'СКЛАД - 1', 'СКЛАД -3', 'СКЛАД - 3']
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'productCode'] },
@@ -203,6 +202,9 @@ function useDocumentVerificationModel() {
   const { activeFilters, items, pageSize, selectedStorageIds, storages, storagesReady } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const storageIds = useMemo(() => toFiniteNumbers(selectedStorageIds), [selectedStorageIds])
+  const storageFilterError = storagesReady && selectedStorageIds.length === 0
+    ? t('Виберіть хоча б один склад')
+    : null
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${selectedStorageIds.join(',')}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
@@ -225,7 +227,7 @@ function useDocumentVerificationModel() {
         }
 
         const defaults = nextStorages.reduce<string[]>((selectedIds, storage) => {
-          if (DEFAULT_STORAGE_NAMES.includes(storage.Name || '')) {
+          if (typeof storage.Id === 'number' && Number.isFinite(storage.Id)) {
             selectedIds.push(String(storage.Id))
           }
 
@@ -250,8 +252,8 @@ function useDocumentVerificationModel() {
   }, [t])
 
   useEffect(() => {
-    if (!storagesReady || filterError) {
-      if (filterError) {
+    if (!storagesReady || filterError || storageFilterError) {
+      if (filterError || storageFilterError) {
         dispatchState({ type: 'invalidFilters' })
       }
       return
@@ -300,6 +302,7 @@ function useDocumentVerificationModel() {
     pageSize,
     reloadKey,
     storageIds,
+    storageFilterError,
     storagesReady,
     t,
   ])
@@ -415,6 +418,7 @@ function useDocumentVerificationModel() {
     resetFilters,
     setPageSize,
     setSelectedStorageIds,
+    storageFilterError,
     storageOptions,
     toggleDensity,
   }
@@ -484,13 +488,13 @@ export function DocumentVerificationTab() {
             </Tooltip>
           </Group>
 
-          {(model.error || model.filterError || model.storagesError) && (
+          {(model.error || model.filterError || model.storageFilterError || model.storagesError) && (
             <Alert
-              color={model.filterError ? 'yellow' : 'red'}
+              color={model.filterError || model.storageFilterError ? 'yellow' : 'red'}
               icon={<IconAlertCircle size={18} />}
               variant="light"
             >
-              {model.filterError || model.error || model.storagesError}
+              {model.filterError || model.storageFilterError || model.error || model.storagesError}
             </Alert>
           )}
 

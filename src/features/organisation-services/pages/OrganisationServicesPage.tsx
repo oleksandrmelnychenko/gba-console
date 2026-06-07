@@ -420,7 +420,9 @@ function useOrganisationServicesPageModel() {
     }
 
     const params = {
+      organizationId: organizationForSearch?.Id,
       organizationName: organizationForSearch?.Name?.trim() || '',
+      organizationNetUid: organizationForSearch?.NetUid,
       serviceTypes,
       from: dateFrom,
       to: dateTo,

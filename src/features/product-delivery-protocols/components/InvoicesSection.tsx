@@ -36,6 +36,11 @@ import type {
   SupplyInvoiceBillOfLadingService,
   SupplyInvoiceMergedService,
 } from '../detailTypes'
+import {
+  getProtocolInvoiceAssignmentKey,
+  getSelectedProtocolInvoices,
+  mergeProtocolInvoiceAssignmentCandidates,
+} from '../protocolInvoiceAssignment'
 import { InvoiceSelectList } from './InvoiceSelectList'
 import { LabelValueRow } from './LabelValueRow'
 import { formatDateTime, formatMoney } from './protocolDetailHelpers'
@@ -405,8 +410,10 @@ function AssignInvoicesDrawer({
     const protocolNetId = protocol.NetUid || ''
 
     const initialSelected = (protocol.SupplyInvoices || []).reduce<Record<string, boolean>>((records, invoice) => {
-      if (invoice.NetUid) {
-        records[invoice.NetUid] = true
+      const key = getProtocolInvoiceAssignmentKey(invoice)
+
+      if (key) {
+        records[key] = true
       }
 
       return records
@@ -421,7 +428,7 @@ function AssignInvoicesDrawer({
         const result = await getApprovedInvoices(organizationNetId, protocol.TransportationType ?? 0, protocolNetId)
 
         if (!cancelled) {
-          setInvoices(result)
+          setInvoices(mergeProtocolInvoiceAssignmentCandidates(result, protocol.SupplyInvoices || []))
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -447,8 +454,11 @@ function AssignInvoicesDrawer({
       return
     }
 
-    const netUid = invoice.NetUid || ''
-    setSelected((records) => ({ ...records, [netUid]: !records[netUid] }))
+    const key = getProtocolInvoiceAssignmentKey(invoice)
+
+    if (key) {
+      setSelected((records) => ({ ...records, [key]: !records[key] }))
+    }
   }
 
   function handleAssign() {
@@ -456,7 +466,7 @@ function AssignInvoicesDrawer({
       return
     }
 
-    onAssign(invoices.filter((invoice) => invoice.NetUid && selected[invoice.NetUid]))
+    onAssign(getSelectedProtocolInvoices(invoices, selected))
   }
 
   return (

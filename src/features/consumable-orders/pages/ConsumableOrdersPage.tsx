@@ -103,7 +103,7 @@ export function ConsumableOrdersPage() {
 
     try {
       const nextOrders = normalizedSearchValue
-        ? await searchConsumableOrders(normalizedSearchValue)
+        ? await searchConsumableOrders(normalizedSearchValue, { from: fromDate, to: toDate })
         : await getConsumableOrders({ from: fromDate, to: toDate })
 
       if (requestRef.current === requestId) {

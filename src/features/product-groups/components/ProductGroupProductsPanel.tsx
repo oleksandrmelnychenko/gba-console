@@ -24,6 +24,7 @@ import type { ProductProductGroup } from '../types'
 import { displayValue } from '../utils'
 
 const PAGE_LIMIT_OPTIONS = ['15', '25', '50', '100', '150', '200']
+const DEFAULT_PAGE_LIMIT = 15
 const PRODUCT_GROUP_SEARCH_DEBOUNCE_MS = 300
 
 const PRODUCTS_TABLE_DEFAULT_LAYOUT = {
@@ -42,7 +43,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
   const [productLinks, setProductLinks] = useValueState<ProductProductGroup[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
-  const [limit, setLimit] = useValueState(50)
+  const [limit, setLimit] = useValueState(DEFAULT_PAGE_LIMIT)
   const [totalFilteredQty, setTotalFilteredQty] = useValueState(0)
   const [totalQty, setTotalQty] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
@@ -236,7 +237,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
           data={PAGE_LIMIT_OPTIONS}
           value={String(limit)}
           w={96}
-          onChange={(value) => setLimit(Number(value || 50))}
+          onChange={(value) => setLimit(Number(value || DEFAULT_PAGE_LIMIT))}
         />
         <Tooltip label={t('Скинути')}>
           <ActionIcon

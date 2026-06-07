@@ -17,10 +17,10 @@ describe('organisationServicesApi', () => {
   })
 
   it('searches service organizations with any non-empty trimmed value', async () => {
-    apiRequestMock.mockResolvedValueOnce([{ Name: 'A', ServiceOrganizationTypes: [0] }])
+    apiRequestMock.mockResolvedValueOnce([{ Id: 12, NetUid: 'org-net-uid', Name: 'A', ServiceOrganizationTypes: [0] }])
 
     await expect(searchServiceOrganizations(' A ')).resolves.toEqual([
-      { Name: 'A', ServiceOrganizationTypes: [0] },
+      { Id: 12, NetUid: 'org-net-uid', Name: 'A', ServiceOrganizationTypes: [0] },
     ])
     expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/search/organizations/all', {
       query: {
@@ -52,6 +52,34 @@ describe('organisationServicesApi', () => {
         serviceTypes: [0, 1],
         from: '2026-06-01',
         to: '2026-06-03T09:30:00',
+      },
+    })
+  })
+
+  it('forwards organization identifiers when they are available', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      SupplyPaymentTasks: [],
+      Total: 0,
+      TotalByRange: 0,
+    })
+
+    await getOrganizationPaymentTasks({
+      organizationId: 12,
+      organizationName: 'Customs LTD',
+      organizationNetUid: 'org-net-uid',
+      serviceTypes: [2],
+      from: '2026-06-01',
+      to: '2026-06-30',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/services/search/organizations/paymenttasks/all', {
+      query: {
+        organizationName: 'Customs LTD',
+        serviceTypes: [2],
+        from: '2026-06-01',
+        to: '2026-06-30',
+        organizationId: 12,
+        organizationNetUid: 'org-net-uid',
       },
     })
   })

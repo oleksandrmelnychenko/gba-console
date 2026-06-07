@@ -17,7 +17,16 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPencil, IconRefresh, IconTrash } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconArrowLeft,
+  IconArrowsExchange,
+  IconDeviceFloppy,
+  IconPencil,
+  IconRefresh,
+  IconTrash,
+  IconX,
+} from '@tabler/icons-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -27,7 +36,11 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import {
+  cancelPaymentAccountExchange,
+  cancelPaymentAccountTransfer,
+  createPaymentAccountExchange,
   createPaymentAccount,
+  createPaymentAccountTransfer,
   deletePaymentAccount,
   getPaymentAccount,
   getPaymentAccountBanks,
@@ -35,7 +48,10 @@ import {
   getPaymentAccountCurrencies,
   getPaymentAccountExchanges,
   getPaymentAccountOrganizations,
+  getPaymentAccountPaymentMovements,
   getPaymentAccountTransfers,
+  getPaymentAccounts,
+  getPaymentAccountsByBank,
   updatePaymentAccount,
 } from '../api/paymentAccountsApi'
 import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } from '../permissions'
@@ -49,6 +65,7 @@ import type {
   PaymentAccountOutcomeOrder,
   PaymentAccountPayload,
   PaymentCurrencyRegister,
+  PaymentMovement,
   PaymentRegisterCurrencyExchange,
   PaymentRegisterTransfer,
 } from '../types'
@@ -139,6 +156,29 @@ type ActivityColumn<T> = {
   key: string
 }
 
+type PaymentAccountTransferDraft = {
+  amount: string
+  comment: string
+  fromDate: string
+  fromPaymentCurrencyRegisterNetId: string
+  movementNetId: string
+  time: string
+  toPaymentCurrencyRegisterNetId: string
+  typeOfOperation: TransferOperationType
+}
+
+type PaymentAccountExchangeDraft = {
+  amount: string
+  comment: string
+  exchangeRate: string
+  fromDate: string
+  fromPaymentCurrencyRegisterNetId: string
+  incomeNumber: string
+  movementNetId: string
+  time: string
+  toPaymentCurrencyRegisterNetId: string
+}
+
 type PaymentAccountActivityStateAction =
   | { type: 'failed'; error: string }
   | { type: 'loading' }
@@ -201,6 +241,8 @@ function activityStateReducer(
 const ACCOUNTS_PATH = '/accounting/payment-accounts'
 const SKIPPED_CURRENCY_CODE = ['P', 'L', 'N'].join('')
 const ACTIVITY_RANGE_DAYS = -7
+const DEFAULT_TRANSFER_MOVEMENT_NAME = 'Переміщення валюти'
+const DEFAULT_EXCHANGE_MOVEMENT_NAME = 'Конвертація валюти'
 const EMPTY_ACTIVITY_STATE: PaymentAccountActivityState = {
   currencyActivity: null,
   error: null,
@@ -430,6 +472,26 @@ export function PaymentAccountFormPage() {
     }
   }
 
+  async function reloadAccountAfterActivityMutation() {
+    const netId = account.NetUid || id
+
+    if (netId) {
+      const nextAccount = await getPaymentAccount(netId)
+
+      if (nextAccount) {
+        dispatchPageState((current) => ({
+          ...current,
+          account: nextAccount,
+          currencyDrafts: toCurrencyDrafts(current.currencyDrafts.map((draft) => draft.currency), nextAccount.PaymentCurrencyRegisters || []),
+          form: toFormState(nextAccount, nextAccount.Organization || current.account.Organization || null),
+          hiddenCurrencyRegisters: (nextAccount.PaymentCurrencyRegisters || []).filter(hasSkippedCurrencyCode),
+        }))
+      }
+    }
+
+    activity.reloadActivity()
+  }
+
   return (
     <AppDrawer
       opened
@@ -483,6 +545,7 @@ export function PaymentAccountFormPage() {
           onFromChange={activity.setActivityFrom}
           onOpenIncome={() => openRegisterScopedPage(navigate, '/accounting/income-cashflows', account)}
           onOpenOutgoing={() => openRegisterScopedPage(navigate, '/accounting/outgoing-cashflow', account)}
+          onMutationComplete={reloadAccountAfterActivityMutation}
           onRefresh={activity.reloadActivity}
           onSelectedCurrencyChange={activity.setSelectedCurrencyRegisterNetId}
           onToChange={activity.setActivityTo}
@@ -1048,6 +1111,7 @@ function PaymentAccountActivityPanel({
   onFromChange,
   onOpenIncome,
   onOpenOutgoing,
+  onMutationComplete,
   onRefresh,
   onSelectedCurrencyChange,
   onToChange,
@@ -1063,108 +1127,654 @@ function PaymentAccountActivityPanel({
   onFromChange: (value: string) => void
   onOpenIncome: () => void
   onOpenOutgoing: () => void
+  onMutationComplete: () => Promise<void>
   onRefresh: () => void
   onSelectedCurrencyChange: (value: string) => void
   onToChange: (value: string) => void
 }) {
   const { t } = useI18n()
   const currencyOptions = getCurrencyRegisterOptions(account.PaymentCurrencyRegisters || [])
+  const [transferModalOpened, setTransferModalOpened] = useValueState(false)
+  const [exchangeModalOpened, setExchangeModalOpened] = useValueState(false)
+  const [cancelTransfer, setCancelTransfer] = useValueState<PaymentRegisterTransfer | null>(null)
+  const [cancelExchange, setCancelExchange] = useValueState<PaymentRegisterCurrencyExchange | null>(null)
+  const [isMutating, setMutating] = useValueState(false)
+
+  async function handleCancelTransfer() {
+    const netId = getEntityValue(cancelTransfer)
+
+    if (!netId) {
+      return
+    }
+
+    setMutating(true)
+
+    try {
+      await cancelPaymentAccountTransfer(netId)
+      notifications.show({ color: 'green', message: t('Переказ скасовано') })
+      setCancelTransfer(null)
+      await onMutationComplete()
+    } catch (cancelError) {
+      notifications.show({
+        color: 'red',
+        message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати переказ'),
+      })
+    } finally {
+      setMutating(false)
+    }
+  }
+
+  async function handleCancelExchange() {
+    const netId = getEntityValue(cancelExchange)
+
+    if (!netId) {
+      return
+    }
+
+    setMutating(true)
+
+    try {
+      await cancelPaymentAccountExchange(netId)
+      notifications.show({ color: 'green', message: t('Обмін валют скасовано') })
+      setCancelExchange(null)
+      await onMutationComplete()
+    } catch (cancelError) {
+      notifications.show({
+        color: 'red',
+        message: cancelError instanceof Error ? cancelError.message : t('Не вдалося скасувати обмін валют'),
+      })
+    } finally {
+      setMutating(false)
+    }
+  }
 
   return (
-    <Card withBorder radius="md" shadow="sm">
-      <Stack gap="md">
-        <Group justify="space-between" wrap="wrap">
-          <Group gap="xs">
-            <Text fw={700}>{t('Операції')}</Text>
-            <Badge color="gray" variant="light">
-              {formatDate(from)} - {formatDate(to)}
-            </Badge>
+    <>
+      <Card withBorder radius="md" shadow="sm">
+        <Stack gap="md">
+          <Group justify="space-between" wrap="wrap">
+            <Group gap="xs">
+              <Text fw={700}>{t('Операції')}</Text>
+              <Badge color="gray" variant="light">
+                {formatDate(from)} - {formatDate(to)}
+              </Badge>
+            </Group>
+            <Group gap="xs">
+              <Button color="green" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenIncome}>
+                {t('Прихід')}
+              </Button>
+              <Button color="red" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenOutgoing}>
+                {t('Розхід')}
+              </Button>
+              <Button
+                disabled={!account.NetUid || isLoadingAccount}
+                leftSection={<IconArrowsExchange size={16} />}
+                size="xs"
+                type="button"
+                variant="light"
+                onClick={() => {
+                  setTransferModalOpened(true)
+                  onActiveTabChange('transfers')
+                }}
+              >
+                {t('Переказ')}
+              </Button>
+              <Button
+                disabled={!account.NetUid || isLoadingAccount}
+                leftSection={<IconArrowsExchange size={16} />}
+                size="xs"
+                type="button"
+                variant="light"
+                onClick={() => {
+                  setExchangeModalOpened(true)
+                  onActiveTabChange('exchanges')
+                }}
+              >
+                {t('Обмін')}
+              </Button>
+              <Button
+                color="gray"
+                disabled={isLoadingAccount}
+                leftSection={<IconRefresh size={16} />}
+                loading={state.isLoading}
+                size="xs"
+                type="button"
+                variant="light"
+                onClick={onRefresh}
+              >
+                {t('Оновити')}
+              </Button>
+            </Group>
           </Group>
-          <Group gap="xs">
-            <Button color="green" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenIncome}>
-              {t('Прихід')}
-            </Button>
-            <Button color="red" disabled={!account.NetUid} size="xs" variant="light" onClick={onOpenOutgoing}>
-              {t('Розхід')}
-            </Button>
-            <Button
-              color="gray"
-              disabled={isLoadingAccount}
-              leftSection={<IconRefresh size={16} />}
-              loading={state.isLoading}
-              size="xs"
-              type="button"
-              variant="light"
-              onClick={onRefresh}
-            >
-              {t('Оновити')}
-            </Button>
+
+          <Group align="end" gap="sm" wrap="wrap">
+            <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
+            <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
           </Group>
-        </Group>
 
-        <Group align="end" gap="sm" wrap="wrap">
-          <TextInput label={t('З')} type="date" value={from} w={150} onChange={(event) => onFromChange(event.currentTarget.value)} />
-          <TextInput label={t('По')} type="date" value={to} w={150} onChange={(event) => onToChange(event.currentTarget.value)} />
-        </Group>
+          {state.error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {state.error}
+            </Alert>
+          )}
 
-        {state.error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {state.error}
-          </Alert>
-        )}
+          <Tabs value={activeTab} onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}>
+            <Tabs.List>
+              <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
+              <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
+              <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
+              <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
+            </Tabs.List>
 
-        <Tabs value={activeTab} onChange={(value) => value && onActiveTabChange(value as PaymentAccountActivityTab)}>
-          <Tabs.List>
-            <Tabs.Tab value="balances">{t('Залишки')}</Tabs.Tab>
-            <Tabs.Tab value="transfers">{t('Перекази')}</Tabs.Tab>
-            <Tabs.Tab value="exchanges">{t('Обмін валют')}</Tabs.Tab>
-            <Tabs.Tab value="currency">{t('Рух валюти')}</Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="balances" pt="md">
-            <PaymentAccountBalancesView
-              account={account}
-              selectedCurrencyRegister={selectedCurrencyRegister}
-              onSelectedCurrencyChange={onSelectedCurrencyChange}
-              onShowCurrency={() => onActiveTabChange('currency')}
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="transfers" pt="md">
-            <ActivityTable
-              columns={getTransferColumns(account, t)}
-              emptyText={t('Перекази відсутні')}
-              getRowKey={(item, index) => getEntityValue(item) || `transfer-${index}`}
-              isLoading={state.isLoading}
-              rows={state.transfers}
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="exchanges" pt="md">
-            <ActivityTable
-              columns={getExchangeColumns(account, t)}
-              emptyText={t('Обмін валют відсутній')}
-              getRowKey={(item, index) => getEntityValue(item) || `exchange-${index}`}
-              isLoading={state.isLoading}
-              rows={state.exchanges}
-            />
-          </Tabs.Panel>
-
-          <Tabs.Panel value="currency" pt="md">
-            <Stack gap="md">
-              <Select
-                data={currencyOptions}
-                label={t('Валюта')}
-                value={selectedCurrencyRegister ? getEntityValue(selectedCurrencyRegister) : null}
-                w={{ base: '100%', sm: 280 }}
-                onChange={(value) => onSelectedCurrencyChange(value || '')}
+            <Tabs.Panel value="balances" pt="md">
+              <PaymentAccountBalancesView
+                account={account}
+                selectedCurrencyRegister={selectedCurrencyRegister}
+                onSelectedCurrencyChange={onSelectedCurrencyChange}
+                onShowCurrency={() => onActiveTabChange('currency')}
               />
-              <PaymentCurrencyActivityView activity={state.currencyActivity} isLoading={state.isLoading} />
-            </Stack>
-          </Tabs.Panel>
-        </Tabs>
+            </Tabs.Panel>
+
+            <Tabs.Panel value="transfers" pt="md">
+              <ActivityTable
+                columns={getTransferColumns(account, t, setCancelTransfer)}
+                emptyText={t('Перекази відсутні')}
+                getRowKey={(item, index) => getEntityValue(item) || `transfer-${index}`}
+                isLoading={state.isLoading}
+                rows={state.transfers}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="exchanges" pt="md">
+              <ActivityTable
+                columns={getExchangeColumns(account, t, setCancelExchange)}
+                emptyText={t('Обмін валют відсутній')}
+                getRowKey={(item, index) => getEntityValue(item) || `exchange-${index}`}
+                isLoading={state.isLoading}
+                rows={state.exchanges}
+              />
+            </Tabs.Panel>
+
+            <Tabs.Panel value="currency" pt="md">
+              <Stack gap="md">
+                <Select
+                  data={currencyOptions}
+                  label={t('Валюта')}
+                  value={selectedCurrencyRegister ? getEntityValue(selectedCurrencyRegister) : null}
+                  w={{ base: '100%', sm: 280 }}
+                  onChange={(value) => onSelectedCurrencyChange(value || '')}
+                />
+                <PaymentCurrencyActivityView
+                  activity={state.currencyActivity}
+                  isLoading={state.isLoading}
+                  onCancelExchange={setCancelExchange}
+                  onCancelTransfer={setCancelTransfer}
+                />
+              </Stack>
+            </Tabs.Panel>
+          </Tabs>
+        </Stack>
+      </Card>
+
+      <PaymentAccountTransferModal
+        account={account}
+        opened={transferModalOpened}
+        onClose={() => setTransferModalOpened(false)}
+        onMutationComplete={onMutationComplete}
+      />
+      <PaymentAccountExchangeModal
+        account={account}
+        opened={exchangeModalOpened}
+        onClose={() => setExchangeModalOpened(false)}
+        onMutationComplete={onMutationComplete}
+      />
+      <CancelActivityModal
+        isLoading={isMutating}
+        opened={Boolean(cancelTransfer)}
+        title={t('Скасувати переказ')}
+        onClose={() => setCancelTransfer(null)}
+        onConfirm={handleCancelTransfer}
+      />
+      <CancelActivityModal
+        isLoading={isMutating}
+        opened={Boolean(cancelExchange)}
+        title={t('Скасувати обмін валют')}
+        onClose={() => setCancelExchange(null)}
+        onConfirm={handleCancelExchange}
+      />
+    </>
+  )
+}
+
+function PaymentAccountTransferModal({
+  account,
+  opened,
+  onClose,
+  onMutationComplete,
+}: {
+  account: PaymentAccount
+  opened: boolean
+  onClose: () => void
+  onMutationComplete: () => Promise<void>
+}) {
+  const { t } = useI18n()
+  const [draft, setDraft] = useValueState(() => createTransferDraft(account))
+  const [error, setError] = useValueState<string | null>(null)
+  const [isLoading, setLoading] = useValueState(false)
+  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [movements, setMovements] = useValueState<PaymentMovement[]>([])
+  const [paymentAccounts, setPaymentAccounts] = useValueState<PaymentAccount[]>([])
+  const currencyRegisters = getVisibleCurrencyRegisters(account)
+  const selectedFromRegister = findCurrencyRegister(currencyRegisters, draft.fromPaymentCurrencyRegisterNetId)
+  const destinationRegisters = getTransferDestinationRegisters(paymentAccounts, account, selectedFromRegister)
+  const selectedToRegister = findCurrencyRegister(destinationRegisters, draft.toPaymentCurrencyRegisterNetId)
+  const selectedMovement = findEntity(movements, draft.movementNetId)
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    let isActive = true
+
+    setError(null)
+    setLoading(true)
+
+    void Promise.all([getPaymentAccounts(), getPaymentAccountPaymentMovements()])
+      .then(([accountsResponse, nextMovements]) => {
+        if (!isActive) {
+          return
+        }
+
+        setPaymentAccounts(accountsResponse.paymentRegisters)
+        setMovements(nextMovements)
+        setDraft(createTransferDraft(account, nextMovements))
+      })
+      .catch((loadError: unknown) => {
+        if (isActive) {
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані для переказу'))
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [account, opened, setDraft, setError, setLoading, setMovements, setPaymentAccounts, t])
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const amount = parseAmount(draft.amount)
+    const validationError = validateTransferDraft(draft, selectedFromRegister, selectedToRegister, selectedMovement, amount, t)
+
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      await createPaymentAccountTransfer({
+        Amount: amount,
+        Comment: draft.comment.trim(),
+        FromDate: toLocalIsoDateTime(draft.fromDate, draft.time),
+        FromPaymentCurrencyRegister: selectedFromRegister,
+        PaymentMovementOperation: {
+          PaymentMovement: selectedMovement,
+        },
+        ToPaymentCurrencyRegister: selectedToRegister,
+        TypeOfOperation: draft.typeOfOperation,
+      })
+      notifications.show({ color: 'green', message: t('Переказ створено') })
+      onClose()
+      await onMutationComplete()
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити переказ'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <AppModal centered opened={opened} size="lg" title={t('Новий переказ')} onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Select
+              data={toCurrencyRegisterSelectOptions(currencyRegisters)}
+              disabled={isLoading || isSubmitting}
+              label={t('З валюти')}
+              required
+              searchable
+              value={draft.fromPaymentCurrencyRegisterNetId || null}
+              onChange={(value) => setDraft((current) => ({
+                ...current,
+                fromPaymentCurrencyRegisterNetId: value || '',
+                toPaymentCurrencyRegisterNetId: '',
+              }))}
+            />
+            <Select
+              data={toCurrencyRegisterSelectOptions(destinationRegisters)}
+              disabled={!selectedFromRegister || isLoading || isSubmitting}
+              label={t('На рахунок')}
+              required
+              searchable
+              value={draft.toPaymentCurrencyRegisterNetId || null}
+              onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              inputMode="decimal"
+              label={t('Сума')}
+              required
+              value={draft.amount}
+              onChange={(event) => setDraft((current) => ({ ...current, amount: event.currentTarget.value }))}
+            />
+            <Select
+              data={[
+                { label: t('Переказ коштів'), value: String(TransferOperationType.FundsTransfer) },
+                { label: t('Отримання/внесення готівки в банк'), value: String(TransferOperationType.CashBankTransfer) },
+                { label: t('Переказ коштів на інший рахунок'), value: String(TransferOperationType.PaymentRegisterTransfer) },
+              ]}
+              disabled={isSubmitting}
+              label={t('Тип операції')}
+              required
+              value={String(draft.typeOfOperation)}
+              onChange={(value) => setDraft((current) => ({
+                ...current,
+                typeOfOperation: Number(value) as TransferOperationType,
+              }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Дата')}
+              required
+              type="date"
+              value={draft.fromDate}
+              onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Час')}
+              required
+              type="time"
+              value={draft.time}
+              onChange={(event) => setDraft((current) => ({ ...current, time: event.currentTarget.value }))}
+            />
+            <Select
+              data={toPaymentMovementOptions(movements)}
+              disabled={isLoading || isSubmitting}
+              label={t('Стаття руху')}
+              required
+              searchable
+              value={draft.movementNetId || null}
+              onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Коментар')}
+              value={draft.comment}
+              onChange={(event) => setDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+            />
+          </SimpleGrid>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </AppModal>
+  )
+}
+
+function PaymentAccountExchangeModal({
+  account,
+  opened,
+  onClose,
+  onMutationComplete,
+}: {
+  account: PaymentAccount
+  opened: boolean
+  onClose: () => void
+  onMutationComplete: () => Promise<void>
+}) {
+  const { t } = useI18n()
+  const [draft, setDraft] = useValueState(() => createExchangeDraft(account))
+  const [error, setError] = useValueState<string | null>(null)
+  const [isLoading, setLoading] = useValueState(false)
+  const [isSubmitting, setSubmitting] = useValueState(false)
+  const [bankAccounts, setBankAccounts] = useValueState<PaymentAccount[]>([])
+  const [movements, setMovements] = useValueState<PaymentMovement[]>([])
+  const currencyRegisters = getVisibleCurrencyRegisters(account)
+  const selectedFromRegister = findCurrencyRegister(currencyRegisters, draft.fromPaymentCurrencyRegisterNetId)
+  const destinationRegisters = getExchangeDestinationRegisters([account, ...bankAccounts], selectedFromRegister)
+  const selectedToRegister = findCurrencyRegister(destinationRegisters, draft.toPaymentCurrencyRegisterNetId)
+  const selectedMovement = findEntity(movements, draft.movementNetId)
+  const amount = parseAmount(draft.amount)
+  const exchangeRate = parseAmount(draft.exchangeRate)
+  const convertedAmount = amount > 0 && exchangeRate > 0 ? formatMoney(getConvertedExchangeAmount(amount, exchangeRate, selectedFromRegister)) : '—'
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    let isActive = true
+
+    setError(null)
+    setLoading(true)
+
+    void Promise.all([
+      account.NetUid ? getPaymentAccountsByBank(account.NetUid) : Promise.resolve([]),
+      getPaymentAccountPaymentMovements(),
+    ])
+      .then(([nextBankAccounts, nextMovements]) => {
+        if (!isActive) {
+          return
+        }
+
+        setBankAccounts(nextBankAccounts)
+        setMovements(nextMovements)
+        setDraft(createExchangeDraft(account, nextMovements))
+      })
+      .catch((loadError: unknown) => {
+        if (isActive) {
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити дані для обміну'))
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [account, opened, setBankAccounts, setDraft, setError, setLoading, setMovements, t])
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const validationError = validateExchangeDraft(draft, selectedFromRegister, selectedToRegister, selectedMovement, amount, exchangeRate, t)
+
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    setSubmitting(true)
+    setError(null)
+
+    try {
+      await createPaymentAccountExchange({
+        Amount: amount,
+        Comment: draft.comment.trim(),
+        ExchangeRate: exchangeRate,
+        FromDate: toLocalIsoDateTime(draft.fromDate, draft.time),
+        FromPaymentCurrencyRegister: selectedFromRegister,
+        IncomeNumber: draft.incomeNumber.trim(),
+        PaymentMovementOperation: {
+          PaymentMovement: selectedMovement,
+        },
+        ToPaymentCurrencyRegister: selectedToRegister,
+      })
+      notifications.show({ color: 'green', message: t('Обмін валют створено') })
+      onClose()
+      await onMutationComplete()
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t('Не вдалося створити обмін валют'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <AppModal centered opened={opened} size="lg" title={t('Новий обмін валют')} onClose={onClose}>
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+          <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <Select
+              data={toCurrencyRegisterSelectOptions(currencyRegisters)}
+              disabled={isLoading || isSubmitting}
+              label={t('З валюти')}
+              required
+              searchable
+              value={draft.fromPaymentCurrencyRegisterNetId || null}
+              onChange={(value) => setDraft((current) => ({
+                ...current,
+                fromPaymentCurrencyRegisterNetId: value || '',
+                toPaymentCurrencyRegisterNetId: '',
+              }))}
+            />
+            <Select
+              data={toCurrencyRegisterSelectOptions(destinationRegisters)}
+              disabled={!selectedFromRegister || isLoading || isSubmitting}
+              label={t('У валюту')}
+              required
+              searchable
+              value={draft.toPaymentCurrencyRegisterNetId || null}
+              onChange={(value) => setDraft((current) => ({ ...current, toPaymentCurrencyRegisterNetId: value || '' }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              inputMode="decimal"
+              label={t('Сума')}
+              required
+              value={draft.amount}
+              onChange={(event) => setDraft((current) => ({ ...current, amount: event.currentTarget.value }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              inputMode="decimal"
+              label={t('Курс')}
+              required
+              value={draft.exchangeRate}
+              onChange={(event) => setDraft((current) => ({ ...current, exchangeRate: event.currentTarget.value }))}
+            />
+            <InfoCell label={t('Сума після конвертації')} value={convertedAmount} />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Вхідний номер')}
+              value={draft.incomeNumber}
+              onChange={(event) => setDraft((current) => ({ ...current, incomeNumber: event.currentTarget.value }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Дата')}
+              required
+              type="date"
+              value={draft.fromDate}
+              onChange={(event) => setDraft((current) => ({ ...current, fromDate: event.currentTarget.value }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Час')}
+              required
+              type="time"
+              value={draft.time}
+              onChange={(event) => setDraft((current) => ({ ...current, time: event.currentTarget.value }))}
+            />
+            <Select
+              data={toPaymentMovementOptions(movements)}
+              disabled={isLoading || isSubmitting}
+              label={t('Стаття руху')}
+              required
+              searchable
+              value={draft.movementNetId || null}
+              onChange={(value) => setDraft((current) => ({ ...current, movementNetId: value || '' }))}
+            />
+            <TextInput
+              disabled={isSubmitting}
+              label={t('Коментар')}
+              value={draft.comment}
+              onChange={(event) => setDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+            />
+          </SimpleGrid>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </AppModal>
+  )
+}
+
+function CancelActivityModal({
+  isLoading,
+  opened,
+  title,
+  onClose,
+  onConfirm,
+}: {
+  isLoading: boolean
+  opened: boolean
+  title: string
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
+      <Stack gap="md">
+        <Text>{t('Скасувати операцію?')}</Text>
+        <Group justify="flex-end">
+          <Button color="gray" disabled={isLoading} type="button" variant="light" onClick={onClose}>
+            {t('Ні')}
+          </Button>
+          <Button color="red" leftSection={<IconX size={16} />} loading={isLoading} type="button" onClick={onConfirm}>
+            {t('Так, скасувати')}
+          </Button>
+        </Group>
       </Stack>
-    </Card>
+    </AppModal>
   )
 }
 
@@ -1223,9 +1833,13 @@ function PaymentAccountBalancesView({
 function PaymentCurrencyActivityView({
   activity,
   isLoading,
+  onCancelExchange,
+  onCancelTransfer,
 }: {
   activity: PaymentCurrencyRegister | null
   isLoading: boolean
+  onCancelExchange: (exchange: PaymentRegisterCurrencyExchange) => void
+  onCancelTransfer: (transfer: PaymentRegisterTransfer) => void
 }) {
   const { t } = useI18n()
   const incomeOrders = activity?.PaymentRegister?.IncomePaymentOrders || activity?.IncomePaymentOrders || []
@@ -1234,7 +1848,7 @@ function PaymentCurrencyActivityView({
   return (
     <Stack gap="md">
       <ActivityTable
-        columns={getTransferColumns(activity?.PaymentRegister || null, t)}
+        columns={getTransferColumns(activity?.PaymentRegister || null, t, onCancelTransfer)}
         emptyText={t('Перекази відсутні')}
         getRowKey={(item, index) => getEntityValue(item) || `currency-transfer-${index}`}
         isLoading={isLoading}
@@ -1257,7 +1871,7 @@ function PaymentCurrencyActivityView({
         title={t('Розхід')}
       />
       <ActivityTable
-        columns={getExchangeColumns(activity?.PaymentRegister || null, t)}
+        columns={getExchangeColumns(activity?.PaymentRegister || null, t, onCancelExchange)}
         emptyText={t('Обмін валют відсутній')}
         getRowKey={(item, index) => getEntityValue(item) || `currency-exchange-${index}`}
         isLoading={isLoading}
@@ -1335,8 +1949,9 @@ function ActivityTable<T>({
 function getTransferColumns(
   account: PaymentAccount | null,
   t: (value: string) => string,
+  onCancel?: (transfer: PaymentRegisterTransfer) => void,
 ): ActivityColumn<PaymentRegisterTransfer>[] {
-  return [
+  const columns: ActivityColumn<PaymentRegisterTransfer>[] = [
     { key: 'fromDate', header: t('Дата'), cell: (transfer) => formatDateTime(transfer.FromDate) },
     { key: 'number', header: t('Номер'), cell: (transfer) => displayValue(transfer.Number) },
     { key: 'status', header: t('Статус'), cell: (transfer) => <CanceledBadge canceled={Boolean(transfer.IsCanceled)} /> },
@@ -1350,13 +1965,37 @@ function getTransferColumns(
     { key: 'user', header: t('Відповідальний'), cell: (transfer) => displayValue(getPersonName(transfer.User)) },
     { key: 'comment', header: t('Коментар'), cell: (transfer) => displayValue(transfer.Comment) },
   ]
+
+  if (onCancel) {
+    columns.push({
+      key: 'actions',
+      header: '',
+      align: 'right',
+      cell: (transfer) => (
+        <Button
+          color="red"
+          disabled={Boolean(transfer.IsCanceled) || !getEntityValue(transfer)}
+          leftSection={<IconX size={14} />}
+          size="xs"
+          type="button"
+          variant="light"
+          onClick={() => onCancel(transfer)}
+        >
+          {t('Скасувати')}
+        </Button>
+      ),
+    })
+  }
+
+  return columns
 }
 
 function getExchangeColumns(
   account: PaymentAccount | null,
   t: (value: string) => string,
+  onCancel?: (exchange: PaymentRegisterCurrencyExchange) => void,
 ): ActivityColumn<PaymentRegisterCurrencyExchange>[] {
-  return [
+  const columns: ActivityColumn<PaymentRegisterCurrencyExchange>[] = [
     { key: 'fromDate', header: t('Дата'), cell: (exchange) => formatDateTime(exchange.FromDate) },
     { key: 'number', header: t('Номер'), cell: (exchange) => displayValue(exchange.Number) },
     { key: 'incomeNumber', header: t('Вхідний номер'), cell: (exchange) => displayValue(exchange.IncomeNumber) },
@@ -1370,6 +2009,29 @@ function getExchangeColumns(
     { key: 'user', header: t('Відповідальний'), cell: (exchange) => displayValue(getPersonName(exchange.User)) },
     { key: 'comment', header: t('Коментар'), cell: (exchange) => displayValue(exchange.Comment) },
   ]
+
+  if (onCancel) {
+    columns.push({
+      key: 'actions',
+      header: '',
+      align: 'right',
+      cell: (exchange) => (
+        <Button
+          color="red"
+          disabled={Boolean(exchange.IsCanceled) || !getEntityValue(exchange)}
+          leftSection={<IconX size={14} />}
+          size="xs"
+          type="button"
+          variant="light"
+          onClick={() => onCancel(exchange)}
+        >
+          {t('Скасувати')}
+        </Button>
+      ),
+    })
+  }
+
+  return columns
 }
 
 function getIncomeColumns(t: (value: string) => string): ActivityColumn<PaymentAccountIncomeOrder>[] {
@@ -1425,6 +2087,289 @@ function getCurrencyRegisterOptions(registers: PaymentCurrencyRegister[]): Array
 
     return options
   }, [])
+}
+
+function getVisibleCurrencyRegisters(account: PaymentAccount): PaymentCurrencyRegister[] {
+  return (account.PaymentCurrencyRegisters || [])
+    .filter((register) => !hasSkippedCurrencyCode(register) && Boolean(getEntityValue(register)))
+}
+
+function createTransferDraft(
+  account: PaymentAccount,
+  movements: PaymentMovement[] = [],
+): PaymentAccountTransferDraft {
+  const now = new Date()
+  const selectedFromRegister = getVisibleCurrencyRegisters(account)[0] || null
+  const selectedMovement = findDefaultPaymentMovement(movements, DEFAULT_TRANSFER_MOVEMENT_NAME)
+
+  return {
+    amount: '',
+    comment: '',
+    fromDate: formatLocalDate(now),
+    fromPaymentCurrencyRegisterNetId: getEntityValue(selectedFromRegister),
+    movementNetId: getEntityValue(selectedMovement),
+    time: toTimeInputValue(now),
+    toPaymentCurrencyRegisterNetId: '',
+    typeOfOperation: TransferOperationType.FundsTransfer,
+  }
+}
+
+function createExchangeDraft(
+  account: PaymentAccount,
+  movements: PaymentMovement[] = [],
+): PaymentAccountExchangeDraft {
+  const now = new Date()
+  const selectedFromRegister = getVisibleCurrencyRegisters(account)[0] || null
+  const selectedToRegister = selectedFromRegister
+    ? getExchangeDestinationRegisters([account], selectedFromRegister)[0] || null
+    : null
+  const selectedMovement = findDefaultPaymentMovement(movements, DEFAULT_EXCHANGE_MOVEMENT_NAME)
+
+  return {
+    amount: '',
+    comment: '',
+    exchangeRate: '',
+    fromDate: formatLocalDate(now),
+    fromPaymentCurrencyRegisterNetId: getEntityValue(selectedFromRegister),
+    incomeNumber: '',
+    movementNetId: getEntityValue(selectedMovement),
+    time: toTimeInputValue(now),
+    toPaymentCurrencyRegisterNetId: getEntityValue(selectedToRegister),
+  }
+}
+
+function getTransferDestinationRegisters(
+  paymentAccounts: PaymentAccount[],
+  account: PaymentAccount,
+  selectedFromRegister: PaymentCurrencyRegister | null,
+): PaymentCurrencyRegister[] {
+  if (!selectedFromRegister?.Currency) {
+    return []
+  }
+
+  const sourceAccountValue = getEntityValue(account)
+  const sourceRegisterValue = getEntityValue(selectedFromRegister)
+
+  return dedupeCurrencyRegisters(
+    paymentAccounts.reduce<PaymentCurrencyRegister[]>((registers, paymentAccount) => {
+      if (getEntityValue(paymentAccount) === sourceAccountValue) {
+        return registers
+      }
+
+      getVisibleCurrencyRegisters(paymentAccount).forEach((register) => {
+        if (getEntityValue(register) !== sourceRegisterValue && isSameCurrency(register.Currency, selectedFromRegister.Currency)) {
+          registers.push({
+            ...register,
+            PaymentRegister: register.PaymentRegister || paymentAccount,
+          })
+        }
+      })
+
+      return registers
+    }, []),
+  )
+}
+
+function getExchangeDestinationRegisters(
+  paymentAccounts: PaymentAccount[],
+  selectedFromRegister: PaymentCurrencyRegister | null,
+): PaymentCurrencyRegister[] {
+  if (!selectedFromRegister?.Currency) {
+    return []
+  }
+
+  const sourceRegisterValue = getEntityValue(selectedFromRegister)
+
+  return dedupeCurrencyRegisters(
+    paymentAccounts.reduce<PaymentCurrencyRegister[]>((registers, paymentAccount) => {
+      getVisibleCurrencyRegisters(paymentAccount).forEach((register) => {
+        if (getEntityValue(register) !== sourceRegisterValue && !isSameCurrency(register.Currency, selectedFromRegister.Currency)) {
+          registers.push({
+            ...register,
+            PaymentRegister: register.PaymentRegister || paymentAccount,
+          })
+        }
+      })
+
+      return registers
+    }, []),
+  )
+}
+
+function dedupeCurrencyRegisters(registers: PaymentCurrencyRegister[]): PaymentCurrencyRegister[] {
+  const seen = new Set<string>()
+
+  return registers.filter((register) => {
+    const value = getEntityValue(register)
+
+    if (!value || seen.has(value)) {
+      return false
+    }
+
+    seen.add(value)
+    return true
+  })
+}
+
+function findCurrencyRegister(registers: PaymentCurrencyRegister[], value: string): PaymentCurrencyRegister | null {
+  return findEntity(registers, value)
+}
+
+function findEntity<T extends { Id?: number; NetUid?: string }>(items: T[], value: string): T | null {
+  if (!value) {
+    return null
+  }
+
+  return items.find((item) => getEntityValue(item) === value) || null
+}
+
+function findDefaultPaymentMovement(movements: PaymentMovement[], defaultName: string): PaymentMovement | null {
+  return movements.find((movement) => getPaymentMovementLabel(movement) === defaultName) || movements[0] || null
+}
+
+function toCurrencyRegisterSelectOptions(registers: PaymentCurrencyRegister[]): Array<{ label: string; value: string }> {
+  return registers.reduce<Array<{ label: string; value: string }>>((options, register) => {
+    const value = getEntityValue(register)
+
+    if (value) {
+      const accountName = register.PaymentRegister?.Name
+      const amount = typeof register.Amount === 'number' ? ` · ${formatMoney(register.Amount)}` : ''
+
+      options.push({
+        label: [getCurrencyLabel(register), accountName].filter(Boolean).join(' · ') + amount,
+        value,
+      })
+    }
+
+    return options
+  }, [])
+}
+
+function toPaymentMovementOptions(movements: PaymentMovement[]): Array<{ label: string; value: string }> {
+  return movements.reduce<Array<{ label: string; value: string }>>((options, movement) => {
+    const value = getEntityValue(movement)
+
+    if (value) {
+      options.push({
+        label: getPaymentMovementLabel(movement) || value,
+        value,
+      })
+    }
+
+    return options
+  }, [])
+}
+
+function validateTransferDraft(
+  draft: PaymentAccountTransferDraft,
+  selectedFromRegister: PaymentCurrencyRegister | null,
+  selectedToRegister: PaymentCurrencyRegister | null,
+  selectedMovement: PaymentMovement | null,
+  amount: number,
+  t: (value: string) => string,
+): string | null {
+  if (!selectedFromRegister) {
+    return t('Оберіть валюту для списання')
+  }
+
+  if (!selectedToRegister) {
+    return t('Оберіть рахунок для зарахування')
+  }
+
+  if (getEntityValue(selectedFromRegister) === getEntityValue(selectedToRegister)) {
+    return t('Оберіть інший рахунок')
+  }
+
+  if (!amount || amount <= 0) {
+    return t('Вкажіть суму')
+  }
+
+  if (!selectedMovement) {
+    return t('Оберіть статтю руху')
+  }
+
+  if (!draft.fromDate || !draft.time) {
+    return t('Вкажіть дату і час')
+  }
+
+  return null
+}
+
+function validateExchangeDraft(
+  draft: PaymentAccountExchangeDraft,
+  selectedFromRegister: PaymentCurrencyRegister | null,
+  selectedToRegister: PaymentCurrencyRegister | null,
+  selectedMovement: PaymentMovement | null,
+  amount: number,
+  exchangeRate: number,
+  t: (value: string) => string,
+): string | null {
+  if (!selectedFromRegister) {
+    return t('Оберіть валюту для списання')
+  }
+
+  if (!selectedToRegister) {
+    return t('Оберіть валюту зарахування')
+  }
+
+  if (getEntityValue(selectedFromRegister) === getEntityValue(selectedToRegister) || isSameCurrency(selectedFromRegister.Currency, selectedToRegister.Currency)) {
+    return t('Оберіть іншу валюту')
+  }
+
+  if (!amount || amount <= 0) {
+    return t('Вкажіть суму')
+  }
+
+  if (typeof selectedFromRegister.Amount === 'number' && amount > selectedFromRegister.Amount) {
+    return t('Сума більша за залишок')
+  }
+
+  if (!exchangeRate || exchangeRate <= 0) {
+    return t('Вкажіть курс')
+  }
+
+  if (!selectedMovement) {
+    return t('Оберіть статтю руху')
+  }
+
+  if (!draft.fromDate || !draft.time) {
+    return t('Вкажіть дату і час')
+  }
+
+  return null
+}
+
+function getConvertedExchangeAmount(
+  amount: number,
+  exchangeRate: number,
+  selectedFromRegister: PaymentCurrencyRegister | null,
+): number {
+  if (!amount || !exchangeRate) {
+    return 0
+  }
+
+  return selectedFromRegister?.Currency?.Code?.toLowerCase() === 'uah'
+    ? amount / exchangeRate
+    : amount * exchangeRate
+}
+
+function toLocalIsoDateTime(date: string, time: string): string {
+  return `${date}T${time || '00:00'}:00`
+}
+
+function toTimeInputValue(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function isSameCurrency(left?: Currency | null, right?: Currency | null): boolean {
+  const leftValue = getEntityValue(left) || left?.Code || left?.Name
+  const rightValue = getEntityValue(right) || right?.Code || right?.Name
+
+  return Boolean(leftValue && rightValue && leftValue === rightValue)
+}
+
+function getPaymentMovementLabel(movement?: PaymentMovement | null): string | undefined {
+  return movement?.OperationName || movement?.Name
 }
 
 function getCurrencyLabel(register: PaymentCurrencyRegister): string {

@@ -48,6 +48,7 @@ import {
   updateDirectSupplyOrder,
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
+import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
@@ -742,6 +743,18 @@ export function SupplyUkraineDirectOrderDetailPage() {
               </Group>
             </Stack>
           </Card>
+
+          <DirectSupplyOrderProFormCard
+            canEdit={canEditAmount && !isLocked}
+            order={order}
+            onError={setError}
+            onOrderUpdated={(updatedOrder) => {
+              setOrder(updatedOrder)
+              dispatchAmountEdit({ type: 'setTransportationType', value: String(updatedOrder.TransportationType ?? 0) })
+              syncAmountInputs(updatedOrder)
+            }}
+            onReload={reloadOrder}
+          />
 
           <Card withBorder radius="md" padding="lg">
             <Group gap="xs" wrap="wrap">

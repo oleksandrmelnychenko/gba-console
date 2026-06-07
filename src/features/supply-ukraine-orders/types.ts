@@ -218,9 +218,26 @@ export type CreditNoteDocument = SupplyOrderUkraineDocument & {
   Number?: string
 }
 
+export type SupplyProFormDocument = EntityFields & {
+  Comment?: string
+  ContentType?: string
+  Deleted?: boolean
+  DocumentUrl?: string
+  FileName?: string
+  GeneratedName?: string
+  Name?: string
+  SupplyProFormId?: number | string
+}
+
 export type SupplyProForm = EntityFields & {
   DateFrom?: Date | string
+  IsSkipped?: boolean
+  NetPrice?: number
   Number?: string
+  ProFormDocuments?: SupplyProFormDocument[]
+  ServiceNumber?: string
+  SupplyInformationProtocols?: EntityFields[]
+  SupplyPaymentProtocols?: EntityFields[]
 }
 
 export type DirectSupplyOrder = EntityFields & {

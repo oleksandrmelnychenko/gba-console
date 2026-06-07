@@ -102,9 +102,11 @@ export const TransferOperationType = {
 export type TransferOperationType = (typeof TransferOperationType)[keyof typeof TransferOperationType]
 
 export type PaymentMovementOperation = EntityFields & {
-  PaymentMovement?: NamedEntity & {
-    OperationName?: string
-  }
+  PaymentMovement?: PaymentMovement | null
+}
+
+export type PaymentMovement = NamedEntity & {
+  OperationName?: string
 }
 
 export type PaymentRegisterTransfer = EntityFields & {
@@ -134,6 +136,10 @@ export type PaymentRegisterCurrencyExchange = EntityFields & {
   ToPaymentCurrencyRegister?: PaymentCurrencyRegister | null
   Type?: PaymentRegisterTransferType
   User?: NamedEntity | null
+}
+
+export type PaymentAccountMutationResult = EntityFields & {
+  IsSuccess?: boolean
 }
 
 export type PaymentAccountIncomeOrder = EntityFields & {

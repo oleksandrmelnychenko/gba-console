@@ -1,6 +1,7 @@
 import { Card, Checkbox, Group, Stack, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { SupplyInvoice } from '../detailTypes'
+import { getProtocolInvoiceAssignmentKey } from '../protocolInvoiceAssignment'
 import { formatDateTime } from './protocolDetailHelpers'
 
 export function InvoiceSelectList({
@@ -26,14 +27,14 @@ export function InvoiceSelectList({
 
   return (
     <Stack gap="xs">
-      {invoices.map((invoice) => {
-        const netUid = invoice.NetUid || ''
+      {invoices.map((invoice, index) => {
+        const key = getProtocolInvoiceAssignmentKey(invoice)
         const currencyCode = invoice.SupplyOrder?.ClientAgreement?.Agreement?.Currency?.Code || ''
 
         return (
-          <Card key={netUid} withBorder padding="sm" radius="sm">
+          <Card key={key || `invoice-${index}`} withBorder padding="sm" radius="sm">
             <Group align="flex-start" gap="sm" wrap="nowrap">
-              <Checkbox disabled={disabled} checked={Boolean(selected[netUid])} onChange={() => onToggle(invoice)} />
+              <Checkbox disabled={disabled || !key} checked={Boolean(selected[key])} onChange={() => onToggle(invoice)} />
               <Stack gap={2} style={{ flex: 1 }}>
                 <Text size="sm" fw={600}>
                   {t('Постачальник')}: {invoice.SupplyOrder?.Client?.FullName || '-'}

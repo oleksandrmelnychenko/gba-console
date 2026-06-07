@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { uploadDirectSupplyOrderFromFile, uploadSupplyOrderUkraineFromSupplierFile } from './supplyUkraineOrdersApi'
+import {
+  deleteSupplyProformDocument,
+  uploadDirectSupplyOrderFromFile,
+  uploadSupplyOrderProformDocuments,
+  uploadSupplyOrderUkraineFromSupplierFile,
+} from './supplyUkraineOrdersApi'
 import type {
   Client,
   ClientAgreement,
   DirectSupplyOrderCreatePayload,
   Organization,
   SupplyOrderDocumentParseConfiguration,
+  SupplyProForm,
   SupplyOrderUkraineSupplierCreatePayload,
   UkraineOrderFromSupplierParseConfiguration,
 } from '../types'
@@ -85,6 +91,53 @@ describe('supplyUkraineOrdersApi', () => {
     })
     expect(formData.get('orderUkraine')).toBeNull()
     expect(response.SupplyOrder?.NetUid).toBe('direct-order-1')
+  })
+
+  it('uploads direct-order proform documents with the backend multipart contract', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      NetUid: 'direct-order-1',
+      SupplyProForm: { NetUid: 'proform-1' },
+    })
+
+    const proForm: SupplyProForm = {
+      NetUid: 'proform-1',
+      Number: 'PF-42',
+      ProFormDocuments: [{ FileName: 'proform.pdf', ContentType: 'application/pdf' }],
+    }
+    const file = new File(['pdf'], 'proform.pdf', { type: 'application/pdf' })
+
+    const response = await uploadSupplyOrderProformDocuments({
+      files: [file],
+      orderNetId: 'direct-order-1',
+      proForm,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/upload/documents', {
+      body: expect.any(FormData),
+      method: 'POST',
+      query: { netId: 'direct-order-1' },
+    })
+
+    const formData = apiRequestMock.mock.calls[0]?.[1]?.body as FormData
+
+    expect(formData.getAll('proFormFiles')).toEqual([file])
+    expect(JSON.parse(String(formData.get('proForm')))).toMatchObject({
+      NetUid: 'proform-1',
+      Number: 'PF-42',
+      ProFormDocuments: [{ FileName: 'proform.pdf' }],
+    })
+    expect(response?.SupplyProForm?.ProFormDocuments).toEqual([])
+  })
+
+  it('deletes direct-order proform documents through the proforms document endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await deleteSupplyProformDocument('document-1')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/proforms/delete/document', {
+      method: 'DELETE',
+      query: { netId: 'document-1' },
+    })
   })
 })
 
