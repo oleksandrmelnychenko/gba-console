@@ -5137,7 +5137,7 @@ function buildStoragePayload(
     ForEcommerce: values.ForEcommerce,
     ForVatProducts: values.ForVatProducts,
     IsResale: values.IsResale,
-    Locale: UKRAINE_CULTURE,
+    Locale: storage?.Locale || UKRAINE_CULTURE,
     Name: values.Name.trim(),
     Organization: organization,
     OrganizationId: organization?.Id,
