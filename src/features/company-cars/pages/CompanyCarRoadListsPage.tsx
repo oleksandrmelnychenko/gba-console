@@ -14,7 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowLeft, IconPlus, IconRefresh, IconRestore, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -105,8 +105,8 @@ export function CompanyCarRoadListsPage() {
       getCompanyCar(id),
       getCompanyCarRoadLists({
         companyCarNetId: id,
-        from: toLegacyDateString(fromDate),
-        to: toLegacyDateString(toDate),
+        from: formatDateInputForQuery(fromDate),
+        to: formatDateInputForQuery(toDate),
       }),
     ])
       .then(([nextCompanyCar, nextRoadLists]) => {
@@ -485,12 +485,6 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
   }
 
   return null
-}
-
-function toLegacyDateString(value: string): string {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? value : date.toDateString()
 }
 
 function formatDateTime(value?: string): string {

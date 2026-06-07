@@ -198,6 +198,11 @@ export function ConsumableStorageFormPage() {
       return
     }
 
+    if (!selectedUser) {
+      dispatchPageState({ error: t('Оберіть відповідального') })
+      return
+    }
+
     const payload: ConsumablesStoragePayload = {
       ...storage,
       Description: form.description.trim(),
@@ -299,6 +304,7 @@ export function ConsumableStorageFormPage() {
               disabled={isLoading || isSaving}
               label={t('Відповідальний')}
               placeholder={t('Оберіть відповідального')}
+              required
               searchValue={userSearchValue}
               value={form.responsibleUserNetUid || null}
               onChange={(value) =>

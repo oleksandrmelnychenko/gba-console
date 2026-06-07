@@ -487,13 +487,26 @@ function ConsumableStorageDetailDrawer({
 
 function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduct[]; totals: ConsumablesStorage['PriceTotals'] }) {
   const { t } = useI18n()
+  const [searchValue, setSearchValue] = useValueState('')
   const columns = useStorageRemnantColumns()
+  const filteredProducts = useMemo(
+    () => filterStorageRemnants(products, searchValue),
+    [products, searchValue],
+  )
 
   return (
     <Stack gap="md">
+      <TextInput
+        leftSection={<IconSearch size={16} />}
+        placeholder={t('Назва або артикул')}
+        value={searchValue}
+        w={{ base: '100%', sm: 320 }}
+        onChange={(event) => setSearchValue(event.currentTarget.value)}
+      />
+
       <DataTable
         columns={columns}
-        data={products}
+        data={filteredProducts}
         defaultLayout={REMNANTS_TABLE_DEFAULT_LAYOUT}
         emptyText={t('Залишків не знайдено')}
         getRowId={(product, index) => String(product.NetUid || product.Id || product.VendorCode || index)}
@@ -517,6 +530,20 @@ function StorageRemnantsPanel({ products, totals }: { products: ConsumableProduc
       )}
     </Stack>
   )
+}
+
+function filterStorageRemnants(products: ConsumableProduct[], value: string): ConsumableProduct[] {
+  const normalizedValue = value.trim().toLowerCase()
+
+  if (!normalizedValue) {
+    return products
+  }
+
+  return products.filter((product) => [
+    product.Name,
+    product.VendorCode,
+    product.Article,
+  ].some((field) => field?.toLowerCase().includes(normalizedValue)))
 }
 
 function getPriceTotalKey(total: NonNullable<ConsumablesStorage['PriceTotals']>[number]): string {
@@ -554,17 +581,17 @@ function getStorageRemnantCurrency(product: ConsumableProduct): string | undefin
     return product.Currency?.Name || product.Currency?.Code
   }
 
-  const codes: string[] = []
+  const codes = new Set<string>()
 
   for (const total of priceTotals) {
     const code = total.Currency?.Code || total.Currency?.Name
 
-    if (code && !codes.includes(code)) {
-      codes.push(code)
+    if (code) {
+      codes.add(code)
     }
   }
 
-  return codes.length > 0 ? codes.join(' ') : undefined
+  return codes.size > 0 ? Array.from(codes).join(' ') : undefined
 }
 
 function useStorageRemnantColumns(): DataTableColumn<ConsumableProduct>[] {
