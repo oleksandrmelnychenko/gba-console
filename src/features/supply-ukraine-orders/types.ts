@@ -50,8 +50,13 @@ export type Product = NamedEntity & {
 }
 
 export type SupplyOrderItem = EntityFields & {
+  GrossWeight?: number
+  IsError?: boolean
   IsPlaced?: boolean
+  NetWeight?: number
   Product?: Product | null
+  ProductId?: number
+  QtyDifference?: number
   Qty?: number
   SupplyInvoiceOrderItems?: SupplyInvoiceOrderItem[]
   TotalAmount?: number
@@ -60,14 +65,22 @@ export type SupplyOrderItem = EntityFields & {
 }
 
 export type SupplyInvoiceOrderItem = EntityFields & {
+  GrossUnitPrice?: number
+  IsError?: boolean
   PackingListPackageOrderItems?: PackingListPackageOrderItem[]
   Product?: Product | null
+  ProductId?: number
   ProductIsImported?: boolean
   Qty?: number
   QtyDifference?: number
+  RowNumber?: number
+  SupplyInvoice?: SupplyInvoice | null
+  SupplyInvoiceId?: number
   SupplyOrderItem?: SupplyOrderItem | null
+  SupplyOrderItemId?: number
   TotalAmount?: number
   UnitPrice?: number
+  Weight?: number
 }
 
 export type PackingListPackageOrderItemSupplyService = EntityFields & {
@@ -86,29 +99,56 @@ export type PackingListPackageOrderItemSupplyService = EntityFields & {
 export type PackingListPackageOrderItem = EntityFields & {
   AccountingTotalGrossPrice?: number
   AccountingTotalGrossPriceEur?: number
+  GrossUnitPriceEur?: number
   GrossWeight?: number
   NetWeight?: number
+  PackingList?: PackingList | null
+  PackingListId?: number
+  PackingListPackageId?: number
   PackingListPackageOrderItemSupplyServices?: PackingListPackageOrderItemSupplyService[]
   ProductIsImported?: boolean
   Qty?: number
+  QtyDifferent?: number
   SupplyInvoiceOrderItem?: SupplyInvoiceOrderItem | null
+  SupplyInvoiceOrderItemId?: number
   TotalGrossPrice?: number
   TotalGrossPriceEur?: number
   TotalGrossWeight?: number
   TotalNetPrice?: number
   TotalNetWeight?: number
   UnitPrice?: number
+  UploadedQty?: number
+}
+
+export type PackingListPackage = EntityFields & {
+  CBM?: number
+  GrossWeight?: number
+  Height?: number
+  Lenght?: number
+  NetWeight?: number
+  PackingListPackageOrderItems?: PackingListPackageOrderItem[]
+  Type?: number
+  Width?: number
 }
 
 export type PackingList = EntityFields & {
   AccountingTotalGrossPrice?: number
   AccountingTotalGrossPriceEur?: number
   Comment?: string
+  DynamicProductPlacementColumns?: unknown[]
   FromDate?: Date | string
+  InvoiceDocuments?: SupplyInvoiceDeliveryDocument[]
   InvNo?: string
+  IsDocumentsAdded?: boolean
+  MarkNumber?: string
   MergedPackingLists?: PackingList[]
   No?: string
+  PackingListBoxes?: PackingListPackage[]
+  PackingListPackages?: PackingListPackage[]
   PackingListPackageOrderItems?: PackingListPackageOrderItem[]
+  PackingListPallets?: PackingListPackage[]
+  PlNo?: string
+  RefNo?: string
   SupplyInvoiceId?: number
   TotalCustomValue?: number
   TotalDuty?: number

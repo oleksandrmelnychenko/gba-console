@@ -22,12 +22,13 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowLeft,
+  IconDeviceFloppy,
   IconFileImport,
   IconPackage,
   IconRefresh,
   IconTrash,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useReducer, useState, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -42,6 +43,8 @@ import {
   getSupplyInvoiceItems,
   getSupplyOrderInvoiceTotals,
   getSupplyOrderItems,
+  updatePackingLists,
+  updateSupplyInvoiceItems,
   uploadPackingListFile,
   uploadSupplyInvoiceFile,
 } from '../api/supplyUkraineOrdersApi'
@@ -86,6 +89,53 @@ type PackListUploadForm = {
   unitPriceColumnNumber: NumberFieldValue
   vendorCodeColumnNumber: NumberFieldValue
 }
+type QuantityBalanceRow = {
+  actualQty: number
+  difference: number
+  expectedQty: number
+  isError: boolean
+  key: string
+}
+type InvoiceBalanceRow = QuantityBalanceRow & {
+  orderItem: SupplyOrderItem
+}
+type PackListBalanceRow = QuantityBalanceRow & {
+  invoiceItem: SupplyInvoiceOrderItem
+}
+type PageState = {
+  deleteInvoiceCandidate: SupplyInvoice | null
+  deletePackListCandidate: PackingList | null
+  error: string | null
+  invoiceDetailsByNetId: Record<string, SupplyInvoice>
+  invoiceUploadOpen: boolean
+  isInvoiceLoading: boolean
+  isLoading: boolean
+  isSaving: boolean
+  order: DirectSupplyOrder | null
+  orderItems: SupplyOrderItem[]
+  packListUploadOpen: boolean
+  selectedInvoiceNetId: string | null
+  selectedPackListNetId: string | null
+  totals: SupplyOrderInvoiceTotals
+}
+type PageStateAction = Partial<PageState> | ((state: PageState) => Partial<PageState>)
+
+const INITIAL_PAGE_STATE: PageState = {
+  deleteInvoiceCandidate: null,
+  deletePackListCandidate: null,
+  error: null,
+  invoiceDetailsByNetId: {},
+  invoiceUploadOpen: false,
+  isInvoiceLoading: false,
+  isLoading: true,
+  isSaving: false,
+  order: null,
+  orderItems: [],
+  packListUploadOpen: false,
+  selectedInvoiceNetId: null,
+  selectedPackListNetId: null,
+  totals: {},
+}
 
 const EMPTY_INVOICE_FORM: InvoiceUploadForm = {
   comment: '',
@@ -127,27 +177,46 @@ const PERMISSION_ADD_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewPackLi
 const PERMISSION_REMOVE_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemoveInvoiceBtn_PKEY'
 const PERMISSION_REMOVE_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemovePackListBtn_PKEY'
 
+function pageStateReducer(state: PageState, action: PageStateAction): PageState {
+  const patch = typeof action === 'function' ? action(state) : action
+
+  return { ...state, ...patch }
+}
+
 export function SupplyUkraineDirectOrderInvoicesPage() {
+  const model = useSupplyUkraineDirectOrderInvoicesPageModel()
+
+  return <SupplyUkraineDirectOrderInvoicesView model={model} />
+}
+
+function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const [order, setOrder] = useState<DirectSupplyOrder | null>(null)
-  const [orderItems, setOrderItems] = useState<SupplyOrderItem[]>([])
-  const [totals, setTotals] = useState<SupplyOrderInvoiceTotals>({})
-  const [selectedInvoiceNetId, setSelectedInvoiceNetId] = useState<string | null>(null)
-  const [selectedInvoice, setSelectedInvoice] = useState<SupplyInvoice | null>(null)
-  const [selectedPackListNetId, setSelectedPackListNetId] = useState<string | null>(null)
-  const [isLoading, setLoading] = useState(true)
-  const [isInvoiceLoading, setInvoiceLoading] = useState(false)
-  const [isSaving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [invoiceUploadOpen, setInvoiceUploadOpen] = useState(false)
-  const [packListUploadOpen, setPackListUploadOpen] = useState(false)
-  const [deleteInvoiceCandidate, setDeleteInvoiceCandidate] = useState<SupplyInvoice | null>(null)
-  const [deletePackListCandidate, setDeletePackListCandidate] = useState<PackingList | null>(null)
+  const [state, setPageState] = useReducer(pageStateReducer, INITIAL_PAGE_STATE)
+  const {
+    deleteInvoiceCandidate,
+    deletePackListCandidate,
+    error,
+    invoiceDetailsByNetId,
+    invoiceUploadOpen,
+    isInvoiceLoading,
+    isLoading,
+    isSaving,
+    order,
+    orderItems,
+    packListUploadOpen,
+    selectedInvoiceNetId,
+    selectedPackListNetId,
+    totals,
+  } = state
 
-  const invoices = order?.SupplyInvoices || []
+  const invoices = useMemo(() => order?.SupplyInvoices || [], [order?.SupplyInvoices])
+  const selectedInvoice = useMemo(
+    () => getSelectedInvoice(selectedInvoiceNetId, invoiceDetailsByNetId, invoices),
+    [invoiceDetailsByNetId, invoices, selectedInvoiceNetId],
+  )
   const selectedPackList = useMemo(
     () => (selectedInvoice?.PackingLists || []).find((packList) => packList.NetUid === selectedPackListNetId) || null,
     [selectedInvoice, selectedPackListNetId],
@@ -156,14 +225,63 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
   const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
   const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
   const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
-  const canShowPackListUpload = Boolean(
-    selectedInvoice && canAddPackList && (selectedInvoice.PackingLists?.length || 0) === 0,
-  )
+  const canShowPackListUpload = Boolean(selectedInvoice && canAddPackList)
   const isBusy = isSaving || isLoading || isInvoiceLoading
 
+  const detailedInvoices = useMemo(
+    () => invoices.map((invoice) => (invoice.NetUid ? invoiceDetailsByNetId[invoice.NetUid] || invoice : invoice)),
+    [invoiceDetailsByNetId, invoices],
+  )
+  const invoiceBalanceRows = useMemo(
+    () => buildInvoiceBalanceRows(orderItems, detailedInvoices),
+    [detailedInvoices, orderItems],
+  )
+  const invoiceBalanceByOrderItemKey = useMemo(
+    () => new Map(invoiceBalanceRows.map((row) => [row.key, row])),
+    [invoiceBalanceRows],
+  )
+  const orderRows = useMemo(
+    () => orderItems.map((item) => {
+      const balance = invoiceBalanceByOrderItemKey.get(getSupplyOrderItemKey(item))
+
+      return {
+        ...item,
+        IsError: balance?.isError || false,
+        QtyDifference: balance?.difference || 0,
+      }
+    }),
+    [invoiceBalanceByOrderItemKey, orderItems],
+  )
+  const selectedInvoiceItems = useMemo(
+    () => buildEditableInvoiceItems(selectedInvoice, orderItems),
+    [orderItems, selectedInvoice],
+  )
+  const packListBalanceRows = useMemo(
+    () => (selectedInvoice ? buildPackListBalanceRows(selectedInvoice) : []),
+    [selectedInvoice],
+  )
+  const packListBalanceByInvoiceItemKey = useMemo(
+    () => new Map(packListBalanceRows.map((row) => [row.key, row])),
+    [packListBalanceRows],
+  )
+  const selectedPackListItems = useMemo(
+    () => buildEditablePackListItems(selectedPackList, selectedInvoice),
+    [selectedInvoice, selectedPackList],
+  )
+  const hasInvoiceMismatch = invoiceBalanceRows.some((row) => row.isError)
+  const hasPackListMismatch = packListBalanceRows.some((row) => row.isError)
+
   const orderItemColumns = useOrderItemColumns()
-  const invoiceItemColumns = useInvoiceItemColumns()
-  const packListItemColumns = usePackListItemColumns()
+  const invoiceItemColumns = useInvoiceItemColumns({
+    balanceByOrderItemKey: invoiceBalanceByOrderItemKey,
+    disabled: isBusy || !selectedInvoice,
+    onQtyChange: handleInvoiceQtyChange,
+  })
+  const packListItemColumns = usePackListItemColumns({
+    balanceByInvoiceItemKey: packListBalanceByInvoiceItemKey,
+    disabled: isBusy || !selectedPackList,
+    onQtyChange: handlePackListQtyChange,
+  })
   const orderTotalsToolbar = useMemo(() => <TotalsBadges totals={totals} />, [totals])
 
   useEffect(() => {
@@ -171,13 +289,11 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
 
     async function loadData() {
       if (!id) {
-        setError(t('Не задано ідентифікатор замовлення'))
-        setLoading(false)
+        setPageState({ error: t('Не задано ідентифікатор замовлення'), isLoading: false })
         return
       }
 
-      setLoading(true)
-      setError(null)
+      setPageState({ error: null, isLoading: true })
 
       try {
         const [nextOrder, nextItems, nextTotals] = await Promise.all([
@@ -185,21 +301,33 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
           getSupplyOrderItems(id),
           getSupplyOrderInvoiceTotals(id),
         ])
+        const invoiceDetails = await loadInvoiceDetails(nextOrder)
 
         if (!cancelled) {
-          setOrder(nextOrder)
-          setOrderItems(nextItems)
-          setTotals(nextTotals)
-          setSelectedInvoiceNetId((current) => current || nextOrder?.SupplyInvoices?.[0]?.NetUid || null)
+          setPageState((current) => {
+            const selectedInvoiceNetId = current.selectedInvoiceNetId || nextOrder?.SupplyInvoices?.[0]?.NetUid || null
+            const invoice = getSelectedInvoice(selectedInvoiceNetId, invoiceDetails, nextOrder?.SupplyInvoices || [])
+
+            return {
+              invoiceDetailsByNetId: invoiceDetails,
+              order: nextOrder,
+              orderItems: nextItems,
+              selectedInvoiceNetId,
+              selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, invoice),
+              totals: nextTotals,
+            }
+          })
         }
       } catch (loadError) {
         if (!cancelled) {
-          setOrder(null)
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
+          setPageState({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'),
+            order: null,
+          })
         }
       } finally {
         if (!cancelled) {
-          setLoading(false)
+          setPageState({ isLoading: false })
         }
       }
     }
@@ -212,25 +340,28 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
   }, [id, t])
 
   useEffect(() => {
-    if (!selectedInvoiceNetId) {
+    if (!selectedInvoiceNetId || invoiceDetailsByNetId[selectedInvoiceNetId]) {
       return
     }
 
     let cancelled = false
 
     async function loadInvoice(invoiceNetId: string) {
-      setInvoiceLoading(true)
+      setPageState({ isInvoiceLoading: true })
 
       try {
         const invoice = await getSupplyInvoiceItems(invoiceNetId)
 
         if (!cancelled) {
-          setSelectedInvoice(invoice)
-          setSelectedPackListNetId(invoice?.PackingLists?.[0]?.NetUid || null)
+          setPageState((current) => ({
+            invoiceDetailsByNetId: invoice?.NetUid
+              ? { ...current.invoiceDetailsByNetId, [invoice.NetUid]: invoice }
+              : current.invoiceDetailsByNetId,
+            selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, invoice),
+          }))
         }
       } catch (loadError) {
         if (!cancelled) {
-          setSelectedInvoice(null)
           notifications.show({
             color: 'red',
             message: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити інвойс'),
@@ -238,7 +369,7 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
         }
       } finally {
         if (!cancelled) {
-          setInvoiceLoading(false)
+          setPageState({ isInvoiceLoading: false })
         }
       }
     }
@@ -248,15 +379,14 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedInvoiceNetId, t])
+  }, [invoiceDetailsByNetId, selectedInvoiceNetId, t])
 
   async function reloadOrder(nextSelectedInvoiceNetId = selectedInvoiceNetId) {
     if (!id) {
       return
     }
 
-    setLoading(true)
-    setError(null)
+    setPageState({ error: null, isLoading: true })
 
     try {
       const [nextOrder, nextItems, nextTotals] = await Promise.all([
@@ -264,35 +394,25 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
         getSupplyOrderItems(id),
         getSupplyOrderInvoiceTotals(id),
       ])
+      const invoiceDetails = await loadInvoiceDetails(nextOrder)
 
-      setOrder(nextOrder)
-      setOrderItems(nextItems)
-      setTotals(nextTotals)
-      const invoiceNetId = nextSelectedInvoiceNetId || nextOrder?.SupplyInvoices?.[0]?.NetUid || null
-      setSelectedInvoiceNetId(invoiceNetId)
-      if (!invoiceNetId) {
-        setSelectedInvoice(null)
-        setSelectedPackListNetId(null)
-      } else if (invoiceNetId === selectedInvoiceNetId) {
-        setInvoiceLoading(true)
+      const invoiceNetId = nextSelectedInvoiceNetId && nextOrder?.SupplyInvoices?.some((invoice) => invoice.NetUid === nextSelectedInvoiceNetId)
+        ? nextSelectedInvoiceNetId
+        : nextOrder?.SupplyInvoices?.[0]?.NetUid || null
+      const invoice = invoiceNetId ? invoiceDetails[invoiceNetId] || null : null
 
-        try {
-          const invoice = await getSupplyInvoiceItems(invoiceNetId)
-
-          setSelectedInvoice(invoice)
-          setSelectedPackListNetId((currentPackListNetId) =>
-            currentPackListNetId && invoice?.PackingLists?.some((packList) => packList.NetUid === currentPackListNetId)
-              ? currentPackListNetId
-              : invoice?.PackingLists?.[0]?.NetUid || null,
-          )
-        } finally {
-          setInvoiceLoading(false)
-        }
-      }
+      setPageState((current) => ({
+        invoiceDetailsByNetId: invoiceDetails,
+        order: nextOrder,
+        orderItems: nextItems,
+        selectedInvoiceNetId: invoiceNetId,
+        selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, invoice),
+        totals: nextTotals,
+      }))
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення'))
+      setPageState({ error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити замовлення') })
     } finally {
-      setLoading(false)
+      setPageState({ isLoading: false })
     }
   }
 
@@ -301,18 +421,31 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
       return
     }
 
-    const parseConfiguration = toInvoiceParseConfiguration(form)
+    const validationMessage = getInvoiceUploadValidationMessage(form)
 
-    if (!form.file || !form.number.trim() || !parseConfiguration) {
-      notifications.show({ color: 'red', message: t('Заповніть файл, номер і колонки імпорту') })
+    if (validationMessage) {
+      notifications.show({ color: 'red', message: t(validationMessage) })
       return
     }
 
-    setSaving(true)
+    const parseConfiguration = toInvoiceParseConfiguration(form)
+
+    if (!parseConfiguration) {
+      notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
+      return
+    }
+
+    const file = form.file
+
+    if (!file) {
+      return
+    }
+
+    setPageState({ isSaving: true })
 
     try {
       const invoice = await uploadSupplyInvoiceFile({
-        file: form.file,
+        file,
         invoice: {
           Comment: form.comment.trim(),
           DateFrom: normalizeDateTimeInput(form.dateFrom),
@@ -323,12 +456,12 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
       })
 
       notifications.show({ color: 'green', message: t('Інвойс завантажено') })
-      setInvoiceUploadOpen(false)
+      setPageState({ invoiceUploadOpen: false })
       await reloadOrder(invoice?.NetUid || selectedInvoiceNetId)
     } catch (saveError) {
       notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
     } finally {
-      setSaving(false)
+      setPageState({ isSaving: false })
     }
   }
 
@@ -338,18 +471,31 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
       return
     }
 
-    const parseConfiguration = toPackListParseConfiguration(form)
+    const validationMessage = getPackListUploadValidationMessage(form)
 
-    if (!form.file || !form.number.trim() || !parseConfiguration) {
-      notifications.show({ color: 'red', message: t('Заповніть файл, номер і колонки імпорту') })
+    if (validationMessage) {
+      notifications.show({ color: 'red', message: t(validationMessage) })
       return
     }
 
-    setSaving(true)
+    const parseConfiguration = toPackListParseConfiguration(form)
+
+    if (!parseConfiguration) {
+      notifications.show({ color: 'red', message: t('Перевірте колонки імпорту') })
+      return
+    }
+
+    const file = form.file
+
+    if (!file) {
+      return
+    }
+
+    setPageState({ isSaving: true })
 
     try {
       const packList = await uploadPackingListFile({
-        file: form.file,
+        file,
         packingList: {
           Comment: form.comment.trim(),
           FromDate: normalizeDateTimeInput(form.dateFrom),
@@ -361,282 +507,549 @@ export function SupplyUkraineDirectOrderInvoicesPage() {
       })
 
       notifications.show({ color: 'green', message: t('Пак лист завантажено') })
-      setPackListUploadOpen(false)
+      setPageState({ packListUploadOpen: false })
       await reloadOrder(selectedInvoice.NetUid)
-      setSelectedPackListNetId(packList?.NetUid || null)
+      if (packList?.NetUid) {
+        setPageState({ selectedPackListNetId: packList.NetUid })
+      }
     } catch (saveError) {
       notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит') })
     } finally {
-      setSaving(false)
+      setPageState({ isSaving: false })
     }
   }
 
   async function confirmDeleteInvoice() {
     if (!deleteInvoiceCandidate?.NetUid) {
-      setDeleteInvoiceCandidate(null)
+      setPageState({ deleteInvoiceCandidate: null })
       return
     }
 
-    setSaving(true)
+    setPageState({ isSaving: true })
 
     try {
       await deleteSupplyInvoice(deleteInvoiceCandidate.NetUid)
       notifications.show({ color: 'green', message: t('Інвойс видалено') })
-      setDeleteInvoiceCandidate(null)
-      setSelectedInvoiceNetId(null)
-      setSelectedInvoice(null)
-      setSelectedPackListNetId(null)
+      setPageState({
+        deleteInvoiceCandidate: null,
+        selectedInvoiceNetId: null,
+        selectedPackListNetId: null,
+      })
       await reloadOrder(null)
     } catch (deleteError) {
       notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити інвойс') })
     } finally {
-      setSaving(false)
+      setPageState({ isSaving: false })
     }
   }
 
   async function confirmDeletePackList() {
     if (!deletePackListCandidate?.NetUid) {
-      setDeletePackListCandidate(null)
+      setPageState({ deletePackListCandidate: null })
       return
     }
 
-    setSaving(true)
+    setPageState({ isSaving: true })
 
     try {
       await deletePackingList(deletePackListCandidate.NetUid)
       notifications.show({ color: 'green', message: t('Пак лист видалено') })
-      setDeletePackListCandidate(null)
+      setPageState({ deletePackListCandidate: null })
       await reloadOrder(selectedInvoiceNetId)
     } catch (deleteError) {
       notifications.show({ color: 'red', message: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити пак лист') })
     } finally {
-      setSaving(false)
+      setPageState({ isSaving: false })
     }
+  }
+
+  function handleInvoiceQtyChange(item: SupplyInvoiceOrderItem, value: number | string) {
+    if (!selectedInvoice?.NetUid) {
+      return
+    }
+
+    const qty = toNonNegativeNumber(value)
+
+    setPageState((current) => {
+      const invoice = current.invoiceDetailsByNetId[selectedInvoice.NetUid || ''] || selectedInvoice
+
+      if (!invoice) {
+        return {}
+      }
+
+      return {
+        invoiceDetailsByNetId: {
+          ...current.invoiceDetailsByNetId,
+          [selectedInvoice.NetUid || '']: upsertInvoiceOrderItem(invoice, item, qty),
+        },
+      }
+    })
+  }
+
+  function handlePackListQtyChange(item: PackingListPackageOrderItem, value: number | string) {
+    if (!selectedInvoice?.NetUid || !selectedPackList) {
+      return
+    }
+
+    const qty = toNonNegativeNumber(value)
+
+    setPageState((current) => {
+      const invoice = current.invoiceDetailsByNetId[selectedInvoice.NetUid || ''] || selectedInvoice
+
+      if (!invoice) {
+        return {}
+      }
+
+      return {
+        invoiceDetailsByNetId: {
+          ...current.invoiceDetailsByNetId,
+          [selectedInvoice.NetUid || '']: upsertPackListOrderItem(invoice, selectedPackList, item, qty),
+        },
+      }
+    })
+  }
+
+  async function saveInvoiceItems() {
+    if (detailedInvoices.length === 0) {
+      notifications.show({ color: 'red', message: t('Немає інвойсів для збереження') })
+      return
+    }
+
+    if (hasInvoiceMismatch) {
+      notifications.show({ color: 'red', message: t('Кількості інвойсів не збігаються із замовленням') })
+      return
+    }
+
+    setPageState({ isSaving: true })
+
+    try {
+      const updatedInvoices = await updateSupplyInvoiceItemsBatch(detailedInvoices)
+      const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, updatedInvoices)
+
+      setPageState({ invoiceDetailsByNetId: nextDetails })
+      notifications.show({ color: 'green', message: t('Рядки інвойсів збережено') })
+      await reloadOrder(selectedInvoiceNetId)
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойси') })
+    } finally {
+      setPageState({ isSaving: false })
+    }
+  }
+
+  async function savePackingLists() {
+    if (!selectedInvoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+      return
+    }
+
+    if (hasPackListMismatch) {
+      notifications.show({ color: 'red', message: t('Кількості пак листів не збігаються з інвойсом') })
+      return
+    }
+
+    setPageState({ isSaving: true })
+
+    try {
+      const updatedInvoice = await updatePackingLists(toPackingListsPayload(selectedInvoice))
+
+      if (updatedInvoice?.NetUid) {
+        setPageState((current) => ({
+          invoiceDetailsByNetId: {
+            ...current.invoiceDetailsByNetId,
+            [updatedInvoice.NetUid || '']: updatedInvoice,
+          },
+        }))
+      }
+
+      notifications.show({ color: 'green', message: t('Пак листи збережено') })
+      await reloadOrder(selectedInvoice.NetUid)
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти пак листи') })
+    } finally {
+      setPageState({ isSaving: false })
+    }
+  }
+
+  return {
+    canAddInvoice,
+    canRemoveInvoice,
+    canRemovePackList,
+    canShowPackListUpload,
+    confirmDeleteInvoice,
+    confirmDeletePackList,
+    deleteInvoiceCandidate,
+    deletePackListCandidate,
+    error,
+    invoiceBalanceByOrderItemKey,
+    invoiceBalanceRows,
+    invoiceDetailsByNetId,
+    invoiceItemColumns,
+    invoiceUploadOpen,
+    invoices,
+    isBusy,
+    isInvoiceLoading,
+    isLoading,
+    isSaving,
+    order,
+    orderItemColumns,
+    orderItems,
+    orderRows,
+    orderTotalsToolbar,
+    packListBalanceByInvoiceItemKey,
+    packListBalanceRows,
+    packListItemColumns,
+    packListUploadOpen,
+    reloadOrder,
+    saveInvoiceItems,
+    savePackingLists,
+    selectedInvoice,
+    selectedInvoiceItems,
+    selectedInvoiceNetId,
+    selectedPackList,
+    selectedPackListItems,
+    selectedPackListNetId,
+    setPageState,
+    submitInvoice,
+    submitPackList,
+    goBack: () => navigate(`/orders/ukraine/all/edit/${id || ''}`),
+  }
+}
+
+type DirectOrderInvoicesPageModel = ReturnType<typeof useSupplyUkraineDirectOrderInvoicesPageModel>
+
+function SupplyUkraineDirectOrderInvoicesView({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Stack gap="lg">
+      <DirectOrderInvoicesHeader model={model} />
+      {model.error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {model.error}
+        </Alert>
+      )}
+      {model.isLoading ? (
+        <Group justify="center" py="xl"><Loader /></Group>
+      ) : model.order ? (
+        <DirectOrderInvoicesBody model={model} />
+      ) : (
+        <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
+      )}
+      <DirectOrderInvoicesModals model={model} />
+    </Stack>
+  )
+}
+
+function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group justify="space-between" align="flex-start">
+      <Group gap="sm">
+        <Tooltip label={t('Назад')}>
+          <ActionIcon aria-label={t('Назад')} color="gray" variant="light" onClick={model.goBack}>
+            <IconArrowLeft size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <Stack gap={2}>
+          <Text fw={700} size="xl">{t('Інвойси і пак листи')} {getOrderNumber(model.order)}</Text>
+          <Text c="dimmed" size="sm">{t('Постачальник')}: {getEntityName(model.order?.Client)}</Text>
+        </Stack>
+      </Group>
+      <Group gap="xs">
+        <Button
+          disabled={model.isSaving || model.isInvoiceLoading}
+          leftSection={<IconRefresh size={16} />}
+          loading={model.isLoading}
+          variant="light"
+          onClick={() => model.reloadOrder()}
+        >
+          {t('Оновити')}
+        </Button>
+        {model.canAddInvoice && (
+          <Button
+            disabled={model.isBusy}
+            leftSection={<IconFileImport size={16} />}
+            loading={model.isSaving}
+            variant="light"
+            onClick={() => model.setPageState({ invoiceUploadOpen: true })}
+          >
+            {t('Додати інвойс')}
+          </Button>
+        )}
+        {model.canShowPackListUpload && (
+          <Button
+            disabled={model.isBusy}
+            leftSection={<IconPackage size={16} />}
+            loading={model.isSaving}
+            variant="light"
+            onClick={() => model.setPageState({ packListUploadOpen: true })}
+          >
+            {t('Додати пак лист')}
+          </Button>
+        )}
+      </Group>
+    </Group>
+  )
+}
+
+function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  if (!model.order) {
+    return null
   }
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <Group gap="sm">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              color="gray"
-              variant="light"
-              onClick={() => navigate(`/orders/ukraine/all/edit/${id || ''}`)}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Stack gap={2}>
-            <Text fw={700} size="xl">{t('Інвойси і пак листи')} {getOrderNumber(order)}</Text>
-            <Text c="dimmed" size="sm">{t('Постачальник')}: {getEntityName(order?.Client)}</Text>
-          </Stack>
-        </Group>
-        <Group gap="xs">
-          <Button
-            disabled={isSaving || isInvoiceLoading}
-            leftSection={<IconRefresh size={16} />}
-            loading={isLoading}
-            variant="light"
-            onClick={() => reloadOrder()}
-          >
-            {t('Оновити')}
-          </Button>
-          {canAddInvoice && (
-            <Button
-              disabled={isBusy}
-              leftSection={<IconFileImport size={16} />}
-              loading={isSaving}
-              variant="light"
-              onClick={() => setInvoiceUploadOpen(true)}
-            >
-              {t('Додати інвойс')}
-            </Button>
+      <SimpleGrid cols={{ base: 1, md: 4 }} spacing="md">
+        <TotalCard label={t('Рядків замовлення')} value={String(model.orderItems.length)} />
+        <TotalCard label={t('Інвойсів')} value={String(model.invoices.length)} />
+        <TotalCard label={t('Кількість')} value={formatNumber(model.order.TotalQuantity)} />
+        <TotalCard label={t('Сума')} value={formatMoney(model.order.TotalNetPrice)} />
+      </SimpleGrid>
+      <Tabs defaultValue="products" keepMounted={false}>
+        <Tabs.List>
+          <Tabs.Tab value="products">{t('Товари замовлення')}</Tabs.Tab>
+          <Tabs.Tab value="invoices">{t('Інвойси')}</Tabs.Tab>
+          <Tabs.Tab value="packlists" disabled={!model.selectedInvoice}>{t('Пак листи')}</Tabs.Tab>
+        </Tabs.List>
+        <ProductsPanel model={model} />
+        <InvoicesPanel model={model} />
+        <PackListsPanel model={model} />
+      </Tabs>
+    </Stack>
+  )
+}
+
+function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Tabs.Panel value="products" pt="md">
+      <Card withBorder radius="md" padding="md">
+        <DataTable
+          columns={model.orderItemColumns}
+          data={model.orderRows}
+          emptyText={t('Товарів немає')}
+          getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+          layoutVersion="supply-direct-order-items-2"
+          minWidth={980}
+          rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
+          tableId="supply-direct-order-items"
+          toolbarLeft={model.orderTotalsToolbar}
+        />
+      </Card>
+    </Tabs.Panel>
+  )
+}
+
+function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Tabs.Panel value="invoices" pt="md">
+      <Card withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <InvoiceSelector model={model} />
+          {model.isInvoiceLoading ? (
+            <Group justify="center" py="md"><Loader size="sm" /></Group>
+          ) : (
+            <Stack gap="sm">
+              <QuantityBalanceSummary
+                actualLabel={t('В інвойсах')}
+                differenceLabel={t('Залишилось')}
+                expectedLabel={t('У замовленні')}
+                rows={model.invoiceBalanceRows}
+              />
+              <Group justify="flex-end">
+                <Button
+                  disabled={model.isBusy || !model.selectedInvoice || model.invoiceBalanceRows.some((row) => row.isError)}
+                  leftSection={<IconDeviceFloppy size={16} />}
+                  loading={model.isSaving}
+                  onClick={model.saveInvoiceItems}
+                >
+                  {t('Зберегти інвойси')}
+                </Button>
+              </Group>
+              <DataTable
+                columns={model.invoiceItemColumns}
+                data={model.selectedInvoiceItems}
+                emptyText={t('Рядків інвойсу немає')}
+                getRowId={getInvoiceOrderItemRowId}
+                layoutVersion="supply-direct-invoice-items-2"
+                minWidth={1080}
+                rowClassName={(item) =>
+                  model.invoiceBalanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.isError
+                    ? 'data-table-row-warning'
+                    : undefined}
+                tableId="supply-direct-invoice-items"
+              />
+            </Stack>
           )}
-          {canShowPackListUpload && (
-            <Button
-              disabled={isBusy}
-              leftSection={<IconPackage size={16} />}
-              loading={isSaving}
-              variant="light"
-              onClick={() => setPackListUploadOpen(true)}
-            >
-              {t('Додати пак лист')}
-            </Button>
-          )}
-        </Group>
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      {isLoading ? (
-        <Group justify="center" py="xl"><Loader /></Group>
-      ) : order ? (
-        <Stack gap="lg">
-          <SimpleGrid cols={{ base: 1, md: 4 }} spacing="md">
-            <TotalCard label={t('Рядків замовлення')} value={String(orderItems.length)} />
-            <TotalCard label={t('Інвойсів')} value={String(invoices.length)} />
-            <TotalCard label={t('Кількість')} value={formatNumber(order.TotalQuantity)} />
-            <TotalCard label={t('Сума')} value={formatMoney(order.TotalNetPrice)} />
-          </SimpleGrid>
-
-          <Tabs defaultValue="products" keepMounted={false}>
-            <Tabs.List>
-              <Tabs.Tab value="products">{t('Товари замовлення')}</Tabs.Tab>
-              <Tabs.Tab value="invoices">{t('Інвойси')}</Tabs.Tab>
-              <Tabs.Tab value="packlists" disabled={!selectedInvoice}>{t('Пак листи')}</Tabs.Tab>
-            </Tabs.List>
-
-            <Tabs.Panel value="products" pt="md">
-              <Card withBorder radius="md" padding="md">
-                <DataTable
-                  columns={orderItemColumns}
-                  data={orderItems}
-                  emptyText={t('Товарів немає')}
-                  getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-                  layoutVersion="supply-direct-order-items-1"
-                  minWidth={980}
-                  tableId="supply-direct-order-items"
-                  toolbarLeft={orderTotalsToolbar}
-                />
-              </Card>
-            </Tabs.Panel>
-
-            <Tabs.Panel value="invoices" pt="md">
-              <Card withBorder radius="md" padding="md">
-                <Stack gap="md">
-                  <Group gap="xs" wrap="wrap">
-                    {invoices.map((invoice) => (
-                      <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
-                        <Button
-                          color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
-                          disabled={isBusy}
-                          variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
-                          onClick={() => setSelectedInvoiceNetId(invoice.NetUid || null)}
-                        >
-                          {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
-                        </Button>
-                        {canRemoveInvoice && (
-                          <Tooltip label={t('Видалити')}>
-                            <ActionIcon
-                              aria-label={t('Видалити')}
-                              color="red"
-                              disabled={isBusy}
-                              size="xs"
-                              variant="subtle"
-                              onClick={() => setDeleteInvoiceCandidate(invoice)}
-                            >
-                              <IconTrash size={14} />
-                            </ActionIcon>
-                          </Tooltip>
-                        )}
-                      </Group>
-                    ))}
-                  </Group>
-
-                  {isInvoiceLoading ? (
-                    <Group justify="center" py="md"><Loader size="sm" /></Group>
-                  ) : (
-                    <DataTable
-                      columns={invoiceItemColumns}
-                      data={selectedInvoice?.SupplyInvoiceOrderItems || []}
-                      emptyText={t('Рядків інвойсу немає')}
-                      getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-                      layoutVersion="supply-direct-invoice-items-1"
-                      minWidth={980}
-                      tableId="supply-direct-invoice-items"
-                    />
-                  )}
-                  {selectedInvoice && <InvoiceTotals invoice={selectedInvoice} />}
-                </Stack>
-              </Card>
-            </Tabs.Panel>
-
-            <Tabs.Panel value="packlists" pt="md">
-              <Card withBorder radius="md" padding="md">
-                <Stack gap="md">
-                  <Group gap="xs" wrap="wrap">
-                    {(selectedInvoice?.PackingLists || []).map((packList) => (
-                      <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
-                        <Button
-                          color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
-                          disabled={isBusy}
-                          variant={packList.NetUid === selectedPackListNetId ? 'filled' : 'light'}
-                          onClick={() => setSelectedPackListNetId(packList.NetUid || null)}
-                        >
-                          {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
-                        </Button>
-                        {canRemovePackList && (
-                          <Tooltip label={t('Видалити')}>
-                            <ActionIcon
-                              aria-label={t('Видалити')}
-                              color="red"
-                              disabled={isBusy}
-                              size="xs"
-                              variant="subtle"
-                              onClick={() => setDeletePackListCandidate(packList)}
-                            >
-                              <IconTrash size={14} />
-                            </ActionIcon>
-                          </Tooltip>
-                        )}
-                      </Group>
-                    ))}
-                  </Group>
-
-                  <DataTable
-                    columns={packListItemColumns}
-                    data={selectedPackList?.PackingListPackageOrderItems || []}
-                    emptyText={t('Рядків пак листа немає')}
-                    getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-                    layoutVersion="supply-direct-pack-list-items-1"
-                    minWidth={1180}
-                    tableId="supply-direct-pack-list-items"
-                  />
-                  <PackListTotals invoice={selectedInvoice} packList={selectedPackList} />
-                </Stack>
-              </Card>
-            </Tabs.Panel>
-          </Tabs>
+          {model.selectedInvoice && <InvoiceTotals invoice={model.selectedInvoice} />}
         </Stack>
-      ) : (
-        <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
-      )}
+      </Card>
+    </Tabs.Panel>
+  )
+}
 
+function InvoiceSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      {model.invoices.map((invoice) => (
+        <Group key={invoice.NetUid || invoice.Id} gap={4} wrap="nowrap">
+          <Button
+            color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+            disabled={model.isBusy}
+            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
+            onClick={() => {
+              const invoiceNetId = invoice.NetUid || null
+              const nextInvoice = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices)
+
+              model.setPageState((current) => ({
+                selectedInvoiceNetId: invoiceNetId,
+                selectedPackListNetId: getValidPackListNetId(current.selectedPackListNetId, nextInvoice),
+              }))
+            }}
+          >
+            {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
+          </Button>
+          {model.canRemoveInvoice && (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={model.isBusy}
+                size="xs"
+                variant="subtle"
+                onClick={() => model.setPageState({ deleteInvoiceCandidate: invoice })}
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      ))}
+    </Group>
+  )
+}
+
+function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Tabs.Panel value="packlists" pt="md">
+      <Card withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <PackListSelector model={model} />
+          <QuantityBalanceSummary
+            actualLabel={t('У пак листах')}
+            differenceLabel={t('Залишилось')}
+            expectedLabel={t('В інвойсі')}
+            rows={model.packListBalanceRows}
+          />
+          <Group justify="flex-end">
+            <Button
+              disabled={model.isBusy || !model.selectedInvoice || !model.selectedPackList || model.packListBalanceRows.some((row) => row.isError)}
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={model.isSaving}
+              onClick={model.savePackingLists}
+            >
+              {t('Зберегти пак листи')}
+            </Button>
+          </Group>
+          <DataTable
+            columns={model.packListItemColumns}
+            data={model.selectedPackListItems}
+            emptyText={t('Рядків пак листа немає')}
+            getRowId={getPackListOrderItemRowId}
+            layoutVersion="supply-direct-pack-list-items-2"
+            minWidth={1260}
+            rowClassName={(item) =>
+              model.packListBalanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.isError
+                ? 'data-table-row-warning'
+                : undefined}
+            tableId="supply-direct-pack-list-items"
+          />
+          <PackListTotals invoice={model.selectedInvoice} packList={model.selectedPackList} />
+        </Stack>
+      </Card>
+    </Tabs.Panel>
+  )
+}
+
+function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      {(model.selectedInvoice?.PackingLists || []).map((packList) => (
+        <Group key={packList.NetUid || packList.Id} gap={4} wrap="nowrap">
+          <Button
+            color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+            disabled={model.isBusy}
+            variant={packList.NetUid === model.selectedPackListNetId ? 'filled' : 'light'}
+            onClick={() => model.setPageState({ selectedPackListNetId: packList.NetUid || null })}
+          >
+            {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
+          </Button>
+          {model.canRemovePackList && (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={model.isBusy}
+                size="xs"
+                variant="subtle"
+                onClick={() => model.setPageState({ deletePackListCandidate: packList })}
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      ))}
+    </Group>
+  )
+}
+
+function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <>
       <InvoiceUploadModal
-        isSaving={isSaving}
-        opened={invoiceUploadOpen}
-        onClose={() => setInvoiceUploadOpen(false)}
-        onSubmit={submitInvoice}
+        isSaving={model.isSaving}
+        opened={model.invoiceUploadOpen}
+        onClose={() => model.setPageState({ invoiceUploadOpen: false })}
+        onSubmit={model.submitInvoice}
       />
       <PackListUploadModal
-        isSaving={isSaving}
-        opened={packListUploadOpen}
-        onClose={() => setPackListUploadOpen(false)}
-        onSubmit={submitPackList}
+        isSaving={model.isSaving}
+        opened={model.packListUploadOpen}
+        onClose={() => model.setPageState({ packListUploadOpen: false })}
+        onSubmit={model.submitPackList}
       />
       <DeleteModal
-        isSaving={isSaving}
-        opened={Boolean(deleteInvoiceCandidate)}
+        isSaving={model.isSaving}
+        opened={Boolean(model.deleteInvoiceCandidate)}
         title={t('Видалити інвойс')}
-        value={deleteInvoiceCandidate?.Number || ''}
-        onClose={() => setDeleteInvoiceCandidate(null)}
-        onConfirm={confirmDeleteInvoice}
+        value={model.deleteInvoiceCandidate?.Number || ''}
+        onClose={() => model.setPageState({ deleteInvoiceCandidate: null })}
+        onConfirm={model.confirmDeleteInvoice}
       />
       <DeleteModal
-        isSaving={isSaving}
-        opened={Boolean(deletePackListCandidate)}
+        isSaving={model.isSaving}
+        opened={Boolean(model.deletePackListCandidate)}
         title={t('Видалити пак лист')}
-        value={deletePackListCandidate?.No || deletePackListCandidate?.InvNo || ''}
-        onClose={() => setDeletePackListCandidate(null)}
-        onConfirm={confirmDeletePackList}
+        value={model.deletePackListCandidate?.No || model.deletePackListCandidate?.InvNo || ''}
+        onClose={() => model.setPageState({ deletePackListCandidate: null })}
+        onConfirm={model.confirmDeletePackList}
       />
-    </Stack>
+    </>
   )
 }
 
@@ -853,6 +1266,7 @@ function useOrderItemColumns(): DataTableColumn<SupplyOrderItem>[] {
       { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.Product?.VendorCode, cell: (item) => item.Product?.VendorCode || '-' },
       { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.Product?.Name, cell: (item) => item.Product?.Name || item.Product?.NameUA || '-' },
       { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
+      { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => formatMoney(getOrderItemTotal(item)) },
       { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge color={item.IsPlaced ? 'green' : 'gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
@@ -861,23 +1275,64 @@ function useOrderItemColumns(): DataTableColumn<SupplyOrderItem>[] {
   )
 }
 
-function useInvoiceItemColumns(): DataTableColumn<SupplyInvoiceOrderItem>[] {
+function useInvoiceItemColumns({
+  balanceByOrderItemKey,
+  disabled,
+  onQtyChange,
+}: {
+  balanceByOrderItemKey: Map<string, InvoiceBalanceRow>
+  disabled: boolean
+  onQtyChange: (item: SupplyInvoiceOrderItem, value: number | string) => void
+}): DataTableColumn<SupplyInvoiceOrderItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<SupplyInvoiceOrderItem>[]>(
     () => [
-      { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.Product?.VendorCode, cell: (item) => item.Product?.VendorCode || '-' },
-      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.Product?.Name, cell: (item) => item.Product?.Name || item.Product?.NameUA || '-' },
-      { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
+      { id: 'code', header: t('Код'), width: 130, accessor: (item) => getInvoiceItemProduct(item)?.VendorCode, cell: (item) => getInvoiceItemProduct(item)?.VendorCode || '-' },
+      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => getInvoiceItemProduct(item)?.Name, cell: (item) => getInvoiceItemProduct(item)?.Name || getInvoiceItemProduct(item)?.NameUA || '-' },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 150,
+        align: 'right',
+        accessor: (item) => item.Qty,
+        cell: (item) => (
+          <NumberInput
+            allowNegative={false}
+            decimalScale={3}
+            disabled={disabled}
+            hideControls
+            min={0}
+            value={toNumberInputValue(item.Qty)}
+            onChange={(value) => onQtyChange(item, value)}
+          />
+        ),
+      },
+      {
+        id: 'leftToInvoice',
+        header: t('Залишок'),
+        width: 120,
+        align: 'right',
+        accessor: (item) => balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference,
+        cell: (item) => <BalanceBadge value={balanceByOrderItemKey.get(getInvoiceOrderItemOrderKey(item))?.difference || 0} />,
+      },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0)) },
       { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge color={item.ProductIsImported ? 'green' : 'gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
-    [t],
+    [balanceByOrderItemKey, disabled, onQtyChange, t],
   )
 }
 
-function usePackListItemColumns(): DataTableColumn<PackingListPackageOrderItem>[] {
+function usePackListItemColumns({
+  balanceByInvoiceItemKey,
+  disabled,
+  onQtyChange,
+}: {
+  balanceByInvoiceItemKey: Map<string, PackListBalanceRow>
+  disabled: boolean
+  onQtyChange: (item: PackingListPackageOrderItem, value: number | string) => void
+}): DataTableColumn<PackingListPackageOrderItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<PackingListPackageOrderItem>[]>(
@@ -886,13 +1341,38 @@ function usePackListItemColumns(): DataTableColumn<PackingListPackageOrderItem>[
       { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.Name, cell: (item) => item.SupplyInvoiceOrderItem?.Product?.Name || item.SupplyInvoiceOrderItem?.Product?.NameUA || '-' },
       { id: 'netUnit', header: t('Нетто од.'), width: 120, align: 'right', accessor: (item) => item.NetWeight, cell: (item) => formatNumber(item.NetWeight) },
       { id: 'grossUnit', header: t('Брутто од.'), width: 120, align: 'right', accessor: (item) => item.GrossWeight, cell: (item) => formatNumber(item.GrossWeight) },
-      { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 150,
+        align: 'right',
+        accessor: (item) => item.Qty,
+        cell: (item) => (
+          <NumberInput
+            allowNegative={false}
+            decimalScale={3}
+            disabled={disabled}
+            hideControls
+            min={0}
+            value={toNumberInputValue(item.Qty)}
+            onChange={(value) => onQtyChange(item, value)}
+          />
+        ),
+      },
+      {
+        id: 'leftToPack',
+        header: t('Залишок'),
+        width: 120,
+        align: 'right',
+        accessor: (item) => balanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.difference,
+        cell: (item) => <BalanceBadge value={balanceByInvoiceItemKey.get(getPackingListInvoiceItemKey(item))?.difference || 0} />,
+      },
       { id: 'net', header: t('Нетто'), width: 120, align: 'right', accessor: (item) => item.TotalNetWeight, cell: (item) => formatNumber(item.TotalNetWeight) },
       { id: 'gross', header: t('Брутто'), width: 120, align: 'right', accessor: (item) => item.TotalGrossWeight, cell: (item) => formatNumber(item.TotalGrossWeight) },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
     ],
-    [t],
+    [balanceByInvoiceItemKey, disabled, onQtyChange, t],
   )
 }
 
@@ -963,6 +1443,591 @@ function SummaryLine({ items }: { items: Array<[string, string]> }) {
       ))}
     </Group>
   )
+}
+
+function QuantityBalanceSummary({
+  actualLabel,
+  differenceLabel,
+  expectedLabel,
+  rows,
+}: {
+  actualLabel: string
+  differenceLabel: string
+  expectedLabel: string
+  rows: QuantityBalanceRow[]
+}) {
+  const { t } = useI18n()
+  const expectedQty = sumRows(rows, 'expectedQty')
+  const actualQty = sumRows(rows, 'actualQty')
+  const difference = roundQuantity(expectedQty - actualQty)
+  const invalidRows = rows.filter((row) => row.isError).length
+
+  return (
+    <Alert color={invalidRows ? 'yellow' : 'green'} icon={<IconAlertCircle size={18} />} variant="light">
+      <Group gap="lg" wrap="wrap">
+        <Text fw={600}>{invalidRows ? t('Є розбіжності') : t('Кількості збігаються')}</Text>
+        <Text size="sm">{expectedLabel}: <Text span fw={700}>{formatNumber(expectedQty)}</Text></Text>
+        <Text size="sm">{actualLabel}: <Text span fw={700}>{formatNumber(actualQty)}</Text></Text>
+        <Text size="sm">{differenceLabel}: <Text span fw={700}>{formatNumber(difference)}</Text></Text>
+        {invalidRows > 0 && <Badge color="yellow" variant="filled">{invalidRows}</Badge>}
+      </Group>
+    </Alert>
+  )
+}
+
+function BalanceBadge({ value }: { value: number }) {
+  const isOk = isZeroQuantity(value)
+
+  return (
+    <Badge color={isOk ? 'green' : 'yellow'} variant={isOk ? 'light' : 'filled'}>
+      {formatNumber(value)}
+    </Badge>
+  )
+}
+
+async function loadInvoiceDetails(order: DirectSupplyOrder | null): Promise<Record<string, SupplyInvoice>> {
+  const invoices = order?.SupplyInvoices || []
+  const details = await Promise.all(
+    invoices.map(async (invoice) => {
+      if (!invoice.NetUid) {
+        return invoice
+      }
+
+      return await getSupplyInvoiceItems(invoice.NetUid) || invoice
+    }),
+  )
+
+  return details.reduce<Record<string, SupplyInvoice>>((result, invoice) => {
+    if (invoice.NetUid) {
+      result[invoice.NetUid] = invoice
+    }
+
+    return result
+  }, {})
+}
+
+function getSelectedInvoice(
+  selectedInvoiceNetId: string | null,
+  invoiceDetailsByNetId: Record<string, SupplyInvoice>,
+  invoices: SupplyInvoice[],
+): SupplyInvoice | null {
+  if (!selectedInvoiceNetId) {
+    return null
+  }
+
+  return invoiceDetailsByNetId[selectedInvoiceNetId]
+    || invoices.find((invoice) => invoice.NetUid === selectedInvoiceNetId)
+    || null
+}
+
+function getValidPackListNetId(
+  currentPackListNetId: string | null,
+  invoice: SupplyInvoice | null,
+): string | null {
+  if (!invoice) {
+    return null
+  }
+
+  if (currentPackListNetId && invoice.PackingLists?.some((packList) => packList.NetUid === currentPackListNetId)) {
+    return currentPackListNetId
+  }
+
+  return invoice.PackingLists?.[0]?.NetUid || null
+}
+
+function buildInvoiceBalanceRows(orderItems: SupplyOrderItem[], invoices: SupplyInvoice[]): InvoiceBalanceRow[] {
+  const invoiceItems = invoices.flatMap((invoice) => invoice.SupplyInvoiceOrderItems || [])
+
+  return orderItems.map((orderItem) => {
+    const expectedQty = orderItem.Qty || 0
+    const actualQty = invoiceItems.reduce(
+      (total, invoiceItem) => total + (isInvoiceItemForOrderItem(invoiceItem, orderItem) ? invoiceItem.Qty || 0 : 0),
+      0,
+    )
+    const difference = roundQuantity(expectedQty - actualQty)
+
+    return {
+      actualQty: roundQuantity(actualQty),
+      difference,
+      expectedQty: roundQuantity(expectedQty),
+      isError: !isZeroQuantity(difference),
+      key: getSupplyOrderItemKey(orderItem),
+      orderItem,
+    }
+  })
+}
+
+function buildPackListBalanceRows(invoice: SupplyInvoice): PackListBalanceRow[] {
+  const packListItems = (invoice.PackingLists || []).flatMap((packList) => packList.PackingListPackageOrderItems || [])
+
+  return (invoice.SupplyInvoiceOrderItems || []).map((invoiceItem) => {
+    const expectedQty = invoiceItem.Qty || 0
+    const actualQty = packListItems.reduce(
+      (total, packListItem) => total + (isPackListItemForInvoiceItem(packListItem, invoiceItem) ? packListItem.Qty || 0 : 0),
+      0,
+    )
+    const difference = roundQuantity(expectedQty - actualQty)
+
+    return {
+      actualQty: roundQuantity(actualQty),
+      difference,
+      expectedQty: roundQuantity(expectedQty),
+      invoiceItem,
+      isError: !isZeroQuantity(difference),
+      key: getSupplyInvoiceItemKey(invoiceItem),
+    }
+  })
+}
+
+function buildEditableInvoiceItems(invoice: SupplyInvoice | null, orderItems: SupplyOrderItem[]): SupplyInvoiceOrderItem[] {
+  if (!invoice) {
+    return []
+  }
+
+  const existingItems = invoice.SupplyInvoiceOrderItems || []
+  const usedItemKeys = new Set<string>()
+  const rows = orderItems.map((orderItem) => {
+    const existingItem = existingItems.find((item) => isInvoiceItemForOrderItem(item, orderItem))
+    const key = existingItem ? getSupplyInvoiceItemKey(existingItem) : ''
+
+    if (key) {
+      usedItemKeys.add(key)
+    }
+
+    return existingItem || createInvoiceOrderItem(orderItem, 0)
+  })
+  const extraRows = existingItems.filter((item) => !usedItemKeys.has(getSupplyInvoiceItemKey(item)))
+
+  return [...rows, ...extraRows]
+}
+
+function buildEditablePackListItems(
+  packList: PackingList | null,
+  invoice: SupplyInvoice | null,
+): PackingListPackageOrderItem[] {
+  if (!packList || !invoice) {
+    return []
+  }
+
+  const existingItems = packList.PackingListPackageOrderItems || []
+  const usedItemKeys = new Set<string>()
+  const rows = (invoice.SupplyInvoiceOrderItems || []).map((invoiceItem) => {
+    const existingItem = existingItems.find((item) => isPackListItemForInvoiceItem(item, invoiceItem))
+    const key = existingItem ? getPackingListPackageOrderItemKey(existingItem) : ''
+
+    if (key) {
+      usedItemKeys.add(key)
+    }
+
+    return existingItem || createPackListOrderItem(invoiceItem, 0)
+  })
+  const extraRows = existingItems.filter((item) => !usedItemKeys.has(getPackingListPackageOrderItemKey(item)))
+
+  return [...rows, ...extraRows]
+}
+
+function upsertInvoiceOrderItem(
+  invoice: SupplyInvoice,
+  sourceItem: SupplyInvoiceOrderItem,
+  qty: number,
+): SupplyInvoice {
+  const sourceKey = getInvoiceOrderItemOrderKey(sourceItem)
+  const existingItems = invoice.SupplyInvoiceOrderItems || []
+  const index = existingItems.findIndex((item) => getInvoiceOrderItemOrderKey(item) === sourceKey)
+  const nextItem = updateInvoiceOrderItemQty(sourceItem, qty)
+  const nextItems = [...existingItems]
+
+  if (index >= 0) {
+    nextItems[index] = nextItem
+  } else {
+    nextItems.push(nextItem)
+  }
+
+  return {
+    ...invoice,
+    SupplyInvoiceOrderItems: nextItems,
+  }
+}
+
+function upsertPackListOrderItem(
+  invoice: SupplyInvoice,
+  targetPackList: PackingList,
+  sourceItem: PackingListPackageOrderItem,
+  qty: number,
+): SupplyInvoice {
+  const sourceKey = getPackingListInvoiceItemKey(sourceItem)
+  const nextPackLists = (invoice.PackingLists || []).map((packList) => {
+    if (!isSameEntity(packList, targetPackList)) {
+      return packList
+    }
+
+    const existingItems = packList.PackingListPackageOrderItems || []
+    const index = existingItems.findIndex((item) => getPackingListInvoiceItemKey(item) === sourceKey)
+    const nextItem = updatePackListOrderItemQty(sourceItem, qty)
+    const nextItems = [...existingItems]
+
+    if (index >= 0) {
+      nextItems[index] = nextItem
+    } else {
+      nextItems.push(nextItem)
+    }
+
+    return {
+      ...packList,
+      PackingListPackageOrderItems: nextItems,
+    }
+  })
+
+  return {
+    ...invoice,
+    PackingLists: nextPackLists,
+  }
+}
+
+function createInvoiceOrderItem(orderItem: SupplyOrderItem, qty: number): SupplyInvoiceOrderItem {
+  return {
+    Product: orderItem.Product || null,
+    ProductIsImported: true,
+    Qty: qty,
+    SupplyOrderItem: orderItem,
+    TotalAmount: (orderItem.UnitPrice || 0) * qty,
+    UnitPrice: orderItem.UnitPrice,
+  }
+}
+
+function updateInvoiceOrderItemQty(item: SupplyInvoiceOrderItem, qty: number): SupplyInvoiceOrderItem {
+  const unitPrice = item.UnitPrice ?? item.SupplyOrderItem?.UnitPrice
+
+  return {
+    ...item,
+    Product: getInvoiceItemProduct(item) || null,
+    Qty: roundQuantity(qty),
+    SupplyOrderItem: item.SupplyOrderItem || null,
+    TotalAmount: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalAmount,
+    UnitPrice: unitPrice,
+  }
+}
+
+function createPackListOrderItem(invoiceItem: SupplyInvoiceOrderItem, qty: number): PackingListPackageOrderItem {
+  return {
+    ProductIsImported: invoiceItem.ProductIsImported,
+    Qty: qty,
+    SupplyInvoiceOrderItem: invoiceItem,
+    SupplyInvoiceOrderItemId: invoiceItem.Id,
+    TotalGrossPrice: (invoiceItem.UnitPrice || 0) * qty,
+    TotalNetPrice: (invoiceItem.UnitPrice || 0) * qty,
+    UnitPrice: invoiceItem.UnitPrice,
+  }
+}
+
+function updatePackListOrderItemQty(
+  item: PackingListPackageOrderItem,
+  qty: number,
+): PackingListPackageOrderItem {
+  const unitPrice = item.UnitPrice ?? item.SupplyInvoiceOrderItem?.UnitPrice
+
+  return {
+    ...item,
+    Qty: roundQuantity(qty),
+    SupplyInvoiceOrderItem: item.SupplyInvoiceOrderItem || null,
+    TotalGrossPrice: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalGrossPrice,
+    TotalNetPrice: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalNetPrice,
+    UnitPrice: unitPrice,
+  }
+}
+
+async function updateSupplyInvoiceItemsBatch(invoices: SupplyInvoice[]): Promise<Array<SupplyInvoice | null>> {
+  const requests: Array<Promise<SupplyInvoice | null>> = []
+
+  for (const invoice of invoices) {
+    if (invoice.NetUid) {
+      requests.push(updateSupplyInvoiceItems(toSupplyInvoiceItemsPayload(invoice)))
+    }
+  }
+
+  return await Promise.all(requests)
+}
+
+function toSupplyInvoiceItemsPayload(invoice: SupplyInvoice): SupplyInvoice {
+  return {
+    ...stripEntityGraph(invoice),
+    PackingLists: [],
+    SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
+    SupplyInvoiceOrderItems: sanitizeSupplyInvoiceOrderItems(invoice),
+    SupplyOrder: null,
+  }
+}
+
+function sanitizeSupplyInvoiceOrderItems(invoice: SupplyInvoice): SupplyInvoiceOrderItem[] {
+  const sanitizedItems: SupplyInvoiceOrderItem[] = []
+
+  for (const [index, item] of (invoice.SupplyInvoiceOrderItems || []).entries()) {
+    if (!item.SupplyOrderItem) {
+      continue
+    }
+
+    const product = getInvoiceItemProduct(item)
+    const supplyOrderItem = item.SupplyOrderItem ? stripEntityGraph(item.SupplyOrderItem) : null
+
+    sanitizedItems.push({
+      ...stripEntityGraph(item),
+      PackingListPackageOrderItems: [],
+      Product: product || null,
+      ProductId: item.ProductId || product?.Id,
+      ProductIsImported: item.ProductIsImported ?? true,
+      Qty: item.Qty || 0,
+      RowNumber: item.RowNumber || index + 1,
+      SupplyInvoice: null,
+      SupplyInvoiceId: item.SupplyInvoiceId || invoice.Id,
+      SupplyOrderItem: supplyOrderItem,
+      SupplyOrderItemId: item.SupplyOrderItemId || supplyOrderItem?.Id,
+      TotalAmount: item.TotalAmount,
+      UnitPrice: item.UnitPrice ?? item.SupplyOrderItem?.UnitPrice,
+    })
+  }
+
+  return sanitizedItems
+}
+
+function toPackingListsPayload(invoice: SupplyInvoice): SupplyInvoice {
+  return {
+    ...stripEntityGraph(invoice),
+    PackingLists: (invoice.PackingLists || []).map((packList) => ({
+      ...stripEntityGraph(packList),
+      DynamicProductPlacementColumns: packList.DynamicProductPlacementColumns || [],
+      InvoiceDocuments: packList.InvoiceDocuments || [],
+      MergedPackingLists: [],
+      PackingListBoxes: sanitizePackingListPackages(packList.PackingListBoxes),
+      PackingListPackageOrderItems: sanitizePackListItems(packList.PackingListPackageOrderItems || []),
+      PackingListPackages: sanitizePackingListPackages(packList.PackingListPackages),
+      PackingListPallets: sanitizePackingListPackages(packList.PackingListPallets),
+    })),
+    SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
+    SupplyInvoiceOrderItems: [],
+    SupplyOrder: null,
+  }
+}
+
+function sanitizePackingListPackages(packages: PackingList['PackingListPackages']): PackingList['PackingListPackages'] {
+  return (packages || []).map((itemPackage) => ({
+    ...stripEntityGraph(itemPackage),
+    PackingListPackageOrderItems: sanitizePackListItems(itemPackage.PackingListPackageOrderItems || []),
+  }))
+}
+
+function sanitizePackListItems(items: PackingListPackageOrderItem[]): PackingListPackageOrderItem[] {
+  const sanitizedItems: PackingListPackageOrderItem[] = []
+
+  for (const item of items) {
+    if (!item.SupplyInvoiceOrderItem) {
+      continue
+    }
+
+    sanitizedItems.push({
+      ...stripEntityGraph(item),
+      PackingList: null,
+      PackingListPackageOrderItemSupplyServices: item.PackingListPackageOrderItemSupplyServices || [],
+      Qty: item.Qty || 0,
+      SupplyInvoiceOrderItem: item.SupplyInvoiceOrderItem
+        ? sanitizeSupplyInvoiceOrderItemReference(item.SupplyInvoiceOrderItem)
+        : null,
+      SupplyInvoiceOrderItemId: item.SupplyInvoiceOrderItemId || item.SupplyInvoiceOrderItem?.Id,
+    })
+  }
+
+  return sanitizedItems
+}
+
+function sanitizeSupplyInvoiceOrderItemReference(item: SupplyInvoiceOrderItem): SupplyInvoiceOrderItem {
+  return {
+    ...stripEntityGraph(item),
+    PackingListPackageOrderItems: [],
+    Product: getInvoiceItemProduct(item) || null,
+    SupplyInvoice: null,
+    SupplyOrderItem: item.SupplyOrderItem ? stripEntityGraph(item.SupplyOrderItem) : null,
+  }
+}
+
+function mergeInvoiceDetails(
+  current: Record<string, SupplyInvoice>,
+  invoices: Array<SupplyInvoice | null>,
+): Record<string, SupplyInvoice> {
+  return invoices.reduce<Record<string, SupplyInvoice>>((result, invoice) => {
+    if (invoice?.NetUid) {
+      result[invoice.NetUid] = invoice
+    }
+
+    return result
+  }, { ...current })
+}
+
+function stripEntityGraph<T extends object>(entity: T): T {
+  const result = { ...entity } as Record<string, unknown>
+
+  delete result.SupplyOrder
+  delete result.SupplyInvoice
+  delete result.PackingList
+  delete result.PackingListPackage
+
+  return result as T
+}
+
+function isInvoiceItemForOrderItem(invoiceItem: SupplyInvoiceOrderItem, orderItem: SupplyOrderItem): boolean {
+  const invoiceOrderKey = getInvoiceOrderItemOrderKey(invoiceItem)
+  const orderKey = getSupplyOrderItemKey(orderItem)
+
+  if (invoiceOrderKey && orderKey && invoiceOrderKey === orderKey) {
+    return true
+  }
+
+  return getProductKey(getInvoiceItemProduct(invoiceItem)) === getProductKey(orderItem.Product)
+}
+
+function isPackListItemForInvoiceItem(
+  packListItem: PackingListPackageOrderItem,
+  invoiceItem: SupplyInvoiceOrderItem,
+): boolean {
+  const packListInvoiceKey = getPackingListInvoiceItemKey(packListItem)
+  const invoiceKey = getSupplyInvoiceItemKey(invoiceItem)
+
+  if (packListInvoiceKey && invoiceKey && packListInvoiceKey === invoiceKey) {
+    return true
+  }
+
+  return getProductKey(packListItem.SupplyInvoiceOrderItem?.Product) === getProductKey(getInvoiceItemProduct(invoiceItem))
+}
+
+function getInvoiceOrderItemOrderKey(item: SupplyInvoiceOrderItem): string {
+  if (item.SupplyOrderItem?.NetUid) {
+    return `order-net-${item.SupplyOrderItem.NetUid}`
+  }
+
+  if (item.SupplyOrderItem?.Id) {
+    return `order-id-${item.SupplyOrderItem.Id}`
+  }
+
+  if (item.SupplyOrderItemId) {
+    return `order-id-${item.SupplyOrderItemId}`
+  }
+
+  return getProductKey(getInvoiceItemProduct(item))
+}
+
+function getSupplyOrderItemKey(item: SupplyOrderItem): string {
+  if (item.NetUid) {
+    return `order-net-${item.NetUid}`
+  }
+
+  if (item.Id) {
+    return `order-id-${item.Id}`
+  }
+
+  return getProductKey(item.Product)
+}
+
+function getSupplyInvoiceItemKey(item: SupplyInvoiceOrderItem): string {
+  if (item.NetUid) {
+    return `invoice-net-${item.NetUid}`
+  }
+
+  if (item.Id) {
+    return `invoice-id-${item.Id}`
+  }
+
+  return getProductKey(getInvoiceItemProduct(item))
+}
+
+function getPackingListInvoiceItemKey(item: PackingListPackageOrderItem): string {
+  if (item.SupplyInvoiceOrderItem?.NetUid) {
+    return `invoice-net-${item.SupplyInvoiceOrderItem.NetUid}`
+  }
+
+  if (item.SupplyInvoiceOrderItem?.Id) {
+    return `invoice-id-${item.SupplyInvoiceOrderItem.Id}`
+  }
+
+  if (item.SupplyInvoiceOrderItemId) {
+    return `invoice-id-${item.SupplyInvoiceOrderItemId}`
+  }
+
+  return getProductKey(item.SupplyInvoiceOrderItem?.Product)
+}
+
+function getPackingListPackageOrderItemKey(item: PackingListPackageOrderItem): string {
+  if (item.NetUid) {
+    return `pack-item-net-${item.NetUid}`
+  }
+
+  if (item.Id) {
+    return `pack-item-id-${item.Id}`
+  }
+
+  return getPackingListInvoiceItemKey(item)
+}
+
+function getInvoiceOrderItemRowId(item: SupplyInvoiceOrderItem, index: number): string {
+  return item.NetUid || getInvoiceOrderItemOrderKey(item) || `invoice-row-${index}`
+}
+
+function getPackListOrderItemRowId(item: PackingListPackageOrderItem, index: number): string {
+  return item.NetUid || getPackingListInvoiceItemKey(item) || `pack-list-row-${index}`
+}
+
+function getInvoiceItemProduct(item: SupplyInvoiceOrderItem) {
+  return item.Product || item.SupplyOrderItem?.Product || null
+}
+
+function getProductKey(product: SupplyOrderItem['Product']): string {
+  if (product?.NetUid) {
+    return `product-net-${product.NetUid}`
+  }
+
+  if (product?.Id) {
+    return `product-id-${product.Id}`
+  }
+
+  if (product?.VendorCode) {
+    return `product-code-${product.VendorCode}`
+  }
+
+  return ''
+}
+
+function isSameEntity(left: PackingList, right: PackingList): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  if (left.Id && right.Id) {
+    return left.Id === right.Id
+  }
+
+  return left === right
+}
+
+function toNonNegativeNumber(value: number | string): number {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
+}
+
+function toNumberInputValue(value?: number): number | '' {
+  return typeof value === 'number' && Number.isFinite(value) ? value : ''
+}
+
+function roundQuantity(value: number): number {
+  return Math.round((value + Number.EPSILON) * 1000) / 1000
+}
+
+function isZeroQuantity(value: number): boolean {
+  return Math.abs(value) < 0.0005
+}
+
+function sumRows<T extends QuantityBalanceRow, K extends 'actualQty' | 'expectedQty'>(
+  rows: T[],
+  key: K,
+): number {
+  return roundQuantity(rows.reduce((total, row) => total + row[key], 0))
 }
 
 function countPackingListItems(invoice: SupplyInvoice): number {
@@ -1070,6 +2135,106 @@ function toPackListParseConfiguration(form: PackListUploadForm): PackingListDocu
     WithNetWeight: true,
     WithTotalAmount: false,
   }
+}
+
+function getInvoiceUploadValidationMessage(form: InvoiceUploadForm): string | null {
+  if (!form.file || !isExcelFile(form.file)) {
+    return 'Оберіть Excel файл'
+  }
+
+  if (!form.number.trim()) {
+    return 'Вкажіть номер інвойсу'
+  }
+
+  if (!hasRequiredNumbers(form)) {
+    return 'Заповніть обовʼязкові колонки імпорту'
+  }
+
+  if (form.startRow > form.endRow) {
+    return 'Кінцевий рядок не може бути меншим за початковий'
+  }
+
+  if (form.withTotalAmount && !form.totalAmountColumnNumber) {
+    return 'Вкажіть колонку суми'
+  }
+
+  if (!form.withTotalAmount && !form.unitPriceColumnNumber) {
+    return 'Вкажіть колонку ціни'
+  }
+
+  if (hasDuplicatePositiveNumbers([
+    form.vendorCodeColumnNumber,
+    form.qtyColumnNumber,
+    form.withTotalAmount ? form.totalAmountColumnNumber : form.unitPriceColumnNumber,
+  ])) {
+    return 'Одна колонка не може використовуватись для кількох значень'
+  }
+
+  return null
+}
+
+function getPackListUploadValidationMessage(form: PackListUploadForm): string | null {
+  if (!form.file || !isExcelFile(form.file)) {
+    return 'Оберіть Excel файл'
+  }
+
+  if (!form.number.trim()) {
+    return 'Вкажіть номер пак листа'
+  }
+
+  if (
+    !form.vendorCodeColumnNumber
+    || !form.qtyColumnNumber
+    || !form.startRow
+    || !form.endRow
+    || !form.unitPriceColumnNumber
+    || !form.netWeightColumnNumber
+    || !form.grossWeightColumnNumber
+  ) {
+    return 'Заповніть обовʼязкові колонки імпорту'
+  }
+
+  if (form.startRow > form.endRow) {
+    return 'Кінцевий рядок не може бути меншим за початковий'
+  }
+
+  if (hasDuplicatePositiveNumbers([
+    form.vendorCodeColumnNumber,
+    form.qtyColumnNumber,
+    form.unitPriceColumnNumber,
+    form.netWeightColumnNumber,
+    form.grossWeightColumnNumber,
+  ])) {
+    return 'Одна колонка не може використовуватись для кількох значень'
+  }
+
+  return null
+}
+
+function isExcelFile(file: File): boolean {
+  const extension = file.name.split('.').pop()?.toLowerCase()
+
+  return extension === 'xls' || extension === 'xlsx'
+}
+
+function hasDuplicatePositiveNumbers(values: NumberFieldValue[]): boolean {
+  const numbers = new Set<number>()
+
+  for (const value of values) {
+    const numberValue = typeof value === 'number' ? value : Number(value)
+
+    if (!Number.isFinite(numberValue) || numberValue <= 0) {
+      continue
+    }
+
+    if (numbers.has(numberValue)) {
+      return true
+    }
+
+    numbers.add(numberValue)
+  }
+
+  return false
 }
 
 function hasRequiredNumbers(form: InvoiceUploadForm): form is InvoiceUploadForm & {

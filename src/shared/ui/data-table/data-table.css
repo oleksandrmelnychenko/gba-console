@@ -279,6 +279,10 @@
   --data-table-cell-bg: var(--mantine-color-gray-0);
 }
 
+.data-table-row.data-table-row-warning {
+  --data-table-cell-bg: var(--mantine-color-yellow-0);
+}
+
 .data-table-row:hover .data-table-cell {
   --data-table-cell-bg: var(--mantine-color-gray-1);
 }

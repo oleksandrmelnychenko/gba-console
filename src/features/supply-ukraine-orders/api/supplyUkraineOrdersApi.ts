@@ -120,6 +120,24 @@ export async function getSupplyInvoiceItems(netId: string): Promise<SupplyInvoic
   return normalizeSupplyInvoice(result)
 }
 
+export async function updateSupplyInvoiceItems(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/items/update', {
+    body: invoice,
+    method: 'POST',
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
+export async function updatePackingLists(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/packinglists/update', {
+    body: invoice,
+    method: 'POST',
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
 export async function uploadSupplyInvoiceFile({
   file,
   invoice,
