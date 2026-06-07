@@ -1295,7 +1295,7 @@ function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow 
     isPlaced: Boolean(order.IsPlaced),
     kind: 'toUkraine',
     netUid: order.NetUid,
-    number: order.Number,
+    number: getToUkraineOrderDisplayNumber(order),
     order,
     orderDate: order.FromDate,
     organization: order.Organization?.Name,
@@ -1426,6 +1426,13 @@ function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefin
   const invoiceNumber = normalizeDisplayNumber(order.SupplyInvoices?.find((invoice) => normalizeDisplayNumber(invoice.Number))?.Number)
 
   return orderNumber || proFormNumber || invoiceNumber
+}
+
+function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
+  const orderNumber = normalizeDisplayNumber(order.Number)
+  const invoiceNumber = normalizeDisplayNumber(order.InvNumber)
+
+  return orderNumber || invoiceNumber || order.NetUid
 }
 
 function normalizeDisplayNumber(value?: string | null): string | undefined {
