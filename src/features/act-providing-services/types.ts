@@ -92,6 +92,7 @@ export type ActProvidingService = EntityFields & {
 
 export type ActProvidingServicesSearchParams = {
   from: string
+  isFiltered?: boolean
   limit: number
   offset: number
   to: string

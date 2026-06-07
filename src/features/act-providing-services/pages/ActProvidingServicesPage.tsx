@@ -38,7 +38,7 @@ import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel
 import './act-providing-services-page.css'
 
 const PAGE_SIZE = 20
-const DEFAULT_LOOKBACK_MONTHS = 36
+const DEFAULT_LOOKBACK_DAYS = 1
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
@@ -147,6 +147,7 @@ function useActProvidingServicesPageModel() {
 
     void getActProvidingServices({
       from: dateFrom,
+      isFiltered: offset === 0,
       limit: pageSize,
       offset,
       to: dateTo,
@@ -638,7 +639,7 @@ function getDefaultFilters(): { from: string; to: string } {
   const to = new Date()
   const from = new Date()
 
-  from.setMonth(from.getMonth() - DEFAULT_LOOKBACK_MONTHS)
+  from.setDate(from.getDate() - DEFAULT_LOOKBACK_DAYS)
 
   return {
     from: formatLocalDate(from),

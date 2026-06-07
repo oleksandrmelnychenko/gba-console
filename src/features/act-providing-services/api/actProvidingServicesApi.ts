@@ -11,6 +11,7 @@ export async function getActProvidingServices(
   const result = await apiRequest<unknown>('/act/providing/services/all', {
     query: {
       from: params.from,
+      isFiltered: params.isFiltered,
       limit: params.limit,
       offset: params.offset,
       to: params.to,

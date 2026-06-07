@@ -12,11 +12,13 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconCreditCard,
   IconEye,
   IconRefresh,
   IconSearch,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -45,7 +47,7 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
-const DEFAULT_LOOKBACK_DAYS = 90
+const DEFAULT_LOOKBACK_DAYS = 7
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -72,6 +74,8 @@ const ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE = {
 
 export function AccountableExpensesPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
   const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
@@ -125,8 +129,37 @@ export function AccountableExpensesPage() {
   }, [loadOrders])
 
   const rows = useMemo(() => buildExpenseRows(orders), [orders])
-  const columns = useAccountableExpenseColumns(setSelectedRow)
+  const openPayment = useCallback(
+    (row: AccountableExpenseRow) => {
+      const netId = row.order.NetUid || row.order.Id
+
+      if (!netId) {
+        return
+      }
+
+      navigate(`/accounting/consumable-orders/pay/${String(netId)}`, {
+        state: {
+          backgroundLocation: location,
+          returnPath: '/accounting/consumable-services',
+        },
+      })
+    },
+    [location, navigate],
+  )
+  const columns = useAccountableExpenseColumns({
+    onOpen: setSelectedRow,
+    onPay: openPayment,
+  })
   const { density, toggleDensity } = useDataTableDensity('accountable-expenses', TABLE_DEFAULT_LAYOUT.density)
+  const toolbarLeft = useMemo(
+    () => (
+      <Text c="dimmed" size="xs">
+        {t('Документів')}: {orders.length}
+        {rows.length !== orders.length ? `, ${t('рядків')}: ${rows.length}` : ''}
+      </Text>
+    ),
+    [orders.length, rows.length, t],
+  )
 
   return (
     <Stack className="accountable-expenses-page" gap={6}>
@@ -192,6 +225,7 @@ export function AccountableExpensesPage() {
           minWidth={1480}
           showLayoutControls={false}
           tableId="accountable-expenses"
+          toolbarLeft={toolbarLeft}
           onRowClick={setSelectedRow}
         />
       </div>
@@ -201,7 +235,13 @@ export function AccountableExpensesPage() {
   )
 }
 
-function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => void): DataTableColumn<AccountableExpenseRow>[] {
+function useAccountableExpenseColumns({
+  onOpen,
+  onPay,
+}: {
+  onOpen: (row: AccountableExpenseRow) => void
+  onPay: (row: AccountableExpenseRow) => void
+}): DataTableColumn<AccountableExpenseRow>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<AccountableExpenseRow>[]>(
@@ -332,32 +372,50 @@ function useAccountableExpenseColumns(onOpen: (row: AccountableExpenseRow) => vo
       {
         id: 'actions',
         header: '',
-        width: 62,
-        minWidth: 58,
+        width: 92,
+        minWidth: 86,
         align: 'right',
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
         cell: (row) => (
-          <Tooltip label={t('Деталі')}>
-            <ActionIcon
-              aria-label={t('Деталі')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpen(row)
-              }}
-            >
-              <IconEye size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Group gap={4} justify="flex-end" wrap="nowrap">
+            {!row.isPayed && (
+              <Tooltip label={t('Оплатити')}>
+                <ActionIcon
+                  aria-label={t('Оплатити')}
+                  color="green"
+                  size="sm"
+                  variant="subtle"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onPay(row)
+                  }}
+                >
+                  <IconCreditCard size={16} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <Tooltip label={t('Деталі')}>
+              <ActionIcon
+                aria-label={t('Деталі')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onOpen(row)
+                }}
+              >
+                <IconEye size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         ),
       },
     ],
-    [onOpen, t],
+    [onOpen, onPay, t],
   )
 }
 
