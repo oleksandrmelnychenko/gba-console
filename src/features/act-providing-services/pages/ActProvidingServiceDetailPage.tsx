@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Group,
+  Loader,
   SimpleGrid,
   Stack,
   Text,
@@ -251,7 +252,7 @@ function ActProvidingServiceDetailPageView({
             {t('Оновити')}
           </Button>
           <Button
-            disabled={!act || !isDirty}
+            disabled={!act || !isDirty || isLoading}
             leftSection={<IconDeviceFloppy size={16} />}
             loading={isSaving}
             onClick={save}
@@ -300,6 +301,7 @@ function ActProvidingServiceDetailPageView({
 
             <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
               <TextInput
+                disabled={isLoading || isSaving}
                 label={t('Дата акта')}
                 type="datetime-local"
                 value={fromDate}
@@ -307,6 +309,7 @@ function ActProvidingServiceDetailPageView({
               />
               <Textarea
                 autosize
+                disabled={isLoading || isSaving}
                 label={t('Коментар')}
                 minRows={2}
                 value={comment}
@@ -315,12 +318,16 @@ function ActProvidingServiceDetailPageView({
             </SimpleGrid>
           </Stack>
         </Card>
+      ) : isLoading ? (
+        <Card withBorder radius="md" padding="lg">
+          <Group justify="center" py="xl">
+            <Loader />
+          </Group>
+        </Card>
       ) : (
-        !isLoading && (
           <Card withBorder radius="md" padding="lg">
             <Text c="dimmed">{t('Акт надання послуг не знайдено')}</Text>
           </Card>
-        )
       )}
     </Stack>
   )

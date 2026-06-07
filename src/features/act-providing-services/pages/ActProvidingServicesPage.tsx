@@ -508,8 +508,8 @@ function useActProvidingServiceColumns(
         width: 116,
         minWidth: 104,
         align: 'right',
-        accessor: (row) => row.amount,
-        cell: (row) => <ActProvidingServiceTableValue value={formatMoney(row.amount)} />,
+        accessor: (row) => getActProvidingServiceListAmount(row),
+        cell: (row) => <ActProvidingServiceTableValue value={formatMoney(getActProvidingServiceListAmount(row))} />,
       },
       {
         id: 'currency',
@@ -613,6 +613,10 @@ function formatMoney(value?: number): string {
   }
 
   return moneyFormatter.format(value)
+}
+
+function getActProvidingServiceListAmount(row: ActProvidingServiceRow): number | undefined {
+  return row.act.Price ?? row.amount
 }
 
 function displayValue(value?: string | number | null): string {
