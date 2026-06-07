@@ -34,6 +34,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -151,6 +153,7 @@ function useProductCapitalizationsPageModel() {
   const [exportingNetId, setExportingNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [createPanelOpened, setCreatePanelOpened] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('product-capitalizations', 'normal')
   const detailRequestRef = useRef(0)
   const exportRequestRef = useRef(0)
   const sourceCapitalizationNetIdRef = useRef('')
@@ -332,6 +335,7 @@ function useProductCapitalizationsPageModel() {
     capitalizations,
     columns,
     createPanelOpened,
+    density,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -350,6 +354,7 @@ function useProductCapitalizationsPageModel() {
     closeDetail,
     openDetail,
     reload,
+    toggleDensity,
     resetFilters,
     setCreatePanelOpened,
     setDownloadModalOpened,
@@ -374,6 +379,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     capitalizations,
     columns,
     createPanelOpened,
+    density,
     detailError,
     downloadDocument,
     downloadModalOpened,
@@ -393,6 +399,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     openDetail,
     reload,
     resetFilters,
+    toggleDensity,
     setCreatePanelOpened,
     setDownloadModalOpened,
     setFilterDraft,
@@ -423,6 +430,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
       </Group>
 
       <Card withBorder radius="md" padding="md">
@@ -501,6 +509,7 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             columns={columns}
             data={capitalizations}
             defaultLayout={PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Оприбуткувань не знайдено')}
             getRowId={(capitalization, index) => String(capitalization.NetUid || capitalization.Id || index)}
             isLoading={isLoading}

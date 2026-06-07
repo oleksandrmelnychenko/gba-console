@@ -27,6 +27,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
@@ -94,6 +96,7 @@ function useActProvidingServicesPageModel() {
   const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
   const [selectedRow, setSelectedRow] = useValueState<ActProvidingServiceRow | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('act-providing-services', TABLE_DEFAULT_LAYOUT.density)
   const requestRef = useRef(0)
   const { acts, error, isLoading, total } = loadState
   const offset = (page - 1) * pageSize
@@ -193,6 +196,7 @@ function useActProvidingServicesPageModel() {
     columns,
     dateFrom,
     dateTo,
+    density,
     error,
     filterError,
     isLoading,
@@ -209,6 +213,7 @@ function useActProvidingServicesPageModel() {
     setDateTo,
     setPage,
     setPageSize,
+    toggleDensity,
   }
 }
 
@@ -226,6 +231,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     columns,
     dateFrom,
     dateTo,
+    density,
     error,
     filterError,
     isLoading,
@@ -242,6 +248,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
     setDateTo,
     setPage,
     setPageSize,
+    toggleDensity,
   } = model
 
   return (
@@ -287,6 +294,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             <IconRestore size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
 
       {(error || filterError) && (
@@ -300,6 +308,7 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
             columns={columns}
             data={rows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Актів надання послуг не знайдено')}
             getRowId={(row, index) => String(row.netId || row.act.Id || index)}
             isLoading={isLoading}

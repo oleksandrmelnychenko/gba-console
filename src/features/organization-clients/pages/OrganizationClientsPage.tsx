@@ -16,6 +16,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getOrganizationClients } from '../api/organizationClientsApi'
@@ -40,6 +42,10 @@ export function OrganizationClientsPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity(
+    'organization-clients',
+    ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT.density,
+  )
   const openClient = useCallback(
     (client: OrganizationClient) => {
       if (!client.NetUid) {
@@ -255,6 +261,7 @@ export function OrganizationClientsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
           </Group>
 
           {error && (
@@ -267,6 +274,7 @@ export function OrganizationClientsPage() {
             columns={columns}
             data={clients}
             defaultLayout={ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Організацій не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             isLoading={isLoading}

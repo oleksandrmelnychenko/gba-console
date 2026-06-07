@@ -40,6 +40,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   ProductMovementHistoryDrawer,
@@ -158,6 +160,7 @@ function useProductIncomeDocumentsPageModel() {
   const [remainingsError, setRemainingsError] = useValueState<string | null>(null)
   const [isLoadingRemainings, setLoadingRemainings] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('product-income-documents', DOCUMENTS_TABLE_DEFAULT_LAYOUT.density)
   const remainingsRequestRef = useRef(0)
   const capitalizationRequestRef = useRef(0)
   const infoRequestRef = useRef(0)
@@ -538,6 +541,7 @@ function useProductIncomeDocumentsPageModel() {
     columns,
     dateFrom,
     dateTo,
+    density,
     detailMode,
     documentInfoError,
     downloadDocument,
@@ -578,6 +582,7 @@ function useProductIncomeDocumentsPageModel() {
     setPage,
     setPageSize,
     setStorageLocationHistoryProduct,
+    toggleDensity,
     updateSearch,
   }
 }
@@ -599,6 +604,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     columns,
     dateFrom,
     dateTo,
+    density,
     detailMode,
     documentInfoError,
     downloadDocument,
@@ -639,6 +645,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     setPage,
     setPageSize,
     setStorageLocationHistoryProduct,
+    toggleDensity,
     updateSearch,
   } = model
 
@@ -751,6 +758,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               >
                 <IconChevronRight size={18} />
               </ActionIcon>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
             </Group>
           </Group>
 
@@ -758,6 +766,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             columns={columns}
             data={rows}
             defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Документів не знайдено')}
             getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
             isLoading={isLoading}

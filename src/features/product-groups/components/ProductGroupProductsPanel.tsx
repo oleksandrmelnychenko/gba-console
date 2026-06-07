@@ -17,6 +17,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductGroupProducts, getRedirectedProductByNetId } from '../api/productGroupsApi'
 import type { ProductProductGroup } from '../types'
@@ -50,6 +52,10 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [isRedirecting, setRedirecting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity(
+    `product-group-products-${productGroupNetId}`,
+    PRODUCTS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const loadSequenceRef = useRef(0)
   const canLoadMore = productLinks.length < totalFilteredQty
   const openProduct = useCallback(
@@ -247,6 +253,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
 
       {error && (
@@ -259,6 +266,7 @@ export function ProductGroupProductsPanel({ productGroupNetId }: ProductGroupPro
         columns={columns}
         data={productLinks}
         defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText="Товарів не знайдено"
         getRowId={(productLink, index) => String(productLink.Product?.NetUid || productLink.Id || index)}
         isLoading={isLoading}

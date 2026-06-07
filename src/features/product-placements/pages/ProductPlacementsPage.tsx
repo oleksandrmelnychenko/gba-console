@@ -39,6 +39,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   exportProductPlacements,
@@ -123,6 +125,7 @@ function useProductPlacementsPageModel() {
   const [returnedRows, setReturnedRows] = useValueState<ProductPlacementRow[]>([])
   const [isSubmittingReturned, setSubmittingReturned] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('product-placements', PLACEMENTS_TABLE_DEFAULT_LAYOUT.density)
   const { isLoading, placements, total } = listState
   const selectedStorageIdNumbers = useMemo(() => parseStorageIds(selectedStorageIds), [selectedStorageIds])
   const offset = (page - 1) * pageSize
@@ -423,6 +426,7 @@ function useProductPlacementsPageModel() {
     canMoveForward,
     columns,
     dateTo,
+    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -460,6 +464,7 @@ function useProductPlacementsPageModel() {
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
+    toggleDensity,
     updateSearch,
   }
 }
@@ -477,6 +482,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     canMoveForward,
     columns,
     dateTo,
+    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -514,6 +520,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
+    toggleDensity,
     updateSearch,
   } = model
   const noStorages = !isLoadingStorages && storageOptions.length === 0
@@ -568,6 +575,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -661,6 +669,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             columns={columns}
             data={placements}
             defaultLayout={PLACEMENTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Розміщень не знайдено')}
             getRowId={(placement, index) =>
               String(placement.NetUid || placement.Id || `${placement.VendorCode || ''}-${placement.StorageId || ''}-${index}`)

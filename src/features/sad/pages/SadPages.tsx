@@ -42,6 +42,8 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { SadAddItemsModal } from '../components/SadAddItemsModal'
@@ -1804,6 +1806,7 @@ export function SadSpecificationsPage() {
   const [editingSpec, setEditingSpec] = useState<{ product: SadProduct; specification: SadProductSpecification | null } | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('sad-specifications', SAD_SPEC_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
     let ignore = false
@@ -1992,6 +1995,7 @@ export function SadSpecificationsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
       </Group>
 
@@ -2000,6 +2004,7 @@ export function SadSpecificationsPage() {
           columns={columns}
           data={sad.SadItems || []}
           defaultLayout={SAD_SPEC_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Специфікацій немає')}
           getRowId={(item, index) => getEntityKey(item) || String(index)}
           minWidth={1420}

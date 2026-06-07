@@ -21,6 +21,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { createProductGroup, getProductGroups, getRootProductGroups } from '../api/productGroupsApi'
@@ -86,6 +88,10 @@ export function ProductGroupsPage() {
     [location, navigate],
   )
   const columns = useProductGroupColumns(openProductGroup)
+  const { density, toggleDensity } = useDataTableDensity(
+    'product-groups',
+    PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const toolbarLeft = useMemo(
     () =>
       searchValue ? (
@@ -284,6 +290,7 @@ export function ProductGroupsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
           </Group>
 
           {error && (
@@ -296,6 +303,7 @@ export function ProductGroupsPage() {
             columns={columns}
             data={productGroups}
             defaultLayout={PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText="Груп товарів не знайдено"
             getRowId={(productGroup, index) => String(productGroup.NetUid || productGroup.Id || index)}
             isLoading={isLoading}

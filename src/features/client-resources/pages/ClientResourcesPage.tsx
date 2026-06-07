@@ -51,7 +51,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
   changeClientResourcePricingPriority,
@@ -206,6 +208,7 @@ const CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT = {
 type ResourceDataTableProps<TData extends ClientResourceEntity> = {
   columns: DataTableColumn<TData>[]
   data: TData[]
+  density?: DataTableDensity
   emptyText?: ReactNode
   layoutVersion?: number | string
   minWidth?: number
@@ -215,6 +218,7 @@ type ResourceDataTableProps<TData extends ClientResourceEntity> = {
 function ResourceDataTable<TData extends ClientResourceEntity>({
   columns,
   data,
+  density,
   emptyText,
   layoutVersion = 'client-resources-table-2',
   minWidth = 760,
@@ -225,6 +229,7 @@ function ResourceDataTable<TData extends ClientResourceEntity>({
       columns={columns}
       data={data}
       defaultLayout={CLIENT_RESOURCE_TABLE_DEFAULT_LAYOUT}
+      density={density}
       emptyText={emptyText}
       getRowId={(row, index) => getEntityKey(row, index)}
       layoutVersion={layoutVersion}
@@ -2149,6 +2154,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-organizations', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((organization) =>
@@ -2250,6 +2256,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
           Нова організація
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -2374,6 +2381,7 @@ function OrganizationsPanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={filtered}
+            density={density}
             emptyText={translate("За цим пошуком немає організацій")}
             layoutVersion="client-resources-organizations-table-2"
             minWidth={1102}
@@ -2644,6 +2652,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-tax-inspections', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((inspection) =>
@@ -2730,6 +2739,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
           Нова налогова інспекція
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -2847,6 +2857,7 @@ function TaxInspectionsPanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={filtered}
+            density={density}
             emptyText={translate("За цим пошуком немає інспекцій")}
             layoutVersion="client-resources-tax-inspections-table-2"
             minWidth={1052}
@@ -2898,6 +2909,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-pricing', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((pricing) =>
@@ -3050,6 +3062,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
           Нове правило
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3069,6 +3082,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
       <Loadable state={state} emptyTitle="Цінових правил не знайдено">
         {filtered.length ? (
           <PricingResourceTable
+            density={density}
             isSaving={isSaving}
             pricings={filtered}
             onChangePriority={changePricingPriority}
@@ -3115,6 +3129,7 @@ function PricingPanel({ section }: { section: ClientResourceSection }) {
 }
 
 type PricingResourceTableProps = {
+  density?: DataTableDensity
   isSaving: boolean
   pricings: ClientResourcePricing[]
   onChangePriority: (pricing: ClientResourcePricing, raise: boolean) => void
@@ -3123,6 +3138,7 @@ type PricingResourceTableProps = {
 }
 
 function PricingResourceTable({
+  density,
   isSaving,
   pricings,
   onChangePriority,
@@ -3272,6 +3288,7 @@ function PricingResourceTable({
     <ResourceDataTable
       columns={columns}
       data={pricings}
+      density={density}
       emptyText={translate("За цим пошуком немає правил")}
       layoutVersion="client-resources-pricing-table-2"
       minWidth={1022}
@@ -3287,6 +3304,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-currencies', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((currency) =>
@@ -3372,6 +3390,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
           Нова валюта
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3457,6 +3476,7 @@ function CurrenciesPanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={filtered}
+            density={density}
             emptyText={translate("За цим пошуком немає валют")}
             layoutVersion="client-resources-currencies-table-2"
             minWidth={532}
@@ -3506,6 +3526,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-storages', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((storage) =>
@@ -3597,6 +3618,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
           Новий склад
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3718,6 +3740,7 @@ function StoragesPanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={filtered}
+            density={density}
             emptyText={translate("За цим пошуком немає складів")}
             layoutVersion="client-resources-storages-table-2"
             minWidth={1002}
@@ -3767,6 +3790,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
   const [deleteTarget, setDeleteTarget] = useValueState<ClientResourceDeleteTarget | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-measure-units', 'compact')
   const filtered = useMemo(
     () =>
       state.data.filter((measureUnit) =>
@@ -3852,6 +3876,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
           Нова одиниця
         </Button>
       </PermissionGate>
+      <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
     </Group>
   )
 
@@ -3937,6 +3962,7 @@ function MeasureUnitsPanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={filtered}
+            density={density}
             emptyText={translate("За цим пошуком немає одиниць")}
             layoutVersion="client-resources-measure-units-table-2"
             minWidth={592}
@@ -3984,6 +4010,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   const [editor, setEditor] = useValueState<ReserveEditorState | null>(null)
   const [formError, setFormError] = useValueState<string | null>(null)
   const [isSaving, setSaving] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('client-resources-product-reserve', 'compact')
   const roles = useMemo(() => getBuyerRoles(state.data), [state.data])
 
   async function saveReserveDays(daysValue: string) {
@@ -4023,7 +4050,15 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
   }
 
   return (
-    <ResourcePanel action={<RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />} section={section}>
+    <ResourcePanel
+      action={
+        <Group gap="xs" wrap="nowrap">
+          <RefreshControl isLoading={state.isLoading} onRefresh={state.reload} />
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
+        </Group>
+      }
+      section={section}
+    >
       <Loadable state={state} emptyTitle="Ролей клієнтів не знайдено">
         {roles.length ? (
           <ResourceDataTable
@@ -4109,6 +4144,7 @@ function ProductReservePanel({ section }: { section: ClientResourceSection }) {
               },
             ]}
             data={roles}
+            density={density}
             emptyText={translate("Ролей покупців не знайдено")}
             layoutVersion="client-resources-product-reserve-table-2"
             minWidth={672}

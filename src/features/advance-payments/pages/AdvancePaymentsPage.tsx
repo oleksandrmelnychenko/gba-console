@@ -15,6 +15,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAdvancePayments } from '../api/advancePaymentsApi'
 import type { AdvancePayment, User } from '../types'
@@ -53,6 +55,7 @@ export function AdvancePaymentsPage() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getDateRangeError(fromDate, toDate)
   const columns = useAdvancePaymentColumns()
+  const { density, toggleDensity } = useDataTableDensity('advance-payments', 'normal')
 
   useEffect(() => {
     let isActive = true
@@ -121,6 +124,7 @@ export function AdvancePaymentsPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
             </Group>
           </Group>
 
@@ -149,6 +153,7 @@ export function AdvancePaymentsPage() {
             columns={columns}
             data={payments}
             defaultLayout={ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Немає даних за вибраний період')}
             getRowId={(payment, index) => String(payment.NetUid || payment.Id || payment.Number || index)}
             isLoading={isLoading}

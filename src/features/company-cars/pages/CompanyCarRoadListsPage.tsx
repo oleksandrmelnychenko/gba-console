@@ -19,6 +19,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -83,6 +85,7 @@ export function CompanyCarRoadListsPage() {
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
   const filterError = getDateRangeError(fromDate, toDate)
 
   const columns = useRoadListColumns(setDeleteTarget)
@@ -200,6 +203,7 @@ export function CompanyCarRoadListsPage() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
           </Group>
 
           {error && (
@@ -224,6 +228,7 @@ export function CompanyCarRoadListsPage() {
             columns={columns}
             data={roadLists}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Шляхових листів не знайдено')}
             getRowId={(roadList, index) => String(roadList.NetUid || roadList.Id || index)}
             isLoading={isLoading}

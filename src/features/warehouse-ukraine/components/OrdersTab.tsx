@@ -6,6 +6,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getWarehouseUkraineOrders } from '../api/ordersApi'
@@ -118,6 +120,7 @@ function useOrdersTabModel() {
   const initialState = useMemo(() => createInitialOrdersState(initialFilters), [initialFilters])
   const [state, dispatchState] = useReducer(ordersTabReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-orders', TABLE_DEFAULT_LAYOUT.density)
   const { activeFilters, orders, pageSize } = state
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
@@ -234,12 +237,14 @@ function useOrdersTabModel() {
     ...state,
     applyFilters,
     columns,
+    density,
     filterError,
     loadMoreOrders,
     openOrder,
     reload,
     resetFilters,
     setPageSize,
+    toggleDensity,
   }
 }
 
@@ -286,6 +291,7 @@ export function OrdersTab() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={36} />
           </Group>
 
           {(model.error || model.filterError) && (
@@ -309,6 +315,7 @@ export function OrdersTab() {
             columns={model.columns}
             data={model.orders}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={model.density}
             emptyText={t('Замовлень не знайдено')}
             getRowId={(order, index) => String(order.NetUid || order.Id || index)}
             isLoading={model.isLoading}

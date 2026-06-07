@@ -43,13 +43,14 @@
   z-index: 8;
 }
 
-.data-table-empty-overlay {
+.data-table-empty {
   align-items: center;
   display: flex;
-  inset: 0;
   justify-content: center;
+  left: 0;
+  padding: 48px 16px;
   pointer-events: none;
-  position: absolute;
+  position: sticky;
   z-index: 7;
 }
 

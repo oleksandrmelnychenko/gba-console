@@ -17,6 +17,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getActReconciliations } from '../api/actReconciliationsApi'
 import type { ActReconciliation } from '../types'
@@ -77,6 +79,11 @@ function useActReconciliationsPageModel() {
 
   const columns = useReconciliationColumns(openDetail, rowSummaries)
 
+  const { density, toggleDensity } = useDataTableDensity(
+    'act-reconciliations',
+    RECONCILIATIONS_TABLE_DEFAULT_LAYOUT.density,
+  )
+
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
@@ -89,6 +96,7 @@ function useActReconciliationsPageModel() {
 
   return {
     columns,
+    density,
     error,
     filterDraft,
     filterError,
@@ -98,6 +106,7 @@ function useActReconciliationsPageModel() {
     openDetail,
     reload,
     resetFilters,
+    toggleDensity,
   }
 }
 
@@ -170,6 +179,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
   const { t } = useI18n()
   const {
     columns,
+    density,
     error,
     filterDraft,
     filterError,
@@ -179,6 +189,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
     reload,
     resetFilters,
     applyFilters,
+    toggleDensity,
   } = model
 
   return (
@@ -196,6 +207,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
       </Group>
 
       <Card withBorder radius="md" padding="md">
@@ -232,6 +244,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             columns={columns}
             data={reconciliations}
             defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Актів звірок не знайдено')}
             getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
             isLoading={isLoading}

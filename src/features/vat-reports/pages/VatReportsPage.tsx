@@ -16,6 +16,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getVatReports } from '../api/vatReportsApi'
 import type { VatReport } from '../types'
@@ -75,6 +77,7 @@ export function VatReportsPage() {
   const requestRef = useRef(0)
   const indexMap = useMemo(() => buildIndexMap(reports), [reports])
   const columns = useVatReportColumns(indexMap)
+  const { density, toggleDensity } = useDataTableDensity('vat-reports', VAT_REPORTS_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
     let isActive = true
@@ -215,6 +218,7 @@ export function VatReportsPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
+              <DataTableDensityToggle density={density} size={36} onToggle={toggleDensity} />
             </Group>
           </Group>
 
@@ -243,6 +247,7 @@ export function VatReportsPage() {
             columns={columns}
             data={reports}
             defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('VAT записів не знайдено')}
             getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
             isLoading={isLoading}

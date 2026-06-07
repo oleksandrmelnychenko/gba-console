@@ -31,6 +31,8 @@ import { useAuth } from '../../auth/useAuth'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addVatPercentToSupplyOrderUkraine,
@@ -410,6 +412,8 @@ export function SupplyUkraineOrderOverviewPage() {
   })
   const documentColumns = useDocumentColumns()
   const documents = order?.SupplyOrderUkraineDocuments || []
+  const { density: documentsDensity, toggleDensity: toggleDocumentsDensity } = useDataTableDensity('supply-ukraine-order-documents', 'normal')
+  const { density: overviewDensity, toggleDensity: toggleOverviewDensity } = useDataTableDensity('supply-ukraine-order-overview', TABLE_DEFAULT_LAYOUT.density)
   const orderRecord = asRecord(order)
   const currencyCode = order?.ClientAgreement?.Agreement?.Currency?.Code || order?.ClientAgreement?.Agreement?.Currency?.Name || ''
 
@@ -511,15 +515,19 @@ export function SupplyUkraineOrderOverviewPage() {
               <Stack gap={2}>
                 <Text fw={700}>{t('Документи замовлення')}</Text>
               </Stack>
-              {order && (
-                <Button disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
-                  {t('Завантажити')}
-                </Button>
-              )}
+              <Group gap="xs">
+                {order && (
+                  <Button disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                    {t('Завантажити')}
+                  </Button>
+                )}
+                <DataTableDensityToggle density={documentsDensity} onToggle={toggleDocumentsDensity} size={36} />
+              </Group>
             </Group>
             <DataTable
               columns={documentColumns}
               data={documents}
+              density={documentsDensity}
               emptyText={t('Документів немає')}
               getRowId={(document, index) => document.NetUid || String(document.Id || index)}
               layoutVersion="supply-ukraine-order-documents-1"
@@ -566,6 +574,7 @@ export function SupplyUkraineOrderOverviewPage() {
                 value={search}
                 onChange={(event) => setSearch(event.currentTarget.value)}
               />
+              <DataTableDensityToggle density={overviewDensity} onToggle={toggleOverviewDensity} size="sm" />
             </Group>
           </Group>
 
@@ -573,6 +582,7 @@ export function SupplyUkraineOrderOverviewPage() {
             columns={columns}
             data={visibleRows}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={overviewDensity}
             emptyText={t('Товарів не знайдено')}
             getRowId={(row) => row.item.NetUid || String(row.item.Id || row.index)}
             isLoading={isLoading}

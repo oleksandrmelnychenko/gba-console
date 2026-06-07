@@ -30,6 +30,8 @@ import {
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
 import {
@@ -1573,6 +1575,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   const [rows, setRows] = useState<ProductStorageLocationHistory[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setLoading] = useState(false)
+  const { density, toggleDensity } = useDataTableDensity('product-storage-history', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження історії місця зберігання')
   const activeError = filterError || missingNetUidError || error
@@ -1647,6 +1650,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
           <ActionIcon aria-label={t('Наступна сторінка')} color="gray" disabled={!canMoveForward || isLoading || Boolean(filterError)} variant="light" onClick={() => setPage((currentPage) => currentPage + 1)}>
             <IconChevronRight size={18} />
           </ActionIcon>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
         </Group>
       </Group>
       {activeError && <Alert color={filterError || missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
@@ -1654,6 +1658,7 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
         <DataTable
           columns={storageHistoryColumns}
           data={rows}
+          density={density}
           emptyText={t('Історію місця зберігання не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || index)}
           isLoading={isLoading}
@@ -1681,6 +1686,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
   const [isLoading, setLoading] = useState(false)
   const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
   const [isExporting, setExporting] = useState(false)
+  const { density, toggleDensity } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -1793,6 +1799,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="light" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
       <Group gap="md" wrap="wrap" align="center">
         {movementItemTypeOptions.map((option) => (
@@ -1813,6 +1820,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <DataTable
           columns={movementColumns}
           data={rows}
+          density={density}
           emptyText={t('Рух товару не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
           isLoading={isLoading}
@@ -1877,6 +1885,7 @@ function ProductDocumentDownloadModal({
 
 function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => void; product: Product }) {
   const { t } = useI18n()
+  const { density, toggleDensity } = useDataTableDensity('product-writeoff-rules', 'normal')
   const productNetUid = product.NetUid?.trim()
   const fallbackProductGroups = useMemo(() => getProductGroupsFromProduct(product), [product])
   const [rows, setRows] = useState<ProductWriteOffRule[]>([])
@@ -2152,12 +2161,14 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
           {t('Додати')}
         </Button>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
       {activeError && <Alert color={missingNetUidError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">{activeError}</Alert>}
       {!activeError ? (
         <DataTable
           columns={writeOffColumns}
           data={rows}
+          density={density}
           emptyText={t('Правил списання не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || index)}
           isLoading={isLoading}

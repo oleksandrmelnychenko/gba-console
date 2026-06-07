@@ -19,6 +19,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getActReconciliationByNetId, getAppliedActions } from '../api/actReconciliationsApi'
 import {
@@ -225,6 +227,7 @@ export function ActReconciliationViewPage() {
 
 function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof useActReconciliationViewModel> }) {
   const { t } = useI18n()
+  const { density, toggleDensity } = useDataTableDensity('act-reconciliation-items', 'normal')
   const columns = useItemColumns({
     items: model.items,
     selectedNetIds: model.selectedNetIds,
@@ -279,6 +282,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
               {t('Обробити')} ({model.selectedItems.length})
             </Button>
           )}
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -292,6 +296,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         <DataTable
           columns={columns}
           data={model.items}
+          density={density}
           emptyText={t('Позицій не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
           isLoading={model.isLoading}

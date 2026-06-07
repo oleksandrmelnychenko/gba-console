@@ -8,6 +8,8 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { EditingItemsResponse, EditingActItem, WarehouseUkraineUser } from '../types'
@@ -39,6 +41,7 @@ type EditingListProps = {
 
 export function EditingList({ kind, layoutVersion, loader, onProcessed, processor, tableId }: EditingListProps) {
   const { t } = useI18n()
+  const { density, toggleDensity } = useDataTableDensity(tableId, 'normal')
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0), isDevelopment: false }),
     [],
@@ -274,6 +277,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
 
       {(error || filterError) && (
@@ -299,6 +303,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
       <DataTable
         columns={columns}
         data={items}
+        density={density}
         emptyText={t('Даних не знайдено')}
         getRowId={(item, index) => String(item.NetUid || item.Id || index)}
         isLoading={isLoading}

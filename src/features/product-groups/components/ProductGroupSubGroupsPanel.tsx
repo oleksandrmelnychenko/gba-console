@@ -17,6 +17,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductSubGroups } from '../api/productGroupsApi'
 import type { ProductGroup, ProductSubGroup } from '../types'
@@ -52,6 +54,10 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity(
+    `product-group-subgroups-${productGroupNetId}`,
+    SUB_GROUPS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const loadSequenceRef = useRef(0)
   const canLoadMore = subGroups.length < totalFilteredQty
   const openSubGroup = useCallback(
@@ -256,6 +262,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
 
       {error && (
@@ -268,6 +275,7 @@ export function ProductGroupSubGroupsPanel({ productGroupNetId }: ProductGroupSu
         columns={columns}
         data={subGroups}
         defaultLayout={SUB_GROUPS_TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText="Підгруп не знайдено"
         getRowId={(subGroup, index) => String(subGroup.SubProductGroup?.NetUid || subGroup.Id || index)}
         isLoading={isLoading}

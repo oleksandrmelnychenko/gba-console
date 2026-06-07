@@ -7,7 +7,9 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -293,11 +295,13 @@ function useCurrencyConvertorsPageModel() {
   }
 
   const columns = useCurrencyTraderColumns({ canEdit, indexMap: traderIndexMap, onEdit: goToEdit })
+  const { density, toggleDensity } = useDataTableDensity('currency-convertors', 'normal')
 
   return {
     canCreate,
     canEdit,
     columns,
+    density,
     editingRate,
     editingValue,
     error,
@@ -330,6 +334,7 @@ function useCurrencyConvertorsPageModel() {
     setEditingValue,
     startAdd,
     startEdit,
+    toggleDensity,
   }
 }
 
@@ -366,6 +371,7 @@ export function CurrencyConvertorsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -380,6 +386,7 @@ export function CurrencyConvertorsPage() {
           <DataTable
             columns={model.columns}
             data={model.traders}
+            density={model.density}
             emptyText={t('Валютних трейдерів не знайдено')}
             getRowId={(trader, index) => String(trader.NetUid || trader.Id || index)}
             isLoading={model.isLoading}

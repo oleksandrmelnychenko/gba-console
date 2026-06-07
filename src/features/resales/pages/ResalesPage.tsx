@@ -41,6 +41,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -212,6 +214,7 @@ export function ResalesPage() {
   const [deleteCandidate, setDeleteCandidate] = useValueState<ReSale | null>(null)
   const [consignmentNoteSale, setConsignmentNoteSale] = useValueState<ReSale | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('resales', RESALES_TABLE_DEFAULT_LAYOUT.density)
   const { isLoading, items, total } = listState
   const offset = (page - 1) * pageSize
   const canMoveBackward = page > 1
@@ -436,6 +439,7 @@ export function ResalesPage() {
               >
                 <IconChevronRight size={18} />
               </ActionIcon>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
             </Group>
           </Group>
 
@@ -443,6 +447,7 @@ export function ResalesPage() {
             columns={columns}
             data={items}
             defaultLayout={RESALES_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Перепродажів не знайдено')}
             getRowId={(resale, index) => String(resale.NetUid || resale.Id || index)}
             isLoading={isLoading}

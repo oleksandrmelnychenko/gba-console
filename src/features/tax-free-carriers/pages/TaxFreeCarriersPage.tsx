@@ -31,6 +31,8 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -77,6 +79,7 @@ function useTaxFreeCarriersPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
   const carrierIndexMap = useMemo(() => buildIndexMap(carriers), [carriers])
+  const { density, toggleDensity } = useDataTableDensity('tax-free-carriers', CARRIERS_TABLE_DEFAULT_LAYOUT.density)
 
   useTaxFreeCarriersLoader({ activeSearch, reloadKey, setCarriers, setError, setLoading })
 
@@ -157,9 +160,9 @@ function useTaxFreeCarriersPageModel() {
   const columns = useCarrierColumns({ canManage, carrierIndexMap, onDelete: setCarrierToDelete, onEdit: openEdit })
 
   return {
-    canManage, canPrint, carrierToDelete, carriers, columns, downloadDocument, downloadError, downloadOpened, error,
-    isDeleting, isDownloading, isLoading, searchDraft, applySearch, closeDownload, confirmDelete,
-    exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, setSearchDraft,
+    canManage, canPrint, carrierToDelete, carriers, columns, density, downloadDocument, downloadError, downloadOpened,
+    error, isDeleting, isDownloading, isLoading, searchDraft, applySearch, closeDownload, confirmDelete,
+    exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, setSearchDraft, toggleDensity,
   }
 }
 
@@ -234,8 +237,8 @@ export function TaxFreeCarriersPage() {
 function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
   const { t } = useI18n()
   const {
-    applySearch, canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
-    openEdit, reload, resetSearch, searchDraft, setSearchDraft,
+    applySearch, canPrint, columns, carriers, density, error, exportDocument, isDownloading, isLoading,
+    openEdit, reload, resetSearch, searchDraft, setSearchDraft, toggleDensity,
   } = model
 
   return (
@@ -283,6 +286,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
               {t('Завантажити')}
             </Button>
           )}
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
 
         {error && (
@@ -295,6 +299,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           columns={columns}
           data={carriers}
           defaultLayout={CARRIERS_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Перевізників не знайдено')}
           getRowId={(carrier, index) => String(carrier.NetUid || carrier.Id || index)}
           isLoading={isLoading}

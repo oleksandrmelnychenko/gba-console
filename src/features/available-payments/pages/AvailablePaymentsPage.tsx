@@ -22,6 +22,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   getAvailablePaymentsOrganizations,
@@ -92,6 +94,10 @@ function useAvailablePaymentsPageModel() {
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity(
+    'available-payments',
+    AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.organizationNetId}|${activeFilters.type}|${pageSize}|${isOutcomePaymentTasksMode}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -314,6 +320,7 @@ function useAvailablePaymentsPageModel() {
     columns,
     confirmCloseDetail,
     confirmCloseDetailOpen,
+    density,
     error,
     filterDraft,
     filterError,
@@ -342,6 +349,7 @@ function useAvailablePaymentsPageModel() {
     reload,
     resetFilters,
     setPageSize,
+    toggleDensity,
     toggleMarked,
   }
 }
@@ -531,6 +539,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   const {
     applyFilters,
     columns,
+    density,
     error,
     filterDraft,
     filterError,
@@ -547,6 +556,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     reload,
     resetFilters,
     setPageSize,
+    toggleDensity,
     toolbarLeft,
     totalGrossPrice,
     totalNotDoneTasks,
@@ -642,6 +652,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {(error || filterError || organizationsError) && (
@@ -681,6 +692,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
           columns={columns}
           data={groups}
           defaultLayout={AVAILABLE_PAYMENTS_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Платіжних задач не знайдено')}
           getRowId={(group, index) => String(group.NetUid || group.Id || index)}
           isLoading={isLoading}

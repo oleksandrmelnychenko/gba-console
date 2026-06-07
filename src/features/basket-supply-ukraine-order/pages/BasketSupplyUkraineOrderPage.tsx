@@ -36,6 +36,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addOrUpdateSad,
@@ -220,6 +222,10 @@ function BasketCartWorkflow() {
   const [isCreatingDocument, setCreatingDocument] = useState(false)
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density: sourceDensity, toggleDensity: toggleSourceDensity } = useDataTableDensity(
+    'basket-supply-ukraine-order-source',
+    BASKET_CART_TABLE_DEFAULT_LAYOUT.density,
+  )
   const filteredCartItems = useMemo(() => filterCartItems(cartItems, filters), [cartItems, filters])
   const selectedSourceCount = useMemo(
     () => countItems(filteredCartItems, (item) => selectedSourceIds.has(getCartItemKey(item))),
@@ -708,6 +714,7 @@ function BasketCartWorkflow() {
               <Button leftSection={FILE_SPREADSHEET_ICON} variant="light" onClick={() => openUploadModal('preview')}>
                 {t('Вибрати для експорту')}
               </Button>
+              <DataTableDensityToggle density={sourceDensity} onToggle={toggleSourceDensity} size={36} />
             </Group>
           </Group>
 
@@ -715,6 +722,7 @@ function BasketCartWorkflow() {
             columns={sourceColumns}
             data={filteredCartItems}
             defaultLayout={BASKET_CART_TABLE_DEFAULT_LAYOUT}
+            density={sourceDensity}
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => getCartItemKey(item, index)}
             isLoading={isLoading}
@@ -870,6 +878,10 @@ function SalesWorkflowTab() {
   const [isCreatingDocument, setCreatingDocument] = useState(false)
   const [isTotalsLoading, setTotalsLoading] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density: salesDensity, toggleDensity: toggleSalesDensity } = useDataTableDensity(
+    'basket-supply-ukraine-order-sales',
+    BASKET_SALES_TABLE_DEFAULT_LAYOUT.density,
+  )
   const destinationSaleIds = useMemo(() => new Set(destinationSales.map(getBasketSaleKey)), [destinationSales])
   const selectedSourceSales = useMemo(
     () => sales.filter((sale) => selectedSourceSaleIds.has(getBasketSaleKey(sale))),
@@ -1181,12 +1193,14 @@ function SalesWorkflowTab() {
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={salesDensity} onToggle={toggleSalesDensity} size={36} />
           </Group>
 
           <DataTable
             columns={sourceColumns}
             data={sourceSales}
             defaultLayout={BASKET_SALES_TABLE_DEFAULT_LAYOUT}
+            density={salesDensity}
             emptyText={t('Даних не знайдено')}
             getRowId={(sale, index) => sale.NetUid || String(sale.Id || index)}
             isLoading={isLoading}

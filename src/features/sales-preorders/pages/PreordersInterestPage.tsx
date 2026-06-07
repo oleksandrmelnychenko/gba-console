@@ -4,6 +4,8 @@ import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getPreorders } from '../api/salesPreordersApi'
 import type { PreOrder } from '../types'
@@ -67,6 +69,7 @@ export function PreordersInterestPage() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadToken, setReloadToken] = useValueState(0)
+  const { density, toggleDensity } = useDataTableDensity('sales-preorders', PREORDERS_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
     let cancelled = false
@@ -185,6 +188,7 @@ export function PreordersInterestPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="lg" />
         </Group>
       </Group>
 
@@ -192,6 +196,7 @@ export function PreordersInterestPage() {
         columns={columns}
         data={preOrders}
         defaultLayout={PREORDERS_TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText={t('Передзамовлень не знайдено')}
         getRowId={(preOrder, index) => String(preOrder.NetUid || preOrder.Id || index)}
         isLoading={isLoading}

@@ -4,6 +4,8 @@ import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   exportDebtorsDocument,
@@ -77,6 +79,7 @@ export function SalesDebtorsPage() {
   const currencyCode = currencyCodeByType[typeCurrency]
   const totalPages = Math.max(1, Math.ceil(debtors.TotalQtyClients / pageSize))
   const columns = useDebtorsColumns(days, t)
+  const { density, toggleDensity } = useDataTableDensity('sales-debtors', DEBTORS_TABLE_DEFAULT_LAYOUT.density)
 
   const managerOptions = useMemo(
     () =>
@@ -298,6 +301,7 @@ export function SalesDebtorsPage() {
                 <IconChevronRight size={16} />
               </ActionIcon>
             </Group>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size="sm" />
           </Group>
 
           {error && (
@@ -310,6 +314,7 @@ export function SalesDebtorsPage() {
             columns={columns}
             data={debtors.ClientInDebtors}
             defaultLayout={DEBTORS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Боржників не знайдено')}
             getRowId={(debtor, index) => String(debtor.ClientNetId || index)}
             isLoading={isLoading}

@@ -30,7 +30,9 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
@@ -77,6 +79,7 @@ export function OnlineShopCitiesPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isEditorOpen, setEditorOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('online-shop-cities', 'normal')
   const visibleCities = useMemo(
     () => filterCities(cities, searchValue),
     [cities, searchValue],
@@ -237,6 +240,7 @@ export function OnlineShopCitiesPage() {
 
       <OnlineShopCitiesTableCard
         columns={columns}
+        density={density}
         error={error}
         isLoading={isLoading}
         searchDraft={searchDraft}
@@ -246,6 +250,7 @@ export function OnlineShopCitiesPage() {
         onReload={reload}
         onResetSearch={resetSearch}
         onSearchChange={updateSearch}
+        onToggleDensity={toggleDensity}
       />
 
       <CityEditorModal
@@ -272,6 +277,7 @@ export function OnlineShopCitiesPage() {
 
 type OnlineShopCitiesTableCardProps = {
   columns: DataTableColumn<OnlineShopCity>[]
+  density: DataTableDensity
   error: string | null
   isLoading: boolean
   searchDraft: string
@@ -281,10 +287,12 @@ type OnlineShopCitiesTableCardProps = {
   onReload: () => void
   onResetSearch: () => void
   onSearchChange: (value: string) => void
+  onToggleDensity: () => void
 }
 
 function OnlineShopCitiesTableCard({
   columns,
+  density,
   error,
   isLoading,
   searchDraft,
@@ -294,6 +302,7 @@ function OnlineShopCitiesTableCard({
   onReload,
   onResetSearch,
   onSearchChange,
+  onToggleDensity,
 }: OnlineShopCitiesTableCardProps) {
   const { t } = useI18n()
 
@@ -313,6 +322,7 @@ function OnlineShopCitiesTableCard({
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={36} />
         </Group>
 
         <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -349,6 +359,7 @@ function OnlineShopCitiesTableCard({
           columns={columns}
           data={visibleCities}
           defaultLayout={ONLINE_SHOP_CITIES_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Міст не знайдено')}
           getRowId={(city, index) => String(city.NetUid || city.Id || index)}
           isLoading={isLoading}

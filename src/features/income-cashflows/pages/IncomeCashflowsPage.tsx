@@ -26,6 +26,8 @@ import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
@@ -194,6 +196,7 @@ export function IncomeCashflowsPage() {
     onReassign: setReassignRow,
   })
   const isTableBusy = isLoading || isSearchSettling
+  const { density, toggleDensity } = useDataTableDensity('income-cashflows', TABLE_DEFAULT_LAYOUT.density)
 
   const loadLookups = useCallback(async () => {
     setLoadingLookups(true)
@@ -423,6 +426,7 @@ export function IncomeCashflowsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -487,6 +491,7 @@ export function IncomeCashflowsPage() {
         columns={columns}
         data={rows}
         defaultLayout={TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText={t('Прибуткових ордерів не знайдено')}
         getRowId={(row) => row.id}
         isLoading={isTableBusy}

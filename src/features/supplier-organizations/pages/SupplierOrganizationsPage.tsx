@@ -28,6 +28,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -84,6 +86,7 @@ export function SupplierOrganizationsPage() {
   const [isExporting, setExporting] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SupplyOrganizationDocumentExport | null>(null)
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
+  const { density, toggleDensity } = useDataTableDensity('supplier-organizations', TABLE_DEFAULT_LAYOUT.density)
   const requestRef = useRef(0)
 
   useEffect(() => {
@@ -221,6 +224,7 @@ export function SupplierOrganizationsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -242,6 +246,8 @@ export function SupplierOrganizationsPage() {
           height="100%"
           minWidth={1450}
           showLayoutControls={false}
+          showDensityToggle={false}
+          density={density}
           tableId="supplier-organizations"
           toolbarLeft={tableToolbarLeft}
           onRowClick={setSelectedOrganization}

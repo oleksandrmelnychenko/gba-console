@@ -19,6 +19,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
@@ -129,6 +131,7 @@ export function ConsumableOrdersPage() {
     onView: (row) => navigateToEdit(navigate, row, location),
   })
   const isTableBusy = isLoading || isSearchSettling
+  const { density, toggleDensity } = useDataTableDensity('consumable-orders', TABLE_DEFAULT_LAYOUT.density)
 
   return (
     <Stack className="consumable-orders-page" gap={6}>
@@ -141,6 +144,7 @@ export function ConsumableOrdersPage() {
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}>
           {t('Додати')}
         </Button>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
       </PageHeaderActions>
 
       <Group align="end" gap="sm" wrap="nowrap">
@@ -173,6 +177,7 @@ export function ConsumableOrdersPage() {
           columns={columns}
           data={rows}
           defaultLayout={TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Прибуткових накладних не знайдено')}
           getRowId={(row) => row.id}
           isLoading={isTableBusy}

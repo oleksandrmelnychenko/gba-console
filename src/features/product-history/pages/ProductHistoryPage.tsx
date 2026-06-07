@@ -34,6 +34,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
 import type {
@@ -83,6 +85,7 @@ function useProductHistoryPageModel() {
   const [isLoading, setLoading] = useValueState(false)
   const [isLoadingStorages, setLoadingStorages] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('product-history', PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT.density)
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateTo, selectedStorageIds)
   const selectedStorageIdNumbers = useMemo(() => parseStorageIds(selectedStorageIds), [selectedStorageIds])
@@ -253,6 +256,7 @@ function useProductHistoryPageModel() {
     canMoveForward,
     columns,
     dateTo,
+    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -276,6 +280,7 @@ function useProductHistoryPageModel() {
     setPage,
     setPageSize,
     setSelectedStorageIds,
+    toggleDensity,
     updateSearch,
   }
 }
@@ -293,6 +298,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     canMoveForward,
     columns,
     dateTo,
+    density,
     downloadDocument,
     downloadModalOpened,
     error,
@@ -316,6 +322,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     setPage,
     setPageSize,
     setSelectedStorageIds,
+    toggleDensity,
     updateSearch,
   } = model
   const noStorages = !isLoadingStorages && storageOptions.length === 0
@@ -349,6 +356,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -442,6 +450,7 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             columns={columns}
             data={historyItems}
             defaultLayout={PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Історію товарів не знайдено')}
             getRowId={(historyItem, index) =>
               String(historyItem.NetUid || historyItem.Id || `${historyItem.Product?.VendorCode || 'product'}-${index}`)

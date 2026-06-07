@@ -5,7 +5,9 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { getSalesByProductTop } from '../api/salesChartsApi'
 import { formatMoney } from '../money'
 import type { SalesByProductTopReport, SalesChartsTopNXRow } from '../types'
@@ -25,6 +27,7 @@ export function ManagerSalesByTopNXView() {
   const [report, setReport] = useValueState<SalesByProductTopReport>({ Managers: [], Products: [] })
   const [isLoading, setIsLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
+  const { density, toggleDensity } = useDataTableDensity('sales-charts-topnx', 'normal')
 
   useEffect(() => {
     let cancelled = false
@@ -122,6 +125,7 @@ export function ManagerSalesByTopNXView() {
             w={140}
             onChange={(value) => setTypeTop((Number(value) === SalesChartsTopType.TopX ? SalesChartsTopType.TopX : SalesChartsTopType.TopN))}
           />
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {error && (
@@ -133,6 +137,7 @@ export function ManagerSalesByTopNXView() {
         <DataTable
           columns={columns}
           data={rows}
+          density={density}
           emptyText={t('Дані відсутні')}
           getRowId={(row) => row.rowId}
           isLoading={isLoading}

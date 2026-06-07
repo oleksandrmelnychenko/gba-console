@@ -20,6 +20,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
@@ -58,6 +60,7 @@ function useProductSpecificationCodesModel() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [selected, setSelected] = useValueState<ProductSpecification | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('product-specification-codes', TABLE_DEFAULT_LAYOUT.density)
 
   const listRequestKey = `${region}|${vendorCode}|${specificationCode}`
   const listRequestKeyRef = useRef(listRequestKey)
@@ -148,6 +151,7 @@ function useProductSpecificationCodesModel() {
   }
 
   return {
+    density,
     error,
     hasMore,
     isLoading,
@@ -164,6 +168,7 @@ function useProductSpecificationCodesModel() {
     setSelected,
     setSpecificationCodeDraft,
     setVendorCodeDraft,
+    toggleDensity,
   }
 }
 
@@ -226,6 +231,7 @@ export function ProductSpecificationCodesPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -280,6 +286,7 @@ export function ProductSpecificationCodesPage() {
             columns={columns}
             data={model.specifications}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={model.density}
             emptyText={t('Митних кодів не знайдено')}
             getRowId={(specification, index) => String(specification.NetUid || specification.Id || index)}
             isLoading={model.isLoading}

@@ -16,6 +16,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   exportDocumentVerification,
@@ -395,12 +397,17 @@ function useDocumentVerificationModel() {
   )
 
   const columns = useVerificationColumns(itemIndexMap)
+  const { density, toggleDensity } = useDataTableDensity(
+    'warehouse-ukraine-verification',
+    TABLE_DEFAULT_LAYOUT.density,
+  )
 
   return {
     ...state,
     applyFilters,
     closeDownload,
     columns,
+    density,
     exportDocument,
     filterError,
     loadMoreItems,
@@ -409,6 +416,7 @@ function useDocumentVerificationModel() {
     setPageSize,
     setSelectedStorageIds,
     storageOptions,
+    toggleDensity,
   }
 }
 
@@ -441,6 +449,7 @@ export function DocumentVerificationTab() {
           >
             {t('Роздрукувати')}
           </Button>
+          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -500,6 +509,7 @@ export function DocumentVerificationTab() {
             columns={model.columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={model.density}
             emptyText={t('Даних не знайдено')}
             getRowId={(item, index) => String(item.NetUid || item.Id || index)}
             isLoading={model.isLoading}

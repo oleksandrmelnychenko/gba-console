@@ -15,6 +15,8 @@ import { useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
 import { addPaymentImage, editPaymentImage, getPaymentShopItems } from '../api/paymentOnlineShopApi'
@@ -62,6 +64,7 @@ function usePaymentOnlineShopModel() {
   const [isCreating, setCreating] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('payment-online-shop', PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT.density)
 
   usePaymentShopLoader({ activeFilters, reloadKey, setError, setItems, setLoading })
 
@@ -164,9 +167,9 @@ function usePaymentOnlineShopModel() {
   )
 
   return {
-    activeFilters, applyFilters, closeDetail, columns, createError, editError, editItem, error, filterDraft,
+    activeFilters, applyFilters, closeDetail, columns, createError, density, editError, editItem, error, filterDraft,
     handleAddPayment, handleEditPayment, isCreating, isLoading, isSaving, items, openDetail, reload, resetFilters,
-    selectedItem, setEditItem, setFilterDraft, toolbarLeft,
+    selectedItem, setEditItem, setFilterDraft, toggleDensity, toolbarLeft,
   }
 }
 
@@ -246,7 +249,7 @@ export function PaymentOnlineShopPage() {
 function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toolbarLeft,
+    applyFilters, columns, density, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toggleDensity, toolbarLeft,
   } = model
 
   return (
@@ -302,6 +305,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {error && (
@@ -314,6 +318,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           columns={columns}
           data={items}
           defaultLayout={PAYMENT_SHOP_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Оплата магазину')}
           getRowId={(item, index) => String(item.NetUid || item.Id || index)}
           isLoading={isLoading}

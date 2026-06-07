@@ -68,7 +68,7 @@ export function DataTable<TData>({
   emptyText,
   loadingText,
   labels: labelsOverride,
-  showLayoutControls = true,
+  showLayoutControls = false,
   showDensityToggle = true,
   density: controlledDensity,
   onDensityChange,
@@ -350,13 +350,13 @@ export function DataTable<TData>({
 
   return (
     <div className={`data-table data-table-density-${effectiveDensity}`}>
-      {showLayoutControls || showDensityToggle || toolbarLeft || toolbarRight ? (
+      {showLayoutControls || toolbarLeft || toolbarRight ? (
         <DataTableToolbar
           columnTitles={columnTitles}
           density={effectiveDensity}
           labels={labels}
           showLayoutControls={showLayoutControls}
-          showDensityToggle={showDensityToggle}
+          showDensityToggle={showDensityToggle && controlledDensity === undefined}
           table={table}
           toolbarLeft={toolbarLeft}
           toolbarRight={toolbarRight}
@@ -421,7 +421,10 @@ export function DataTable<TData>({
           </Table>
         </DndContext>
         {isLoading ? (
-          <div className="data-table-loading-overlay">
+          <div
+            className="data-table-loading-overlay"
+            style={{ width: scrollViewportWidth ? `${scrollViewportWidth}px` : undefined, right: 'auto' }}
+          >
             <Group className="data-table-loading-content" gap={8} justify="center">
               <Loader color="violet" size="sm" />
               <span>{normalizedLoadingText ?? labels.loadingData}</span>
@@ -429,7 +432,10 @@ export function DataTable<TData>({
           </div>
         ) : null}
         {isEmpty ? (
-          <div className="data-table-empty-overlay">
+          <div
+            className="data-table-empty"
+            style={{ width: scrollViewportWidth ? `${scrollViewportWidth}px` : '100%' }}
+          >
             <div className="data-table-empty-content">
               {normalizedEmptyText ?? labels.noData}
             </div>

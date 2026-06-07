@@ -14,6 +14,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
@@ -80,6 +82,7 @@ function useSalesTabModel() {
   const [downloadError, setDownloadError] = useValueState<string | null>(null)
   const [isDownloading, setDownloading] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-sales', TABLE_DEFAULT_LAYOUT.density)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
   const saleIndexMap = useMemo(() => buildIndexMap(salesState.sales), [salesState.sales])
@@ -245,9 +248,9 @@ function useSalesTabModel() {
 
   return {
     activeFilters, applyFilters, canMoveBack, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
-    downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError, isDownloading,
-    isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: salesState.sales, setCarrierSale,
-    setPage, totalQty: salesState.totalQty,
+    density, downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError,
+    isDownloading, isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: salesState.sales,
+    setCarrierSale, setPage, toggleDensity, totalQty: salesState.totalQty,
   }
 }
 
@@ -321,6 +324,7 @@ export function SalesTab() {
                 <IconRestore size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={36} />
             <Group gap={4} wrap="nowrap" style={{ marginLeft: 'auto' }}>
               <Select
                 aria-label={t('Кількість рядків')}
@@ -367,6 +371,7 @@ export function SalesTab() {
             columns={model.columns}
             data={model.sales}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={model.density}
             emptyText={t('Документів не знайдено')}
             getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
             isLoading={model.isLoading}

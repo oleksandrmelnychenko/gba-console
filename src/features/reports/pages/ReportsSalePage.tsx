@@ -25,7 +25,9 @@ import readXlsxFile from 'read-excel-file/browser'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-table/types'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { SpreadsheetCellValue, SpreadsheetSheet } from '../types'
 import {
   buildDateFileSuffix,
@@ -46,6 +48,7 @@ export function ReportsSalePage() {
   const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('reports-sale-spreadsheet', 'normal')
   const activeSheet = sheets.find((sheet) => sheet.name === activeSheetName) || sheets[0] || null
   const visibleRows = useMemo(
     () => filterRows(activeSheet, searchValue, dateFrom, dateTo),
@@ -173,6 +176,7 @@ export function ReportsSalePage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size="md" />
           </Group>
         </Stack>
       </Card>
@@ -198,7 +202,7 @@ export function ReportsSalePage() {
 
             <Stack gap="md" pt="md">
               <TotalsBar totals={visibleTotals} />
-              <SpreadsheetTable columns={activeSheet.columns} rows={visibleRows} totals={visibleTotals} />
+              <SpreadsheetTable columns={activeSheet.columns} rows={visibleRows} totals={visibleTotals} density={density} />
             </Stack>
           </div>
         </Card>
@@ -239,10 +243,12 @@ function SpreadsheetTable({
   columns,
   rows,
   totals,
+  density,
 }: {
   columns: string[]
   rows: SpreadsheetCellValue[][]
   totals: Record<string, number>
+  density: DataTableDensity
 }) {
   const { t } = useI18n()
   const hasTotals = Object.keys(totals).length > 0
@@ -292,6 +298,7 @@ function SpreadsheetTable({
       <DataTable
         columns={previewColumns}
         data={previewData}
+        density={density}
         emptyText={t('Немає рядків для перегляду')}
         getRowId={(row) => row.key}
         layoutVersion={`reports-sale-spreadsheet:${columns.join('|')}`}

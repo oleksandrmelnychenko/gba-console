@@ -29,6 +29,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -482,6 +484,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
     hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openOptions, organizations,
     pageSize, protocols, reload, resetFilters, setPageSize,
   } = model
+  const { density, toggleDensity } = useDataTableDensity('product-delivery-protocols', 'normal')
 
   const organizationOptions = useMemo(
     () => [
@@ -572,6 +575,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               {t('Завантажити')}
             </Button>
           )}
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {(error || filterError) && (
@@ -597,6 +601,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
         <DataTable
           columns={columns}
           data={protocols}
+          density={density}
           defaultLayout={PROTOCOLS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Протоколів не знайдено')}
           getRowId={(protocol, index) => String(protocol.NetUid || protocol.Id || index)}

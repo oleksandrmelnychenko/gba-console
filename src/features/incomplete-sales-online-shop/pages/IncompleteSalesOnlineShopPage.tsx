@@ -35,7 +35,9 @@ import { useAuth } from '../../auth/useAuth'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../../clients/components/OnlineShopOrderItemsList'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import type {
   IncompleteSalesOnlineShopFilter,
   IncompleteSalesOnlineShopItem,
@@ -102,6 +104,7 @@ function useIncompleteSalesOnlineShopPageModel() {
   const [selectedSale, setSelectedSale] = useValueState<IncompleteSalesOnlineShopItem | null>(null)
   const [pendingStatusAction, setPendingStatusAction] = useValueState<PendingStatusAction | null>(null)
   const [updatingId, setUpdatingId] = useValueState<string | null>(null)
+  const { density, toggleDensity } = useDataTableDensity('incomplete-sales-online-shop', 'normal')
 
   useEffect(() => {
     let cancelled = false
@@ -281,6 +284,7 @@ function useIncompleteSalesOnlineShopPageModel() {
 
   return {
     columns,
+    density,
     detailError,
     error,
     filterDraft,
@@ -290,6 +294,7 @@ function useIncompleteSalesOnlineShopPageModel() {
     sales,
     selectedSale,
     toolbarLeft,
+    toggleDensity,
     closeDetail,
     confirmStatusAction,
     openClientSales,
@@ -314,6 +319,7 @@ function IncompleteSalesOnlineShopPageView({
 }) {
   const {
     columns,
+    density,
     detailError,
     error,
     filterDraft,
@@ -323,6 +329,7 @@ function IncompleteSalesOnlineShopPageView({
     sales,
     selectedSale,
     toolbarLeft,
+    toggleDensity,
     closeDetail,
     confirmStatusAction,
     openClientSales,
@@ -337,6 +344,7 @@ function IncompleteSalesOnlineShopPageView({
     <Stack gap="lg">
       <IncompleteSalesTableCard
         columns={columns}
+        density={density}
         error={error}
         filterDraft={filterDraft}
         isLoading={isLoading}
@@ -349,6 +357,7 @@ function IncompleteSalesOnlineShopPageView({
         onReset={resetFilters}
         onToChange={(to) => applyFilters({ ...filterDraft, to })}
         onToggleAccepted={(isAccepted) => applyFilters({ ...filterDraft, isAccepted })}
+        onToggleDensity={toggleDensity}
       />
 
       <IncompleteSaleDetailDrawer
@@ -370,6 +379,7 @@ function IncompleteSalesOnlineShopPageView({
 
 function IncompleteSalesTableCard({
   columns,
+  density,
   error,
   filterDraft,
   isLoading,
@@ -382,8 +392,10 @@ function IncompleteSalesTableCard({
   onReset,
   onToChange,
   onToggleAccepted,
+  onToggleDensity,
 }: {
   columns: DataTableColumn<IncompleteSalesOnlineShopItem>[]
+  density: DataTableDensity
   error: string | null
   filterDraft: FilterDraft
   isLoading: boolean
@@ -396,6 +408,7 @@ function IncompleteSalesTableCard({
   onReset: () => void
   onToChange: (to: string) => void
   onToggleAccepted: (isAccepted: boolean) => void
+  onToggleDensity: () => void
 }) {
   const { t } = useI18n()
 
@@ -441,6 +454,7 @@ function IncompleteSalesTableCard({
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={36} />
         </Group>
 
         {error && (
@@ -453,6 +467,7 @@ function IncompleteSalesTableCard({
           columns={columns}
           data={sales}
           defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Продажів не знайдено')}
           getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
           isLoading={isLoading}

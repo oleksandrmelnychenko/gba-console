@@ -19,6 +19,8 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getRetailClientCart, getRetailClients, searchRetailClients } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
@@ -67,6 +69,7 @@ export function OnlineShopClientsPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
+  const { density, toggleDensity } = useDataTableDensity('online-shop-clients', ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT.density)
   const clientColumns = useRetailClientColumns()
   const tableToolbarLeft = useMemo(
     () =>
@@ -192,6 +195,7 @@ export function OnlineShopClientsPage() {
                   <IconRestore size={18} />
                 </ActionIcon>
               </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
             </Group>
 
             {error && (
@@ -204,6 +208,7 @@ export function OnlineShopClientsPage() {
               columns={clientColumns}
               data={clients}
               defaultLayout={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT}
+              density={density}
               emptyText={t('Клієнтів інтернет-магазину не знайдено')}
               getRowId={(client, index) => getRetailClientRowKey(client, index)}
               height="100%"

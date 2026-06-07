@@ -41,6 +41,8 @@ import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import {
@@ -697,6 +699,10 @@ function DeprecatedConsumableOrdersPanel({
   const { error, isLoading, orders } = ordersState
   const filterError = getDateRangeError(fromDate, toDate)
   const rows = useMemo(() => flattenDeprecatedConsumableOrders(orders), [orders])
+  const { density, toggleDensity } = useDataTableDensity(
+    'consumable-storage-deprecated-orders',
+    DEPRECATED_TABLE_DEFAULT_LAYOUT.density,
+  )
   const columns = useDeprecatedConsumableOrderColumns({
     onDelete: setDeleteOrderTarget,
     onEdit: setEditorOrder,
@@ -796,6 +802,7 @@ function DeprecatedConsumableOrdersPanel({
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         <Button leftSection={<IconPlus size={16} />} onClick={() => setEditorOrder(createDeprecatedConsumableOrderDraft(storage))}>
@@ -819,6 +826,7 @@ function DeprecatedConsumableOrdersPanel({
         columns={columns}
         data={rows}
         defaultLayout={DEPRECATED_TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText={t('Списаних товарів не знайдено')}
         getRowId={(row) => row.id}
         isLoading={isLoading || isSearchSettling}

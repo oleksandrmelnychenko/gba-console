@@ -32,6 +32,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -162,6 +164,14 @@ function useProductRemainsPageModel() {
   const supplierSelectOptions = useMemo(() => buildSupplierOptions(supplierOptions), [supplierOptions])
   const batchColumns = useProductRemainBatchColumns()
   const productColumns = useProductRemainProductColumns(canOpenProductMovement, openMovement)
+  const { density: batchDensity, toggleDensity: toggleBatchDensity } = useDataTableDensity(
+    'product-remains-batches',
+    BATCHES_TABLE_DEFAULT_LAYOUT.density,
+  )
+  const { density: productDensity, toggleDensity: toggleProductDensity } = useDataTableDensity(
+    'product-remains-products',
+    PRODUCTS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const batchToolbarLeft = useMemo(() => <TableStatus totals={batchTotals} />, [batchTotals])
   const productToolbarLeft = useMemo(
     () => <TableStatus searchValue={productSearchValue} totals={productTotals} />,
@@ -338,12 +348,12 @@ function useProductRemainsPageModel() {
   }
 
   return {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
+    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, toggleBatchDensity, toggleProductDensity,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
@@ -645,12 +655,12 @@ export function ProductRemainsPage() {
 function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProductRemainsPageModel> }) {
   const { t } = useI18n()
   const {
-    activeError, activeTab, batchColumns, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
+    activeError, activeTab, batchColumns, batchDensity, batchDetailColumns, batchHasMore, batchRows, batchToolbarLeft, batchTotals,
     dateFrom, dateTo, downloadDocument, downloadModalOpened, exportingTab, filterError, isActiveLoading,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
-    productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
+    productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
     selectedBatch, selectedMovementRow, selectedStorageValue, storageNetId, storageOptions, supplierNetId,
-    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters,
+    supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, toggleBatchDensity, toggleProductDensity,
     setActiveTab, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
     setSupplierNetId, setSupplierSearch, updateProductSearch,
@@ -685,6 +695,11 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle
+            density={activeTab === 'batches' ? batchDensity : productDensity}
+            onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
+            size={38}
+          />
         </Group>
       </Group>
 
@@ -793,6 +808,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   columns={batchColumns}
                   data={batchRows}
                   defaultLayout={BATCHES_TABLE_DEFAULT_LAYOUT}
+                  density={batchDensity}
                   emptyText={t('Залишків за партіями не знайдено')}
                   getRowId={getBatchRowId}
                   isLoading={isLoadingBatches}
@@ -833,6 +849,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                   columns={productColumns}
                   data={productRows}
                   defaultLayout={PRODUCTS_TABLE_DEFAULT_LAYOUT}
+                  density={productDensity}
                   emptyText={storageNetId ? t('Залишків за товарами не знайдено') : t('Оберіть склад для перегляду товарів')}
                   getRowId={getProductRowId}
                   isLoading={isLoadingProducts}

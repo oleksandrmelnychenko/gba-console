@@ -22,6 +22,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   getAccountableExpenses,
@@ -122,6 +124,7 @@ export function AccountableExpensesPage() {
 
   const rows = useMemo(() => buildExpenseRows(orders), [orders])
   const columns = useAccountableExpenseColumns(setSelectedRow)
+  const { density, toggleDensity } = useDataTableDensity('accountable-expenses', TABLE_DEFAULT_LAYOUT.density)
 
   return (
     <Stack className="accountable-expenses-page" gap={6}>
@@ -151,11 +154,14 @@ export function AccountableExpensesPage() {
             }}
           />
         </Group>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Group align="end" gap="sm">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
+        </Group>
       </Group>
 
       {error && (
@@ -175,6 +181,7 @@ export function AccountableExpensesPage() {
           columns={columns}
           data={rows}
           defaultLayout={TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Підзвітних витрат не знайдено')}
           getRowId={(row) => row.id}
           isLoading={isLoading}

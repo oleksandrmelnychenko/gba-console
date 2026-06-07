@@ -37,6 +37,8 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
@@ -674,6 +676,10 @@ function AutoShipmentsPanel() {
   const model = useShipmentsTabModel()
   const { t } = useI18n()
   const columns = useShipmentColumns(model)
+  const { density, toggleDensity } = useDataTableDensity(
+    'warehouse-ukraine-shipments',
+    TABLE_DEFAULT_LAYOUT.density,
+  )
 
   const typeOptions = toTransporterOptions(model.transporterTypes)
   const transporterOptions = toTransporterOptions(model.transporters)
@@ -695,6 +701,7 @@ function AutoShipmentsPanel() {
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
+        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
       </PageHeaderActions>
 
       <Card withBorder radius="md" padding="md">
@@ -760,6 +767,7 @@ function AutoShipmentsPanel() {
             columns={columns}
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Відвантажень не знайдено')}
             getRowId={getRowId}
             isLoading={model.isLoading}
@@ -852,6 +860,10 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
+  const { density, toggleDensity } = useDataTableDensity(
+    'warehouse-ukraine-all-shipments',
+    ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT.density,
+  )
   const listIndexMap = useMemo(() => buildShipmentListIndexMap(shipmentLists), [shipmentLists])
   const listColumns = useAllShipmentColumns(listIndexMap)
   const draftItems = useMemo(() => shipmentDraft?.ShipmentListItems || [], [shipmentDraft])
@@ -1233,6 +1245,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={18} />} onClick={onCreate}>
             {t('Створити')}
           </Button>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </PageHeaderActions>
 
@@ -1281,6 +1294,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             columns={listColumns}
             data={shipmentLists}
             defaultLayout={ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Відвантажень не знайдено')}
             getRowId={getShipmentListRowId}
             isLoading={isLoading}

@@ -17,6 +17,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSyncDocuments } from '../api/balancesApi'
 import { ContractorType, type ContractorTypeValue, type SyncDocument } from '../types'
@@ -68,6 +70,7 @@ function useBalancesPageModel() {
   const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${activeFilters.name}|${activeFilters.type}|${pageSize}`
   const listRequestKeyRef = useRef(listRequestKey)
   const columns = useBalancesColumns()
+  const { density, toggleDensity } = useDataTableDensity('balances', BALANCES_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
@@ -145,8 +148,8 @@ function useBalancesPageModel() {
   )
 
   return {
-    applyFilters, columns, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toolbarLeft, totalQty,
+    applyFilters, columns, density, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
+    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toggleDensity, toolbarLeft, totalQty,
   }
 }
 
@@ -275,8 +278,8 @@ function BalancesHeader({ model }: { model: ReturnType<typeof useBalancesPageMod
 function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
-    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toolbarLeft,
+    applyFilters, columns, density, documents, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore,
+    loadMoreDocuments, pageSize, reload, resetFilters, setPageSize, toggleDensity, toolbarLeft,
   } = model
 
   const typeOptions = useMemo(
@@ -329,6 +332,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {(error || filterError) && (
@@ -355,6 +359,7 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
           columns={columns}
           data={documents}
           defaultLayout={BALANCES_TABLE_DEFAULT_LAYOUT}
+          density={density}
           emptyText={t('Відсутній')}
           getRowId={(document, index) => String(document.NetUid || document.Id || index)}
           isLoading={isLoading}

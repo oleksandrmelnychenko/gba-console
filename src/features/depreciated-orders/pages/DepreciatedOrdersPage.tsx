@@ -27,6 +27,8 @@ import { UserRoleType } from '../../../shared/auth/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
@@ -104,6 +106,7 @@ function useDepreciatedOrdersPageModel() {
   const [hasMore, setHasMore] = useValueState(false)
   const [, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('depreciated-orders', DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT.density)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
@@ -302,11 +305,11 @@ function useDepreciatedOrdersPageModel() {
   }
 
   return {
-    columns, createError, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
+    columns, createError, density, detailError, downloadDocument, downloadError, downloadOpened, error, exceptionMessages,
     filterDraft, filterError, hasMore, isAdmin, isCreateModalOpen, isCreating, isDetailLoading, isDownloading,
     isLoading, isLoadingMore, isLoadingStorages, orders, pageSize, selectedOrder, storageError, storages,
     applyFilters, closeCreateModal, closeDetail, closeDownload, handleCreate, loadMoreOrders,
-    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize,
+    openCreateModal, openDetail, openDownload, reload, resetFilters, setExceptionMessages, setPageSize, toggleDensity,
   }
 }
 
@@ -523,8 +526,8 @@ function DepreciatedOrdersHeader({ model }: { model: ReturnType<typeof useDeprec
 function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   const { t } = useI18n()
   const {
-    columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, loadMoreOrders, openDetail, orders,
-    pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
+    columns, density, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, loadMoreOrders, openDetail,
+    orders, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError, toggleDensity,
   } = model
 
   return (
@@ -550,6 +553,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {(error || filterError || storageError) && (
@@ -575,6 +579,7 @@ function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDep
         <DataTable
           columns={columns}
           data={orders}
+          density={density}
           defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Актів списання не знайдено')}
           getRowId={(order, index) => String(order.NetUid || order.Id || index)}

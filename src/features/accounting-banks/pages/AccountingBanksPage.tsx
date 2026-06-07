@@ -29,6 +29,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
@@ -68,6 +70,7 @@ export function AccountingBanksPage() {
   const [isLoading, setLoading] = useState(true)
   const [isSaving, setSaving] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('accounting-banks', 'normal')
   const visibleBanks = useMemo(() => filterBanks(banks, searchValue), [banks, searchValue])
   const openEditor = useCallback((bank?: AccountingBank) => {
     setEditingBank(bank || null)
@@ -257,6 +260,7 @@ export function AccountingBanksPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
           </Group>
 
           {error && (
@@ -269,6 +273,7 @@ export function AccountingBanksPage() {
             columns={columns}
             data={visibleBanks}
             defaultLayout={ACCOUNTING_BANKS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Банків не знайдено')}
             getRowId={(bank, index) => String(bank.NetUid || bank.Id || index)}
             isLoading={isLoading}

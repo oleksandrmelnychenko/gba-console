@@ -9,6 +9,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import {
   createProductIncomeFromDynamicPlacements,
@@ -156,6 +158,7 @@ function useOrderPlacementsModel() {
   const [incomeDate, setIncomeDate] = useValueState(() => formatLocalDate(new Date()))
   const [confirmPlacement, setConfirmPlacement] = useValueState<{ isFullPlaced: boolean } | null>(null)
   const [isPlacing, setPlacing] = useValueState(false)
+  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-placements', 'normal')
 
   useEffect(() => {
     if (!id) {
@@ -526,11 +529,11 @@ function useOrderPlacementsModel() {
   const totalNetWeight = order?.TotalNetWeight || 0
 
   return {
-    columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, drawer, error, gridRows, handleAddColumn,
+    columnModalOpen, columnToRemove, confirmPlacement, confirmRemoveColumn, density, drawer, error, gridRows, handleAddColumn,
     handleApplyPlacements, handleCellChange, handleMoveRemnants, handleOpenPlacements, handleSave, incomeDate, isDirty,
     isBusy, isLoading, isPlacing, isSaving, navigate, order, placeOrder, reloadFromServer, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, setConfirmPlacement, setDrawer, setIncomeDate, setOrder, setSelectedStorageId,
-    setUnorderedOpen, storages, totalNetWeight, totalProductsCount, unorderedOpen,
+    setUnorderedOpen, storages, toggleDensity, totalNetWeight, totalProductsCount, unorderedOpen,
   }
 }
 
@@ -778,6 +781,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
                 {t('Оприходувати')}
               </Button>
             )}
+            <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size="lg" />
           </Group>
         </Group>
       </Card>
@@ -793,6 +797,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
           <DataTable
             columns={columns}
             data={model.gridRows}
+            density={model.density}
             emptyText={t('Замовлень не знайдено')}
             getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
             isLoading={model.isLoading}

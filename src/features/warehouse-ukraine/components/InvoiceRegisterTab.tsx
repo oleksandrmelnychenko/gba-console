@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getInvoiceRegister, getInvoiceRegisterPrintDocument } from '../api/invoiceRegisterApi'
@@ -276,18 +278,21 @@ function useInvoiceRegisterModel() {
   }
 
   const columns = useInvoiceRegisterColumns(invoiceIndexMap)
+  const { density, toggleDensity } = useDataTableDensity('warehouse-ukraine-invoice-register', TABLE_DEFAULT_LAYOUT.density)
 
   return {
     ...state,
     applyFilters,
     closeDownload,
     columns,
+    density,
     exportDocument,
     filterError,
     loadMoreInvoices,
     reload,
     resetFilters,
     setPageSize,
+    toggleDensity,
   }
 }
 
@@ -320,6 +325,7 @@ export function InvoiceRegisterTab() {
           >
             {t('Роздрукувати')}
           </Button>
+          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
         </Group>
       </PageHeaderActions>
 
@@ -365,6 +371,7 @@ export function InvoiceRegisterTab() {
             columns={model.columns}
             data={model.invoices}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={model.density}
             emptyText={t('Накладних не знайдено')}
             getRowId={(invoice, index) => String(invoice.NetUid || invoice.Id || index)}
             isLoading={model.isLoading}

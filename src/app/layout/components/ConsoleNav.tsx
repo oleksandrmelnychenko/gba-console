@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
-import { getNodeIcon } from '../../../features/navigation/navigationIcons'
 import type { NavigationModule, NavigationNode } from '../../../features/navigation/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
@@ -74,7 +73,6 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
       {mode !== 'modules' && items.length > 0 && (
         <div className="console-subnav-row console-subnav-items">
           {items.map((node) => {
-            const Icon = getNodeIcon({ Module: node.Module, Route: node.Route })
             const key = node.NetUid || String(node.Id)
             const active = activeNodeKey != null && key === activeNodeKey
 
@@ -86,7 +84,6 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
                 aria-pressed={active}
                 onClick={() => openNode(node)}
               >
-                <Icon size={16} stroke={1.7} className="console-subnav-item-icon" />
                 <span>{node.Module}</span>
               </button>
             )

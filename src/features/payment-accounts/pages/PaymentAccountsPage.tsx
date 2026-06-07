@@ -19,6 +19,8 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
@@ -59,6 +61,7 @@ export function PaymentAccountsPage() {
   const [isLoading, setLoading] = useValueState(true)
   const [isLoadingLookups, setLoadingLookups] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const { density, toggleDensity } = useDataTableDensity('payment-accounts', PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT.density)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
@@ -236,6 +239,7 @@ export function PaymentAccountsPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
               <PermissionGate permissionKey={PAYMENT_ACCOUNT_CREATE_PERMISSION}>
                 <Button
                   color="violet"
@@ -297,6 +301,7 @@ export function PaymentAccountsPage() {
             columns={columns}
             data={accounts}
             defaultLayout={PAYMENT_ACCOUNTS_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Рахунків не знайдено')}
             getRowId={(account, index) => String(account.NetUid || account.Id || index)}
             isLoading={isTableBusy}

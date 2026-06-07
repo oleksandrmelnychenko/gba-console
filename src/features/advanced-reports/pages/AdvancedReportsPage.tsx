@@ -32,6 +32,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   calculateAdvancedReportOrder,
@@ -111,6 +113,7 @@ export function AdvancedReportsPage() {
   const filterError = getDateRangeError(fromDate, toDate)
   const lookupRequestRef = useRef(0)
   const structureCalculationRequestRef = useRef(0)
+  const { density, toggleDensity } = useDataTableDensity('advanced-reports', TABLE_DEFAULT_LAYOUT.density)
 
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(reports)
@@ -426,6 +429,7 @@ export function AdvancedReportsPage() {
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
+          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -503,6 +507,7 @@ export function AdvancedReportsPage() {
         columns={columns}
         data={rows}
         defaultLayout={TABLE_DEFAULT_LAYOUT}
+        density={density}
         emptyText={t('Авансових звітів не знайдено')}
         getRowId={(row) => row.id}
         isLoading={isTableBusy}
