@@ -2,27 +2,86 @@
   background: #f1f3f5;
 }
 
-.console-page-actions:not(:empty) {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 10px 20px 0 28px;
-}
-
-.console-page-content-header:not(:empty) {
-  padding: 8px 20px 0 28px;
-}
-
 .console-frame {
   background: #ffffff;
   min-height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 8px);
-  margin: 8px 0 0 8px;
-  padding: 18px 20px;
+  margin: 6px 0 0 0;
+  padding: 8px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
   overflow-x: hidden;
   box-shadow: 0 1px 3px rgba(57, 73, 76, 0.06);
+}
+
+.console-content-header-slot {
+  padding: 8px 0 0;
+}
+
+.console-content-header-slot:empty {
+  display: none;
+}
+
+/* Default page content header: breadcrumb (left) + page actions (right) */
+.console-content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px; /* fixed so the row never jumps when a tab has no action button */
+  margin-top: 6px; /* match the frame's 6px below → equal spacing above/below the bar */
+  padding: 0 16px;
+}
+
+.console-content-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.console-content-crumb {
+  color: var(--mantine-color-gray-6);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.console-content-crumb.is-current {
+  color: var(--mantine-color-gray-9);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console-content-crumb-sep {
+  flex: 0 0 auto;
+  color: var(--mantine-color-gray-4);
+}
+
+.console-content-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* Keep page action controls compact & uniform so the fixed-height bar fits them */
+.console-content-header-actions .mantine-Button-root {
+  height: 30px;
+}
+
+.console-content-header-actions .mantine-ActionIcon-root {
+  --ai-size: 30px !important;
+}
+
+/* Hide the default content header when a page supplies a fully custom one */
+.console-content:has(.console-content-header-slot:not(:empty)) .console-content-header {
+  display: none;
+}
+
+/* Hide the default bar entirely when it has neither crumbs nor actions */
+.console-content-header:not(:has(.console-content-crumb)):has(.console-content-header-actions:empty) {
+  display: none;
 }
 
 .console-frame .mantine-Card-root {
@@ -62,6 +121,8 @@
 .console-header {
   background: rgba(255, 255, 255, 0.98);
   border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
 }
 
 .mantine-Drawer-content {
@@ -73,11 +134,39 @@
 }
 
 .console-header-main {
-  height: 48px;
+  --console-header-brand-width: 188px;
+  display: grid;
+  grid-template-columns: var(--console-header-brand-width) minmax(0, 1fr) minmax(240px, auto);
+  grid-template-rows: 56px 38px;
+  column-gap: 16px;
+  height: 94px;
+  min-height: 94px;
+  align-items: center;
+  padding: 0 20px;
+  position: relative;
+}
+
+.console-header-main::before {
+  background: var(--mantine-color-gray-2);
+  content: '';
+  height: 1px;
+  left: 20px;
+  pointer-events: none;
+  position: absolute;
+  right: 20px;
+  top: 56px;
+  z-index: 3;
 }
 
 .console-header-brand {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
+  min-width: 0;
+  height: 56px;
+  gap: var(--mantine-spacing-xs);
 }
 
 .console-brand-button {
@@ -91,6 +180,7 @@
   cursor: pointer;
   font: inherit;
   gap: 10px;
+  height: 44px;
   text-align: left;
 }
 
@@ -102,36 +192,155 @@
 }
 
 .console-header-divider {
-  width: 1px;
-  height: 22px;
-  margin: 0 6px;
-  background: var(--mantine-color-gray-3);
+  display: none;
+}
+
+.console-header-top-nav,
+.console-header-bottom-nav {
+  grid-column: 2;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.console-header-top-nav {
+  grid-row: 1;
+  align-self: center;
+}
+
+.console-header-bottom-nav {
+  grid-row: 2;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+
+.console-header-top-nav > .console-subnav,
+.console-header-bottom-nav > .console-subnav {
+  min-width: 0;
+}
+
+.console-header-top-nav > .console-subnav-mode-modules {
+  align-self: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.console-header-top-nav > .console-subnav-mode-modules .console-subnav-row {
+  justify-content: safe center;
+  padding: 0 8px;
+}
+
+.console-header-top-nav > .console-subnav-mode-modules .console-subnav-modules {
+  background: transparent;
+  border-bottom: 0;
+}
+
+.console-header-top-nav > .console-subnav-mode-modules .console-subnav-pill {
+  height: 34px;
+}
+
+.console-header-bottom-nav > .console-subnav-mode-items {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  background: transparent; /* don't paint over the header's bottom border in the centre */
+  border-top: 0; /* the row divider (::before) already draws this line */
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  width: 100%;
+}
+
+.console-header-bottom-nav > .console-subnav-mode-items .console-subnav-row {
+  width: 100%;
+}
+
+.console-header-title {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+}
+
+.console-header-title .mantine-Title-root {
+  display: block;
+  margin: 0;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* Slot where each page teleports its primary action(s), next to the breadcrumb */
+.console-header-page-actions {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+  margin-left: 0;
+}
+
+.console-header-page-actions:empty {
+  display: none;
+}
+
+/* Compact, evenly-centred create buttons in the header */
+.console-header-page-actions .mantine-Button-root {
+  height: 30px;
+  min-height: 30px;
+  padding-inline: 13px;
+  font-size: 13px;
+}
+
+.console-header-page-actions .mantine-Button-label {
+  font-weight: 600;
 }
 
 .console-header-crumbs {
+  display: flex;
+  height: 20px;
   min-width: 0;
   max-width: 100%;
+  align-items: center;
   overflow: hidden;
 }
 
-.console-header-crumb-module {
+.console-header-crumbs .tx-blur-swap {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 20px;
+}
+
+.console-header-crumbs .tx-blur-swap-in,
+.console-header-crumbs .tx-blur-swap-layer {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  line-height: 20px;
+}
+
+.console-header-crumb {
+  display: inline-flex;
+  align-items: center;
   color: var(--mantine-color-gray-6);
+  font-size: var(--mantine-font-size-sm);
   font-weight: 500;
+  height: 20px;
+  line-height: 20px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 220px;
 }
 
-.console-header-crumb-page {
+.console-header-crumb.is-current {
   color: var(--mantine-color-gray-9);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 600;
   max-width: 360px;
 }
 
 .console-header-crumb-sep {
+  display: block;
+  align-self: center;
   color: var(--mantine-color-gray-4);
   flex: 0 0 auto;
 }
@@ -139,6 +348,12 @@
 .console-bell {
   position: relative;
   display: inline-flex;
+  overflow: visible;
+}
+
+.console-bell .mantine-ActionIcon-root,
+.console-header-actions > .mantine-ActionIcon-root {
+  overflow: visible;
 }
 
 .console-bell-badge {
@@ -261,18 +476,85 @@
 }
 
 .console-header-actions {
+  grid-column: 3;
+  grid-row: 1;
   flex: 0 0 auto;
+  align-self: center;
+  justify-self: end;
+  height: 64px;
+  align-items: center;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.console-header-date {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: center;
+  justify-self: start;
+  height: 42px;
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  font-size: 13px;
+  min-width: 0;
+  padding-left: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.console-header-date svg {
+  color: var(--mantine-color-gray-5);
+  flex: 0 0 auto;
+}
+
+.console-header-date .mantine-Text-root {
+  color: inherit;
+  line-height: 1;
+  text-transform: capitalize;
+}
+
+.console-header-user-panel {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+  height: 42px;
+  align-items: center;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .console-header-tool-actions {
   flex: 0 0 auto;
-  padding-right: 8px;
-  margin-right: 2px;
-  border-right: 1px solid var(--mantine-color-gray-2);
+  align-items: center;
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
+  overflow: visible !important;
 }
 
 .console-header-action {
   color: var(--mantine-color-gray-7);
+  overflow: visible !important;
+}
+
+.console-header-action .mantine-ActionIcon-icon,
+.console-header-action .mantine-Indicator-root {
+  overflow: visible !important;
+}
+
+.console-header-action .mantine-Indicator-indicator {
+  z-index: 20;
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 4px;
+  overflow: visible !important;
+  line-height: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 .console-header-action:hover {
@@ -284,6 +566,8 @@
   max-width: 180px;
   overflow: hidden;
   color: var(--mantine-color-gray-8);
+  font-size: 14px;
+  line-height: 20px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -393,9 +677,14 @@
   padding: 4px;
   border-radius: 999px;
   background: var(--mantine-color-gray-1);
+  width: fit-content;
+  margin-inline: auto; /* centre every tab row consistently */
 }
 
 .pill-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   height: 30px;
   padding: 0 14px;
   border: 0;
@@ -411,6 +700,10 @@
   transition:
     background-color 160ms var(--tx-ease-spring),
     color 160ms var(--tx-ease-spring);
+}
+
+.pill-tab-icon {
+  flex: 0 0 auto;
 }
 
 .pill-tab:hover {
@@ -560,11 +853,14 @@
 .dashboard-readiness-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .dashboard-table-wrap {
   flex: 1 1 auto;
   width: 100%;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 .console-footer {
@@ -852,4 +1148,104 @@
   .exchange-rates-history-date {
     flex-basis: 118px;
   }
+}
+
+/* Sub-header navigation (2 rows: modules / active-module items) */
+.console-subnav {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  background: var(--mantine-color-white);
+}
+
+.console-subnav-row {
+  display: flex;
+  align-items: center;
+  justify-content: safe center;
+  gap: 4px;
+  padding: 2px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+}
+
+.console-subnav-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.console-subnav-row::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+}
+
+.console-subnav-modules {
+  position: relative;
+  background: var(--mantine-color-gray-1);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  overflow: visible;
+}
+
+.console-subnav-pill {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mantine-color-gray-7);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+  white-space: nowrap;
+  transition:
+    background-color 140ms var(--tx-ease-spring),
+    color 140ms var(--tx-ease-spring);
+}
+
+.console-subnav-pill:hover {
+  color: var(--mantine-color-violet-7);
+}
+
+.console-subnav-item:hover {
+  color: var(--mantine-color-orange-light-color);
+}
+
+.console-subnav-module.is-active,
+.console-subnav-module.is-active:hover {
+  background: transparent;
+  color: var(--mantine-color-violet-7);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.console-subnav-item-icon {
+  flex: 0 0 auto;
+}
+
+.console-subnav-items {
+  position: relative;
+  overflow: visible;
+}
+
+.console-subnav-item.is-active,
+.console-subnav-item.is-active:hover {
+  background: transparent;
+  color: var(--mantine-color-orange-light-color);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.console-subnav-state {
+  padding: 10px 12px;
+  color: var(--mantine-color-dimmed);
+  font-size: 13px;
 }

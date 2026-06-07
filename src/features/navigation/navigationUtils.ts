@@ -90,7 +90,7 @@ export function isNavigationNodeRouteTarget(node: NavigationNode, pathname: stri
 
 function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNode | null {
   let activeNode: NavigationNode | null = null
-  let activeRouteLength = -1
+  let activeScore = -1
 
   for (const node of nodes) {
     if (!isNavigationNodeActive(node, pathname)) {
@@ -98,14 +98,34 @@ function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNo
     }
 
     const routeLength = splitPath(node.Route).length
+    const queryScore = getRouteQueryScore(node.Route, pathname)
+    const routeScore = routeLength * 1000 + queryScore
 
-    if (routeLength > activeRouteLength) {
+    if (routeScore > activeScore) {
       activeNode = node
-      activeRouteLength = routeLength
+      activeScore = routeScore
     }
   }
 
   return activeNode
+}
+
+function getRouteQueryScore(route: string | undefined, currentPath: string): number {
+  const routeParams = getRouteSearchParams(route)
+
+  if (routeParams.size === 0) {
+    return 0
+  }
+
+  const currentParams = getRouteSearchParams(currentPath)
+
+  for (const [key, value] of routeParams) {
+    if (currentParams.get(key) !== value) {
+      return -1
+    }
+  }
+
+  return routeParams.size
 }
 
 function isRemovedNavigationModule(module: NavigationModule): boolean {
@@ -152,6 +172,23 @@ function splitRouteTarget(path: string): { pathname: string; suffix: string } {
     pathname: path.slice(0, suffixIndex),
     suffix: path.slice(suffixIndex),
   }
+}
+
+function getRouteSearchParams(path: string | undefined): URLSearchParams {
+  if (!path) {
+    return new URLSearchParams()
+  }
+
+  const queryIndex = path.indexOf('?')
+
+  if (queryIndex === -1) {
+    return new URLSearchParams()
+  }
+
+  const hashIndex = path.indexOf('#', queryIndex)
+  const query = hashIndex === -1 ? path.slice(queryIndex + 1) : path.slice(queryIndex + 1, hashIndex)
+
+  return new URLSearchParams(query)
 }
 
 function splitPath(path?: string): string[] {
