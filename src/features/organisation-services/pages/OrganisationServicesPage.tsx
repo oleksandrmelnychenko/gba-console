@@ -31,6 +31,10 @@ import {
   findAutoSelectableOrganization,
   isOrganizationSearchResultForValue,
 } from '../components/organisationSearchSelection'
+import {
+  getBrokerServiceType,
+  type ServiceTypeClassificationContext,
+} from '../serviceTypeClassifier'
 import type {
   DocumentFilter,
   OrganizationPaymentTasks,
@@ -128,8 +132,20 @@ function useOrganisationServicesPageModel() {
     [selectedOrganization?.ServiceOrganizationTypes],
   )
   const rows = useMemo(
-    () => filterRows(flattenPaymentTasks(paymentTasks.SupplyPaymentTasks), documentFilters),
-    [documentFilters, paymentTasks.SupplyPaymentTasks],
+    () => filterRows(
+      flattenPaymentTasks(paymentTasks.SupplyPaymentTasks, {
+        organizationName: lastSearchParams?.organizationName || selectedOrganization?.Name,
+        serviceTypes: lastSearchParams?.serviceTypes,
+      }),
+      documentFilters,
+    ),
+    [
+      documentFilters,
+      lastSearchParams?.organizationName,
+      lastSearchParams?.serviceTypes,
+      paymentTasks.SupplyPaymentTasks,
+      selectedOrganization?.Name,
+    ],
   )
   const columns = useOrganisationServicesColumns()
   const visibleError = organizationSearchState.error || error
@@ -682,11 +698,11 @@ function useOrganisationServicesColumns(): DataTableColumn<PaymentTaskRow>[] {
   )
 }
 
-function flattenPaymentTasks(tasks: SupplyPaymentTask[]): PaymentTaskRow[] {
+function flattenPaymentTasks(tasks: SupplyPaymentTask[], context: ServiceTypeClassificationContext): PaymentTaskRow[] {
   return tasks.flatMap((task, taskIndex) =>
     serviceCollections.flatMap((collection) =>
       readServices(task, collection.key).map((service, serviceIndex) => {
-        const serviceType = getServiceType(collection, service)
+        const serviceType = getServiceType(collection, service, context)
         const serviceTypeLabel = getServiceTypeLabel(serviceType)
         const invoiceDocument = getInvoiceDocument(task, service)
         const invoiceDocumentId = getInvoiceDocumentId(service)
@@ -777,8 +793,11 @@ function getServiceTypeLabel(value: ServiceOrganizationTypeValue): string {
 function getServiceType(
   collection: { key: ServiceCollectionKey; serviceType: ServiceOrganizationTypeValue },
   service: ServiceItem,
+  context: ServiceTypeClassificationContext,
 ): ServiceOrganizationTypeValue {
-  return collection.key === 'BrokerServices' && service.SupplyCustomType === 1 ? 3 : collection.serviceType
+  return collection.key === 'BrokerServices'
+    ? getBrokerServiceType(service, context, collection.serviceType)
+    : collection.serviceType
 }
 
 function buildServiceOptions(serviceTypes: ServiceOrganizationTypeValue[]) {

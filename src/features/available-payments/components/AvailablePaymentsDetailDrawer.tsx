@@ -48,6 +48,10 @@ import {
   getAvailablePaymentSelectionError,
   validateAvailablePaymentSelection,
 } from '../models/availablePaymentSelection'
+import {
+  countActiveDocuments,
+  getTaskPaymentProofDocumentCount,
+} from '../models/availablePaymentDocuments'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   createAvailablePaymentOutcome,
@@ -394,7 +398,7 @@ function useAvailablePaymentsDetailDrawerModel({
 
     if (
       shouldRequireDocuments &&
-      payableModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)
+      payableModels.some((model) => getTaskPaymentProofDocumentCount(model, filesByTaskId[model.id] || []) === 0)
     ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
@@ -564,7 +568,7 @@ function useAvailablePaymentsDetailDrawerModel({
 
     if (
       outcomeRequiresDocuments &&
-      outcomeModels.some((model) => getTaskDocumentCount(model, filesByTaskId[model.id] || []) === 0)
+      outcomeModels.some((model) => getTaskPaymentProofDocumentCount(model, filesByTaskId[model.id] || []) === 0)
     ) {
       setError(t('Додайте хоча б один документ до кожної платіжної задачі'))
       return
@@ -1718,18 +1722,6 @@ function buildTaskWithDocumentChanges(model: AvailablePaymentTaskModel, files: F
       })),
     ],
   }
-}
-
-function getTaskDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
-  return (
-    countActiveDocuments(model.task.SupplyPaymentTaskDocuments) +
-    countActiveDocuments(model.documents) +
-    files.length
-  )
-}
-
-function countActiveDocuments(documents: AvailablePaymentDocument[] = []): number {
-  return documents.filter((document) => !document.Deleted).length
 }
 
 function uniqueOutcomeModels(models: AvailablePaymentTaskModel[]): AvailablePaymentTaskModel[] {

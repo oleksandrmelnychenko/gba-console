@@ -53,6 +53,8 @@ export type ServiceItem = EntityFields & {
   BillOfLadingDocument?: BillOfLadingDocument | null
   BillOfLadingDocumentId?: number
   BillOfLadingDocuments?: BillOfLadingDocument[]
+  CustomOrganization?: ServiceOrganization | null
+  ExciseDutyOrganization?: ServiceOrganization | null
   FromDate?: string
   GrossPrice?: number
   InvoiceDocuments?: BaseDocument[]

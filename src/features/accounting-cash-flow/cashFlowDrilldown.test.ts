@@ -36,6 +36,44 @@ describe('cashFlowDrilldown', () => {
         },
       } as AccountingCashFlowHeadItem),
     ).toBe('/product-delivery-protocols/protocol-1')
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 14,
+        SupplyPaymentTask: {
+          ConsumablesOrder: {
+            NetUid: 'consumable-order-1',
+          },
+        },
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/accounting/consumable-orders/edit/consumable-order-1')
+  })
+
+  it('routes consumable orders from direct rows and related outcome orders', () => {
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 10,
+        ConsumablesOrder: { NetUid: 'consumable-order-2' },
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/accounting/consumable-orders/edit/consumable-order-2')
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 11,
+        OutcomePaymentOrder: {
+          NetUid: 'outcome-2',
+          OutcomePaymentOrderConsumablesOrders: [
+            {
+              Deleted: true,
+              ConsumablesOrder: { NetUid: 'deleted-consumable-order' },
+            },
+            {
+              ConsumablesOrder: { NetUid: 'consumable-order-3' },
+            },
+          ],
+        },
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/accounting/consumable-orders/edit/consumable-order-3')
   })
 
   it('routes act providing services and resales', () => {
@@ -78,8 +116,31 @@ describe('cashFlowDrilldown', () => {
 
     expect(
       getAccountingCashFlowDrilldownRoute({
+        Type: 11,
+        OutcomePaymentOrder: {
+          NetUid: 'outcome-without-detail-route',
+        },
+      } as AccountingCashFlowHeadItem),
+    ).toBeNull()
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 12,
+        IncomePaymentOrder: { NetUid: 'income-1' },
+      } as AccountingCashFlowHeadItem),
+    ).toBeNull()
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
         Type: 13,
         Sale: { NetUid: 'sale-1' },
+      } as AccountingCashFlowHeadItem),
+    ).toBeNull()
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 15,
+        SaleReturn: { NetUid: 'sale-return-1' },
       } as AccountingCashFlowHeadItem),
     ).toBeNull()
   })

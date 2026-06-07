@@ -3,7 +3,10 @@ import type { AccountingCashFlowHeadItem } from './types'
 const JOIN_SERVICE_TYPE = {
   ConsumablesOrder: 10,
   OutcomePaymentOrder: 11,
+  IncomePaymentOrder: 12,
+  Sale: 13,
   SupplyPaymentTask: 14,
+  SaleReturn: 15,
   SupplyOrderUkraine: 16,
   MergedService: 17,
   SupplyOrderUkrainePaymentDeliveryProtocol: 18,
@@ -45,11 +48,18 @@ export function getAccountingCashFlowDrilldownRoute(item: AccountingCashFlowHead
 
 function resolveDirectRoute(record: Record<string, unknown>, type?: number): string | null {
   if (type === JOIN_SERVICE_TYPE.OutcomePaymentOrder) {
-    const outcome = toRecord(record.OutcomePaymentOrder)
-    const outcomeNetUid = getNetUid(outcome)
+    const route = resolveOutcomePaymentOrderRoute(toRecord(record.OutcomePaymentOrder) || record)
 
-    if (outcome?.IsUnderReport === true && outcomeNetUid) {
-      return `/accounting/outgoing-cashflow/${encodeURIComponent(outcomeNetUid)}/advanced-report/view`
+    if (route) {
+      return route
+    }
+  }
+
+  if (type === JOIN_SERVICE_TYPE.ConsumablesOrder) {
+    const route = resolveConsumablesOrderRoute(toRecord(record.ConsumablesOrder) || record)
+
+    if (route) {
+      return route
     }
   }
 
@@ -96,7 +106,13 @@ function resolveTaskRoute(record: Record<string, unknown>): string | null {
     const items = Array.isArray(value) ? value : value ? [value] : []
 
     for (const item of items) {
-      const route = resolveDirectRoute(toRecord(item) || {}, undefined)
+      const itemRecord = toRecord(item)
+      const route = itemRecord
+        ? resolveDirectRoute(
+            itemRecord,
+            field === 'ConsumablesOrder' ? JOIN_SERVICE_TYPE.ConsumablesOrder : undefined,
+          )
+        : null
 
       if (route) {
         return route
@@ -117,6 +133,37 @@ function resolveUkraineOrderRoute(order: Record<string, unknown> | null, mode: '
   return mode === 'protocols'
     ? `/orders/ukraine/protocols/${encodeURIComponent(orderNetUid)}`
     : `/orders/ukraine/view/${encodeURIComponent(orderNetUid)}`
+}
+
+function resolveOutcomePaymentOrderRoute(outcome: Record<string, unknown> | null): string | null {
+  const outcomeNetUid = getNetUid(outcome)
+
+  if (outcome?.IsUnderReport === true && outcomeNetUid) {
+    return `/accounting/outgoing-cashflow/${encodeURIComponent(outcomeNetUid)}/advanced-report/view`
+  }
+
+  return resolveOutcomeConsumablesOrderRoute(outcome)
+}
+
+function resolveOutcomeConsumablesOrderRoute(outcome: Record<string, unknown> | null): string | null {
+  const relatedOrders = toArray(outcome?.OutcomePaymentOrderConsumablesOrders)
+
+  for (const relatedOrder of relatedOrders) {
+    const relatedOrderRecord = toRecord(relatedOrder)
+    const consumablesOrder = toRecord(relatedOrderRecord?.ConsumablesOrder)
+
+    if (relatedOrderRecord?.Deleted === true || consumablesOrder?.Deleted === true) {
+      continue
+    }
+
+    const route = resolveConsumablesOrderRoute(consumablesOrder)
+
+    if (route) {
+      return route
+    }
+  }
+
+  return null
 }
 
 function resolveUkraineProtocolRoute(protocol: Record<string, unknown> | null): string | null {
@@ -168,4 +215,8 @@ function stringValue(value: unknown): string {
 
 function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+}
+
+function toArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : value ? [value] : []
 }
