@@ -102,13 +102,15 @@ export async function calculateCompanyCarRoadList(roadList: CompanyCarRoadListPa
   return normalizeCompanyCarRoadList(result)
 }
 
-export async function deleteCompanyCarRoadList(netId: string): Promise<void> {
-  await apiRequest<unknown>('/consumables/company/cars/roadlists/delete', {
+export async function deleteCompanyCarRoadList(netId: string): Promise<CompanyCar | null> {
+  const result = await apiRequest<unknown>('/consumables/company/cars/roadlists/delete', {
     method: 'DELETE',
     query: {
       netId,
     },
   })
+
+  return normalizeCompanyCar(result)
 }
 
 export async function getOutcomeOrdersByCompanyCar(companyCarNetId: string): Promise<OutcomePaymentOrder[]> {
@@ -172,6 +174,7 @@ function normalizeCompanyCarRoadList(result: unknown): CompanyCarRoadList | null
 
   return {
     ...roadList,
+    CompanyCar: normalizeCompanyCar(roadList.CompanyCar),
     CompanyCarRoadListDrivers: Array.isArray(roadList.CompanyCarRoadListDrivers)
       ? roadList.CompanyCarRoadListDrivers.filter((driver): driver is NonNullable<typeof driver> => Boolean(driver && typeof driver === 'object'))
       : [],

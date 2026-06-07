@@ -22,10 +22,19 @@ export type UserProfile = NamedEntity & {
   PhoneNumber?: string
 }
 
+export type ConsumablesStorage = EntityFields & {
+  CompanyCar?: CompanyCar | null
+  Description?: string
+  Name?: string
+  Organization?: Organization | null
+  ResponsibleUser?: UserProfile | null
+}
+
 export type CompanyCar = EntityFields & {
   CarBrand?: string
   CompanyCarFuelings?: unknown[]
   CompanyCarRoadLists?: CompanyCarRoadList[]
+  ConsumablesStorage?: ConsumablesStorage | null
   CreatedBy?: UserProfile | null
   FuelAmount?: number
   InCityConsumption?: number

@@ -22,6 +22,7 @@ import {
   createCompanyCarRoadList,
   getOutcomeOrdersByCompanyCar,
   searchCompanyCarUsers,
+  updateCompanyCarRoadList,
 } from '../api/companyCarsApi'
 import type {
   CompanyCar,
@@ -64,7 +65,8 @@ type RoadListModalAction =
   | { type: 'loaded-users'; users: UserProfile[] }
   | { type: 'patch-form'; patch: Partial<RoadListFormState> }
   | { type: 'remove-driver'; driver: CompanyCarRoadListDriver }
-  | { type: 'reset' }
+  | { type: 'reset'; roadList: CompanyCarRoadList | null }
+  | { type: 'restore-driver'; driver: CompanyCarRoadListDriver }
   | { type: 'selected-outcome-changed'; selectedOutcomeNetUid: string }
   | { type: 'started-saving' }
   | { type: 'user-search-changed'; userSearchValue: string }
@@ -72,13 +74,103 @@ type RoadListModalAction =
 export function CompanyCarRoadListFormModal({
   companyCar,
   onClose,
-  onCreated,
   opened,
+  roadList,
+  onSaved,
 }: {
   companyCar: CompanyCar
   onClose: () => void
-  onCreated: (roadList: CompanyCarRoadList) => void
   opened: boolean
+  roadList?: CompanyCarRoadList | null
+  onSaved: (roadList: CompanyCarRoadList) => void
+}) {
+  const { t } = useI18n()
+  const {
+    activeDrivers,
+    calculated,
+    error,
+    effectiveCompanyCar,
+    effectiveResponsible,
+    form,
+    handleSave,
+    isEditMode,
+    isMileageOnly,
+    isMixedDisabled,
+    isSaving,
+    outcomeOptions,
+    selectedOutcomeNetUid,
+    userOptions,
+    userSearchValue,
+    addDriver,
+    patchForm,
+    removeDriver,
+    selectOutcome,
+    setUserSearchValue,
+  } = useRoadListFormModel({ companyCar, onSaved, opened, roadList: roadList || null })
+
+  return (
+    <AppModal
+      centered
+      opened={opened}
+      size="lg"
+      title={`${isEditMode ? t('Редагування шляхового листа') : t('Створення шляхового листа')} ${t('для автомобіля')} ${effectiveCompanyCar.LicensePlate || ''}`.trim()}
+      onClose={onClose}
+    >
+      <Stack gap="md">
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <RoadListSummary companyCar={effectiveCompanyCar} calculated={calculated} responsible={effectiveResponsible} />
+
+        <Select
+          data={outcomeOptions}
+          label={t('Виберіть вихідну статтю бюджету')}
+          placeholder={t('Видаткова стаття бюджету')}
+          value={selectedOutcomeNetUid || null}
+          onChange={selectOutcome}
+        />
+
+        <RoadListKilometerFields
+          form={form}
+          isMileageOnly={isMileageOnly}
+          isMixedDisabled={isMixedDisabled}
+          onPatch={patchForm}
+        />
+
+        <TextInput
+          label={t('Коментар')}
+          value={form.comment}
+          onChange={(event) => patchForm({ comment: event.currentTarget.value })}
+        />
+
+        <RoadListDriversEditor
+          activeDrivers={activeDrivers}
+          userOptions={userOptions}
+          userSearchValue={userSearchValue}
+          onAddDriver={addDriver}
+          onRemoveDriver={removeDriver}
+          onSearchChange={setUserSearchValue}
+        />
+
+        <RoadListFormFooter calculated={calculated} isSaving={isSaving} onClose={onClose} onSave={handleSave} />
+      </Stack>
+    </AppModal>
+  )
+}
+
+function useRoadListFormModel({
+  companyCar,
+  onSaved,
+  opened,
+  roadList,
+}: {
+  companyCar: CompanyCar
+  onSaved: (roadList: CompanyCarRoadList) => void
+  opened: boolean
+  roadList: CompanyCarRoadList | null
 }) {
   const { t } = useI18n()
   const { user } = useAuth()
@@ -97,7 +189,16 @@ export function CompanyCarRoadListFormModal({
   const [debouncedUserSearchValue] = useDebouncedValue(userSearchValue, USER_SEARCH_DEBOUNCE_MS)
   const [debouncedForm] = useDebouncedValue(form, CALCULATE_DEBOUNCE_MS)
 
-  const companyCarNetUid = companyCar.NetUid || ''
+  const editedRoadList = roadList
+  const isEditMode = Boolean(editedRoadList?.Id || editedRoadList?.NetUid)
+  const fallbackResponsible = useMemo(() => toUserProfile(user), [user])
+  const effectiveCompanyCar = useMemo(
+    () => ({ ...companyCar, ...(editedRoadList?.CompanyCar || {}) }),
+    [companyCar, editedRoadList],
+  )
+  const effectiveResponsible = editedRoadList?.Responsible || fallbackResponsible
+  const activeDrivers = useMemo(() => drivers.filter((driver) => !driver.Deleted), [drivers])
+  const companyCarNetUid = effectiveCompanyCar.NetUid || ''
   const isMileageOnly = parseDecimal(form.mixedModeKilometers) !== 0
   const isMixedDisabled = parseDecimal(form.inCityKilometers) !== 0 || parseDecimal(form.outsideCityKilometers) !== 0
 
@@ -106,8 +207,8 @@ export function CompanyCarRoadListFormModal({
       return
     }
 
-    dispatchState({ type: 'reset' })
-  }, [opened])
+    dispatchState({ roadList: editedRoadList, type: 'reset' })
+  }, [editedRoadList, opened])
 
   useEffect(() => {
     if (!opened || !companyCarNetUid) {
@@ -119,7 +220,7 @@ export function CompanyCarRoadListFormModal({
     void getOutcomeOrdersByCompanyCar(companyCarNetUid)
       .then((nextOrders) => {
         if (!cancelled) {
-          dispatchState({ outcomeOrders: nextOrders, type: 'loaded-outcome-orders' })
+          dispatchState({ outcomeOrders: mergeOutcomeOrders(editedRoadList?.OutcomePaymentOrder, nextOrders), type: 'loaded-outcome-orders' })
         }
       })
       .catch((loadError: unknown) => {
@@ -134,7 +235,7 @@ export function CompanyCarRoadListFormModal({
     return () => {
       cancelled = true
     }
-  }, [companyCarNetUid, opened, t])
+  }, [companyCarNetUid, editedRoadList, opened, t])
 
   useEffect(() => {
     if (!opened) {
@@ -177,15 +278,24 @@ export function CompanyCarRoadListFormModal({
       return
     }
 
+    if (isEditMode && editedRoadList) {
+      dispatchState({
+        calculated: calculateEditedRoadListPreview(editedRoadList, effectiveCompanyCar, debouncedForm),
+        type: 'calculated',
+      })
+      return
+    }
+
     let cancelled = false
 
     void calculateCompanyCarRoadList(
       buildRoadListPayload({
+        baseRoadList: editedRoadList,
         companyCar,
         drivers,
         form: debouncedForm,
         outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
-        responsible: toUserProfile(user),
+        responsible: effectiveResponsible,
       }),
     )
       .then((result) => {
@@ -205,7 +315,7 @@ export function CompanyCarRoadListFormModal({
     return () => {
       cancelled = true
     }
-  }, [companyCar, companyCarNetUid, debouncedForm, drivers, opened, outcomeOrders, selectedOutcomeNetUid, t, user])
+  }, [companyCar, companyCarNetUid, debouncedForm, drivers, editedRoadList, effectiveCompanyCar, effectiveResponsible, isEditMode, opened, outcomeOrders, selectedOutcomeNetUid, t])
 
   const outcomeOptions = useMemo(
     () => toSelectOptions(outcomeOrders, (order) => order.Number),
@@ -216,6 +326,18 @@ export function CompanyCarRoadListFormModal({
     [users],
   )
 
+  function patchForm(patch: Partial<RoadListFormState>) {
+    dispatchState({ patch, type: 'patch-form' })
+  }
+
+  function selectOutcome(value: string | null) {
+    dispatchState({ selectedOutcomeNetUid: value || '', type: 'selected-outcome-changed' })
+  }
+
+  function setUserSearchValue(value: string) {
+    dispatchState({ type: 'user-search-changed', userSearchValue: value })
+  }
+
   function addDriver(netUid: string | null) {
     if (!netUid) {
       return
@@ -223,7 +345,14 @@ export function CompanyCarRoadListFormModal({
 
     const profile = users.find((candidate) => getEntityValue(candidate) === netUid)
 
-    if (!profile || drivers.some((driver) => getEntityValue(driver.User) === netUid)) {
+    if (!profile || drivers.some((driver) => !driver.Deleted && getEntityValue(driver.User) === netUid)) {
+      return
+    }
+
+    const removedDriver = drivers.find((driver) => driver.Deleted && getEntityValue(driver.User) === netUid)
+
+    if (removedDriver) {
+      dispatchState({ driver: removedDriver, type: 'restore-driver' })
       return
     }
 
@@ -243,17 +372,18 @@ export function CompanyCarRoadListFormModal({
 
     try {
       const payload = buildRoadListPayload({
+        baseRoadList: editedRoadList,
         calculated,
-        companyCar,
+        companyCar: effectiveCompanyCar,
         drivers,
         form,
         outcomeOrder: outcomeOrders.find((order) => getEntityValue(order) === selectedOutcomeNetUid) || null,
-        responsible: toUserProfile(user),
+        responsible: effectiveResponsible,
       })
-      const created = await createCompanyCarRoadList(payload)
+      const saved = isEditMode ? await updateCompanyCarRoadList(payload) : await createCompanyCarRoadList(payload)
 
-      if (created) {
-        onCreated(created)
+      if (saved) {
+        onSaved(saved)
       }
     } catch (saveError) {
       dispatchState({
@@ -265,117 +395,176 @@ export function CompanyCarRoadListFormModal({
     }
   }
 
+  return {
+    activeDrivers,
+    calculated,
+    effectiveCompanyCar,
+    effectiveResponsible,
+    error,
+    form,
+    handleSave,
+    isEditMode,
+    isMileageOnly,
+    isMixedDisabled,
+    isSaving,
+    outcomeOptions,
+    selectedOutcomeNetUid,
+    userOptions,
+    userSearchValue,
+    addDriver,
+    patchForm,
+    removeDriver,
+    selectOutcome,
+    setUserSearchValue,
+  }
+}
+
+function RoadListSummary({
+  calculated,
+  companyCar,
+  responsible,
+}: {
+  calculated: CompanyCarRoadList | null
+  companyCar: CompanyCar
+  responsible: UserProfile | null
+}) {
+  const { t } = useI18n()
+
   return (
-    <AppModal
-      centered
-      opened={opened}
-      size="lg"
-      title={`${t('Створення шляхового листа')} ${t('для автомобіля')} ${companyCar.LicensePlate || ''}`.trim()}
-      onClose={onClose}
-    >
-      <Stack gap="md">
-        {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <ReadonlyItem label={t('Показники одометра')} value={formatNumber(companyCar.Mileage)} />
+      <ReadonlyItem label={t('Кількість пального')} value={formatNumber(companyCar.FuelAmount)} />
+      <ReadonlyItem label={t('Відповідальний')} value={displayValue(responsible?.LastName)} />
+      <ReadonlyItem label={t('Кількість пального')} value={formatNumber(calculated?.FuelAmount ?? 0)} />
+      <ReadonlyItem label={t('Загальний кілометраж')} value={formatNumber(calculated?.TotalKilometers ?? 0)} />
+    </SimpleGrid>
+  )
+}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <ReadonlyItem label={t('Показники одометра')} value={formatNumber(companyCar.Mileage)} />
-          <ReadonlyItem label={t('Кількість пального')} value={formatNumber(companyCar.FuelAmount)} />
-          <ReadonlyItem label={t('Відповідальний')} value={displayValue(user?.LastName)} />
-          <ReadonlyItem label={t('Кількість пального')} value={formatNumber(calculated?.FuelAmount ?? 0)} />
-          <ReadonlyItem label={t('Загальний кілометраж')} value={formatNumber(calculated?.TotalKilometers ?? 0)} />
-        </SimpleGrid>
+function RoadListKilometerFields({
+  form,
+  isMileageOnly,
+  isMixedDisabled,
+  onPatch,
+}: {
+  form: RoadListFormState
+  isMileageOnly: boolean
+  isMixedDisabled: boolean
+  onPatch: (patch: Partial<RoadListFormState>) => void
+}) {
+  const { t } = useI18n()
 
-        <Select
-          data={outcomeOptions}
-          label={t('Виберіть вихідну статтю бюджету')}
-          placeholder={t('Видаткова стаття бюджету')}
-          value={selectedOutcomeNetUid || null}
-          onChange={(value) => dispatchState({ selectedOutcomeNetUid: value || '', type: 'selected-outcome-changed' })}
-        />
+  return (
+    <SimpleGrid cols={{ base: 1, sm: 2 }}>
+      <TextInput
+        label={t('Показники одометра')}
+        value={form.mileage}
+        onChange={(event) => onPatch({ mileage: event.currentTarget.value })}
+      />
+      <TextInput
+        disabled={isMileageOnly}
+        label={t('По місту')}
+        value={form.inCityKilometers}
+        onChange={(event) => onPatch({ inCityKilometers: event.currentTarget.value })}
+      />
+      <TextInput
+        disabled={isMileageOnly}
+        label={t('За містом')}
+        value={form.outsideCityKilometers}
+        onChange={(event) => onPatch({ outsideCityKilometers: event.currentTarget.value })}
+      />
+      <TextInput
+        disabled={isMixedDisabled}
+        label={t('Змішаний режим')}
+        value={form.mixedModeKilometers}
+        onChange={(event) => onPatch({ mixedModeKilometers: event.currentTarget.value })}
+      />
+    </SimpleGrid>
+  )
+}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <TextInput
-            label={t('Показники одометра')}
-            value={form.mileage}
-            onChange={(event) => dispatchState({ patch: { mileage: event.currentTarget.value }, type: 'patch-form' })}
-          />
-          <TextInput
-            disabled={isMileageOnly}
-            label={t('По місту')}
-            value={form.inCityKilometers}
-            onChange={(event) => dispatchState({ patch: { inCityKilometers: event.currentTarget.value }, type: 'patch-form' })}
-          />
-          <TextInput
-            disabled={isMileageOnly}
-            label={t('За містом')}
-            value={form.outsideCityKilometers}
-            onChange={(event) => dispatchState({ patch: { outsideCityKilometers: event.currentTarget.value }, type: 'patch-form' })}
-          />
-          <TextInput
-            disabled={isMixedDisabled}
-            label={t('Змішаний режим')}
-            value={form.mixedModeKilometers}
-            onChange={(event) => dispatchState({ patch: { mixedModeKilometers: event.currentTarget.value }, type: 'patch-form' })}
-          />
-        </SimpleGrid>
+function RoadListDriversEditor({
+  activeDrivers,
+  userOptions,
+  userSearchValue,
+  onAddDriver,
+  onRemoveDriver,
+  onSearchChange,
+}: {
+  activeDrivers: CompanyCarRoadListDriver[]
+  userOptions: Array<{ label: string; value: string }>
+  userSearchValue: string
+  onAddDriver: (netUid: string | null) => void
+  onRemoveDriver: (driver: CompanyCarRoadListDriver) => void
+  onSearchChange: (value: string) => void
+}) {
+  const { t } = useI18n()
 
-        <TextInput
-          label={t('Коментар')}
-          value={form.comment}
-          onChange={(event) => dispatchState({ patch: { comment: event.currentTarget.value }, type: 'patch-form' })}
-        />
+  return (
+    <>
+      <Select
+        clearable
+        searchable
+        data={userOptions}
+        label={t('Кому видано')}
+        placeholder={t('Місце вводу для пошуку')}
+        searchValue={userSearchValue}
+        value={null}
+        onChange={onAddDriver}
+        onSearchChange={onSearchChange}
+      />
 
-        <Select
-          clearable
-          searchable
-          data={userOptions}
-          label={t('Кому видано')}
-          placeholder={t('Місце вводу для пошуку')}
-          searchValue={userSearchValue}
-          value={null}
-          onChange={addDriver}
-          onSearchChange={(value) => dispatchState({ type: 'user-search-changed', userSearchValue: value })}
-        />
-
-        {drivers.length > 0 && (
-          <Group gap="xs">
-            {drivers.map((driver, index) => (
-              <Chip key={getEntityValue(driver.User) || index} checked={false} variant="light">
-                <Group gap={4} wrap="nowrap">
-                  <Text size="sm">{displayValue(getEntityName(driver.User))}</Text>
-                  <ActionIcon
-                    aria-label={t('Видалити')}
-                    color="red"
-                    size="xs"
-                    variant="subtle"
-                    onClick={() => removeDriver(driver)}
-                  >
-                    <IconX size={12} />
-                  </ActionIcon>
-                </Group>
-              </Chip>
-            ))}
-          </Group>
-        )}
-
-        <Group justify="space-between">
-          <Badge color="gray" variant="light">
-            {t('Загальний кілометраж')}: {formatNumber(calculated?.TotalKilometers ?? 0)}
-          </Badge>
-          <Group gap="xs">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={handleSave}>
-              {t('Зберегти')}
-            </Button>
-          </Group>
+      {activeDrivers.length > 0 && (
+        <Group gap="xs">
+          {activeDrivers.map((driver, index) => (
+            <Chip key={getEntityValue(driver.User) || index} checked={false} variant="light">
+              <Group gap={4} wrap="nowrap">
+                <Text size="sm">{displayValue(getEntityName(driver.User))}</Text>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  size="xs"
+                  variant="subtle"
+                  onClick={() => onRemoveDriver(driver)}
+                >
+                  <IconX size={12} />
+                </ActionIcon>
+              </Group>
+            </Chip>
+          ))}
         </Group>
-      </Stack>
-    </AppModal>
+      )}
+    </>
+  )
+}
+
+function RoadListFormFooter({
+  calculated,
+  isSaving,
+  onClose,
+  onSave,
+}: {
+  calculated: CompanyCarRoadList | null
+  isSaving: boolean
+  onClose: () => void
+  onSave: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group justify="space-between">
+      <Badge color="gray" variant="light">
+        {t('Загальний кілометраж')}: {formatNumber(calculated?.TotalKilometers ?? 0)}
+      </Badge>
+      <Group gap="xs">
+        <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+          {t('Скасувати')}
+        </Button>
+        <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={onSave}>
+          {t('Зберегти')}
+        </Button>
+      </Group>
+    </Group>
   )
 }
 
@@ -391,14 +580,18 @@ function ReadonlyItem({ label, value }: { label: string; value: string }) {
 }
 
 function createRoadListModalState(): RoadListModalState {
+  return createRoadListModalStateFrom(null)
+}
+
+function createRoadListModalStateFrom(roadList: CompanyCarRoadList | null): RoadListModalState {
   return {
-    calculated: null,
-    drivers: [],
+    calculated: roadList,
+    drivers: Array.isArray(roadList?.CompanyCarRoadListDrivers) ? roadList.CompanyCarRoadListDrivers : [],
     error: null,
-    form: createEmptyForm(),
+    form: createFormFromRoadList(roadList),
     isSaving: false,
-    outcomeOrders: [],
-    selectedOutcomeNetUid: '',
+    outcomeOrders: roadList?.OutcomePaymentOrder ? [roadList.OutcomePaymentOrder] : [],
+    selectedOutcomeNetUid: getEntityValue(roadList?.OutcomePaymentOrder),
     userSearchValue: '',
     users: [],
   }
@@ -431,7 +624,7 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
       return {
         ...state,
         outcomeOrders: action.outcomeOrders,
-        selectedOutcomeNetUid: getEntityValue(action.outcomeOrders[0]) || '',
+        selectedOutcomeNetUid: state.selectedOutcomeNetUid || getEntityValue(action.outcomeOrders[0]) || '',
       }
     case 'loaded-users':
       return {
@@ -447,12 +640,24 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
         },
       }
     case 'remove-driver':
+      if (!action.driver.Id && !action.driver.NetUid) {
+        return {
+          ...state,
+          drivers: state.drivers.filter((candidate) => candidate !== action.driver),
+        }
+      }
+
       return {
         ...state,
-        drivers: state.drivers.filter((candidate) => candidate !== action.driver),
+        drivers: state.drivers.map((candidate) => (candidate === action.driver ? { ...candidate, Deleted: true } : candidate)),
       }
     case 'reset':
-      return createRoadListModalState()
+      return createRoadListModalStateFrom(action.roadList)
+    case 'restore-driver':
+      return {
+        ...state,
+        drivers: state.drivers.map((candidate) => (candidate === action.driver ? { ...candidate, Deleted: false } : candidate)),
+      }
     case 'selected-outcome-changed':
       return {
         ...state,
@@ -475,6 +680,7 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
 }
 
 function buildRoadListPayload({
+  baseRoadList,
   calculated,
   companyCar,
   drivers,
@@ -482,6 +688,7 @@ function buildRoadListPayload({
   outcomeOrder,
   responsible,
 }: {
+  baseRoadList?: CompanyCarRoadList | null
   calculated?: CompanyCarRoadList | null
   companyCar: CompanyCar
   drivers: CompanyCarRoadListDriver[]
@@ -490,6 +697,7 @@ function buildRoadListPayload({
   responsible: UserProfile | null
 }): CompanyCarRoadListPayload {
   return {
+    ...(baseRoadList || {}),
     ...(calculated || {}),
     Comment: form.comment,
     CompanyCar: companyCar,
@@ -527,6 +735,89 @@ function createEmptyForm(): RoadListFormState {
   }
 }
 
+function createFormFromRoadList(roadList: CompanyCarRoadList | null): RoadListFormState {
+  if (!roadList) {
+    return createEmptyForm()
+  }
+
+  return {
+    comment: roadList.Comment || '',
+    inCityKilometers: formatDecimalInput(roadList.InCityKilometers),
+    mileage: formatDecimalInput(roadList.Mileage),
+    mixedModeKilometers: formatDecimalInput(roadList.MixedModeKilometers),
+    outsideCityKilometers: formatDecimalInput(roadList.OutsideCityKilometers),
+  }
+}
+
+function calculateEditedRoadListPreview(
+  roadList: CompanyCarRoadList,
+  companyCar: CompanyCar,
+  form: RoadListFormState,
+): CompanyCarRoadList {
+  const mileage = parseDecimal(form.mileage)
+  const inCity = parseDecimal(form.inCityKilometers)
+  const outsideCity = parseDecimal(form.outsideCityKilometers)
+  const mixed = parseDecimal(form.mixedModeKilometers)
+  const totalKilometers = Math.trunc((roadList.TotalKilometers || 0) + mileage - (roadList.Mileage || 0))
+  const fuelAmount = calculateFuelAmount({
+    companyCar,
+    inCity,
+    mixed,
+    outsideCity,
+    totalKilometers,
+  })
+
+  return {
+    ...roadList,
+    Comment: form.comment,
+    FuelAmount: fuelAmount,
+    InCityKilometers: inCity,
+    Mileage: mileage,
+    MixedModeKilometers: mixed,
+    OutsideCityKilometers: outsideCity,
+    TotalKilometers: totalKilometers,
+  }
+}
+
+function calculateFuelAmount({
+  companyCar,
+  inCity,
+  mixed,
+  outsideCity,
+  totalKilometers,
+}: {
+  companyCar: CompanyCar
+  inCity: number
+  mixed: number
+  outsideCity: number
+  totalKilometers: number
+}): number {
+  const inModesKilometers = inCity + outsideCity + mixed
+
+  if (totalKilometers < inModesKilometers) {
+    return 0
+  }
+
+  if (!inCity && !outsideCity && !mixed) {
+    return roundFuel((totalKilometers * (companyCar.InCityConsumption || 0)) / 100)
+  }
+
+  return roundFuel(
+    (inCity * (companyCar.InCityConsumption || 0)) / 100 +
+      (outsideCity * (companyCar.OutsideCityConsumption || 0)) / 100 +
+      (mixed * (companyCar.MixedModeConsumption || 0)) / 100 +
+      ((totalKilometers - inModesKilometers) * (companyCar.InCityConsumption || 0)) / 100,
+  )
+}
+
+function roundFuel(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+function formatDecimalInput(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) && value !== 0 ? String(value) : ''
+}
+
 function parseDecimal(value: string): number {
   if (!value) {
     return 0
@@ -552,6 +843,22 @@ function toSelectOptions<T extends { NetUid?: string; Id?: number }>(items: T[],
 
     return options
   }, [])
+}
+
+function mergeOutcomeOrders(current: OutcomePaymentOrder | null | undefined, outcomeOrders: OutcomePaymentOrder[]): OutcomePaymentOrder[] {
+  const merged: OutcomePaymentOrder[] = []
+
+  if (current) {
+    merged.push(current)
+  }
+
+  for (const outcomeOrder of outcomeOrders) {
+    if (!merged.some((candidate) => getEntityValue(candidate) === getEntityValue(outcomeOrder))) {
+      merged.push(outcomeOrder)
+    }
+  }
+
+  return merged
 }
 
 function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): string {

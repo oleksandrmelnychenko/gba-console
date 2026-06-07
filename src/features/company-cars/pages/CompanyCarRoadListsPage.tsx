@@ -11,7 +11,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconPlus, IconRefresh, IconRestore, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconArrowLeft, IconPencil, IconPlus, IconRefresh, IconRestore, IconTrash } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -56,12 +56,13 @@ type CompanyCarRoadListsState = {
 
 type CompanyCarRoadListsAction =
   | { type: 'append-road-list'; roadList: CompanyCarRoadList }
-  | { type: 'delete-road-list'; netUid: string }
+  | { type: 'delete-road-list'; companyCar: CompanyCar | null; netUid: string }
   | { type: 'failed'; error: string }
   | { type: 'invalid-filter' }
   | { type: 'missing-company-car' }
   | { type: 'set-error'; error: string | null }
   | { type: 'start-loading' }
+  | { type: 'upsert-road-list'; companyCar: CompanyCar | null; roadList: CompanyCarRoadList }
   | { type: 'loaded'; companyCar: CompanyCar | null; roadLists: CompanyCarRoadList[] }
 
 const initialRoadListsState: CompanyCarRoadListsState = {
@@ -83,13 +84,14 @@ export function CompanyCarRoadListsPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [isFormOpen, setFormOpen] = useValueState(false)
+  const [editTarget, setEditTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<CompanyCarRoadList | null>(null)
   const [isDeleting, setDeleting] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('company-car-road-lists', TABLE_DEFAULT_LAYOUT.density)
   const filterError = getDateRangeError(fromDate, toDate)
 
-  const columns = useRoadListColumns(setDeleteTarget)
+  const columns = useRoadListColumns({ onDelete: setDeleteTarget, onEdit: setEditTarget })
 
   useEffect(() => {
     if (!id) {
@@ -130,14 +132,27 @@ export function CompanyCarRoadListsPage() {
     return () => controller.abort()
   }, [filterError, fromDate, id, reloadKey, t, toDate])
 
-  const handleCreated = useCallback(
+  const handleSaved = useCallback(
     (roadList: CompanyCarRoadList) => {
-      dispatchLoadState({ roadList, type: 'append-road-list' })
+      const wasEdit = Boolean(editTarget?.NetUid || editTarget?.Id)
+
+      dispatchLoadState({ companyCar: roadList.CompanyCar || null, roadList, type: 'upsert-road-list' })
       setFormOpen(false)
-      notifications.show({ color: 'green', message: t('Шляховий лист створено') })
+      setEditTarget(null)
+      notifications.show({ color: 'green', message: wasEdit ? t('Шляховий лист оновлено') : t('Шляховий лист створено') })
     },
-    [setFormOpen, t],
+    [editTarget, setEditTarget, setFormOpen, t],
   )
+
+  function openCreateForm() {
+    setEditTarget(null)
+    setFormOpen(true)
+  }
+
+  function closeForm() {
+    setFormOpen(false)
+    setEditTarget(null)
+  }
 
   async function handleDelete() {
     if (!deleteTarget?.NetUid) {
@@ -148,8 +163,8 @@ export function CompanyCarRoadListsPage() {
     dispatchLoadState({ error: null, type: 'set-error' })
 
     try {
-      await deleteCompanyCarRoadList(deleteTarget.NetUid)
-      dispatchLoadState({ netUid: deleteTarget.NetUid, type: 'delete-road-list' })
+      const nextCompanyCar = await deleteCompanyCarRoadList(deleteTarget.NetUid)
+      dispatchLoadState({ companyCar: nextCompanyCar, netUid: deleteTarget.NetUid, type: 'delete-road-list' })
       notifications.show({ color: 'green', message: t('Шляховий лист видалено') })
       setDeleteTarget(null)
     } catch (deleteError) {
@@ -175,7 +190,7 @@ export function CompanyCarRoadListsPage() {
           size="sm"
           disabled={!companyCar?.NetUid}
           leftSection={<IconPlus size={16} />}
-          onClick={() => setFormOpen(true)}
+          onClick={openCreateForm}
         >
           {t('Створення шляхового листа')}
         </Button>
@@ -243,9 +258,10 @@ export function CompanyCarRoadListsPage() {
       {companyCar && (
         <CompanyCarRoadListFormModal
           companyCar={companyCar}
-          opened={isFormOpen}
-          onClose={() => setFormOpen(false)}
-          onCreated={handleCreated}
+          opened={isFormOpen || Boolean(editTarget)}
+          roadList={editTarget}
+          onClose={closeForm}
+          onSaved={handleSaved}
         />
       )}
 
@@ -272,6 +288,7 @@ function roadListsReducer(
     case 'delete-road-list':
       return {
         ...state,
+        companyCar: action.companyCar || state.companyCar,
         roadLists: state.roadLists.filter((roadList) => roadList.NetUid !== action.netUid),
       }
     case 'failed':
@@ -306,6 +323,23 @@ function roadListsReducer(
         error: null,
         isLoading: true,
       }
+    case 'upsert-road-list': {
+      const roadListIndex = state.roadLists.findIndex((roadList) => isSameRoadList(roadList, action.roadList))
+
+      if (roadListIndex === -1) {
+        return {
+          ...state,
+          companyCar: action.companyCar || state.companyCar,
+          roadLists: [...state.roadLists, action.roadList],
+        }
+      }
+
+      return {
+        ...state,
+        companyCar: action.companyCar || state.companyCar,
+        roadLists: state.roadLists.map((roadList, index) => (index === roadListIndex ? action.roadList : roadList)),
+      }
+    }
     case 'loaded':
       return {
         companyCar: action.companyCar,
@@ -318,7 +352,13 @@ function roadListsReducer(
   }
 }
 
-function useRoadListColumns(onDelete: (roadList: CompanyCarRoadList) => void): DataTableColumn<CompanyCarRoadList>[] {
+function useRoadListColumns({
+  onDelete,
+  onEdit,
+}: {
+  onDelete: (roadList: CompanyCarRoadList) => void
+  onEdit: (roadList: CompanyCarRoadList) => void
+}): DataTableColumn<CompanyCarRoadList>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<CompanyCarRoadList>[]>(
@@ -403,33 +443,49 @@ function useRoadListColumns(onDelete: (roadList: CompanyCarRoadList) => void): D
       {
         id: 'actions',
         header: '',
-        width: 62,
-        minWidth: 58,
+        width: 92,
+        minWidth: 88,
         align: 'right',
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
         cell: (roadList) => (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="red"
-              disabled={!roadList.NetUid}
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onDelete(roadList)
-              }}
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Tooltip>
+          <Group gap={4} justify="flex-end" wrap="nowrap">
+            <Tooltip label={t('Редагувати')}>
+              <ActionIcon
+                aria-label={t('Редагувати')}
+                disabled={!roadList.NetUid && !roadList.Id}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(roadList)
+                }}
+              >
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={!roadList.NetUid}
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onDelete(roadList)
+                }}
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
         ),
       },
     ],
-    [onDelete, t],
+    [onDelete, onEdit, t],
   )
 }
 
@@ -509,6 +565,14 @@ function displayValue(value?: string | number | null): string {
   }
 
   return value || '—'
+}
+
+function isSameRoadList(left: CompanyCarRoadList, right: CompanyCarRoadList): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  return typeof left.Id === 'number' && typeof right.Id === 'number' && left.Id === right.Id
 }
 
 function isAbortError(error: unknown): boolean {
