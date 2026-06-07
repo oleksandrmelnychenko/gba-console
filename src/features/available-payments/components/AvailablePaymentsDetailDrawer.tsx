@@ -40,6 +40,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import { getAccountingCashFlowPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
+import { getAccountingCashFlowDrilldownRoute } from '../../accounting-cash-flow/cashFlowDrilldown'
 import type { AccountingCashFlowHeadItem } from '../../accounting-cash-flow/types'
 import { CashFlowGrid } from '../../../shared/ui/cash-flow-grid/CashFlowGrid'
 import type { CashFlowGridItem, CashFlowGridLeadColumn, CashFlowGridSummary } from '../../../shared/ui/cash-flow-grid/types'
@@ -526,6 +527,17 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }
 
+  function handleCashFlowRowClick(item: AccountingCashFlowHeadItem) {
+    const route = getAccountingCashFlowDrilldownRoute(item)
+
+    if (route) {
+      navigate(route)
+      return
+    }
+
+    setSelectedCashFlowItem(item)
+  }
+
   async function handleCreateOutcome(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -623,6 +635,7 @@ function useAvailablePaymentsDetailDrawerModel({
     closeOutcomeForm,
     confirmDrawerClose,
     handleCashFlowFiltersChange,
+    handleCashFlowRowClick,
     handleCashFlowTab,
     handleCreateOutcome,
     handleMovementSearchChange,
@@ -670,6 +683,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     closeOutcomeForm,
     confirmDrawerClose,
     handleCashFlowFiltersChange,
+    handleCashFlowRowClick,
     handleCashFlowTab,
     handleCreateOutcome,
     handleMovementSearchChange,
@@ -712,7 +726,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
             models={models}
             onCashFlowTab={handleCashFlowTab}
             onCashFlowFiltersChange={handleCashFlowFiltersChange}
-            onCashFlowRowClick={(item) => setSelectedCashFlowItem(item)}
+            onCashFlowRowClick={handleCashFlowRowClick}
             onClearMarked={onClearMarked}
             onCreateOutcome={openOutcomeForm}
             onFilesChanged={onFilesChanged}

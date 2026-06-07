@@ -30,7 +30,7 @@ import {
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
@@ -44,6 +44,7 @@ import {
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
+import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import type {
   AccountingCashFlow,
   AccountingCashFlowAgreement,
@@ -357,6 +358,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
 
 function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAccountingCashFlowPageModel> }) {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const {
     agreements,
     cashFlow,
@@ -386,6 +388,19 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     submitFilters,
   } = model
   const canExport = Boolean(selectedAgreement?.NetUid)
+  const handleCashFlowRowClick = useCallback(
+    (item: AccountingCashFlowHeadItem) => {
+      const route = getAccountingCashFlowDrilldownRoute(item)
+
+      if (route) {
+        navigate(route)
+        return
+      }
+
+      setSelectedItem(item)
+    },
+    [navigate, setSelectedItem],
+  )
   const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
     () => [
       {
@@ -542,7 +557,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           loadingText={t('Завантаження руху коштів')}
           maxHeight="calc(100vh - 430px)"
           renderRowBadge={renderRowBadge}
-          onRowClick={setSelectedItem}
+          onRowClick={handleCashFlowRowClick}
         />
       </Card>
 
