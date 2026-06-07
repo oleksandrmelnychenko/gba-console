@@ -49,7 +49,9 @@ export type BillOfLadingDocument = BaseDocument & {
 export type ServiceItem = EntityFields & {
   AccountingGrossPrice?: number
   AccountingNetPrice?: number
+  ActProvidingServiceDocumentId?: number
   BillOfLadingDocument?: BillOfLadingDocument | null
+  BillOfLadingDocumentId?: number
   BillOfLadingDocuments?: BillOfLadingDocument[]
   FromDate?: string
   GrossPrice?: number
@@ -59,6 +61,7 @@ export type ServiceItem = EntityFields & {
   Number?: string
   ServiceNumber?: string
   SupplyCustomType?: 0 | 1
+  SupplyServiceAccountDocumentId?: number
 }
 
 export type TaskStatus = 0 | 1 | 2

@@ -491,12 +491,13 @@ function flattenPaymentTasks(tasks: SupplyPaymentTask[]): PaymentTaskRow[] {
         const serviceType = getServiceType(collection, service)
         const serviceTypeLabel = getServiceTypeLabel(serviceType)
         const invoiceDocument = getInvoiceDocument(task, service)
+        const invoiceDocumentId = getInvoiceDocumentId(service)
 
         return {
           amount: readAmount(service, task),
           date: service.FromDate || task.PayToDate || task.Created,
-          documentName: getDocumentName(invoiceDocument, service),
-          hasInvoice: Boolean(invoiceDocument),
+          documentName: getDocumentName(invoiceDocument, service, invoiceDocumentId),
+          hasInvoice: Boolean(invoiceDocument || invoiceDocumentId),
           id: [
             task.NetUid || task.Id || taskIndex,
             collection.key,
@@ -543,10 +544,24 @@ function getInvoiceDocument(task: SupplyPaymentTask, service: ServiceItem) {
     || null
 }
 
-function getDocumentName(document: ReturnType<typeof getInvoiceDocument>, service: ServiceItem): string | undefined {
+function getInvoiceDocumentId(service: ServiceItem): number | undefined {
+  return service.SupplyServiceAccountDocumentId
+    || service.BillOfLadingDocumentId
+    || service.ActProvidingServiceDocumentId
+}
+
+function getDocumentName(
+  document: ReturnType<typeof getInvoiceDocument>,
+  service: ServiceItem,
+  documentId?: number,
+): string | undefined {
   const documentNumber = document && 'Number' in document ? (document as { Number?: string }).Number : undefined
 
-  return documentNumber || document?.FileName || document?.GeneratedName || service.BillOfLadingDocument?.Number
+  return documentNumber
+    || document?.FileName
+    || document?.GeneratedName
+    || service.BillOfLadingDocument?.Number
+    || (documentId ? String(documentId) : undefined)
 }
 
 function readAmount(service: ServiceItem, task: SupplyPaymentTask): number | undefined {
