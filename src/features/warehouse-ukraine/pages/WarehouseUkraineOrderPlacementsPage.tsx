@@ -9,7 +9,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   createProductIncomeFromDynamicPlacements,
   getNonDefectiveStorages,
@@ -35,6 +35,21 @@ const PLACEMENT_ADD_CANCEL_SAVE_PERMISSION = 'PlacementHeader_AddCancelSave_orde
 const PLACEMENT_ACT_RECONCILIATION_PERMISSION = 'PlacementHeader_ActReconciliationNew_ordersUkrainePlacement_PKEY'
 const PLACEMENT_CARRY_OUT_PERMISSION = 'PlacementHeader_CarryOut_ordersUkrainePlacement_PKEY'
 const PLACEMENT_GET_UP_PERMISSION = 'PlacementHeader_GetUp_ordersUkrainePlacement_PKEY'
+
+const amountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 3,
+})
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
+})
+
+const TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['index', 'vendorCode', 'name'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 function columnKey(column: DynamicProductPlacementColumn): string {
   return column.NetUid || String(column.Id || '')
@@ -561,34 +576,135 @@ export function WarehouseUkraineOrderPlacementsPage() {
         id: 'vendorCode',
         header: t('Код товару'),
         width: 160,
-        cell: (gridRow) => gridRow.item.Product?.VendorCode || '-',
+        accessor: (gridRow) => gridRow.item.Product?.VendorCode,
+        cell: (gridRow) => displayValue(gridRow.item.Product?.VendorCode),
       },
       {
         id: 'name',
         header: t('Назва'),
         minWidth: 220,
-        cell: (gridRow) => gridRow.item.Product?.Name || gridRow.item.Product?.NameUA || '-',
+        accessor: (gridRow) => getProductName(gridRow.item),
+        cell: (gridRow) => displayValue(getProductName(gridRow.item)),
+      },
+      {
+        id: 'specificationCode',
+        header: t('Код УКТЗЕД'),
+        width: 150,
+        accessor: (gridRow) => gridRow.item.ProductSpecification?.SpecificationCode,
+        cell: (gridRow) => displayValue(gridRow.item.ProductSpecification?.SpecificationCode),
       },
       {
         id: 'qty',
         header: t('К-сть'),
         width: 80,
         align: 'right',
-        cell: (gridRow) => gridRow.item.Qty || 0,
+        accessor: (gridRow) => gridRow.item.Qty,
+        cell: (gridRow) => formatAmount(gridRow.item.Qty),
+      },
+      {
+        id: 'measureUnit',
+        header: t('Од. виміру'),
+        width: 120,
+        accessor: (gridRow) => gridRow.item.Product?.MeasureUnit?.Name,
+        cell: (gridRow) => displayValue(gridRow.item.Product?.MeasureUnit?.Name),
+      },
+      {
+        id: 'netUnitPrice',
+        header: t('Ціна'),
+        width: 110,
+        align: 'right',
+        accessor: (gridRow) => getNetUnitPrice(gridRow.item),
+        cell: (gridRow) => formatMoney(getNetUnitPrice(gridRow.item)),
+      },
+      {
+        id: 'totalNetPrice',
+        header: t('Сума нетто'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.NetPriceLocal,
+        cell: (gridRow) => formatMoney(gridRow.item.NetPriceLocal),
+      },
+      {
+        id: 'deliveryExpenseAmount',
+        header: t('Витрати упр.'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.DeliveryExpenseAmount,
+        cell: (gridRow) => formatMoney(gridRow.item.DeliveryExpenseAmount),
+      },
+      {
+        id: 'accountingDeliveryExpenseAmount',
+        header: t('Витрати бух.'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.AccountingDeliveryExpenseAmount,
+        cell: (gridRow) => formatMoney(gridRow.item.AccountingDeliveryExpenseAmount),
+      },
+      {
+        id: 'isImported',
+        header: t('Імпорт'),
+        width: 96,
+        accessor: (gridRow) => gridRow.item.ProductIsImported,
+        cell: (gridRow) =>
+          gridRow.item.ProductIsImported
+            ? <Badge color="green" variant="light">{t('Так')}</Badge>
+            : <Badge color="gray" variant="light">{t('Ні')}</Badge>,
+      },
+      {
+        id: 'vatPercent',
+        header: t('ПДВ %'),
+        width: 100,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.VatPercent,
+        cell: (gridRow) => formatAmount(gridRow.item.VatPercent),
+      },
+      {
+        id: 'vatAmount',
+        header: t('ПДВ бух.'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.VatAmountLocal,
+        cell: (gridRow) => formatMoney(gridRow.item.VatAmountLocal),
+      },
+      {
+        id: 'totalWithVat',
+        header: t('З ПДВ'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.GrossPriceLocal,
+        cell: (gridRow) => formatMoney(gridRow.item.GrossPriceLocal),
+      },
+      {
+        id: 'totalManagementGrossPrice',
+        header: t('Упр. з ПДВ'),
+        width: 130,
+        align: 'right',
+        accessor: (gridRow) => gridRow.item.AccountingGrossPriceLocal,
+        cell: (gridRow) => formatMoney(gridRow.item.AccountingGrossPriceLocal),
       },
       {
         id: 'netWeight',
         header: t('Вага Нетто'),
         width: 120,
         align: 'right',
-        cell: (gridRow) => (gridRow.item.NetWeight || 0).toFixed(3),
+        accessor: (gridRow) => getNetWeight(gridRow.item),
+        cell: (gridRow) => formatAmount(getNetWeight(gridRow.item)),
+      },
+      {
+        id: 'grossWeight',
+        header: t('Вага Брутто'),
+        width: 120,
+        align: 'right',
+        accessor: (gridRow) => getGrossWeight(gridRow.item),
+        cell: (gridRow) => formatAmount(getGrossWeight(gridRow.item)),
       },
       {
         id: 'placedQty',
         header: t('К-сть оприходуваних'),
         width: 160,
         align: 'right',
-        cell: (gridRow) => gridRow.item.PlacedQty || 0,
+        accessor: (gridRow) => gridRow.item.PlacedQty,
+        cell: (gridRow) => formatAmount(gridRow.item.PlacedQty),
       },
     ]
 
@@ -793,12 +909,13 @@ export function WarehouseUkraineOrderPlacementsPage() {
           <DataTable
             columns={columns}
             data={model.gridRows}
+            defaultLayout={TABLE_DEFAULT_LAYOUT}
             emptyText={t('Замовлень не знайдено')}
             getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-placements-1"
+            layoutVersion="warehouse-ukraine-placements-3"
             maxHeight="calc(100vh - 360px)"
-            minWidth={1100}
+            minWidth={2600}
             tableId="warehouse-ukraine-placements"
           />
 
@@ -807,7 +924,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
               {t('Всього товарів')}: <Text span fw={700}>{model.totalProductsCount}</Text>
             </Text>
             <Text size="sm">
-              {t('Заг. вага нетто')}: <Text span fw={700}>{model.totalNetWeight.toFixed(3)}</Text>
+              {t('Заг. вага нетто')}: <Text span fw={700}>{formatAmount(model.totalNetWeight)}</Text>
             </Text>
           </Group>
         </Stack>
@@ -906,4 +1023,36 @@ function isValidDateInputValue(value: string): boolean {
   const date = new Date(`${value}T00:00:00`)
 
   return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+}
+
+function getProductName(item: PlacementOrderItem): string | undefined {
+  return item.Product?.Name || item.Product?.NameUA
+}
+
+function getNetUnitPrice(item: PlacementOrderItem): number | undefined {
+  return item.UnitPriceLocal ?? item.UnitPrice
+}
+
+function getNetWeight(item: PlacementOrderItem): number | undefined {
+  return item.NetWeight
+}
+
+function getGrossWeight(item: PlacementOrderItem): number | undefined {
+  return item.GrossWeight
+}
+
+function formatAmount(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) ? amountFormatter.format(value) : '-'
+}
+
+function formatMoney(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  return String(value)
 }
