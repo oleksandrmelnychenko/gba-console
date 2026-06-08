@@ -252,7 +252,7 @@ function useInvoiceRegisterModel() {
       const document = await getInvoiceRegisterPrintDocument({
         value: activeFilters.value,
         date: activeFilters.date,
-        limit: pageSize,
+        limit: invoices.length || pageSize,
         offset: 0,
       })
 

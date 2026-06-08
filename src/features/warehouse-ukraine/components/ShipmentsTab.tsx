@@ -126,6 +126,20 @@ function hasEditingMarker(shipmentList: ShipmentList): boolean {
   )
 }
 
+function hasCarrierUpdateMarker(shipmentList: ShipmentList): boolean {
+  return shipmentList.ShipmentListItems.some(
+    (item) => Boolean(item.Sale.UpdateDataCarrier?.length) || Boolean(item.IsChangeTransporter),
+  )
+}
+
+function isRecipientAddressReadOnly(item: ShipmentListItem): boolean {
+  return Boolean(item.IsDirty || item.Sale.WarehousesShipment)
+}
+
+function getChangedTransporterDecoration(item: ShipmentListItem): 'line-through' | undefined {
+  return item.IsChangeTransporter ? 'line-through' : undefined
+}
+
 function cloneShipmentList(shipmentList: ShipmentList): ShipmentList {
   return {
     ...shipmentList,
@@ -352,7 +366,11 @@ function getCashOnDeliveryAmount(sale: ShipmentSale): number | undefined {
   return sale.WarehousesShipment ? sale.WarehousesShipment.CashOnDeliveryAmount : sale.CashOnDeliveryAmount
 }
 
-function useShipmentsTabModel() {
+type ShipmentsTabModelOptions = {
+  onCarriedOut?: () => void
+}
+
+function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
     () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
@@ -556,6 +574,7 @@ function useShipmentsTabModel() {
     try {
       await updateShipmentList({ ...shipmentList, IsSent: true })
       refreshList()
+      onCarriedOut?.()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {
@@ -565,6 +584,10 @@ function useShipmentsTabModel() {
 
   async function saveRecipient(recipient: ShipmentDeliveryRecipient) {
     if (activeModal?.kind !== 'recipient') {
+      return
+    }
+
+    if (isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -590,6 +613,10 @@ function useShipmentsTabModel() {
 
   async function saveAddress(address: ShipmentDeliveryRecipientAddress) {
     if (activeModal?.kind !== 'address') {
+      return
+    }
+
+    if (isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -732,7 +759,7 @@ export function ShipmentsTab() {
 
       <Box>
         {activeTab === SHIPMENTS_TAB_AUTO ? (
-          <AutoShipmentsPanel />
+          <AutoShipmentsPanel onCarriedOut={() => setActiveTab(SHIPMENTS_TAB_ALL)} />
         ) : (
           <AllShipmentsPanel onCreate={() => setActiveTab(SHIPMENTS_TAB_AUTO)} />
         )}
@@ -741,8 +768,12 @@ export function ShipmentsTab() {
   )
 }
 
-function AutoShipmentsPanel() {
-  const model = useShipmentsTabModel()
+type AutoShipmentsPanelProps = {
+  onCarriedOut: () => void
+}
+
+function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
+  const model = useShipmentsTabModel({ onCarriedOut })
   const { t } = useI18n()
   const columns = useShipmentColumns(model)
   const { density, toggleDensity } = useDataTableDensity(
@@ -1224,7 +1255,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
-    if (!canEditShipment) {
+    if (!canEditShipment || isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -1261,7 +1292,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
-    if (!canEditShipment) {
+    if (!canEditShipment || isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -1641,7 +1672,22 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
         header: t('Перевізник'),
         minWidth: 180,
         accessor: getShipmentListTransporterName,
-        cell: (item) => displayValue(getShipmentListTransporterName(item)),
+        cell: (item) => {
+          const transporterName = displayValue(getShipmentListTransporterName(item))
+
+          if (!hasCarrierUpdateMarker(item)) {
+            return transporterName
+          }
+
+          return (
+            <Group gap={6} wrap="nowrap">
+              <IconEdit size={14} />
+              <Text size="sm" truncate>
+                {transporterName}
+              </Text>
+            </Group>
+          )
+        },
       },
       {
         id: 'comment',
@@ -1692,7 +1738,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         header: t('Клієнт'),
         minWidth: 220,
         accessor: (item) => getClientName(item.Sale),
-        cell: (item) => displayValue(getClientName(item.Sale)),
+        cell: (item) => (
+          <Text size="sm" td={getChangedTransporterDecoration(item)} truncate>
+            {displayValue(getClientName(item.Sale))}
+          </Text>
+        ),
       },
       {
         id: 'recipient',
@@ -1701,7 +1751,8 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
-            disabled={!model.canEdit}
+            disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+            isCrossed={Boolean(getChangedTransporterDecoration(item))}
             text={getRecipientInfo(item.Sale, t)}
             onEdit={() => model.onEditRecipient(item)}
           />
@@ -1714,7 +1765,8 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
-            disabled={!model.canEdit}
+            disabled={!model.canEdit || isRecipientAddressReadOnly(item)}
+            isCrossed={Boolean(getChangedTransporterDecoration(item))}
             text={getAddressInfo(item.Sale, t)}
             onEdit={() => model.onEditAddress(item)}
           />
@@ -1726,7 +1778,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         width: 160,
         minWidth: 140,
         accessor: (item) => item.Sale.ChangedToInvoice,
-        cell: (item) => formatDateTime(item.Sale.ChangedToInvoice),
+        cell: (item) => (
+          <Text size="sm" td={getChangedTransporterDecoration(item)}>
+            {formatDateTime(item.Sale.ChangedToInvoice)}
+          </Text>
+        ),
       },
       {
         id: 'editing',
@@ -1749,7 +1805,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         width: 140,
         minWidth: 110,
         accessor: (item) => item.Sale.SaleNumber?.Value,
-        cell: (item) => <Text fw={700}>{displayValue(item.Sale.SaleNumber?.Value)}</Text>,
+        cell: (item) => (
+          <Text fw={700} td={getChangedTransporterDecoration(item)}>
+            {displayValue(item.Sale.SaleNumber?.Value)}
+          </Text>
+        ),
       },
       {
         id: 'qtyPlaces',
@@ -1837,6 +1897,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
           <EditableTextCell
             text={item.Sale.WarehousesShipment?.Comment || item.Sale.Comment || ''}
             disabled={!model.canEdit}
+            isCrossed={Boolean(getChangedTransporterDecoration(item))}
             onEdit={() => model.onEditComment(item)}
           />
         ),
@@ -1930,6 +1991,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
+            disabled={isRecipientAddressReadOnly(item)}
             text={getRecipientInfo(item.Sale, t)}
             onEdit={() => model.setActiveModal({ kind: 'recipient', item })}
           />
@@ -1942,6 +2004,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
+            disabled={isRecipientAddressReadOnly(item)}
             text={getAddressInfo(item.Sale, t)}
             onEdit={() => model.setActiveModal({ kind: 'address', item })}
           />
@@ -2085,17 +2148,18 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
 
 type EditableTextCellProps = {
   disabled?: boolean
+  isCrossed?: boolean
   text: string
   onEdit: () => void
 }
 
-function EditableTextCell({ disabled = false, onEdit, text }: EditableTextCellProps) {
+function EditableTextCell({ disabled = false, isCrossed = false, onEdit, text }: EditableTextCellProps) {
   return (
     <Group gap={4} wrap="nowrap" align="center">
       <ActionIcon color="gray" disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
         <IconEdit size={14} />
       </ActionIcon>
-      <Text size="sm" truncate>
+      <Text size="sm" td={isCrossed ? 'line-through' : undefined} truncate>
         {text}
       </Text>
     </Group>

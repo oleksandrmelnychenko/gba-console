@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getDocumentVerification } from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
-import { ALL_TRANSPORTERS_NET_ID, getAllShipmentLists } from './shipmentsApi'
+import { getAllShipmentLists } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -83,7 +83,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
     })
   })
 
-  it('sends the empty GUID sentinel when all transporters are selected', async () => {
+  it('omits transporter net id when all transporters are selected', async () => {
     apiRequestMock.mockResolvedValueOnce([])
 
     await getAllShipmentLists({
@@ -94,7 +94,6 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/all/filtered', {
       query: {
-        netId: ALL_TRANSPORTERS_NET_ID,
         from: '2026-06-01',
         to: '2026-06-08',
         limit: 20,

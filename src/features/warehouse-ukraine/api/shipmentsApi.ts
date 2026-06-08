@@ -10,8 +10,6 @@ import type {
 } from '../shipmentTypes'
 import { normalizeExportDocument } from './salesApi'
 
-export const ALL_TRANSPORTERS_NET_ID = '00000000-0000-0000-0000-000000000000'
-
 export async function getShipmentTransporterTypes(): Promise<ShipmentTransporterType[]> {
   const result = await apiRequest<unknown>('/transporters/types/all')
 
@@ -56,7 +54,7 @@ export async function getAutoShipmentList(params: AutoShipmentListParams): Promi
 export async function getAllShipmentLists(params: ShipmentListSearchParams): Promise<ShipmentList[]> {
   const result = await apiRequest<unknown>('/sales/shipments/all/filtered', {
     query: {
-      netId: params.transporterNetId || ALL_TRANSPORTERS_NET_ID,
+      ...(params.transporterNetId ? { netId: params.transporterNetId } : {}),
       from: params.from,
       to: params.to,
       limit: params.limit ?? 20,

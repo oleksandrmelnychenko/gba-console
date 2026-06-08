@@ -87,7 +87,8 @@ function useSalesTabModel() {
   const downloadRequestRef = useRef(0)
   const realtimeReloadRef = useRef<number | null>(null)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const saleIndexMap = useMemo(() => buildIndexMap(salesState.sales), [salesState.sales])
+  const orderedSales = useMemo(() => orderWarehouseSales(salesState.sales), [salesState.sales])
+  const saleIndexMap = useMemo(() => buildIndexMap(orderedSales), [orderedSales])
 
   const replaceSale = useCallback(
     (targetSale: Sale, nextSale: Sale) => {
@@ -210,6 +211,7 @@ function useSalesTabModel() {
       try {
         const savedSale = await updateWarehouseUkraineSale(optimisticSale)
         replaceSale(sale, { ...optimisticSale, ...savedSale })
+        reload()
       } catch (updateError) {
         replaceSale(sale, sale)
         dispatchSalesState({
@@ -218,7 +220,7 @@ function useSalesTabModel() {
         })
       }
     },
-    [replaceSale, t],
+    [reload, replaceSale, t],
   )
 
   const printSale = useCallback(
@@ -274,7 +276,7 @@ function useSalesTabModel() {
   return {
     activeFilters, applyFilters, canMoveBack, canMoveForward, carrierSale, changePageSize, closeDownload, columns,
     density, downloadDocument, downloadError, downloadOpened, error: salesState.error, filterDraft, filterError,
-    isDownloading, isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: salesState.sales,
+    isDownloading, isLoading: salesState.isLoading, page, pageSize, reload, resetFilters, sales: orderedSales,
     setCarrierSale, setPage, toggleDensity, totalQty: salesState.totalQty,
   }
 }
@@ -608,6 +610,45 @@ function getPrintedStatusText(sale: Sale): string {
 
 function hasApprovedInvoiceEdits(sale: Sale): boolean {
   return (sale.HistoryInvoiceEdit || []).some((entry) => entry.ApproveUpdate)
+}
+
+function hasUnprintedInvoiceEdits(sale: Sale): boolean {
+  return Boolean(sale.HistoryInvoiceEdit?.length && !sale.IsPrinted)
+}
+
+function hasUpdatedApprovedInvoiceEdits(sale: Sale): boolean {
+  return Boolean(sale.Updated && hasApprovedInvoiceEdits(sale))
+}
+
+function compareBooleanPriority(left: boolean, right: boolean): number {
+  return Number(right) - Number(left)
+}
+
+function orderWarehouseSales(sales: Sale[]): Sale[] {
+  return sales
+    .map((sale, index) => ({ index, sale }))
+    .sort((left, right) => {
+      const updatedApprovedCompare = compareBooleanPriority(
+        hasUpdatedApprovedInvoiceEdits(left.sale),
+        hasUpdatedApprovedInvoiceEdits(right.sale),
+      )
+
+      if (updatedApprovedCompare !== 0) {
+        return updatedApprovedCompare
+      }
+
+      const unprintedEditCompare = compareBooleanPriority(
+        hasUnprintedInvoiceEdits(left.sale),
+        hasUnprintedInvoiceEdits(right.sale),
+      )
+
+      if (unprintedEditCompare !== 0) {
+        return unprintedEditCompare
+      }
+
+      return left.index - right.index
+    })
+    .map((entry) => entry.sale)
 }
 
 function sameSale(left: Sale, right: Sale): boolean {

@@ -166,7 +166,7 @@ export type ResaleAvailabilityFilterPayload = {
   To?: string
 }
 
-export type GenerateAutomaticallyResalePayload = ResaleAvailabilityFilterPayload & {
+export type GenerateAutomaticallyResalePayload = Omit<ResaleAvailabilityFilterPayload, 'From' | 'To'> & {
   SelectedStorageNetId: string
 }
 

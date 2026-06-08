@@ -354,7 +354,7 @@ function useDocumentVerificationModel() {
       const document = await exportDocumentVerification({
         from: toDateString(activeFilters.from),
         to: toDateString(activeFilters.to),
-        limit: pageSize,
+        limit: items.length || pageSize,
         offset: 0,
         storageIds,
       })

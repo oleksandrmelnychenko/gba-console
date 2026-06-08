@@ -725,8 +725,17 @@ export function NewResalePage() {
     setWarning(null)
 
     try {
+      const generatePayload = {
+        Amount: payload.Amount,
+        ExtraChargePercent: payload.ExtraChargePercent,
+        IncludedProductGroups: payload.IncludedProductGroups,
+        IncludedSpecificationCodes: payload.IncludedSpecificationCodes,
+        IncludedStorages: payload.IncludedStorages,
+        PossibleAmountDistinct: payload.PossibleAmountDistinct,
+        Search: payload.Search,
+      }
       const result = await generateAutomaticallyResale({
-        ...payload,
+        ...generatePayload,
         SelectedStorageNetId: generateStorageNetId,
       } satisfies GenerateAutomaticallyResalePayload)
       const storage = filterOptions?.Storages.find((item) => item.NetUid === generateStorageNetId)
@@ -750,14 +759,17 @@ export function NewResalePage() {
 
     const processData = result.data
 
-    if (processData) {
+    if (processData?.ReSaleAvailabilityItemModels?.length) {
       setProcessState((currentState) => ({
         data: processData,
         fromStorageId,
         id: currentState.id + 1,
         opened: true,
       }))
+      return
     }
+
+    setWarning({ Message: t('Немає позицій для створення перепродажу') })
   }
 
   function toggleAvailability(row: GroupingResaleAvailability) {
@@ -1202,10 +1214,6 @@ export function ResalePage() {
   }
 
   async function saveResale() {
-    if (isCompleted) {
-      return
-    }
-
     cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
@@ -1448,7 +1456,7 @@ export function ResalePage() {
             />
           </SimpleGrid>
           <Textarea
-            disabled={isCompleted || isSaving}
+            disabled={isSaving}
             label={t('Коментар')}
             minRows={2}
             value={detailInfo.comment}
@@ -1474,7 +1482,7 @@ export function ResalePage() {
             <Button disabled={isCompleted || isSaving} loading={isSaving} variant="light" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
-            <Button disabled={isCompleted || isSaving} loading={isSaving} onClick={saveResale}>
+            <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
               {t('Зберегти')}
             </Button>
             {!changedToInvoice && detailInfo.clientAgreement && (
@@ -3011,7 +3019,11 @@ function applyResaleItemPatch(
 function mapResaleAvailabilityItemForCreate(item: ResaleAvailabilityItemModel): ResaleAvailabilityItemModel {
   return {
     ...item,
-    OldValue: getResaleOldValue(item),
+    OldValue: {
+      Amount: 0,
+      QtyToReSale: 0,
+      SalePrice: 0,
+    },
   }
 }
 
@@ -3115,7 +3127,7 @@ function findClientAgreement(client: ResaleClient | null, value: string | null):
 
 function getResaleStatusLabel(resale: ReSale): string {
   if (resale.ChangedToInvoice) {
-    return resale.IsCompleted ? translate('Завершено') : translate('Інвойс')
+    return translate('Інвойс')
   }
 
   return translate('Рахунок')
