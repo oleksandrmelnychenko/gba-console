@@ -38,10 +38,12 @@ const INITIAL_LOGISTIC_PATH_LOAD_STATE: LogisticPathLoadState = {
   isLoading: true,
   protocol: null,
 }
+const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
+  'ProductDeliveryProtocols_specifications_download_exel_upload_documents_PKEY'
 
 function useLogisticPathModel(netId: string | undefined) {
   const { t } = useI18n()
-  const { user } = useAuth()
+  const { hasPermission, user } = useAuth()
   const isGba = user?.UserRole?.UserRoleType === UserRoleType.GBA
   const [loadState, setLoadState] = useValueState<LogisticPathLoadState>(INITIAL_LOGISTIC_PATH_LOAD_STATE)
   const [isUpdating, setUpdating] = useValueState(false)
@@ -123,7 +125,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }, [netId, setLoadState, t])
 
   const canEdit = isGba || !protocol?.IsCompleted
-  const canEditDeliveryDocuments = canEdit
+  const canEditDeliveryDocuments = canEdit && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
 
   async function changeStatus() {
     if (!protocol?.NetUid) {

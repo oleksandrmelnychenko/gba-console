@@ -84,6 +84,7 @@ import type {
   ResaleDownloadDocumentType,
   ResaleExportDocument,
   ResalePaymentStatus,
+  ResaleProductLocation,
   ResaleProductGroup,
   ResaleStorage,
   UpdatedResaleItemModel,
@@ -2092,6 +2093,35 @@ function useResaleDetailColumns({
         cell: (row) => displayValue(row.ConsignmentItem?.ProductSpecification?.SpecificationCode),
       },
       {
+        id: 'locations',
+        header: t('Місця'),
+        minWidth: 168,
+        width: 190,
+        accessor: (row) => formatResaleProductLocations(getUpdatedRowProductLocations(row)),
+        cell: (row) => {
+          const locations = getUpdatedRowProductLocations(row)
+
+          if (!locations.length) {
+            return displayValue()
+          }
+
+          return (
+            <Stack gap={2}>
+              {locations.slice(0, 3).map((location, index) => (
+                <Text key={getResaleProductLocationKey(location, index)} size="xs">
+                  {formatResaleProductLocation(location)}
+                </Text>
+              ))}
+              {locations.length > 3 && (
+                <Text c="dimmed" size="xs">
+                  +{locations.length - 3}
+                </Text>
+              )}
+            </Stack>
+          )
+        },
+      },
+      {
         id: 'price',
         header: t('Собівартість'),
         width: 128,
@@ -3606,6 +3636,51 @@ function getUpdatedRowProductName(row: UpdatedResaleItemModel): string | undefin
 
 function getUpdatedRowMeasureUnit(row: UpdatedResaleItemModel): string | undefined {
   return getUpdatedRowProduct(row)?.MeasureUnit?.Name
+}
+
+function getUpdatedRowProductLocations(row: UpdatedResaleItemModel): ResaleProductLocation[] {
+  const locations: ResaleProductLocation[] = []
+  const seen = new Set<string>()
+
+  row.ReSaleItems?.forEach((item) => {
+    item.ReSaleAvailability?.ProductLocations?.forEach((location, index) => {
+      const key = getResaleProductLocationKey(location, index)
+
+      if (!seen.has(key)) {
+        seen.add(key)
+        locations.push(location)
+      }
+    })
+  })
+
+  return locations
+}
+
+function getResaleProductLocationKey(location: ResaleProductLocation, index: number): string {
+  const placement = location.ProductPlacement
+
+  return String(
+    location.NetUid
+      || location.Id
+      || location.ProductPlacementId
+      || `${placement?.StorageNumber || ''}-${placement?.RowNumber || ''}-${placement?.CellNumber || ''}-${location.Qty || 0}-${index}`,
+  )
+}
+
+function formatResaleProductLocations(locations: ResaleProductLocation[]): string {
+  return locations.map(formatResaleProductLocation).join(', ')
+}
+
+function formatResaleProductLocation(location: ResaleProductLocation): string {
+  const placement = location.ProductPlacement
+  const address = [
+    placement?.StorageNumber,
+    placement?.RowNumber,
+    placement?.CellNumber,
+  ].filter(Boolean).join('-')
+  const qty = typeof location.Qty === 'number' ? ` x ${formatAmount(location.Qty)}` : ''
+
+  return `${address || '-'}${qty}`
 }
 
 function readTotal(items: ReSale[]): number | undefined {

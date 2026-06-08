@@ -60,6 +60,19 @@ export type ResaleProduct = NamedEntity & {
   MeasureUnit?: NamedEntity | null
 }
 
+export type ResaleProductPlacement = EntityFields & {
+  CellNumber?: string
+  Qty?: number
+  RowNumber?: string
+  StorageNumber?: string
+}
+
+export type ResaleProductLocation = EntityFields & {
+  ProductPlacement?: ResaleProductPlacement | null
+  ProductPlacementId?: number
+  Qty?: number
+}
+
 export type ResaleConsignmentItem = EntityFields & {
   ProductSpecification?: {
     SpecificationCode?: string
@@ -67,6 +80,7 @@ export type ResaleConsignmentItem = EntityFields & {
 }
 
 export type ResaleAvailability = {
+  ProductLocations?: ResaleProductLocation[]
   Product?: ResaleProduct | null
 }
 

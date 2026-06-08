@@ -198,6 +198,7 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const PERMISSION_ADD_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
+const PERMISSION_EDIT_INVOICE = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditInvoice_PKEY'
 const PERMISSION_ADD_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_NewPackListBtn_PKEY'
 const PERMISSION_REMOVE_INVOICE = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemoveInvoiceBtn_PKEY'
 const PERMISSION_REMOVE_PACK_LIST = 'SUPPLY_INVOICES_ordersUkraineAllEdit_RemovePackListBtn_PKEY'
@@ -248,6 +249,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     [selectedInvoice, selectedPackListNetId],
   )
   const canAddInvoice = hasPermission(PERMISSION_ADD_INVOICE)
+  const canEditInvoice = hasPermission(PERMISSION_EDIT_INVOICE)
   const canAddPackList = hasPermission(PERMISSION_ADD_PACK_LIST)
   const canRemoveInvoice = hasPermission(PERMISSION_REMOVE_INVOICE)
   const canRemovePackList = hasPermission(PERMISSION_REMOVE_PACK_LIST)
@@ -300,7 +302,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const orderItemColumns = useOrderItemColumns()
   const invoiceItemColumns = useInvoiceItemColumns({
     balanceByOrderItemKey: invoiceBalanceByOrderItemKey,
-    disabled: isBusy || !selectedInvoice || !canAddInvoice,
+    disabled: isBusy || !selectedInvoice || !canEditInvoice,
     onQtyChange: handleInvoiceQtyChange,
   })
   const packListItemColumns = usePackListItemColumns({
@@ -600,7 +602,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   function handleInvoiceQtyChange(item: SupplyInvoiceOrderItem, value: number | string) {
-    if (!canAddInvoice) {
+    if (!canEditInvoice) {
       return
     }
 
@@ -654,7 +656,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceItems() {
-    if (!canAddInvoice) {
+    if (!canEditInvoice) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
       return
     }
@@ -765,6 +767,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
   return {
     canAddInvoice,
+    canEditInvoice,
     canAddPackList,
     canRemoveInvoice,
     canRemovePackList,
@@ -962,7 +965,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
                 <Button
                   disabled={
                     model.isBusy
-                    || !model.canAddInvoice
+                    || !model.canEditInvoice
                     || !model.selectedInvoice
                     || model.invoiceBalanceRows.some((row) => row.isError)
                   }
