@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Divider,
   Group,
   Loader,
@@ -58,6 +57,7 @@ import type {
   DataTableSortingState,
 } from '../../../shared/ui/data-table/types'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
+import './suppliers-page.css'
 
 const pageSizeOptions = ['15', '30', '50']
 const SUPPLIER_CLIENT_TYPE = 1
@@ -71,8 +71,17 @@ const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
     left: ['status', 'regionCode', 'supplier'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const SUPPLIER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
@@ -535,15 +544,14 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack className="suppliers-page" gap={6}>
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
           {t('Новий виробник...')}
         </Button>
       </PageHeaderActions>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <>
           <SuppliersFilterToolbar
             activeFilter={activeFilter}
             clientTypes={clientTypes}
@@ -569,18 +577,21 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             </Alert>
           )}
 
-          <DataTable
+          <div className="suppliers-page__table">
+            <DataTable
             columns={supplierColumns}
             data={suppliers}
             defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Постачальників не знайдено')}
             getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
-            height="calc(100vh - 240px)"
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="suppliers-table-default-freeze-1"
+            layoutVersion="suppliers-table-default-freeze-2"
             loadingText={t('Завантаження постачальників')}
             manualSorting
             minWidth={1120}
+            showLayoutControls={false}
+            showDensityToggle={false}
             tableId="suppliers"
             sorting={sorting}
             toolbarLeft={tableToolbarLeft}
@@ -590,9 +601,9 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
               setPage(1)
               setSorting(nextSorting)
             }}
-          />
-        </Stack>
-      </Card>
+            />
+          </div>
+      </>
 
       <SupplierActionsModal
         supplier={selectedSupplier}
@@ -970,7 +981,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         width: 96,
         minWidth: 84,
         accessor: (supplier) => supplier.RegionCode?.Value,
-        cell: (supplier) => displayValue(supplier.RegionCode?.Value),
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.RegionCode?.Value)} />,
       },
       {
         id: 'supplier',
@@ -978,7 +989,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         width: 300,
         minWidth: 220,
         accessor: getSupplierDisplayName,
-        cell: (supplier) => <Text fw={600}>{getSupplierDisplayName(supplier)}</Text>,
+        cell: (supplier) => <SupplierTableValue fw={600} value={getSupplierDisplayName(supplier)} />,
       },
       {
         id: 'phone',
@@ -986,7 +997,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         width: 150,
         minWidth: 132,
         accessor: getSupplierPhone,
-        cell: (supplier) => displayValue(getSupplierPhone(supplier)),
+        cell: (supplier) => <SupplierTableValue value={displayValue(getSupplierPhone(supplier))} />,
       },
       {
         id: 'balance',
@@ -995,7 +1006,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         minWidth: 130,
         align: 'right',
         accessor: (supplier) => supplier.TotalCurrentAmount,
-        cell: (supplier) => formatAmount(supplier.TotalCurrentAmount),
+        cell: (supplier) => <SupplierTableValue value={formatAmount(supplier.TotalCurrentAmount)} />,
       },
       {
         id: 'email',
@@ -1003,7 +1014,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         width: 220,
         minWidth: 160,
         accessor: (supplier) => supplier.EmailAddress,
-        cell: (supplier) => displayValue(supplier.EmailAddress),
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.EmailAddress)} />,
       },
       {
         id: 'notResident',
@@ -1028,7 +1039,7 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
         width: 180,
         minWidth: 140,
         accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
-        cell: (supplier) => displayValue(supplier.ClientInRole?.ClientTypeRole?.Name),
+        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.ClientInRole?.ClientTypeRole?.Name)} />,
       },
       {
         id: 'actions',
@@ -1076,6 +1087,16 @@ function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
   return dynamicOptions.length > 0
     ? dynamicOptions
     : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
+}
+
+function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={SUPPLIER_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
+  )
 }
 
 function buildSupplierSortDescriptors(sorting: DataTableSortingState) {

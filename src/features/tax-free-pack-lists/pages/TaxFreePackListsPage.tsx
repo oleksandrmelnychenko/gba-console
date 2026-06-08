@@ -3,7 +3,6 @@ import {
   Alert,
   Badge,
   Button,
-  Card,
   Group,
   Pagination,
   Stack,
@@ -52,8 +51,17 @@ const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['actions', 'fromDate', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const PACK_LIST_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 const EXPORT_COLUMNS = [
   { Number: 1, TableName: 'TaxFreePackList.FromDate', ColumnName: 'FromDate', Translate: 'Від якої дати' },
@@ -213,7 +221,7 @@ export function TaxFreePackListsPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="tax-free-pack-lists-page" gap={6}>
       <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
@@ -227,8 +235,8 @@ export function TaxFreePackListsPage() {
         </Tooltip>
       </PageHeaderActions>
 
-      <Card withBorder radius="md">
-        <Stack>
+      <>
+        <Stack className="tax-free-pack-lists-page__stack" gap="xs">
           <Group align="flex-end">
             <TextInput
               label={t('Дата з')}
@@ -268,21 +276,25 @@ export function TaxFreePackListsPage() {
             </Alert>
           )}
 
-          <DataTable
+          <div className="tax-free-pack-lists-page__table">
+            <DataTable
             columns={columns}
             data={filterError ? [] : packLists}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             emptyText={t('Пакувальних листів не знайдено')}
             getRowId={(packList, index) => packList.NetUid || String(packList.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="tax-free-pack-lists-table-1"
+            layoutVersion="tax-free-pack-lists-table-2"
             loadingText={t('Завантаження пакувальних листів')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1290}
+            showLayoutControls={false}
+            showDensityToggle={false}
             tableId="tax-free-pack-lists"
             toolbarLeft={toolbarLeft}
             onRowClick={setSelectedPackList}
-          />
+            />
+          </div>
 
           {(page > 1 || canMoveForward) && (
             <Group justify="flex-end">
@@ -294,7 +306,7 @@ export function TaxFreePackListsPage() {
             </Group>
           )}
         </Stack>
-      </Card>
+      </>
 
       <AppModal centered opened={Boolean(selectedPackList)} title={t('Оберіть дію')} onClose={() => setSelectedPackList(null)}>
         {selectedPackList && (
@@ -478,35 +490,35 @@ function usePackListColumns({
         header: t('Дата'),
         width: 150,
         accessor: (packList) => packList.FromDate,
-        cell: (packList) => <Text fw={600}>{formatDateTime(packList.FromDate)}</Text>,
+        cell: (packList) => <PackListTableValue fw={600} value={formatDateTime(packList.FromDate)} />,
       },
       {
         id: 'number',
         header: t('Номер'),
         width: 150,
         accessor: (packList) => packList.Number,
-        cell: (packList) => <Text fw={600}>{displayValue(packList.Number)}</Text>,
+        cell: (packList) => <PackListTableValue fw={600} value={displayValue(packList.Number)} />,
       },
       {
         id: 'organization',
         header: t('Організація'),
         width: 160,
         accessor: (packList) => getEntityName(packList.Organization),
-        cell: (packList) => displayValue(getEntityName(packList.Organization)),
+        cell: (packList) => <PackListTableValue value={displayValue(getEntityName(packList.Organization))} />,
       },
       {
         id: 'client',
         header: t('Клієнт'),
         width: 250,
         accessor: (packList) => getEntityName(packList.Client),
-        cell: (packList) => displayValue(getEntityName(packList.Client)),
+        cell: (packList) => <PackListTableValue value={displayValue(getEntityName(packList.Client))} />,
       },
       {
         id: 'agreement',
         header: t('Договір'),
         width: 170,
         accessor: getPackListAgreementName,
-        cell: (packList) => displayValue(getPackListAgreementName(packList)),
+        cell: (packList) => <PackListTableValue value={displayValue(getPackListAgreementName(packList))} />,
       },
       {
         id: 'taxFreeCount',
@@ -514,7 +526,7 @@ function usePackListColumns({
         width: 120,
         align: 'right',
         accessor: (packList) => packList.TaxFreesCount ?? packList.TaxFrees?.length,
-        cell: (packList) => displayValue(packList.TaxFreesCount ?? packList.TaxFrees?.length ?? 0),
+        cell: (packList) => <PackListTableValue value={displayValue(packList.TaxFreesCount ?? packList.TaxFrees?.length ?? 0)} />,
       },
       {
         id: 'status',
@@ -543,17 +555,27 @@ function usePackListColumns({
         header: t('Відповідальний'),
         width: 170,
         accessor: (packList) => getEntityName(packList.Responsible),
-        cell: (packList) => displayValue(getEntityName(packList.Responsible)),
+        cell: (packList) => <PackListTableValue value={displayValue(getEntityName(packList.Responsible))} />,
       },
       {
         id: 'comment',
         header: t('Коментар'),
         width: 250,
         accessor: (packList) => packList.Comment,
-        cell: (packList) => displayValue(packList.Comment),
+        cell: (packList) => <PackListTableValue value={displayValue(packList.Comment)} />,
       },
     ],
     [onDelete, onOpen, t],
+  )
+}
+
+function PackListTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={PACK_LIST_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

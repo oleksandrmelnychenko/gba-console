@@ -1,5 +1,5 @@
 .online-shop-clients-page {
-  height: calc(100vh - var(--app-shell-header-offset, 60px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
 }

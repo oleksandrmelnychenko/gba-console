@@ -4,7 +4,6 @@ import {
   Anchor,
   Badge,
   Button,
-  Card,
   FileInput,
   Group,
   NumberInput,
@@ -85,8 +84,17 @@ const TABLE_DEFAULT_LAYOUT = {
     left: ['index', 'number', 'createdDate'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const ORDER_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -814,7 +822,7 @@ function OrdersListCard({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding="sm" className="supply-ukraine-orders-card">
+    <>
       <Stack gap="xs" className="supply-ukraine-orders-card-stack">
         <OrdersFilterToolbar
           createPermissions={createPermissions}
@@ -849,10 +857,12 @@ function OrdersListCard({
             getRowId={getRowId}
             height="100%"
             isLoading={state.isLoading}
-            layoutVersion="supply-ukraine-orders-table-1"
+            layoutVersion="supply-ukraine-orders-table-2"
             loadingText={t('Завантаження замовлень')}
             minWidth={1680}
             rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
+            showLayoutControls={false}
+            showDensityToggle={false}
             tableId="supply-ukraine-orders"
             toolbarLeft={toolbarLeft}
             onRowClick={onRowClick}
@@ -867,7 +877,7 @@ function OrdersListCard({
           onChangePageSize={onChangePageSize}
         />
       </Stack>
-    </Card>
+    </>
   )
 }
 
@@ -1108,35 +1118,37 @@ function useSupplyUkraineOrdersColumns({
         header: t('Номер'),
         width: 140,
         accessor: (row) => row.number,
-        cell: (row) => row.kind === 'invoice' ? <Text c="dimmed">{displayValue(row.invoiceNumber)}</Text> : <Text fw={700}>{displayValue(row.number)}</Text>,
+        cell: (row) => row.kind === 'invoice'
+          ? <OrderTableValue c="dimmed" value={displayValue(row.invoiceNumber)} />
+          : <OrderTableValue fw={700} value={displayValue(row.number)} />,
       },
       {
         id: 'createdDate',
         header: t('Створено'),
         width: 142,
         accessor: (row) => toTimestamp(row.createdDate),
-        cell: (row) => formatDateTime(row.createdDate),
+        cell: (row) => <OrderTableValue value={formatDateTime(row.createdDate)} />,
       },
       {
         id: 'orderDate',
         header: t('Від'),
         width: 142,
         accessor: (row) => toTimestamp(row.orderDate),
-        cell: (row) => formatDateTime(row.orderDate),
+        cell: (row) => <OrderTableValue value={formatDateTime(row.orderDate)} />,
       },
       {
         id: 'invoiceNumber',
         header: t('Номер інвойсу'),
         width: 180,
         accessor: (row) => row.invoiceNumber,
-        cell: (row) => displayValue(row.invoiceNumber),
+        cell: (row) => <OrderTableValue value={displayValue(row.invoiceNumber)} />,
       },
       {
         id: 'invoiceDate',
         header: t('Дата інвойсу'),
         width: 142,
         accessor: (row) => toTimestamp(row.invoiceDate),
-        cell: (row) => formatDateTime(row.invoiceDate),
+        cell: (row) => <OrderTableValue value={formatDateTime(row.invoiceDate)} />,
       },
       {
         id: 'grossPrice',
@@ -1144,28 +1156,28 @@ function useSupplyUkraineOrdersColumns({
         width: 110,
         align: 'right',
         accessor: (row) => row.grossPrice,
-        cell: (row) => formatMoney(row.grossPrice),
+        cell: (row) => <OrderTableValue value={formatMoney(row.grossPrice)} />,
       },
       {
         id: 'supplier',
         header: t('Постачальник'),
         minWidth: 220,
         accessor: (row) => row.supplier,
-        cell: (row) => displayValue(row.supplier),
+        cell: (row) => <OrderTableValue value={displayValue(row.supplier)} />,
       },
       {
         id: 'agreement',
         header: t('Договір'),
         width: 190,
         accessor: (row) => row.agreement,
-        cell: (row) => displayValue(row.agreement),
+        cell: (row) => <OrderTableValue value={displayValue(row.agreement)} />,
       },
       {
         id: 'currency',
         header: t('Валюта'),
         width: 90,
         accessor: (row) => row.currency,
-        cell: (row) => displayValue(row.currency),
+        cell: (row) => <OrderTableValue value={displayValue(row.currency)} />,
       },
       {
         id: 'qty',
@@ -1173,7 +1185,7 @@ function useSupplyUkraineOrdersColumns({
         width: 92,
         align: 'right',
         accessor: (row) => row.qty,
-        cell: (row) => formatAmount(row.qty),
+        cell: (row) => <OrderTableValue value={formatAmount(row.qty)} />,
       },
       {
         id: 'additionalPercent',
@@ -1181,14 +1193,14 @@ function useSupplyUkraineOrdersColumns({
         width: 96,
         align: 'right',
         accessor: (row) => row.additionalPercent,
-        cell: (row) => formatAmount(row.additionalPercent),
+        cell: (row) => <OrderTableValue value={formatAmount(row.additionalPercent)} />,
       },
       {
         id: 'organization',
         header: t('Організація'),
         width: 180,
         accessor: (row) => row.organization,
-        cell: (row) => displayValue(row.organization),
+        cell: (row) => <OrderTableValue value={displayValue(row.organization)} />,
       },
       {
         id: 'isPlaced',
@@ -1202,7 +1214,7 @@ function useSupplyUkraineOrdersColumns({
         header: t('Відповідальний'),
         width: 150,
         accessor: (row) => row.responsible,
-        cell: (row) => displayValue(row.responsible),
+        cell: (row) => <OrderTableValue value={displayValue(row.responsible)} />,
       },
       {
         id: 'kind',
@@ -1380,6 +1392,24 @@ function OrderActionsModal({
         </Stack>
       )}
     </AppModal>
+  )
+}
+
+function OrderTableValue({
+  c,
+  fw,
+  value,
+}: {
+  c?: string
+  fw?: number
+  value: string
+}) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text c={c} component="span" fw={fw} style={ORDER_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 
