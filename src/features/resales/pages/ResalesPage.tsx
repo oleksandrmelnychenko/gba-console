@@ -2322,6 +2322,8 @@ function ResaleProcessDrawer({
   const { t } = useI18n()
   const [processForm, setProcessForm] = useValueState<ProcessDrawerState>(() => createProcessDrawerState(processData))
   const [isRecalculating, setRecalculating] = useValueState(false)
+  const recalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const recalculateRequestRef = useRef(0)
   const columns = useProcessColumns({
     onChangeAmount: updateAmount,
     onChangeQty: updateQty,
@@ -2334,6 +2336,13 @@ function ResaleProcessDrawer({
   const rowsWithIndex = useMemo(
     () => processForm.rows.map((row, index) => ({ ...row, __rowIndex: index })),
     [processForm.rows],
+  )
+
+  useEffect(
+    () => () => {
+      cancelPendingProcessRecalculate()
+    },
+    [],
   )
 
   function updateQty(index: number, value: number | string) {
@@ -2349,6 +2358,12 @@ function ResaleProcessDrawer({
   }
 
   function updateRow(index: number, patch: Partial<ResaleAvailabilityItemModel>) {
+    const nextRows = processForm.rows.map((row, rowIndex) =>
+      rowIndex === index ? applyResaleItemPatch(row, patch) : row,
+    )
+
+    scheduleProcessRecalculate(nextRows)
+
     setProcessForm((currentForm) => ({
       ...currentForm,
       isDirty: true,
@@ -2358,33 +2373,69 @@ function ResaleProcessDrawer({
     }))
   }
 
-  async function recalculateRows() {
+  function cancelPendingProcessRecalculate(): number {
+    if (recalculateTimerRef.current) {
+      clearTimeout(recalculateTimerRef.current)
+      recalculateTimerRef.current = null
+    }
+
+    recalculateRequestRef.current += 1
+
+    return recalculateRequestRef.current
+  }
+
+  function scheduleProcessRecalculate(rows: ResaleAvailabilityItemModel[]) {
+    const requestId = cancelPendingProcessRecalculate()
+
+    recalculateTimerRef.current = setTimeout(() => {
+      recalculateTimerRef.current = null
+      void recalculateRows(rows, requestId)
+    }, 500)
+  }
+
+  async function recalculateRows(rowsOverride?: ResaleAvailabilityItemModel[], requestId = cancelPendingProcessRecalculate()) {
+    const rowsToRecalculate = rowsOverride ?? processForm.rows
+
+    if (!rowsToRecalculate.length) {
+      return
+    }
+
     setRecalculating(true)
     setProcessForm((currentForm) => ({ ...currentForm, warning: null }))
 
     try {
-      const result = await onRecalculate(processForm.rows)
+      if (recalculateRequestRef.current !== requestId) {
+        return
+      }
 
-      if (result.warning) {
-        setProcessForm((currentForm) => ({ ...currentForm, warning: result.warning || null }))
-      } else if (result.data) {
-        setProcessForm((currentForm) => ({
-          ...currentForm,
-          activeProcessData: result.data || null,
-          isDirty: false,
-          rows: result.data?.ReSaleAvailabilityItemModels || [],
-          warning: null,
-        }))
+      const result = await onRecalculate(rowsToRecalculate)
+
+      if (recalculateRequestRef.current === requestId) {
+        if (result.warning) {
+          setProcessForm((currentForm) => ({ ...currentForm, warning: result.warning || null }))
+        } else if (result.data) {
+          setProcessForm((currentForm) => ({
+            ...currentForm,
+            activeProcessData: result.data || null,
+            isDirty: false,
+            rows: result.data?.ReSaleAvailabilityItemModels || [],
+            warning: null,
+          }))
+        }
       }
     } catch (recalculateError) {
-      setProcessForm((currentForm) => ({
-        ...currentForm,
-        warning: {
-          Message: recalculateError instanceof Error ? recalculateError.message : t('Не вдалося перерахувати позиції'),
-        },
-      }))
+      if (recalculateRequestRef.current === requestId) {
+        setProcessForm((currentForm) => ({
+          ...currentForm,
+          warning: {
+            Message: recalculateError instanceof Error ? recalculateError.message : t('Не вдалося перерахувати позиції'),
+          },
+        }))
+      }
     } finally {
-      setRecalculating(false)
+      if (recalculateRequestRef.current === requestId) {
+        setRecalculating(false)
+      }
     }
   }
 
@@ -2409,6 +2460,7 @@ function ResaleProcessDrawer({
       return
     }
 
+    cancelPendingProcessRecalculate()
     onCreate({
       ClientAgreement: processForm.clientAgreement,
       Comment: processForm.comment,
@@ -2416,6 +2468,12 @@ function ResaleProcessDrawer({
       Organization: processForm.activeProcessData?.Organization,
       ReSaleAvailabilityModels: processForm.rows.map(mapResaleAvailabilityItemForCreate),
     })
+  }
+
+  function closeProcessDrawer() {
+    cancelPendingProcessRecalculate()
+    setRecalculating(false)
+    onClose()
   }
 
   return (
@@ -2427,7 +2485,7 @@ function ResaleProcessDrawer({
       radius="md"
       size="min(1180px, 96vw)"
       title={t('Обробка перепродажу')}
-      onClose={onClose}
+      onClose={closeProcessDrawer}
     >
       <Stack gap="lg">
         {processForm.warning && (
@@ -2493,7 +2551,7 @@ function ResaleProcessDrawer({
           tableId="resale-process"
         />
         <Group justify="flex-end">
-          <Button loading={isRecalculating} variant="light" onClick={recalculateRows}>
+          <Button loading={isRecalculating} variant="light" onClick={() => void recalculateRows()}>
             {t('Перерахувати')}
           </Button>
           <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
