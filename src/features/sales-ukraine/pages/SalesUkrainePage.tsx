@@ -52,7 +52,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
+import { SaleAuditDetail } from '../../../shared/sale-audit/SaleAuditDetail'
+import { getSaleStatisticBySaleId } from '../../../shared/sale-audit/saleAuditApi'
+import type { SaleAuditStatistic } from '../../../shared/sale-audit/saleAuditTypes'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import './sales-grid.css'
@@ -152,7 +154,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
-  0: 'Неоплаченно',
+  0: 'Неоплачено',
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
@@ -360,16 +362,6 @@ export function SalesUkrainePage() {
 
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
-
-  const renderSaleExpandContent = useCallback(
-    (sale: SalesUkraineSale) => (
-      <SaleExpandContent
-        sale={sale}
-        onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
-      />
-    ),
-    [setDiscountTarget],
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -739,7 +731,14 @@ export function SalesUkrainePage() {
                       onWillNotShip={requestWillNotShip}
                       onOpenDiscount={(target) => setDiscountTarget({ sale: target })}
                     />
-                    {isExpanded && <div className="sales-grid-expand">{renderSaleExpandContent(sale)}</div>}
+                    {isExpanded && (
+                      <div className="sales-grid-expand">
+                        <SaleExpandContent
+                          sale={sale}
+                          onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
+                        />
+                      </div>
+                    )}
                   </Fragment>
                 )
               })
@@ -932,27 +931,22 @@ function SaleGridRow({
           )}
           {showBang && (
             <Tooltip label={t('Замовлення не буде відвантажено')}>
-              <span
-                className="sg-bang"
-                data-clickable={bangClickable ? 'true' : undefined}
-                role={bangClickable ? 'button' : undefined}
-                tabIndex={bangClickable ? 0 : undefined}
-                aria-label={bangClickable ? t('Замовлення не буде відвантажено') : undefined}
-                style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}
-                onClick={bangClickable ? () => onWillNotShip(sale) : undefined}
-                onKeyDown={
-                  bangClickable
-                    ? (event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault()
-                          onWillNotShip(sale)
-                        }
-                      }
-                    : undefined
-                }
-              >
-                !
-              </span>
+              {bangClickable ? (
+                <button
+                  className="sg-bang"
+                  data-clickable="true"
+                  type="button"
+                  aria-label={t('Замовлення не буде відвантажено')}
+                  style={{ opacity: 1 }}
+                  onClick={() => onWillNotShip(sale)}
+                >
+                  !
+                </button>
+              ) : (
+                <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
+                  !
+                </span>
+              )}
             </Tooltip>
           )}
           {canExpand && (

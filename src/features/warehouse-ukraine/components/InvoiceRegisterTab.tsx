@@ -10,6 +10,7 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getInvoiceRegister, getInvoiceRegisterPrintDocument } from '../api/invoiceRegisterApi'
+import { getInvoicePrintStatus } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, getDateShiftedByDays } from './dateHelpers'
@@ -426,18 +427,17 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         width: 132,
         minWidth: 112,
         enableSorting: false,
-        accessor: (invoice) => getPrintedStatusText(invoice),
+        accessor: (invoice) => getInvoicePrintStatus(invoice)?.label || '',
         cell: (invoice) => {
-          const status = getPrintedStatusText(invoice)
-          const hasChanges = hasApprovedInvoiceEdits(invoice)
+          const status = getInvoicePrintStatus(invoice)
 
           if (!status) {
             return '-'
           }
 
           return (
-            <Badge color={hasChanges ? 'orange' : 'teal'} variant="light">
-              {status}
+            <Badge color={status.color} variant="light">
+              {status.label}
             </Badge>
           )
         },
@@ -488,20 +488,4 @@ function buildIndexMap(invoices: Sale[], offset = 0): Map<Sale, number> {
 
     return indexMap
   }, new Map<Sale, number>())
-}
-
-function getPrintedStatusText(invoice: Sale): string {
-  if (hasApprovedInvoiceEdits(invoice)) {
-    return translate('Змінено')
-  }
-
-  if (invoice.IsPrinted) {
-    return translate('Роздруковано')
-  }
-
-  return ''
-}
-
-function hasApprovedInvoiceEdits(invoice: Sale): boolean {
-  return (invoice.HistoryInvoiceEdit || []).some((entry) => entry.ApproveUpdate)
 }

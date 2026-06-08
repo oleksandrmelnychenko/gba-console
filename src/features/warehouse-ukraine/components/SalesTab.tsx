@@ -25,6 +25,7 @@ import {
   getWarehouseUkraineSales,
   updateWarehouseUkraineSale,
 } from '../api/salesApi'
+import { getInvoicePrintStatus, hasApprovedInvoiceEdits } from '../invoicePrintStatus'
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
@@ -526,17 +527,17 @@ function useSalesColumns({
         width: 120,
         minWidth: 100,
         enableSorting: false,
-        accessor: (sale) => getPrintedStatusText(sale),
+        accessor: (sale) => getInvoicePrintStatus(sale)?.label || '',
         cell: (sale) => {
-          const status = getPrintedStatusText(sale)
+          const status = getInvoicePrintStatus(sale)
 
           if (!status) {
             return '-'
           }
 
           return (
-            <Badge color={status === 'changed' ? 'orange' : 'teal'} variant="light">
-              {status}
+            <Badge color={status.color} variant="light">
+              {status.label}
             </Badge>
           )
         },
@@ -617,22 +618,6 @@ function useSalesColumns({
     ],
     [indexMap, onOpenCarrier, onPrint, onPrintActProtocolEdit, t],
   )
-}
-
-function getPrintedStatusText(sale: Sale): string {
-  if (hasApprovedInvoiceEdits(sale)) {
-    return 'changed'
-  }
-
-  if (sale.IsPrinted) {
-    return translate('Роздруковано')
-  }
-
-  return ''
-}
-
-function hasApprovedInvoiceEdits(sale: Sale): boolean {
-  return (sale.HistoryInvoiceEdit || []).some((entry) => entry.ApproveUpdate)
 }
 
 function hasUnprintedInvoiceEdits(sale: Sale): boolean {

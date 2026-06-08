@@ -45,12 +45,16 @@
 }
 
 .sg-bang {
+  appearance: none;
+  border: 0;
+  background: transparent;
   color: var(--mantine-color-red-6);
   font-weight: 800;
   font-size: 16px;
   line-height: 1;
   padding: 0 2px;
   align-self: center;
+  font-family: inherit;
 }
 
 .sg-bang[data-clickable='true'] {
