@@ -49,8 +49,9 @@ export type PricingPanelProps = {
   mode?: PricingPanelMode
   disabled?: boolean
   onChange: (client: Client) => void
+  onAddContractDocuments?: (files: File[]) => void
   onPendingDiscountDraftChange?: (draft: DiscountsTreeDraft | null) => void
-  onValidityChange?: (isValid: boolean) => void
+  onRemoveContractDocument?: (document: ClientContractDocument) => void
 }
 
 const AGREEMENT_DEFAULT_NAME = 'Default'
@@ -108,8 +109,9 @@ export function PricingPanel({
   mode = 'edit',
   disabled = false,
   onChange,
+  onAddContractDocuments,
   onPendingDiscountDraftChange,
-  onValidityChange,
+  onRemoveContractDocument,
 }: PricingPanelProps) {
   const { t } = useI18n()
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -172,10 +174,6 @@ export function PricingPanel({
       cancelled = true
     }
   }, [t])
-
-  useEffect(() => {
-    onValidityChange?.(clientAgreements.length > 0)
-  }, [clientAgreements.length, onValidityChange])
 
   const highlightedAgreement = useMemo(
     () => clientAgreements.find((clientAgreement) => clientAgreement.Agreement?.NetUid === selectedAgreementNetId),
@@ -376,6 +374,11 @@ export function PricingPanel({
   }, [onPendingDiscountDraftChange])
 
   function handleAddDocuments(files: File[]) {
+    if (mode === 'new' && onAddContractDocuments) {
+      onAddContractDocuments(files)
+      return
+    }
+
     pendingDocumentsRef.current = [...pendingDocumentsRef.current, ...files]
     onChange({
       ...client,
@@ -387,6 +390,11 @@ export function PricingPanel({
   }
 
   function handleRemoveDocument(document: ClientContractDocument) {
+    if (mode === 'new' && onRemoveContractDocument) {
+      onRemoveContractDocument(document)
+      return
+    }
+
     if (document.Id && document.Id > 0) {
       onChange({
         ...client,

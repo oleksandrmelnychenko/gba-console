@@ -35,9 +35,15 @@ export type DocumentFilter = 'invoice' | 'payed'
 
 export type BaseDocument = EntityFields & {
   ContentType?: string
+  DocumentURL?: string
   DocumentUrl?: string
   FileName?: string
   GeneratedName?: string
+  PdfDocumentURL?: string
+  PdfDocumentUrl?: string
+  URL?: string
+  Url?: string
+  url?: string
 }
 
 export type BillOfLadingDocument = BaseDocument & {
@@ -49,21 +55,62 @@ export type BillOfLadingDocument = BaseDocument & {
 export type ServiceItem = EntityFields & {
   AccountingGrossPrice?: number
   AccountingNetPrice?: number
+  AccountingVat?: number
+  AccountingVatPercent?: number
   ActProvidingServiceDocumentId?: number
   BillOfLadingDocument?: BillOfLadingDocument | null
   BillOfLadingDocumentId?: number
   BillOfLadingDocuments?: BillOfLadingDocument[]
+  ContainerNumber?: string
+  ContainerOrganization?: ServiceOrganization | null
+  CustomAgencyOrganization?: ServiceOrganization | null
   CustomOrganization?: ServiceOrganization | null
   ExciseDutyOrganization?: ServiceOrganization | null
   FromDate?: string
   GrossPrice?: number
   InvoiceDocuments?: BaseDocument[]
+  LoadDate?: string
   Name?: string
   NetPrice?: number
   Number?: string
+  PlaneDeliveryOrganization?: ServiceOrganization | null
+  PortCustomAgencyOrganization?: ServiceOrganization | null
+  PortWorkOrganization?: ServiceOrganization | null
   ServiceNumber?: string
+  ServiceDetailItems?: ServiceDetailItem[]
   SupplyCustomType?: 0 | 1
+  SupplyOrganizationAgreement?: ServiceAgreement | null
   SupplyServiceAccountDocumentId?: number
+  TermDeliveryInDays?: number
+  TransportationOrganization?: ServiceOrganization | null
+  Vat?: number
+  VatPercent?: number
+  VehicleDeliveryOrganization?: ServiceOrganization | null
+  VehicleNumber?: string
+  VehicleOrganization?: ServiceOrganization | null
+}
+
+export type ServiceAgreement = EntityFields & {
+  Currency?: {
+    Code?: string
+    Name?: string
+  } | null
+  Name?: string
+  Number?: string
+  Organization?: ServiceOrganization | null
+}
+
+export type ServiceDetailItem = EntityFields & {
+  GrossPrice?: number
+  NetPrice?: number
+  Qty?: number
+  ServiceDetailItemKey?: {
+    Name?: string
+    Symbol?: string
+  } | null
+  UnitPrice?: number
+  Vat?: number
+  VatPercent?: number
 }
 
 export type TaskStatus = 0 | 1 | 2
@@ -112,8 +159,10 @@ export type PaymentTaskRow = {
   id: string
   isPayed: boolean
   number?: string
+  service: ServiceItem
   serviceName?: string
   serviceType: ServiceOrganizationTypeValue
   serviceTypeLabel: string
   status?: TaskStatus
+  task: SupplyPaymentTask
 }

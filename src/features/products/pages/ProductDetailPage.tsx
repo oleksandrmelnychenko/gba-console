@@ -61,8 +61,10 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { PermissionGate } from '../../auth/components/PermissionGate'
+import { useAuth } from '../../auth/useAuth'
 import {
   addOrUpdateProductWriteOffRule,
+  addProductSpecificationCode,
   deleteProductWriteOffRule,
   exportProductMovementsDocument,
   getProductAuditEntities,
@@ -118,8 +120,16 @@ export const PRODUCT_EDIT_PERMISSION = 'Product_Entire_Assortment_EditBtn_PKEY'
 const PRODUCT_IMAGE_ADD_PERMISSION = 'Product_Entire_Assortment_Picture_AddBtn_PKEY'
 const PRODUCT_IMAGE_DELETE_PERMISSION = 'Product_Entire_Assortment_Picture_DelBtn_PKEY'
 export const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
+const PRODUCT_SPECIFICATION_CHANGE_PERMISSION = 'Product_Entire_Assortment_Specification_ChangeBtn_PKEY'
 export const PRODUCT_WRITE_OFF_PERMISSION = 'Product_Entire_Assortment_Product_WriteOff_Rule_Btn_PKEY'
 type ProductWriteOffRuleScope = 'group' | 'product'
+
+type ProductSpecificationDraft = {
+  CustomsValue: number | ''
+  Duty: number | ''
+  SpecificationCode: string
+  VATValue: number | ''
+}
 
 type ProductEditForm = {
   Description: string
@@ -1020,7 +1030,7 @@ export function ProductActionDrawer({
           <ProductConsignmentRemainingsPanel product={product} />
         </PermissionGate>
       )}
-      {activePanel === 'specification' && <ProductSpecificationPanel product={product} />}
+      {activePanel === 'specification' && <ProductSpecificationPanel product={product} onProductSaved={onProductSaved} />}
       {activePanel === 'storage-history' && <ProductStorageHistoryPanel product={product} />}
       {activePanel === 'writeoff' && (
         <PermissionGate permissionKey={PRODUCT_WRITE_OFF_PERMISSION} fallback={<ProductPermissionDeniedAlert />}>
@@ -1409,52 +1419,156 @@ function ProductAuditPanel({ product }: { product: Product }) {
   )
 }
 
-function ProductSpecificationPanel({ product }: { product: Product }) {
+function ProductSpecificationPanel({
+  onProductSaved,
+  product,
+}: {
+  onProductSaved: (product: Product | null) => void
+  product: Product
+}) {
   const { t } = useI18n()
+  const { user } = useAuth()
   const specifications = useMemo(() => sortSpecificationsByCreatedDesc(product.ProductSpecifications || []), [product])
   const currentSpecification = specifications[0] || null
   const historySpecifications = specifications.slice(1)
+  const [draft, setDraft] = useState<ProductSpecificationDraft>({
+    CustomsValue: '',
+    Duty: '',
+    SpecificationCode: '',
+    VATValue: '',
+  })
+  const [error, setError] = useState<string | null>(null)
+  const [isSaving, setSaving] = useState(false)
 
-  if (specifications.length === 0) {
-    return (
-      <Text c="dimmed" size="sm">
-        {t('Специфікацій не знайдено')}
-      </Text>
-    )
+  function updateDraft<K extends keyof ProductSpecificationDraft>(key: K, value: ProductSpecificationDraft[K]) {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      [key]: value,
+    }))
+  }
+
+  async function saveSpecification() {
+    const specificationCode = draft.SpecificationCode.trim()
+
+    if (!specificationCode) {
+      setError(t('Вкажіть код специфікації'))
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      const updatedProduct = await addProductSpecificationCode(product, {
+        AddedBy: user
+          ? {
+              FirstName: user.FirstName,
+              LastName: user.LastName,
+            }
+          : undefined,
+        CustomsValue: toOptionalNumber(draft.CustomsValue),
+        Duty: toOptionalNumber(draft.Duty),
+        ProductId: product.Id,
+        SpecificationCode: specificationCode,
+        VATValue: toOptionalNumber(draft.VATValue),
+      })
+
+      notifications.show({ color: 'green', message: t('Специфікацію збережено') })
+      setDraft({
+        CustomsValue: '',
+        Duty: '',
+        SpecificationCode: '',
+        VATValue: '',
+      })
+      onProductSaved(updatedProduct)
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти специфікацію'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
       <Card withBorder radius="md" padding="md">
-        <Stack gap="xs">
-          <Title order={5}>{t('Поточний')}</Title>
-          {currentSpecification ? (
-            <Stack gap={4}>
-              <Text fw={700} size="sm">{displayValue(currentSpecification.SpecificationCode)}</Text>
-              {currentSpecification.Name ? <Text c="dimmed" size="sm">{currentSpecification.Name}</Text> : null}
-              <SimpleGrid cols={3} spacing={6} mt={4}>
-                <InfoBlock label="Митна вартість" value={displayValue(currentSpecification.CustomsValue)} />
-                <InfoBlock label="Мито" value={displayValue(currentSpecification.Duty)} />
-                <InfoBlock label="ПДВ" value={displayValue(currentSpecification.VATValue)} />
+        <Stack gap="md">
+          <Stack gap="xs">
+            <Title order={5}>{t('Поточний')}</Title>
+            {currentSpecification ? (
+              <Stack gap={4}>
+                <Text fw={700} size="sm">{displayValue(currentSpecification.SpecificationCode)}</Text>
+                {currentSpecification.Name ? <Text c="dimmed" size="sm">{currentSpecification.Name}</Text> : null}
+                <SimpleGrid cols={3} spacing={6} mt={4}>
+                  <InfoBlock label="Митна вартість" value={displayValue(currentSpecification.CustomsValue)} />
+                  <InfoBlock label="Мито" value={displayValue(currentSpecification.Duty)} />
+                  <InfoBlock label="ПДВ" value={displayValue(currentSpecification.VATValue)} />
+                </SimpleGrid>
+                <Text c="dimmed" size="xs" mt={4}>
+                  {[formatSpecificationAuthor(currentSpecification), formatDate(currentSpecification.Created)].filter((part) => part && part !== '-').join(' · ')}
+                </Text>
+              </Stack>
+            ) : (
+              <Text c="dimmed" size="sm">{t('Немає поточного коду')}</Text>
+            )}
+          </Stack>
+
+          <PermissionGate permissionKey={PRODUCT_SPECIFICATION_CHANGE_PERMISSION}>
+            <Divider />
+            <Stack gap="sm">
+              <Title order={5}>{t('Змінити специфікацію')}</Title>
+              {error && <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">{error}</Alert>}
+              <TextInput
+                label={t('Код специфікації')}
+                value={draft.SpecificationCode}
+                onChange={(event) => updateDraft('SpecificationCode', event.currentTarget.value)}
+              />
+              <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+                <NumberInput
+                  decimalScale={2}
+                  label={t('Митна вартість')}
+                  min={0}
+                  value={draft.CustomsValue}
+                  onChange={(value) => updateDraft('CustomsValue', typeof value === 'number' ? value : '')}
+                />
+                <NumberInput
+                  decimalScale={2}
+                  label={t('Мито')}
+                  min={0}
+                  value={draft.Duty}
+                  onChange={(value) => updateDraft('Duty', typeof value === 'number' ? value : '')}
+                />
+                <NumberInput
+                  decimalScale={2}
+                  label={t('ПДВ')}
+                  min={0}
+                  value={draft.VATValue}
+                  onChange={(value) => updateDraft('VATValue', typeof value === 'number' ? value : '')}
+                />
               </SimpleGrid>
-              <Text c="dimmed" size="xs" mt={4}>
-                {[formatSpecificationAuthor(currentSpecification), formatDate(currentSpecification.Created)].filter((part) => part && part !== '-').join(' · ')}
-              </Text>
+              <Group justify="flex-end">
+                <Button
+                  color="violet"
+                  leftSection={<IconDeviceFloppy size={16} />}
+                  loading={isSaving}
+                  onClick={() => void saveSpecification()}
+                >
+                  {t('Зберегти')}
+                </Button>
+              </Group>
             </Stack>
-          ) : (
-            <Text c="dimmed" size="sm">{t('Немає поточного коду')}</Text>
-          )}
+          </PermissionGate>
         </Stack>
       </Card>
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="xs">
           <Title order={5}>{t('Історія')}</Title>
-          {historySpecifications.length === 0 ? (
-            <Text c="dimmed" size="sm">{t('Історію не знайдено')}</Text>
+          {specifications.length === 0 ? (
+            <Text c="dimmed" size="sm">{t('Специфікацій не знайдено')}</Text>
           ) : (
             <ScrollArea mah={420}>
               <Stack gap="xs">
+                {historySpecifications.length === 0 && <Text c="dimmed" size="sm">{t('Історію не знайдено')}</Text>}
                 {historySpecifications.map((specification, index) => (
                   <Box
                     key={`${specification.NetUid || specification.Id || index}`}
@@ -2391,6 +2505,10 @@ function readPlacementNumber(value: number | string): number {
   const parsedValue = Number(value)
 
   return Number.isFinite(parsedValue) ? parsedValue : 0
+}
+
+function toOptionalNumber(value: number | ''): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 function getPanelFromQuery(searchParams: URLSearchParams): ProductDetailPanel | null {

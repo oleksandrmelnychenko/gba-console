@@ -57,6 +57,15 @@ describe('available payment selection validation', () => {
     expect(getAvailablePaymentSelectionFailureReason([], candidate)).toBe('done')
   })
 
+  it('rejects unsupported fallback candidates before any write action', () => {
+    const candidate = buildModel({ isUnsupported: true })
+
+    expect(getAvailablePaymentSelectionFailureReason([], candidate)).toBe('unsupported')
+    expect(validateAvailablePaymentSelection([candidate], t)).toBe(
+      'Цей тип платіжної задачі ще не підтримується для створення видаткового ордера',
+    )
+  })
+
   it('rejects candidates from another organization', () => {
     const selected = buildModel()
     const candidate = buildModel({ organizationNetUid: 'organization-2' })

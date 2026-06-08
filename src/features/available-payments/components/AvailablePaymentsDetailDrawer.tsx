@@ -52,6 +52,7 @@ import {
   countActiveDocuments,
   getTaskPaymentProofDocumentCount,
 } from '../models/availablePaymentDocuments'
+import { getAvailablePaymentSourceRoute } from '../models/availablePaymentSourceRoute'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   createAvailablePaymentOutcome,
@@ -556,10 +557,10 @@ function useAvailablePaymentsDetailDrawerModel({
   }
 
   function handleRedirectToSource(model: AvailablePaymentTaskModel) {
-    if (model.supplyOrderUkraineNetUid) {
-      navigate(`/orders/ukraine/view/${model.supplyOrderUkraineNetUid}`)
-    } else if (model.deliveryProductProtocolNetUid) {
-      navigate(`/product-delivery-protocols/${model.deliveryProductProtocolNetUid}`)
+    const route = getAvailablePaymentSourceRoute(model)
+
+    if (route) {
+      navigate(route)
     }
   }
 
@@ -595,6 +596,13 @@ function useAvailablePaymentsDetailDrawerModel({
 
     if (validationError) {
       setError(validationError)
+      return
+    }
+
+    const selectionValidationError = validateAvailablePaymentSelection(outcomeModels, t)
+
+    if (selectionValidationError) {
+      setError(selectionValidationError)
       return
     }
 
@@ -871,6 +879,7 @@ function AvailablePaymentTaskList({
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
+  const markedSelectionError = markedModels.length > 0 ? validateAvailablePaymentSelection(markedModels, t) : null
 
   return (
     <Stack gap="sm">
@@ -881,9 +890,18 @@ function AvailablePaymentTaskList({
               {t('Вибрано платіжних задач')}: {markedModels.length}
             </Text>
             <Group gap="xs">
-              <Button disabled={isSaving} size="xs" variant="light" onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}>
-                {t('Створити видатковий')}
-              </Button>
+              <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
+                <span>
+                  <Button
+                    disabled={isSaving || Boolean(markedSelectionError)}
+                    size="xs"
+                    variant="light"
+                    onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
+                  >
+                    {t('Створити видатковий')}
+                  </Button>
+                </span>
+              </Tooltip>
               <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
                 {t('Очистити')}
               </Button>
@@ -900,85 +918,93 @@ function AvailablePaymentTaskList({
         const isMarkingDisabled = isSaving || Boolean(selectionError)
 
         return (
-        <Stack key={model.id} gap={0}>
-          <Group
-            align="center"
-            justify="space-between"
-            p="sm"
-            style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}
-          >
-            <Group gap="sm" wrap="nowrap">
-              <Tooltip disabled={!selectionError} label={selectionError}>
-                <span>
-                  <Checkbox
-                    checked={isMarked}
-                    aria-label={t('Вибрати платіжну задачу')}
-                    disabled={isMarkingDisabled}
-                    onChange={() => onToggleMarked(model)}
-                  />
-                </span>
-              </Tooltip>
-              <Stack gap={2}>
-                <Group gap="xs">
-                  <TaskStatusBadge task={model.task} />
-                  <Text fw={600}>{model.organizationName || t('Контрагент')}</Text>
-                </Group>
-                <Text c="dimmed" size="sm">
-                  {model.serviceName}
-                  {model.serviceNumber ? ` #${model.serviceNumber}` : ''}
-                </Text>
-              </Stack>
-            </Group>
-            <Group gap="sm">
-              <Text fw={700}>
-                {formatAmount(model.grossPrice)} {model.currencyCode}
-              </Text>
-              <RedirectToSourceButton model={model} onRedirectToSource={onRedirectToSource} />
-              <Button color="gray" size="xs" variant="light" onClick={() => onToggleExpanded(model)}>
-                {expandedId === model.id ? t('Згорнути') : t('Деталі')}
-              </Button>
-            </Group>
-          </Group>
-
-          {expandedId === model.id && (
-            <Stack
-              gap="md"
-              p="md"
-              style={{
-                border: '1px solid var(--mantine-color-gray-3)',
-                borderTop: 0,
-                borderRadius: '0 0 8px 8px',
-              }}
+          <Stack key={model.id} gap={0}>
+            <Group
+              align="center"
+              justify="space-between"
+              p="sm"
+              style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 8 }}
             >
-              <SegmentedControl
-                data={tabs.map((tab) => ({ label: getTaskDetailTabLabel(tab, t), value: tab }))}
-                value={activeTab}
-                onChange={(value) => void onCashFlowTab(model, value)}
-              />
+              <Group gap="sm" wrap="nowrap">
+                <Tooltip disabled={!selectionError} label={selectionError}>
+                  <span>
+                    <Checkbox
+                      checked={isMarked}
+                      aria-label={t('Вибрати платіжну задачу')}
+                      disabled={isMarkingDisabled}
+                      onChange={() => onToggleMarked(model)}
+                    />
+                  </span>
+                </Tooltip>
+                <Stack gap={2}>
+                  <Group gap="xs">
+                    <TaskStatusBadge task={model.task} />
+                    <Text fw={600}>{model.organizationName || t('Контрагент')}</Text>
+                  </Group>
+                  <Text c="dimmed" size="sm">
+                    {model.serviceName}
+                    {model.serviceNumber ? ` #${model.serviceNumber}` : ''}
+                  </Text>
+                </Stack>
+              </Group>
+              <Group gap="sm">
+                <Text fw={700}>
+                  {formatAmount(model.grossPrice)} {model.currencyCode}
+                </Text>
+                <RedirectToSourceButton model={model} onRedirectToSource={onRedirectToSource} />
+                <Button color="gray" size="xs" variant="light" onClick={() => onToggleExpanded(model)}>
+                  {expandedId === model.id ? t('Згорнути') : t('Деталі')}
+                </Button>
+              </Group>
+            </Group>
 
-              {activeTab === 'invoice' && <InvoiceTab model={model} />}
-              {activeTab === 'cash-flow' && (
-                <CashFlowTab
-                  filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
-                  state={cashFlows[model.id]}
-                  onFiltersChange={(filters) => onCashFlowFiltersChange(model, filters)}
-                  onRowClick={onCashFlowRowClick}
+            {expandedId === model.id && (
+              <Stack
+                gap="md"
+                p="md"
+                style={{
+                  border: '1px solid var(--mantine-color-gray-3)',
+                  borderTop: 0,
+                  borderRadius: '0 0 8px 8px',
+                }}
+              >
+                <SegmentedControl
+                  data={tabs.map((tab) => ({ label: getTaskDetailTabLabel(tab, t), value: tab }))}
+                  value={activeTab}
+                  onChange={(value) => void onCashFlowTab(model, value)}
                 />
-              )}
-              {activeTab === 'payment' && (
-                <PaymentTab
-                  files={filesByTaskId[model.id] || []}
-                  isSaving={isSaving}
-                  model={model}
-                  onCreateOutcome={() => onCreateOutcome([model])}
-                  onFilesChanged={(files) => onFilesChanged(model.id, files)}
-                  onMoveToDone={() => void onMoveToDone(model)}
-                />
-              )}
-              {activeTab === 'transfer' && <TransferTab model={model} />}
-            </Stack>
-          )}
-        </Stack>
+
+                {model.isUnsupported && (
+                  <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+                    {t(
+                      'Немає підтриманого джерела для цієї платіжної задачі. Створення видаткового ордера заблоковано.',
+                    )}
+                  </Alert>
+                )}
+
+                {activeTab === 'invoice' && <InvoiceTab model={model} />}
+                {activeTab === 'cash-flow' && (
+                  <CashFlowTab
+                    filters={cashFlowFiltersByTaskId[model.id] || createDefaultCashFlowFilters()}
+                    state={cashFlows[model.id]}
+                    onFiltersChange={(filters) => onCashFlowFiltersChange(model, filters)}
+                    onRowClick={onCashFlowRowClick}
+                  />
+                )}
+                {activeTab === 'payment' && (
+                  <PaymentTab
+                    files={filesByTaskId[model.id] || []}
+                    isSaving={isSaving}
+                    model={model}
+                    onCreateOutcome={() => onCreateOutcome([model])}
+                    onFilesChanged={(files) => onFilesChanged(model.id, files)}
+                    onMoveToDone={() => void onMoveToDone(model)}
+                  />
+                )}
+                {activeTab === 'transfer' && <TransferTab model={model} />}
+              </Stack>
+            )}
+          </Stack>
         )
       })}
     </Stack>
@@ -990,6 +1016,10 @@ function getTaskDetailTabs(model: AvailablePaymentTaskModel): TaskDetailTab[] {
 
   if (model.task.TaskStatus === TaskStatusValue.Done) {
     return [...tabs, 'transfer']
+  }
+
+  if (model.isUnsupported) {
+    return tabs
   }
 
   return [...tabs, 'payment']
@@ -1521,31 +1551,42 @@ function PaymentTab({
 }) {
   const { t } = useI18n()
   const isDone = model.task.TaskStatus === TaskStatusValue.Done
+  const isUnsupported = Boolean(model.isUnsupported)
 
   return (
     <Stack gap="md">
       <Group justify="space-between" align="center">
-        {!isDone ? (
+        {!isDone && !isUnsupported ? (
           <FileButton multiple onChange={(nextFiles) => onFilesChanged(mergeLocalFiles(files, nextFiles || []))}>
             {(props) => (
-              <Button {...props} color="gray" disabled={isSaving} leftSection={<IconFileUpload size={16} />} variant="light">
+              <Button
+                {...props}
+                color="gray"
+                disabled={isSaving}
+                leftSection={<IconFileUpload size={16} />}
+                variant="light"
+              >
                 {t('Завантажити файли')}
               </Button>
             )}
           </FileButton>
+        ) : isUnsupported ? (
+          <Text c="dimmed" size="sm">
+            {t('Оплата недоступна для цього типу платіжної задачі')}
+          </Text>
         ) : (
           <Text c="dimmed" size="sm">
             {t('Задачу вже виконано')}
           </Text>
         )}
         <Group gap="xs">
-          {!isDone && !model.task.IsAvailableForPayment && (
+          {!isDone && !isUnsupported && !model.task.IsAvailableForPayment && (
             <Button color="green" disabled={isSaving} loading={isSaving} variant="light" onClick={onMoveToDone}>
               {t('Перевести в оплату')}
             </Button>
           )}
           {!isDone && (
-            <Button color="violet" disabled={isSaving} leftSection={<IconCash size={16} />} onClick={onCreateOutcome}>
+            <Button color="violet" disabled={isSaving || isUnsupported} leftSection={<IconCash size={16} />} onClick={onCreateOutcome}>
               {t('Створити видатковий')}
             </Button>
           )}
@@ -1643,7 +1684,7 @@ function RedirectToSourceButton({
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
 }) {
   const { t } = useI18n()
-  const canNavigate = Boolean(model.supplyOrderUkraineNetUid || model.deliveryProductProtocolNetUid)
+  const canNavigate = Boolean(getAvailablePaymentSourceRoute(model))
   const hasPolandOrder = !canNavigate && Boolean(model.supplyOrderNetUid)
 
   if (!canNavigate && !hasPolandOrder) {

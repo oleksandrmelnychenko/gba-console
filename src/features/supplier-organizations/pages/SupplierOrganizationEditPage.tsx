@@ -768,37 +768,43 @@ function AgreementDrawer({
 
           <Divider label={t('Документи')} />
           <Stack gap="xs">
-            {documents.map((document) => (
-              <Group key={document.NetUid || document.Id || document.DocumentURL || document.Name} justify="space-between" wrap="nowrap">
-                <Group gap="xs" wrap="nowrap">
-                  <IconFile size={16} />
-                  <Text size="sm">{displayValue(getDocumentName(document))}</Text>
+            {documents.map((document) => {
+              const documentUrl = getSupplierAgreementDocumentUrl(document)
+              const documentPdfUrl = getSupplierAgreementDocumentPdfUrl(document)
+              const documentName = getDocumentName(document)
+
+              return (
+                <Group key={getSupplierAgreementDocumentKey(document, documentName)} justify="space-between" wrap="nowrap">
+                  <Group gap="xs" wrap="nowrap">
+                    <IconFile size={16} />
+                    <Text size="sm">{displayValue(documentName)}</Text>
+                  </Group>
+                  <Group gap={4} wrap="nowrap">
+                    {documentUrl && (
+                      <Tooltip label={t('Документ')}>
+                        <ActionIcon component="a" href={getDocumentHref(documentUrl)} target="_blank" rel="noreferrer" aria-label={t('Документ')} size="sm" variant="subtle">
+                          <IconFileTypeXls size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                    {documentPdfUrl && (
+                      <Tooltip label={t('PDF')}>
+                        <ActionIcon component="a" href={getDocumentHref(documentPdfUrl)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
+                          <IconFileTypePdf size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                    {editor && (
+                      <Tooltip label={t('Видалити')}>
+                        <ActionIcon aria-label={t('Видалити документ')} color="red" size="sm" variant="subtle" onClick={() => onDeleteDocument(editor, document)}>
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
+                  </Group>
                 </Group>
-                <Group gap={4} wrap="nowrap">
-                  {document.DocumentURL && (
-                    <Tooltip label={t('Excel')}>
-                      <ActionIcon component="a" href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" aria-label={t('Excel')} size="sm" variant="subtle">
-                        <IconFileTypeXls size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {document.PdfDocumentURL && (
-                    <Tooltip label={t('PDF')}>
-                      <ActionIcon component="a" href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" aria-label={t('PDF')} size="sm" variant="subtle">
-                        <IconFileTypePdf size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                  {editor && (
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon aria-label={t('Видалити документ')} color="red" size="sm" variant="subtle" onClick={() => onDeleteDocument(editor, document)}>
-                        <IconTrash size={16} />
-                      </ActionIcon>
-                    </Tooltip>
-                  )}
-                </Group>
-              </Group>
-            ))}
+              )
+            })}
             {documents.length === 0 && <Text c="dimmed" size="sm">{t('Документів немає')}</Text>}
           </Stack>
 
@@ -1002,11 +1008,30 @@ function documentMatches(left: SupplyOrganizationDocument, right: SupplyOrganiza
     return left.Id === right.Id
   }
 
-  return Boolean(left.DocumentURL && left.DocumentURL === right.DocumentURL)
+  const leftUrl = getSupplierAgreementDocumentUrl(left)
+  const rightUrl = getSupplierAgreementDocumentUrl(right)
+
+  return Boolean(leftUrl && leftUrl === rightUrl)
 }
 
 function getDocumentName(document: SupplyOrganizationDocument): string {
-  return document.Name || document.FileName || document.DocumentURL || document.PdfDocumentURL || document.URL || ''
+  return document.Name || document.FileName || getSupplierAgreementDocumentUrl(document) || getSupplierAgreementDocumentPdfUrl(document) || ''
+}
+
+function getSupplierAgreementDocumentUrl(document: SupplyOrganizationDocument): string | undefined {
+  return document.DocumentURL || document.DocumentUrl || document.URL || document.Url || document.url
+}
+
+function getSupplierAgreementDocumentPdfUrl(document: SupplyOrganizationDocument): string | undefined {
+  return document.PdfDocumentURL || document.PdfDocumentUrl
+}
+
+function getSupplierAgreementDocumentKey(document: SupplyOrganizationDocument, documentName: string): string {
+  return document.NetUid
+    || (document.Id ? String(document.Id) : undefined)
+    || getSupplierAgreementDocumentUrl(document)
+    || getSupplierAgreementDocumentPdfUrl(document)
+    || documentName
 }
 
 function normalizeDateInput(value?: string): string {

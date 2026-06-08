@@ -113,6 +113,7 @@ const PERMISSION_TO_UKRAINE_PLACEMENT = 'UkraineAllOrders_SelectAnOption_Product
 const PERMISSION_TO_UKRAINE_VIEW = 'UkraineAllOrders_SelectAnOption_View_PKEY'
 const PERMISSION_TO_UKRAINE_PROTOCOLS = 'UkraineAllOrders_SelectAnOption_NewPaymentProtocol_PKEY'
 const PERMISSION_TO_UKRAINE_OFFICIAL_COSTS = 'UkraineAllOrders_SelectAnOption_AddingOfficialCostsForProductDelivery_PKEY'
+const PERMISSION_DELETE_ORDER = 'UkraineAllOrders_SelectAnOption_Delete_PKEY'
 const PERMISSION_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
 const PERMISSION_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
 const PERMISSION_DIRECT_LOGISTICS = 'UkraineAllOrders_SelectAnOption_LogisticWay_PKEY'
@@ -366,6 +367,7 @@ function useSupplyUkraineOrdersPageController() {
   const canOpenToUkraineView = hasPermission(PERMISSION_TO_UKRAINE_VIEW)
   const canOpenToUkraineProtocols = hasPermission(PERMISSION_TO_UKRAINE_PROTOCOLS)
   const canOpenToUkraineOfficialCosts = hasPermission(PERMISSION_TO_UKRAINE_OFFICIAL_COSTS)
+  const canDeleteOrder = hasPermission(PERMISSION_DELETE_ORDER)
   const canOpenDirectInvoices = hasPermission(PERMISSION_DIRECT_INVOICES)
   const canOpenDirectSpecifications = hasPermission(PERMISSION_DIRECT_SPECIFICATIONS)
   const canOpenDirectLogistics = hasPermission(PERMISSION_DIRECT_LOGISTICS)
@@ -503,6 +505,7 @@ function useSupplyUkraineOrdersPageController() {
     ],
   )
   const columns = useSupplyUkraineOrdersColumns({
+    canDeleteOrder,
     expandedDirectOrders,
     onDelete: (row) => dispatchUi({ row, type: 'setDeleteCandidate' }),
     onToggleDirectOrder: toggleDirectOrder,
@@ -1078,10 +1081,12 @@ function OrdersPageModals({
 }
 
 function useSupplyUkraineOrdersColumns({
+  canDeleteOrder,
   expandedDirectOrders,
   onDelete,
   onToggleDirectOrder,
 }: {
+  canDeleteOrder: boolean
   expandedDirectOrders: Set<string>
   onDelete: (row: SupplyUkraineOrderRow) => void
   onToggleDirectOrder: (order: DirectSupplyOrder) => void
@@ -1228,7 +1233,7 @@ function useSupplyUkraineOrdersColumns({
                 </ActionIcon>
               </Tooltip>
             )}
-            {canDeleteRow(row) && (
+            {canDeleteOrder && canDeleteRow(row) && (
               <Tooltip label={t('Видалити')}>
                 <ActionIcon
                   aria-label={t('Видалити')}
@@ -1248,7 +1253,7 @@ function useSupplyUkraineOrdersColumns({
         ),
       },
     ],
-    [expandedDirectOrders, onDelete, onToggleDirectOrder, t],
+    [canDeleteOrder, expandedDirectOrders, onDelete, onToggleDirectOrder, t],
   )
 }
 

@@ -182,6 +182,7 @@ function buildConsumableOrderModel(consumableOrder: DataRecord, context: BuildCo
 
   return baseModel(context, {
     columns: consumableOrderColumns(t),
+    consumableOrderNetUid: readString(consumableOrder, ['NetUid']),
     currency: currency as AvailablePaymentsCurrency | null,
     documents: readDocuments(consumableOrder.ConsumablesOrderDocuments),
     organization: organization as AvailablePaymentsOrganization | null,
@@ -494,6 +495,7 @@ function buildFallbackModel(context: BuildContext): AvailablePaymentTaskModel {
     columns: [],
     currency: null,
     documents: readDocuments(task.SupplyPaymentTaskDocuments),
+    isUnsupported: true,
     organizationName: '',
     rows: [],
     serviceName: t('Платіжна задача'),
@@ -545,9 +547,11 @@ function baseModel(
   context: BuildContext,
   init: {
     columns: AvailablePaymentColumn[]
+    consumableOrderNetUid?: string
     currency?: AvailablePaymentsCurrency | null
     deliveryProductProtocolNetUid?: string
     documents?: AvailablePaymentDocument[]
+    isUnsupported?: boolean
     organization?: AvailablePaymentsOrganization | null
     organizationName: string
     organizationNetUid?: string
@@ -568,12 +572,14 @@ function baseModel(
 
   return {
     columns: init.columns,
+    consumableOrderNetUid: init.consumableOrderNetUid || '',
     currency,
     currencyCode: readString(currency as DataRecord | null, ['Code']),
     deliveryProductProtocolNetUid: init.deliveryProductProtocolNetUid || '',
     documents: init.documents || [],
     grossPrice: task.GrossPrice || 0,
     id: getTaskModelId(task, `${index}-${serviceIndex}`),
+    isUnsupported: init.isUnsupported || undefined,
     organization: payForOrganization || organization,
     organizationName: init.organizationName,
     organizationNetUid: init.organizationNetUid ?? getEntityValue(organization),

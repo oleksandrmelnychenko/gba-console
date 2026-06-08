@@ -35,9 +35,11 @@ const MONEY_PRECISION = 2
 const PERCENT_MAX = 100
 
 function ProtocolRow({
+  canRemove,
   onRemove,
   protocol,
 }: {
+  canRemove: boolean
   onRemove: () => void
   protocol: SupplyOrderUkrainePaymentDeliveryProtocol
 }) {
@@ -49,11 +51,13 @@ function ProtocolRow({
       <Stack gap="xs">
         <Group justify="space-between" align="center">
           <Text fw={700}>{protocol.SupplyOrderUkrainePaymentDeliveryProtocolKey?.Key || t('Платіжні задачі')}</Text>
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon color="red" variant="subtle" onClick={onRemove}>
-              <IconTrash size={18} />
-            </ActionIcon>
-          </Tooltip>
+          {canRemove && (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+                <IconTrash size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
         </Group>
 
         <Group justify="space-between">
@@ -100,6 +104,8 @@ function ProtocolRow({
 }
 
 export function PaymentDeliveryProtocolsSection({
+  canCreateProtocol,
+  canRemoveProtocol,
   isSaving,
   onCreateProtocol,
   onRemoveProtocol,
@@ -108,6 +114,8 @@ export function PaymentDeliveryProtocolsSection({
   totalGrossPriceLocal,
   users,
 }: {
+  canCreateProtocol: boolean
+  canRemoveProtocol: boolean
   isSaving: boolean
   onCreateProtocol: (values: NewPaymentProtocolFormValues) => Promise<void>
   onRemoveProtocol: (protocol: SupplyOrderUkrainePaymentDeliveryProtocol) => Promise<void>
@@ -232,9 +240,11 @@ export function PaymentDeliveryProtocolsSection({
         <Text fw={700} size="lg">
           {t('Протоколи доставки')}
         </Text>
-        <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setFormOpen(true)}>
-          {t('Створити платіжну задачу')}
-        </Button>
+        {canCreateProtocol && (
+          <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setFormOpen(true)}>
+            {t('Створити платіжну задачу')}
+          </Button>
+        )}
       </Group>
 
       {visibleProtocols.length === 0 ? (
@@ -244,7 +254,12 @@ export function PaymentDeliveryProtocolsSection({
       ) : (
         <Stack gap="md">
           {visibleProtocols.map((protocol, index) => (
-            <ProtocolRow key={protocol.NetUid || index} protocol={protocol} onRemove={() => setRemoveTarget(protocol)} />
+            <ProtocolRow
+              canRemove={canRemoveProtocol}
+              key={protocol.NetUid || index}
+              protocol={protocol}
+              onRemove={() => setRemoveTarget(protocol)}
+            />
           ))}
         </Stack>
       )}

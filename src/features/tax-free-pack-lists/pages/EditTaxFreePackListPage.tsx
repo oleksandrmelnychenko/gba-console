@@ -123,6 +123,9 @@ export function EditTaxFreePackListPage() {
   const [documentTaxFree, setDocumentTaxFree] = useState<TaxFree | null>(null)
   const [carrierTaxFree, setCarrierTaxFree] = useState<TaxFree | null>(null)
   const [deleteTaxFree, setDeleteTaxFree] = useState<TaxFree | null>(null)
+  const [pendingDirtyAction, setPendingDirtyAction] = useState<'reload' | null>(null)
+  const [documentFiles, setDocumentFiles] = useState<File[]>([])
+  const [confirmCloseDocumentsOpen, setConfirmCloseDocumentsOpen] = useState(false)
   const [isSaving, setSaving] = useState(false)
   const [isPrinting, setPrinting] = useState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -213,6 +216,23 @@ export function EditTaxFreePackListPage() {
     return () => controller.abort()
   }, [clientSearch])
 
+  useEffect(() => {
+    if (!isDirty || isSaving) {
+      return undefined
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [isDirty, isSaving])
+
   const setPackList = useCallback((updater: TaxFreePackList | ((packList: TaxFreePackList) => TaxFreePackList)) => {
     setState((currentState) => {
       if (!currentState.packList) {
@@ -278,6 +298,41 @@ export function EditTaxFreePackListPage() {
       setSelectedTaxFreeIds(new Set())
       setSelectedTaxFreeItemIds(new Set())
     }
+  }
+
+  function requestReload() {
+    if (isDirty && !isSaving) {
+      setPendingDirtyAction('reload')
+      return
+    }
+
+    reload()
+  }
+
+  function cancelDirtyNavigation() {
+    setPendingDirtyAction(null)
+  }
+
+  function confirmDirtyNavigation() {
+    if (pendingDirtyAction === 'reload') {
+      setPendingDirtyAction(null)
+      reload()
+    }
+  }
+
+  function requestCloseDocumentsDrawer() {
+    if (documentFiles.length > 0) {
+      setConfirmCloseDocumentsOpen(true)
+      return
+    }
+
+    setDocumentTaxFree(null)
+  }
+
+  function confirmCloseDocumentsDrawer() {
+    setConfirmCloseDocumentsOpen(false)
+    setDocumentFiles([])
+    setDocumentTaxFree(null)
   }
 
   function toggleSource(rowId: string, enabled: boolean) {
@@ -407,7 +462,7 @@ export function EditTaxFreePackListPage() {
         </Badge>
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
-            <ActionIcon variant="light" size={36} aria-label={t('Оновити')} onClick={reload}>
+            <ActionIcon variant="light" size={36} aria-label={t('Оновити')} onClick={requestReload}>
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
@@ -661,7 +716,10 @@ export function EditTaxFreePackListPage() {
                   taxFreeId={getTaxFreeId(taxFree, index)}
                   taxFreeIndex={index}
                   onDelete={() => setDeleteTaxFree(taxFree)}
-                  onDocuments={() => setDocumentTaxFree(taxFree)}
+                  onDocuments={() => {
+                    setDocumentFiles([])
+                    setDocumentTaxFree(taxFree)
+                  }}
                   onItemQtyChange={(itemIndex, qty) => {
                     setPackList((currentPackList) => updateTaxFreeItem(currentPackList, index, itemIndex, { ChangedQty: qty }))
                   }}
@@ -767,11 +825,13 @@ export function EditTaxFreePackListPage() {
         position="right"
         size="min(620px, 100vw)"
         title={documentTaxFree ? `${t('Документи')} TF ${documentTaxFree.Number || ''}` : t('Документи')}
-        onClose={() => setDocumentTaxFree(null)}
+        onClose={requestCloseDocumentsDrawer}
       >
         {documentTaxFree && (
           <TaxFreeDocumentsPanel
+            files={documentFiles}
             taxFree={documentTaxFree}
+            onFilesChange={setDocumentFiles}
             onUpdated={(updatedTaxFree) => {
               setDocumentTaxFree(updatedTaxFree)
               setPackList((currentPackList) => replaceTaxFree(currentPackList, updatedTaxFree))
@@ -780,6 +840,25 @@ export function EditTaxFreePackListPage() {
           />
         )}
       </AppDrawer>
+
+      <AppModal
+        centered
+        opened={confirmCloseDocumentsOpen}
+        title={t('Є незбережені зміни')}
+        onClose={() => setConfirmCloseDocumentsOpen(false)}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо закрити документи, вибрані файли не будуть завантажені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" variant="light" onClick={() => setConfirmCloseDocumentsOpen(false)}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" onClick={confirmCloseDocumentsDrawer}>
+              {t('Закрити без збереження')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
 
       <AppModal centered opened={Boolean(deleteTaxFree)} title={t('Підтвердити видалення')} onClose={() => setDeleteTaxFree(null)}>
         <Stack>
@@ -799,6 +878,25 @@ export function EditTaxFreePackListPage() {
               }}
             >
               {t('Видалити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
+
+      <AppModal
+        centered
+        opened={pendingDirtyAction !== null}
+        title={t('Є незбережені зміни')}
+        onClose={cancelDirtyNavigation}
+      >
+        <Stack gap="md">
+          <Text>{t('Якщо продовжити, незбережені зміни пакувального листа Tax Free будуть втрачені.')}</Text>
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSaving} variant="light" onClick={cancelDirtyNavigation}>
+              {t('Залишитися')}
+            </Button>
+            <Button color="red" disabled={isSaving} onClick={confirmDirtyNavigation}>
+              {t('Продовжити без збереження')}
             </Button>
           </Group>
         </Stack>

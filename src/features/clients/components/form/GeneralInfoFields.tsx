@@ -345,16 +345,14 @@ function BuyerFields(props: GeneralInfoFieldsProps) {
         />
       )}
 
-      {!props.isNew && (
-        <ContractDocuments
-          canSave={props.canSaveDocuments !== false}
-          documents={client.ClientContractDocuments || []}
-          isUploading={props.isUploadingDocuments}
-          onAdd={props.onAddDocuments}
-          onRemove={props.onRemoveDocument}
-          onSave={props.onSaveDocuments}
-        />
-      )}
+      <ContractDocuments
+        canSave={props.canSaveDocuments !== false}
+        documents={client.ClientContractDocuments || []}
+        isUploading={props.isUploadingDocuments}
+        onAdd={props.onAddDocuments}
+        onRemove={props.onRemoveDocument}
+        onSave={props.onSaveDocuments}
+      />
     </Stack>
   )
 }

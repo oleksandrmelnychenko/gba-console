@@ -77,6 +77,78 @@ describe('ProductIncomeDocumentsPage helpers', () => {
       type: 'Прихідний інвойс в Україну',
     })
   })
+
+  it('falls back to net price for resident packing invoices without VAT total', () => {
+    const document = incomeDocument({
+      TotalNetPrice: 1250,
+      ProductIncomeItems: [
+        {
+          PackingListPackageOrderItem: {
+            PackingList: {
+              SupplyInvoice: {
+                SupplyOrder: {
+                  Client: {
+                    IsNotResident: false,
+                    Name: 'Resident supplier',
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    expect(mapDocumentRow(document).amount).toBe(1250)
+  })
+
+  it('keeps VAT total preferred for resident packing invoices', () => {
+    const document = incomeDocument({
+      TotalNetPrice: 1250,
+      TotalNetWithVat: 1500,
+      ProductIncomeItems: [
+        {
+          PackingListPackageOrderItem: {
+            PackingList: {
+              SupplyInvoice: {
+                SupplyOrder: {
+                  Client: {
+                    IsNotResident: false,
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    expect(mapDocumentRow(document).amount).toBe(1500)
+  })
+
+  it('uses net price for non-resident packing invoices', () => {
+    const document = incomeDocument({
+      TotalNetPrice: 1250,
+      TotalNetWithVat: 1500,
+      ProductIncomeItems: [
+        {
+          PackingListPackageOrderItem: {
+            PackingList: {
+              SupplyInvoice: {
+                SupplyOrder: {
+                  Client: {
+                    IsNotResident: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    expect(mapDocumentRow(document).amount).toBe(1250)
+  })
 })
 
 function incomeDocument(document: ProductIncomeDocument): ProductIncomeDocument {

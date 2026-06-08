@@ -21,6 +21,7 @@ import type {
   ProductRelatedUploadType,
   ProductReservation,
   ProductSearchParams,
+  ProductSpecification,
   ProductStorageLocationHistory,
   ProductStorageLocationHistoryParams,
   ProductUploadDocumentPayload,
@@ -123,6 +124,19 @@ export async function updateProduct(product: Product, descriptionOnly = false): 
     errorMessages: {
       default: 'Не вдалося зберегти товар',
       network: 'Сервер товарів недоступний',
+    },
+  })
+
+  return normalizeProduct(result)
+}
+
+export async function addProductSpecificationCode(product: Product, specification: ProductSpecification): Promise<Product | null> {
+  const result = await apiRequest<unknown>('/products/specification/new', {
+    method: 'POST',
+    body: buildProductSpecificationPayload(product, specification),
+    errorMessages: {
+      default: 'Не вдалося зберегти специфікацію товару',
+      network: 'Сервер специфікацій товару недоступний',
     },
   })
 
@@ -705,6 +719,33 @@ function buildProductUpdatePayload(product: Product): Product {
   delete payload.ProductSpecifications
 
   return payload
+}
+
+function buildProductSpecificationPayload(product: Product, specification: ProductSpecification): Product {
+  return {
+    ...buildProductUpdatePayload(product),
+    ProductSpecifications: [
+      ...(product.ProductSpecifications || []).map(prepareProductSpecificationPayload),
+      prepareProductSpecificationPayload({
+        ...specification,
+        ProductId: specification.ProductId ?? product.Id,
+      }),
+    ],
+  }
+}
+
+function prepareProductSpecificationPayload(specification: ProductSpecification): ProductSpecification {
+  return {
+    AddedBy: specification.AddedBy,
+    CustomsValue: specification.CustomsValue,
+    Duty: specification.Duty,
+    Id: specification.Id,
+    Name: specification.Name,
+    NetUid: specification.NetUid,
+    ProductId: specification.ProductId,
+    SpecificationCode: specification.SpecificationCode,
+    VATValue: specification.VATValue,
+  }
 }
 
 function buildProductImageUpdatePayload(product: Product): Product {

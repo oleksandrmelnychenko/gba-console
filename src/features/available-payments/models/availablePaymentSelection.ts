@@ -1,6 +1,7 @@
 import { TaskStatusValue, type AvailablePaymentTaskModel } from '../types'
 
 export type AvailablePaymentSelectionFailureReason =
+  | 'unsupported'
   | 'done'
   | 'organization'
   | 'currency'
@@ -10,6 +11,7 @@ export type AvailablePaymentSelectionFailureReason =
 type Translate = (key: string) => string
 
 const selectionFailureMessages = {
+  unsupported: 'Цей тип платіжної задачі ще не підтримується для створення видаткового ордера',
   done: 'Можна обрати тільки незавершені платіжні задачі',
   organization: 'Можна обрати платіжні задачі тільки одного контрагента',
   currency: 'Можна обрати платіжні задачі тільки в одній валюті',
@@ -21,6 +23,10 @@ export function getAvailablePaymentSelectionFailureReason(
   selectedModels: AvailablePaymentTaskModel[],
   candidate: AvailablePaymentTaskModel,
 ): AvailablePaymentSelectionFailureReason | null {
+  if (candidate.isUnsupported) {
+    return 'unsupported'
+  }
+
   if (candidate.task.TaskStatus === TaskStatusValue.Done) {
     return 'done'
   }

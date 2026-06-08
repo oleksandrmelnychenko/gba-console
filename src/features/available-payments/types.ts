@@ -180,12 +180,14 @@ export type AvailablePaymentColumn = {
 
 export type AvailablePaymentTaskModel = {
   columns: AvailablePaymentColumn[]
+  consumableOrderNetUid?: string
   currency?: AvailablePaymentsCurrency | null
   currencyCode: string
   deliveryProductProtocolNetUid: string
   documents: AvailablePaymentDocument[]
   grossPrice: number
   id: string
+  isUnsupported?: boolean
   organization?: AvailablePaymentsOrganization | null
   organizationName: string
   organizationNetUid: string

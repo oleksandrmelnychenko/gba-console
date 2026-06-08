@@ -45,6 +45,7 @@ import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Curren
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
+const NEW_CLIENT_SESSION_STORAGE_KEY = 'gba_console:new_client_session:v1'
 const NEW_CLIENT_STEPS = ['role', 'general-information', 'contact-information', 'bank-details', 'perfect-client', 'pricing'] as const
 
 type NewClientStep = (typeof NEW_CLIENT_STEPS)[number]
@@ -62,6 +63,12 @@ type ClientDraft = Client & {
     ClientType?: ClientType
     ClientTypeRole?: ClientTypeRole
   }
+}
+
+type NewClientSessionState = {
+  draft?: ClientDraft
+  routeState?: ClientNewRouteState | null
+  version: 1
 }
 
 type SetClientDraftField = <K extends keyof ClientDraft>(key: K, value: ClientDraft[K]) => void
@@ -90,7 +97,6 @@ type NewStepContentProps = {
   onCreateRegion: (name: string) => void
   onDraftChange: (client: Client) => void
   onPendingDiscountDraftChange: (draft: DiscountsTreeDraft | null) => void
-  onPricingValidityChange: (isValid: boolean) => void
   step: NewClientStep
 }
 
@@ -103,19 +109,139 @@ function getDraftRole(draft: ClientDraft): ClientFormRole {
   }
 }
 
+function readNewClientSession(): NewClientSessionState | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    const rawSession = window.sessionStorage.getItem(NEW_CLIENT_SESSION_STORAGE_KEY)
+
+    if (!rawSession) {
+      return null
+    }
+
+    const session = JSON.parse(rawSession) as Partial<NewClientSessionState>
+
+    return session && session.version === 1 ? session as NewClientSessionState : null
+  } catch {
+    clearNewClientSession()
+
+    return null
+  }
+}
+
+function writeNewClientSession(session: NewClientSessionState) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      NEW_CLIENT_SESSION_STORAGE_KEY,
+      JSON.stringify({
+        ...session,
+        draft: sanitizeNewClientDraft(session.draft),
+      }),
+    )
+  } catch {
+    // Session persistence is best-effort; the form must keep working if storage is unavailable.
+  }
+}
+
+function clearNewClientSession() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.sessionStorage.removeItem(NEW_CLIENT_SESSION_STORAGE_KEY)
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
+function sanitizeNewClientDraft(draft?: ClientDraft): ClientDraft | undefined {
+  if (!draft) {
+    return undefined
+  }
+
+  return {
+    ...draft,
+    ClientContractDocuments: [],
+  }
+}
+
+function restoreClientDraftFromSession(draft: ClientDraft, routeState: ClientNewRouteState | null): ClientDraft {
+  return {
+    ...createEmptyDraft(Boolean(routeState?.parentClientId)),
+    ...sanitizeNewClientDraft(draft),
+    ClientInRole: draft.ClientInRole || {},
+  }
+}
+
+function sanitizeNewClientRouteState(routeState: ClientNewRouteState | null): ClientNewRouteState | null {
+  if (!routeState) {
+    return null
+  }
+
+  return {
+    clientType: routeState.clientType,
+    moduleTitle: routeState.moduleTitle,
+    parentClientId: routeState.parentClientId,
+    returnPath: routeState.returnPath,
+    returnState: isJsonSerializable(routeState.returnState) ? routeState.returnState : undefined,
+  }
+}
+
+function isJsonSerializable(value: unknown): boolean {
+  if (typeof value === 'undefined') {
+    return true
+  }
+
+  try {
+    JSON.stringify(value)
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isSameNewClientSessionContext(
+  savedRouteState: ClientNewRouteState | null,
+  explicitRouteState: ClientNewRouteState | null,
+): boolean {
+  if (!explicitRouteState) {
+    return true
+  }
+
+  return (
+    (savedRouteState?.clientType || undefined) === (explicitRouteState.clientType || undefined)
+    && (savedRouteState?.parentClientId || undefined) === (explicitRouteState.parentClientId || undefined)
+    && (savedRouteState?.returnPath || undefined) === (explicitRouteState.returnPath || undefined)
+  )
+}
+
 export function ClientNewPage() {
   const { t } = useI18n()
   const { step } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const { hasPermission } = useAuth()
-  const routeState = location.state as ClientNewRouteState | null
+  const explicitRouteState = location.state as ClientNewRouteState | null
+  const savedSession = useMemo(() => readNewClientSession(), [])
+  const canRestoreSession = Boolean(savedSession && isSameNewClientSessionContext(savedSession.routeState || null, explicitRouteState))
+  const routeState = explicitRouteState || (canRestoreSession ? savedSession?.routeState || null : null)
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
-  const [draft, setDraft] = useValueState<ClientDraft>(() => createEmptyDraft(Boolean(routeState?.parentClientId)))
+  const [draft, setDraft] = useValueState<ClientDraft>(() =>
+    canRestoreSession && savedSession?.draft
+      ? restoreClientDraftFromSession(savedSession.draft, routeState)
+      : createEmptyDraft(Boolean(routeState?.parentClientId)),
+  )
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
-  const [isPricingValid, setPricingValid] = useValueState(false)
   const [isLoadingRegionCode, setLoadingRegionCode] = useValueState(false)
   const [regionCodeError, setRegionCodeError] = useValueState<string | undefined>(undefined)
   const pendingDocumentsRef = useRef<File[]>([])
@@ -127,10 +253,15 @@ export function ClientNewPage() {
   const firstUnavailableStep = currentStep !== 'role' && !draft.ClientInRole.ClientTypeRole
   const returnPath = getNewClientReturnPath(routeState)
   const role = useMemo(() => getDraftRole(draft), [draft])
+  const isPricingValid = (draft.ClientAgreements?.length || 0) > 0
   const { lookups, error: lookupsError, reloadCountries, reloadIncoterms, reloadRegions } = useClientFormLookups({
     needsProviderLookups: role.isProvider,
     needsBuyerLookups: role.isBuyer,
   })
+
+  useEffect(() => {
+    writeNewClientSession({ draft, routeState: sanitizeNewClientRouteState(routeState), version: 1 })
+  }, [draft, routeState])
 
   useEffect(() => {
     let cancelled = false
@@ -225,7 +356,6 @@ export function ClientNewPage() {
       if (isTypeChanged) {
         pendingDocumentsRef.current = []
         pendingDiscountDraftRef.current = null
-        setPricingValid(false)
       }
 
       return {
@@ -491,6 +621,7 @@ export function ClientNewPage() {
       return
     }
 
+    clearNewClientSession()
     setDraft(createEmptyDraft())
     navigate(returnPath, { replace: true, state: routeState?.returnState })
   }
@@ -562,6 +693,7 @@ export function ClientNewPage() {
         color: documentsWereSaved ? 'green' : 'yellow',
         message: documentsWereSaved ? t('Клієнта створено') : t('Клієнта створено без документів'),
       })
+      clearNewClientSession()
       setDraft(createEmptyDraft())
       pendingDocumentsRef.current = []
       pendingDiscountDraftRef.current = null
@@ -656,7 +788,6 @@ export function ClientNewPage() {
                     onPendingDiscountDraftChange={(discountDraft) => {
                       pendingDiscountDraftRef.current = discountDraft
                     }}
-                    onPricingValidityChange={setPricingValid}
                   />
                 </Card>
               </Grid.Col>
@@ -725,7 +856,6 @@ function NewStepContent({
   onCreateRegion,
   onDraftChange,
   onPendingDiscountDraftChange,
-  onPricingValidityChange,
 }: NewStepContentProps) {
   const { t } = useI18n()
 
@@ -814,8 +944,9 @@ function NewStepContent({
           isProvider={getClientType(draft) === CLIENT_TYPE_PROVIDER}
           mode="new"
           onChange={onDraftChange}
+          onAddContractDocuments={onAddDocuments}
           onPendingDiscountDraftChange={onPendingDiscountDraftChange}
-          onValidityChange={onPricingValidityChange}
+          onRemoveContractDocument={onRemoveDocument}
         />
       </Stack>
     )

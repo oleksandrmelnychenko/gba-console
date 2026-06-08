@@ -19,6 +19,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import type { MergedService, ProtocolUser, SupplyDocument, SupplyPaymentTask } from '../types'
 import { formatDate, formatMoney, fromDateInput, responsibleName, toDateInput } from './helpers'
+import type { MergedServicePermissions } from './MergedServicesSection'
 
 type AddPaymentTaskValues = {
   comment: string
@@ -71,10 +72,12 @@ function LabelValueRow({ children, label }: { children: ReactNode; label: string
 }
 
 function PaymentTaskRow({
+  canRemove,
   isAccounting,
   onRemove,
   task,
 }: {
+  canRemove: boolean
   isAccounting?: boolean
   onRemove: () => void
   task: SupplyPaymentTask
@@ -99,11 +102,13 @@ function PaymentTaskRow({
             </Text>
           )}
         </Stack>
-        <Tooltip label={t('Видалити')}>
-          <ActionIcon color="red" variant="subtle" onClick={onRemove}>
-            <IconTrash size={18} />
-          </ActionIcon>
-        </Tooltip>
+        {canRemove && (
+          <Tooltip label={t('Видалити')}>
+            <ActionIcon color="red" variant="subtle" onClick={onRemove}>
+              <IconTrash size={18} />
+            </ActionIcon>
+          </Tooltip>
+        )}
       </Group>
     </Card>
   )
@@ -173,6 +178,7 @@ export function MergedServiceCard({
   onAddPaymentTask,
   onRemovePaymentTask,
   onRemoveService,
+  permissions,
   service,
   users,
 }: {
@@ -180,6 +186,7 @@ export function MergedServiceCard({
   onAddPaymentTask: (service: MergedService, values: AddPaymentTaskValues, isAccounting: boolean) => void
   onRemovePaymentTask: (service: MergedService, task: SupplyPaymentTask) => void
   onRemoveService: (service: MergedService) => void
+  permissions: MergedServicePermissions
   service: MergedService
   users: ProtocolUser[]
 }) {
@@ -211,11 +218,13 @@ export function MergedServiceCard({
       <Stack gap="xs">
         <Group justify="space-between" align="center">
           <Text fw={700}>{t('Об’єднаний сервіс')}</Text>
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon color="red" variant="subtle" onClick={() => onRemoveService(service)}>
-              <IconTrash size={18} />
-            </ActionIcon>
-          </Tooltip>
+          {permissions.canRemoveService && (
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon color="red" variant="subtle" onClick={() => onRemoveService(service)}>
+                <IconTrash size={18} />
+              </ActionIcon>
+            </Tooltip>
+          )}
         </Group>
 
         <LabelValueRow label={t('Номер інвойса')}>{service.Number || '-'}</LabelValueRow>
@@ -285,19 +294,22 @@ export function MergedServiceCard({
 
         {hasPaymentTask && (
           <PaymentTaskRow
+            canRemove={permissions.canRemovePaymentTask}
             task={service.SupplyPaymentTask as SupplyPaymentTask}
             onRemove={() => onRemovePaymentTask(service, service.SupplyPaymentTask as SupplyPaymentTask)}
           />
         )}
         {hasAccountingPaymentTask && (
           <PaymentTaskRow
+            canRemove={permissions.canRemovePaymentTask}
             isAccounting
             task={service.AccountingPaymentTask as SupplyPaymentTask}
             onRemove={() => onRemovePaymentTask(service, service.AccountingPaymentTask as SupplyPaymentTask)}
           />
         )}
 
-        {!hasPaymentTask &&
+        {permissions.canCreatePaymentTask &&
+          !hasPaymentTask &&
           !isAddAccountingOpen &&
           (isAddOpen ? (
             <AddPaymentTaskForm
@@ -317,7 +329,8 @@ export function MergedServiceCard({
             </Button>
           ))}
 
-        {!hasAccountingPaymentTask &&
+        {permissions.canCreatePaymentTask &&
+          !hasAccountingPaymentTask &&
           !isAddOpen &&
           (isAddAccountingOpen ? (
             <AddPaymentTaskForm

@@ -11,6 +11,51 @@ const removedNavigationRoutePatterns = [
   /^\/?sales\/poland(?:\/|$)/i,
   /^\/?warehouse\/poland(?:\/|$)/i,
 ]
+const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = [
+  {
+    source: '/orders/ukraine/all',
+    targets: [
+      /^\/orders\/develop\/all\/edit\/[^/]+\/specifications$/i,
+      /^\/orders\/ukraine\/all\/(?:new|edit\/[^/]+(?:\/.*)?)$/i,
+      /^\/orders\/ukraine\/(?:to-ukraine\/new|view\/[^/]+|placement\/[^/]+|protocols\/[^/]+|[^/]+\/product-income)$/i,
+      /^\/supply-orders\/product-placement\/[^/]+$/i,
+    ],
+  },
+  {
+    source: '/sales/ukraine/all',
+    targets: [
+      /^\/resales(?:\/.*)?$/i,
+      /^\/sales\/charts$/i,
+      /^\/sales\/return\/client$/i,
+      /^\/sales\/ukraine\/(?:all\/returns\/new|cart-reserve|client-product-movement|debtors|interest|offers|prediction)$/i,
+    ],
+  },
+  {
+    source: '/accounting/available-payments',
+    targets: [
+      /^\/payments\/available$/i,
+    ],
+  },
+  {
+    source: '/payments/available',
+    targets: [
+      /^\/accounting\/available-payments$/i,
+    ],
+  },
+  {
+    source: '/accounting/income-cashflows',
+    targets: [
+      /^\/accounting\/income-cashflows\/new\/(?:client|conversion|shop|user)$/i,
+    ],
+  },
+  {
+    source: '/accounting/outgoing-cashflow',
+    targets: [
+      /^\/accounting\/outgoing-cashflow\/new(?:\/(?:simple|supplier|client-return|group|payment-tasks))?$/i,
+      /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
+    ],
+  },
+]
 
 export function normalizeNavigation(modules: NavigationModule[] | null | undefined): NavigationModule[] {
   const normalizedModules: NavigationModule[] = []
@@ -126,11 +171,21 @@ function isNavigationNodePathAllowed(node: NavigationNode, pathname: string): bo
   const routeSegments = splitPath(node.Route)
   const currentSegments = splitPath(pathname)
 
-  return (
+  const exactOrDescendantMatch = (
     routeSegments.length > 0 &&
     currentSegments.length >= routeSegments.length &&
     routeSegments.every((segment, index) => segment === currentSegments[index])
   )
+
+  return exactOrDescendantMatch || isNavigationAliasPathAllowed(node.Route, pathname)
+}
+
+function isNavigationAliasPathAllowed(route: string | undefined, pathname: string): boolean {
+  const normalizedRoute = normalizePath(route || '')
+  const normalizedPath = normalizePath(pathname)
+  const rule = navigationRouteAliasRules.find((item) => item.source === normalizedRoute)
+
+  return Boolean(rule && rule.targets.some((target) => target.test(normalizedPath)))
 }
 
 function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNode | null {

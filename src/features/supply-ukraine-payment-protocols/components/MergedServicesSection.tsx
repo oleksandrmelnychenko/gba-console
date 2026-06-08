@@ -10,14 +10,21 @@ import type {
   SupplyInformationTask,
   SupplyPaymentTask,
 } from '../types'
+import { MergedServiceCard } from './MergedServiceCard'
+import { NewMergedServiceForm } from './NewMergedServiceForm'
 
 type AddPaymentTaskValues = {
   comment: string
   payToDate: Date | null
   responsible: ProtocolUser | null
 }
-import { MergedServiceCard } from './MergedServiceCard'
-import { NewMergedServiceForm } from './NewMergedServiceForm'
+
+export type MergedServicePermissions = {
+  canCreatePaymentTask: boolean
+  canCreateService: boolean
+  canRemovePaymentTask: boolean
+  canRemoveService: boolean
+}
 
 function buildServiceFromForm(values: NewMergedServiceFormValues): MergedService {
   const service: MergedService = {
@@ -81,6 +88,7 @@ export function MergedServicesSection({
   onCreateService,
   onRemovePaymentTask,
   onRemoveService,
+  permissions,
   services,
   users,
 }: {
@@ -89,6 +97,7 @@ export function MergedServicesSection({
   onCreateService: (service: MergedService, documents: File[]) => Promise<void>
   onRemovePaymentTask: (service: MergedService, task: SupplyPaymentTask) => Promise<void>
   onRemoveService: (service: MergedService) => Promise<void>
+  permissions: MergedServicePermissions
   services: MergedService[]
   users: ProtocolUser[]
 }) {
@@ -118,9 +127,11 @@ export function MergedServicesSection({
         <Text fw={700} size="lg">
           {t('Об’єднаний сервіс')}
         </Text>
-        <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
-          {t('Додати')}
-        </Button>
+        {permissions.canCreateService && (
+          <Button color="violet" leftSection={<IconPlus size={16} />} variant="light" onClick={() => setNewOpen(true)}>
+            {t('Додати')}
+          </Button>
+        )}
       </Group>
 
       {visibleServices.length === 0 ? (
@@ -133,6 +144,7 @@ export function MergedServicesSection({
             <MergedServiceCard
               key={service.NetUid || index}
               isSaving={isSaving}
+              permissions={permissions}
               service={service}
               users={users}
               onAddPaymentTask={(target, values, isAccounting) => void onAddPaymentTask(target, values, isAccounting)}

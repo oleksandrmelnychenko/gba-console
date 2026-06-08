@@ -1,11 +1,14 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Badge,
   Button,
   Card,
+  Divider,
   Group,
   MultiSelect,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -19,7 +22,9 @@ import {
 import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
@@ -36,10 +41,12 @@ import {
   type ServiceTypeClassificationContext,
 } from '../serviceTypeClassifier'
 import type {
+  BaseDocument,
   DocumentFilter,
   OrganizationPaymentTasks,
   OrganizationPaymentTasksParams,
   PaymentTaskRow,
+  ServiceDetailItem,
   ServiceItem,
   ServiceOrganization,
   ServiceOrganizationTypeValue,
@@ -123,6 +130,7 @@ function useOrganisationServicesPageModel() {
   const [dateTo, setDateTo] = useValueState(getDefaultDateTo)
   const [paymentTasks, setPaymentTasks] = useValueState<OrganizationPaymentTasks>(createEmptyPaymentTasks)
   const [lastSearchParams, setLastSearchParams] = useValueState<OrganizationPaymentTasksParams | null>(null)
+  const [selectedServiceRow, setSelectedServiceRow] = useValueState<PaymentTaskRow | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingTasks, setLoadingTasks] = useValueState(false)
   const organizationSearchRequestRef = useRef(0)
@@ -270,6 +278,7 @@ function useOrganisationServicesPageModel() {
     setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setSelectedServiceRow(null)
     setError(null)
   }
 
@@ -282,6 +291,7 @@ function useOrganisationServicesPageModel() {
     setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setSelectedServiceRow(null)
     setError(null)
     setLoadingTasks(false)
   }
@@ -295,6 +305,7 @@ function useOrganisationServicesPageModel() {
     setOrganizationSearchState(EMPTY_ORGANIZATION_SEARCH_STATE)
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setSelectedServiceRow(null)
     setError(null)
     setLoadingTasks(false)
   }
@@ -387,6 +398,7 @@ function useOrganisationServicesPageModel() {
     setDocumentFilters([])
     setPaymentTasks(createEmptyPaymentTasks())
     setLastSearchParams(null)
+    setSelectedServiceRow(null)
     setError(null)
   }
 
@@ -445,6 +457,7 @@ function useOrganisationServicesPageModel() {
     paymentTasks,
     rows,
     selectedOrganization,
+    selectedServiceRow,
     selectedServiceTypes,
     toolbarLeft,
     toolbarRight,
@@ -456,6 +469,7 @@ function useOrganisationServicesPageModel() {
     setDateFrom,
     setDateTo,
     setDocumentFilters,
+    setSelectedServiceRow,
     updateSelectedServiceTypes,
     submitSearch,
     updateOrganizationSearch,
@@ -479,6 +493,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
     paymentTasks,
     rows,
     selectedOrganization,
+    selectedServiceRow,
     selectedServiceTypes,
     toolbarLeft,
     toolbarRight,
@@ -490,6 +505,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
     setDateFrom,
     setDateTo,
     setDocumentFilters,
+    setSelectedServiceRow,
     updateSelectedServiceTypes,
     submitSearch,
     updateOrganizationSearch,
@@ -598,6 +614,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
             tableId="organisation-services"
             toolbarLeft={toolbarLeft}
             toolbarRight={toolbarRight}
+            onRowClick={setSelectedServiceRow}
           />
 
           <Group justify="flex-end" gap="lg">
@@ -606,6 +623,8 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
           </Group>
         </Stack>
       </Card>
+
+      <OrganisationServiceDetailDrawer row={selectedServiceRow} onClose={() => setSelectedServiceRow(null)} />
     </Stack>
   )
 }
@@ -623,6 +642,187 @@ function SummaryValue({ label, value }: { label: string; value: number }) {
       </Badge>
     </Group>
   )
+}
+
+function OrganisationServiceDetailDrawer({ row, onClose }: { row: PaymentTaskRow | null; onClose: () => void }) {
+  const { t } = useI18n()
+  const service = row?.service
+  const task = row?.task
+  const serviceDetails = service?.ServiceDetailItems || []
+  const documents = row ? collectServiceDocuments(row.task, row.service) : []
+
+  return (
+    <AppDrawer
+      opened={Boolean(row)}
+      padding="lg"
+      position="right"
+      size="min(980px, 100vw)"
+      title={row ? `${row.serviceTypeLabel}${row.number ? ` #${row.number}` : ''}` : t('Деталі послуги')}
+      onClose={onClose}
+    >
+      {row && service && task && (
+        <Stack gap="lg">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }}>
+            <DetailItem label={t('Дата')} value={displayDate(row.date)} />
+            <DetailItem label={t('Тип')} value={row.serviceTypeLabel} />
+            <DetailItem label={t('Назва')} value={displayValue(row.serviceName)} />
+            <DetailItem label={t('Номер')} value={displayValue(service.Number || service.ServiceNumber)} />
+            <DetailItem label={t('Номер документа')} value={displayValue(service.ServiceNumber)} />
+            <DetailItem label={t('Фактура')} value={displayValue(row.documentName)} />
+            <DetailItem label={t('Організація')} value={displayValue(getServiceOrganizationName(service))} />
+            <DetailItem label={t('Договір')} value={displayValue(getAgreementLabel(service))} />
+            <DetailItem label={t('Валюта')} value={displayValue(getServiceCurrencyCode(service))} />
+            <DetailItem label={t('Сума нетто')} value={displayMoney(service.NetPrice)} />
+            <DetailItem label={t('Сума')} value={displayMoney(service.GrossPrice)} />
+            <DetailItem label={t('Бух. нетто')} value={displayMoney(service.AccountingNetPrice)} />
+            <DetailItem label={t('Бух. сума')} value={displayMoney(service.AccountingGrossPrice)} />
+            <DetailItem label={`${t('ПДВ')} %`} value={displayNumber(service.VatPercent ?? service.AccountingVatPercent)} />
+            <DetailItem label={t('ПДВ')} value={displayMoney(service.Vat ?? service.AccountingVat)} />
+            <DetailItem label={t('Контейнер / авто')} value={displayValue(getServiceTransportNumber(service))} />
+            <DetailItem label={t('Дата завантаження')} value={displayDate(service.LoadDate)} />
+            <DetailItem label={t('Днів доставки')} value={displayNumber(service.TermDeliveryInDays)} />
+            <DetailItem label={t('Статус')} value={getStatusLabel(row.status, t)} />
+          </SimpleGrid>
+
+          <Divider />
+
+          <Stack gap="sm">
+            <Group justify="space-between">
+              <Text fw={700}>{t('Деталізація послуги')}</Text>
+              <Badge color={serviceDetails.length > 0 ? CREATE_ACTION_COLOR : 'gray'} variant="light">
+                {serviceDetails.length}
+              </Badge>
+            </Group>
+            {serviceDetails.length > 0 ? (
+              <DataTable
+                columns={getServiceDetailColumns(t)}
+                data={serviceDetails}
+                density="compact"
+                emptyText={t('Деталізації немає')}
+                getRowId={(detail, index) => detail.NetUid || String(detail.Id || index)}
+                layoutVersion="organisation-service-detail-items-1"
+                maxHeight={320}
+                minWidth={760}
+                showDensityToggle={false}
+                tableId={`organisation-service-detail-items-${row.id}`}
+              />
+            ) : (
+              <Text c="dimmed" size="sm">
+                {t('Деталізації немає')}
+              </Text>
+            )}
+          </Stack>
+
+          <Divider />
+
+          <Stack gap="sm">
+            <Text fw={700}>{t('Документи')}</Text>
+            {documents.length > 0 ? (
+              <Stack gap="xs">
+                {documents.map((document, index) => {
+                  const documentUrl = getServiceDocumentUrl(document)
+                  const documentName = getServiceDocumentName(document, index)
+                  const documentKey = getServiceDocumentKey(document, documentName)
+
+                  return documentUrl ? (
+                    <Anchor key={documentKey} href={getDocumentHref(documentUrl)} target="_blank" rel="noreferrer">
+                      {documentName}
+                    </Anchor>
+                  ) : (
+                    <Text key={documentKey} c="dimmed" size="sm">
+                      {documentName}
+                    </Text>
+                  )
+                })}
+              </Stack>
+            ) : (
+              <Text c="dimmed" size="sm">
+                {t('Документів немає')}
+              </Text>
+            )}
+          </Stack>
+        </Stack>
+      )}
+    </AppDrawer>
+  )
+}
+
+function DetailItem({ label, value }: { label: string; value: string }) {
+  return (
+    <Stack gap={2}>
+      <Text c="dimmed" size="xs" tt="uppercase">
+        {label}
+      </Text>
+      <Text size="sm">{value}</Text>
+    </Stack>
+  )
+}
+
+function getServiceDetailColumns(t: (value: string) => string): DataTableColumn<ServiceDetailItem>[] {
+  return [
+    {
+      id: 'symbol',
+      header: t('Код'),
+      width: 110,
+      accessor: (row) => row.ServiceDetailItemKey?.Symbol,
+      cell: (row) => displayValue(row.ServiceDetailItemKey?.Symbol),
+    },
+    {
+      id: 'name',
+      header: t('Назва'),
+      width: 220,
+      accessor: (row) => row.ServiceDetailItemKey?.Name,
+      cell: (row) => displayValue(row.ServiceDetailItemKey?.Name),
+    },
+    {
+      id: 'qty',
+      header: t('Кількість'),
+      width: 110,
+      align: 'right',
+      accessor: (row) => row.Qty,
+      cell: (row) => displayNumber(row.Qty),
+    },
+    {
+      id: 'unitPrice',
+      header: t('Ціна'),
+      width: 120,
+      align: 'right',
+      accessor: (row) => row.UnitPrice,
+      cell: (row) => displayMoney(row.UnitPrice),
+    },
+    {
+      id: 'netPrice',
+      header: t('Нетто'),
+      width: 120,
+      align: 'right',
+      accessor: (row) => row.NetPrice,
+      cell: (row) => displayMoney(row.NetPrice),
+    },
+    {
+      id: 'vatPercent',
+      header: `${t('ПДВ')} %`,
+      width: 100,
+      align: 'right',
+      accessor: (row) => row.VatPercent,
+      cell: (row) => displayNumber(row.VatPercent),
+    },
+    {
+      id: 'vat',
+      header: t('ПДВ'),
+      width: 120,
+      align: 'right',
+      accessor: (row) => row.Vat,
+      cell: (row) => displayMoney(row.Vat),
+    },
+    {
+      id: 'grossPrice',
+      header: t('Сума'),
+      width: 120,
+      align: 'right',
+      accessor: (row) => row.GrossPrice,
+      cell: (row) => displayMoney(row.GrossPrice),
+    },
+  ]
 }
 
 function useOrganisationServicesColumns(): DataTableColumn<PaymentTaskRow>[] {
@@ -721,10 +921,12 @@ function flattenPaymentTasks(tasks: SupplyPaymentTask[], context: ServiceTypeCla
           ].join(':'),
           isPayed: task.IsPayed === true || task.TaskStatus === 1,
           number: service.Number || service.ServiceNumber,
+          service,
           serviceName: getServiceName(service, serviceTypeLabel),
           serviceType,
           serviceTypeLabel,
           status: task.TaskStatus,
+          task,
         }
       }),
     ),
@@ -782,6 +984,75 @@ function getDocumentName(
 
 function getServiceName(service: ServiceItem, serviceTypeLabel: string): string | undefined {
   return service.Name?.trim() || serviceTypeLabel || service.ServiceNumber
+}
+
+function getServiceOrganizationName(service: ServiceItem): string | undefined {
+  return service.ContainerOrganization?.Name
+    || service.CustomAgencyOrganization?.Name
+    || service.CustomOrganization?.Name
+    || service.ExciseDutyOrganization?.Name
+    || service.PlaneDeliveryOrganization?.Name
+    || service.PortCustomAgencyOrganization?.Name
+    || service.PortWorkOrganization?.Name
+    || service.TransportationOrganization?.Name
+    || service.VehicleDeliveryOrganization?.Name
+    || service.VehicleOrganization?.Name
+    || service.SupplyOrganizationAgreement?.Organization?.Name
+}
+
+function getAgreementLabel(service: ServiceItem): string | undefined {
+  const agreement = service.SupplyOrganizationAgreement
+
+  return agreement?.Name || agreement?.Number || agreement?.NetUid
+}
+
+function getServiceCurrencyCode(service: ServiceItem): string | undefined {
+  return service.SupplyOrganizationAgreement?.Currency?.Code || service.SupplyOrganizationAgreement?.Currency?.Name
+}
+
+function getServiceTransportNumber(service: ServiceItem): string | undefined {
+  return service.ContainerNumber || service.VehicleNumber
+}
+
+function collectServiceDocuments(task: SupplyPaymentTask, service: ServiceItem): BaseDocument[] {
+  return [
+    service.BillOfLadingDocument,
+    ...(service.InvoiceDocuments || []),
+    ...(service.BillOfLadingDocuments || []),
+    ...(task.InvoiceDocuments || []),
+    ...(task.SupplyPaymentTaskDocuments || []),
+  ].filter((document): document is BaseDocument => Boolean(document))
+}
+
+function getServiceDocumentName(document: BaseDocument, index: number): string {
+  const documentNumber = 'Number' in document ? stringFromUnknown(document.Number) : undefined
+
+  return documentNumber
+    || document.FileName
+    || document.GeneratedName
+    || document.NetUid
+    || (document.Id ? String(document.Id) : `Документ ${index + 1}`)
+}
+
+function stringFromUnknown(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : undefined
+}
+
+function getServiceDocumentUrl(document: BaseDocument): string | undefined {
+  return document.DocumentURL
+    || document.DocumentUrl
+    || document.PdfDocumentURL
+    || document.PdfDocumentUrl
+    || document.URL
+    || document.Url
+    || document.url
+}
+
+function getServiceDocumentKey(document: BaseDocument, documentName: string): string {
+  return document.NetUid
+    || (document.Id ? String(document.Id) : undefined)
+    || getServiceDocumentUrl(document)
+    || documentName
 }
 
 function readAmount(service: ServiceItem, task: SupplyPaymentTask): number | undefined {
@@ -934,6 +1205,10 @@ function parseDisplayDate(value: string): Date | null {
 }
 
 function displayMoney(value?: number): string {
+  return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
+}
+
+function displayNumber(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '-'
 }
 

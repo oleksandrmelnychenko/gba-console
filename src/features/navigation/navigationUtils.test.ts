@@ -246,7 +246,85 @@ describe('isNavigationPathAllowed', () => {
     expect(isNavigationPathAllowed(modules, '/users/edit/user-1')).toBe(false)
     expect(isNavigationPathAllowed(modules, '/users/new')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/users/new/details')).toBe(true)
-    expect(isNavigationPathAllowed(modules, '/sales/ukraine/debtors')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/sales/ukraine/debtors')).toBe(true)
     expect(isNavigationPathAllowed(modules, '/sales/ukraine/all/returns/new')).toBe(true)
+  })
+
+  it('allows explicit migrated sibling routes for known menu roots', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Меню',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Замовлення на Україну',
+            Route: '/orders/ukraine/all',
+          },
+          {
+            Id: 12,
+            Module: 'Продажі Україна',
+            Route: '/sales/ukraine/all',
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, '/orders/ukraine/view/order-1')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/orders/ukraine/protocols/order-1')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/orders/develop/all/edit/order-1/specifications')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/sales/ukraine/offers')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/resales/new')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts')).toBe(false)
+  })
+
+  it('allows accounting compatibility and create routes for known menu roots', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Бухгалтерія',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Наявні платежі',
+            Route: '/accounting/available-payments',
+          },
+          {
+            Id: 12,
+            Module: 'Прихід коштів',
+            Route: '/accounting/income-cashflows',
+          },
+          {
+            Id: 13,
+            Module: 'Рух коштів',
+            Route: '/accounting/outgoing-cashflow',
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, '/payments/available')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/income-cashflows/new/shop')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/client-return')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/order-1/advanced-report/view')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts/new')).toBe(false)
+  })
+
+  it('allows available-payments menu nodes to open the accounting canonical route', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Платежі',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Наявні платежі',
+            Route: '/payments/available',
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, '/accounting/available-payments')).toBe(true)
   })
 })

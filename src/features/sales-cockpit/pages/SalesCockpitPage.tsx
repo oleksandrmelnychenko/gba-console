@@ -10,6 +10,7 @@ import {
   regenerateCockpit,
   setTaskStatus,
 } from '../api/salesCockpitApi'
+import { DoneModal } from '../components/DoneModal'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
 import { TaskCard } from '../components/TaskCard'
@@ -56,6 +57,7 @@ export function SalesCockpitPage() {
   const [pendingTaskKey, setPendingTaskKey] = useState<string | null>(null)
   const [noteTask, setNoteTask] = useState<CockpitTask | null>(null)
   const [snoozeTask, setSnoozeTask] = useState<CockpitTask | null>(null)
+  const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
   useEffect(() => {
@@ -98,13 +100,18 @@ export function SalesCockpitPage() {
     return filtered.toSorted(inboxOrder)
   }, [tasks, taskTypeFilter, urgencyFilter])
 
-  const handleDone = useCallback(
-    async (task: CockpitTask) => {
+  const handleDoneSubmit = useCallback(
+    async (task: CockpitTask, outcome: { sold: boolean; amount: number | null }) => {
       setPendingTaskKey(task.task_key)
 
       try {
-        await setTaskStatus(task.task_key, { To: 'done' })
+        await setTaskStatus(task.task_key, {
+          To: 'done',
+          Sold: outcome.sold,
+          Amount: outcome.amount ?? undefined,
+        })
         notifications.show({ color: 'green', message: t('Завдання виконано') })
+        setDoneTask(null)
         reload()
       } catch (actionError) {
         notifications.show({
@@ -265,7 +272,7 @@ export function SalesCockpitPage() {
               task={task}
               onAddNote={setNoteTask}
               onDismiss={handleDismiss}
-              onDone={handleDone}
+              onDone={setDoneTask}
               onSnooze={setSnoozeTask}
             />
           ))}
@@ -284,6 +291,13 @@ export function SalesCockpitPage() {
         task={snoozeTask}
         onClose={() => setSnoozeTask(null)}
         onSubmit={handleSnoozeSubmit}
+      />
+
+      <DoneModal
+        saving={Boolean(doneTask && pendingTaskKey === doneTask.task_key)}
+        task={doneTask}
+        onClose={() => setDoneTask(null)}
+        onSubmit={handleDoneSubmit}
       />
     </Stack>
   )

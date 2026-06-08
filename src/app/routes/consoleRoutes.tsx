@@ -158,6 +158,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/orders/ukraine/placement/:id', element: lazyRoute(<WarehouseUkraineOrderPlacementsPage />) },
   { path: '/orders/ukraine/all/edit/:id/supply-invoices', element: lazyRoute(<SupplyUkraineDirectOrderInvoicesPage />) },
   { path: '/orders/ukraine/all/edit/:id/specifications', element: lazyRoute(<SupplyUkraineDirectOrderSpecificationsPage />) },
+  { path: '/orders/develop/all/edit/:id/specifications', element: lazyRoute(<SupplyUkraineDirectOrderSpecificationsPage />) },
   { path: '/orders/ukraine/all/edit/:id/product-income', element: lazyRoute(<SupplyUkraineDirectOrderProductIncomePage />) },
   { path: '/orders/ukraine/all/edit/:id/new', element: lazyRoute(<SupplyUkraineDirectOrderDetailPage />) },
   { path: '/orders/ukraine/all/edit/:id', element: lazyRoute(<SupplyUkraineDirectOrderDetailPage />) },

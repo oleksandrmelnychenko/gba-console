@@ -89,7 +89,9 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
   if (packingInvoice) {
     return {
       ...baseRow,
-      amount: packingInvoice.SupplyOrder?.Client?.IsNotResident ? document.TotalNetPrice : document.TotalNetWithVat || 0,
+      amount: packingInvoice.SupplyOrder?.Client?.IsNotResident
+        ? document.TotalNetPrice
+        : document.TotalNetWithVat ?? document.TotalNetPrice ?? 0,
       client: getEntityName(packingInvoice.SupplyOrder?.Client),
       comment: packingInvoice.Comment || document.Comment,
       docState: getDocumentState(documentIsActive),

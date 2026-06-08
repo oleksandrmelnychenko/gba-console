@@ -23,10 +23,14 @@ export type Organization = NamedEntity & {
 
 export type SupplyOrganizationDocument = EntityFields & {
   DocumentURL?: string
+  DocumentUrl?: string
   FileName?: string
   Name?: string
   PdfDocumentURL?: string
+  PdfDocumentUrl?: string
   URL?: string
+  Url?: string
+  url?: string
 }
 
 export type SupplyOrganizationAgreement = EntityFields & {

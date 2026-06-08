@@ -28,11 +28,12 @@ export function ModulePage({ fallback = false, module }: ModulePageProps) {
     ? isLoading
       ? t('Перевіряємо маршрут у меню консолі.')
       : isUnsupportedNavigationRoute
-        ? t('Маршрут є в меню, але ще не підключений у новій оболонці консолі.')
+        ? t('Маршрут є в меню, але для нього немає підключеної сторінки. Це треба доробити перед використанням.')
         : t('Для цього шляху немає сторінки у новій оболонці консолі.')
     : t('Маршрут підключений у новій оболонці консолі.')
   const Icon = fallback && !isLoading ? IconAlertTriangle : IconDatabase
   const label = isUnsupportedNavigationRoute ? selectedNode?.Module : module
+  const iconColor = fallback && !isLoading ? 'orange' : 'cyan'
 
   return (
     <Stack gap="lg">
@@ -51,7 +52,7 @@ export function ModulePage({ fallback = false, module }: ModulePageProps) {
               </Text>
             )}
           </Box>
-          <ThemeIcon variant="light" color="cyan" size={48} radius="md">
+          <ThemeIcon variant="light" color={iconColor} size={48} radius="md">
             <Icon size={24} stroke={1.8} />
           </ThemeIcon>
         </Group>

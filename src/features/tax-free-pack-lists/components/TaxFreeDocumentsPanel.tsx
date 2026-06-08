@@ -7,13 +7,14 @@ import { deleteTaxFreeDocument, uploadTaxFreeDocuments } from '../api/taxFreePac
 import type { TaxFree, TaxFreeDocument } from '../types'
 
 type TaxFreeDocumentsPanelProps = {
+  files: File[]
   taxFree: TaxFree
+  onFilesChange: (files: File[]) => void
   onUpdated: (taxFree: TaxFree) => void
 }
 
-export function TaxFreeDocumentsPanel({ taxFree, onUpdated }: TaxFreeDocumentsPanelProps) {
+export function TaxFreeDocumentsPanel({ files, taxFree, onFilesChange, onUpdated }: TaxFreeDocumentsPanelProps) {
   const { t } = useI18n()
-  const [files, setFiles] = useState<File[]>([])
   const [isSaving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const documents = taxFree.TaxFreeDocuments || []
@@ -53,7 +54,7 @@ export function TaxFreeDocumentsPanel({ taxFree, onUpdated }: TaxFreeDocumentsPa
       if (updatedTaxFree) {
         onUpdated(updatedTaxFree)
       }
-      setFiles([])
+      onFilesChange([])
       notifications.show({ color: 'green', message: t('Документи завантажено') })
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : t('Не вдалося завантажити документи'))
@@ -77,7 +78,7 @@ export function TaxFreeDocumentsPanel({ taxFree, onUpdated }: TaxFreeDocumentsPa
         label={t('Файли')}
         placeholder={t('Оберіть файли')}
         value={files}
-        onChange={setFiles}
+        onChange={onFilesChange}
       />
 
       {documents.length > 0 ? (
