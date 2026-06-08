@@ -123,6 +123,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }, [netId, setLoadState, t])
 
   const canEdit = isGba || !protocol?.IsCompleted
+  const canEditDeliveryDocuments = Boolean(protocol)
 
   async function changeStatus() {
     if (!protocol?.NetUid) {
@@ -283,8 +284,9 @@ function useLogisticPathModel(netId: string | undefined) {
   }
 
   return {
-    assignInvoices, assignServiceInvoices, calculate, canEdit, changeStatus, error, isAssigning, isLoading,
-    isSavingInvoiceDocuments, isSavingService, isUpdating, protocol, removeService, saveInvoiceDocuments, saveService,
+    assignInvoices, assignServiceInvoices, calculate, canEdit, canEditDeliveryDocuments, changeStatus, error,
+    isAssigning, isLoading, isSavingInvoiceDocuments, isSavingService, isUpdating, protocol, removeService,
+    saveInvoiceDocuments, saveService,
   }
 }
 
@@ -344,10 +346,15 @@ export function ProductDeliveryProtocolLogisticPathPage() {
           )}
 
           <InvoicesSection
-            canEdit={model.canEdit}
-            isAssigning={model.isAssigning}
-            isSavingInvoiceDocuments={model.isSavingInvoiceDocuments}
+            permissions={{
+              canEditAssignments: model.canEdit,
+              canEditDeliveryDocuments: model.canEditDeliveryDocuments,
+            }}
             protocol={model.protocol}
+            status={{
+              isAssigning: model.isAssigning,
+              isSavingInvoiceDocuments: model.isSavingInvoiceDocuments,
+            }}
             onAssignInvoices={model.assignInvoices}
             onSaveInvoiceDocuments={model.saveInvoiceDocuments}
           />

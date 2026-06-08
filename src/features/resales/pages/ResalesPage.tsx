@@ -34,7 +34,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -90,6 +90,17 @@ import type {
   UpdatedResaleModel,
 } from '../types'
 import { ResaleDownloadDocumentType as DocumentType } from '../types'
+import {
+  EMPTY_SPECIFICATION_VALUE,
+  buildAvailabilityPayload,
+  buildResalesDateQuery,
+  canProcessAvailabilityRows,
+  getDateRangeError,
+  getProcessFromStorageId,
+  mapAvailabilityToItemModel,
+  readAvailabilityStorageId,
+  type ResaleAvailabilityForm,
+} from '../resalesFlowHelpers'
 
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
@@ -152,18 +163,6 @@ type ResalesListState = {
   isLoading: boolean
   items: ReSale[]
   total?: number
-}
-
-type ResaleAvailabilityForm = {
-  amount: number
-  extraChargePercent: number
-  from: string
-  infelicity: number
-  productGroupIds: string[]
-  search: string
-  specificationCodes: string[]
-  storageIds: string[]
-  to: string
 }
 
 type ProcessState = {
@@ -257,13 +256,14 @@ export function ResalesPage() {
       setError(null)
 
       try {
+        const dateQuery = buildResalesDateQuery(fromDate, toDate)
         const nextItems = await getResales({
-          from: toStartOfDayIso(fromDate),
+          from: dateQuery.from,
           isFiltered: page === 1,
           limit: pageSize,
           offset,
           status: Number(status),
-          to: toEndOfDayIso(toDate),
+          to: dateQuery.to,
         })
 
         if (!cancelled) {
@@ -519,13 +519,13 @@ export function NewResalePage() {
   const [form, setForm] = useValueState<ResaleAvailabilityForm>(() => ({
     amount: 0,
     extraChargePercent: 0,
-    from: shiftDateInput(-365),
+    from: shiftDateTimeInput(-365, 'start'),
     infelicity: 0,
     productGroupIds: [],
     search: '',
     specificationCodes: [],
     storageIds: [],
-    to: getDateInputValue(new Date()),
+    to: getDateTimeInputValue(new Date()),
   }))
   const [availabilities, setAvailabilities] = useValueState<GroupingResaleAvailability[]>([])
   const [totals, setTotals] = useValueState<ResaleAvailabilityWithTotalsTotals>(getEmptyAvailabilityTotals)
@@ -560,7 +560,7 @@ export function NewResalePage() {
     () => availabilities.filter((availability) => selectedKeys.includes(getAvailabilityKey(availability))),
     [availabilities, selectedKeys],
   )
-  const canProcessSelected = selectedRows.length > 0 && hasSingleStorage(selectedRows)
+  const canProcessSelected = canProcessAvailabilityRows(selectedRows)
   const columns = useResaleAvailabilityColumns({
     selectedKeys,
     onToggle: toggleAvailability,
@@ -625,7 +625,7 @@ export function NewResalePage() {
               return currentNetId
             }
 
-            return nextOptions.Storages.find((storage) => storage.NetUid)?.NetUid || null
+            return null
           })
         }
       } catch (loadError) {
@@ -701,9 +701,7 @@ export function NewResalePage() {
     }
 
     if (!canProcessSelected) {
-      setWarning({
-        Message: t('Для обробки оберіть товари з одного складу'),
-      })
+      setWarning({ Message: t('Для обробки оберіть товари зі складом') })
       return
     }
 
@@ -720,7 +718,7 @@ export function NewResalePage() {
 
     if (!canProcessSelected) {
       setWarning({
-        Message: t('Для обробки оберіть товари з одного складу'),
+        Message: t('Для обробки оберіть товари зі складом'),
       })
       return
     }
@@ -733,7 +731,7 @@ export function NewResalePage() {
     try {
       const result = await updateResaleAvailabilityList(selectedRows.map(mapAvailabilityToItemModel))
 
-      handleProcessResult(result, readAvailabilityStorageId(selectedRows[0]))
+      handleProcessResult(result, getProcessFromStorageId(result.data, selectedRows))
     } catch (processError) {
       setError(processError instanceof Error ? processError.message : t('Не вдалося підготувати перепродаж'))
     } finally {
@@ -826,13 +824,13 @@ export function NewResalePage() {
     setForm({
       amount: 0,
       extraChargePercent: 0,
-      from: shiftDateInput(-365),
+      from: shiftDateTimeInput(-365, 'start'),
       infelicity: 0,
       productGroupIds: collectProductGroupIds(filterOptions.ProductGroups),
       search: '',
       specificationCodes: buildSpecificationSelection(filterOptions.SpecificationCodes),
       storageIds: collectStorageIds(filterOptions.Storages),
-      to: getDateInputValue(new Date()),
+      to: getDateTimeInputValue(new Date()),
     })
   }
 
@@ -953,16 +951,16 @@ export function NewResalePage() {
               />
               <TextInput
                 label={t('Від')}
-                type="date"
+                type="datetime-local"
                 value={form.from}
-                w={150}
+                w={190}
                 onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, from: nextValue })) }}
               />
               <TextInput
                 label={t('До')}
-                type="date"
+                type="datetime-local"
                 value={form.to}
-                w={150}
+                w={190}
                 onChange={(event) => { const nextValue = event.currentTarget.value; setForm((currentForm) => ({ ...currentForm, to: nextValue })) }}
               />
               <Button color="gray" variant="light" onClick={resetFilters}>
@@ -988,7 +986,7 @@ export function NewResalePage() {
                 {t('Створити автоматично')}
               </Button>
               <Button
-                disabled={!payload || isLoadingOptions || isLoadingAvailabilities || !selectedRows.length}
+                disabled={!payload || isLoadingOptions || isLoadingAvailabilities || !canProcessSelected}
                 loading={isProcessing}
                 onClick={requestProcessSelected}
               >
@@ -3036,22 +3034,6 @@ function getEmptyAvailabilityTotals(): ResaleAvailabilityWithTotalsTotals {
   }
 }
 
-function buildAvailabilityPayload(form: ResaleAvailabilityForm): ResaleAvailabilityFilterPayload {
-  return {
-    Amount: form.amount,
-    ExtraChargePercent: form.extraChargePercent,
-    From: toStartOfDayIso(form.from),
-    IncludedProductGroups: parseNumberValues(form.productGroupIds),
-    IncludedSpecificationCodes: form.specificationCodes.map((code) => (code === EMPTY_SPECIFICATION_VALUE ? '' : code)),
-    IncludedStorages: parseNumberValues(form.storageIds),
-    PossibleAmountDistinct: form.infelicity,
-    Search: form.search.trim(),
-    To: toEndOfDayIso(form.to),
-  }
-}
-
-const EMPTY_SPECIFICATION_VALUE = '__empty_specification__'
-
 function buildProductGroupOptions(productGroups: ResaleProductGroup[]): { label: string; value: string }[] {
   const options: { label: string; value: string }[] = []
 
@@ -3139,61 +3121,8 @@ function collectStorageIds(storages: ResaleStorage[]): string[] {
   return buildStorageOptions(storages).map((option) => option.value)
 }
 
-function parseNumberValues(values: string[]): number[] {
-  return values.reduce<number[]>((numbers, value) => {
-    const numberValue = Number(value)
-
-    if (Number.isFinite(numberValue)) {
-      numbers.push(numberValue)
-    }
-
-    return numbers
-  }, [])
-}
-
 function getAvailabilityKey(row: GroupingResaleAvailability): string {
   return `${row.ProductId}-${readAvailabilityStorageId(row) || 0}-${row.SpecificationCode || ''}`
-}
-
-function hasSingleStorage(rows: GroupingResaleAvailability[]): boolean {
-  const firstStorageId = readAvailabilityStorageId(rows[0])
-
-  return rows.every((row) => readAvailabilityStorageId(row) === firstStorageId)
-}
-
-function mapAvailabilityToItemModel(row: GroupingResaleAvailability): ResaleAvailabilityItemModel {
-  const fromStorageId = readAvailabilityStorageId(row) || 0
-
-  return {
-    Amount: row.TotalSalePrice || 0,
-    ConsignmentItem: {},
-    ExchangeRate: row.ExchangeRate,
-    FromStorageId: fromStorageId,
-    MeasureUnit: row.MeasureUnit,
-    OldValue: {
-      Amount: row.TotalSalePrice || 0,
-      QtyToReSale: row.Qty || 0,
-      SalePrice: row.SalePrice || 0,
-    },
-    OrganizationId: row.OrganizationId ?? row.FromStorage?.OrganizationId,
-    Price: row.AccountingGrossPrice || 0,
-    ProductId: row.ProductId,
-    ProductName: row.ProductName,
-    Profit: 0,
-    Profitability: 0,
-    Qty: row.Qty || 0,
-    QtyToReSale: row.Qty || 0,
-    ReSaleAvailabilities: [],
-    SalePrice: row.SalePrice || 0,
-    SpecificationCode: row.SpecificationCode,
-    Vat: 0,
-    VendorCode: row.VendorCode,
-    Weight: row.Weight,
-  }
-}
-
-function readAvailabilityStorageId(row?: GroupingResaleAvailability): number | undefined {
-  return row?.FromStorageId ?? row?.FromStorage?.Id
 }
 
 function createProcessDrawerState(processData: CreatedResaleAvailabilityWithTotals | null): ProcessDrawerState {
@@ -3598,6 +3527,10 @@ function getDateInputValue(date: Date): string {
   return formatLocalDate(date)
 }
 
+function getDateTimeInputValue(date: Date): string {
+  return formatLocalDateTime(date).slice(0, 16)
+}
+
 function shiftDateInput(days: number): string {
   const date = new Date()
   date.setDate(date.getDate() + days)
@@ -3605,38 +3538,17 @@ function shiftDateInput(days: number): string {
   return getDateInputValue(date)
 }
 
-function toStartOfDayIso(dateValue: string): string {
-  return new Date(`${dateValue}T00:00:00.000`).toISOString()
-}
+function shiftDateTimeInput(days: number, boundary?: 'start' | 'end'): string {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
 
-function toEndOfDayIso(dateValue: string): string {
-  return new Date(`${dateValue}T23:59:59.999`).toISOString()
-}
-
-function getDateRangeError(from: string, to: string): string | null {
-  if (!from || !to) {
-    return translate('Оберіть діапазон дат')
+  if (boundary === 'start') {
+    date.setHours(0, 0, 0, 0)
+  } else if (boundary === 'end') {
+    date.setHours(23, 59, 59, 999)
   }
 
-  if (!isValidDateInputValue(from) || !isValidDateInputValue(to)) {
-    return translate('Оберіть коректний діапазон дат')
-  }
-
-  if (from > to) {
-    return translate('Дата “Від” не може бути більшою за дату “До”')
-  }
-
-  return null
-}
-
-function isValidDateInputValue(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false
-  }
-
-  const date = new Date(`${value}T00:00:00`)
-
-  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+  return getDateTimeInputValue(date)
 }
 
 function formatDateTime(value?: string): string {

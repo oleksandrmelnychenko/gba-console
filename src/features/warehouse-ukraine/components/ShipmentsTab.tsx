@@ -1602,6 +1602,13 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   }
 
   const activeShipmentNumber = shipmentDraft?.Number || selectedShipment?.Number || ''
+  const printSelectedShipmentDisabledReason = !shipmentDraft?.NetUid
+    ? t('Збережіть відвантаження перед друком')
+    : hasShipmentDraftChanges
+      ? t('Збережіть зміни перед друком')
+      : isSaving
+        ? t('Дочекайтесь завершення операції')
+        : null
 
   return (
     <Stack gap="md">
@@ -1714,14 +1721,18 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             >
               {t('Додати накладні')}
             </Button>
-            <Button
-              leftSection={<IconPrinter size={18} />}
-              variant="light"
-              onClick={printSelectedShipment}
-              disabled={!shipmentDraft?.NetUid || hasShipmentDraftChanges || isSaving}
-            >
-              {t('Роздрукувати')}
-            </Button>
+            <Tooltip disabled={!printSelectedShipmentDisabledReason} label={printSelectedShipmentDisabledReason || ''}>
+              <Box component="span">
+                <Button
+                  leftSection={<IconPrinter size={18} />}
+                  variant="light"
+                  onClick={printSelectedShipment}
+                  disabled={Boolean(printSelectedShipmentDisabledReason)}
+                >
+                  {t('Роздрукувати')}
+                </Button>
+              </Box>
+            </Tooltip>
             <Button
               color="green"
               leftSection={<IconDeviceFloppy size={18} />}

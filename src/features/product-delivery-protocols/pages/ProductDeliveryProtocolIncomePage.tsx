@@ -58,6 +58,7 @@ import type {
   IncomeSupplyInvoice,
   PackingListPackageOrderItem,
 } from '../productIncomeTypes'
+import { isInvoiceAllNotPlaced } from '../productIncomePlacementState'
 
 const DEFAULT_VAT_PERCENT = 23
 const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
@@ -1110,6 +1111,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
     handleAddColumn, handleAllReadyToPlace, handleApplyPlacements, handleCalculateVat, handleCarryOut, handleCellChange,
     handleMoveRemnants, handleNetWeightChange, handleOpenPlacements, handleProductIncome, handleReadyToPlace,
     canUseIncome, handleSave, invoice, isDirty, isLoading, isSaving, navigate: requestNavigate, packingList, pendingDirtyAction,
+    isInvoiceAllNotPlaced: isInvoiceAllNotPlaced(invoice, packingList),
     placementStatus, productIncome, protocol, reloadFromServer: requestReloadFromServer,
     selectPackingList: requestSelectPackingList, selectedInvoiceId, selectedStorage, selectedStorageId,
     setColumnModalOpen, setColumnToRemove, source,
@@ -1702,13 +1704,15 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
                 onChange={(value) => model.setSelectedStorageId(value)}
               />
             )}
-            <TextInput
-              disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
-              label={t('Від якої дати')}
-              type="date"
-              value={model.fromDate}
-              onChange={(event) => model.setFromDate(event.currentTarget.value)}
-            />
+            {model.isInvoiceAllNotPlaced && (
+              <TextInput
+                disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
+                label={t('Від якої дати')}
+                type="date"
+                value={model.fromDate}
+                onChange={(event) => model.setFromDate(event.currentTarget.value)}
+              />
+            )}
             <NumberInput
               disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
               label={t('Відсоток ПДВ')}

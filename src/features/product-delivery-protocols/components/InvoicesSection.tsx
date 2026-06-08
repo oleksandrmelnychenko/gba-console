@@ -47,6 +47,16 @@ import { formatDateTime, formatMoney } from './protocolDetailHelpers'
 
 const MANAGE_INVOICES_PERMISSION = 'ProductDeliveryProtocols_logistic_path_card_invoices_infoBtn_PKEY'
 
+type InvoicesSectionPermissions = {
+  canEditAssignments: boolean
+  canEditDeliveryDocuments: boolean
+}
+
+type InvoicesSectionStatus = {
+  isAssigning: boolean
+  isSavingInvoiceDocuments: boolean
+}
+
 function getDocumentKey(document: SupplyDocument, index: number): string {
   return String(document.NetUid || document.Id || document.DocumentUrl || document.FileName || index)
 }
@@ -64,11 +74,11 @@ function getInvoiceCardKey(invoice: SupplyInvoice): string {
 
 function InvoiceViewCard({
   invoice,
-  canEdit,
+  canEditDeliveryDocuments,
   isSaving,
   onSaveDocuments,
 }: {
-  canEdit: boolean
+  canEditDeliveryDocuments: boolean
   invoice: SupplyInvoice
   isSaving: boolean
   onSaveDocuments: (invoice: SupplyInvoice, documents: File[]) => Promise<void>
@@ -102,7 +112,7 @@ function InvoiceViewCard({
   }
 
   async function handleSaveDocuments() {
-    if (!canEdit || isSaving) {
+    if (!canEditDeliveryDocuments || isSaving) {
       return
     }
 
@@ -145,7 +155,7 @@ function InvoiceViewCard({
           >
             {t('Детальні витрати')}
           </Button>
-          {canEdit && (
+          {canEditDeliveryDocuments && (
             <Button
               color="violet"
               disabled={isSaving}
@@ -203,7 +213,7 @@ function InvoiceViewCard({
                         {t('Видалено')}
                       </Badge>
                     )}
-                    {canEdit && (
+                    {canEditDeliveryDocuments && (
                       <Tooltip label={document.Deleted ? t('Відновити') : t('Видалити')}>
                         <ActionIcon
                           aria-label={document.Deleted ? t('Відновити файл') : t('Видалити файл')}
@@ -225,7 +235,7 @@ function InvoiceViewCard({
             '-'
           )}
         </LabelValueRow>
-        {canEdit && (
+        {canEditDeliveryDocuments && (
           <>
             <Divider />
             <FileInput
@@ -505,24 +515,22 @@ function AssignInvoicesDrawer({
 
 export function InvoicesSection({
   protocol,
-  canEdit,
-  isAssigning,
-  isSavingInvoiceDocuments,
+  permissions,
+  status,
   onAssignInvoices,
   onSaveInvoiceDocuments,
 }: {
-  canEdit: boolean
-  isAssigning: boolean
-  isSavingInvoiceDocuments: boolean
   onAssignInvoices: (invoices: SupplyInvoice[]) => Promise<void>
   onSaveInvoiceDocuments: (invoice: SupplyInvoice, documents: File[]) => Promise<void>
+  permissions: InvoicesSectionPermissions
   protocol: ProtocolDetail
+  status: InvoicesSectionStatus
 }) {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const [drawerOpened, setDrawerOpened] = useValueState(false)
   const invoices = protocol.SupplyInvoices || []
-  const canManageInvoices = canEdit && hasPermission(MANAGE_INVOICES_PERMISSION)
+  const canManageInvoices = permissions.canEditAssignments && hasPermission(MANAGE_INVOICES_PERMISSION)
 
   async function handleAssign(selectedInvoices: SupplyInvoice[]) {
     try {
@@ -538,7 +546,7 @@ export function InvoicesSection({
       <Group justify="space-between" align="center">
         <Text fw={700}>{t('Інвойси')}</Text>
         {canManageInvoices && (
-          <Button color="violet" disabled={isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
+          <Button color="violet" disabled={status.isAssigning} variant="light" onClick={() => setDrawerOpened(true)}>
             {t('Управління інвойсами')}
           </Button>
         )}
@@ -553,9 +561,9 @@ export function InvoicesSection({
           {invoices.map((invoice) => (
             <InvoiceViewCard
               key={getInvoiceCardKey(invoice)}
-              canEdit={canEdit}
+              canEditDeliveryDocuments={permissions.canEditDeliveryDocuments}
               invoice={invoice}
-              isSaving={isSavingInvoiceDocuments}
+              isSaving={status.isSavingInvoiceDocuments}
               onSaveDocuments={onSaveInvoiceDocuments}
             />
           ))}
@@ -563,12 +571,12 @@ export function InvoicesSection({
       )}
 
       <AssignInvoicesDrawer
-        isSaving={isAssigning}
+        isSaving={status.isAssigning}
         opened={drawerOpened}
         protocol={protocol}
         onAssign={handleAssign}
         onClose={() => {
-          if (!isAssigning) {
+          if (!status.isAssigning) {
             setDrawerOpened(false)
           }
         }}

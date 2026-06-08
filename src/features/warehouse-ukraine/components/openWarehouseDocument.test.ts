@@ -61,7 +61,7 @@ describe('openWarehouseDocument', () => {
 
     expect(getPreferredWarehousePrintUrl({
       DocumentURL: 'https://example.test/invoice.xlsx',
-    })).toBe('')
+    })).toBe('https://example.test/invoice.xlsx')
 
     expect(hasWarehouseDocumentUrl({
       DocumentURL: 'https://example.test/invoice.xlsx',

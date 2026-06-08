@@ -6,7 +6,7 @@ type WarehouseDocumentLike = {
 }
 
 export function getPreferredWarehousePrintUrl(document: WarehouseDocumentLike): string {
-  return document.PdfDocumentURL || ''
+  return document.PdfDocumentURL || document.DocumentURL || ''
 }
 
 export function hasWarehouseDocumentUrl(document: WarehouseDocumentLike): boolean {
