@@ -265,7 +265,7 @@ export async function createAdvancePaymentFromSad(
 }
 
 function normalizeArray<TItem>(result: unknown): TItem[] {
-  const parsedResult = parseJsonPayload(result)
+  const parsedResult = unwrapPayload(parseJsonPayload(result))
 
   if (Array.isArray(parsedResult)) {
     return parsedResult as TItem[]
@@ -276,7 +276,15 @@ function normalizeArray<TItem>(result: unknown): TItem[] {
   }
 
   const payload = parsedResult as Record<string, unknown>
-  const items = payload.Body ?? payload.Items ?? payload.Data ?? payload.Collection ?? payload.items ?? payload.data
+  const items = payload.Items
+    ?? payload.Sads
+    ?? payload.Rows
+    ?? payload.Data
+    ?? payload.Collection
+    ?? payload.Values
+    ?? payload.items
+    ?? payload.data
+    ?? payload.rows
 
   if (Array.isArray(items)) {
     return items as TItem[]
@@ -286,12 +294,9 @@ function normalizeArray<TItem>(result: unknown): TItem[] {
 }
 
 function normalizeItem<TItem>(result: unknown, ensure?: (item: TItem) => TItem): TItem | null {
-  const parsedResult = parseJsonPayload(result)
-  const item = parsedResult && typeof parsedResult === 'object' && 'Body' in parsedResult
-    ? (parsedResult as { Body?: unknown }).Body
-    : parsedResult
+  const item = unwrapPayload(parseJsonPayload(result))
 
-  if (item && typeof item === 'object') {
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
     return ensure ? ensure(item as TItem) : item as TItem
   }
 
@@ -308,6 +313,14 @@ function parseJsonPayload(result: unknown): unknown {
   } catch {
     return result
   }
+}
+
+function unwrapPayload(result: unknown): unknown {
+  if (!result || typeof result !== 'object' || !('Body' in result)) {
+    return result
+  }
+
+  return (result as { Body?: unknown }).Body
 }
 
 function ensureSad(sad: Sad): Sad {

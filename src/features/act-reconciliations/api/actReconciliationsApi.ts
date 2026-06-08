@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   ActReconciliation,
   ActReconciliationAppliedAction,
@@ -18,24 +19,12 @@ export async function getActReconciliations(
 ): Promise<ActReconciliation[]> {
   const result = await apiRequest<unknown>('/supplies/ukraine/reconciliation/all/filtered', {
     query: {
-      from: toRangeStartIso(params.from),
-      to: toRangeEndIso(params.to),
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
     },
   })
 
   return normalizeReconciliations(result)
-}
-
-function toRangeStartIso(value: string): string {
-  const date = new Date(`${value}T00:00:00.000`)
-
-  return Number.isNaN(date.getTime()) ? value : date.toISOString()
-}
-
-function toRangeEndIso(value: string): string {
-  const date = new Date(`${value}T23:59:59.999`)
-
-  return Number.isNaN(date.getTime()) ? value : date.toISOString()
 }
 
 export async function getActReconciliationByNetId(netId: string): Promise<ActReconciliation | null> {
@@ -128,80 +117,27 @@ export async function createDepreciatedOrderFromItems(
 }
 
 function normalizeReconciliations(result: unknown): ActReconciliation[] {
-  if (Array.isArray(result)) {
-    return result.map(ensureReconciliation)
-  }
-
-  if (!result || typeof result !== 'object') {
-    return []
-  }
-
-  const payload = result as Record<string, unknown>
-  const items = Array.isArray(payload.Items)
-    ? payload.Items
-    : Array.isArray(payload.ActReconciliations)
-      ? payload.ActReconciliations
-      : Array.isArray(payload.Data)
-        ? payload.Data
-        : []
-
-  return (items as ActReconciliation[]).map(ensureReconciliation)
+  return readArrayPayload(result, ['Items', 'ActReconciliations', 'Data', 'Collection', 'Values']).map((item) =>
+    ensureReconciliation(item as ActReconciliation),
+  )
 }
 
 function normalizeReconciliation(result: unknown): ActReconciliation | null {
-  if (!result || typeof result !== 'object') {
+  const payload = unwrapPayload(result)
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return null
   }
 
-  return ensureReconciliation(result as ActReconciliation)
+  return ensureReconciliation(payload as ActReconciliation)
 }
 
 function normalizeAppliedActions(result: unknown): ActReconciliationAppliedAction[] {
-  if (Array.isArray(result)) {
-    return result as ActReconciliationAppliedAction[]
-  }
-
-  if (!result || typeof result !== 'object') {
-    return []
-  }
-
-  const payload = result as Record<string, unknown>
-
-  if (Array.isArray(payload.Items)) {
-    return payload.Items as ActReconciliationAppliedAction[]
-  }
-
-  if (Array.isArray(payload.AppliedActions)) {
-    return payload.AppliedActions as ActReconciliationAppliedAction[]
-  }
-
-  return []
+  return readArrayPayload(result, ['Items', 'AppliedActions', 'Data', 'Collection', 'Values']) as ActReconciliationAppliedAction[]
 }
 
 function normalizeStorages(result: unknown): ReconciliationStorageOption[] {
-  if (Array.isArray(result)) {
-    return result as ReconciliationStorageOption[]
-  }
-
-  if (!result || typeof result !== 'object') {
-    return []
-  }
-
-  const payload = result as Record<string, unknown>
-
-  if (Array.isArray(payload.Items)) {
-    return payload.Items as ReconciliationStorageOption[]
-  }
-
-  if (Array.isArray(payload.Storages)) {
-    return payload.Storages as ReconciliationStorageOption[]
-  }
-
-  if (Array.isArray(payload.Collection)) {
-    return payload.Collection as ReconciliationStorageOption[]
-  }
-
-  return []
+  return readArrayPayload(result, ['Items', 'Storages', 'Data', 'Collection', 'Values']) as ReconciliationStorageOption[]
 }
 
 function ensureReconciliation(reconciliation: ActReconciliation): ActReconciliation {
@@ -214,4 +150,34 @@ function ensureReconciliation(reconciliation: ActReconciliation): ActReconciliat
         }))
       : [],
   }
+}
+
+function readArrayPayload(result: unknown, keys: string[]): unknown[] {
+  const payload = unwrapPayload(result)
+
+  if (Array.isArray(payload)) {
+    return payload
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return []
+  }
+
+  const data = payload as Record<string, unknown>
+
+  for (const key of keys) {
+    if (Array.isArray(data[key])) {
+      return data[key] as unknown[]
+    }
+  }
+
+  return []
+}
+
+function unwrapPayload(result: unknown): unknown {
+  if (!result || typeof result !== 'object' || !('Body' in result)) {
+    return result
+  }
+
+  return (result as { Body?: unknown }).Body
 }

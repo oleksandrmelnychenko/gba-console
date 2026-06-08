@@ -36,7 +36,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
+import { formatDateInputForQuery, formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
@@ -175,7 +175,7 @@ export function AllSadsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const [filters, setFilters] = useState(() => ({
-    from: getDateShiftedByDays(-7),
+    from: SYNC_DATA_RANGE_START,
     to: formatLocalDate(new Date()),
   }))
   const [sads, setSads] = useState<Sad[]>([])
@@ -680,41 +680,28 @@ function SadEditorPage({ mode, netId }: { mode: EditorMode; netId?: string }) {
       setError(null)
 
       try {
-        if (ignore) {
-          return
-        }
-
         const loadedSad = await getSad(netId)
 
-        if (ignore) {
-          return
-        }
-
         if (!loadedSad) {
-          setSad(null)
-          return
-        }
+          if (!ignore) {
+            setSad(null)
+          }
+        } else if (!ignore) {
+          const agreementsPromise = loadedSad.Client?.NetUid
+            ? getClientAgreements(loadedSad.Client.NetUid)
+            : Promise.resolve<SadClientAgreement[] | null>(null)
 
-        const agreementsPromise = loadedSad.Client?.NetUid
-          ? getClientAgreements(loadedSad.Client.NetUid)
-          : Promise.resolve<SadClientAgreement[] | null>(null)
+          const [loadedOrganizations, agreements] = await Promise.all([getOrganizations(), agreementsPromise])
 
-        if (ignore) {
-          return
-        }
+          if (!ignore) {
+            setSad(loadedSad)
+            setOrganizations(loadedOrganizations)
+            hydrateEditorState(loadedSad, loadedOrganizations)
 
-        const [loadedOrganizations, agreements] = await Promise.all([getOrganizations(), agreementsPromise])
-
-        if (ignore) {
-          return
-        }
-
-        setSad(loadedSad)
-        setOrganizations(loadedOrganizations)
-        hydrateEditorState(loadedSad, loadedOrganizations)
-
-        if (agreements) {
-          setClientAgreements(agreements)
+            if (agreements) {
+              setClientAgreements(agreements)
+            }
+          }
         }
       } catch (loadError) {
         if (!ignore) {
@@ -2816,13 +2803,6 @@ function numberInputValue(value: string | number) {
 
 function toEditableNumber(value?: number | null): number | '' {
   return typeof value === 'number' && Number.isFinite(value) ? value : ''
-}
-
-function getDateShiftedByDays(days: number) {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-
-  return formatLocalDate(date)
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

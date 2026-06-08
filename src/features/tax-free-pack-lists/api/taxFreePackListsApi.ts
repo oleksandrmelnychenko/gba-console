@@ -229,27 +229,30 @@ export async function createSupplyOrderFromPackList(
 }
 
 function readList<T>(result: unknown): T[] {
-  if (Array.isArray(result)) {
-    return result as T[]
+  const payload = unwrapPayload(result)
+
+  if (Array.isArray(payload)) {
+    return payload as T[]
   }
 
-  if (!result || typeof result !== 'object') {
+  if (!payload || typeof payload !== 'object') {
     return []
   }
 
-  const payload = result as Record<string, unknown>
-  const items = payload.Items ?? payload.Data ?? payload.Collection ?? payload.Values
+  const data = payload as Record<string, unknown>
+  const items = data.Items ?? data.Data ?? data.Collection ?? data.Values
 
   return Array.isArray(items) ? (items as T[]) : []
 }
 
 function readTotalQty(result: unknown, items: TaxFreePackList[]): number | undefined {
-  const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
+  const payload = unwrapPayload(result)
+  const data = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {}
 
-  return readNumber(payload.TotalQty)
-    ?? readNumber(payload.Total)
-    ?? readNumber(payload.TotalRowsQty)
-    ?? readNumber(payload.TotalRowQty)
+  return readNumber(data.TotalQty)
+    ?? readNumber(data.Total)
+    ?? readNumber(data.TotalRowsQty)
+    ?? readNumber(data.TotalRowQty)
     ?? readNumber(items[0]?.TotalRowsQty)
 }
 
@@ -272,13 +275,23 @@ function readNumber(value: unknown): number | undefined {
 function normalizeObject<T>(result: unknown): T | null
 function normalizeObject<T>(result: unknown, normalize: (value: T) => T): T | null
 function normalizeObject<T>(result: unknown, normalize?: (value: T) => T): T | null {
-  if (!result || typeof result !== 'object') {
+  const payload = unwrapPayload(result)
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     return null
   }
 
-  const value = result as T
+  const value = payload as T
 
   return normalize ? normalize(value) : value
+}
+
+function unwrapPayload(result: unknown): unknown {
+  if (!result || typeof result !== 'object' || !('Body' in result)) {
+    return result
+  }
+
+  return (result as { Body?: unknown }).Body
 }
 
 function normalizeCarrier(carrier: Statham): Statham {

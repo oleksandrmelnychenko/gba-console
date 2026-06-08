@@ -11,7 +11,7 @@ import {
 import { IconAlertCircle, IconEye, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -43,7 +43,7 @@ function useActReconciliationsPageModel() {
   const navigate = useNavigate()
   const initialFilters = useMemo<FilterDraft>(
     () => ({
-      from: getDateShiftedByDays(-30),
+      from: SYNC_DATA_RANGE_START,
       to: formatLocalDate(new Date()),
     }),
     [],
@@ -435,13 +435,6 @@ function getFilterError(from: string, to: string): string | null {
   }
 
   return null
-}
-
-function getDateShiftedByDays(days: number): string {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-
-  return formatLocalDate(date)
 }
 
 function getDateTime(value: unknown): number {

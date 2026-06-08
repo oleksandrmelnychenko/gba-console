@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateInputForQuery, toDateTimeQuery } from './dateTime'
+import { formatDateInputForQuery, SYNC_DATA_RANGE_START, toDateTimeQuery } from './dateTime'
+
+describe('SYNC_DATA_RANGE_START', () => {
+  it('matches the current operational sync baseline', () => {
+    expect(SYNC_DATA_RANGE_START).toBe('2025-01-01')
+  })
+})
 
 describe('formatDateInputForQuery', () => {
   it('keeps date-only input as a local date without UTC conversion', () => {

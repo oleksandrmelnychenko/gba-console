@@ -23,7 +23,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -45,7 +45,7 @@ import {
 import './taxFreePackLists.css'
 
 const PAGE_SIZE = 20
-const FILTER_STORAGE_KEY = 'taxFreePackListFilters'
+const FILTER_STORAGE_KEY = 'taxFreePackListFilters:v2'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -583,11 +583,9 @@ function PackListTableValue({ fw, value }: { fw?: number; value: string }) {
 
 function getDefaultFilters() {
   const to = new Date()
-  const from = new Date()
-  from.setDate(from.getDate() - 7)
 
   return {
-    from: formatLocalDate(from),
+    from: SYNC_DATA_RANGE_START,
     to: formatLocalDate(to),
   }
 }

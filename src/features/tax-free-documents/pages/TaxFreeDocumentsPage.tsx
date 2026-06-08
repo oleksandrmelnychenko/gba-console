@@ -32,7 +32,7 @@ import {
   IconTruckDelivery,
 } from '@tabler/icons-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/components/DocumentOutcomePaymentModal'
@@ -64,7 +64,7 @@ import {
 } from '../utils'
 import './tax-free-documents-page.css'
 
-const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters'
+const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
 const PAGE_SIZE = 21
 const pageSizeOptions = ['21', '42', '63', '105']
 
@@ -1561,12 +1561,10 @@ function mapTaxFreeDocumentRow(document: TaxFreeDocument): TaxFreeDocumentRow {
 
 function getDefaultFilters(): StoredFilters {
   const to = new Date()
-  const from = new Date()
-  from.setDate(from.getDate() - 7)
 
   return {
     carrierNetId: '',
-    from: formatLocalDate(from),
+    from: SYNC_DATA_RANGE_START,
     status: 'all',
     to: formatLocalDate(to),
     value: '',

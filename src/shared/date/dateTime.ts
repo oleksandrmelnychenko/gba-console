@@ -1,6 +1,8 @@
 export type QueryValue = string | number | boolean | Date | null | undefined
 export type QueryParams = Record<string, QueryValue | QueryValue[]>
 
+export const SYNC_DATA_RANGE_START = '2025-01-01'
+
 function getClientTimeZone(): string | undefined {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined

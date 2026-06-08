@@ -45,7 +45,7 @@ export async function updateTaxFreeDocument(document: TaxFreeDocument): Promise<
     method: 'POST',
   })
 
-  return normalizeTaxFreeDocument(result as TaxFreeDocument)
+  return normalizeTaxFreeDocument(unwrapPayload(result) as TaxFreeDocument)
 }
 
 export async function printTaxFreeDocument(document: TaxFreeDocument): Promise<PrintTaxFreeResponse> {
@@ -92,7 +92,9 @@ export async function getTaxFreeCarrier(netId: string): Promise<Statham | null> 
     },
   })
 
-  return result && typeof result === 'object' ? (result as Statham) : null
+  const payload = unwrapPayload(result)
+
+  return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Statham) : null
 }
 
 export async function createIncomePaymentFromTaxFree(
@@ -107,7 +109,9 @@ export async function createIncomePaymentFromTaxFree(
     body: paymentIncome,
   })
 
-  return result && typeof result === 'object' ? (result as IncomePaymentOrder) : null
+  const payload = unwrapPayload(result)
+
+  return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as IncomePaymentOrder) : null
 }
 
 export async function createAdvancePaymentFromTaxFree(
@@ -122,15 +126,18 @@ export async function createAdvancePaymentFromTaxFree(
     body: advancePayment,
   })
 
-  return result && typeof result === 'object' ? (result as TaxFreeAdvancePaymentPayload) : null
+  const payload = unwrapPayload(result)
+
+  return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as TaxFreeAdvancePaymentPayload) : null
 }
 
 function normalizeTaxFreeDocumentsResponse(result: unknown): TaxFreeDocumentsResponse {
-  const items = readArrayPayload(result, ['Items', 'TaxFrees', 'Documents', 'Data']).map((item) =>
+  const payload = unwrapPayload(result)
+  const items = readArrayPayload(payload, ['Items', 'TaxFrees', 'Documents', 'Data', 'Collection', 'Values']).map((item) =>
     normalizeTaxFreeDocument(item as TaxFreeDocument),
   )
-  const payload = result && typeof result === 'object' ? (result as Record<string, unknown>) : {}
-  const total = readNumber(payload.Total, readNumber(payload.TotalRowQty, readNumber(payload.TotalRowsQty)))
+  const data = payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {}
+  const total = readNumber(data.Total, readNumber(data.TotalRowQty, readNumber(data.TotalRowsQty)))
     ?? readNumber(items[0]?.TotalRowQty, readNumber(items[0]?.TotalRowsQty))
 
   return {
@@ -151,23 +158,33 @@ function normalizeTaxFreeItems(items?: TaxFreeItem[]): TaxFreeItem[] {
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {
-  if (Array.isArray(result)) {
-    return result
+  const payload = unwrapPayload(result)
+
+  if (Array.isArray(payload)) {
+    return payload
   }
 
-  if (!result || typeof result !== 'object') {
+  if (!payload || typeof payload !== 'object') {
     return []
   }
 
-  const payload = result as Record<string, unknown>
+  const data = payload as Record<string, unknown>
 
   for (const key of keys) {
-    if (Array.isArray(payload[key])) {
-      return payload[key] as unknown[]
+    if (Array.isArray(data[key])) {
+      return data[key] as unknown[]
     }
   }
 
   return []
+}
+
+function unwrapPayload(result: unknown): unknown {
+  if (!result || typeof result !== 'object' || !('Body' in result)) {
+    return result
+  }
+
+  return (result as { Body?: unknown }).Body
 }
 
 function readNumber(value: unknown, fallback?: number): number | undefined {
