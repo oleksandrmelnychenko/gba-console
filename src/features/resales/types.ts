@@ -79,7 +79,7 @@ export type ResaleLifeCycleStatus = {
 }
 
 export type ResalePaymentStatus = {
-  SalePaymentStatusType?: number
+  SalePaymentStatusType?: number | string
 }
 
 export type ReSale = EntityFields & {

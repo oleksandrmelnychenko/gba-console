@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -380,9 +380,9 @@ export function InvoiceRegisterTab() {
             emptyText={t('Накладних не знайдено')}
             getRowId={(invoice, index) => String(invoice.NetUid || invoice.Id || index)}
             isLoading={model.isLoading}
-            layoutVersion="warehouse-ukraine-invoice-register-1"
+            layoutVersion="warehouse-ukraine-invoice-register-2"
             maxHeight="calc(100vh - 420px)"
-            minWidth={760}
+            minWidth={1000}
             tableId="warehouse-ukraine-invoice-register"
           />
 
@@ -435,6 +435,43 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         cell: (invoice) => <Text fw={700}>{displayValue(invoice.SaleNumber?.Value)}</Text>,
       },
       {
+        id: 'printedStatus',
+        header: t('Роздруковано'),
+        width: 132,
+        minWidth: 112,
+        enableSorting: false,
+        accessor: (invoice) => getPrintedStatusText(invoice),
+        cell: (invoice) => {
+          const status = getPrintedStatusText(invoice)
+
+          if (!status) {
+            return '-'
+          }
+
+          return (
+            <Badge color={status === 'changed' ? 'orange' : 'teal'} variant="light">
+              {status}
+            </Badge>
+          )
+        },
+      },
+      {
+        id: 'actProtocolEditStatus',
+        header: t('Акт редагування'),
+        width: 144,
+        minWidth: 124,
+        enableSorting: false,
+        accessor: (invoice) => invoice.IsPrintedActProtocolEdit,
+        cell: (invoice) =>
+          invoice.IsPrintedActProtocolEdit
+            ? (
+                <Badge color="teal" variant="light">
+                  {t('Так')}
+                </Badge>
+              )
+            : '-',
+      },
+      {
         id: 'clientCode',
         header: t('Код клієнта'),
         width: 200,
@@ -464,4 +501,20 @@ function buildIndexMap(invoices: Sale[]): Map<Sale, number> {
 
     return indexMap
   }, new Map<Sale, number>())
+}
+
+function getPrintedStatusText(invoice: Sale): string {
+  if (hasApprovedInvoiceEdits(invoice)) {
+    return 'changed'
+  }
+
+  if (invoice.IsPrinted) {
+    return translate('Роздруковано')
+  }
+
+  return ''
+}
+
+function hasApprovedInvoiceEdits(invoice: Sale): boolean {
+  return (invoice.HistoryInvoiceEdit || []).some((entry) => entry.ApproveUpdate)
 }

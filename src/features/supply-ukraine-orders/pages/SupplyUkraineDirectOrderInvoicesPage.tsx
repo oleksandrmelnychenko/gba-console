@@ -300,12 +300,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const orderItemColumns = useOrderItemColumns()
   const invoiceItemColumns = useInvoiceItemColumns({
     balanceByOrderItemKey: invoiceBalanceByOrderItemKey,
-    disabled: isBusy || !selectedInvoice,
+    disabled: isBusy || !selectedInvoice || !canAddInvoice,
     onQtyChange: handleInvoiceQtyChange,
   })
   const packListItemColumns = usePackListItemColumns({
     balanceByInvoiceItemKey: packListBalanceByInvoiceItemKey,
-    disabled: isBusy || !selectedPackList,
+    disabled: isBusy || !selectedPackList || !canAddPackList,
     onQtyChange: handlePackListQtyChange,
   })
   const orderTotalsToolbar = useMemo(() => <TotalsBadges totals={totals} />, [totals])
@@ -443,6 +443,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function submitInvoice(form: InvoiceUploadForm) {
+    if (!canAddInvoice) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!id) {
       return
     }
@@ -492,6 +497,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function submitPackList(form: PackListUploadForm) {
+    if (!canAddPackList) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!selectedInvoice?.NetUid) {
       notifications.show({ color: 'red', message: t('Оберіть інвойс') })
       return
@@ -590,6 +600,10 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   function handleInvoiceQtyChange(item: SupplyInvoiceOrderItem, value: number | string) {
+    if (!canAddInvoice) {
+      return
+    }
+
     if (!selectedInvoice?.NetUid) {
       return
     }
@@ -613,6 +627,10 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   function handlePackListQtyChange(item: PackingListPackageOrderItem, value: number | string) {
+    if (!canAddPackList) {
+      return
+    }
+
     if (!selectedInvoice?.NetUid || !selectedPackList) {
       return
     }
@@ -636,8 +654,13 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function saveInvoiceItems() {
-    if (detailedInvoices.length === 0) {
-      notifications.show({ color: 'red', message: t('Немає інвойсів для збереження') })
+    if (!canAddInvoice) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
+    if (!selectedInvoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
       return
     }
 
@@ -649,8 +672,8 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     setPageState({ isSaving: true })
 
     try {
-      const updatedInvoices = await updateSupplyInvoiceItemsBatch(detailedInvoices)
-      const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, updatedInvoices)
+      const updatedInvoice = await updateSupplyInvoiceItems(toSupplyInvoiceItemsPayload(selectedInvoice))
+      const nextDetails = mergeInvoiceDetails(invoiceDetailsByNetId, [updatedInvoice])
 
       setPageState({ invoiceDetailsByNetId: nextDetails })
       notifications.show({ color: 'green', message: t('Рядки інвойсів збережено') })
@@ -663,6 +686,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function savePackingLists() {
+    if (!canAddPackList) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!selectedInvoice?.NetUid) {
       notifications.show({ color: 'red', message: t('Оберіть інвойс') })
       return
@@ -697,6 +725,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   }
 
   async function savePackListMetadata(form: PackListMetadataForm) {
+    if (!canAddPackList) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
     if (!selectedInvoice?.NetUid) {
       notifications.show({ color: 'red', message: t('Оберіть інвойс') })
       return
@@ -732,6 +765,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
 
   return {
     canAddInvoice,
+    canAddPackList,
     canRemoveInvoice,
     canRemovePackList,
     canShowPackListUpload,
@@ -926,7 +960,12 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               />
               <Group justify="flex-end">
                 <Button
-                  disabled={model.isBusy || !model.selectedInvoice || model.invoiceBalanceRows.some((row) => row.isError)}
+                  disabled={
+                    model.isBusy
+                    || !model.canAddInvoice
+                    || !model.selectedInvoice
+                    || model.invoiceBalanceRows.some((row) => row.isError)
+                  }
                   leftSection={<IconDeviceFloppy size={16} />}
                   loading={model.isSaving}
                   onClick={model.saveInvoiceItems}
@@ -1014,16 +1053,24 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
             rows={model.packListBalanceRows}
           />
           <Group justify="flex-end">
+            {model.canAddPackList && (
+              <Button
+                disabled={model.isBusy || !model.selectedInvoice}
+                leftSection={<IconPackage size={16} />}
+                variant="light"
+                onClick={() => model.setPageState({ packListEditor: { packList: null } })}
+              >
+                {t('Новий пак лист')}
+              </Button>
+            )}
             <Button
-              disabled={model.isBusy || !model.selectedInvoice}
-              leftSection={<IconPackage size={16} />}
-              variant="light"
-              onClick={() => model.setPageState({ packListEditor: { packList: null } })}
-            >
-              {t('Новий пак лист')}
-            </Button>
-            <Button
-              disabled={model.isBusy || !model.selectedInvoice || !model.selectedPackList || model.packListBalanceRows.some((row) => row.isError)}
+              disabled={
+                model.isBusy
+                || !model.canAddPackList
+                || !model.selectedInvoice
+                || !model.selectedPackList
+                || model.packListBalanceRows.some((row) => row.isError)
+              }
               leftSection={<IconDeviceFloppy size={16} />}
               loading={model.isSaving}
               onClick={model.savePackingLists}
@@ -1066,17 +1113,19 @@ function PackListSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
           >
             {packList.No || packList.InvNo || t('Пак лист')} ({formatDate(packList.FromDate)})
           </Button>
-          <Tooltip label={t('Редагувати')}>
-            <ActionIcon
-              aria-label={t('Редагувати')}
-              disabled={model.isBusy}
-              size="xs"
-              variant="subtle"
-              onClick={() => model.setPageState({ packListEditor: { packList } })}
-            >
-              <IconEdit size={14} />
-            </ActionIcon>
-          </Tooltip>
+          {model.canAddPackList && (
+            <Tooltip label={t('Редагувати')}>
+              <ActionIcon
+                aria-label={t('Редагувати')}
+                disabled={model.isBusy}
+                size="xs"
+                variant="subtle"
+                onClick={() => model.setPageState({ packListEditor: { packList } })}
+              >
+                <IconEdit size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {model.canRemovePackList && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
@@ -2049,11 +2098,27 @@ function upsertPackListMetadata(invoice: SupplyInvoice, packList: PackingList): 
 }
 
 function findSavedPackList(invoice: SupplyInvoice, draft: PackingList): PackingList | null {
-  return (invoice.PackingLists || []).find((packList) =>
-    isSameEntity(packList, draft)
-    || (draft.InvNo && packList.InvNo === draft.InvNo)
-    || (draft.No && packList.No === draft.No),
-  ) || null
+  const packLists = invoice.PackingLists || []
+
+  return (
+    packLists.find((packList) => isSameEntity(packList, draft))
+    || findUniquePackListByField(packLists, 'InvNo', draft.InvNo)
+    || findUniquePackListByField(packLists, 'No', draft.No)
+    || null
+  )
+}
+
+function findUniquePackListByField(
+  packLists: PackingList[],
+  field: 'InvNo' | 'No',
+  value?: string | null,
+): PackingList | null {
+  if (!value) {
+    return null
+  }
+
+  const matches = packLists.filter((packList) => packList[field] === value)
+  return matches.length === 1 ? matches[0] : null
 }
 
 function updatePackListOrderItemQty(
@@ -2070,18 +2135,6 @@ function updatePackListOrderItemQty(
     TotalNetPrice: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalNetPrice,
     UnitPrice: unitPrice,
   }
-}
-
-async function updateSupplyInvoiceItemsBatch(invoices: SupplyInvoice[]): Promise<Array<SupplyInvoice | null>> {
-  const requests: Array<Promise<SupplyInvoice | null>> = []
-
-  for (const invoice of invoices) {
-    if (invoice.NetUid) {
-      requests.push(updateSupplyInvoiceItems(toSupplyInvoiceItemsPayload(invoice)))
-    }
-  }
-
-  return await Promise.all(requests)
 }
 
 function toSupplyInvoiceItemsPayload(invoice: SupplyInvoice): SupplyInvoice {

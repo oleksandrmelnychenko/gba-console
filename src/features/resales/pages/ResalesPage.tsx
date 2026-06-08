@@ -1353,11 +1353,7 @@ export function ResalePage() {
           ? {
               ...row,
               ...patch,
-              OldValue: {
-                Amount: patch.Amount ?? row.Amount,
-                QtyToReSale: patch.QtyToReSale ?? row.QtyToReSale,
-                SalePrice: patch.SalePrice ?? row.SalePrice,
-              },
+              OldValue: getResaleOldValue(row),
             }
           : row,
       )
@@ -2522,11 +2518,13 @@ function ConsignmentNoteSettingsDrawer({
     setNoteState((currentState) => ({ ...currentState, error: null }))
 
     try {
+      const savedTemplate = findConsignmentSettingByKey(settings, noteState.selectedSettingKey)
+      const payload = buildConsignmentTemplatePayload(noteState.setting, defaultSetting, savedTemplate)
       const nextSettings = hasExistingSetting
-        ? await updateResaleConsignmentNoteSetting(noteState.setting)
-        : await addResaleConsignmentNoteSetting(noteState.setting)
+        ? await updateResaleConsignmentNoteSetting(payload)
+        : await addResaleConsignmentNoteSetting(payload)
       const nextSetting = applyConsignmentDocumentDefaults(
-        findMatchingConsignmentSetting(nextSettings, noteState.setting) || noteState.setting,
+        findMatchingConsignmentSetting(nextSettings, payload) || payload,
         defaultSetting,
       )
 
@@ -2984,6 +2982,21 @@ function createProcessDrawerState(processData: CreatedResaleAvailabilityWithTota
   }
 }
 
+type ResaleItemOldValue = ResaleAvailabilityItemModel['OldValue']
+
+function getResaleOldValue(row: {
+  Amount: number
+  OldValue?: ResaleItemOldValue
+  QtyToReSale: number
+  SalePrice: number
+}): ResaleItemOldValue {
+  return row.OldValue || {
+    Amount: row.Amount,
+    QtyToReSale: row.QtyToReSale,
+    SalePrice: row.SalePrice,
+  }
+}
+
 function applyResaleItemPatch(
   row: ResaleAvailabilityItemModel,
   patch: Partial<ResaleAvailabilityItemModel>,
@@ -2991,22 +3004,14 @@ function applyResaleItemPatch(
   return {
     ...row,
     ...patch,
-    OldValue: {
-      Amount: patch.Amount ?? row.Amount,
-      QtyToReSale: patch.QtyToReSale ?? row.QtyToReSale,
-      SalePrice: patch.SalePrice ?? row.SalePrice,
-    },
+    OldValue: getResaleOldValue(row),
   }
 }
 
 function mapResaleAvailabilityItemForCreate(item: ResaleAvailabilityItemModel): ResaleAvailabilityItemModel {
   return {
     ...item,
-    OldValue: {
-      Amount: 0,
-      QtyToReSale: 0,
-      SalePrice: 0,
-    },
+    OldValue: getResaleOldValue(item),
   }
 }
 
@@ -3124,8 +3129,10 @@ function getAgreementName(agreement?: ResaleAgreement | null): string | undefine
   return agreement?.Name || agreement?.FullName
 }
 
-function displayPaymentStatus(status?: number): string {
-  if (typeof status !== 'number') {
+function displayPaymentStatus(status?: number | string): string {
+  const statusValue = normalizeNumericStatus(status)
+
+  if (statusValue === null) {
     return '—'
   }
 
@@ -3133,11 +3140,25 @@ function displayPaymentStatus(status?: number): string {
     0: translate('Не оплачено'),
     1: translate('Оплачено'),
     2: translate('Оплачено'),
-    3: translate('Частково'),
+    3: translate('Частково оплачено'),
     4: translate('Повернення'),
   }
 
-  return statusMap[status] || String(status)
+  return statusMap[statusValue] || String(statusValue)
+}
+
+function normalizeNumericStatus(status?: number | string): number | null {
+  if (typeof status === 'number') {
+    return Number.isFinite(status) ? status : null
+  }
+
+  if (typeof status !== 'string' || status.trim() === '') {
+    return null
+  }
+
+  const parsedStatus = Number(status)
+
+  return Number.isFinite(parsedStatus) ? parsedStatus : null
 }
 
 function buildDefaultConsignmentNoteSetting(resale: ReSale | null): ResaleConsignmentNoteSetting {
@@ -3208,6 +3229,33 @@ function applyConsignmentDocumentDefaults(
   }
 }
 
+function buildConsignmentTemplatePayload(
+  setting: ResaleConsignmentNoteSetting,
+  defaults: ResaleConsignmentNoteSetting,
+  savedSetting?: ResaleConsignmentNoteSetting,
+): ResaleConsignmentNoteSetting {
+  const payload = { ...setting }
+
+  restoreTemplateField(payload, savedSetting, defaults, 'LoadingPoint')
+  restoreTemplateField(payload, savedSetting, defaults, 'Number')
+
+  return payload
+}
+
+function restoreTemplateField(
+  payload: ResaleConsignmentNoteSetting,
+  savedSetting: ResaleConsignmentNoteSetting | undefined,
+  defaults: ResaleConsignmentNoteSetting,
+  field: 'LoadingPoint' | 'Number',
+) {
+  if (payload[field] !== defaults[field]) {
+    return
+  }
+
+  const savedValue = savedSetting?.[field]
+  payload[field] = savedValue && savedValue !== defaults[field] ? savedValue : ''
+}
+
 function buildConsignmentSettingOptions(settings: ResaleConsignmentNoteSetting[]): { label: string; value: string }[] {
   return settings.reduce<Array<{ label: string; value: string }>>((options, setting) => {
     const value = getConsignmentSettingKey(setting)
@@ -3225,6 +3273,13 @@ function buildConsignmentSettingOptions(settings: ResaleConsignmentNoteSetting[]
 
 function getConsignmentSettingKey(setting: ResaleConsignmentNoteSetting): string {
   return setting.NetUid || (typeof setting.Id === 'number' && setting.Id > 0 ? String(setting.Id) : '')
+}
+
+function findConsignmentSettingByKey(
+  settings: ResaleConsignmentNoteSetting[],
+  key: string | null,
+): ResaleConsignmentNoteSetting | undefined {
+  return key ? settings.find((setting) => getConsignmentSettingKey(setting) === key) : undefined
 }
 
 function findMatchingConsignmentSetting(
