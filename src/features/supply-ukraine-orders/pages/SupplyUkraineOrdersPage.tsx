@@ -719,9 +719,18 @@ export function SupplyUkraineOrdersPage() {
   return (
     <Stack gap="sm" className="supply-ukraine-orders-page">
       <PageHeaderActions>
-        <Button leftSection={<IconRefresh size={16} />} loading={state.isLoading} size="sm" onClick={refreshOrders}>
-          {t('Оновити')}
-        </Button>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={state.isLoading}
+            size={38}
+            variant="light"
+            onClick={refreshOrders}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
       </PageHeaderActions>
 
       <OrdersListCard

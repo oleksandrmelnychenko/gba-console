@@ -4,7 +4,6 @@ import {
   Anchor,
   Box,
   Button,
-  Card,
   Group,
   Stack,
   Text,
@@ -19,6 +18,7 @@ import {
   IconFileTypePdf,
   IconPlus,
   IconRefresh,
+  IconRestore,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
@@ -31,8 +31,6 @@ import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -79,12 +77,14 @@ function useTaxFreeCarriersPageModel() {
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
   const carrierIndexMap = useMemo(() => buildIndexMap(carriers), [carriers])
-  const { density, toggleDensity } = useDataTableDensity('tax-free-carriers', CARRIERS_TABLE_DEFAULT_LAYOUT.density)
 
   useTaxFreeCarriersLoader({ activeSearch, reloadKey, setCarriers, setError, setLoading })
 
-  function applySearch() {
-    setActiveSearch(searchDraft.trim())
+  function updateSearchDraft(value: string) {
+    setSearchDraft(value)
+
+    const nextSearch = value.trim()
+    setActiveSearch(nextSearch.length >= 3 ? nextSearch : '')
   }
 
   function resetSearch() {
@@ -160,9 +160,9 @@ function useTaxFreeCarriersPageModel() {
   const columns = useCarrierColumns({ canManage, carrierIndexMap, onDelete: setCarrierToDelete, onEdit: openEdit })
 
   return {
-    canManage, canPrint, carrierToDelete, carriers, columns, density, downloadDocument, downloadError, downloadOpened,
-    error, isDeleting, isDownloading, isLoading, searchDraft, applySearch, closeDownload, confirmDelete,
-    exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, setSearchDraft, toggleDensity,
+    canManage, canPrint, carrierToDelete, carriers, columns, downloadDocument, downloadError, downloadOpened,
+    error, isDeleting, isDownloading, isLoading, searchDraft, closeDownload, confirmDelete,
+    exportDocument, openCreate, openEdit, reload, resetSearch, setCarrierToDelete, updateSearchDraft,
   }
 }
 
@@ -219,14 +219,26 @@ export function TaxFreeCarriersPage() {
   const model = useTaxFreeCarriersPageModel()
 
   return (
-    <Stack gap="lg">
-      {model.canManage && (
-        <PageHeaderActions>
+    <Stack gap={6}>
+      <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={model.isLoading}
+            size={38}
+            variant="light"
+            onClick={() => model.reload()}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+        {model.canManage && (
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={model.openCreate}>
             {t('Додати')}
           </Button>
-        </PageHeaderActions>
-      )}
+        )}
+      </PageHeaderActions>
       <CarriersTableCard model={model} />
       <CarriersDeleteModal model={model} />
       <CarriersDownloadModal model={model} />
@@ -237,47 +249,28 @@ export function TaxFreeCarriersPage() {
 function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarriersPageModel> }) {
   const { t } = useI18n()
   const {
-    applySearch, canPrint, columns, carriers, density, error, exportDocument, isDownloading, isLoading,
-    openEdit, reload, resetSearch, searchDraft, setSearchDraft, toggleDensity,
+    canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
+    openEdit, resetSearch, searchDraft, updateSearchDraft,
   } = model
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
+    <Stack gap="xs">
         <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <TextInput
             label={t('Пошук')}
             leftSection={<IconSearch size={16} />}
+            placeholder={t('Прізвище')}
             value={searchDraft}
             style={{ flex: '1 1 auto', minWidth: 180 }}
-            onChange={(event) => setSearchDraft(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                applySearch()
-              }
-            }}
+            onChange={(event) => updateSearchDraft(event.currentTarget.value)}
           />
-          <Button color="gray" variant="light" onClick={applySearch}>
-            {t('Пошук')}
-          </Button>
-          <Button color="gray" variant="subtle" onClick={resetSearch}>
-            {t('Скинути')}
-          </Button>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetSearch}>
+              <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
           {canPrint && (
             <Button
-              color="gray"
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}
               variant="light"
@@ -286,7 +279,6 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
               {t('Завантажити')}
             </Button>
           )}
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
         </Group>
 
         {error && (
@@ -299,7 +291,6 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           columns={columns}
           data={carriers}
           defaultLayout={CARRIERS_TABLE_DEFAULT_LAYOUT}
-          density={density}
           emptyText={t('Перевізників не знайдено')}
           getRowId={(carrier, index) => String(carrier.NetUid || carrier.Id || index)}
           isLoading={isLoading}
@@ -311,7 +302,6 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           onRowClick={openEdit}
         />
       </Stack>
-    </Card>
   )
 }
 

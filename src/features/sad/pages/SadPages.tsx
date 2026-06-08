@@ -90,6 +90,7 @@ import type {
   SadTypeValue,
 } from '../types'
 import { SAD_TYPES } from '../types'
+import './sad-pages.css'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
@@ -99,8 +100,17 @@ const SAD_LIST_TABLE_DEFAULT_LAYOUT = {
     left: ['fromDate', 'number'],
     right: ['actions'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const SAD_LIST_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 const SAD_ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -141,6 +151,24 @@ type PalletTableRow = SadPalletItem & {
 type DownloadDocumentLink = {
   label: string
   url?: string
+}
+
+function SadListTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={SAD_LIST_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
+  )
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  return String(value)
 }
 
 export function AllSadsPage() {
@@ -206,13 +234,14 @@ export function AllSadsPage() {
         id: 'fromDate',
         header: t('Дата'),
         accessor: (sad) => sad.FromDate,
-        cell: (sad) => formatDate(sad.FromDate),
+        cell: (sad) => <SadListTableValue value={formatDate(sad.FromDate)} />,
         width: 130,
       },
       {
         id: 'number',
         header: t('Номер'),
         accessor: (sad) => sad.Number,
+        cell: (sad) => <SadListTableValue fw={600} value={displayValue(sad.Number)} />,
         width: 170,
       },
       {
@@ -237,32 +266,35 @@ export function AllSadsPage() {
         id: 'organization',
         header: t('Організація'),
         accessor: (sad) => sad.Organization?.Name,
+        cell: (sad) => <SadListTableValue value={displayValue(sad.Organization?.Name)} />,
         minWidth: 160,
       },
       {
         id: 'client',
         header: t('Клієнт'),
         accessor: (sad) => getSadClientName(sad),
+        cell: (sad) => <SadListTableValue value={displayValue(getSadClientName(sad))} />,
         minWidth: 220,
       },
       {
         id: 'type',
         header: t('Тип'),
         accessor: (sad) => getSadTypeLabel(sad.SadType),
-        cell: (sad) => getSadTypeLabel(sad.SadType),
+        cell: (sad) => <SadListTableValue value={displayValue(getSadTypeLabel(sad.SadType))} />,
         width: 90,
       },
       {
         id: 'carrier',
         header: t('Перевізник'),
         accessor: (sad) => sad.Statham?.LastName || sad.Statham?.FullName,
+        cell: (sad) => <SadListTableValue value={displayValue(sad.Statham?.LastName || sad.Statham?.FullName)} />,
         width: 150,
       },
       {
         id: 'amount',
         header: t('EUR'),
         accessor: (sad) => sad.TotalAmountWithMargin ?? sad.TotalAmount,
-        cell: (sad) => formatNumber(sad.TotalAmountWithMargin ?? sad.TotalAmount),
+        cell: (sad) => <SadListTableValue value={formatNumber(sad.TotalAmountWithMargin ?? sad.TotalAmount)} />,
         align: 'right',
         width: 120,
       },
@@ -270,7 +302,7 @@ export function AllSadsPage() {
         id: 'amountLocal',
         header: t('Місцева валюта'),
         accessor: (sad) => sad.TotalAmountLocal,
-        cell: (sad) => formatNumber(sad.TotalAmountLocal),
+        cell: (sad) => <SadListTableValue value={formatNumber(sad.TotalAmountLocal)} />,
         align: 'right',
         width: 120,
       },
@@ -278,12 +310,14 @@ export function AllSadsPage() {
         id: 'responsible',
         header: t('Відповідальний'),
         accessor: (sad) => getUserName(sad.Responsible),
+        cell: (sad) => <SadListTableValue value={displayValue(getUserName(sad.Responsible))} />,
         width: 160,
       },
       {
         id: 'comment',
         header: t('Коментар'),
         accessor: (sad) => sad.Comment,
+        cell: (sad) => <SadListTableValue value={displayValue(sad.Comment)} />,
         minWidth: 180,
       },
       {
@@ -391,17 +425,17 @@ export function AllSadsPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="sad-list-page" gap={6}>
       <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={() => reload()}>
+          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
       </PageHeaderActions>
 
-      <Card withBorder radius="sm">
-        <Group align="end">
+      <Stack className="sad-list-page__stack" gap="xs">
+        <Group align="end" gap="sm">
           <TextInput
             label={t('З')}
             type="date"
@@ -415,28 +449,32 @@ export function AllSadsPage() {
             onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, to: nextValue })) }}
           />
         </Group>
-      </Card>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />}>
+            {error}
+          </Alert>
+        )}
 
-      <Card withBorder p={0} radius="sm">
-        <DataTable
-          columns={columns}
-          data={sads}
-          defaultLayout={SAD_LIST_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('SAD не знайдено')}
-          getRowId={(sad, index) => sad.NetUid || String(index)}
-          isLoading={isLoading}
-          minWidth={1420}
-          tableId="sad-all"
-          toolbarRight={toolbarRight}
-          onRowClick={setSelectedSad}
-        />
-      </Card>
+        <div className="sad-list-page__table">
+          <DataTable
+            columns={columns}
+            data={sads}
+            defaultLayout={SAD_LIST_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('SAD не знайдено')}
+            getRowId={(sad, index) => sad.NetUid || String(index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="sad-all-table-2"
+            minWidth={1420}
+            showDensityToggle={false}
+            showLayoutControls={false}
+            tableId="sad-all"
+            toolbarRight={toolbarRight}
+            onRowClick={setSelectedSad}
+          />
+        </div>
+      </Stack>
 
       <SadActionModal
         sad={selectedSad}

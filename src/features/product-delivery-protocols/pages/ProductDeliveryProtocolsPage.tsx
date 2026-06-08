@@ -3,7 +3,6 @@ import {
   Alert,
   Anchor,
   Button,
-  Card,
   Group,
   Select,
   Stack,
@@ -29,8 +28,6 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
@@ -49,6 +46,7 @@ import type {
   ProtocolExportDocument,
   ProtocolOrganization,
 } from '../types'
+import './product-delivery-protocols-page.css'
 
 type FilterDraft = {
   from: string
@@ -64,8 +62,17 @@ const PROTOCOLS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['index', 'number', 'fromDate'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const PROTOCOL_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 const EXPORT_COLUMNS: ProtocolExportColumn[] = [
   { Number: 1, TableName: 'DeliveryProductProtocol.DeliveryProductProtocolNumber', ColumnName: 'Number', Translate: 'Номер' },
@@ -439,7 +446,7 @@ export function ProductDeliveryProtocolsPage() {
   const model = useProtocolsPageModel()
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-delivery-protocols-page" gap={6}>
       {model.canCreate && (
         <PageHeaderActions>
           <Button
@@ -484,8 +491,6 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
     hasMore, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, openOptions, organizations,
     pageSize, protocols, reload, resetFilters, setPageSize,
   } = model
-  const { density, toggleDensity } = useDataTableDensity('product-delivery-protocols', 'normal')
-
   const organizationOptions = useMemo(
     () => [
       { label: t('Всі організації'), value: '' },
@@ -504,8 +509,8 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   )
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
+    <>
+      <Stack className="product-delivery-protocols-page__stack" gap="xs">
         <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <TextInput
             label={t('Постачальник')}
@@ -575,7 +580,6 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               {t('Завантажити')}
             </Button>
           )}
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
         </Group>
 
         {(error || filterError) && (
@@ -598,21 +602,24 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           />
         </Group>
 
-        <DataTable
+        <div className="product-delivery-protocols-page__table">
+          <DataTable
           columns={columns}
           data={protocols}
-          density={density}
           defaultLayout={PROTOCOLS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Протоколів не знайдено')}
           getRowId={(protocol, index) => String(protocol.NetUid || protocol.Id || index)}
+          height="100%"
           isLoading={isLoading}
-          layoutVersion="product-delivery-protocols-table-1"
+          layoutVersion="product-delivery-protocols-table-2"
           loadingText={t('Завантаження протоколів')}
-          maxHeight="calc(100vh - 360px)"
           minWidth={1240}
+          showLayoutControls={false}
+          showDensityToggle={false}
           tableId="product-delivery-protocols"
           onRowClick={canOpenOptions ? openOptions : undefined}
-        />
+          />
+        </div>
 
         {hasMore && (
           <Group justify="center">
@@ -622,7 +629,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           </Group>
         )}
       </Stack>
-    </Card>
+    </>
   )
 }
 
@@ -706,7 +713,7 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         width: 150,
         minWidth: 120,
         accessor: (protocol) => protocol.DeliveryProductProtocolNumber?.Number,
-        cell: (protocol) => <Text fw={700}>{displayValue(protocol.DeliveryProductProtocolNumber?.Number)}</Text>,
+        cell: (protocol) => <ProtocolTableValue fw={700} value={displayValue(protocol.DeliveryProductProtocolNumber?.Number)} />,
       },
       {
         id: 'fromDate',
@@ -714,7 +721,7 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         width: 140,
         minWidth: 120,
         accessor: (protocol) => getDateTime(protocol.FromDate),
-        cell: (protocol) => <Text fw={600}>{formatDate(protocol.FromDate)}</Text>,
+        cell: (protocol) => <ProtocolTableValue fw={600} value={formatDate(protocol.FromDate)} />,
       },
       {
         id: 'organization',
@@ -722,7 +729,7 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         width: 240,
         minWidth: 180,
         accessor: (protocol) => protocol.Organization?.Name,
-        cell: (protocol) => displayValue(protocol.Organization?.Name),
+        cell: (protocol) => <ProtocolTableValue value={displayValue(protocol.Organization?.Name)} />,
       },
       {
         id: 'responsible',
@@ -730,7 +737,7 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         width: 200,
         minWidth: 150,
         accessor: (protocol) => protocol.User?.LastName,
-        cell: (protocol) => displayValue(getResponsibleName(protocol)),
+        cell: (protocol) => <ProtocolTableValue value={displayValue(getResponsibleName(protocol))} />,
       },
       {
         id: 'created',
@@ -738,7 +745,7 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         width: 168,
         minWidth: 148,
         accessor: (protocol) => getDateTime(protocol.Created),
-        cell: (protocol) => formatDateTime(protocol.Created),
+        cell: (protocol) => <ProtocolTableValue value={formatDateTime(protocol.Created)} />,
       },
       {
         id: 'suppliers',
@@ -746,25 +753,27 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         minWidth: 240,
         enableSorting: false,
         accessor: (protocol) => formatSuppliers(protocol),
-        cell: (protocol) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(formatSuppliers(protocol))}
-          </Text>
-        ),
+        cell: (protocol) => <ProtocolTableValue value={displayValue(formatSuppliers(protocol))} />,
       },
       {
         id: 'comment',
         header: t('Коментар'),
         minWidth: 200,
         accessor: (protocol) => protocol.Comment,
-        cell: (protocol) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(protocol.Comment)}
-          </Text>
-        ),
+        cell: (protocol) => <ProtocolTableValue value={displayValue(protocol.Comment)} />,
       },
     ],
     [indexMap, t],
+  )
+}
+
+function ProtocolTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={PROTOCOL_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
   )
 }
 

@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Box,
-  Card,
   Group,
   Stack,
   Text,
@@ -17,9 +16,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getActReconciliations } from '../api/actReconciliationsApi'
 import type { ActReconciliation } from '../types'
 
@@ -79,11 +77,6 @@ function useActReconciliationsPageModel() {
 
   const columns = useReconciliationColumns(openDetail, rowSummaries)
 
-  const { density, toggleDensity } = useDataTableDensity(
-    'act-reconciliations',
-    RECONCILIATIONS_TABLE_DEFAULT_LAYOUT.density,
-  )
-
   function applyFilters(nextFilters: FilterDraft) {
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
@@ -96,7 +89,6 @@ function useActReconciliationsPageModel() {
 
   return {
     columns,
-    density,
     error,
     filterDraft,
     filterError,
@@ -106,7 +98,6 @@ function useActReconciliationsPageModel() {
     openDetail,
     reload,
     resetFilters,
-    toggleDensity,
   }
 }
 
@@ -179,7 +170,6 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
   const { t } = useI18n()
   const {
     columns,
-    density,
     error,
     filterDraft,
     filterError,
@@ -189,12 +179,11 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
     reload,
     resetFilters,
     applyFilters,
-    toggleDensity,
   } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="center">
+    <Stack gap={6}>
+      <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
             aria-label={t('Оновити')}
@@ -207,56 +196,52 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-      </Group>
+      </PageHeaderActions>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap">
-            <TextInput
-              label={t('Від якої дати')}
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('До якої дати')}
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
-
-          <DataTable
-            columns={columns}
-            data={reconciliations}
-            defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
-            density={density}
-            emptyText={t('Актів звірок не знайдено')}
-            getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
-            isLoading={isLoading}
-            layoutVersion="act-reconciliations-table-1"
-            loadingText={t('Завантаження актів звірок')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={1200}
-            tableId="act-reconciliations"
-            onRowClick={openDetail}
+      <Stack gap="xs">
+        <Group align="end" gap="sm" wrap="nowrap">
+          <TextInput
+            label={t('Від')}
+            max={filterDraft.to || undefined}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
           />
-        </Stack>
-      </Card>
+          <TextInput
+            label={t('До')}
+            min={filterDraft.from || undefined}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+          />
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
+              <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+
+        {(error || filterError) && (
+          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError || error}
+          </Alert>
+        )}
+
+        <DataTable
+          columns={columns}
+          data={reconciliations}
+          defaultLayout={RECONCILIATIONS_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Актів звірок не знайдено')}
+          getRowId={(reconciliation, index) => String(reconciliation.NetUid || reconciliation.Id || index)}
+          isLoading={isLoading}
+          layoutVersion="act-reconciliations-table-1"
+          loadingText={t('Завантаження актів звірок')}
+          maxHeight="calc(100vh - 320px)"
+          minWidth={1200}
+          tableId="act-reconciliations"
+          onRowClick={openDetail}
+        />
+      </Stack>
     </Stack>
   )
 }

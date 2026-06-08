@@ -39,6 +39,7 @@ import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/comp
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getTaxFreeCarrier,
   getTaxFreeDocuments,
@@ -61,6 +62,7 @@ import {
   getTaxFreeStatusLabel,
   getTaxFreeStatusOptions,
 } from '../utils'
+import './tax-free-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters'
 const PAGE_SIZE = 21
@@ -72,8 +74,17 @@ const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['packListNumber', 'number'],
   },
-  density: 'normal',
+  density: 'compact',
 } satisfies DataTableDefaultLayout
+
+const TAX_FREE_TABLE_CELL_STYLE = {
+  display: 'block',
+  lineHeight: '18px',
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+} as const
 
 const ITEMS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -492,17 +503,17 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
   } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
+    <Stack className="tax-free-documents-page" gap={6}>
+      <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
             <IconRefresh size={18} />
           </ActionIcon>
         </Tooltip>
-      </Group>
+      </PageHeaderActions>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <>
+        <Stack className="tax-free-documents-page__stack" gap="xs">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               label={t('Від')}
@@ -609,23 +620,27 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             </Group>
           </Group>
 
-          <DataTable
+          <div className="tax-free-documents-page__table">
+            <DataTable
             columns={columns}
             data={rows}
             defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Tax Free не знайдено')}
             getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            layoutVersion="tax-free-documents-table-1"
+            layoutVersion="tax-free-documents-table-2"
             loadingText={t('Завантаження Tax Free')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1540}
+            showLayoutControls={false}
+            showDensityToggle={false}
             tableId="tax-free-documents"
             toolbarLeft={toolbarLeft}
             onRowClick={(row) => openDocument(row.document)}
-          />
+            />
+          </div>
         </Stack>
-      </Card>
+      </>
 
       <TaxFreeDocumentDrawer
         carrierOptions={carrierSelectOptions}
@@ -756,19 +771,21 @@ function useTaxFreeDocumentColumns({
     () => [
       {
         accessor: (row) => row.packListNumber,
+        cell: (row) => <TaxFreeTableValue value={displayValue(row.packListNumber)} />,
         header: t('Номер пакувального'),
         id: 'packListNumber',
         width: 150,
       },
       {
         accessor: (row) => row.document.Number,
+        cell: (row) => <TaxFreeTableValue fw={600} value={displayValue(row.document.Number)} />,
         header: t('Номер Tax Free'),
         id: 'number',
         width: 150,
       },
       {
         accessor: (row) => row.document.DateOfPrint,
-        cell: (row) => formatDateTime(row.document.DateOfPrint),
+        cell: (row) => <TaxFreeTableValue value={formatDateTime(row.document.DateOfPrint)} />,
         header: t('Дата Tax Free'),
         id: 'dateOfPrint',
         width: 150,
@@ -776,7 +793,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalWithVatPl,
         align: 'right',
-        cell: (row) => formatMoney(row.document.TotalWithVatPl),
+        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.TotalWithVatPl)} />,
         header: t('Сума з ПДВ, місцева валюта'),
         id: 'amountPln',
         width: 130,
@@ -784,7 +801,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.VatAmountPl,
         align: 'right',
-        cell: (row) => formatMoney(row.document.VatAmountPl),
+        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.VatAmountPl)} />,
         header: t('ПДВ, місцева валюта'),
         id: 'vatPln',
         width: 120,
@@ -792,7 +809,7 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalWithVat,
         align: 'right',
-        cell: (row) => formatMoney(row.document.TotalWithVat),
+        cell: (row) => <TaxFreeTableValue value={formatMoney(row.document.TotalWithVat)} />,
         header: t('Сума з ПДВ EUR'),
         id: 'amountEur',
         width: 130,
@@ -800,19 +817,21 @@ function useTaxFreeDocumentColumns({
       {
         accessor: (row) => row.document.TotalNetWeight,
         align: 'right',
-        cell: (row) => formatAmount(row.document.TotalNetWeight),
+        cell: (row) => <TaxFreeTableValue value={formatAmount(row.document.TotalNetWeight)} />,
         header: t('Вага'),
         id: 'weight',
         width: 95,
       },
       {
         accessor: (row) => row.client,
+        cell: (row) => <TaxFreeTableValue value={displayValue(row.client)} />,
         header: t('Клієнт'),
         id: 'client',
         width: 160,
       },
       {
         accessor: (row) => row.carrier,
+        cell: (row) => <TaxFreeTableValue value={displayValue(row.carrier)} />,
         header: t('Перевізник'),
         id: 'carrier',
         width: 170,
@@ -833,6 +852,7 @@ function useTaxFreeDocumentColumns({
       },
       {
         accessor: (row) => row.responsible,
+        cell: (row) => <TaxFreeTableValue value={displayValue(row.responsible)} />,
         header: t('Відповідальний'),
         id: 'responsible',
         width: 150,
@@ -882,7 +902,7 @@ function useTaxFreeDocumentColumns({
       },
       {
         accessor: (row) => row.document.ClosedDate,
-        cell: (row) => formatDateTime(row.document.ClosedDate),
+        cell: (row) => <TaxFreeTableValue value={formatDateTime(row.document.ClosedDate)} />,
         header: t('Дата закриття TF'),
         id: 'closedDate',
         width: 150,
@@ -989,6 +1009,24 @@ function useTaxFreeItemColumns(items: TaxFreeItem[]) {
     ],
     [items, t],
   )
+}
+
+function TaxFreeTableValue({ fw, value }: { fw?: number; value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <Text component="span" fw={fw} style={TAX_FREE_TABLE_CELL_STYLE}>
+        {value}
+      </Text>
+    </Tooltip>
+  )
+}
+
+function displayValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+
+  return String(value)
 }
 
 function TaxFreeDocumentDrawer({

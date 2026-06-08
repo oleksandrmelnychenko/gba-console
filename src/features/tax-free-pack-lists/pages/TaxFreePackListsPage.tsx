@@ -225,9 +225,11 @@ export function TaxFreePackListsPage() {
       <PageHeaderActions>
         <Tooltip label={t('Оновити')}>
           <ActionIcon
-            variant="light"
-            size={36}
             aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoading}
+            size={38}
+            variant="light"
             onClick={() => dispatchList({ type: 'reloadRequested' })}
           >
             <IconRefresh size={18} />
@@ -254,11 +256,6 @@ export function TaxFreePackListsPage() {
                 dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
               }}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
             <Button
               leftSection={<IconDownload size={16} />}
               loading={isExporting}
@@ -268,6 +265,11 @@ export function TaxFreePackListsPage() {
             >
               {t('Завантажити')}
             </Button>
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetFilters}>
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
 
           {(error || filterError) && (
