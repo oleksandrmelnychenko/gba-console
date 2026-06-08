@@ -32,7 +32,6 @@ export default defineConfig({
               name: 'vendor-mantine',
               test: /node_modules[\\/]@mantine[\\/]/,
               priority: 40,
-              maxSize: 240 * 1024,
             },
             {
               name: 'vendor-table',
