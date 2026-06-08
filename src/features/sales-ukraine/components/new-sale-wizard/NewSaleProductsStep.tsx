@@ -8,13 +8,14 @@ import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/ev
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { ProductInterestModal } from '../../../sales-preorders'
-import { addOrderItem, deleteOrderItem, searchSaleProducts, updateOrderItem } from '../../api/salesUkraineApi'
+import { addOrderItem, deleteOrderItem, updateOrderItem } from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 import { FutureReservationModal } from './FutureReservationModal'
 import {
   getProductCalculatedPricingsByAgreement,
   getProductCurrentPriceByAgreement,
   getProductReservationsByAgreement,
+  searchSaleProductsWithAvailability,
   type WizardCalculatedProductPricing,
   type WizardProductReservation,
 } from './newSaleWizardApi'
@@ -133,32 +134,32 @@ export function NewSaleProductsStep({
       const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
       const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
       const preciseReservation = pricing?.reservation
+      const available = getSellableQty(product, isVatSale)
+      const price = pricing?.currentPrice ?? getReservationPrice(preciseReservation) ?? getReservationPrice(reservation)
 
-      if (!reservation && !pricing) {
+      if (available == null && price == null) {
         return undefined
       }
 
-      return {
-        available: getReservationAvailableQty(preciseReservation) ?? getReservationAvailableQty(reservation),
-        price: pricing?.currentPrice ?? getReservationPrice(preciseReservation) ?? getReservationPrice(reservation),
-      }
+      return { available, price }
     },
-    [productPricing, reservations],
+    [productPricing, reservations, isVatSale],
   )
 
   useEffect(() => {
     const value = query.trim()
 
-    if (value.length < 2) {
+    if (value.length < 2 || !agreementNetId) {
       return
     }
 
+    const searchAgreementNetId = agreementNetId
     let cancelled = false
     const handle = setTimeout(async () => {
       setSearching(true)
 
       try {
-        const next = await searchSaleProducts(value)
+        const next = await searchSaleProductsWithAvailability(value, searchAgreementNetId)
 
         if (!cancelled) {
           setResults(next)
@@ -178,7 +179,7 @@ export function NewSaleProductsStep({
       cancelled = true
       clearTimeout(handle)
     }
-  }, [query])
+  }, [query, agreementNetId])
 
   async function addProduct(product: SalesUkraineProduct) {
     if (!agreementNetId || !sale?.NetUid) {
@@ -195,10 +196,9 @@ export function NewSaleProductsStep({
 
     try {
       const pricing = await loadProductPricing(product, agreementNetId)
-      const meta = getProductMeta(pricing.product)
-      const available = getReservationAvailableQty(pricing.reservation) ?? meta?.available
+      const sellable = getSellableQty(pricing.product, isVatSale)
 
-      if (!alreadyInCart && typeof available === 'number' && available <= 0) {
+      if (!alreadyInCart && typeof sellable === 'number' && sellable === 0) {
         setFutureProduct(pricing.product)
 
         return
@@ -610,8 +610,19 @@ function findReservationForProduct(
   return reservations.find((reservation) => reservation.ProductNetUid === productNetUid) ?? (reservations.length === 1 ? reservations[0] : undefined)
 }
 
-function getReservationAvailableQty(reservation?: WizardProductReservation): number | undefined {
-  return reservation?.AvailableQty ?? reservation?.AvailableQtyUk
+function getSellableQty(product: SalesUkraineProduct, isVatSale: boolean): number | undefined {
+  if (isVatSale) {
+    return getNumber(product.AvailableQtyUkVAT) ?? undefined
+  }
+
+  const uk = getNumber(product.AvailableQtyUk)
+  const reSale = getNumber(product.AvailableQtyUkReSale)
+
+  if (uk === null && reSale === null) {
+    return undefined
+  }
+
+  return (uk ?? 0) + (reSale ?? 0)
 }
 
 function getReservationPrice(reservation?: WizardProductReservation): number | undefined {

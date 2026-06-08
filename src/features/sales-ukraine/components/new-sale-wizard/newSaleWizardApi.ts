@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../../shared/api/apiClient'
-import type { SalesUkraineSale } from '../../types'
+import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
 
 export type WizardDeliveryRecipientAddress = {
   Id?: number
@@ -117,6 +117,26 @@ function asNumber(result: unknown): number | null {
   }
 
   return null
+}
+
+// --- Product search (agreement + VAT aware, carries availability buckets) ---
+
+export async function searchSaleProductsWithAvailability(
+  value: string,
+  clientAgreementNetId: string,
+): Promise<SalesUkraineProduct[]> {
+  const result = await apiRequest<unknown>('/products/search/advanced', {
+    query: {
+      limit: 20,
+      mode: '0',
+      netId: clientAgreementNetId,
+      offset: 0,
+      sortMode: '2',
+      value: value.trim(),
+    },
+  })
+
+  return asArray<SalesUkraineProduct>(result)
 }
 
 // --- Delivery recipients ---------------------------------------------------

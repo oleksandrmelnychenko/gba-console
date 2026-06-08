@@ -174,6 +174,9 @@ export type SalesUkraineStatus = SalesUkraineEntity & {
 
 export type SalesUkraineProduct = SalesUkraineEntity & {
   Articul?: string
+  AvailableQtyUk?: number
+  AvailableQtyUkReSale?: number
+  AvailableQtyUkVAT?: number
   IsForSale?: boolean
   IsForZeroSale?: boolean
   MainOriginalNumber?: string
