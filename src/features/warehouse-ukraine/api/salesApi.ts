@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
 import type { Sale, SalesResponse, WarehouseUkraineExportDocument } from '../types'
 
 const PACKAGING_STATUS = 'Packaging'
@@ -77,16 +78,7 @@ function normalizeSalesResponse(result: unknown): SalesResponse {
 }
 
 export function normalizeExportDocument(result: unknown): WarehouseUkraineExportDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
-  }
+  return normalizeSharedExportDocument(result)
 }
 
 export function readArrayPayload(result: unknown, keys: string[]): unknown[] {

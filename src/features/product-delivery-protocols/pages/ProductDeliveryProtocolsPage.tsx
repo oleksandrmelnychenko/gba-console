@@ -138,6 +138,7 @@ function useProtocolsPageModel() {
   const canOpenLogisticPath = hasPermission(PERMISSION_OPEN_LOGISTIC_PATH)
   const canOpenSpecifications = hasPermission(PERMISSION_OPEN_SPECIFICATIONS)
   const canOpenIncome = hasPermission(PERMISSION_OPEN_INCOME)
+  const exportScopeWarning = getExportScopeWarning(activeFilters, t)
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
@@ -320,7 +321,7 @@ function useProtocolsPageModel() {
     activeFilters, canCreate, canExport, canOpenIncome, canOpenLogisticPath, canOpenOptions, canOpenSpecifications,
     closeCreateModal, closeDownload, closeOptions, columns, createError, downloadDocument, downloadError,
     downloadOpened, error, exportDocument, filterDraft, filterError, handleCreate, hasMore, isCreateModalOpen,
-    isCreating, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, navigateToIncome, navigateToLogisticPath,
+    exportScopeWarning, isCreating, isDownloading, isLoading, isLoadingMore, loadMoreProtocols, navigateToIncome, navigateToLogisticPath,
     navigateToSpecifications, openCreateModal, openOptions, optionsProtocol, organizations, organizationsError,
     pageSize, protocols, applyFilters, reload, resetFilters, setPageSize,
   }
@@ -644,11 +645,17 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
 
 function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
-  const { closeDownload, downloadDocument, downloadError, downloadOpened, isDownloading } = model
+  const { closeDownload, downloadDocument, downloadError, downloadOpened, exportScopeWarning, isDownloading } = model
 
   return (
     <AppModal centered opened={downloadOpened} title={t('Завантажити')} onClose={closeDownload}>
       <Stack gap="sm">
+        {exportScopeWarning && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {exportScopeWarning}
+          </Alert>
+        )}
+
         {isDownloading ? (
           <Text c="dimmed" size="sm">
             {t('Завантаження')}
@@ -694,6 +701,14 @@ function ProtocolsDownloadModal({ model }: { model: ReturnType<typeof useProtoco
       </Stack>
     </AppModal>
   )
+}
+
+function getExportScopeWarning(filters: Pick<FilterDraft, 'organization' | 'supplier'>, t: (value: string) => string): string | null {
+  if (!filters.organization && !filters.supplier) {
+    return null
+  }
+
+  return t('Експорт протоколів використовує тільки період дат. Фільтри організації та постачальника не входять у цей документ.')
 }
 
 function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
