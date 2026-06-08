@@ -933,7 +933,7 @@ function OrdersFilterToolbar({
         label={t('Постачальник')}
         placeholder={t('Назва постачальника')}
         value={filterDraft.supplier}
-        w={205}
+        style={{ flex: '1 1 240px', minWidth: 205 }}
         onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
       />
       <Select

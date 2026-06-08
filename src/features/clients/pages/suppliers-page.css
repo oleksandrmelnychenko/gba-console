@@ -1,5 +1,5 @@
 .suppliers-page {
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  height: calc(100vh - var(--app-shell-header-offset, 134px) - var(--app-shell-footer-offset, 36px) - 56px);
   min-height: 0;
   overflow: hidden;
 }
@@ -11,8 +11,11 @@
 }
 
 .suppliers-page__table {
-  flex: 1 1 auto;
+  flex: 0 1 calc(100% - 96px);
+  height: calc(100% - 96px);
+  max-height: calc(100% - 96px);
   min-height: 0;
+  overflow: hidden;
 }
 
 .suppliers-page__table .data-table {
@@ -24,5 +27,17 @@
 
 .suppliers-page__table .data-table-scroll {
   flex: 1 1 auto;
+  height: auto !important;
   min-height: 0;
+}
+
+.suppliers-page__table .data-table-th {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.suppliers-page__pagination {
+  flex: 0 0 auto;
+  padding-top: 2px;
 }

@@ -457,18 +457,32 @@ export function ProductDeliveryProtocolsPage() {
 
   return (
     <Stack className="product-delivery-protocols-page" gap={6}>
-      {model.canCreate && (
-        <PageHeaderActions>
-          <Button
-            color={CREATE_ACTION_COLOR}
-            size="sm"
-            leftSection={<IconPlus size={16} />}
-            onClick={model.openCreateModal}
-          >
-            {t('Додати')}
-          </Button>
-        </PageHeaderActions>
-      )}
+      <PageHeaderActions>
+        <Group gap="xs">
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              color="gray"
+              loading={model.isLoading}
+              size={38}
+              variant="light"
+              onClick={() => model.reload()}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+          {model.canCreate && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              size="sm"
+              leftSection={<IconPlus size={16} />}
+              onClick={model.openCreateModal}
+            >
+              {t('Додати')}
+            </Button>
+          )}
+        </Group>
+      </PageHeaderActions>
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}
@@ -521,28 +535,28 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
   return (
     <>
       <Stack className="product-delivery-protocols-page__stack" gap="xs">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+        <Group align="flex-end" gap="xs" wrap="nowrap" className="clients-filter-row">
           <TextInput
             label={t('Постачальник')}
             value={filterDraft.supplier}
             onChange={(event) => applyFilters({ ...filterDraft, supplier: event.currentTarget.value })}
-            style={{ flex: '1 1 auto', minWidth: 180 }}
+            style={{ flex: '1 1 auto', minWidth: 260 }}
           />
           <TextInput
-            label={t('Від якої дати')}
+            label={t('Від')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            style={{ flex: '0 0 auto' }}
           />
           <TextInput
-            label={t('До якої дати')}
+            label={t('До')}
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            style={{ flex: '0 0 auto' }}
           />
           <Select
             data={organizationOptions}
@@ -556,7 +570,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           <Tooltip label={t('Скинути')}>
             <ActionIcon
               aria-label={t('Скинути')}
-              color="gray"
+              color="violet"
               size={36}
               style={{ flex: '0 0 auto' }}
               variant="light"
@@ -565,22 +579,8 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               <IconRestore size={18} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={36}
-              style={{ flex: '0 0 auto' }}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
           {canExport && (
             <Button
-              color="gray"
               disabled={Boolean(filterError) || isDownloading}
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}

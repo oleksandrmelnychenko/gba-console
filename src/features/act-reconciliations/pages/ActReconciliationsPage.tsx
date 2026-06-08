@@ -199,12 +199,13 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
       </PageHeaderActions>
 
       <Stack gap="xs">
-        <Group align="end" gap="sm" wrap="nowrap">
+        <Group align="flex-end" gap="xs" wrap="nowrap">
           <TextInput
             label={t('Від')}
             max={filterDraft.to || undefined}
             type="date"
             value={filterDraft.from}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
           />
           <TextInput
@@ -212,6 +213,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
             min={filterDraft.from || undefined}
             type="date"
             value={filterDraft.to}
+            w={150}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
           <Tooltip label={t('Скинути')}>

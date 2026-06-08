@@ -117,16 +117,6 @@ export function TaxFreePackListsPage() {
     onDelete: setDeleteCandidate,
     onOpen: setSelectedPackList,
   })
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Сторінка')} {page}
-        {typeof totalQty === 'number' ? `, ${t('усього')}: ${totalQty}` : ''}
-      </Text>
-    ),
-    [page, totalQty, t],
-  )
-
   useEffect(() => {
     writeStoredFilters(filters)
   }, [filters])
@@ -239,37 +229,45 @@ export function TaxFreePackListsPage() {
 
       <>
         <Stack className="tax-free-pack-lists-page__stack" gap="xs">
-          <Group align="flex-end">
+          <Group align="flex-end" gap="xs">
             <TextInput
-              label={t('Дата з')}
+              label={t('Від')}
               type="date"
               value={filters.from}
+              w={150}
               onChange={(event) => {
                 dispatchList({ type: 'filterChanged', field: 'from', value: event.currentTarget.value })
               }}
             />
             <TextInput
-              label={t('Дата по')}
+              label={t('До')}
               type="date"
               value={filters.to}
+              w={150}
               onChange={(event) => {
                 dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
               }}
             />
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                variant="light"
+                color="violet"
+                size={36}
+                aria-label={t('Скинути')}
+                style={{ marginLeft: 'auto' }}
+                onClick={resetFilters}
+              >
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
             <Button
               leftSection={<IconDownload size={16} />}
               loading={isExporting}
-              style={{ marginLeft: 'auto' }}
               variant="light"
               onClick={exportPackLists}
             >
               {t('Завантажити')}
             </Button>
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
           </Group>
 
           {(error || filterError) && (
@@ -293,7 +291,6 @@ export function TaxFreePackListsPage() {
             showLayoutControls={false}
             showDensityToggle={false}
             tableId="tax-free-pack-lists"
-            toolbarLeft={toolbarLeft}
             onRowClick={setSelectedPackList}
             />
           </div>

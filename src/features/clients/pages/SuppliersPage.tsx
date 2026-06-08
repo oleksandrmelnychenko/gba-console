@@ -8,6 +8,7 @@ import {
   Divider,
   Group,
   Loader,
+  Pagination,
   Select,
   Stack,
   Text,
@@ -21,8 +22,6 @@ import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconCash,
-  IconChevronLeft,
-  IconChevronRight,
   IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
@@ -139,9 +138,17 @@ function useSuppliersPageModel() {
   const offset = (page - 1) * pageSize
   const canMoveBack = page > 1
   const canMoveForward = suppliers.length === pageSize
+  const totalPages = typeof totalCount === 'number'
+    ? Math.max(1, Math.ceil(totalCount / pageSize))
+    : canMoveForward ? page + 1 : page
   const active = activeFilter === 'all' ? null : activeFilter === 'active'
   const typeRoleFilter = roleFilter.join(',')
   const searchFieldOptions = useMemo(() => buildSupplierSearchFieldOptions(supplierFilterItems), [supplierFilterItems])
+  useEffect(() => {
+    if (!searchFieldOptions.some((option) => option.value === searchField)) {
+      setSearchField(SUPPLIER_SEARCH_SQL)
+    }
+  }, [searchField, searchFieldOptions, setSearchField])
   const selectedFilterItem = useMemo(
     () => supplierFilterItems.find((filterItem) => filterItem.SQL === searchField),
     [searchField, supplierFilterItems],
@@ -183,21 +190,6 @@ function useSuppliersPageModel() {
     ),
     [normalizedSearchValue, page, totalCount],
   )
-  const tableToolbarRight = useMemo(
-    () => (
-      <SupplierTablePagination
-        canMoveBack={canMoveBack}
-        canMoveForward={canMoveForward}
-        isTableBusy={isTableBusy}
-        page={page}
-        pageSize={pageSize}
-        onPageSizeChange={changePageSize}
-        onSetPage={setPage}
-      />
-    ),
-    [canMoveBack, canMoveForward, changePageSize, isTableBusy, page, pageSize, setPage],
-  )
-
   useSupplierListLoader({
     hasLoadedSuppliersRef,
     searchParams,
@@ -362,8 +354,9 @@ function useSuppliersPageModel() {
     supplierColumns,
     suppliers,
     tableToolbarLeft,
-    tableToolbarRight,
     totalCount,
+    totalPages,
+    changePageSize,
     handleExport,
     handleSwitchActive,
     openCashFlow,
@@ -524,7 +517,10 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     supplierColumns,
     suppliers,
     tableToolbarLeft,
-    tableToolbarRight,
+    totalPages,
+    page,
+    pageSize,
+    changePageSize,
     handleExport,
     handleSwitchActive,
     openCashFlow,
@@ -547,38 +543,37 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     <Stack className="suppliers-page" gap={6}>
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
-          {t('Новий виробник...')}
+          {t('Добавити')}
         </Button>
       </PageHeaderActions>
 
-      <>
-          <SuppliersFilterToolbar
-            activeFilter={activeFilter}
-            clientTypes={clientTypes}
-            isExporting={supplierAction === 'export'}
-            isTableBusy={isTableBusy}
-            roleFilter={roleFilter}
-            searchField={searchField}
-            searchFieldOptions={searchFieldOptions}
-            searchInputRef={searchInputRef}
-            searchValue={searchValue}
-            onExport={handleExport}
-            onReset={resetSearch}
-            onSetActiveFilter={setActiveFilter}
-            onSetPage={setPage}
-            onSetRoleFilter={setRoleFilter}
-            onSetSearchField={setSearchField}
-            onSetSearchValue={setSearchValue}
-          />
+      <SuppliersFilterToolbar
+        activeFilter={activeFilter}
+        clientTypes={clientTypes}
+        isExporting={supplierAction === 'export'}
+        isTableBusy={isTableBusy}
+        roleFilter={roleFilter}
+        searchField={searchField}
+        searchFieldOptions={searchFieldOptions}
+        searchInputRef={searchInputRef}
+        searchValue={searchValue}
+        onExport={handleExport}
+        onReset={resetSearch}
+        onSetActiveFilter={setActiveFilter}
+        onSetPage={setPage}
+        onSetRoleFilter={setRoleFilter}
+        onSetSearchField={setSearchField}
+        onSetSearchValue={setSearchValue}
+      />
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
-          <div className="suppliers-page__table">
-            <DataTable
+      <div className="suppliers-page__table">
+        <DataTable
             columns={supplierColumns}
             data={suppliers}
             defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
@@ -595,15 +590,21 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             tableId="suppliers"
             sorting={sorting}
             toolbarLeft={tableToolbarLeft}
-            toolbarRight={tableToolbarRight}
             onRowClick={setSelectedSupplier}
             onSortingChange={(nextSorting) => {
               setPage(1)
               setSorting(nextSorting)
             }}
             />
-          </div>
-      </>
+      </div>
+      <SupplierTablePagination
+        isTableBusy={isTableBusy}
+        page={page}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        onPageSizeChange={changePageSize}
+        onSetPage={setPage}
+      />
 
       <SupplierActionsModal
         supplier={selectedSupplier}
@@ -815,7 +816,7 @@ function SuppliersFilterToolbar({
         }}
       />
       <Tooltip label={t('Скинути')}>
-        <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
+        <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
           <IconRestore size={18} />
         </ActionIcon>
       </Tooltip>
@@ -859,58 +860,45 @@ function SupplierTableSummary({
 }
 
 function SupplierTablePagination({
-  canMoveBack,
-  canMoveForward,
   isTableBusy,
   page,
   pageSize,
+  totalPages,
   onPageSizeChange,
   onSetPage,
 }: {
-  canMoveBack: boolean
-  canMoveForward: boolean
   isTableBusy: boolean
   page: number
   pageSize: number
+  totalPages: number
   onPageSizeChange: (value: string | null) => void
-  onSetPage: (value: number | ((currentPage: number) => number)) => void
+  onSetPage: (value: number) => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Group gap={4} wrap="nowrap">
-      <Select
-        aria-label={t('Розмір сторінки')}
-        data={pageSizeOptions}
-        disabled={isTableBusy}
-        size="xs"
-        value={String(pageSize)}
-        w={68}
-        onChange={onPageSizeChange}
-      />
-      <Text size="xs" c="dark" fw={700} style={{ whiteSpace: 'nowrap' }}>
-        {t('стор.')} {page}
-      </Text>
-      <ActionIcon
-        aria-label={t('Попередня сторінка')}
-        color="gray"
-        disabled={!canMoveBack || isTableBusy}
-        size="sm"
-        variant="subtle"
-        onClick={() => onSetPage((currentPage) => Math.max(1, currentPage - 1))}
-      >
-        <IconChevronLeft size={16} />
-      </ActionIcon>
-      <ActionIcon
-        aria-label={t('Наступна сторінка')}
-        color="gray"
-        disabled={!canMoveForward || isTableBusy}
-        size="sm"
-        variant="subtle"
-        onClick={() => onSetPage((currentPage) => currentPage + 1)}
-      >
-        <IconChevronRight size={16} />
-      </ActionIcon>
+    <Group justify="flex-end" className="suppliers-page__pagination">
+      <Group gap={6}>
+        <Text c="dimmed" size="xs">{t('Рядків')}</Text>
+        <Select
+          allowDeselect={false}
+          aria-label={t('Рядків')}
+          data={pageSizeOptions.map((value) => ({ label: value, value }))}
+          disabled={isTableBusy}
+          size="xs"
+          value={String(pageSize)}
+          w={82}
+          onChange={onPageSizeChange}
+        />
+      </Group>
+      {totalPages > 1 && (
+        <Pagination
+          disabled={isTableBusy}
+          total={totalPages}
+          value={Math.min(page, totalPages)}
+          onChange={onSetPage}
+        />
+      )}
     </Group>
   )
 }
@@ -1072,21 +1060,8 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
   )
 }
 
-function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
-  const dynamicOptions: Array<{ label: string; value: string }> = []
-
-  filterItems.forEach((filterItem) => {
-    if (filterItem.SQL) {
-      dynamicOptions.push({
-        value: filterItem.SQL,
-        label: filterItem.Name?.trim() || filterItem.Description?.trim() || filterItem.SQL,
-      })
-    }
-  })
-
-  return dynamicOptions.length > 0
-    ? dynamicOptions
-    : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
+function buildSupplierSearchFieldOptions(_filterItems: ClientFilterItem[]) {
+  return DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
 }
 
 function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {

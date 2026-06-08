@@ -435,17 +435,19 @@ export function AllSadsPage() {
       </PageHeaderActions>
 
       <Stack className="sad-list-page__stack" gap="xs">
-        <Group align="end" gap="sm">
+        <Group align="flex-end" gap="xs">
           <TextInput
-            label={t('З')}
+            label={t('Від')}
             type="date"
             value={filters.from}
+            w={150}
             onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, from: nextValue })) }}
           />
           <TextInput
-            label={t('По')}
+            label={t('До')}
             type="date"
             value={filters.to}
+            w={150}
             onChange={(event) => { const nextValue = event.currentTarget.value; setFilters((currentFilters) => ({ ...currentFilters, to: nextValue })) }}
           />
         </Group>

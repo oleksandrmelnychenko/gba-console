@@ -216,17 +216,6 @@ function useTaxFreeDocumentsPageModel() {
     carrierOptions,
     selectedCarrierNetId,
   ])
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Сторінка')} {page}
-        {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
-        {searchValue ? `, ${t('номер')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [page, searchValue, t, total],
-  )
-
   useEffect(() => {
     writeStoredFilters({
       carrierNetId: selectedCarrierNetId,
@@ -423,7 +412,6 @@ function useTaxFreeDocumentsPageModel() {
     selectedDocument,
     statusOptions,
     statusValue,
-    toolbarLeft,
     closeDetails: () => setSelectedDocument(null),
     closeAccounting: () => setAccountingDocument(null),
     closeOutcome: () => setOutcomeSource(null),
@@ -480,7 +468,6 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
     selectedDocument,
     statusOptions,
     statusValue,
-    toolbarLeft,
     closeAccounting,
     closeDetails,
     closeOutcome,
@@ -514,7 +501,7 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
 
       <>
         <Stack className="tax-free-documents-page__stack" gap="xs">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <Group align="flex-end" gap="xs" wrap="nowrap" className="clients-filter-row">
             <TextInput
               label={t('Від')}
               type="date"
@@ -582,6 +569,25 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             </Alert>
           )}
 
+          <div className="tax-free-documents-page__table">
+            <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Tax Free не знайдено')}
+            getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="tax-free-documents-table-2"
+            loadingText={t('Завантаження Tax Free')}
+            minWidth={1540}
+            showLayoutControls={false}
+            showDensityToggle={false}
+            tableId="tax-free-documents"
+            onRowClick={(row) => openDocument(row.document)}
+            />
+          </div>
+
           <Group justify="flex-end" gap="sm">
             <Group gap="xs">
               <Select
@@ -619,26 +625,6 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
               </ActionIcon>
             </Group>
           </Group>
-
-          <div className="tax-free-documents-page__table">
-            <DataTable
-            columns={columns}
-            data={rows}
-            defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Tax Free не знайдено')}
-            getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
-            height="100%"
-            isLoading={isLoading}
-            layoutVersion="tax-free-documents-table-2"
-            loadingText={t('Завантаження Tax Free')}
-            minWidth={1540}
-            showLayoutControls={false}
-            showDensityToggle={false}
-            tableId="tax-free-documents"
-            toolbarLeft={toolbarLeft}
-            onRowClick={(row) => openDocument(row.document)}
-            />
-          </div>
         </Stack>
       </>
 
