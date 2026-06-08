@@ -83,6 +83,7 @@ import type {
   ResaleCreatePayload,
   ResaleDownloadDocumentType,
   ResaleExportDocument,
+  ResalePaymentStatus,
   ResaleProductGroup,
   ResaleStorage,
   UpdatedResaleItemModel,
@@ -176,6 +177,7 @@ type ProcessDrawerState = {
   client: ResaleClient | null
   clientAgreement: ResaleClientAgreement | null
   comment: string
+  isDirty: boolean
   rows: ResaleAvailabilityItemModel[]
   warning: ResaleBackendWarning | null
 }
@@ -1446,7 +1448,7 @@ export function ResalePage() {
             <Select
               searchable
               disabled={changedToInvoice || isCompleted || !detailInfo.client}
-              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined)}
+              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
               label={t('Угода')}
               value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
               onChange={(value) => {
@@ -1490,7 +1492,7 @@ export function ResalePage() {
                 {t('Зробити інвойсом')}
               </Button>
             )}
-            {changedToInvoice && !model.ReSale.IsCompleted && (
+            {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
               <Button disabled={isSaving} loading={isSaving} color="green" onClick={completeInvoice}>
                 {t('Завершити')}
               </Button>
@@ -1644,7 +1646,7 @@ function useResalesColumns({
         width: 150,
         minWidth: 120,
         accessor: (resale) => resale.BaseSalePaymentStatus?.SalePaymentStatusType,
-        cell: (resale) => displayPaymentStatus(resale.BaseSalePaymentStatus?.SalePaymentStatusType),
+        cell: (resale) => displayPaymentStatus(resale.BaseSalePaymentStatus),
       },
       {
         id: 'actions',
@@ -2155,6 +2157,7 @@ function ResaleProcessDrawer({
   function updateRow(index: number, patch: Partial<ResaleAvailabilityItemModel>) {
     setProcessForm((currentForm) => ({
       ...currentForm,
+      isDirty: true,
       rows: currentForm.rows.map((row, rowIndex) =>
         rowIndex === index ? applyResaleItemPatch(row, patch) : row,
       ),
@@ -2174,6 +2177,7 @@ function ResaleProcessDrawer({
         setProcessForm((currentForm) => ({
           ...currentForm,
           activeProcessData: result.data || null,
+          isDirty: false,
           rows: result.data?.ReSaleAvailabilityItemModels || [],
           warning: null,
         }))
@@ -2189,6 +2193,16 @@ function ResaleProcessDrawer({
         ...currentForm,
         warning: {
           Message: t('Оберіть клієнта, угоду і склад'),
+        },
+      }))
+      return
+    }
+
+    if (isRecalculating || processForm.isDirty) {
+      setProcessForm((currentForm) => ({
+        ...currentForm,
+        warning: {
+          Message: t('Перерахуйте позиції перед створенням'),
         },
       }))
       return
@@ -2218,6 +2232,11 @@ function ResaleProcessDrawer({
         {processForm.warning && (
           <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
             {processForm.warning.Message}
+          </Alert>
+        )}
+        {processForm.isDirty && !processForm.warning && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {t('Перерахуйте позиції перед створенням')}
           </Alert>
         )}
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
@@ -2276,7 +2295,7 @@ function ResaleProcessDrawer({
           <Button loading={isRecalculating} variant="light" onClick={recalculateRows}>
             {t('Перерахувати')}
           </Button>
-          <Button loading={isSaving} onClick={create}>
+          <Button disabled={isRecalculating || processForm.isDirty} loading={isSaving} onClick={create}>
             {t('Створити')}
           </Button>
         </Group>
@@ -2985,6 +3004,7 @@ function createProcessDrawerState(processData: CreatedResaleAvailabilityWithTota
     client: null,
     clientAgreement: null,
     comment: '',
+    isDirty: false,
     rows: processData?.ReSaleAvailabilityItemModels || [],
     warning: null,
   }
@@ -3141,11 +3161,11 @@ function getAgreementName(agreement?: ResaleAgreement | null): string | undefine
   return agreement?.Name || agreement?.FullName
 }
 
-function displayPaymentStatus(status?: number | string): string {
-  const statusValue = normalizeNumericStatus(status)
+function displayPaymentStatus(status?: ResalePaymentStatus | null): string {
+  const statusValue = normalizeNumericStatus(status?.SalePaymentStatusType)
 
   if (statusValue === null) {
-    return '—'
+    return status?.Name || status?.Value || '—'
   }
 
   const statusMap: Record<number, string> = {
@@ -3156,7 +3176,7 @@ function displayPaymentStatus(status?: number | string): string {
     4: translate('Повернення'),
   }
 
-  return statusMap[statusValue] || String(statusValue)
+  return statusMap[statusValue] || status?.Name || status?.Value || '—'
 }
 
 function normalizeNumericStatus(status?: number | string): number | null {

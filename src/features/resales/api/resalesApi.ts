@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument as normalizeSharedExportDocument } from '../../../shared/documents/exportDocument'
 import { getClients } from '../../clients/api/clientsApi'
 import type {
   CreatedResaleAvailabilityWithTotals,
@@ -365,16 +366,7 @@ function readBackendWarning(result: unknown): ResaleBackendWarning | null {
 }
 
 function normalizeExportDocument(result: unknown): ResaleExportDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
-  }
+  return normalizeSharedExportDocument(result)
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

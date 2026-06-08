@@ -104,7 +104,7 @@ export function WarehouseUkrainePage() {
         value: TAB_INVOICE_REGISTER,
         label: t('Реєстр накладних'),
         icon: <IconReceipt size={16} />,
-        permissionKey: PKEY_INVOICES,
+        permissionKey: PKEY_UKRAINE_ORDER,
         render: () => <InvoiceRegisterTab />,
       },
       {

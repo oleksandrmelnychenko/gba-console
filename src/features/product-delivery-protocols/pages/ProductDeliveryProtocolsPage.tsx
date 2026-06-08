@@ -216,6 +216,14 @@ function useProtocolsPageModel() {
   }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
 
   async function exportDocument() {
+    if (filterError) {
+      setDownloadOpened(true)
+      setDownloadDocument(null)
+      setDownloadError(filterError)
+      setDownloading(false)
+      return
+    }
+
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
     setDownloadOpened(true)
@@ -571,6 +579,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           {canExport && (
             <Button
               color="gray"
+              disabled={Boolean(filterError) || isDownloading}
               leftSection={<IconDownload size={16} />}
               loading={isDownloading}
               style={{ flex: '0 0 auto' }}

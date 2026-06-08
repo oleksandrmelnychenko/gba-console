@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import { getDocumentVerification } from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
+import { getSaleActProtocolEditDocument, getSalePrintDocument } from './salesApi'
 import { getAllShipmentLists } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -97,6 +98,32 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         from: '2026-06-01',
         to: '2026-06-08',
         limit: 20,
+      },
+    })
+  })
+
+  it('requests the warehouse sale print document with storage context', async () => {
+    apiRequestMock.mockResolvedValueOnce({ PdfDocumentURL: 'https://example.test/sale.pdf' })
+
+    await getSalePrintDocument('sale-net-id')
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/document', {
+      query: {
+        netId: 'sale-net-id',
+        isFromStorages: true,
+      },
+    })
+  })
+
+  it('requests the shifted sale print document with act-protocol-edit flag', async () => {
+    apiRequestMock.mockResolvedValueOnce({ PdfDocumentURL: 'https://example.test/sale-shifted.pdf' })
+
+    await getSaleActProtocolEditDocument('sale-net-id', true)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/shifted/document', {
+      query: {
+        netId: 'sale-net-id',
+        IsPrintedActProtocolEdit: true,
       },
     })
   })

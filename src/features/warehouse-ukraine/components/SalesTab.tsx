@@ -28,6 +28,13 @@ import {
 import type { Sale, WarehouseUkraineExportDocument } from '../types'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays, toDateString } from './dateHelpers'
+import {
+  closePendingWarehouseDocumentWindow,
+  getPreferredWarehousePrintUrl,
+  hasWarehouseDocumentUrl,
+  openPendingWarehouseDocumentWindow,
+  openWarehouseDocumentInWindow,
+} from './openWarehouseDocument'
 import { SaleCarrierDrawer } from './SaleCarrierDrawer'
 
 const DEFAULT_LIMIT = 500
@@ -168,10 +175,11 @@ function useSalesTabModel() {
     setDownloading(false)
   }, [setDownloadDocument, setDownloadError, setDownloadOpened, setDownloading])
 
-  const runDownload = useCallback(
+  const runPrintDocument = useCallback(
     async (loader: () => Promise<WarehouseUkraineExportDocument>) => {
       const requestId = downloadRequestRef.current + 1
       downloadRequestRef.current = requestId
+      const pendingWindow = openPendingWarehouseDocumentWindow()
       setDownloadOpened(true)
       setDownloadDocument(null)
       setDownloadError(null)
@@ -181,17 +189,32 @@ function useSalesTabModel() {
         const document = await loader()
 
         if (downloadRequestRef.current === requestId) {
-          setDownloadDocument(document)
+          const documentUrl = getPreferredWarehousePrintUrl(document)
+
+          if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
+            setDownloadOpened(false)
+            setDownloadDocument(null)
+            setDownloadError(null)
+          } else {
+            closePendingWarehouseDocumentWindow(pendingWindow)
+            setDownloadDocument(hasWarehouseDocumentUrl(document) ? document : null)
+            setDownloadError(hasWarehouseDocumentUrl(document) ? null : t('Немає документів для завантаження'))
+          }
         }
       } catch (exportError) {
         if (downloadRequestRef.current === requestId) {
+          closePendingWarehouseDocumentWindow(pendingWindow)
           setDownloadError(
             exportError instanceof Error ? exportError.message : t('Немає документів для завантаження'),
           )
+        } else {
+          closePendingWarehouseDocumentWindow(pendingWindow)
         }
       } finally {
         if (downloadRequestRef.current === requestId) {
           setDownloading(false)
+        } else {
+          closePendingWarehouseDocumentWindow(pendingWindow)
         }
       }
     },
@@ -230,10 +253,10 @@ function useSalesTabModel() {
           void markSaleBeforePrint(sale, { IsPrinted: true })
         }
 
-        void runDownload(() => getSalePrintDocument(sale.NetUid as string))
+        void runPrintDocument(() => getSalePrintDocument(sale.NetUid as string))
       }
     },
-    [markSaleBeforePrint, runDownload],
+    [markSaleBeforePrint, runPrintDocument],
   )
 
   const printActProtocolEdit = useCallback(
@@ -243,10 +266,10 @@ function useSalesTabModel() {
           void markSaleBeforePrint(sale, { IsPrintedActProtocolEdit: true })
         }
 
-        void runDownload(() => getSaleActProtocolEditDocument(sale.NetUid as string, true))
+        void runPrintDocument(() => getSaleActProtocolEditDocument(sale.NetUid as string, true))
       }
     },
-    [markSaleBeforePrint, runDownload],
+    [markSaleBeforePrint, runPrintDocument],
   )
 
   function applyFilters(nextFilters: FilterDraft) {

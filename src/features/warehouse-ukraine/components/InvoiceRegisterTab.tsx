@@ -443,13 +443,14 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
         accessor: (invoice) => getPrintedStatusText(invoice),
         cell: (invoice) => {
           const status = getPrintedStatusText(invoice)
+          const hasChanges = hasApprovedInvoiceEdits(invoice)
 
           if (!status) {
             return '-'
           }
 
           return (
-            <Badge color={status === 'changed' ? 'orange' : 'teal'} variant="light">
+            <Badge color={hasChanges ? 'orange' : 'teal'} variant="light">
               {status}
             </Badge>
           )
@@ -505,7 +506,7 @@ function buildIndexMap(invoices: Sale[]): Map<Sale, number> {
 
 function getPrintedStatusText(invoice: Sale): string {
   if (hasApprovedInvoiceEdits(invoice)) {
-    return 'changed'
+    return translate('Змінено')
   }
 
   if (invoice.IsPrinted) {

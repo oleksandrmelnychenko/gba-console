@@ -14,6 +14,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCircleCheck,
@@ -70,6 +71,13 @@ import { displayValue, formatDateTime, getDateShiftedByDays } from './dateHelper
 import { DownloadDocumentModal } from './DownloadDocumentModal'
 import { EditDeliveryAddressModal } from './EditDeliveryAddressModal'
 import { EditDeliveryRecipientModal } from './EditDeliveryRecipientModal'
+import {
+  closePendingWarehouseDocumentWindow,
+  getPreferredWarehousePrintUrl,
+  hasWarehouseDocumentUrl,
+  openPendingWarehouseDocumentWindow,
+  openWarehouseDocumentInWindow,
+} from './openWarehouseDocument'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'clientName'] },
@@ -674,6 +682,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
     setDocLoading(true)
     setDocError(null)
     setPrintDoc(null)
+    const pendingWindow = openPendingWarehouseDocumentWindow()
 
     try {
       const result = await getShipmentCreatePageDocument({
@@ -681,8 +690,17 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
         from: filterDraft.from,
         to: filterDraft.to,
       })
-      setPrintDoc(result)
+      const documentUrl = getPreferredWarehousePrintUrl(result)
+
+      if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
+        setDocOpened(false)
+      } else {
+        closePendingWarehouseDocumentWindow(pendingWindow)
+        setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
+        setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
+      }
     } catch (printError) {
+      closePendingWarehouseDocumentWindow(pendingWindow)
       setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
     } finally {
       setDocLoading(false)
@@ -973,7 +991,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     () => hasShipmentListChanges(selectedShipment, shipmentDraft),
     [selectedShipment, shipmentDraft],
   )
-  const canEditShipment = Boolean(shipmentDraft && !shipmentDraft.IsSent)
+  const canEditShipment = Boolean(shipmentDraft)
 
   useEffect(() => {
     let cancelled = false
@@ -1095,7 +1113,13 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const editColumns = useEditShipmentColumns({
     canEdit: canEditShipment,
     indexMap: draftIndexMap,
-    onEditAddress: (item) => setActiveModal({ kind: 'address', item }),
+    onEditAddress: (item) => {
+      if (!item.Sale.DeliveryRecipient) {
+        notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
+      }
+
+      setActiveModal({ kind: 'address', item })
+    },
     onEditComment: (item) => setActiveModal({ kind: 'comment', item }),
     onEditRecipient: (item) => setActiveModal({ kind: 'recipient', item }),
     onPrintSale: printShipmentForSale,
@@ -1216,7 +1240,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     }
 
     if (!canEditShipment) {
-      setEditError(t('Проведене відвантаження доступне тільки для перегляду'))
+      setEditError(t('Відвантаження доступне тільки для перегляду'))
 
       return
     }
@@ -1372,12 +1396,21 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     setDocLoading(true)
     setDocError(null)
     setPrintDoc(null)
+    const pendingWindow = openPendingWarehouseDocumentWindow()
 
     try {
       const result = await loader()
+      const documentUrl = getPreferredWarehousePrintUrl(result)
 
-      setPrintDoc(result)
+      if (documentUrl && openWarehouseDocumentInWindow(pendingWindow, documentUrl)) {
+        setDocOpened(false)
+      } else {
+        closePendingWarehouseDocumentWindow(pendingWindow)
+        setPrintDoc(hasWarehouseDocumentUrl(result) ? result : null)
+        setDocError(hasWarehouseDocumentUrl(result) ? null : t('Немає документів для завантаження'))
+      }
     } catch (printError) {
+      closePendingWarehouseDocumentWindow(pendingWindow)
       setDocError(printError instanceof Error ? printError.message : t('Не вдалося виконати запит'))
     } finally {
       setDocLoading(false)
@@ -2006,7 +2039,13 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
           <EditableTextCell
             disabled={isRecipientAddressReadOnly(item)}
             text={getAddressInfo(item.Sale, t)}
-            onEdit={() => model.setActiveModal({ kind: 'address', item })}
+            onEdit={() => {
+              if (!item.Sale.DeliveryRecipient) {
+                notifications.show({ color: 'yellow', message: t('Додайте одержувача для цієї накладної') })
+              }
+
+              model.setActiveModal({ kind: 'address', item })
+            }}
           />
         ),
       },
