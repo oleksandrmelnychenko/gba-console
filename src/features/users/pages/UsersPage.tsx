@@ -1,16 +1,17 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
+  Avatar,
   Box,
   Button,
-  Card,
-  Group,
+  ScrollArea,
+  Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
   IconPencil,
@@ -20,26 +21,39 @@ import {
   IconSearch,
   IconShieldLock,
 } from '@tabler/icons-react'
-import { useDebouncedValue } from '@mantine/hooks'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import {
+  CREATE_ACTION_COLOR,
+  PageHeaderActions,
+} from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getUsers } from '../api/usersApi'
-import type { UserProfile } from '../types'
-import { displayValue, getUserFullName, getUserRegionName, getUserRoleName } from '../utils'
+import type { UserProfile, UserRole } from '../types'
+import {
+  displayValue,
+  getUserFullName,
+  getUserRegionName,
+  getUserRoleName,
+} from '../utils'
+import './users-page.css'
 
-const USERS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['lastName', 'firstName'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 const USERS_SEARCH_DEBOUNCE_MS = 350
+const USER_STATUS_ACTIVE = 'active'
+const USER_STATUS_INACTIVE = 'inactive'
+const USER_STATUS_DELETED = 'deleted'
+
+type UserStatus =
+  | typeof USER_STATUS_ACTIVE
+  | typeof USER_STATUS_INACTIVE
+  | typeof USER_STATUS_DELETED
+
+type RoleNavigationItem = {
+  count: number
+  label: string
+  value: string
+}
 
 export function UsersPage() {
   const { t } = useI18n()
@@ -47,13 +61,43 @@ export function UsersPage() {
   const navigate = useNavigate()
   const [users, setUsers] = useValueState<UserProfile[]>([])
   const [searchValue, setSearchValue] = useValueState('')
-  const [debouncedSearchValue] = useDebouncedValue(searchValue, USERS_SEARCH_DEBOUNCE_MS)
+  const [roleFilter, setRoleFilter] = useValueState<string | null>(null)
+  const [regionFilter, setRegionFilter] = useValueState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useValueState<UserStatus | null>(null)
+  const [debouncedSearchValue] = useDebouncedValue(
+    searchValue,
+    USERS_SEARCH_DEBOUNCE_MS,
+  )
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
-  const isTableBusy = isLoading || isSearchSettling
+  const isBusy = isLoading || isSearchSettling
+  const roleNavItems = useMemo(() => createRoleNavItems(users), [users])
+  const regionOptions = useMemo(() => createRegionOptions(users), [users])
+  const statusOptions = useMemo(
+    () => [
+      { value: USER_STATUS_ACTIVE, label: t('Активні') },
+      { value: USER_STATUS_INACTIVE, label: t('Неактивні') },
+      { value: USER_STATUS_DELETED, label: t('Видалені') },
+    ],
+    [t],
+  )
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (user) =>
+          (!roleFilter || getUserRoleFilterValue(user.UserRole) === roleFilter) &&
+          (!regionFilter || getUserRegionFilterValue(user) === regionFilter) &&
+          (!statusFilter || getUserStatus(user) === statusFilter),
+      ),
+    [regionFilter, roleFilter, statusFilter, users],
+  )
+  const activeFilterCount = [roleFilter, regionFilter, statusFilter].filter(
+    Boolean,
+  ).length
+  const hasActiveFilters = searchValue.trim().length > 0 || activeFilterCount > 0
   const openUser = useCallback(
     (user: UserProfile) => {
       if (!user.NetUid) {
@@ -69,106 +113,6 @@ export function UsersPage() {
       })
     },
     [location, navigate],
-  )
-  const columns = useMemo<DataTableColumn<UserProfile>[]>(
-    () => [
-      {
-        id: 'lastName',
-        header: 'Прізвище',
-        width: 180,
-        minWidth: 140,
-        accessor: (user) => user.LastName,
-        cell: (user) => <Text fw={600}>{displayValue(user.LastName)}</Text>,
-      },
-      {
-        id: 'firstName',
-        header: "Ім'я",
-        width: 180,
-        minWidth: 140,
-        accessor: (user) => user.FirstName,
-        cell: (user) => displayValue(user.FirstName),
-      },
-      {
-        id: 'middleName',
-        header: 'По батькові',
-        width: 180,
-        minWidth: 140,
-        accessor: (user) => user.MiddleName,
-        cell: (user) => displayValue(user.MiddleName),
-      },
-      {
-        id: 'email',
-        header: 'Email',
-        width: 240,
-        minWidth: 180,
-        accessor: (user) => user.Email,
-        cell: (user) => displayValue(user.Email),
-      },
-      {
-        id: 'phone',
-        header: 'Телефон',
-        width: 150,
-        minWidth: 124,
-        accessor: (user) => user.PhoneNumber,
-        cell: (user) => displayValue(user.PhoneNumber),
-      },
-      {
-        id: 'role',
-        header: 'Роль',
-        width: 200,
-        minWidth: 160,
-        accessor: (user) => getUserRoleName(user.UserRole),
-        cell: (user) => displayValue(getUserRoleName(user.UserRole)),
-      },
-      {
-        id: 'region',
-        header: 'Регіон',
-        width: 118,
-        minWidth: 104,
-        accessor: (user) => getUserRegionName(user.Region),
-        cell: (user) => (
-          <Badge color={user.Region === 'pl' ? 'blue' : 'green'} variant="light">
-            {getUserRegionName(user.Region)}
-          </Badge>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (user) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Відкрити')}>
-              <ActionIcon
-                aria-label={t('Відкрити')}
-                color="gray"
-                variant="subtle"
-                onClick={() => openUser(user)}
-              >
-                <IconPencil size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Box>
-        ),
-      },
-    ],
-    [openUser, t],
-  )
-  const toolbarLeft = useMemo(
-    () =>
-      normalizedSearchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {normalizedSearchValue}
-        </Text>
-      ) : null,
-    [normalizedSearchValue, t],
   )
 
   useEffect(() => {
@@ -192,7 +136,11 @@ export function UsersPage() {
 
         if (!cancelled) {
           setUsers([])
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити користувачів'))
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : t('Не вдалося завантажити користувачів'),
+          )
         }
       } finally {
         if (!cancelled) {
@@ -209,17 +157,20 @@ export function UsersPage() {
     }
   }, [reloadKey, normalizedSearchValue, setError, setLoading, setUsers, t])
 
-  function resetSearch() {
+  function resetFilters() {
     setSearchValue('')
+    setRoleFilter(null)
+    setRegionFilter(null)
+    setStatusFilter(null)
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="users-page" gap="md">
       <PageHeaderActions>
         <Button
           color={CREATE_ACTION_COLOR}
+          leftSection={<IconPlus size={15} />}
           size="sm"
-          leftSection={<IconPlus size={16} />}
           onClick={() =>
             navigate('/users/new', {
               state: {
@@ -232,80 +183,293 @@ export function UsersPage() {
           {t('Новий користувач')}
         </Button>
       </PageHeaderActions>
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<IconSearch size={16} />}
-              label={t('Пошук')}
-              placeholder={t('ПІБ, email або телефон')}
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 160 }}
-            />
-            <Tooltip label={t('Скинути')}>
+
+      <Box className="users-shell">
+        <div className="users-command-bar">
+          <TextInput
+            className="users-search-input"
+            leftSection={<IconSearch size={15} />}
+            label={t('Пошук користувача')}
+            placeholder={t('ПІБ, email, телефон')}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+          />
+          <Select
+            className="users-filter-select"
+            clearable
+            data={regionOptions}
+            label={t('Регіон')}
+            placeholder={t('Всі')}
+            value={regionFilter}
+            onChange={setRegionFilter}
+          />
+          <Select
+            className="users-filter-select"
+            clearable
+            data={statusOptions}
+            label={t('Статус')}
+            placeholder={t('Всі')}
+            value={statusFilter}
+            onChange={(value) => setStatusFilter(value as UserStatus | null)}
+          />
+          <div className="users-toolbar-actions">
+            <Tooltip label={t('Очистити')}>
               <ActionIcon
-                aria-label={t('Скинути')}
+                aria-label={t('Очистити')}
                 color="gray"
-                size={36}
-                style={{ flex: '0 0 auto' }}
+                disabled={!hasActiveFilters}
+                size={34}
                 variant="light"
-                onClick={resetSearch}
+                onClick={resetFilters}
               >
-                <IconRestore size={18} />
+                <IconRestore size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
               <ActionIcon
                 aria-label={t('Оновити')}
                 color="gray"
-                loading={isTableBusy}
-                size={36}
-                style={{ flex: '0 0 auto' }}
+                loading={isBusy}
+                size={34}
                 variant="light"
                 onClick={() => reload()}
               >
-                <IconRefresh size={18} />
+                <IconRefresh size={17} />
               </ActionIcon>
             </Tooltip>
             <Button
+              className="users-roles-action"
               color="gray"
-              leftSection={<IconShieldLock size={16} />}
+              leftSection={<IconShieldLock size={15} />}
+              size="sm"
               variant="light"
               onClick={() => navigate('/users/roles')}
-              style={{ flex: '0 0 auto' }}
             >
               {t('Ролі')}
             </Button>
-          </Group>
+          </div>
+        </div>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-          <DataTable
-            columns={columns}
-            data={users}
-            defaultLayout={USERS_TABLE_DEFAULT_LAYOUT}
-            emptyText="Користувачів не знайдено"
-            getRowId={(user, index) => String(user.NetUid || user.Id || index)}
-            isLoading={isTableBusy}
-            layoutVersion="users-table-1"
-            loadingText="Завантаження користувачів"
-            maxHeight="calc(100vh - 260px)"
-            minWidth={1340}
-            tableId="users"
-            toolbarLeft={toolbarLeft}
-            onRowClick={openUser}
-          />
-        </Stack>
-      </Card>
+        <div className="users-layout">
+          <aside className="users-role-rail" aria-label={t('Ролі')}>
+            <div className="users-rail-header">
+              <span>{t('Навігація ролей')}</span>
+              <strong>{roleNavItems.length}</strong>
+            </div>
+
+            <button
+              className={`users-role-option${roleFilter === null ? ' is-active' : ''}`}
+              type="button"
+              onClick={() => setRoleFilter(null)}
+            >
+              <span className="users-role-option-name">{t('Всі користувачі')}</span>
+              <span className="users-role-option-count">{users.length}</span>
+            </button>
+
+            <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
+              <div className="users-role-list">
+                {roleNavItems.map((item) => (
+                  <button
+                    key={item.value}
+                    className={`users-role-option${roleFilter === item.value ? ' is-active' : ''}`}
+                    type="button"
+                    onClick={() => setRoleFilter(item.value)}
+                  >
+                    <span className="users-role-option-name">{item.label}</span>
+                    <span className="users-role-option-count">{item.count}</span>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea.Autosize>
+          </aside>
+
+          <section className="users-roster">
+            <div className="users-roster-table">
+              <div className="users-roster-head">
+                <span>{t('Профіль')}</span>
+                <span>{t('Контакти')}</span>
+                <span>{t('Регіон')}</span>
+                <span>{t('Стан')}</span>
+                <span />
+              </div>
+
+              <ScrollArea.Autosize mah="calc(100vh - 372px)" type="auto">
+                <div className="users-roster-body">
+                  {isBusy ? (
+                    <div className="users-empty-state">
+                      {t('Завантаження користувачів')}
+                    </div>
+                  ) : filteredUsers.length > 0 ? (
+                    filteredUsers.map((user, index) => (
+                      <UserRosterRow
+                        key={String(user.NetUid || user.Id || index)}
+                        user={user}
+                        onEdit={openUser}
+                      />
+                    ))
+                  ) : (
+                    <div className="users-empty-state">
+                      {hasActiveFilters
+                        ? t('Користувачів за цими фільтрами не знайдено')
+                        : t('Користувачів не знайдено')}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea.Autosize>
+            </div>
+          </section>
+        </div>
+      </Box>
     </Stack>
+  )
+}
+
+function UserRosterRow({
+  user,
+  onEdit,
+}: {
+  user: UserProfile
+  onEdit: (user: UserProfile) => void
+}) {
+  return (
+    <div
+      className={`users-roster-row users-row-${getUserStatus(user)}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onEdit(user)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onEdit(user)
+        }
+      }}
+    >
+      <div className="users-profile-cell">
+        <Avatar className="users-avatar" radius="xl" size={34}>
+          {getUserInitials(user)}
+        </Avatar>
+        <div className="users-profile-copy">
+          <Text className="users-profile-name">{getUserFullName(user)}</Text>
+          <Text className="users-profile-role">
+            {displayValue(getUserRoleName(user.UserRole))}
+          </Text>
+        </div>
+      </div>
+
+      <div className="users-contact-cell">
+        <Text className="users-contact-primary">{displayValue(user.Email)}</Text>
+        <Text className="users-contact-secondary">
+          {displayValue(user.PhoneNumber)}
+        </Text>
+      </div>
+
+      <span className="users-region-tag">{getUserRegionName(user.Region)}</span>
+      <UserStatusTag user={user} />
+
+      <Tooltip label="Редагувати">
+        <ActionIcon
+          aria-label="Редагувати"
+          className="users-row-action"
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(user)
+          }}
+        >
+          <IconPencil size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </div>
+  )
+}
+
+function UserStatusTag({ user }: { user: UserProfile }) {
+  const status = getUserStatus(user)
+
+  return (
+    <span className={`users-status-tag is-${status}`}>
+      {getUserStatusLabel(user)}
+    </span>
   )
 }
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+function createRoleNavItems(users: UserProfile[]): RoleNavigationItem[] {
+  const counts = new Map<string, number>()
+
+  users.forEach((user) => {
+    const roleName = getUserRoleFilterValue(user.UserRole)
+    counts.set(roleName, (counts.get(roleName) || 0) + 1)
+  })
+
+  return [...counts.entries()]
+    .sort(([first], [second]) => first.localeCompare(second, 'uk'))
+    .map(([value, count]) => ({ value, label: value, count }))
+}
+
+function createRegionOptions(users: UserProfile[]) {
+  return [...new Set(users.map(getUserRegionFilterValue))]
+    .sort((first, second) =>
+      getRegionOptionLabel(first).localeCompare(getRegionOptionLabel(second), 'uk'),
+    )
+    .map((region) => ({ value: region, label: getRegionOptionLabel(region) }))
+}
+
+function getUserRoleFilterValue(role?: UserRole | null) {
+  return getUserRoleName(role)
+}
+
+function getUserRegionFilterValue(user: UserProfile) {
+  return user.Region?.trim() || 'other'
+}
+
+function getRegionOptionLabel(region: string) {
+  return region === 'other' ? 'Інший' : getUserRegionName(region)
+}
+
+function getUserStatus(user: UserProfile): UserStatus {
+  if (user.Deleted) {
+    return USER_STATUS_DELETED
+  }
+
+  return user.IsActive === false ? USER_STATUS_INACTIVE : USER_STATUS_ACTIVE
+}
+
+function getUserStatusLabel(user: UserProfile) {
+  const status = getUserStatus(user)
+
+  if (status === USER_STATUS_DELETED) {
+    return 'Видалений'
+  }
+
+  return status === USER_STATUS_INACTIVE ? 'Неактивний' : 'Активний'
+}
+
+function getUserInitials(user: UserProfile) {
+  if (user.Abbreviation?.trim()) {
+    return user.Abbreviation.trim().slice(0, 2).toLocaleUpperCase('uk')
+  }
+
+  const parts = [user.FirstName, user.LastName, user.FullName]
+    .flatMap((value) => value?.trim().split(/\s+/) || [])
+    .filter(Boolean)
+
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toLocaleUpperCase('uk') || '?'
+  )
 }
