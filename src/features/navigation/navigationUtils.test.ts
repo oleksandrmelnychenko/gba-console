@@ -84,6 +84,46 @@ describe('normalizeNavigation', () => {
     expect(normalizedModules.map((module) => module.Module)).toEqual(['Продажі'])
     expect(normalizedModules[0].Children.map((node) => node.Module)).toEqual(['Продажі Україна'])
   })
+
+  it('removes inactive tax-free and SAD export workflow entries from orders menu', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Замовлення',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Акти звірки',
+            Route: '/ukraine/act/reconcoliation',
+          },
+          {
+            Id: 12,
+            Module: 'Пак лісти',
+            Route: '/tax-free/pack-list/all',
+          },
+          {
+            Id: 13,
+            Module: 'Перевізники',
+            Route: '/tax-free/carriers/all',
+          },
+          {
+            Id: 14,
+            Module: 'Tax-Free',
+            Route: '/tax-free/all',
+          },
+          {
+            Id: 15,
+            Module: 'Експорт',
+            Route: '/sad/all',
+          },
+        ],
+      },
+    ]
+
+    const [ordersModule] = normalizeNavigation(modules)
+
+    expect(ordersModule.Children.map((node) => node.Module)).toEqual(['Акти звірки'])
+  })
 })
 
 describe('getNavigationNodePath', () => {

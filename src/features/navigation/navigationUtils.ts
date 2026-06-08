@@ -7,8 +7,11 @@ const removedNavigationRoutePatterns = [
   /^\/?orders\/poland(?:\/|$)/i,
   /^\/?products\/income\/poland(?:\/|$)/i,
   /^\/?products\/pl-income-order(?:\/|$)/i,
+  // PL/export workflow is not active in the current console data scope.
+  /^\/?sad(?:\/|$)/i,
   /^\/?sales\/allegro(?:\/|$)/i,
   /^\/?sales\/poland(?:\/|$)/i,
+  /^\/?tax-free(?:\/|$)/i,
   /^\/?warehouse\/poland(?:\/|$)/i,
 ]
 const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = [
