@@ -25,30 +25,49 @@
 .console-content-header {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 38px;
+  margin: 8px 8px 0;
+}
+
+.console-content-header-panel {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  height: 34px; /* fixed so the row never jumps when a tab has no action button */
-  margin-top: 6px; /* match the frame's 6px below → equal spacing above/below the bar */
-  padding: 0 16px;
+  flex: 1 1 auto;
+  gap: 8px;
+  min-height: 38px;
+  min-width: 0;
+  padding: 4px 12px;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
 .console-content-breadcrumbs {
   display: flex;
   align-items: center;
-  gap: 4px;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
   min-width: 0;
   overflow: hidden;
 }
 
 .console-content-crumb {
   color: var(--mantine-color-gray-6);
-  font-size: 14px;
+  font-size: 12px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
 .console-content-crumb.is-current {
   color: var(--mantine-color-gray-9);
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -56,20 +75,38 @@
 .console-content-crumb-sep {
   flex: 0 0 auto;
   color: var(--mantine-color-gray-4);
+  font-size: 13px;
+  line-height: 1;
 }
 
+.console-content-header-panel-actions,
 .console-content-header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex: 0 0 auto;
 }
 
 /* Keep page action controls compact & uniform so the fixed-height bar fits them */
+.console-content-header-panel-actions .mantine-Button-root,
 .console-content-header-actions .mantine-Button-root {
   height: 30px;
+  min-height: 30px;
+  padding-inline: 10px;
 }
 
+.console-content-header-panel-actions .mantine-Button-section,
+.console-content-header-actions .mantine-Button-section {
+  margin-inline-end: 5px;
+}
+
+.console-content-header-panel-actions .mantine-Button-label,
+.console-content-header-actions .mantine-Button-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.console-content-header-panel-actions .mantine-ActionIcon-root,
 .console-content-header-actions .mantine-ActionIcon-root {
   --ai-size: 30px !important;
 }
@@ -79,8 +116,13 @@
   display: none;
 }
 
+/* Hide the breadcrumb panel when it has neither crumbs nor secondary actions */
+.console-content-header-panel:not(:has(.console-content-crumb)):has(.console-content-header-panel-actions:empty) {
+  display: none;
+}
+
 /* Hide the default bar entirely when it has neither crumbs nor actions */
-.console-content-header:not(:has(.console-content-crumb)):has(.console-content-header-actions:empty) {
+.console-content-header:has(.console-content-header-panel:not(:has(.console-content-crumb)):has(.console-content-header-panel-actions:empty)):has(.console-content-header-actions:empty) {
   display: none;
 }
 

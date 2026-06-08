@@ -6,11 +6,10 @@ import { PageHeaderActionsContext } from './pageHeaderActionsContext'
 export const CREATE_ACTION_COLOR = '#E8782E'
 
 /**
- * Wraps the console shell so the header slot and the routed pages share one
- * portal target. Pages render their primary action via {@link PageHeaderActions}
- * and it teleports into {@link PageHeaderActionsSlot} placed in the header. Pages
- * may also append a trailing breadcrumb segment (e.g. the active sub-tab) via
- * {@link usePageBreadcrumb}.
+ * Wraps the console shell so header slots and routed pages share portal
+ * targets. Pages render their primary actions via {@link PageHeaderActions},
+ * secondary panel actions via {@link PageHeaderPanelActions}, and may append a
+ * trailing breadcrumb segment via {@link usePageBreadcrumb}.
  */
 export function PageHeaderActionsProvider({
   children,
@@ -18,6 +17,8 @@ export function PageHeaderActionsProvider({
   children: ReactNode
 }) {
   const [container, setContainer] = useState<HTMLElement | null>(null)
+  const [panelActionsContainer, setPanelActionsContainer] =
+    useState<HTMLElement | null>(null)
   const [contentHeaderContainer, setContentHeaderContainer] =
     useState<HTMLElement | null>(null)
   const [breadcrumb, setBreadcrumb] = useState<string | null>(null)
@@ -26,8 +27,10 @@ export function PageHeaderActionsProvider({
     <PageHeaderActionsContext
       value={{
         container,
+        panelActionsContainer,
         contentHeaderContainer,
         setContainer,
+        setPanelActionsContainer,
         setContentHeaderContainer,
         breadcrumb,
         setBreadcrumb,
@@ -49,6 +52,17 @@ export function PageHeaderActionsSlot({ className }: { className?: string }) {
   return <div ref={refCallback} className={className} />
 }
 
+/** Render exactly once in the breadcrumb panel - the destination for secondary header actions. */
+export function PageHeaderPanelActionsSlot({ className }: { className?: string }) {
+  const { setPanelActionsContainer } = useContext(PageHeaderActionsContext)
+  const refCallback = useCallback(
+    (element: HTMLDivElement | null) => setPanelActionsContainer(element),
+    [setPanelActionsContainer],
+  )
+
+  return <div ref={refCallback} className={className} />
+}
+
 /** Render once above the page content frame. Pages can portal compact page-level navigation here. */
 export function PageContentHeaderSlot({ className }: { className?: string }) {
   const { setContentHeaderContainer } = useContext(PageHeaderActionsContext)
@@ -60,10 +74,7 @@ export function PageContentHeaderSlot({ className }: { className?: string }) {
   return <div ref={refCallback} className={className} />
 }
 
-/**
- * Render inside any page to lift its primary action(s) into the header next to
- * the breadcrumb. Renders nothing inline; saves vertical space in the content.
- */
+/** Render inside any page to lift primary actions to the right of the header panel. */
 export function PageHeaderActions({ children }: { children: ReactNode }) {
   const { container } = useContext(PageHeaderActionsContext)
 
@@ -72,6 +83,17 @@ export function PageHeaderActions({ children }: { children: ReactNode }) {
   }
 
   return createPortal(children, container)
+}
+
+/** Lift secondary actions into the gray breadcrumb panel. */
+export function PageHeaderPanelActions({ children }: { children: ReactNode }) {
+  const { panelActionsContainer } = useContext(PageHeaderActionsContext)
+
+  if (!panelActionsContainer) {
+    return null
+  }
+
+  return createPortal(children, panelActionsContainer)
 }
 
 /** Portals content into the page-level strip above the main content frame. */

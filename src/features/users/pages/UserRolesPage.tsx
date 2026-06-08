@@ -26,10 +26,10 @@ import {
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { Link } from 'react-router-dom'
 import {
   CREATE_ACTION_COLOR,
-  PageContentHeader,
+  PageHeaderActions,
+  PageHeaderPanelActions,
 } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
@@ -383,53 +383,42 @@ export function UserRolesPage() {
 
   return (
     <Stack gap="lg">
-      <PageContentHeader>
-        <div className="user-roles-content-header">
-          <div className="user-roles-breadcrumbs">
-            <nav aria-label="breadcrumb" className="user-roles-breadcrumb-trail">
-              <Link className="user-roles-breadcrumb-link" to="/users">
-                {t('Користувачі')}
-              </Link>
-              <Text>{t('Ролі')}</Text>
-            </nav>
-            <div className="user-roles-breadcrumb-actions">
-              {visibleSelectedRole ? (
-                <>
-                  <Button
-                    color="gray"
-                    className="user-roles-cancel-action"
-                    disabled={isSaving}
-                    size="xs"
-                    variant="subtle"
-                    onClick={cancelSelection}
-                  >
-                    {t('Скасувати')}
-                  </Button>
-                  <Button
-                    color={CREATE_ACTION_COLOR}
-                    leftSection={<IconDeviceFloppy size={14} />}
-                    loading={isSaving}
-                    size="xs"
-                    variant="subtle"
-                    onClick={handleSavePermissions}
-                  >
-                    {t('Зберегти')}
-                  </Button>
-                </>
-              ) : null}
-            </div>
-          </div>
-          <Button
-            className="user-roles-create-action"
-            color={CREATE_ACTION_COLOR}
-            size="xs"
-            leftSection={<IconPlus size={14} />}
-            onClick={() => setRoleModalState({ open: true, role: null })}
-          >
-            {t('Створити')}
-          </Button>
-        </div>
-      </PageContentHeader>
+      <PageHeaderPanelActions>
+        {visibleSelectedRole ? (
+          <>
+            <Button
+              color="gray"
+              className="user-roles-cancel-action"
+              disabled={isSaving}
+              size="xs"
+              variant="subtle"
+              onClick={cancelSelection}
+            >
+              {t('Скасувати')}
+            </Button>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              leftSection={<IconDeviceFloppy size={14} />}
+              loading={isSaving}
+              size="xs"
+              variant="subtle"
+              onClick={handleSavePermissions}
+            >
+              {t('Зберегти')}
+            </Button>
+          </>
+        ) : null}
+      </PageHeaderPanelActions>
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="xs"
+          leftSection={<IconPlus size={14} />}
+          onClick={() => setRoleModalState({ open: true, role: null })}
+        >
+          {t('Створити')}
+        </Button>
+      </PageHeaderActions>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
