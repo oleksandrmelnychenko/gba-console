@@ -15,10 +15,11 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
 
   orders.forEach((order, orderIndex) => {
     const outcomeSummary = summarizeOutcomePaymentOrders(order)
-    const items = order.ConsumablesOrderItems?.length ? order.ConsumablesOrderItems : [{}]
+    const hasItems = Boolean(order.ConsumablesOrderItems?.length)
+    const items = hasItems ? order.ConsumablesOrderItems ?? [{}] : [{}]
 
     items.forEach((item, itemIndex) => {
-      const amount = item.TotalPriceWithVAT ?? order.TotalAmount
+      const amount = hasItems ? item.TotalPriceWithVAT : order.TotalAmount
 
       rows.push({
         advanceNumber: outcomeSummary.advanceNumber,
@@ -35,7 +36,7 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
         payedTo: outcomeSummary.payedTo,
         paidAmount: outcomeSummary.paidAmount,
         paymentStatus: outcomeSummary.paymentStatus,
-        pricePerItem: item.PricePerItem ?? amount,
+        pricePerItem: hasItems ? item.PricePerItem : amount,
         productName: item.ConsumableProduct?.Name || outcomeSummary.paymentMovement,
         qty: item.Qty,
         responsible: order.User?.LastName || order.User?.FullName || order.User?.Name
