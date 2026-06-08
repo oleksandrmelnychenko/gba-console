@@ -1,4 +1,5 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Button, Card, Group, Pagination, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle, IconDownload, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -15,6 +16,7 @@ import { displayValue, getDateShiftedByDays } from './dateHelpers'
 
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '50', '100', '150']
+const SEARCH_DEBOUNCE_MS = 200
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['index', 'invoiceNumber'] },
@@ -33,9 +35,8 @@ type InvoiceRegisterState = {
   totalQty: number
   error: string | null
   isLoading: boolean
-  isLoadingMore: boolean
+  page: number
   pageSize: number
-  hasMore: boolean
   downloadOpened: boolean
   downloadDocument: WarehouseUkraineExportDocument | null
   downloadError: string | null
@@ -43,16 +44,16 @@ type InvoiceRegisterState = {
 }
 
 type InvoiceRegisterAction =
+  | { type: 'setFilterDraft'; filters: FilterDraft }
+  | { type: 'applyActiveFilters'; filters: FilterDraft }
   | { type: 'applyFilters'; filters: FilterDraft }
   | { type: 'resetFilters'; filters: FilterDraft }
   | { type: 'setPageSize'; pageSize: number }
+  | { type: 'setPage'; page: number }
   | { type: 'invalidFilters' }
   | { type: 'loadStarted' }
-  | { type: 'loadSucceeded'; invoices: Sale[]; totalQty: number; hasMore: boolean }
+  | { type: 'loadSucceeded'; invoices: Sale[]; totalQty: number }
   | { type: 'loadFailed'; error: string }
-  | { type: 'loadMoreStarted' }
-  | { type: 'loadMoreSucceeded'; invoices: Sale[]; totalQty: number; hasMore: boolean; requestOffset: number }
-  | { type: 'loadMoreFailed'; error: string }
   | { type: 'downloadStarted' }
   | { type: 'downloadSucceeded'; document: WarehouseUkraineExportDocument }
   | { type: 'downloadFailed'; error: string }
@@ -66,9 +67,8 @@ function createInitialInvoiceRegisterState(initialFilters: FilterDraft): Invoice
     totalQty: 0,
     error: null,
     isLoading: true,
-    isLoadingMore: false,
+    page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-    hasMore: false,
     downloadOpened: false,
     downloadDocument: null,
     downloadError: null,
@@ -78,14 +78,20 @@ function createInitialInvoiceRegisterState(initialFilters: FilterDraft): Invoice
 
 function invoiceRegisterReducer(state: InvoiceRegisterState, action: InvoiceRegisterAction): InvoiceRegisterState {
   switch (action.type) {
+    case 'setFilterDraft':
+      return { ...state, filterDraft: action.filters }
+    case 'applyActiveFilters':
+      return { ...state, activeFilters: action.filters, page: 1 }
     case 'applyFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'resetFilters':
-      return { ...state, filterDraft: action.filters, activeFilters: action.filters }
+      return { ...state, filterDraft: action.filters, activeFilters: action.filters, page: 1 }
     case 'setPageSize':
-      return { ...state, pageSize: action.pageSize }
+      return { ...state, page: 1, pageSize: action.pageSize }
+    case 'setPage':
+      return { ...state, page: action.page }
     case 'invalidFilters':
-      return { ...state, invoices: [], totalQty: 0, hasMore: false, isLoading: false }
+      return { ...state, invoices: [], totalQty: 0, isLoading: false }
     case 'loadStarted':
       return { ...state, isLoading: true, error: null }
     case 'loadSucceeded':
@@ -93,7 +99,6 @@ function invoiceRegisterReducer(state: InvoiceRegisterState, action: InvoiceRegi
         ...state,
         invoices: action.invoices,
         totalQty: action.totalQty,
-        hasMore: action.hasMore,
         isLoading: false,
       }
     case 'loadFailed':
@@ -101,23 +106,9 @@ function invoiceRegisterReducer(state: InvoiceRegisterState, action: InvoiceRegi
         ...state,
         invoices: [],
         totalQty: 0,
-        hasMore: false,
         error: action.error,
         isLoading: false,
       }
-    case 'loadMoreStarted':
-      return { ...state, isLoadingMore: true, error: null }
-    case 'loadMoreSucceeded':
-      return {
-        ...state,
-        invoices:
-          state.invoices.length === action.requestOffset ? [...state.invoices, ...action.invoices] : state.invoices,
-        totalQty: action.totalQty,
-        hasMore: action.hasMore,
-        isLoadingMore: false,
-      }
-    case 'loadMoreFailed':
-      return { ...state, error: action.error, isLoadingMore: false }
     case 'downloadStarted':
       return {
         ...state,
@@ -148,15 +139,25 @@ function useInvoiceRegisterModel() {
   const [state, dispatchState] = useReducer(invoiceRegisterReducer, initialState)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const downloadRequestRef = useRef(0)
-  const { activeFilters, invoices, pageSize } = state
+  const { activeFilters, invoices, page, pageSize, totalQty } = state
+  const [debouncedSearchValue] = useDebouncedValue(state.filterDraft.value, SEARCH_DEBOUNCE_MS)
   const filterError = activeFilters.date ? null : translate('Вкажіть дату')
-  const listRequestKey = `${activeFilters.date}|${activeFilters.value}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
-  const invoiceIndexMap = useMemo(() => buildIndexMap(invoices), [invoices])
+  const pageOffset = (page - 1) * pageSize
+  const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
+  const pageStart = totalQty > 0 ? pageOffset + 1 : 0
+  const pageEnd = totalQty > 0 ? Math.min(pageOffset + invoices.length, totalQty) : 0
+  const invoiceIndexMap = useMemo(() => buildIndexMap(invoices, pageOffset), [invoices, pageOffset])
 
   useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+    const nextFilters = {
+      date: state.filterDraft.date,
+      value: debouncedSearchValue,
+    }
+
+    if (activeFilters.date !== nextFilters.date || activeFilters.value !== nextFilters.value) {
+      dispatchState({ type: 'applyActiveFilters', filters: nextFilters })
+    }
+  }, [activeFilters.date, activeFilters.value, debouncedSearchValue, state.filterDraft.date])
 
   useEffect(() => {
     if (filterError) {
@@ -174,7 +175,7 @@ function useInvoiceRegisterModel() {
           value: activeFilters.value,
           date: activeFilters.date,
           limit: pageSize,
-          offset: 0,
+          offset: pageOffset,
         })
 
         if (!cancelled) {
@@ -182,7 +183,6 @@ function useInvoiceRegisterModel() {
             type: 'loadSucceeded',
             invoices: result.items,
             totalQty: result.totalQty,
-            hasMore: result.items.length < result.totalQty && result.items.length > 0,
           })
         }
       } catch (loadError) {
@@ -200,39 +200,7 @@ function useInvoiceRegisterModel() {
     return () => {
       cancelled = true
     }
-  }, [activeFilters, filterError, pageSize, reloadKey, t])
-
-  async function loadMoreInvoices() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = invoices.length
-    dispatchState({ type: 'loadMoreStarted' })
-
-    try {
-      const result = await getInvoiceRegister({
-        value: activeFilters.value,
-        date: activeFilters.date,
-        limit: pageSize,
-        offset: requestOffset,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreSucceeded',
-          invoices: result.items,
-          totalQty: result.totalQty,
-          hasMore: requestOffset + result.items.length < result.totalQty && result.items.length > 0,
-          requestOffset,
-        })
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        dispatchState({
-          type: 'loadMoreFailed',
-          error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити реєстр'),
-        })
-      }
-    }
-  }
+  }, [activeFilters, filterError, pageOffset, pageSize, reloadKey, t])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -252,8 +220,8 @@ function useInvoiceRegisterModel() {
       const document = await getInvoiceRegisterPrintDocument({
         value: activeFilters.value,
         date: activeFilters.date,
-        limit: invoices.length || pageSize,
-        offset: 0,
+        limit: pageSize,
+        offset: pageOffset,
       })
 
       if (downloadRequestRef.current === requestId) {
@@ -273,12 +241,20 @@ function useInvoiceRegisterModel() {
     dispatchState({ type: 'applyFilters', filters: nextFilters })
   }
 
+  function updateFilterDraft(nextFilters: FilterDraft) {
+    dispatchState({ type: 'setFilterDraft', filters: nextFilters })
+  }
+
   function resetFilters() {
     dispatchState({ type: 'resetFilters', filters: initialFilters })
   }
 
   function setPageSize(pageSize: number) {
     dispatchState({ type: 'setPageSize', pageSize })
+  }
+
+  function setPage(page: number) {
+    dispatchState({ type: 'setPage', page })
   }
 
   const columns = useInvoiceRegisterColumns(invoiceIndexMap)
@@ -292,11 +268,15 @@ function useInvoiceRegisterModel() {
     density,
     exportDocument,
     filterError,
-    loadMoreInvoices,
+    pageEnd,
+    pageStart,
     reload,
     resetFilters,
+    setPage,
     setPageSize,
     toggleDensity,
+    totalPages,
+    updateFilterDraft,
   }
 }
 
@@ -340,7 +320,7 @@ export function InvoiceRegisterTab() {
             <TextInput
               label={t('Значення')}
               value={model.filterDraft.value}
-              onChange={(event) => model.applyFilters({ ...model.filterDraft, value: event.currentTarget.value })}
+              onChange={(event) => model.updateFilterDraft({ ...model.filterDraft, value: event.currentTarget.value })}
             />
             <TextInput
               label={t('На дату')}
@@ -386,11 +366,17 @@ export function InvoiceRegisterTab() {
             tableId="warehouse-ukraine-invoice-register"
           />
 
-          {model.hasMore && (
-            <Group justify="center">
-              <Button color="gray" loading={model.isLoadingMore} variant="light" onClick={model.loadMoreInvoices}>
-                {t('Завантажити ще')}
-              </Button>
+          {model.totalQty > 0 && (
+            <Group justify="space-between" gap="sm">
+              <Text c="dimmed" size="sm">
+                {t('Показано')} {model.pageStart}-{model.pageEnd} {t('з')} {model.totalQty}
+              </Text>
+              <Pagination
+                total={model.totalPages}
+                value={Math.min(model.page, model.totalPages)}
+                withEdges
+                onChange={model.setPage}
+              />
             </Group>
           )}
         </Stack>
@@ -496,9 +482,9 @@ function useInvoiceRegisterColumns(indexMap: Map<Sale, number>) {
   )
 }
 
-function buildIndexMap(invoices: Sale[]): Map<Sale, number> {
+function buildIndexMap(invoices: Sale[], offset = 0): Map<Sale, number> {
   return invoices.reduce((indexMap, invoice, index) => {
-    indexMap.set(invoice, index + 1)
+    indexMap.set(invoice, offset + index + 1)
 
     return indexMap
   }, new Map<Sale, number>())

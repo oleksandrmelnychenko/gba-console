@@ -596,8 +596,8 @@ function useSpecificationModel(netId: string | undefined) {
       return
     }
 
-    if (!invoice?.NetUid || (invoice.PackingLists?.length || 0) === 0) {
-      notifications.show({ color: 'red', message: t('В інвойсі відсутні пак лісти') })
+    if (!invoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Інвойс відсутній') })
 
       return
     }
@@ -849,7 +849,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
     Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
   const canUploadDocuments = canMutateSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canOpenDeliveryDocuments =
-    canMutateSpecification && Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
+    canMutateSpecification && Boolean(model.selectedInvoice?.NetUid)
   const canEditSpecification = canMutateSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
   const canSaveSpecification = canMutateSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)

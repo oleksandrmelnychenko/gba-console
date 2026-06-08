@@ -10,10 +10,12 @@ export type InvoiceRegisterSearchParams = {
 }
 
 function buildDayBounds(date: string): { from: Date; to: Date } {
-  const from = new Date(date)
+  const [year = NaN, month = NaN, day = NaN] = date.split('-').map(Number)
+  const isDateInputValue = Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
+  const from = isDateInputValue ? new Date(year, month - 1, day) : new Date(date)
   from.setHours(0, 0, 0, 0)
 
-  const to = new Date(date)
+  const to = isDateInputValue ? new Date(year, month - 1, day) : new Date(date)
   to.setHours(23, 59, 59, 999)
 
   return { from, to }

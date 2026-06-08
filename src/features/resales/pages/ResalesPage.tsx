@@ -116,6 +116,13 @@ const PROCESS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
+const PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: {
+    left: ['vendorCode', 'productName'],
+  },
+  density: 'compact',
+} satisfies DataTableDefaultLayout
+
 const DETAIL_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['vendorCode', 'productName'],
@@ -532,6 +539,7 @@ export function NewResalePage() {
   const [warning, setWarning] = useValueState<ResaleBackendWarning | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
+  const [processConfirmOpened, setProcessConfirmOpened] = useValueState(false)
   const [processState, setProcessState] = useValueState<ProcessState>({
     data: null,
     fromStorageId: undefined,
@@ -681,6 +689,29 @@ export function NewResalePage() {
     }
   }
 
+  function requestProcessSelected() {
+    if (!payload || isLoadingAvailabilities || isLoadingOptions) {
+      setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
+      return
+    }
+
+    if (!selectedRows.length) {
+      setWarning({ Message: t('Оберіть позиції для обробки') })
+      return
+    }
+
+    if (!canProcessSelected) {
+      setWarning({
+        Message: t('Для обробки оберіть товари з одного складу'),
+      })
+      return
+    }
+
+    setError(null)
+    setWarning(null)
+    setProcessConfirmOpened(true)
+  }
+
   async function processSelected() {
     if (!payload || isLoadingAvailabilities || isLoadingOptions) {
       setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
@@ -697,6 +728,7 @@ export function NewResalePage() {
     setProcessing(true)
     setError(null)
     setWarning(null)
+    setProcessConfirmOpened(false)
 
     try {
       const result = await updateResaleAvailabilityList(selectedRows.map(mapAvailabilityToItemModel))
@@ -958,7 +990,7 @@ export function NewResalePage() {
               <Button
                 disabled={!payload || isLoadingOptions || isLoadingAvailabilities || !selectedRows.length}
                 loading={isProcessing}
-                onClick={processSelected}
+                onClick={requestProcessSelected}
               >
                 {t('Обробити')} {selectedRows.length ? selectedRows.length : ''}
               </Button>
@@ -1012,6 +1044,14 @@ export function NewResalePage() {
           onRowClick={toggleAvailability}
         />
       </Card>
+
+      <ProcessSelectionConfirmDrawer
+        isSaving={isProcessing}
+        opened={processConfirmOpened}
+        rows={selectedRows}
+        onClose={() => setProcessConfirmOpened(false)}
+        onConfirm={() => void processSelected()}
+      />
 
       <ResaleProcessDrawer
         key={processState.id}
@@ -1646,7 +1686,11 @@ function useResalesColumns({
         width: 150,
         minWidth: 120,
         accessor: (resale) => resale.BaseSalePaymentStatus?.SalePaymentStatusType,
-        cell: (resale) => displayPaymentStatus(resale.BaseSalePaymentStatus),
+        cell: (resale) => (
+          <Badge color={getPaymentStatusColor(resale.BaseSalePaymentStatus)} variant="light">
+            {displayPaymentStatus(resale.BaseSalePaymentStatus)}
+          </Badge>
+        ),
       },
       {
         id: 'actions',
@@ -2108,6 +2152,153 @@ function useResaleDetailColumns({
   )
 }
 
+function ProcessSelectionConfirmDrawer({
+  isSaving,
+  opened,
+  rows,
+  onClose,
+  onConfirm,
+}: {
+  isSaving: boolean
+  opened: boolean
+  rows: GroupingResaleAvailability[]
+  onClose: () => void
+  onConfirm: () => void
+}) {
+  const { t } = useI18n()
+  const totals = useMemo(
+    () => rows.reduce(
+      (result, row) => ({
+        qty: result.qty + (row.Qty || 0),
+        sale: result.sale + (row.TotalSalePrice || 0),
+        cost: result.cost + (row.TotalAccountingPrice || 0),
+      }),
+      { cost: 0, qty: 0, sale: 0 },
+    ),
+    [rows],
+  )
+  const columns = useMemo<DataTableColumn<GroupingResaleAvailability>[]>(
+    () => [
+      {
+        id: 'vendorCode',
+        header: t('Артикул'),
+        width: 132,
+        minWidth: 112,
+        accessor: (row) => row.VendorCode,
+        cell: (row) => <Text fw={700}>{displayValue(row.VendorCode)}</Text>,
+      },
+      {
+        id: 'productName',
+        header: t('Товар'),
+        width: 300,
+        minWidth: 240,
+        accessor: (row) => row.ProductName,
+        cell: (row) => (
+          <Text size="sm" lineClamp={2}>
+            {displayValue(row.ProductName)}
+          </Text>
+        ),
+      },
+      {
+        id: 'storage',
+        header: t('Склад'),
+        width: 180,
+        minWidth: 140,
+        accessor: (row) => row.FromStorage?.Name,
+        cell: (row) => displayValue(row.FromStorage?.Name),
+      },
+      {
+        id: 'specification',
+        header: t('Специфікація'),
+        width: 124,
+        minWidth: 104,
+        accessor: (row) => row.SpecificationCode,
+        cell: (row) => displayValue(row.SpecificationCode),
+      },
+      {
+        id: 'qty',
+        header: t('Кількість'),
+        width: 112,
+        minWidth: 96,
+        align: 'right',
+        accessor: (row) => row.Qty,
+        cell: (row) => formatAmount(row.Qty),
+      },
+      {
+        id: 'salePrice',
+        header: t('Ціна продажу'),
+        width: 130,
+        minWidth: 112,
+        align: 'right',
+        accessor: (row) => row.SalePrice,
+        cell: (row) => formatMoney(row.SalePrice),
+      },
+      {
+        id: 'totalSale',
+        header: t('Сума продажу'),
+        width: 136,
+        minWidth: 118,
+        align: 'right',
+        accessor: (row) => row.TotalSalePrice,
+        cell: (row) => formatMoney(row.TotalSalePrice),
+      },
+    ],
+    [t],
+  )
+
+  return (
+    <AppDrawer
+      offset={8}
+      opened={opened}
+      padding="lg"
+      position="right"
+      radius="md"
+      size="min(980px, 94vw)"
+      title={t('Підтвердження обробки')}
+      onClose={onClose}
+    >
+      <Stack gap="lg">
+        <Group gap="xs">
+          <Badge color="violet" variant="light">
+            {t('Позицій')}: {rows.length}
+          </Badge>
+          <Badge color="blue" variant="light">
+            {t('Кількість')}: {formatAmount(totals.qty)}
+          </Badge>
+          <Badge color="teal" variant="light">
+            {t('Сума продажу')}: {formatMoney(totals.sale)}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Собівартість')}: {formatMoney(totals.cost)}
+          </Badge>
+        </Group>
+
+        <DataTable
+          columns={columns}
+          data={rows}
+          defaultLayout={PROCESS_CONFIRM_TABLE_DEFAULT_LAYOUT}
+          emptyText={t('Позиції не обрані')}
+          getRowId={(row, index) => getAvailabilityKey(row) || String(index)}
+          layoutVersion="resale-process-confirm-selection-1"
+          maxHeight="calc(100vh - 270px)"
+          minWidth={1040}
+          showDensityToggle={false}
+          tableId="resale-process-confirm-selection"
+        />
+
+        <Group justify="flex-end" gap="sm">
+          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
+            {t('Скасувати')}
+          </Button>
+          <Button disabled={!rows.length} loading={isSaving} onClick={onConfirm}>
+            {t('Підтвердити')}
+          </Button>
+        </Group>
+      </Stack>
+    </AppDrawer>
+  )
+}
+
 function ResaleProcessDrawer({
   fromStorageId,
   isSaving,
@@ -2182,6 +2373,13 @@ function ResaleProcessDrawer({
           warning: null,
         }))
       }
+    } catch (recalculateError) {
+      setProcessForm((currentForm) => ({
+        ...currentForm,
+        warning: {
+          Message: recalculateError instanceof Error ? recalculateError.message : t('Не вдалося перерахувати позиції'),
+        },
+      }))
     } finally {
       setRecalculating(false)
     }
@@ -3177,6 +3375,24 @@ function displayPaymentStatus(status?: ResalePaymentStatus | null): string {
   }
 
   return statusMap[statusValue] || status?.Name || status?.Value || '—'
+}
+
+function getPaymentStatusColor(status?: ResalePaymentStatus | null): string {
+  const statusValue = normalizeNumericStatus(status?.SalePaymentStatusType)
+
+  if (statusValue === 0) {
+    return 'red'
+  }
+
+  if (statusValue === 3) {
+    return 'orange'
+  }
+
+  if (statusValue === 1 || statusValue === 2) {
+    return 'green'
+  }
+
+  return 'gray'
 }
 
 function normalizeNumericStatus(status?: number | string): number | null {

@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import type { MergedService, SupplyDocument, SupplyPaymentTask } from '../detailTypes'
+import { getMergedServiceCalculationLabel } from '../mergedServiceCalculationLabel'
 import { LabelValueRow } from './LabelValueRow'
 import { formatDate, formatMoney, responsibleName } from './protocolDetailHelpers'
 
@@ -96,6 +97,7 @@ export function MergedServiceViewCard({
   const { hasPermission } = useAuth()
   const currencyCode = service.SupplyOrganizationAgreement?.Currency?.Code || ''
   const invoiceCount = service.SupplyInvoiceMergedServices?.length || 0
+  const calculationLabel = getMergedServiceCalculationLabel(service, t)
   const canCalculate = canEdit && hasPermission(CALCULATE_PERMISSION)
   const canAssignInvoices = canEdit && hasPermission(ASSIGN_INVOICES_PERMISSION)
   const canUpdate = canEdit && hasPermission(EDIT_PERMISSION)
@@ -184,9 +186,9 @@ export function MergedServiceViewCard({
           </>
         )}
 
-        {service.IsCalculatedValue && (
+        {calculationLabel && (
           <Text c="dimmed" size="sm">
-            {service.IsAutoCalculatedValue ? t('Розраховано по ціні') : t('Розраховано вручну')}
+            {calculationLabel}
           </Text>
         )}
 

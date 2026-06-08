@@ -1,4 +1,4 @@
-import { Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Checkbox, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -53,6 +53,7 @@ function CalculateMergedServicesPanelContent({
   const [items, setItems] = useValueState<CalculateMergedServiceInvoiceItem[]>(initialItems)
   const [isAuto, setIsAuto] = useValueState(Boolean(service.IsAutoCalculatedValue))
   const [extraChargeType, setExtraChargeType] = useValueState<SupplyExtraChargeType>(service.SupplyExtraChargeType ?? 0)
+  const [error, setError] = useValueState<string | null>(null)
 
   const typeOptions = [
     { label: t('Розраховано по ціні'), value: '0' },
@@ -73,7 +74,16 @@ function CalculateMergedServicesPanelContent({
       return
     }
 
-    await onSubmit({ extraChargeType, isAuto, items: items.filter((item) => item.isSelected) })
+    const selectedItems = items.filter((item) => item.isSelected)
+
+    if (!isAuto && selectedItems.some((item) => !item.value.trim() && !item.accountingValue.trim())) {
+      setError(t('Для ручного розрахунку заповніть вартість або бух. вартість для кожного вибраного інвойсу'))
+
+      return
+    }
+
+    setError(null)
+    await onSubmit({ extraChargeType, isAuto, items: selectedItems })
   }
 
   return (
@@ -88,6 +98,12 @@ function CalculateMergedServicesPanelContent({
       }}
     >
       <Stack gap="md">
+        {error && (
+          <Alert color="red" variant="light">
+            {error}
+          </Alert>
+        )}
+
         <Group gap="lg">
           <Checkbox
             checked={isAuto}

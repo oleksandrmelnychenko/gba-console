@@ -14,3 +14,10 @@ export function getProtocolStatusLabel(
 
   return t('В дорозі')
 }
+
+export function getProtocolStatusActionLabel(
+  protocol: Pick<ProtocolDetail, 'IsCompleted' | 'IsShipped'>,
+  t: (value: string) => string,
+): string {
+  return getProtocolStatusLabel(protocol, t)
+}
