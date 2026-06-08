@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   CreateDirectSalesReturnPayload,
   CreateSalesReturnPayload,
@@ -53,7 +54,11 @@ export async function exportSaleReturnsReport(params: {
   to: string
 }): Promise<SalesReturnDocument> {
   const result = await apiRequest<unknown>('/sales/returns/document/export', {
-    query: params,
+    query: {
+      ...params,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
+    },
   })
 
   return normalizeDocument(result)
