@@ -271,7 +271,6 @@ export function UsersPage() {
           <aside className="users-role-rail" aria-label={t('Ролі')}>
             <div className="users-rail-header">
               <span>{t('Навігація ролей')}</span>
-              <strong>{roleNavItems.length}</strong>
             </div>
 
             <button

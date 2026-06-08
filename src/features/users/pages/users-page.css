@@ -60,30 +60,21 @@
     #fbfcfd;
   border-right: 1px solid var(--mantine-color-gray-2);
   min-width: 0;
-  padding: 12px 6px 12px 10px;
+  padding: 21px 6px 12px 10px;
 }
 
 .users-rail-header {
   align-items: center;
   color: var(--mantine-color-gray-5);
   display: flex;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
   justify-content: space-between;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
+  line-height: 1.2;
   margin-bottom: 9px;
   padding: 0 4px;
   text-transform: uppercase;
-}
-
-.users-rail-header strong {
-  background: var(--mantine-color-white);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-7);
-  font-size: 10px;
-  line-height: 1;
-  padding: 4px 7px;
 }
 
 .users-role-list {
@@ -201,6 +192,8 @@
   font-weight: 500;
   gap: 14px;
   grid-template-columns: minmax(235px, 1.1fr) minmax(180px, 0.72fr) minmax(230px, 1fr) 108px 112px 36px;
+  letter-spacing: 0;
+  line-height: 1.2;
   min-width: 830px;
   padding: 11px 24px 8px 10px;
   text-transform: uppercase;
@@ -276,12 +269,22 @@
 }
 
 .users-avatar {
+  --avatar-fz: 11px;
   background: var(--mantine-color-gray-0);
   border: 1px solid var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-8);
-  flex: 0 0 auto;
-  font-size: 11px;
+  flex: 0 0 34px;
+  font-size: 9px;
   font-weight: 750;
+  height: 34px;
+  padding: 3px;
+  width: 34px;
+}
+
+.users-avatar .mantine-Avatar-placeholder,
+.users-avatar > span {
+  font-size: 11px;
+  line-height: 1;
 }
 
 .users-profile-copy,
@@ -314,11 +317,12 @@
 .users-role-cell {
   align-items: center;
   background: transparent;
-  border: 0;
+  border-left: 1px dashed var(--mantine-color-gray-3);
   display: flex;
   gap: 7px;
   justify-content: flex-start;
   min-height: 34px;
+  padding-left: 12px;
 }
 
 .users-role-marker {
