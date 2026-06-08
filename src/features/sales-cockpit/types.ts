@@ -95,3 +95,86 @@ export type CockpitStatusBody = {
 export type CockpitNoteBody = {
   Text: string
 }
+
+export type HeadPaceStatus = 'ahead' | 'on' | 'behind' | 'no_target'
+
+export type CockpitTargetMetric = {
+  target: number
+  mtd: number
+  daily_pace: number
+  expected_to_date: number
+  gap: number
+  today_needed: number
+  attainment_pct: number
+  pace_status: HeadPaceStatus
+}
+
+export type CockpitTarget = {
+  manager_id?: number
+  manager_name?: string | null
+  month?: string | null
+  as_of?: string | null
+  working_days: number
+  working_days_elapsed: number
+  shipped: CockpitTargetMetric
+  paid: CockpitTargetMetric
+}
+
+export type EscalatedTask = CockpitTask
+
+export type EscalatedResponse = {
+  is_head: boolean
+  count: number
+  tasks: EscalatedTask[]
+}
+
+export type HeadTargetMetric = {
+  target: number
+  mtd: number
+  attainment_pct: number
+  pace_status: HeadPaceStatus
+}
+
+export type HeadRowTarget = {
+  shipped: HeadTargetMetric
+  paid: HeadTargetMetric
+}
+
+export type HeadRowTasks = {
+  active: number
+  generated_month: number
+  done_month: number
+  sold_month: number
+  dismissed_month: number
+  revenue_month: number
+  close_rate: number
+  conversion_rate: number
+}
+
+export type HeadTeamRow = {
+  manager_id: number
+  manager_name?: string | null
+  target: HeadRowTarget
+  tasks: HeadRowTasks
+}
+
+export type HeadTeamTotals = {
+  shipped_target: number
+  shipped_mtd: number
+  paid_target: number
+  paid_mtd: number
+  generated_month: number
+  done_month: number
+  sold_month: number
+  dismissed_month: number
+  revenue_month: number
+  close_rate: number
+  conversion_rate: number
+}
+
+export type HeadTeam = {
+  is_head: boolean
+  as_of?: string | null
+  team: HeadTeamRow[]
+  totals: HeadTeamTotals
+}

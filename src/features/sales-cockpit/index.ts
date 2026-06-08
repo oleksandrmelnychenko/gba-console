@@ -1,5 +1,6 @@
 export { SalesCockpitPage } from './pages/SalesCockpitPage'
-export { getCockpitCount } from './api/salesCockpitApi'
+export { HeadDashboardPage } from './pages/HeadDashboardPage'
+export { getCockpitCount, getHeadTeam } from './api/salesCockpitApi'
 export type {
   CockpitCount,
   CockpitInbox,
@@ -7,4 +8,6 @@ export type {
   CockpitTaskStatus,
   CockpitTaskType,
   CockpitUrgency,
+  HeadTeam,
+  HeadTeamRow,
 } from './types'

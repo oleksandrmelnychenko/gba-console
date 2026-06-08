@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
@@ -7,6 +7,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import {
   addTaskNote,
   getCockpitInbox,
+  getCockpitTarget,
   regenerateCockpit,
   setTaskStatus,
 } from '../api/salesCockpitApi'
@@ -15,7 +16,7 @@ import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
 import { TaskCard } from '../components/TaskCard'
 import { TaskFilters } from '../components/TaskFilters'
-import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
+import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency, HeadPaceStatus } from '../types'
 
 const INBOX_LIMIT = 50
 
@@ -29,6 +30,24 @@ const TYPE_RANK: Record<CockpitTaskType, number> = {
   cross_sell: 3,
   new_client_activation: 4,
 }
+
+const PACE_COLOR: Record<HeadPaceStatus, string> = {
+  ahead: 'green',
+  on: 'blue',
+  behind: 'red',
+  no_target: 'gray',
+}
+
+const PACE_LABEL: Record<HeadPaceStatus, string> = {
+  ahead: 'Випереджає',
+  on: 'У графіку',
+  behind: 'Відстає',
+  no_target: 'Немає цілі',
+}
+
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 0,
+})
 
 function inboxOrder(left: CockpitTask, right: CockpitTask): number {
   return (
@@ -49,6 +68,7 @@ function getTaskTypeRank(taskType?: CockpitTaskType): number {
 export function SalesCockpitPage() {
   const { t } = useI18n()
   const [tasks, setTasks] = useValueState<CockpitTask[]>([])
+  const [target, setTarget] = useValueState<CockpitTarget | null>(null)
   const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
   const [urgencyFilter, setUrgencyFilter] = useValueState<CockpitUrgency | null>(null)
   const [error, setError] = useValueState<string | null>(null)
@@ -68,10 +88,11 @@ export function SalesCockpitPage() {
       setError(null)
 
       try {
-        const inbox = await getCockpitInbox({ limit: INBOX_LIMIT })
+        const [inbox, cockpitTarget] = await Promise.all([getCockpitInbox({ limit: INBOX_LIMIT }), getCockpitTarget()])
 
         if (!controller.signal.aborted) {
           setTasks(inbox.tasks)
+          setTarget(cockpitTarget)
         }
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
@@ -88,7 +109,7 @@ export function SalesCockpitPage() {
     void loadInbox()
 
     return () => controller.abort()
-  }, [reloadKey, setError, setTasks, t])
+  }, [reloadKey, setError, setTarget, setTasks, t])
 
   const visibleTasks = useMemo(() => {
     const filtered = tasks.filter(
@@ -251,6 +272,8 @@ export function SalesCockpitPage() {
         </Stack>
       </Card>
 
+      {target && <TargetCard target={target} />}
+
       {isLoading ? (
         <Group justify="center" py="xl">
           <Loader />
@@ -301,6 +324,64 @@ export function SalesCockpitPage() {
       />
     </Stack>
   )
+}
+
+function TargetCard({ target }: { target: CockpitTarget }) {
+  const { t } = useI18n()
+
+  return (
+    <Card withBorder radius="md" shadow="sm">
+      <Stack gap="sm">
+        <Text fw={700} size="lg">
+          {t('Моя ціль (місяць)')}
+        </Text>
+
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Stack gap={4}>
+            <Group gap="xs" wrap="nowrap">
+              <Text c="dimmed" size="xs" tt="uppercase">
+                {t('Відвантаження')}
+              </Text>
+              <Badge color={PACE_COLOR[target.shipped.pace_status]} variant="light">
+                {t(PACE_LABEL[target.shipped.pace_status])}
+              </Badge>
+            </Group>
+            <Text fw={600} size="sm">
+              {formatMoney(target.shipped.mtd)} / {formatMoney(target.shipped.target)} · {formatPercent(target.shipped.attainment_pct)}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('Сьогодні потрібно')}: {formatMoney(target.shipped.today_needed)}
+            </Text>
+          </Stack>
+
+          <Stack gap={4}>
+            <Group gap="xs" wrap="nowrap">
+              <Text c="dimmed" size="xs" tt="uppercase">
+                {t('Оплати')}
+              </Text>
+              <Badge color={PACE_COLOR[target.paid.pace_status]} variant="light">
+                {t(PACE_LABEL[target.paid.pace_status])}
+              </Badge>
+            </Group>
+            <Text fw={600} size="sm">
+              {formatMoney(target.paid.mtd)} / {formatMoney(target.paid.target)} · {formatPercent(target.paid.attainment_pct)}
+            </Text>
+            <Text c="dimmed" size="xs">
+              {t('Сьогодні потрібно')}: {formatMoney(target.paid.today_needed)}
+            </Text>
+          </Stack>
+        </SimpleGrid>
+      </Stack>
+    </Card>
+  )
+}
+
+function formatMoney(value: number): string {
+  return `€${moneyFormatter.format(value)}`
+}
+
+function formatPercent(value: number): string {
+  return `${value}%`
 }
 
 function isAbortError(error: unknown): boolean {

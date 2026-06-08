@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, getCockpitCount, getCockpitInbox, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
+import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getEscalated, getHeadTeam, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -107,6 +107,235 @@ describe('salesCockpitApi', () => {
       },
       body: {
         Text: 'Передзвонити завтра',
+      },
+    })
+  })
+
+  it('loads the head team with the as-of date query and normalizes the payload', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true,
+      as_of: '2026-06-08',
+      team: [
+        {
+          manager_id: 7,
+          manager_name: 'Олена',
+          target: {
+            shipped: { target: 1000, mtd: 600, attainment_pct: 60, pace_status: 'behind' },
+            paid: { target: 800, mtd: 800, attainment_pct: 100, pace_status: 'ahead' },
+          },
+          tasks: { active: 3, generated_month: 8, done_month: 5, sold_month: 2, dismissed_month: 1, revenue_month: 4200, close_rate: 0.83, conversion_rate: 0.4 },
+        },
+        null,
+      ],
+      totals: {
+        shipped_target: 1000,
+        shipped_mtd: 600,
+        paid_target: 800,
+        paid_mtd: 800,
+        generated_month: 8,
+        done_month: 5,
+        sold_month: 2,
+        dismissed_month: 1,
+        revenue_month: 4200,
+        close_rate: 0.83,
+        conversion_rate: 0.4,
+      },
+    })
+
+    await expect(getHeadTeam('2026-06-08')).resolves.toEqual({
+      is_head: true,
+      as_of: '2026-06-08',
+      team: [
+        {
+          manager_id: 7,
+          manager_name: 'Олена',
+          target: {
+            shipped: { target: 1000, mtd: 600, attainment_pct: 60, pace_status: 'behind' },
+            paid: { target: 800, mtd: 800, attainment_pct: 100, pace_status: 'ahead' },
+          },
+          tasks: { active: 3, generated_month: 8, done_month: 5, sold_month: 2, dismissed_month: 1, revenue_month: 4200, close_rate: 0.83, conversion_rate: 0.4 },
+        },
+      ],
+      totals: {
+        shipped_target: 1000,
+        shipped_mtd: 600,
+        paid_target: 800,
+        paid_mtd: 800,
+        generated_month: 8,
+        done_month: 5,
+        sold_month: 2,
+        dismissed_month: 1,
+        revenue_month: 4200,
+        close_rate: 0.83,
+        conversion_rate: 0.4,
+      },
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team', {
+      query: {
+        asOfDate: '2026-06-08',
+      },
+    })
+  })
+
+  it('defaults the head team to a non-head empty shape on a non-object response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getHeadTeam()).resolves.toEqual({
+      is_head: false,
+      as_of: null,
+      team: [],
+      totals: {
+        shipped_target: 0,
+        shipped_mtd: 0,
+        paid_target: 0,
+        paid_mtd: 0,
+        generated_month: 0,
+        done_month: 0,
+        sold_month: 0,
+        dismissed_month: 0,
+        revenue_month: 0,
+        close_rate: 0,
+        conversion_rate: 0,
+      },
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/team', {
+      query: {
+        asOfDate: undefined,
+      },
+    })
+  })
+
+  it('loads the manager target with the as-of date query and normalizes both metrics', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      manager_id: 7,
+      manager_name: 'Олена',
+      month: '2026-06',
+      as_of: '2026-06-08',
+      working_days: 21,
+      working_days_elapsed: 6,
+      shipped: {
+        target: 1000,
+        mtd: 600,
+        daily_pace: 100,
+        expected_to_date: 285,
+        gap: -315,
+        today_needed: 0,
+        attainment_pct: 60,
+        pace_status: 'ahead',
+      },
+      paid: {
+        target: 800,
+        mtd: 200,
+        daily_pace: 33,
+        expected_to_date: 228,
+        gap: 28,
+        today_needed: 40,
+        attainment_pct: 25,
+        pace_status: 'behind',
+      },
+    })
+
+    await expect(getCockpitTarget('2026-06-08')).resolves.toEqual({
+      manager_id: 7,
+      manager_name: 'Олена',
+      month: '2026-06',
+      as_of: '2026-06-08',
+      working_days: 21,
+      working_days_elapsed: 6,
+      shipped: {
+        target: 1000,
+        mtd: 600,
+        daily_pace: 100,
+        expected_to_date: 285,
+        gap: -315,
+        today_needed: 0,
+        attainment_pct: 60,
+        pace_status: 'ahead',
+      },
+      paid: {
+        target: 800,
+        mtd: 200,
+        daily_pace: 33,
+        expected_to_date: 228,
+        gap: 28,
+        today_needed: 40,
+        attainment_pct: 25,
+        pace_status: 'behind',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/target', {
+      query: {
+        asOfDate: '2026-06-08',
+      },
+    })
+  })
+
+  it('defaults the manager target to a no-target shape on a non-object response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getCockpitTarget()).resolves.toEqual({
+      manager_id: 0,
+      manager_name: null,
+      month: null,
+      as_of: null,
+      working_days: 0,
+      working_days_elapsed: 0,
+      shipped: {
+        target: 0,
+        mtd: 0,
+        daily_pace: 0,
+        expected_to_date: 0,
+        gap: 0,
+        today_needed: 0,
+        attainment_pct: 0,
+        pace_status: 'no_target',
+      },
+      paid: {
+        target: 0,
+        mtd: 0,
+        daily_pace: 0,
+        expected_to_date: 0,
+        gap: 0,
+        today_needed: 0,
+        attainment_pct: 0,
+        pace_status: 'no_target',
+      },
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/target', {
+      query: {
+        asOfDate: undefined,
+      },
+    })
+  })
+
+  it('loads escalated tasks with the limit query and normalizes the head payload', async () => {
+    const task: CockpitTask = { task_key: 'mgr|client|debt_followup|w1', title: 'Контроль боргу' }
+
+    apiRequestMock.mockResolvedValueOnce({ is_head: true, count: 1, tasks: [task, null, 'noise'] })
+
+    await expect(getEscalated(20)).resolves.toEqual({
+      is_head: true,
+      count: 1,
+      tasks: [task],
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/escalated', {
+      query: {
+        limit: 20,
+      },
+    })
+  })
+
+  it('defaults escalated tasks to a non-head empty shape on a non-object response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getEscalated()).resolves.toEqual({
+      is_head: false,
+      count: 0,
+      tasks: [],
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/escalated', {
+      query: {
+        limit: undefined,
       },
     })
   })
