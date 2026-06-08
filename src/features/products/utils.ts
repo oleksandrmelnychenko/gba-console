@@ -125,19 +125,8 @@ function normalizeProductShopImageCode(value: string): string {
 }
 
 export function getProductAvailableQty(product?: Product | null): number {
-  const values = product?.ProductAvailabilities?.map((availability) => availability.Amount) || []
-
-  if (values.length === 0) {
-    values.push(
-      product?.AvailableQtyUk,
-      product?.AvailableQtyUkVAT,
-      product?.AvailableQtyUkReSale,
-      product?.AvailableQtyRoad,
-    )
-  }
-
-  return values.reduce<number>(
-    (total, value) => total + (typeof value === 'number' && Number.isFinite(value) ? value : 0),
+  return (product?.ProductAvailabilities ?? []).reduce<number>(
+    (total, availability) => total + (typeof availability.Amount === 'number' && Number.isFinite(availability.Amount) ? availability.Amount : 0),
     0,
   )
 }

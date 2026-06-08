@@ -2785,7 +2785,7 @@ function ProductInlineMovementsTab({
 }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
-  const [dateFrom, setDateFrom] = useState(getTodayDate)
+  const [dateFrom, setDateFrom] = useState(() => (direction === 'income' ? getDateDaysAgo(7) : getTodayDate()))
   const [dateTo, setDateTo] = useState(getTodayDate)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const [state, dispatch] = useReducer(inlineMovementReducer, {
@@ -3246,6 +3246,13 @@ function copyToClipboard(value: string) {
 function getTodayDate(): string {
   const now = new Date()
   const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+
+  return localDate.toISOString().slice(0, 10)
+}
+
+function getDateDaysAgo(days: number): string {
+  const now = new Date()
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000 - days * 86_400_000)
 
   return localDate.toISOString().slice(0, 10)
 }
