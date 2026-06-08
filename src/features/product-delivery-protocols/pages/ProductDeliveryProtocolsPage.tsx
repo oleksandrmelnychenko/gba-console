@@ -39,6 +39,7 @@ import {
 } from '../api/productDeliveryProtocolsApi'
 import { NewProductDeliveryProtocolModal } from '../components/NewProductDeliveryProtocolModal'
 import { ProtocolOptionsModal } from '../components/ProtocolOptionsModal'
+import { getProtocolPlacementStatusLabel, getProtocolStatusLabel } from '../protocolStatus'
 import type {
   CreateProtocolPayload,
   DeliveryProductProtocol,
@@ -621,9 +622,9 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           getRowId={(protocol, index) => String(protocol.NetUid || protocol.Id || index)}
           height="100%"
           isLoading={isLoading}
-          layoutVersion="product-delivery-protocols-table-2"
+          layoutVersion="product-delivery-protocols-table-3"
           loadingText={t('Завантаження протоколів')}
-          minWidth={1240}
+          minWidth={1560}
           showLayoutControls={false}
           showDensityToggle={false}
           tableId="product-delivery-protocols"
@@ -746,6 +747,22 @@ function useProtocolColumns(indexMap: Map<DeliveryProductProtocol, number>) {
         minWidth: 120,
         accessor: (protocol) => getDateTime(protocol.FromDate),
         cell: (protocol) => <ProtocolTableValue fw={600} value={formatDate(protocol.FromDate)} />,
+      },
+      {
+        id: 'status',
+        header: t('Статус'),
+        width: 128,
+        minWidth: 112,
+        accessor: (protocol) => getProtocolStatusLabel(protocol, t),
+        cell: (protocol) => <ProtocolTableValue value={getProtocolStatusLabel(protocol, t)} />,
+      },
+      {
+        id: 'placementStatus',
+        header: t('Оприходування'),
+        width: 190,
+        minWidth: 170,
+        accessor: (protocol) => getProtocolPlacementStatusLabel(protocol, t),
+        cell: (protocol) => <ProtocolTableValue value={getProtocolPlacementStatusLabel(protocol, t)} />,
       },
       {
         id: 'organization',

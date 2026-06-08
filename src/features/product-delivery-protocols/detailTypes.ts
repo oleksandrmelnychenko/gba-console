@@ -155,9 +155,12 @@ export type MergedService = EntityFields & {
 
 export type ProtocolDetail = EntityFields & {
   Comment?: string
+  DeliveryProductProtocolDocuments?: SupplyDocument[]
   DeliveryProductProtocolNumber?: { Number?: string } | null
   FromDate?: Date | string
   IsCompleted?: boolean
+  IsPartiallyPlaced?: boolean
+  IsPlaced?: boolean
   IsShipped?: boolean
   MergedServices?: MergedService[]
   Organization?: ProtocolOrganization | null

@@ -103,6 +103,7 @@ import {
 } from '../resalesFlowHelpers'
 
 const PAGE_SIZE = 20
+const DEFAULT_RESALES_LOOKBACK_DAYS = 30
 const pageSizeOptions = ['20', '40', '60', '100']
 
 const RESALES_TABLE_DEFAULT_LAYOUT = {
@@ -204,7 +205,7 @@ export function ResalesPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
-  const [fromDate, setFromDate] = useValueState(() => shiftDateInput(-3))
+  const [fromDate, setFromDate] = useValueState(() => shiftDateInput(-DEFAULT_RESALES_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => shiftDateInput(1))
   const [status, setStatus] = useValueState('0')
   const [page, setPage] = useValueState(1)
@@ -391,7 +392,7 @@ export function ResalesPage() {
               allowDeselect={false}
               data={[
                 { label: t('Усі'), value: '0' },
-                { label: t('Рахунок'), value: '1' },
+                { label: t('Чернетка'), value: '1' },
                 { label: t('Інвойс'), value: '2' },
               ]}
               label={t('Статус')}
@@ -457,7 +458,7 @@ export function ResalesPage() {
             data={items}
             defaultLayout={RESALES_TABLE_DEFAULT_LAYOUT}
             density={density}
-            emptyText={t('Перепродажів не знайдено')}
+            emptyText={`${t('Перепродажів не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={(resale, index) => String(resale.NetUid || resale.Id || index)}
             isLoading={isLoading}
             layoutVersion="resales-table-1"
@@ -1100,8 +1101,8 @@ export function ResalePage() {
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detailRequestRef = useRef(0)
   const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
-  const changedToInvoice = Boolean(model?.ReSale?.ChangedToInvoice)
-  const isCompleted = Boolean(model?.ReSale?.IsCompleted)
+  const changedToInvoice = isResaleInvoice(model?.ReSale)
+  const isCompleted = isResaleCompleted(model?.ReSale)
   const canEditDetail = !isCompleted
   const columns = useResaleDetailColumns({
     isBusy: isSaving,
@@ -1285,7 +1286,7 @@ export function ResalePage() {
   }
 
   async function changeToInvoice() {
-    if (!canEditDetail || !model?.ReSale.NetUid) {
+    if (!canEditDetail || changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1323,7 +1324,7 @@ export function ResalePage() {
   }
 
   async function completeInvoice() {
-    if (!canEditDetail || !model?.ReSale.NetUid) {
+    if (!canEditDetail || !changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1477,7 +1478,7 @@ export function ResalePage() {
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
-            <DetailValue label={t('Статус')} value={changedToInvoice ? t('Інвойс') : t('Рахунок')} />
+            <DetailValue label={t('Статус')} value={getResaleStatusLabel(model.ReSale)} />
             <DetailValue label={t('Відповідальний')} value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
             <DetailValue label={t('Організація')} value={model.ReSale.Organization?.Name || model.ReSale.Organization?.FullName} />
           </SimpleGrid>
@@ -1511,16 +1512,16 @@ export function ResalePage() {
             }}
           />
           <Group justify="flex-end">
-            <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
+            <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
               {t('Платіжний документ')}
             </Button>
             {changedToInvoice && (
-              <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.SalesInvoice)}>
                 {t('Інвойс')}
               </Button>
             )}
             {changedToInvoice && (
-              <Button leftSection={<IconTruckDelivery size={16} />} variant="light" onClick={() => setConsignmentNoteOpened(true)}>
+              <Button disabled={!model.ReSale.NetUid} leftSection={<IconTruckDelivery size={16} />} variant="light" onClick={() => setConsignmentNoteOpened(true)}>
                 {t('ТТН')}
               </Button>
             )}
@@ -1531,12 +1532,12 @@ export function ResalePage() {
               {t('Зберегти')}
             </Button>
             {!changedToInvoice && detailInfo.clientAgreement && (
-              <Button disabled={isSaving} loading={isSaving} color="green" onClick={changeToInvoice}>
+              <Button disabled={isSaving || !canEditDetail} loading={isSaving} color="green" onClick={changeToInvoice}>
                 {t('Зробити інвойсом')}
               </Button>
             )}
             {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
-              <Button disabled={isSaving} loading={isSaving} color="green" onClick={completeInvoice}>
+              <Button disabled={isSaving || !canEditDetail} loading={isSaving} color="green" onClick={completeInvoice}>
                 {t('Завершити')}
               </Button>
             )}
@@ -1609,7 +1610,7 @@ function useResalesColumns({
         minWidth: 108,
         accessor: (resale) => getResaleStatusLabel(resale),
         cell: (resale) => (
-          <Badge color={resale.ChangedToInvoice ? 'green' : 'blue'} variant="light">
+          <Badge color={getResaleStatusColor(resale)} variant="light">
             {getResaleStatusLabel(resale)}
           </Badge>
         ),
@@ -1722,7 +1723,7 @@ function useResalesColumns({
                 <IconDownload size={16} />
               </ActionIcon>
             </Tooltip>
-            {resale.ChangedToInvoice && (
+            {isResaleInvoice(resale) && (
               <>
                 <Tooltip label={t('Інвойс')}>
                   <ActionIcon
@@ -1757,7 +1758,7 @@ function useResalesColumns({
                 </Tooltip>
               </>
             )}
-            {!resale.ChangedToInvoice && (
+            {isResaleDraft(resale) && (
               <Tooltip label={t('Видалити')}>
                 <ActionIcon
                   aria-label={t('Видалити')}
@@ -3278,11 +3279,39 @@ function findClientAgreement(client: ResaleClient | null, value: string | null):
 }
 
 function getResaleStatusLabel(resale: ReSale): string {
-  if (resale.ChangedToInvoice) {
+  if (isResaleCompleted(resale)) {
+    return translate('Завершено')
+  }
+
+  if (isResaleInvoice(resale)) {
     return translate('Інвойс')
   }
 
-  return translate('Рахунок')
+  return translate('Чернетка')
+}
+
+function getResaleStatusColor(resale: ReSale): string {
+  if (isResaleCompleted(resale)) {
+    return 'teal'
+  }
+
+  if (isResaleInvoice(resale)) {
+    return 'green'
+  }
+
+  return 'blue'
+}
+
+function isResaleCompleted(resale?: ReSale | null): boolean {
+  return Boolean(resale?.IsCompleted)
+}
+
+function isResaleInvoice(resale?: ReSale | null): boolean {
+  return Boolean(resale?.ChangedToInvoice)
+}
+
+function isResaleDraft(resale?: ReSale | null): boolean {
+  return Boolean(resale && !isResaleInvoice(resale) && !isResaleCompleted(resale))
 }
 
 function getClientName(client?: ResaleClient | null): string | undefined {

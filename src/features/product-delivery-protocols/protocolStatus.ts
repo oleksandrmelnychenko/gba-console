@@ -21,3 +21,18 @@ export function getProtocolStatusActionLabel(
 ): string {
   return getProtocolStatusLabel(protocol, t)
 }
+
+export function getProtocolPlacementStatusLabel(
+  protocol: Pick<ProtocolDetail, 'IsPartiallyPlaced' | 'IsPlaced'>,
+  t: (value: string) => string,
+): string {
+  if (protocol.IsPlaced) {
+    return t('Оприходуваний')
+  }
+
+  if (protocol.IsPartiallyPlaced) {
+    return t('Частково оприходуваний')
+  }
+
+  return t('Не оприходуваний')
+}

@@ -110,6 +110,7 @@ const MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT = {
 const ALL_TRANSPORTERS_VALUE = '__all_transporters__'
 const SHIPMENTS_TAB_ALL = 'all'
 const SHIPMENTS_TAB_AUTO = 'auto'
+const DEFAULT_SHIPMENT_LOOKBACK_DAYS = 30
 
 type FilterDraft = {
   from: string
@@ -402,7 +403,7 @@ type ShipmentsTabModelOptions = {
 function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
+    () => ({ from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) }),
     [],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
@@ -426,6 +427,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const items = shipmentList.ShipmentListItems
   const itemIndexMap = useMemo(() => buildIndexMap(items), [items])
+  const canEditShipment = !shipmentList.IsSent
 
   useEffect(() => {
     let cancelled = false
@@ -550,6 +552,10 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 
   function commitQtyPlaces(item: ShipmentListItem, rowId: string) {
+    if (!canEditShipment) {
+      return
+    }
+
     const draft = qtyEdits[rowId]
 
     if (draft === undefined) {
@@ -582,6 +588,10 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 
   async function saveShipmentList(nextShipmentList = shipmentList) {
+    if (!canEditShipment) {
+      return
+    }
+
     setSaving(true)
     setError(null)
 
@@ -596,6 +606,11 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
   }
 
   async function carryOut() {
+    if (!shipmentList.NetUid || shipmentList.IsSent || items.length === 0) {
+      setConfirmCarryOut(false)
+      return
+    }
+
     setConfirmCarryOut(false)
     setSaving(true)
     setError(null)
@@ -616,7 +631,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       return
     }
 
-    if (isRecipientAddressReadOnly(activeModal.item)) {
+    if (!canEditShipment || isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -645,7 +660,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
       return
     }
 
-    if (isRecipientAddressReadOnly(activeModal.item)) {
+    if (!canEditShipment || isRecipientAddressReadOnly(activeModal.item)) {
       return
     }
 
@@ -671,6 +686,10 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
 
   async function saveComment(comment: string) {
     if (activeModal?.kind !== 'comment') {
+      return
+    }
+
+    if (!canEditShipment) {
       return
     }
 
@@ -730,6 +749,7 @@ function useShipmentsTabModel({ onCarriedOut }: ShipmentsTabModelOptions = {}) {
 
   return {
     activeModal,
+    canEditShipment,
     carryOut,
     commitQtyPlaces,
     confirmCarryOut,
@@ -824,6 +844,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
   const transporterOptions = toTransporterOptions(model.transporters)
 
   const activeModal = model.activeModal
+  const hasShipmentList = Boolean(model.shipmentList.NetUid)
 
   return (
     <Stack gap="md">
@@ -876,9 +897,18 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
               value={model.filterDraft.to}
               onChange={(event) => model.setFilterDraft({ ...model.filterDraft, to: event.currentTarget.value })}
             />
+            {hasShipmentList && (
+              <Badge
+                color={model.shipmentList.IsSent ? 'green' : 'gray'}
+                leftSection={model.shipmentList.IsSent ? <IconCircleCheck size={12} /> : <IconCircleDashed size={12} />}
+                variant="light"
+              >
+                {model.shipmentList.IsSent ? t('Проведено') : t('Не проведено')}
+              </Badge>
+            )}
             <Button
               color="green"
-              disabled={!model.shipmentList.NetUid || model.items.length === 0}
+              disabled={!model.shipmentList.NetUid || !model.canEditShipment || model.items.length === 0}
               leftSection={<IconTruckDelivery size={18} />}
               loading={model.isSaving}
               variant="light"
@@ -907,7 +937,7 @@ function AutoShipmentsPanel({ onCarriedOut }: AutoShipmentsPanelProps) {
             data={model.items}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             density={density}
-            emptyText={t('Відвантажень не знайдено')}
+            emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getRowId}
             isLoading={model.isLoading}
             layoutVersion="warehouse-ukraine-shipments-1"
@@ -976,7 +1006,7 @@ type AllShipmentsPanelProps = {
 function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const { t } = useI18n()
   const initialFilters = useMemo<FilterDraft>(
-    () => ({ from: getDateShiftedByDays(-7), to: getDateShiftedByDays(0) }),
+    () => ({ from: getDateShiftedByDays(-DEFAULT_SHIPMENT_LOOKBACK_DAYS), to: getDateShiftedByDays(0) }),
     [],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialFilters)
@@ -1255,7 +1285,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   }
 
   function appendManualSelectedSalesToDraft() {
-    if (!shipmentDraft) {
+    if (!shipmentDraft || !canEditShipment) {
       return
     }
 
@@ -1679,7 +1709,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             data={shipmentLists}
             defaultLayout={ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT}
             density={density}
-            emptyText={t('Відвантажень не знайдено')}
+            emptyText={`${t('Відвантажень не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getShipmentListRowId}
             isLoading={isLoading}
             layoutVersion="warehouse-ukraine-all-shipments-1"
@@ -1826,7 +1856,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             columns={manualColumns}
             data={manualSales}
             defaultLayout={MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Накладних не знайдено')}
+            emptyText={`${t('Накладних не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={getManualSaleRowId}
             isLoading={isManualLoading}
             layoutVersion="warehouse-ukraine-manual-shipment-sales-1"
@@ -2391,6 +2421,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
 }
 
 type ShipmentColumnsModel = {
+  canEditShipment: boolean
   commitQtyPlaces: (item: ShipmentListItem, rowId: string) => void
   itemIndexMap: Map<ShipmentListItem, number>
   qtyEdits: Record<string, string>
@@ -2433,7 +2464,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
-            disabled={isRecipientAddressReadOnly(item)}
+            disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
             text={getRecipientInfo(item.Sale, t)}
             onEdit={() => model.setActiveModal({ kind: 'recipient', item })}
           />
@@ -2446,7 +2477,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
           <EditableTextCell
-            disabled={isRecipientAddressReadOnly(item)}
+            disabled={!model.canEditShipment || isRecipientAddressReadOnly(item)}
             text={getAddressInfo(item.Sale, t)}
             onEdit={() => {
               if (!item.Sale.DeliveryRecipient) {
@@ -2472,6 +2503,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
 
           return (
             <TextInput
+              disabled={!model.canEditShipment}
               size="xs"
               type="number"
               value={value}
@@ -2532,6 +2564,7 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
         accessor: (item) => item.Sale.WarehousesShipment?.Comment || item.Sale.Comment,
         cell: (item) => (
           <EditableTextCell
+            disabled={!model.canEditShipment}
             text={item.Sale.WarehousesShipment?.Comment || item.Sale.Comment || ''}
             onEdit={() => model.setActiveModal({ kind: 'comment', item })}
           />

@@ -839,6 +839,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
   const canMutateSpecification = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
+  const specificationUnavailableMessage = getSpecificationUnavailableMessage(model.protocol, t)
   const canMerge = canMutateSpecification && invoices.length > 1
   const canDownload =
     hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&
@@ -903,9 +904,9 @@ export function ProductDeliveryProtocolSpecificationPage() {
         </Text>
       ) : model.protocol ? (
         <Stack gap="lg">
-          {!canMutateSpecification && (
+          {specificationUnavailableMessage && (
             <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {t('Редагування специфікації доступне після відвантаження протоколу')}
+              {specificationUnavailableMessage}
             </Alert>
           )}
 
@@ -1062,6 +1063,25 @@ export function ProductDeliveryProtocolSpecificationPage() {
       />
     </Stack>
   )
+}
+
+function getSpecificationUnavailableMessage(
+  protocol: SpecificationProtocol | null,
+  t: (value: string) => string,
+): string | null {
+  if (!protocol) {
+    return null
+  }
+
+  if (protocol.IsCompleted) {
+    return t('Редагування специфікації недоступне після завершення протоколу')
+  }
+
+  if (!protocol.IsShipped) {
+    return t('Редагування специфікації доступне після відвантаження протоколу')
+  }
+
+  return null
 }
 
 type SpecificationModel = ReturnType<typeof useSpecificationModel>

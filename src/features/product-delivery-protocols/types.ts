@@ -51,8 +51,11 @@ export type DeliveryProductProtocolNumber = EntityFields & {
 export type DeliveryProductProtocol = EntityFields & {
   Comment?: string
   DeliveryProductProtocolNumber?: DeliveryProductProtocolNumber | null
+  DeliveryProductProtocolDocuments?: ProtocolSupplyDocument[]
   FromDate?: Date | string
   IsCompleted?: boolean
+  IsPartiallyPlaced?: boolean
+  IsPlaced?: boolean
   IsShipped?: boolean
   Organization?: ProtocolOrganization | null
   SupplyInvoices?: ProtocolSupplyInvoice[]
@@ -76,9 +79,17 @@ export type ProtocolsSearchParams = {
 
 export type CreateProtocolPayload = {
   Comment?: string
+  Documents?: File[]
   FromDate: string
   Organization: ProtocolOrganization
   TransportationType: SupplyTransportationType
+}
+
+export type ProtocolSupplyDocument = EntityFields & {
+  ContentType?: string
+  Deleted?: boolean
+  DocumentUrl?: string
+  FileName?: string
 }
 
 export type ProtocolExportColumn = {

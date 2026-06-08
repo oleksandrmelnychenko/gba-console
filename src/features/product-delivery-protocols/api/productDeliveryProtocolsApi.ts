@@ -40,8 +40,13 @@ export async function getProtocolOrganizations(): Promise<ProtocolOrganization[]
 }
 
 export async function createProtocol(payload: CreateProtocolPayload): Promise<DeliveryProductProtocol | null> {
+  const { Documents = [], ...protocolPayload } = payload
   const formData = new FormData()
-  formData.append('deliveryProductProtocolString', JSON.stringify(payload))
+  formData.append('deliveryProductProtocolString', JSON.stringify(protocolPayload))
+
+  for (const document of Documents) {
+    formData.append('documents', document)
+  }
 
   const result = await apiRequest<unknown>('/delivery/product/protocol/new', {
     method: 'POST',
