@@ -26,6 +26,7 @@ import { ExcelIcon } from '../ExcelIcon'
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { apiRequest } from '../../api/apiClient'
 import { formatLocalDate } from '../../date/dateTime'
+import { requireExportDocument, type ExportDocument } from '../../documents/exportDocument'
 import { useI18n } from '../../i18n/useI18n'
 import { upgradeHttpToHttps } from '../../url/upgradeHttpToHttps'
 import { AppDrawer } from '../AppDrawer'
@@ -127,14 +128,7 @@ type ProductStorageLocationHistory = EntityFields & {
   } | null
 }
 
-type ProductMovementExportDocument = {
-  DocumentURL?: string
-  PdfDocumentURL?: string
-  URL?: string
-  XlsxDocument?: string
-  PdfDocument?: string
-  url?: string
-}
+type ProductMovementExportDocument = ExportDocument
 
 type ProductMovementExportState = {
   document: ProductMovementExportDocument
@@ -496,6 +490,7 @@ function productMovementExportModalReducer(
       return {
         ...state,
         documentState: null,
+        exportingKey: null,
       }
     case 'export-finished':
       return {
@@ -505,6 +500,7 @@ function productMovementExportModalReducer(
     case 'export-started':
       return {
         ...state,
+        documentState: null,
         exportingKey: action.key,
       }
     case 'export-succeeded':
@@ -783,6 +779,7 @@ function ProductMovementPanel({ active, product }: { active: boolean; product: M
 
   useEffect(() => {
     exportRequestRef.current += 1
+    dispatchExportModalState({ type: 'close-document' })
   }, [active, dateFrom, dateTo, movementType, productNetUid, selectedTypes])
 
   useEffect(() => {
@@ -978,6 +975,7 @@ function ProductIncomeMovementPanel({ active, product }: { active: boolean; prod
 
   useEffect(() => {
     exportRequestRef.current += 1
+    dispatchExportModalState({ type: 'close-document' })
   }, [active, dateFrom, dateTo, productNetUid])
 
   useEffect(() => {
@@ -1121,6 +1119,7 @@ function ProductOutcomeMovementPanel({ active, product }: { active: boolean; pro
 
   useEffect(() => {
     exportRequestRef.current += 1
+    dispatchExportModalState({ type: 'close-document' })
   }, [active, dateFrom, dateTo, productNetUid])
 
   useEffect(() => {
@@ -1914,7 +1913,7 @@ async function exportProductMovementsDocument(
     },
   })
 
-  return normalizeExportDocument(result)
+  return requireExportDocument(result, 'Документ руху товару недоступний для завантаження')
 }
 
 async function exportProductIncomeMovementsDocument(
@@ -1932,7 +1931,7 @@ async function exportProductIncomeMovementsDocument(
     },
   })
 
-  return normalizeExportDocument(result)
+  return requireExportDocument(result, 'Документ приходу недоступний для завантаження')
 }
 
 async function exportProductOutcomeMovementsDocument(
@@ -1950,7 +1949,7 @@ async function exportProductOutcomeMovementsDocument(
     },
   })
 
-  return normalizeExportDocument(result)
+  return requireExportDocument(result, 'Документ виходу недоступний для завантаження')
 }
 
 function normalizeArray(result: unknown): unknown[] {
@@ -1975,27 +1974,6 @@ function readArrayPayload(payload: Record<string, unknown>, keys: string[]): unk
   }
 
   return []
-}
-
-function normalizeExportDocument(result: unknown): ProductMovementExportDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL:
-      readString(payload.DocumentURL)
-      || readString(payload.XlsxDocument)
-      || readString(payload.URL)
-      || readString(payload.url),
-    PdfDocumentURL: readString(payload.PdfDocumentURL) || readString(payload.PdfDocument),
-  }
-}
-
-function readString(value: unknown): string {
-  return typeof value === 'string' ? value : ''
 }
 
 function getProductTitle(product: MovementHistoryProduct): string {

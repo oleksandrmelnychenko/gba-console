@@ -31,11 +31,18 @@ import {
   getAccountableExpenses,
   searchAccountableExpenses,
 } from '../api/accountableExpensesApi'
+import {
+  buildExpenseRows,
+  formatPaymentStatus,
+  formatUnderReportStatus,
+  getOutcomeOrderLinkKey,
+  getOutcomePaymentOrder,
+  getOutcomePaymentOrders,
+  getPaymentStatusColor,
+} from '../accountableExpenseRows'
 import type {
   AccountableExpenseRow,
   ConsumablesOrder,
-  OutcomePaymentOrderConsumablesOrder,
-  OutcomePaymentOrder,
 } from '../types'
 import './accountable-expenses-page.css'
 
@@ -352,12 +359,12 @@ function useAccountableExpenseColumns({
       {
         id: 'status',
         header: t('Статус'),
-        width: 110,
-        minWidth: 95,
-        accessor: (row) => row.isPayed,
+        width: 130,
+        minWidth: 110,
+        accessor: (row) => row.paymentStatus,
         cell: (row) => (
-          <Badge color={row.isPayed ? 'green' : 'yellow'} variant="light">
-            {row.isPayed ? t('Оплачено') : t('Не оплачено')}
+          <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
+            {formatPaymentStatus(row.paymentStatus, t)}
           </Badge>
         ),
       },
@@ -381,7 +388,7 @@ function useAccountableExpenseColumns({
         enableReorder: false,
         cell: (row) => (
           <Group gap={4} justify="flex-end" wrap="nowrap">
-            {!row.isPayed && (
+            {row.paymentStatus !== 'paid' && (
               <Tooltip label={t('Оплатити')}>
                 <ActionIcon
                   aria-label={t('Оплатити')}
@@ -457,8 +464,9 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             <DetailItem label={t('ПДВ')} value={formatMoney(row.item.VAT)} />
             <DetailItem label={t('ПДВ %')} value={formatAmount(row.item.VatPercent)} />
             <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
-            <DetailItem label={t('Оплачено')} value={row.isPayed ? t('Так') : t('Ні')} />
-            <DetailItem label={t('Підзвіт закрито')} value={outcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Оплата')} value={formatPaymentStatus(row.paymentStatus, t)} />
+            <DetailItem label={t('Підзвіт закрито')} value={formatUnderReportStatus(row.underReportStatus, t)} />
+            <DetailItem label={t('Оплачено сумарно')} value={formatMoney(row.paidAmount)} />
           </SimpleGrid>
           <Stack gap={2}>
             <Text c="dimmed" size="xs" tt="uppercase">
@@ -499,6 +507,8 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                     <DetailItem label={t('Авансовий звіт')} value={displayValue(item.OutcomePaymentOrder?.AdvanceNumber)} />
                     <DetailItem label={t('Видатковий ордер')} value={displayValue(item.OutcomePaymentOrder?.Number || item.OutcomePaymentOrder?.CustomNumber)} />
                     <DetailItem label={t('Дата')} value={formatDateTime(item.OutcomePaymentOrder?.FromDate)} />
+                    <DetailItem label={t('Сума')} value={formatMoney(item.OutcomePaymentOrder?.Amount)} />
+                    <DetailItem label={t('Валюта')} value={displayValue(item.OutcomePaymentOrder?.PaymentCurrencyRegister?.Currency?.Code || item.OutcomePaymentOrder?.PaymentCurrencyRegister?.Currency?.Name)} />
                     <DetailItem label={t('Закрито')} value={item.OutcomePaymentOrder?.IsUnderReportDone ? t('Так') : t('Ні')} />
                   </SimpleGrid>
                 ))}
@@ -520,57 +530,6 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <Text size="sm">{value}</Text>
     </Stack>
   )
-}
-
-function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpenseRow[] {
-  const rows: AccountableExpenseRow[] = []
-
-  orders.forEach((order, orderIndex) => {
-    const outcome = getOutcomePaymentOrder(order)
-    const items = order.ConsumablesOrderItems?.length ? order.ConsumablesOrderItems : [{}]
-
-    items.forEach((item, itemIndex) => {
-      const amount = item.TotalPriceWithVAT ?? order.TotalAmount ?? outcome?.Amount
-
-      rows.push({
-        advanceNumber: outcome?.AdvanceNumber,
-        amount,
-        comment: order.Comment || outcome?.Comment || outcome?.PaymentPurpose,
-        created: order.OrganizationFromDate || outcome?.FromDate || order.Created,
-        currency: outcome?.PaymentCurrencyRegister?.Currency?.Code || outcome?.PaymentCurrencyRegister?.Currency?.Name,
-        id: String(item.NetUid || item.Id || `${order.NetUid || order.Id || orderIndex}-${itemIndex}`),
-        isPayed: order.IsPayed ?? outcome?.IsUnderReportDone,
-        item,
-        order,
-        organization: outcome?.Organization?.Name,
-        payedTo: outcome?.Colleague?.LastName || outcome?.Colleague?.FullName || outcome?.Colleague?.Name,
-        pricePerItem: item.PricePerItem ?? amount,
-        productName: item.ConsumableProduct?.Name || outcome?.PaymentMovementOperation?.PaymentMovement?.OperationName,
-        qty: item.Qty,
-        responsible: order.User?.LastName || order.User?.FullName || order.User?.Name
-          || outcome?.User?.LastName || outcome?.User?.FullName || outcome?.User?.Name,
-        vendorCode: item.ConsumableProduct?.VendorCode,
-      })
-    })
-  })
-
-  return rows
-}
-
-function getOutcomePaymentOrder(order?: ConsumablesOrder | null): OutcomePaymentOrder | null {
-  return getOutcomePaymentOrders(order)[0]?.OutcomePaymentOrder || null
-}
-
-function getOutcomePaymentOrders(
-  order?: ConsumablesOrder | null,
-): NonNullable<ConsumablesOrder['OutcomePaymentOrderConsumablesOrders']> {
-  return (order?.OutcomePaymentOrderConsumablesOrders || []).filter(
-    (item) => !item.Deleted && item.OutcomePaymentOrder && !item.OutcomePaymentOrder.Deleted,
-  )
-}
-
-function getOutcomeOrderLinkKey(item: OutcomePaymentOrderConsumablesOrder, index: number): string {
-  return String(item.NetUid || item.Id || item.OutcomePaymentOrder?.NetUid || item.OutcomePaymentOrder?.Id || `outcome-${index}`)
 }
 
 function shiftDate(days: number): string {

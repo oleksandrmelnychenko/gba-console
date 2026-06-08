@@ -14,6 +14,7 @@ import { notifications } from '@mantine/notifications'
 import { IconArrowsExchange2 } from '@tabler/icons-react'
 import { useCallback, useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { markDataSyncStarted } from '../../../shared/realtime/dataSyncProgressStore'
 import { realtimeEvents, useRealtimeEvent, type DataSyncNotification } from '../../../shared/realtime/events'
 import { getSyncHistory, startDailySync, startGbaToOneCSync, startRemnantsSync } from '../api/syncApi'
 import { TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
@@ -311,6 +312,7 @@ export function SyncControl() {
     try {
       const response = await request()
       const message = response?.Message || t('Синхронізацію запущено')
+      markDataSyncStarted(message)
       dispatch({ type: 'syncSucceeded', message })
       notifications.show({ color: 'green', message })
     } catch (error) {

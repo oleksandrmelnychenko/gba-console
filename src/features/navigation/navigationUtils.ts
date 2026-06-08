@@ -72,6 +72,16 @@ export function findNavigationMatch(modules: NavigationModule[], pathname: strin
   return null
 }
 
+export function isNavigationPathAllowed(modules: NavigationModule[], pathname: string): boolean {
+  const normalizedPath = normalizePath(pathname)
+
+  if (normalizedPath === '/' || normalizedPath === '/dashboard') {
+    return true
+  }
+
+  return modules.some((module) => hasAllowedNavigationNode(module.Children, pathname))
+}
+
 export function isNavigationNodeActive(node: NavigationNode, pathname: string): boolean {
   const routeSegments = splitPath(node.Route)
   const currentSegments = splitPath(pathname)
@@ -102,26 +112,61 @@ export function isNavigationNodeRouteTarget(node: NavigationNode, pathname: stri
   )
 }
 
+function hasAllowedNavigationNode(nodes: NavigationNode[], pathname: string): boolean {
+  for (const node of nodes) {
+    if (isNavigationNodePathAllowed(node, pathname) || hasAllowedNavigationNode(node.Children || [], pathname)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function isNavigationNodePathAllowed(node: NavigationNode, pathname: string): boolean {
+  const routeSegments = splitPath(node.Route)
+  const currentSegments = splitPath(pathname)
+
+  return (
+    routeSegments.length > 0 &&
+    currentSegments.length >= routeSegments.length &&
+    routeSegments.every((segment, index) => segment === currentSegments[index])
+  )
+}
+
 function findActiveNode(nodes: NavigationNode[], pathname: string): NavigationNode | null {
   let activeNode: NavigationNode | null = null
   let activeScore = -1
 
   for (const node of nodes) {
-    if (!isNavigationNodeActive(node, pathname)) {
-      continue
+    if (isNavigationNodeActive(node, pathname)) {
+      const routeScore = getActiveNodeScore(node, pathname)
+
+      if (routeScore > activeScore) {
+        activeNode = node
+        activeScore = routeScore
+      }
     }
 
-    const routeLength = splitPath(node.Route).length
-    const queryScore = getRouteQueryScore(node.Route, pathname)
-    const routeScore = routeLength * 1000 + queryScore
+    const childNode = findActiveNode(node.Children || [], pathname)
 
-    if (routeScore > activeScore) {
-      activeNode = node
-      activeScore = routeScore
+    if (childNode) {
+      const routeScore = getActiveNodeScore(childNode, pathname)
+
+      if (routeScore > activeScore) {
+        activeNode = childNode
+        activeScore = routeScore
+      }
     }
   }
 
   return activeNode
+}
+
+function getActiveNodeScore(node: NavigationNode, pathname: string): number {
+  const routeLength = splitPath(node.Route).length
+  const queryScore = getRouteQueryScore(node.Route, pathname)
+
+  return routeLength * 1000 + queryScore
 }
 
 function getRouteQueryScore(route: string | undefined, currentPath: string): number {

@@ -631,6 +631,15 @@ function useRegionsPanelModel(section: ClientResourceSection) {
       || state.data[0],
     [effectiveSelectedRegionId, filteredRegions, state.data],
   )
+  const selectedRegionCodes = useMemo(() => {
+    const codes = selectedRegion?.RegionCodes || []
+
+    if (!search.trim() || matchesSearch(search, [selectedRegion?.Name, selectedRegion?.NetUid])) {
+      return codes
+    }
+
+    return codes.filter((code) => matchesSearch(search, [code.Value, code.City, code.District]))
+  }, [search, selectedRegion])
 
   function openCreateRegion() {
     setFormError(null)
@@ -774,7 +783,7 @@ function useRegionsPanelModel(section: ClientResourceSection) {
 
   return {
     deleteTarget, filteredRegions, formError, isSaving, regionCodeEditor, regionEditor, search, section,
-    selectedRegion, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
+    selectedRegion, selectedRegionCodes, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
     openEditRegionCode, saveRegion, saveRegionCode, setDeleteTarget, setFormError, setRegionCodeEditor,
     setRegionEditor, setSearch, setSelectedRegionId,
   }
@@ -789,7 +798,7 @@ function RegionsPanel({ section }: { section: ClientResourceSection }) {
 function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelModel> }) {
   const {
     deleteTarget, filteredRegions, formError, isSaving, regionCodeEditor, regionEditor, search, section,
-    selectedRegion, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
+    selectedRegion, selectedRegionCodes, state, confirmDeleteRegionTarget, openCreateRegion, openCreateRegionCode, openEditRegion,
     openEditRegionCode, saveRegion, saveRegionCode, setDeleteTarget, setFormError, setRegionCodeEditor,
     setRegionEditor, setSearch, setSelectedRegionId,
   } = model
@@ -915,7 +924,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   </PermissionGate>
                 ) : null}
               </Group>
-              {selectedRegion?.RegionCodes?.length ? (
+              {selectedRegion && selectedRegionCodes.length ? (
                 <ResourceDataTable
                   columns={[
                     {
@@ -981,13 +990,13 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                       ),
                     },
                   ]}
-                  data={selectedRegion.RegionCodes}
+                  data={selectedRegionCodes}
                   emptyText={translate("Кодів регіону немає")}
                   minWidth={620}
                   tableId="region-codes"
                 />
               ) : (
-                <EmptyState title={translate("Кодів регіону немає")} />
+                <EmptyState title={translate(selectedRegion?.RegionCodes?.length ? "За цим пошуком кодів немає" : "Кодів регіону немає")} />
               )}
             </Box>
           </Box>

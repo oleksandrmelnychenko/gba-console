@@ -31,12 +31,20 @@ import {
   searchPaymentMovements,
   searchPaymentRegisters,
 } from '../api/consumableOrdersApi'
+import {
+  MONEY_EPSILON,
+  buildPaymentPayload,
+  calculateLocalTotal,
+  getPaidAmount,
+  getPaymentTotalAmount,
+  getRemainingPaymentAmount,
+  isPaymentCoveringOutstandingAmount,
+} from '../paymentPayload'
 import type {
   ConsumablesOrder,
   ConsumablesOrderItem,
   NamedEntity,
   Organization,
-  OutcomePaymentOrder,
   PaymentCurrencyRegister,
   PaymentMovement,
   PaymentRegister,
@@ -114,7 +122,10 @@ export function ConsumableOrderPayPage() {
   const currencyOptions = useMemo(() => toCurrencyOptions(selectedRegister?.PaymentCurrencyRegisters || []), [selectedRegister])
   const movementOptions = useMemo(() => toEntityOptions(paymentMovements, (movement) => movement?.OperationName || ''), [paymentMovements])
   const items = order?.ConsumablesOrderItems?.filter((item) => !item.Deleted) || []
-  const isOrderPaid = Boolean(order?.IsPayed)
+  const paymentTotalAmount = order ? getPaymentTotalAmount(order) : 0
+  const paidAmount = order ? getPaidAmount(order) : 0
+  const remainingAmount = order ? getRemainingPaymentAmount(order) : 0
+  const isOrderPaid = Boolean(order?.IsPayed) || Boolean(order && isPaymentCoveringOutstandingAmount(order, 0))
 
   useEffect(() => {
     if (!id) {
@@ -160,9 +171,14 @@ export function ConsumableOrderPayPage() {
         const totalAmount = calculation?.Total || calculatedOrder.TotalAmount || calculateLocalTotal(calculatedOrder.ConsumablesOrderItems || [])
         const paidAmount = nextOrder.TotalPaidAmount || 0
         const remainingAmount = totalAmount - paidAmount
-        const defaultAmount = paidAmount > 0 && remainingAmount > 0 ? remainingAmount : totalAmount
+        const defaultAmount = remainingAmount > 0 ? remainingAmount : 0
+        const normalizedOrder: ConsumablesOrder = {
+          ...calculatedOrder,
+          TotalAmount: totalAmount,
+          TotalPaidAmount: paidAmount,
+        }
 
-        setOrder(calculatedOrder)
+        setOrder(normalizedOrder)
         setOrganizations(includeEntity(nextOrganizations, defaultOrganization))
         setPaymentRegisters(nextRegisters)
         setPaymentMovements(nextMovements)
@@ -447,9 +463,21 @@ export function ConsumableOrderPayPage() {
             <Stack gap="sm">
               <Group justify="space-between">
                 <Text fw={700}>{t('Позиції накладної')}</Text>
-                <Badge color="blue" variant="light">
-                  {t('Разом')}: {formatMoney(order?.TotalAmount || calculateLocalTotal(items))}
-                </Badge>
+                <Group gap="xs" wrap="wrap">
+                  <Badge color="blue" variant="light">
+                    {t('Разом')}: {formatMoney(paymentTotalAmount)}
+                  </Badge>
+                  {paidAmount > 0 ? (
+                    <Badge color="teal" variant="light">
+                      {t('Оплачено')}: {formatMoney(paidAmount)}
+                    </Badge>
+                  ) : null}
+                  {remainingAmount > 0 ? (
+                    <Badge color="yellow" variant="light">
+                      {t('Залишок')}: {formatMoney(remainingAmount)}
+                    </Badge>
+                  ) : null}
+                </Group>
               </Group>
 
               <Table.ScrollContainer minWidth={820}>
@@ -510,54 +538,6 @@ function createInitialForm(): PayFormState {
   }
 }
 
-function buildPaymentPayload({
-  amount,
-  comment,
-  date,
-  order,
-  selectedCurrencyRegister,
-  selectedMovement,
-  selectedOrganization,
-  selectedRegister,
-  time,
-}: {
-  amount: number
-  comment: string
-  date: string
-  order: ConsumablesOrder
-  selectedCurrencyRegister: PaymentCurrencyRegister
-  selectedMovement: PaymentMovement
-  selectedOrganization: Organization
-  selectedRegister: PaymentRegister
-  time: string
-}): OutcomePaymentOrder {
-  const paidOrder = {
-    ...order,
-    ConsumablesOrderItems: (order.ConsumablesOrderItems || []).map((item) => ({
-      ...item,
-      ConsumableProductOrganization: order.ConsumableProductOrganization,
-    })),
-    IsPayed: true,
-  }
-
-  return {
-    Amount: amount,
-    Comment: comment.trim(),
-    FromDate: toIsoDateTime(date, time),
-    Organization: selectedOrganization,
-    OutcomePaymentOrderConsumablesOrders: [
-      {
-        ConsumablesOrder: paidOrder,
-      },
-    ],
-    PaymentCurrencyRegister: selectedCurrencyRegister,
-    PaymentMovementOperation: {
-      PaymentMovement: selectedMovement,
-    },
-    PaymentRegister: selectedRegister,
-  }
-}
-
 function validatePaymentForm({
   amount,
   order,
@@ -599,11 +579,17 @@ function validatePaymentForm({
     return t('Сума має бути більшою за нуль')
   }
 
-  return null
-}
+  const remainingAmount = getRemainingPaymentAmount(order)
 
-function calculateLocalTotal(items: ConsumablesOrderItem[]): number {
-  return items.reduce((total, item) => total + (item.TotalPriceWithVAT || 0), 0)
+  if (remainingAmount <= MONEY_EPSILON) {
+    return t('Накладна вже оплачена')
+  }
+
+  if (amount - remainingAmount > MONEY_EPSILON) {
+    return t('Сума перевищує залишок до оплати')
+  }
+
+  return null
 }
 
 function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = getEntityLabel): SelectOption[] {
@@ -662,12 +648,6 @@ function getEntityLabel(entity?: NamedEntity | null): string {
 
 function getItemKey(item: ConsumablesOrderItem, index: number): string {
   return String(item.NetUid || item.Id || `${item.ConsumableProduct?.NetUid || item.ConsumableProduct?.Id || 'item'}-${index}`)
-}
-
-function toIsoDateTime(dateValue: string, timeValue: string): string {
-  const date = new Date(`${dateValue || formatLocalDate(new Date())}T${timeValue || '00:00'}`)
-
-  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString()
 }
 
 function toTimeValue(date: Date): string {

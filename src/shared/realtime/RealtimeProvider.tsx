@@ -18,6 +18,7 @@ import {
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
 import { realtimeUrl } from './realtimeUrl'
+import { applyDataSyncNotification } from './dataSyncProgressStore'
 
 const hubPaths = {
   dataSync: '/hubs/data/sync',
@@ -148,6 +149,7 @@ function createDataSyncConnection(t: (key: string) => string, user: AuthUser | n
 
   connection.on('ProcessNotificationMessage', (payload: unknown) => {
     const notification = parseRealtimePayload<DataSyncNotification>(payload)
+    applyDataSyncNotification(notification)
     realtimeBus.emit(realtimeEvents.dataSyncNotification, notification)
     showDataSyncNotification(notification, user, t)
   })

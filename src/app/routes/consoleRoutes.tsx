@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { ModulePage } from '../../pages/module/ModulePage'
 import {
   AccountableExpensesPage,
   ActProvidingServiceDetailPage,
@@ -309,9 +308,6 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/sales/ukraine/all/returns/new', element: <SalesDashboardShell>{lazyRoute(<NewUkraineSaleReturnPage />)}</SalesDashboardShell> },
   { path: '/sales', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/service/organisations', element: lazyRoute(<OrganisationServicesPage />) },
-  { path: '/supply', element: <ModulePage module="Постачання" /> },
-  { path: '/routes', element: <ModulePage module="Маршрути" /> },
-  { path: '/settings', element: <ModulePage module="Налаштування" /> },
 ]
 
 export const consoleRoutes: ConsoleRoute[] = [

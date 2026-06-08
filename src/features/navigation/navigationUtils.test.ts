@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   findNavigationMatch,
   getNavigationNodePath,
+  isNavigationPathAllowed,
   isNavigationNodeActive,
   isNavigationNodeRouteTarget,
   normalizeNavigation,
@@ -171,5 +172,81 @@ describe('findNavigationMatch', () => {
     ]
 
     expect(findNavigationMatch(modules, '/accounting/available-payments')?.node.Module).toBe('Доступні платежі')
+  })
+
+  it('finds nested backend navigation nodes recursively', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Меню',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Батьківський розділ',
+            Route: '/accounting',
+            Children: [
+              {
+                Id: 111,
+                Module: 'Каси',
+                Route: '/accounting/payment-accounts',
+              },
+            ],
+          },
+        ],
+      },
+    ]
+
+    expect(findNavigationMatch(modules, '/accounting/payment-accounts/edit/1')?.node.Module).toBe('Каси')
+  })
+})
+
+describe('isNavigationPathAllowed', () => {
+  it('allows dashboard and descendants of allowed menu nodes', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Меню',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Клієнти',
+            Route: '/clients',
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, '/')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/dashboard')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/clients/edit/client-1')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/users')).toBe(false)
+  })
+
+  it('does not reuse loose active-menu wildcards for access control', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Меню',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Новий користувач',
+            Route: '/users/new',
+          },
+          {
+            Id: 12,
+            Module: 'Продажі Україна',
+            Route: '/sales/ukraine/all',
+          },
+        ],
+      },
+    ]
+
+    expect(findNavigationMatch(modules, '/users/edit/user-1')?.node.Module).toBe('Новий користувач')
+    expect(isNavigationPathAllowed(modules, '/users/edit/user-1')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/users/new')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/users/new/details')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/sales/ukraine/debtors')).toBe(false)
+    expect(isNavigationPathAllowed(modules, '/sales/ukraine/all/returns/new')).toBe(true)
   })
 })

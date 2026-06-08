@@ -876,6 +876,31 @@
   min-width: 0;
 }
 
+.data-sync-progress {
+  flex: 0 1 420px;
+  min-width: 220px;
+  max-width: min(42vw, 520px);
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--mantine-color-teal-2);
+  border-radius: 6px;
+  background: var(--mantine-color-teal-0);
+  color: var(--mantine-color-teal-9);
+}
+
+.data-sync-progress.is-error {
+  border-color: var(--mantine-color-red-2);
+  background: var(--mantine-color-red-0);
+  color: var(--mantine-color-red-9);
+}
+
+.data-sync-progress-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .rates-footer-groups {
   width: max-content;
 }

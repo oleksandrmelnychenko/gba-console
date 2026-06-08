@@ -90,8 +90,13 @@ export type ConsumablesOrder = EntityFields & {
   OutcomePaymentOrderConsumablesOrders?: OutcomePaymentOrderConsumablesOrder[]
   TotalAmount?: number
   TotalAmountWithoutVAT?: number
+  TotalPaidAmount?: number
   User?: NamedEntity | null
 }
+
+export type AccountableExpensePaymentStatus = 'paid' | 'partial' | 'unpaid'
+
+export type AccountableExpenseUnderReportStatus = 'closed' | 'mixed' | 'none' | 'open'
 
 export type AccountableExpenseRow = {
   advanceNumber?: string
@@ -101,14 +106,18 @@ export type AccountableExpenseRow = {
   currency?: string
   id: string
   isPayed?: boolean
+  isUnderReportDone?: boolean
   item: ConsumablesOrderItem
   order: ConsumablesOrder
   organization?: string
   payedTo?: string
+  paidAmount?: number
+  paymentStatus?: AccountableExpensePaymentStatus
   pricePerItem?: number
   productName?: string
   qty?: number
   responsible?: string
+  underReportStatus?: AccountableExpenseUnderReportStatus
   vendorCode?: string
 }
 

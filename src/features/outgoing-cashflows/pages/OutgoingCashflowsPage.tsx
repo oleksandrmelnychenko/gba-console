@@ -1156,19 +1156,16 @@ function buildCashflowRows(orders: OutcomePaymentOrder[]): OutgoingCashflowRow[]
 function getPayedTo(order: OutcomePaymentOrder): string | undefined {
   const consumablesRecipients = getConsumablesOrderRecipientNames(order)
 
-  if (consumablesRecipients) {
-    return consumablesRecipients
+  if (order.IsUnderReport) {
+    return getColleagueFullName(order.Colleague) || consumablesRecipients
   }
 
-  if (!order.IsUnderReport) {
-    return getEntityName(order.ConsumableProductOrganization)
-      || getEntityName(order.ClientAgreement?.Client)
-      || getColleagueFullName(order.Colleague)
-      || getEntityName(order.Client)
-      || undefined
-  }
-
-  return getColleagueFullName(order.Colleague)
+  return consumablesRecipients
+    || getEntityName(order.ConsumableProductOrganization)
+    || getEntityName(order.ClientAgreement?.Client)
+    || getColleagueFullName(order.Colleague)
+    || getEntityName(order.Client)
+    || undefined
 }
 
 function getConsumablesOrderRecipientNames(order: OutcomePaymentOrder): string | undefined {

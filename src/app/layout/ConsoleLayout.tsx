@@ -5,6 +5,7 @@ import { PageHeaderActionsProvider } from '../../shared/ui/page-header-actions/P
 import { ConsoleFooter } from './components/ConsoleFooter'
 import { ConsoleHeader } from './components/ConsoleHeader'
 import { ConsoleMain } from './components/ConsoleMain'
+import { NavigationRouteGuard } from './components/NavigationRouteGuard'
 import './layout.css'
 
 export function ConsoleLayout() {
@@ -18,7 +19,9 @@ export function ConsoleLayout() {
         >
           <ConsoleHeader />
           <ConsoleMain>
-            <Outlet />
+            <NavigationRouteGuard>
+              <Outlet />
+            </NavigationRouteGuard>
           </ConsoleMain>
           <ConsoleFooter />
         </AppShell>

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { updateProduct, updateProductWithImages, uploadProductsFromFile } from './productsApi'
+import { exportProductIncomeMovementsDocument, updateProduct, updateProductWithImages, uploadProductsFromFile } from './productsApi'
 import type { Product, ProductFileUploadConfiguration } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -82,6 +82,22 @@ describe('products API upload contracts', () => {
     expect(payload).not.toHaveProperty('ProductOriginalNumbers')
     expect(payload).not.toHaveProperty('ProductSpecifications')
     expect(payload).not.toHaveProperty('ProductProductGroups')
+  })
+
+  it('normalizes alternate export document field names for product movement documents', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      PdfDocument: 'https://example.test/income.pdf',
+      XlsxDocument: 'https://example.test/income.xlsx',
+    })
+
+    await expect(exportProductIncomeMovementsDocument({
+      from: '2026-06-01',
+      productNetId: 'product-1',
+      to: '2026-06-08',
+    })).resolves.toEqual({
+      DocumentURL: 'https://example.test/income.xlsx',
+      PdfDocumentURL: 'https://example.test/income.pdf',
+    })
   })
 })
 

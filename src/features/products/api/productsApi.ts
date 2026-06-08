@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   AuditEntity,
   Product,
@@ -669,19 +670,6 @@ function normalizeReservation(result: unknown): ProductReservation {
   }
 
   return {}
-}
-
-function normalizeExportDocument(result: unknown): ProductMovementExportDocument {
-  if (!result || typeof result !== 'object') {
-    return {}
-  }
-
-  const payload = result as Record<string, unknown>
-
-  return {
-    DocumentURL: typeof payload.DocumentURL === 'string' ? payload.DocumentURL : '',
-    PdfDocumentURL: typeof payload.PdfDocumentURL === 'string' ? payload.PdfDocumentURL : '',
-  }
 }
 
 function ensureProduct(product: Product): Product {
