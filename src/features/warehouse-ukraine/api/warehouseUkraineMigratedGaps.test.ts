@@ -91,6 +91,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
       from: '2026-06-01',
       to: '2026-06-08',
       limit: 20,
+      offset: 40,
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/shipments/all/filtered', {
@@ -98,6 +99,7 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         from: '2026-06-01',
         to: '2026-06-08',
         limit: 20,
+        offset: 40,
       },
     })
   })

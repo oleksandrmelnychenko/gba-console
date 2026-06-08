@@ -355,34 +355,77 @@ function buildServiceColumn(service: ServiceColumn): DataTableColumn<Specificati
 }
 
 function buildServiceColumns(items: PackingListPackageOrderItem[], currencyIsEur: boolean) {
-  const baseItem = items[0]
-  const services = baseItem?.PackingListPackageOrderItemSupplyServices || []
   const netServiceColumns: ServiceColumn[] = []
   const generalServiceColumns: ServiceColumn[] = []
   const managementServiceColumns: ServiceColumn[] = []
+  const seen = new Set<string>()
 
-  services.forEach((service, index) => {
-    if (service.NetValue) {
-      netServiceColumns.push({
-        id: `service-${index}-net`,
-        name: buildServiceName(service, 'net', currencyIsEur),
-      })
-    } else if (service.GeneralValue) {
-      generalServiceColumns.push({
-        id: `service-${index}-general`,
-        name: buildServiceName(service, 'general', currencyIsEur),
-      })
-    }
+  items.forEach((item) => {
+    const services = item.PackingListPackageOrderItemSupplyServices || []
 
-    if (service.ManagementValue) {
-      managementServiceColumns.push({
-        id: `service-${index}-management`,
-        name: buildServiceName(service, 'management', currencyIsEur),
-      })
-    }
+    services.forEach((service, index) => {
+      if (service.NetValue) {
+        const id = buildServiceColumnId(service, 'net', index)
+
+        if (!seen.has(id)) {
+          seen.add(id)
+          netServiceColumns.push({
+            id,
+            name: buildServiceName(service, 'net', currencyIsEur),
+          })
+        }
+      } else if (service.GeneralValue) {
+        const id = buildServiceColumnId(service, 'general', index)
+
+        if (!seen.has(id)) {
+          seen.add(id)
+          generalServiceColumns.push({
+            id,
+            name: buildServiceName(service, 'general', currencyIsEur),
+          })
+        }
+      }
+
+      if (service.ManagementValue) {
+        const id = buildServiceColumnId(service, 'management', index)
+
+        if (!seen.has(id)) {
+          seen.add(id)
+          managementServiceColumns.push({
+            id,
+            name: buildServiceName(service, 'management', currencyIsEur),
+          })
+        }
+      }
+    })
   })
 
   return { generalServiceColumns, managementServiceColumns, netServiceColumns }
+}
+
+function buildServiceColumnId(
+  service: PackingListPackageOrderItemSupplyService,
+  kind: 'general' | 'management' | 'net',
+  fallbackIndex: number,
+): string {
+  const sourceKey =
+    getEntityKey(service.MergedService, 'merged') ||
+    getEntityKey(service.BillOfLadingService, 'bill-of-lading') ||
+    getEntityKey(service.ContainerService, 'container') ||
+    getEntityKey(service.VehicleService, 'vehicle') ||
+    service.Name ||
+    getEntityKey(service, 'service') ||
+    String(fallbackIndex)
+
+  return `service-${kind}-${sourceKey}`
+}
+
+function getEntityKey(entity: EntityWithKey | null | undefined, prefix: string): string {
+  if (!entity) {
+    return ''
+  }
+
+  return entity.NetUid ? `${prefix}-${entity.NetUid}` : entity.Id ? `${prefix}-${entity.Id}` : ''
 }
 
 function buildServiceName(
@@ -427,17 +470,25 @@ function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEu
 
   services.forEach((service, serviceIndex) => {
     if (service.NetValue) {
-      serviceValues[`service-${serviceIndex}-net`] = currencyIsEur ? service.NetValueEur || 0 : service.NetValueUah || 0
+      addServiceValue(
+        serviceValues,
+        buildServiceColumnId(service, 'net', serviceIndex),
+        currencyIsEur ? service.NetValueEur || 0 : service.NetValueUah || 0,
+      )
     } else if (service.GeneralValue) {
-      serviceValues[`service-${serviceIndex}-general`] = currencyIsEur
-        ? service.GeneralValueEur || 0
-        : service.GeneralValueUah || 0
+      addServiceValue(
+        serviceValues,
+        buildServiceColumnId(service, 'general', serviceIndex),
+        currencyIsEur ? service.GeneralValueEur || 0 : service.GeneralValueUah || 0,
+      )
     }
 
     if (service.ManagementValue) {
-      serviceValues[`service-${serviceIndex}-management`] = currencyIsEur
-        ? service.ManagementValueEur || 0
-        : service.ManagementValueUah || 0
+      addServiceValue(
+        serviceValues,
+        buildServiceColumnId(service, 'management', serviceIndex),
+        currencyIsEur ? service.ManagementValueEur || 0 : service.ManagementValueUah || 0,
+      )
     }
   })
 
@@ -467,6 +518,15 @@ function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEu
     vatValue: lastSpecification?.VATValue || 0,
     vendorCode: product?.VendorCode || '',
   }
+}
+
+type EntityWithKey = {
+  Id?: number
+  NetUid?: string
+}
+
+function addServiceValue(values: Record<string, number>, id: string, value: number) {
+  values[id] = (values[id] || 0) + value
 }
 
 function getLastSpecification(specifications: ProductSpecificationEntity[]): ProductSpecificationEntity | null {

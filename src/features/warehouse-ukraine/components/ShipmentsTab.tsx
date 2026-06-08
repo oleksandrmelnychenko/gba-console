@@ -18,6 +18,8 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconChevronLeft,
+  IconChevronRight,
   IconCircleCheck,
   IconCircleDashed,
   IconDeviceFloppy,
@@ -111,6 +113,8 @@ const ALL_TRANSPORTERS_VALUE = '__all_transporters__'
 const SHIPMENTS_TAB_ALL = 'all'
 const SHIPMENTS_TAB_AUTO = 'auto'
 const DEFAULT_SHIPMENT_LOOKBACK_DAYS = 30
+const DEFAULT_ALL_SHIPMENTS_LIMIT = 20
+const ALL_SHIPMENTS_PAGE_SIZE_OPTIONS = ['20', '50', '100']
 
 type FilterDraft = {
   from: string
@@ -1015,6 +1019,8 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const [transporters, setTransporters] = useValueState<ShipmentTransporter[]>([])
   const [selectedTransporterNetId, setSelectedTransporterNetId] = useValueState<string>(ALL_TRANSPORTERS_VALUE)
   const [shipmentLists, setShipmentLists] = useValueState<ShipmentList[]>([])
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_ALL_SHIPMENTS_LIMIT)
   const [selectedShipment, setSelectedShipment] = useValueState<ShipmentList | null>(null)
   const [shipmentDraft, setShipmentDraft] = useValueState<ShipmentList | null>(null)
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
@@ -1146,7 +1152,8 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
           transporterNetId,
           from: filterDraft.from,
           to: filterDraft.to,
-          limit: 20,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
         })
 
         if (!cancelled) {
@@ -1173,6 +1180,8 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     filterDraft.from,
     filterDraft.to,
     filterError,
+    page,
+    pageSize,
     reloadKey,
     selectedTransporterNetId,
     setError,
@@ -1210,9 +1219,31 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     { value: ALL_TRANSPORTERS_VALUE, label: t('Усі') },
     ...toTransporterOptions(transporters),
   ]
+  const canMoveBack = page > 1
+  const canMoveForward = shipmentLists.length === pageSize
 
   function refreshList() {
     reload()
+  }
+
+  function updateListFilter(nextFilter: FilterDraft) {
+    setPage(1)
+    setFilterDraft(nextFilter)
+  }
+
+  function changeTransporterType(value: string | null) {
+    setPage(1)
+    setSelectedTypeNetId(value)
+  }
+
+  function changeTransporter(value: string | null) {
+    setPage(1)
+    setSelectedTransporterNetId(value || ALL_TRANSPORTERS_VALUE)
+  }
+
+  function changePageSize(value: string | null) {
+    setPage(1)
+    setPageSize(Number(value || DEFAULT_ALL_SHIPMENTS_LIMIT))
   }
 
   async function loadManualSales(
@@ -1672,7 +1703,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               placeholder={t('Тип перевізника')}
               value={selectedTypeNetId}
               w={220}
-              onChange={(value) => setSelectedTypeNetId(value)}
+              onChange={changeTransporterType}
             />
             <Select
               data={transporterOptions}
@@ -1680,21 +1711,21 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               placeholder={t('Перевізник')}
               value={selectedTransporterNetId}
               w={240}
-              onChange={(value) => setSelectedTransporterNetId(value || ALL_TRANSPORTERS_VALUE)}
+              onChange={changeTransporter}
             />
             <TextInput
               label={t('Початкова дата')}
               max={filterDraft.to || undefined}
               type="date"
               value={filterDraft.from}
-              onChange={(event) => setFilterDraft({ ...filterDraft, from: event.currentTarget.value })}
+              onChange={(event) => updateListFilter({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
               label={t('Кінцева дата')}
               min={filterDraft.from || undefined}
               type="date"
               value={filterDraft.to}
-              onChange={(event) => setFilterDraft({ ...filterDraft, to: event.currentTarget.value })}
+              onChange={(event) => updateListFilter({ ...filterDraft, to: event.currentTarget.value })}
             />
           </Group>
 
@@ -1703,6 +1734,44 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               {filterError || error}
             </Alert>
           )}
+
+          <Group justify="space-between" gap="sm">
+            <Text size="sm" c="dimmed">
+              {t('Сторінка')} {page}
+            </Text>
+            <Group gap="xs" wrap="nowrap">
+              <Select
+                aria-label={t('Розмір сторінки')}
+                data={ALL_SHIPMENTS_PAGE_SIZE_OPTIONS}
+                value={String(pageSize)}
+                w={86}
+                onChange={changePageSize}
+              />
+              <ActionIcon
+                aria-label={t('Попередня сторінка')}
+                color="gray"
+                disabled={!canMoveBack || isLoading}
+                size={36}
+                variant="light"
+                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              >
+                <IconChevronLeft size={18} />
+              </ActionIcon>
+              <Text size="sm" w={34} ta="center">
+                {page}
+              </Text>
+              <ActionIcon
+                aria-label={t('Наступна сторінка')}
+                color="gray"
+                disabled={!canMoveForward || isLoading}
+                size={36}
+                variant="light"
+                onClick={() => setPage((currentPage) => currentPage + 1)}
+              >
+                <IconChevronRight size={18} />
+              </ActionIcon>
+            </Group>
+          </Group>
 
           <DataTable
             columns={listColumns}

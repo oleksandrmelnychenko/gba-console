@@ -38,6 +38,7 @@ export type ShipmentListSearchParams = {
   from: string
   to: string
   limit?: number
+  offset?: number
 }
 
 export async function getManualShipmentSales(params: AutoShipmentListParams): Promise<ShipmentSale[]> {
@@ -71,6 +72,7 @@ export async function getAllShipmentLists(params: ShipmentListSearchParams): Pro
       from: params.from,
       to: params.to,
       limit: params.limit ?? 20,
+      ...(typeof params.offset === 'number' ? { offset: params.offset } : {}),
     },
   })
 
