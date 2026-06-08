@@ -108,8 +108,12 @@ export function MergedServicesSection({
   const visibleServices = services.filter((service) => !service.Deleted)
 
   async function handleNewSubmit(values: NewMergedServiceFormValues) {
-    await onCreateService(buildServiceFromForm(values), values.files)
-    setNewOpen(false)
+    try {
+      await onCreateService(buildServiceFromForm(values), values.files)
+      setNewOpen(false)
+    } catch {
+      // Parent renders the action error; keep the drawer open so the user does not lose form context.
+    }
   }
 
   async function handleRemoveConfirm() {
@@ -117,8 +121,12 @@ export function MergedServicesSection({
       return
     }
 
-    await onRemoveService(removeTarget)
-    setRemoveTarget(null)
+    try {
+      await onRemoveService(removeTarget)
+      setRemoveTarget(null)
+    } catch {
+      // Parent renders the action error; keep the confirmation open on failure.
+    }
   }
 
   return (
@@ -147,7 +155,7 @@ export function MergedServicesSection({
               permissions={permissions}
               service={service}
               users={users}
-              onAddPaymentTask={(target, values, isAccounting) => void onAddPaymentTask(target, values, isAccounting)}
+              onAddPaymentTask={onAddPaymentTask}
               onRemovePaymentTask={(target, task) => void onRemovePaymentTask(target, task)}
               onRemoveService={(target) => setRemoveTarget(target)}
             />

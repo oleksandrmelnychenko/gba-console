@@ -45,6 +45,11 @@ export function SupplyUkrainePaymentProtocolsView() {
   const canAddPaymentProtocol = hasPermission(PERMISSION_ADD_PAYMENT_PROTOCOL)
   const canRemovePaymentTask = hasPermission(PERMISSION_REMOVE_PAYMENT_TASK)
 
+  function rejectAction(message: string): never {
+    setActionError(message)
+    throw new Error(message)
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -102,7 +107,9 @@ export function SupplyUkrainePaymentProtocolsView() {
         setOrder(updated)
       }
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит'))
+      const message = requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит')
+      setActionError(message)
+      throw new Error(message, { cause: requestError })
     } finally {
       setSaving(false)
     }
@@ -110,12 +117,11 @@ export function SupplyUkrainePaymentProtocolsView() {
 
   async function handleCreateService(service: MergedService, documents: File[]): Promise<void> {
     if (!canAddPaymentProtocol) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order?.NetUid) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     setSaving(true)
@@ -128,7 +134,9 @@ export function SupplyUkrainePaymentProtocolsView() {
         setOrder(updated)
       }
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит'))
+      const message = requestError instanceof Error ? requestError.message : t('Не вдалося виконати запит')
+      setActionError(message)
+      throw new Error(message, { cause: requestError })
     } finally {
       setSaving(false)
     }
@@ -136,12 +144,11 @@ export function SupplyUkrainePaymentProtocolsView() {
 
   async function handleRemoveService(service: MergedService): Promise<void> {
     if (!canRemovePaymentTask) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     const nextOrder: SupplyOrderUkraine = {
@@ -160,12 +167,11 @@ export function SupplyUkrainePaymentProtocolsView() {
     isAccounting: boolean,
   ): Promise<void> {
     if (!canAddPaymentProtocol) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     const paymentTask: SupplyPaymentTask = {
@@ -194,12 +200,11 @@ export function SupplyUkrainePaymentProtocolsView() {
 
   async function handleRemovePaymentTask(service: MergedService, task: SupplyPaymentTask): Promise<void> {
     if (!canRemovePaymentTask) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     const nextOrder: SupplyOrderUkraine = {
@@ -228,12 +233,11 @@ export function SupplyUkrainePaymentProtocolsView() {
 
   async function handleCreateProtocol(values: NewPaymentProtocolFormValues): Promise<void> {
     if (!canAddPaymentProtocol) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     const protocol: SupplyOrderUkrainePaymentDeliveryProtocol = {
@@ -261,12 +265,11 @@ export function SupplyUkrainePaymentProtocolsView() {
 
   async function handleRemoveProtocol(protocol: SupplyOrderUkrainePaymentDeliveryProtocol): Promise<void> {
     if (!canRemovePaymentTask) {
-      setActionError(t('Недостатньо прав для цієї дії'))
-      return
+      rejectAction(t('Недостатньо прав для цієї дії'))
     }
 
     if (!order) {
-      return
+      rejectAction(t('Не задано замовлення'))
     }
 
     const nextOrder: SupplyOrderUkraine = {

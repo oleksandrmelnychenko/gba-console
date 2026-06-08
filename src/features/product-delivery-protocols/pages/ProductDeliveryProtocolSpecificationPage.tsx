@@ -616,9 +616,7 @@ function useSpecificationModel(netId: string | undefined) {
     try {
       const invoicePayload: SpecificationSupplyInvoice = {
         ...invoice,
-        DateCustomDeclaration: dateCustomDeclaration
-          ? formatLocalInputDateTime(dateCustomDeclaration)
-          : formatLocalInputDateTime(),
+        DateCustomDeclaration: dateCustomDeclaration ? formatLocalInputDateTime(dateCustomDeclaration) : null,
         NumberCustomDeclaration: numberCustomDeclaration,
         SupplyInvoiceDeliveryDocuments: (invoice.SupplyInvoiceDeliveryDocuments || []).map((document, index) => {
           const draft = existingDocuments.find((item) => item.id === getDeliveryDocumentDraftId(document, index))
@@ -840,15 +838,21 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const model = useSpecificationModel(id)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
-  const canMerge = invoices.length > 1
+  const canUseSpecification = Boolean(model.protocol?.IsShipped)
+  const canMerge = canUseSpecification && invoices.length > 1
   const canDownload =
-    hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) && Boolean(model.packingList && (model.packingList.Id || 0) > 0)
+    canUseSpecification &&
+    hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&
+    Boolean(model.packingList && (model.packingList.Id || 0) > 0)
   const canUpload =
-    hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
-  const canUploadDocuments = hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
-  const canOpenDeliveryDocuments = Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
-  const canEditSpecification = hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
-  const canSaveSpecification = hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
+    canUseSpecification &&
+    hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) &&
+    Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
+  const canUploadDocuments = canUseSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canOpenDeliveryDocuments =
+    canUseSpecification && Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
+  const canEditSpecification = canUseSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
+  const canSaveSpecification = canUseSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
 
   return (
@@ -875,13 +879,13 @@ export function ProductDeliveryProtocolSpecificationPage() {
         <Group gap="sm" align="center">
           <SegmentedControl
             data={SPECIFICATION_CURRENCY_OPTIONS}
-            disabled={model.isActionBusy}
+            disabled={!canUseSpecification || model.isActionBusy}
             value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
             onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
           />
           <SegmentedControl
             data={SERVICE_MODE_OPTIONS}
-            disabled={model.isActionBusy}
+            disabled={!canUseSpecification || model.isActionBusy}
             value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
             onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
           />
@@ -898,6 +902,10 @@ export function ProductDeliveryProtocolSpecificationPage() {
         <Text c="dimmed" size="sm">
           {t('Завантаження')}
         </Text>
+      ) : model.protocol && !canUseSpecification ? (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {t('Специфікації доступні після відвантаження протоколу')}
+        </Alert>
       ) : model.protocol ? (
         <Stack gap="lg">
           <Card withBorder radius="md" padding="md">
@@ -1165,9 +1173,7 @@ function ProductDeliveryProtocolSpecificationModals({
 }
 
 function getInvoiceCustomDeclarationDate(invoice: SpecificationSupplyInvoice): string {
-  return invoice.DateCustomDeclaration
-    ? formatLocalDate(new Date(invoice.DateCustomDeclaration))
-    : formatLocalDate(new Date())
+  return invoice.DateCustomDeclaration ? formatLocalDate(new Date(invoice.DateCustomDeclaration)) : ''
 }
 
 function isValidDateInputValue(value: string): boolean {

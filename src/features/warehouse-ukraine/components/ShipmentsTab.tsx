@@ -145,6 +145,62 @@ function cloneShipmentList(shipmentList: ShipmentList): ShipmentList {
   }
 }
 
+function getShipmentComparableState(shipmentList: ShipmentList | null) {
+  if (!shipmentList) {
+    return null
+  }
+
+  return {
+    Comment: shipmentList.Comment || '',
+    FromDate: shipmentList.FromDate || '',
+    ShipmentListItems: shipmentList.ShipmentListItems.map((item, index) => ({
+      key: getShipmentItemKey(item, index),
+      IsDirty: Boolean(item.IsDirty),
+      QtyPlaces: item.QtyPlaces ?? null,
+      Sale: {
+        Comment: item.Sale.Comment || '',
+        DeliveryRecipient: item.Sale.DeliveryRecipient || null,
+        DeliveryRecipientAddress: item.Sale.DeliveryRecipientAddress || null,
+        ShippingAmount: item.Sale.ShippingAmount ?? null,
+        TTN: item.Sale.TTN || '',
+        WarehousesShipmentComment: item.Sale.WarehousesShipment?.Comment || '',
+      },
+    })),
+  }
+}
+
+function hasShipmentListChanges(original: ShipmentList | null, draft: ShipmentList | null): boolean {
+  if (!original || !draft) {
+    return false
+  }
+
+  return JSON.stringify(getShipmentComparableState(original)) !== JSON.stringify(getShipmentComparableState(draft))
+}
+
+function getShipmentItemKey(item: ShipmentListItem, index = -1): string {
+  return item.NetUid || (typeof item.Id === 'number' ? String(item.Id) : '') || item.Sale.NetUid || (index >= 0 ? String(index) : '')
+}
+
+function isSameShipmentItem(left: ShipmentListItem, right: ShipmentListItem): boolean {
+  const leftKey = getShipmentItemKey(left)
+  const rightKey = getShipmentItemKey(right)
+
+  return Boolean(leftKey && rightKey && leftKey === rightKey) || left === right
+}
+
+function updateShipmentListItem(
+  shipmentList: ShipmentList,
+  item: ShipmentListItem,
+  updater: (currentItem: ShipmentListItem) => ShipmentListItem,
+): ShipmentList {
+  return {
+    ...shipmentList,
+    ShipmentListItems: shipmentList.ShipmentListItems.map((currentItem) =>
+      isSameShipmentItem(currentItem, item) ? updater(currentItem) : currentItem,
+    ),
+  }
+}
+
 function toDateTimeLocalValue(value: Date | string | undefined): string {
   if (!value) {
     return ''
@@ -455,22 +511,35 @@ function useShipmentsTabModel() {
 
     const parsed = Number.parseInt(draft, 10)
 
-    if (!Number.isFinite(parsed) || parsed === item.QtyPlaces) {
+    if (!Number.isFinite(parsed)) {
       return
     }
 
-    item.QtyPlaces = parsed
-    item.IsDirty = true
+    if (parsed < 0) {
+      setError(t('Кількість місць не може бути від’ємною'))
+      return
+    }
 
-    void saveShipmentList()
+    if (parsed === item.QtyPlaces) {
+      return
+    }
+
+    const nextShipmentList = updateShipmentListItem(shipmentList, item, (currentItem) => ({
+      ...currentItem,
+      IsDirty: true,
+      QtyPlaces: parsed,
+    }))
+
+    setShipmentList(nextShipmentList)
+    void saveShipmentList(nextShipmentList)
   }
 
-  async function saveShipmentList() {
+  async function saveShipmentList(nextShipmentList = shipmentList) {
     setSaving(true)
     setError(null)
 
     try {
-      await updateShipmentList(shipmentList)
+      await updateShipmentList(nextShipmentList)
       refreshList()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
@@ -849,6 +918,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const [selectedShipment, setSelectedShipment] = useValueState<ShipmentList | null>(null)
   const [shipmentDraft, setShipmentDraft] = useValueState<ShipmentList | null>(null)
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
+  const [confirmCloseShipment, setConfirmCloseShipment] = useState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -868,6 +938,11 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const listColumns = useAllShipmentColumns(listIndexMap)
   const draftItems = useMemo(() => shipmentDraft?.ShipmentListItems || [], [shipmentDraft])
   const draftIndexMap = useMemo(() => buildIndexMap(draftItems), [draftItems])
+  const hasShipmentDraftChanges = useMemo(
+    () => hasShipmentListChanges(selectedShipment, shipmentDraft),
+    [selectedShipment, shipmentDraft],
+  )
+  const canEditShipment = Boolean(shipmentDraft && !shipmentDraft.IsSent)
 
   useEffect(() => {
     let cancelled = false
@@ -987,6 +1062,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   ])
 
   const editColumns = useEditShipmentColumns({
+    canEdit: canEditShipment,
     indexMap: draftIndexMap,
     onEditAddress: (item) => setActiveModal({ kind: 'address', item }),
     onEditComment: (item) => setActiveModal({ kind: 'comment', item }),
@@ -1016,11 +1092,29 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   function closeShipment() {
     setEditError(null)
+    setConfirmCloseShipment(false)
     setSelectedShipment(null)
     setShipmentDraft(null)
   }
 
+  function requestCloseShipment() {
+    if (isSaving) {
+      return
+    }
+
+    if (hasShipmentDraftChanges) {
+      setConfirmCloseShipment(true)
+      return
+    }
+
+    closeShipment()
+  }
+
   function updateDraftField(field: 'Comment' | 'FromDate', value: string) {
+    if (!canEditShipment) {
+      return
+    }
+
     setShipmentDraft((current) => (current ? { ...current, [field]: value } : current))
   }
 
@@ -1028,6 +1122,10 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     item: ShipmentListItem,
     updater: (currentItem: ShipmentListItem) => ShipmentListItem,
   ) {
+    if (!canEditShipment) {
+      return
+    }
+
     setShipmentDraft((current) =>
       current
         ? {
@@ -1040,7 +1138,19 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     )
   }
 
+  function patchShipmentDraftItem(
+    item: ShipmentListItem,
+    updater: (currentItem: ShipmentListItem) => ShipmentListItem,
+  ) {
+    setShipmentDraft((current) => (current ? updateShipmentListItem(current, item, updater) : current))
+    setSelectedShipment((current) => (current ? updateShipmentListItem(current, item, updater) : current))
+  }
+
   function removeDraftItem(item: ShipmentListItem) {
+    if (!canEditShipment) {
+      return
+    }
+
     setShipmentDraft((current) => {
       if (!current) {
         return current
@@ -1071,6 +1181,12 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   async function saveSelectedShipment() {
     if (!shipmentDraft) {
+      return
+    }
+
+    if (!canEditShipment) {
+      setEditError(t('Проведене відвантаження доступне тільки для перегляду'))
+
       return
     }
 
@@ -1108,6 +1224,11 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
+    if (!canEditShipment) {
+      return
+    }
+
+    const currentItem = activeModal.item
     const saleNetId = activeModal.item.Sale.NetUid
 
     if (!saleNetId) {
@@ -1120,10 +1241,14 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     try {
       await updateDeliveryRecipient(saleNetId, { ...recipient, SaleNetId: saleNetId })
       setActiveModal(null)
-
-      if (shipmentDraft?.NetUid) {
-        await reloadSelectedShipment(shipmentDraft.NetUid)
-      }
+      patchShipmentDraftItem(currentItem, (item) => ({
+        ...item,
+        Sale: {
+          ...item.Sale,
+          DeliveryRecipient: { ...recipient, SaleNetId: saleNetId },
+        },
+      }))
+      refreshList()
     } catch (saveError) {
       setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {
@@ -1136,6 +1261,11 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
+    if (!canEditShipment) {
+      return
+    }
+
+    const currentItem = activeModal.item
     const saleNetId = activeModal.item.Sale.NetUid
 
     if (!saleNetId) {
@@ -1148,10 +1278,14 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     try {
       await updateDeliveryRecipientAddress(saleNetId, { ...address, SaleNetId: saleNetId })
       setActiveModal(null)
-
-      if (shipmentDraft?.NetUid) {
-        await reloadSelectedShipment(shipmentDraft.NetUid)
-      }
+      patchShipmentDraftItem(currentItem, (item) => ({
+        ...item,
+        Sale: {
+          ...item.Sale,
+          DeliveryRecipientAddress: { ...address, SaleNetId: saleNetId },
+        },
+      }))
+      refreshList()
     } catch (saveError) {
       setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {
@@ -1164,6 +1298,11 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       return
     }
 
+    if (!canEditShipment) {
+      return
+    }
+
+    const currentItem = activeModal.item
     const saleNetId = activeModal.item.Sale.NetUid
 
     if (!saleNetId) {
@@ -1176,10 +1315,20 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     try {
       await updateSaleComment(saleNetId, comment)
       setActiveModal(null)
-
-      if (shipmentDraft?.NetUid) {
-        await reloadSelectedShipment(shipmentDraft.NetUid)
-      }
+      patchShipmentDraftItem(currentItem, (item) => ({
+        ...item,
+        Sale: {
+          ...item.Sale,
+          Comment: comment,
+          WarehousesShipment: item.Sale.WarehousesShipment
+            ? {
+                ...item.Sale.WarehousesShipment,
+                Comment: comment,
+              }
+            : item.Sale.WarehousesShipment,
+        },
+      }))
+      refreshList()
     } catch (saveError) {
       setEditError(saveError instanceof Error ? saveError.message : t('Не вдалося виконати запит'))
     } finally {
@@ -1311,17 +1460,19 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
         opened={Boolean(shipmentDraft)}
         size="min(1180px, 100vw)"
         title={activeShipmentNumber ? `${t('Відвантаження')} ${activeShipmentNumber}` : t('Відвантаження')}
-        onClose={closeShipment}
+        onClose={requestCloseShipment}
       >
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">
             <TextInput
+              disabled={!canEditShipment || isSaving}
               label={t('Коментар')}
               value={shipmentDraft?.Comment || ''}
               w={280}
               onChange={(event) => updateDraftField('Comment', event.currentTarget.value)}
             />
             <TextInput
+              disabled={!canEditShipment || isSaving}
               label={t('Дата від')}
               type="datetime-local"
               value={toDateTimeLocalValue(shipmentDraft?.FromDate)}
@@ -1331,19 +1482,20 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               leftSection={<IconPrinter size={18} />}
               variant="light"
               onClick={printSelectedShipment}
-              disabled={!shipmentDraft?.NetUid}
+              disabled={!shipmentDraft?.NetUid || hasShipmentDraftChanges || isSaving}
             >
               {t('Роздрукувати')}
             </Button>
             <Button
               color="green"
               leftSection={<IconDeviceFloppy size={18} />}
+              disabled={!canEditShipment || !hasShipmentDraftChanges}
               loading={isSaving}
               onClick={saveSelectedShipment}
             >
               {t('Зберегти')}
             </Button>
-            <Button color="gray" leftSection={<IconX size={18} />} variant="light" onClick={closeShipment}>
+            <Button color="gray" leftSection={<IconX size={18} />} variant="light" onClick={requestCloseShipment}>
               {t('Скасувати')}
             </Button>
           </Group>
@@ -1371,7 +1523,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       </AppDrawer>
 
       <EditDeliveryRecipientModal
-        isSaving={isSaving}
+        isSaving={isSaving || !canEditShipment}
         opened={activeModal?.kind === 'recipient'}
         recipient={activeModal?.kind === 'recipient' ? activeModal.item.Sale.DeliveryRecipient || null : null}
         onClose={() => setActiveModal(null)}
@@ -1380,7 +1532,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
       <EditDeliveryAddressModal
         address={activeModal?.kind === 'address' ? activeModal.item.Sale.DeliveryRecipientAddress || null : null}
-        isSaving={isSaving}
+        isSaving={isSaving || !canEditShipment}
         opened={activeModal?.kind === 'address'}
         onClose={() => setActiveModal(null)}
         onSave={saveAddress}
@@ -1388,7 +1540,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
       <ChangeCommentModal
         comment={activeModal?.kind === 'comment' ? activeModal.item.Sale.Comment || '' : ''}
-        isSaving={isSaving}
+        isSaving={isSaving || !canEditShipment}
         opened={activeModal?.kind === 'comment'}
         onClose={() => setActiveModal(null)}
         onSave={saveComment}
@@ -1401,6 +1553,25 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
         opened={docOpened}
         onClose={() => setDocOpened(false)}
       />
+
+      <AppModal
+        centered
+        opened={confirmCloseShipment}
+        title={t('Закрити без збереження?')}
+        onClose={() => setConfirmCloseShipment(false)}
+      >
+        <Stack gap="md">
+          <Text size="sm">{t('Незбережені зміни у відвантаженні буде втрачено.')}</Text>
+          <Group justify="flex-end" gap="sm">
+            <Button color="gray" variant="light" onClick={() => setConfirmCloseShipment(false)}>
+              {t('Ні')}
+            </Button>
+            <Button color="red" onClick={closeShipment}>
+              {t('Так')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -1501,6 +1672,7 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
 }
 
 type EditShipmentColumnsModel = {
+  canEdit: boolean
   indexMap: Map<ShipmentListItem, number>
   onEditAddress: (item: ShipmentListItem) => void
   onEditComment: (item: ShipmentListItem) => void
@@ -1528,7 +1700,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 220,
         accessor: (item) => getRecipientInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell text={getRecipientInfo(item.Sale, t)} onEdit={() => model.onEditRecipient(item)} />
+          <EditableTextCell
+            disabled={!model.canEdit}
+            text={getRecipientInfo(item.Sale, t)}
+            onEdit={() => model.onEditRecipient(item)}
+          />
         ),
       },
       {
@@ -1537,7 +1713,11 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         minWidth: 220,
         accessor: (item) => getAddressInfo(item.Sale, t),
         cell: (item) => (
-          <EditableTextCell text={getAddressInfo(item.Sale, t)} onEdit={() => model.onEditAddress(item)} />
+          <EditableTextCell
+            disabled={!model.canEdit}
+            text={getAddressInfo(item.Sale, t)}
+            onEdit={() => model.onEditAddress(item)}
+          />
         ),
       },
       {
@@ -1581,6 +1761,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         cell: (item) => (
           <TextInput
             size="xs"
+            disabled={!model.canEdit}
             type="number"
             value={item.QtyPlaces == null ? '' : String(item.QtyPlaces)}
             onChange={(event) => {
@@ -1604,6 +1785,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         cell: (item) => (
           <TextInput
             size="xs"
+            disabled={!model.canEdit}
             type="number"
             value={item.Sale.ShippingAmount == null ? '' : String(item.Sale.ShippingAmount)}
             onChange={(event) => {
@@ -1630,6 +1812,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         cell: (item) => (
           <TextInput
             size="xs"
+            disabled={!model.canEdit}
             value={item.Sale.TTN || ''}
             onChange={(event) => {
               const value = event.currentTarget.value
@@ -1653,6 +1836,7 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         cell: (item) => (
           <EditableTextCell
             text={item.Sale.WarehousesShipment?.Comment || item.Sale.Comment || ''}
+            disabled={!model.canEdit}
             onEdit={() => model.onEditComment(item)}
           />
         ),
@@ -1686,7 +1870,13 @@ function useEditShipmentColumns(model: EditShipmentColumnsModel): DataTableColum
         accessor: (item) => model.indexMap.get(item),
         cell: (item) => (
           <Tooltip label={t('Видалити')}>
-            <ActionIcon color="red" size="sm" variant="subtle" onClick={() => model.onRemoveItem(item)}>
+            <ActionIcon
+              color="red"
+              disabled={!model.canEdit}
+              size="sm"
+              variant="subtle"
+              onClick={() => model.onRemoveItem(item)}
+            >
               <IconTrash size={16} />
             </ActionIcon>
           </Tooltip>
@@ -1894,14 +2084,15 @@ function useShipmentColumns(model: ShipmentColumnsModel): DataTableColumn<Shipme
 }
 
 type EditableTextCellProps = {
+  disabled?: boolean
   text: string
   onEdit: () => void
 }
 
-function EditableTextCell({ onEdit, text }: EditableTextCellProps) {
+function EditableTextCell({ disabled = false, onEdit, text }: EditableTextCellProps) {
   return (
     <Group gap={4} wrap="nowrap" align="center">
-      <ActionIcon color="gray" size="sm" variant="subtle" onClick={onEdit}>
+      <ActionIcon color="gray" disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
         <IconEdit size={14} />
       </ActionIcon>
       <Text size="sm" truncate>

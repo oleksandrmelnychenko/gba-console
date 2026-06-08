@@ -213,16 +213,20 @@ export function PaymentDeliveryProtocolsSection({
     }
 
     setValidationError(null)
-    await onCreateProtocol({
-      comment,
-      discount,
-      isAccounting,
-      payToDate,
-      protocolKey,
-      responsible,
-      value,
-    })
-    setFormOpen(false)
+    try {
+      await onCreateProtocol({
+        comment,
+        discount,
+        isAccounting,
+        payToDate,
+        protocolKey,
+        responsible,
+        value,
+      })
+      setFormOpen(false)
+    } catch {
+      // Parent renders the action error; keep the form open on failure.
+    }
   }
 
   async function handleRemoveConfirm() {
@@ -230,8 +234,12 @@ export function PaymentDeliveryProtocolsSection({
       return
     }
 
-    await onRemoveProtocol(removeTarget)
-    setRemoveTarget(null)
+    try {
+      await onRemoveProtocol(removeTarget)
+      setRemoveTarget(null)
+    } catch {
+      // Parent renders the action error; keep the confirmation open on failure.
+    }
   }
 
   return (

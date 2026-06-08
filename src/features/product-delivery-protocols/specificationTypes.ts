@@ -158,6 +158,7 @@ export type SpecificationSupplyInvoice = EntityFields & {
 
 export type SpecificationProtocol = EntityFields & {
   DeliveryProductProtocolNumber?: { Number?: string } | null
+  IsShipped?: boolean
   SupplyInvoices?: SpecificationSupplyInvoice[]
 }
 

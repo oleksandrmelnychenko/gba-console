@@ -65,6 +65,14 @@ export function getOutcomeOrderLinkKey(item: OutcomePaymentOrderConsumablesOrder
   return String(item.NetUid || item.Id || item.OutcomePaymentOrder?.NetUid || item.OutcomePaymentOrder?.Id || `outcome-${index}`)
 }
 
+export function getAdvanceReportLink(outcome?: OutcomePaymentOrder | null): string | null {
+  const netUid = outcome?.NetUid?.trim()
+
+  return netUid
+    ? `/accounting/outgoing-cashflow/${encodeURIComponent(netUid)}/advanced-report/view`
+    : null
+}
+
 export function getPaymentStatusColor(status: AccountableExpensePaymentStatus | undefined): string {
   switch (status) {
     case 'paid':

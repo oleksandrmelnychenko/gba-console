@@ -73,7 +73,13 @@ export async function completeResale(netId: string): Promise<UpdatedResaleModel 
     },
   })
 
-  return normalizeUpdatedResaleModel(result)
+  const actionResult = normalizeActionResult(result, normalizeUpdatedResaleModel)
+
+  if (actionResult.warning) {
+    throw new Error(actionResult.warning.Message || 'Resale completion failed')
+  }
+
+  return actionResult.data ?? null
 }
 
 export async function changeResaleToInvoice(netId: string): Promise<UpdatedResaleModel | null> {
@@ -85,7 +91,13 @@ export async function changeResaleToInvoice(netId: string): Promise<UpdatedResal
     },
   })
 
-  return normalizeUpdatedResaleModel(result)
+  const actionResult = normalizeActionResult(result, normalizeUpdatedResaleModel)
+
+  if (actionResult.warning) {
+    throw new Error(actionResult.warning.Message || 'Resale invoice conversion failed')
+  }
+
+  return actionResult.data ?? null
 }
 
 export async function exportResaleDocument(params: {
@@ -258,10 +270,14 @@ function normalizeUpdatedResaleModel(result: unknown): UpdatedResaleModel | null
     return null
   }
 
-  const payload = result as UpdatedResaleModel
+  const payload = result as Partial<UpdatedResaleModel>
+
+  if (!payload.ReSale || typeof payload.ReSale !== 'object') {
+    return null
+  }
 
   return {
-    ...payload,
+    ...(payload as UpdatedResaleModel),
     ReSaleItemModels: Array.isArray(payload.ReSaleItemModels) ? payload.ReSaleItemModels : [],
   }
 }

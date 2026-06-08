@@ -1060,8 +1060,8 @@ function useReturnedProductPlacementColumns({
         cell: (row) => (
           <TextInput
             aria-label={t('Розміщення')}
-            defaultValue={row.Placement || ''}
-            onBlur={(event) => onChangePlacement(getReturnedRowIndex(row), event.currentTarget.value)}
+            value={row.Placement || ''}
+            onChange={(event) => onChangePlacement(getReturnedRowIndex(row), event.currentTarget.value)}
           />
         ),
       },

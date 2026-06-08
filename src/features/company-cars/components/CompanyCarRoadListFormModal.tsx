@@ -160,7 +160,7 @@ export function CompanyCarRoadListFormModal({
 
         <RoadListFormFooter
           calculated={calculated}
-          isSaveDisabled={Boolean(outcomeError)}
+          isSaveDisabled={Boolean(outcomeError) || !calculated}
           isSaving={isSaving}
           onClose={onClose}
           onSave={handleSave}
@@ -292,20 +292,12 @@ function useRoadListFormModel({
       return
     }
 
-    if (isEditMode && editedRoadList) {
-      dispatchState({
-        calculated: calculateEditedRoadListPreview(editedRoadList, effectiveCompanyCar, debouncedForm),
-        type: 'calculated',
-      })
-      return
-    }
-
     let cancelled = false
 
     void calculateCompanyCarRoadList(
       buildRoadListPayload({
         baseRoadList: editedRoadList,
-        companyCar,
+        companyCar: effectiveCompanyCar,
         drivers,
         form: debouncedForm,
         outcomeOrder: selectedOutcomeOrder,
@@ -657,6 +649,7 @@ function roadListModalReducer(state: RoadListModalState, action: RoadListModalAc
     case 'patch-form':
       return {
         ...state,
+        calculated: null,
         form: {
           ...state.form,
           ...action.patch,
@@ -770,71 +763,6 @@ function createFormFromRoadList(roadList: CompanyCarRoadList | null): RoadListFo
     mixedModeKilometers: formatDecimalInput(roadList.MixedModeKilometers),
     outsideCityKilometers: formatDecimalInput(roadList.OutsideCityKilometers),
   }
-}
-
-function calculateEditedRoadListPreview(
-  roadList: CompanyCarRoadList,
-  companyCar: CompanyCar,
-  form: RoadListFormState,
-): CompanyCarRoadList {
-  const mileage = parseDecimal(form.mileage)
-  const inCity = parseDecimal(form.inCityKilometers)
-  const outsideCity = parseDecimal(form.outsideCityKilometers)
-  const mixed = parseDecimal(form.mixedModeKilometers)
-  const totalKilometers = Math.trunc((roadList.TotalKilometers || 0) + mileage - (roadList.Mileage || 0))
-  const fuelAmount = calculateFuelAmount({
-    companyCar,
-    inCity,
-    mixed,
-    outsideCity,
-    totalKilometers,
-  })
-
-  return {
-    ...roadList,
-    Comment: form.comment,
-    FuelAmount: fuelAmount,
-    InCityKilometers: inCity,
-    Mileage: mileage,
-    MixedModeKilometers: mixed,
-    OutsideCityKilometers: outsideCity,
-    TotalKilometers: totalKilometers,
-  }
-}
-
-function calculateFuelAmount({
-  companyCar,
-  inCity,
-  mixed,
-  outsideCity,
-  totalKilometers,
-}: {
-  companyCar: CompanyCar
-  inCity: number
-  mixed: number
-  outsideCity: number
-  totalKilometers: number
-}): number {
-  const inModesKilometers = inCity + outsideCity + mixed
-
-  if (totalKilometers < inModesKilometers) {
-    return 0
-  }
-
-  if (!inCity && !outsideCity && !mixed) {
-    return roundFuel((totalKilometers * (companyCar.InCityConsumption || 0)) / 100)
-  }
-
-  return roundFuel(
-    (inCity * (companyCar.InCityConsumption || 0)) / 100 +
-      (outsideCity * (companyCar.OutsideCityConsumption || 0)) / 100 +
-      (mixed * (companyCar.MixedModeConsumption || 0)) / 100 +
-      ((totalKilometers - inModesKilometers) * (companyCar.InCityConsumption || 0)) / 100,
-  )
-}
-
-function roundFuel(value: number): number {
-  return Math.round(value * 100) / 100
 }
 
 function formatDecimalInput(value?: number): string {

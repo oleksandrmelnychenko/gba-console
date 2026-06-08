@@ -168,6 +168,7 @@ export type IncomeProtocol = EntityFields & {
   ClientAgreement?: IncomeClientAgreement | null
   DeliveryProductProtocolNumber?: ProtocolNumber | null
   FromDate?: Date | string
+  IsCompleted?: boolean
   Number?: string
   Organization?: IncomeOrganization | null
   SupplyOrderNumber?: ProtocolNumber | null

@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Badge,
+  Button,
   Divider,
   Group,
   SimpleGrid,
@@ -14,11 +15,13 @@ import {
   IconAlertCircle,
   IconCreditCard,
   IconEye,
+  IconExternalLink,
+  IconPencil,
   IconRefresh,
   IconSearch,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -35,6 +38,7 @@ import {
   buildExpenseRows,
   formatPaymentStatus,
   formatUnderReportStatus,
+  getAdvanceReportLink,
   getOutcomeOrderLinkKey,
   getOutcomePaymentOrder,
   getOutcomePaymentOrders,
@@ -153,7 +157,25 @@ export function AccountableExpensesPage() {
     },
     [location, navigate],
   )
+  const openOrderEdit = useCallback(
+    (row: AccountableExpenseRow) => {
+      const netId = row.order.NetUid || row.order.Id
+
+      if (!netId) {
+        return
+      }
+
+      navigate(`/accounting/consumable-orders/edit/${String(netId)}`, {
+        state: {
+          backgroundLocation: location,
+          returnPath: `${location.pathname}${location.search}`,
+        },
+      })
+    },
+    [location, navigate],
+  )
   const columns = useAccountableExpenseColumns({
+    onEdit: openOrderEdit,
     onOpen: setSelectedRow,
     onPay: openPayment,
   })
@@ -243,9 +265,11 @@ export function AccountableExpensesPage() {
 }
 
 function useAccountableExpenseColumns({
+  onEdit,
   onOpen,
   onPay,
 }: {
+  onEdit: (row: AccountableExpenseRow) => void
   onOpen: (row: AccountableExpenseRow) => void
   onPay: (row: AccountableExpenseRow) => void
 }): DataTableColumn<AccountableExpenseRow>[] {
@@ -379,8 +403,8 @@ function useAccountableExpenseColumns({
       {
         id: 'actions',
         header: '',
-        width: 92,
-        minWidth: 86,
+        width: 122,
+        minWidth: 116,
         align: 'right',
         enableSorting: false,
         enableHiding: false,
@@ -404,6 +428,20 @@ function useAccountableExpenseColumns({
                 </ActionIcon>
               </Tooltip>
             )}
+            <Tooltip label={t('Відкрити накладну')}>
+              <ActionIcon
+                aria-label={t('Відкрити накладну')}
+                color="blue"
+                size="sm"
+                variant="subtle"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onEdit(row)
+                }}
+              >
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Tooltip>
             <Tooltip label={t('Деталі')}>
               <ActionIcon
                 aria-label={t('Деталі')}
@@ -422,7 +460,7 @@ function useAccountableExpenseColumns({
         ),
       },
     ],
-    [onOpen, onPay, t],
+    [onEdit, onOpen, onPay, t],
   )
 }
 
@@ -440,6 +478,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
   const { t } = useI18n()
   const outcome = getOutcomePaymentOrder(row?.order)
   const outcomeOrders = getOutcomePaymentOrders(row?.order)
+  const advanceReportLink = getAdvanceReportLink(outcome)
 
   return (
     <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Підзвітна витрата')} onClose={onClose}>
@@ -478,7 +517,20 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
           <Divider />
 
           <Stack gap="xs">
-            <Text fw={700}>{t('Пов’язаний видатковий документ')}</Text>
+            <Group justify="space-between" align="center" gap="sm">
+              <Text fw={700}>{t('Пов’язаний видатковий документ')}</Text>
+              {advanceReportLink && (
+                <Button
+                  component={Link}
+                  leftSection={<IconExternalLink size={16} />}
+                  size="xs"
+                  to={advanceReportLink}
+                  variant="light"
+                >
+                  {t('Відкрити авансовий звіт')}
+                </Button>
+              )}
+            </Group>
             {outcome ? (
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />

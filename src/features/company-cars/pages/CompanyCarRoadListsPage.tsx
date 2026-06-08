@@ -32,7 +32,7 @@ import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFor
 import type { CompanyCar, CompanyCarRoadList } from '../types'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
-const DEFAULT_LOOKBACK_MONTHS = 36
+const DEFAULT_LOOKBACK_DAYS = 7
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -81,7 +81,7 @@ export function CompanyCarRoadListsPage() {
   const returnPath = locationState?.returnPath || COMPANY_CARS_PATH
   const [loadState, dispatchLoadState] = useReducer(roadListsReducer, initialRoadListsState)
   const { companyCar, error, isLoading, roadLists } = loadState
-  const [fromDate, setFromDate] = useValueState(() => shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
+  const [fromDate, setFromDate] = useValueState(() => shiftDay(-DEFAULT_LOOKBACK_DAYS))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [isFormOpen, setFormOpen] = useValueState(false)
   const [editTarget, setEditTarget] = useValueState<CompanyCarRoadList | null>(null)
@@ -178,7 +178,7 @@ export function CompanyCarRoadListsPage() {
   }
 
   function resetFilters() {
-    setFromDate(shiftMonth(-DEFAULT_LOOKBACK_MONTHS))
+    setFromDate(shiftDay(-DEFAULT_LOOKBACK_DAYS))
     setToDate(formatLocalDate(new Date()))
   }
 
@@ -209,6 +209,20 @@ export function CompanyCarRoadListsPage() {
                 </ActionIcon>
               </Tooltip>
             </Group>
+          </Group>
+
+          <Group gap="xs" wrap="wrap">
+            <Badge color="blue" variant="light">
+              {displayValue(companyCar?.LicensePlate)}
+            </Badge>
+            <Text fw={700} size="lg">
+              {displayValue(companyCar?.CarBrand)}
+            </Text>
+            {companyCar?.Organization && (
+              <Text c="dimmed" size="sm">
+                {displayValue(companyCar.Organization.Name)}
+              </Text>
+            )}
           </Group>
 
           <Group align="end" gap="sm" wrap="wrap">
@@ -526,9 +540,9 @@ function getDriversLabel(roadList: CompanyCarRoadList): string {
     .join(' ')
 }
 
-function shiftMonth(months: number): string {
+function shiftDay(days: number): string {
   const date = new Date()
-  date.setMonth(date.getMonth() + months)
+  date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
 }

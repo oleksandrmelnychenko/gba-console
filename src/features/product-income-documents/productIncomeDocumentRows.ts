@@ -40,6 +40,7 @@ export function getOverviewKind(
 export function getIncomeItemProduct(item: ProductIncomeItem): NamedEntity | null | undefined {
   return item.PackingListPackageOrderItem?.SupplyInvoiceOrderItem?.Product
     || item.SaleReturnItem?.OrderItem?.Product
+    || item.SupplyOrderUkraineItem?.Product
     || item.ActReconciliationItem?.Product
     || item.Product
 }
@@ -113,11 +114,10 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       client: getEntityName(ukraineOrder.Supplier),
       comment: ukraineOrder.Comment || document.Comment,
       docState: getDocumentState(documentIsActive),
-      invDate: ukraineOrder.FromDate,
+      invDate: ukraineOrder.InvDate || ukraineOrder.FromDate,
       invNumber: ukraineOrder.InvNumber,
       organization: getEntityName(ukraineOrder.Organization),
       qty: sumItems(items, (item) => item.Qty),
-      specificationDate: ukraineOrder.InvDate,
       type: translate('Прихідний інвойс в Україну'),
     }
   }
@@ -134,13 +134,15 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       client: sourceOrder ? getEntityName(sourceOrder.Supplier) : getEntityName(sourceInvoice?.SupplyOrder?.Client),
       comment: reconciliationItem.Comment || document.Comment,
       docState: getDocumentState(documentIsActive),
-      invDate: sourceOrder?.FromDate || reconciliation?.FromDate || document.FromDate,
+      invDate: sourceOrder
+        ? sourceOrder.InvDate || sourceOrder.FromDate || reconciliation?.InvDate || reconciliation?.FromDate || document.FromDate
+        : reconciliation?.InvDate || reconciliation?.FromDate || document.FromDate,
       invNumber: sourceOrder?.InvNumber || reconciliation?.InvNumber || document.Number,
       organization: sourceOrder
         ? getEntityName(sourceOrder.Organization)
         : getEntityName(sourceInvoice?.SupplyOrder?.Organization || document.Storage?.Organization),
       qty: sumItems(items, (item) => item.Qty),
-      specificationDate: sourceOrder?.InvDate || reconciliation?.InvDate || document.FromDate,
+      specificationDate: sourceOrder ? undefined : reconciliation?.InvDate || document.FromDate,
       type: sourceOrder
         ? translate('Прихідний інвойс в Україну')
         : sourceInvoice

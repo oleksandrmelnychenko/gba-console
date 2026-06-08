@@ -240,6 +240,10 @@ function useInvoiceRegisterModel() {
   }, [])
 
   async function exportDocument() {
+    if (filterError || state.isLoading || state.isDownloading) {
+      return
+    }
+
     const requestId = downloadRequestRef.current + 1
     downloadRequestRef.current = requestId
     dispatchState({ type: 'downloadStarted' })
@@ -320,6 +324,7 @@ export function InvoiceRegisterTab() {
             color="gray"
             leftSection={<IconDownload size={16} />}
             loading={model.isDownloading}
+            disabled={Boolean(model.filterError) || model.isLoading || model.isDownloading}
             variant="light"
             onClick={model.exportDocument}
           >

@@ -541,9 +541,10 @@ export function NewResalePage() {
   const storageOptions = useMemo(() => buildStorageOptions(filterOptions?.Storages || []), [filterOptions?.Storages])
   const specificationOptions = useMemo(() => buildSpecificationOptions(filterOptions?.SpecificationCodes || [], t), [filterOptions?.SpecificationCodes, t])
   const generateStorageOptions = useMemo(() => buildGenerateStorageOptions(filterOptions?.Storages || []), [filterOptions?.Storages])
+  const dateRangeError = useMemo(() => getDateRangeError(form.from, form.to), [form.from, form.to])
   const payload = useMemo(
-    () => buildAvailabilityPayload(form),
-    [form],
+    () => (dateRangeError ? null : buildAvailabilityPayload(form)),
+    [dateRangeError, form],
   )
   const selectedRows = useMemo(
     () => availabilities.filter((availability) => selectedKeys.includes(getAvailabilityKey(availability))),
@@ -559,6 +560,7 @@ export function NewResalePage() {
       setLoadingAvailabilities(true)
       setError(null)
       setWarning(null)
+      setSelectedKeys([])
 
       try {
         const response = await getResaleAvailabilities(nextPayload)
@@ -569,7 +571,6 @@ export function NewResalePage() {
           totalValueWithVat: response.TotalValueWithVat || 0,
           totalWithExtraValue: response.TotalWithExtraValue || 0,
         })
-        setSelectedKeys([])
       } catch (loadError) {
         setAvailabilities([])
         setTotals(getEmptyAvailabilityTotals())
@@ -640,10 +641,17 @@ export function NewResalePage() {
       return
     }
 
+    if (!payload) {
+      setAvailabilities([])
+      setTotals(getEmptyAvailabilityTotals())
+      setSelectedKeys([])
+      return
+    }
+
     void loadAvailabilities(payload)
-  }, [filterOptions, loadAvailabilities, payload])
+  }, [filterOptions, loadAvailabilities, payload, setAvailabilities, setSelectedKeys, setTotals])
   const handleRealtimeAvailabilityUpdate = useCallback(() => {
-    if (filterOptions) {
+    if (filterOptions && payload) {
       void loadAvailabilities(payload)
     }
   }, [filterOptions, loadAvailabilities, payload])
@@ -651,6 +659,11 @@ export function NewResalePage() {
   useRealtimeEvent(realtimeEvents.resaleAvailabilitiesUpdated, handleRealtimeAvailabilityUpdate)
 
   async function exportAvailabilities() {
+    if (!payload) {
+      setWarning({ Message: dateRangeError || t('Перевірте фільтри') })
+      return
+    }
+
     setExporting(true)
     setError(null)
 
@@ -667,6 +680,11 @@ export function NewResalePage() {
   }
 
   async function processSelected() {
+    if (!payload || isLoadingAvailabilities || isLoadingOptions) {
+      setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
+      return
+    }
+
     if (!canProcessSelected) {
       setWarning({
         Message: t('Для обробки оберіть товари з одного складу'),
@@ -690,6 +708,11 @@ export function NewResalePage() {
   }
 
   async function generateAutomatically() {
+    if (!payload || isLoadingAvailabilities || isLoadingOptions) {
+      setWarning({ Message: dateRangeError || t('Дочекайтесь завантаження доступних товарів') })
+      return
+    }
+
     if (!generateStorageNetId) {
       setWarning({
         Message: t('Оберіть склад для автоматичного створення'),
@@ -910,23 +933,38 @@ export function NewResalePage() {
                 style={{ flex: '1 1 260px' }}
                 onChange={setGenerateStorageNetId}
               />
-              <Button loading={isProcessing} variant="light" onClick={generateAutomatically}>
+              <Button
+                disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
+                loading={isProcessing}
+                variant="light"
+                onClick={generateAutomatically}
+              >
                 {t('Створити автоматично')}
               </Button>
-              <Button disabled={!selectedRows.length} loading={isProcessing} onClick={processSelected}>
+              <Button
+                disabled={!payload || isLoadingOptions || isLoadingAvailabilities || !selectedRows.length}
+                loading={isProcessing}
+                onClick={processSelected}
+              >
                 {t('Обробити')} {selectedRows.length ? selectedRows.length : ''}
               </Button>
-              <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={exportAvailabilities}>
+              <Button
+                disabled={!payload || isLoadingOptions || isLoadingAvailabilities}
+                leftSection={<IconDownload size={16} />}
+                loading={isExporting}
+                variant="light"
+                onClick={exportAvailabilities}
+              >
                 {t('Друк')}
               </Button>
             </Group>
         </Stack>
       </Card>
 
-      {(error || warning) && (
-        <Alert color={warning ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+      {(error || warning || dateRangeError) && (
+        <Alert color={warning || dateRangeError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
           <Stack gap={4}>
-            <Text size="sm">{warning?.Message || error}</Text>
+            <Text size="sm">{warning?.Message || dateRangeError || error}</Text>
             {warning?.Products?.map((product) => (
               <Text key={`${product.ProductId}-${product.VendorCode}`} size="xs">
                 {displayValue(product.VendorCode)} - {formatAmount(product.Qty)}
@@ -1008,6 +1046,7 @@ export function ResalePage() {
   const [consignmentNoteOpened, setConsignmentNoteOpened] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const detailRequestRef = useRef(0)
   const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
   const changedToInvoice = Boolean(model?.ReSale?.ChangedToInvoice)
   const isCompleted = Boolean(model?.ReSale?.IsCompleted)
@@ -1089,6 +1128,7 @@ export function ResalePage() {
       if (recalcTimerRef.current) {
         clearTimeout(recalcTimerRef.current)
       }
+      detailRequestRef.current += 1
     },
     [],
   )
@@ -1111,9 +1151,23 @@ export function ResalePage() {
     }
   }
 
+  function cancelPendingRecalculate() {
+    if (recalcTimerRef.current) {
+      clearTimeout(recalcTimerRef.current)
+      recalcTimerRef.current = null
+    }
+
+    detailRequestRef.current += 1
+  }
+
   async function recalculate(itemModels?: UpdatedResaleItemModel[]) {
-    if (!id) {
+    if (!id || isCompleted) {
       return
+    }
+
+    if (recalcTimerRef.current) {
+      clearTimeout(recalcTimerRef.current)
+      recalcTimerRef.current = null
     }
 
     const nextModel = buildUpdatedModel(itemModels)
@@ -1122,20 +1176,38 @@ export function ResalePage() {
       return
     }
 
+    const requestId = detailRequestRef.current + 1
+    detailRequestRef.current = requestId
+    const isCurrentRequest = () => detailRequestRef.current === requestId
+
     setSaving(true)
     setError(null)
     setWarning(null)
 
     try {
-      applyDetailResult(await getResaleByNetId(id, nextModel))
+      const result = await getResaleByNetId(id, nextModel)
+
+      if (isCurrentRequest()) {
+        applyDetailResult(result)
+      }
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося перерахувати позиції'))
+      if (isCurrentRequest()) {
+        setError(saveError instanceof Error ? saveError.message : t('Не вдалося перерахувати позиції'))
+      }
     } finally {
-      setSaving(false)
+      if (isCurrentRequest()) {
+        setSaving(false)
+      }
     }
   }
 
   async function saveResale() {
+    if (isCompleted) {
+      return
+    }
+
+    cancelPendingRecalculate()
+
     const nextModel = buildUpdatedModel()
 
     if (!nextModel) {
@@ -1163,6 +1235,8 @@ export function ResalePage() {
     if (!model?.ReSale.NetUid) {
       return
     }
+
+    cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
 
@@ -1199,6 +1273,8 @@ export function ResalePage() {
     if (!model?.ReSale.NetUid) {
       return
     }
+
+    cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
 
@@ -1267,6 +1343,10 @@ export function ResalePage() {
   }
 
   function updateRow(index: number, patch: Partial<UpdatedResaleItemModel>) {
+    if (isCompleted) {
+      return
+    }
+
     setRows((currentRows) => {
       const nextRows = currentRows.map((row, rowIndex) =>
         rowIndex === index
@@ -1354,15 +1434,15 @@ export function ResalePage() {
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <ResaleClientSelect
-              disabled={changedToInvoice}
+              disabled={changedToInvoice || isCompleted}
               label={t('Клієнт')}
               selectedClient={detailInfo.client}
               onSelectClient={(client) => setDetailInfo((current) => ({ ...current, client, clientAgreement: null }))}
             />
             <Select
               searchable
-              disabled={changedToInvoice || !detailInfo.client}
-              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
+              disabled={changedToInvoice || isCompleted || !detailInfo.client}
+              data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined)}
               label={t('Угода')}
               value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
               onChange={(value) => {
@@ -1372,10 +1452,14 @@ export function ResalePage() {
             />
           </SimpleGrid>
           <Textarea
+            disabled={isCompleted || isSaving}
             label={t('Коментар')}
             minRows={2}
             value={detailInfo.comment}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setDetailInfo((current) => ({ ...current, comment: nextValue })) }}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setDetailInfo((current) => ({ ...current, comment: nextValue }))
+            }}
           />
           <Group justify="flex-end">
             <Button leftSection={<IconDownload size={16} />} loading={isExporting} variant="light" onClick={() => exportDocument(DocumentType.PaymentDocument)}>
@@ -1391,19 +1475,19 @@ export function ResalePage() {
                 {t('ТТН')}
               </Button>
             )}
-            <Button loading={isSaving} variant="light" onClick={() => recalculate()}>
+            <Button disabled={isCompleted || isSaving} loading={isSaving} variant="light" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
-            <Button loading={isSaving} onClick={saveResale}>
+            <Button disabled={isCompleted || isSaving} loading={isSaving} onClick={saveResale}>
               {t('Зберегти')}
             </Button>
             {!changedToInvoice && detailInfo.clientAgreement && (
-              <Button loading={isSaving} color="green" onClick={changeToInvoice}>
+              <Button disabled={isSaving} loading={isSaving} color="green" onClick={changeToInvoice}>
                 {t('Зробити інвойсом')}
               </Button>
             )}
             {changedToInvoice && !model.ReSale.IsCompleted && (
-              <Button loading={isSaving} color="green" onClick={completeInvoice}>
+              <Button disabled={isSaving} loading={isSaving} color="green" onClick={completeInvoice}>
                 {t('Завершити')}
               </Button>
             )}
@@ -2866,7 +2950,7 @@ function mapAvailabilityToItemModel(row: GroupingResaleAvailability): ResaleAvai
     OldValue: {
       Amount: row.TotalSalePrice || 0,
       QtyToReSale: row.Qty || 0,
-      SalePrice: row.TotalSalePrice || 0,
+      SalePrice: row.SalePrice || 0,
     },
     OrganizationId: row.OrganizationId ?? row.FromStorage?.OrganizationId,
     Price: row.AccountingGrossPrice || 0,
@@ -3231,11 +3315,25 @@ function getDateRangeError(from: string, to: string): string | null {
     return translate('Оберіть діапазон дат')
   }
 
+  if (!isValidDateInputValue(from) || !isValidDateInputValue(to)) {
+    return translate('Оберіть коректний діапазон дат')
+  }
+
   if (from > to) {
     return translate('Дата “Від” не може бути більшою за дату “До”')
   }
 
   return null
+}
+
+function isValidDateInputValue(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(`${value}T00:00:00`)
+
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
 }
 
 function formatDateTime(value?: string): string {

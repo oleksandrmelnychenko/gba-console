@@ -41,7 +41,6 @@ const PAGE_SIZE = 20
 const DEFAULT_LOOKBACK_DAYS = 1
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
-const PERMISSION_VIEW_OPTION = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -121,7 +120,7 @@ function useActProvidingServicesPageModel() {
   )
   const openSelectedRow = useCallback(
     (row: ActProvidingServiceRow) => {
-      if (!row.supplyOrderUkraineNetUid && (!row.protocolNetId || !row.netId)) {
+      if (!row.netId && !row.supplyOrderUkraineNetUid && !row.protocolNetId) {
         notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
         return
       }
@@ -384,9 +383,7 @@ function ActProvidingServiceOptionsModal({
   const { hasPermission } = useAuth()
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
   const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
-  const canOpenViewOption = Boolean(
-    row?.netId && (canOpenSupplyOrder || row.sourceKind === 'deliveryExpense' || hasPermission(PERMISSION_VIEW_OPTION)),
-  )
+  const canOpenViewOption = Boolean(row?.netId)
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
 
@@ -415,33 +412,32 @@ function ActProvidingServiceOptionsModal({
               {t('Огляд')}
             </Button>
           )}
-          {canOpenSupplyOrder
-            ? (
-                <Button
-                  justify="flex-start"
-                  leftSection={<IconRoute size={18} />}
-                  variant="light"
-                  onClick={() => {
-                    navigate(`/orders/ukraine/view/${row.supplyOrderUkraineNetUid}`)
-                    onClose()
-                  }}
-                >
-                  {t('Замовлення в Україну')}
-                </Button>
-              )
-            : canOpenProtocol && (
-                <Button
-                  justify="flex-start"
-                  leftSection={<IconRoute size={18} />}
-                  variant="light"
-                  onClick={() => {
-                    navigate(`/product-delivery-protocols/${row.protocolNetId}`)
-                    onClose()
-                  }}
-                >
-                  {t('Логістичний шлях')}
-                </Button>
-              )}
+          {canOpenSupplyOrder && (
+            <Button
+              justify="flex-start"
+              leftSection={<IconRoute size={18} />}
+              variant="light"
+              onClick={() => {
+                navigate(`/orders/ukraine/view/${row.supplyOrderUkraineNetUid}`)
+                onClose()
+              }}
+            >
+              {t('Замовлення в Україну')}
+            </Button>
+          )}
+          {canOpenProtocol && (
+            <Button
+              justify="flex-start"
+              leftSection={<IconRoute size={18} />}
+              variant="light"
+              onClick={() => {
+                navigate(`/product-delivery-protocols/${row.protocolNetId}`)
+                onClose()
+              }}
+            >
+              {t('Логістичний шлях')}
+            </Button>
+          )}
           {!hasAvailableActions && (
             <Text c="dimmed" size="sm">
               {t('Немає доступних дій')}

@@ -155,6 +155,8 @@ export type ProductIncomeItem = EntityFields & {
     TotalGrossWeight?: number
     TotalNetWeight?: number
     UnitPriceLocal?: number
+    VatAmountLocal?: number
+    VatPercent?: number
   } | null
 }
 

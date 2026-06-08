@@ -6,6 +6,11 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { getServiceApprovedInvoices } from '../api/protocolDetailApi'
 import type { MergedService, SupplyInvoice } from '../detailTypes'
+import {
+  getProtocolInvoiceAssignmentKey,
+  getSelectedProtocolInvoices,
+  mergeProtocolInvoiceAssignmentCandidates,
+} from '../protocolInvoiceAssignment'
 import { InvoiceSelectList } from './InvoiceSelectList'
 
 export function AssignInvoicesToMergedServicePanel({
@@ -35,16 +40,19 @@ export function AssignInvoicesToMergedServicePanel({
     let cancelled = false
     const serviceNetId = service.NetUid || ''
 
-    const initialSelected = (service.SupplyInvoiceMergedServices || []).reduce<Record<string, boolean>>(
-      (records, item) => {
-        if (item.SupplyInvoice?.NetUid) {
-          records[item.SupplyInvoice.NetUid] = true
-        }
+    const assignedInvoices = (service.SupplyInvoiceMergedServices || [])
+      .map((item) => item.SupplyInvoice)
+      .filter((invoice): invoice is SupplyInvoice => Boolean(invoice))
 
-        return records
-      },
-      {},
-    )
+    const initialSelected = assignedInvoices.reduce<Record<string, boolean>>((records, invoice) => {
+      const key = getProtocolInvoiceAssignmentKey(invoice)
+
+      if (key) {
+        records[key] = true
+      }
+
+      return records
+    }, {})
     setSelected(initialSelected)
 
     async function loadInvoices() {
@@ -55,7 +63,7 @@ export function AssignInvoicesToMergedServicePanel({
         const result = await getServiceApprovedInvoices(serviceNetId)
 
         if (!cancelled) {
-          setInvoices(result)
+          setInvoices(mergeProtocolInvoiceAssignmentCandidates(result, assignedInvoices))
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -81,8 +89,13 @@ export function AssignInvoicesToMergedServicePanel({
       return
     }
 
-    const netUid = invoice.NetUid || ''
-    setSelected((records) => ({ ...records, [netUid]: !records[netUid] }))
+    const key = getProtocolInvoiceAssignmentKey(invoice)
+
+    if (!key) {
+      return
+    }
+
+    setSelected((records) => ({ ...records, [key]: !records[key] }))
   }
 
   async function handleAssign() {
@@ -90,7 +103,7 @@ export function AssignInvoicesToMergedServicePanel({
       return
     }
 
-    await onAssign(invoices.filter((invoice) => invoice.NetUid && selected[invoice.NetUid]))
+    await onAssign(getSelectedProtocolInvoices(invoices, selected))
   }
 
   return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildExpenseRows } from './accountableExpenseRows'
+import { buildExpenseRows, getAdvanceReportLink } from './accountableExpenseRows'
 import type { ConsumablesOrder } from './types'
 
 describe('accountable expense rows', () => {
@@ -74,5 +74,11 @@ describe('accountable expense rows', () => {
 
     expect(row.paidAmount).toBe(30)
     expect(row.paymentStatus).toBe('partial')
+  })
+
+  it('builds encoded advance-report links from linked outcome payment orders', () => {
+    expect(getAdvanceReportLink({ NetUid: 'report/1 2' })).toBe('/accounting/outgoing-cashflow/report%2F1%202/advanced-report/view')
+    expect(getAdvanceReportLink({ NetUid: '   ' })).toBeNull()
+    expect(getAdvanceReportLink(null)).toBeNull()
   })
 })

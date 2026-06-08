@@ -12,10 +12,10 @@ import {
   getSupplyOrderUkraineProductIncomeByNetId,
 } from '../api/productIncomeDocumentsApi'
 import { getActiveProductIncomeItems } from '../productIncomeDocumentItems'
+import { mapSupplyPlacementRows, type SupplyPlacementRow } from '../supplyOrderProductPlacementRows'
 import type {
   NamedEntity,
   ProductIncomeInfo,
-  ProductIncomeItem,
   ProductIncomePackingList,
   ProductIncomePlacement,
 } from '../types'
@@ -35,28 +35,6 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const rateFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 4 })
-
-type SupplyPlacementRow = {
-  actualQty?: number
-  customsRate?: number
-  customsValue?: number
-  index: number
-  isImported: boolean
-  item: ProductIncomeItem
-  measureUnit?: string
-  orderedQty?: number
-  placements: ProductIncomePlacement[]
-  productName?: string
-  specificationCode?: string
-  total?: number
-  totalGrossWeight?: number
-  totalNetPrice?: number
-  totalNetWeight?: number
-  unitPrice?: number
-  vatAmount?: number
-  vatPercent?: number
-  vendorCode?: string
-}
 
 export function SupplyOrderProductPlacementPage() {
   return (
@@ -133,7 +111,7 @@ function SupplyOrderProductPlacementContent({
     }
   }, [id, loadIncome, setError, setIncome, setLoading, t])
 
-  const rows = useMemo(() => mapRows(getActiveProductIncomeItems(income)), [income])
+  const rows = useMemo(() => mapSupplyPlacementRows(getActiveProductIncomeItems(income)), [income])
   const columns = usePlacementColumns(setPlacementDetailsRow)
   const firstPackingItem = rows[0]?.item.PackingListPackageOrderItem
   const firstUkraineItem = rows[0]?.item.SupplyOrderUkraineItem
@@ -159,7 +137,7 @@ function SupplyOrderProductPlacementContent({
             {t(title)}
           </Text>
           <Text c="dimmed" size="sm">
-            {order?.SupplyOrderNumber?.Number || income?.Number || id}
+            {order?.SupplyOrderNumber?.Number || ukraineOrder?.Number || income?.Number || id}
           </Text>
         </Stack>
       </Group>
@@ -443,46 +421,6 @@ function usePlacementColumns(
   )
 }
 
-function mapRows(items: ProductIncomeItem[]): SupplyPlacementRow[] {
-  return items.map((item, index) => {
-    const packingItem = item.PackingListPackageOrderItem
-    const ukraineItem = item.SupplyOrderUkraineItem
-    const product = packingItem?.SupplyInvoiceOrderItem?.Product || ukraineItem?.Product || item.Product || null
-    const specification = [...(item.ConsignmentItems || []), ...(packingItem?.ConsignmentItems || [])].find(
-      (consignmentItem) => consignmentItem.ProductSpecification,
-    )?.ProductSpecification || ukraineItem?.ProductSpecification
-    const totalNetPrice = roundMoney(packingItem?.TotalNetPrice ?? ukraineItem?.NetPriceLocal)
-    const vatAmount = roundMoney(packingItem?.VatAmount)
-    const totalGrossPrice = roundMoney(ukraineItem?.GrossPriceLocal)
-
-    return {
-      actualQty: readFiniteNumber(ukraineItem?.PlacedQty ?? item.Qty),
-      customsRate: roundMoney(specification?.DutyPercent),
-      customsValue: roundMoney(specification?.CustomsValue),
-      index: index + 1,
-      isImported: Boolean(packingItem?.ProductIsImported || ukraineItem?.ProductIsImported),
-      item,
-      measureUnit: getEntityName(product?.MeasureUnit),
-      orderedQty: readFiniteNumber(packingItem?.Qty ?? ukraineItem?.Qty),
-      placements: packingItem?.ProductPlacements || [],
-      productName: product?.NameUA || product?.Name,
-      specificationCode: specification?.SpecificationCode,
-      total: isFiniteNumber(totalGrossPrice)
-        ? totalGrossPrice
-        : isFiniteNumber(totalNetPrice) || isFiniteNumber(vatAmount)
-        ? readFiniteNumber(totalNetPrice) + readFiniteNumber(vatAmount)
-        : undefined,
-      totalGrossWeight: roundWeight(packingItem?.TotalGrossWeight ?? ukraineItem?.TotalGrossWeight),
-      totalNetPrice,
-      totalNetWeight: roundWeight(packingItem?.TotalNetWeight ?? ukraineItem?.TotalNetWeight),
-      unitPrice: roundMoney(packingItem?.UnitPrice ?? ukraineItem?.UnitPriceLocal),
-      vatAmount,
-      vatPercent: readFiniteNumber(packingItem?.VatPercent),
-      vendorCode: product?.VendorCode || product?.Code,
-    }
-  })
-}
-
 function DetailValue({ label, value }: { label: string; value?: string | number }) {
   return (
     <Stack gap={2}>
@@ -668,14 +606,6 @@ function displayValue(value?: string | number | null): string {
 
 function readFiniteNumber(value?: number): number {
   return isFiniteNumber(value) ? value : 0
-}
-
-function roundMoney(value?: number): number | undefined {
-  return isFiniteNumber(value) ? Math.round(value * 100) / 100 : undefined
-}
-
-function roundWeight(value?: number): number | undefined {
-  return isFiniteNumber(value) ? Math.round(value * 1000) / 1000 : undefined
 }
 
 function isFiniteNumber(value?: number): value is number {

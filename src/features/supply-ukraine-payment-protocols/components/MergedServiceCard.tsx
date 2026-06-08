@@ -114,6 +114,10 @@ function PaymentTaskRow({
   )
 }
 
+function hasPersistedPaymentTask(task?: SupplyPaymentTask | null): boolean {
+  return Boolean(task && (task.Id || task.NetUid) && !task.Deleted)
+}
+
 function AddPaymentTaskForm({
   isAccounting,
   isSaving,
@@ -124,7 +128,7 @@ function AddPaymentTaskForm({
   isAccounting?: boolean
   isSaving: boolean
   onCancel: () => void
-  onSubmit: (values: AddPaymentTaskValues) => void
+  onSubmit: (values: AddPaymentTaskValues) => Promise<void>
   users: ProtocolUser[]
 }) {
   const { t } = useI18n()
@@ -163,7 +167,9 @@ function AddPaymentTaskForm({
           <Button
             color="violet"
             loading={isSaving}
-            onClick={() => onSubmit({ comment, payToDate, responsible })}
+            onClick={() => {
+              void onSubmit({ comment, payToDate, responsible })
+            }}
           >
             {t('Зберегти')}
           </Button>
@@ -183,7 +189,7 @@ export function MergedServiceCard({
   users,
 }: {
   isSaving: boolean
-  onAddPaymentTask: (service: MergedService, values: AddPaymentTaskValues, isAccounting: boolean) => void
+  onAddPaymentTask: (service: MergedService, values: AddPaymentTaskValues, isAccounting: boolean) => Promise<void>
   onRemovePaymentTask: (service: MergedService, task: SupplyPaymentTask) => void
   onRemoveService: (service: MergedService) => void
   permissions: MergedServicePermissions
@@ -196,20 +202,18 @@ export function MergedServiceCard({
   const [isAddOpen, setAddOpen] = useValueState(false)
   const [isAddAccountingOpen, setAddAccountingOpen] = useValueState(false)
 
-  const hasPaymentTask = Boolean(
-    service.SupplyPaymentTask && (service.SupplyPaymentTask.Id || 0) > 0 && !service.SupplyPaymentTask.Deleted,
-  )
-  const hasAccountingPaymentTask = Boolean(
-    service.AccountingPaymentTask &&
-      (service.AccountingPaymentTask.Id || 0) > 0 &&
-      !service.AccountingPaymentTask.Deleted,
-  )
+  const hasPaymentTask = hasPersistedPaymentTask(service.SupplyPaymentTask)
+  const hasAccountingPaymentTask = hasPersistedPaymentTask(service.AccountingPaymentTask)
 
   function handleAdd(isAccounting: boolean) {
-    return (values: AddPaymentTaskValues) => {
-      onAddPaymentTask(service, values, isAccounting)
-      setAddOpen(false)
-      setAddAccountingOpen(false)
+    return async (values: AddPaymentTaskValues) => {
+      try {
+        await onAddPaymentTask(service, values, isAccounting)
+        setAddOpen(false)
+        setAddAccountingOpen(false)
+      } catch {
+        // Parent renders the action error; keep the form open on failure.
+      }
     }
   }
 

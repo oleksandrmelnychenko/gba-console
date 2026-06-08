@@ -78,6 +78,80 @@ describe('ProductIncomeDocumentsPage helpers', () => {
     })
   })
 
+  it('uses Ukraine supply order item product data in document item rows', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          SupplyOrderUkraineItem: {
+            Product: {
+              Name: 'Ukraine product',
+              VendorCode: 'UK-100',
+            },
+          },
+        },
+      ],
+    })
+    const item = document.ProductIncomeItems?.[0]
+
+    expect(item ? getItemProductCode(item) : undefined).toBe('UK-100')
+    expect(item ? getItemProductName(item) : undefined).toBe('Ukraine product')
+  })
+
+  it('maps Ukraine supply order invoice date to invoice date and leaves customs date empty', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          SupplyOrderUkraineItem: {
+            SupplyOrderUkraine: {
+              FromDate: '2026-06-01T10:00:00Z',
+              InvDate: '2026-06-03T12:00:00Z',
+              InvNumber: 'UK-INV-1',
+            },
+          },
+        },
+      ],
+    })
+
+    const row = mapDocumentRow(document)
+
+    expect(row).toMatchObject({
+      invDate: '2026-06-03T12:00:00Z',
+      invNumber: 'UK-INV-1',
+      type: 'Прихідний інвойс в Україну',
+    })
+    expect(row.specificationDate).toBeUndefined()
+  })
+
+  it('keeps Ukraine-source reconciliation invoice date in the invoice date column', () => {
+    const document = incomeDocument({
+      ProductIncomeItems: [
+        {
+          ActReconciliationItem: {
+            ActReconciliation: {
+              FromDate: '2026-06-01T10:00:00Z',
+              InvDate: '2026-06-04T12:00:00Z',
+              InvNumber: 'ACT-UK-1',
+              SupplyOrderUkraine: {
+                FromDate: '2026-06-02T10:00:00Z',
+                InvDate: '2026-06-05T12:00:00Z',
+                InvNumber: 'UK-INV-2',
+              },
+            },
+          },
+        },
+      ],
+    })
+
+    const row = mapDocumentRow(document)
+
+    expect(row).toMatchObject({
+      invDate: '2026-06-05T12:00:00Z',
+      invNumber: 'UK-INV-2',
+      type: 'Прихідний інвойс в Україну',
+    })
+    expect(row.specificationDate).toBeUndefined()
+  })
+
   it('falls back to net price for resident packing invoices without VAT total', () => {
     const document = incomeDocument({
       TotalNetPrice: 1250,
