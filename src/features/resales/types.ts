@@ -99,6 +99,7 @@ export type ReSale = EntityFields & {
   TotalAmountEurToUah?: number
   TotalAmountLocal?: number
   TotalPaymentAmount?: number
+  TotalRowsQty?: number
   TotalVat?: number
   User?: ResaleUser | null
 }

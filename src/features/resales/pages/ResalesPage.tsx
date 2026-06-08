@@ -103,7 +103,7 @@ import {
 } from '../resalesFlowHelpers'
 
 const PAGE_SIZE = 20
-const DEFAULT_RESALES_LOOKBACK_DAYS = 30
+const DEFAULT_RESALES_LOOKBACK_DAYS = 3
 const pageSizeOptions = ['20', '40', '60', '100']
 
 const RESALES_TABLE_DEFAULT_LAYOUT = {
@@ -1103,7 +1103,6 @@ export function ResalePage() {
   const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
   const changedToInvoice = isResaleInvoice(model?.ReSale)
   const isCompleted = isResaleCompleted(model?.ReSale)
-  const canEditDetail = !isCompleted
   const columns = useResaleDetailColumns({
     isBusy: isSaving,
     isCompleted,
@@ -1256,10 +1255,6 @@ export function ResalePage() {
   }
 
   async function saveResale() {
-    if (!canEditDetail) {
-      return
-    }
-
     cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
@@ -1286,7 +1281,7 @@ export function ResalePage() {
   }
 
   async function changeToInvoice() {
-    if (!canEditDetail || changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
+    if (isCompleted || changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1324,7 +1319,7 @@ export function ResalePage() {
   }
 
   async function completeInvoice() {
-    if (!canEditDetail || !changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
+    if (isCompleted || !changedToInvoice || !detailInfo.clientAgreement || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1397,7 +1392,11 @@ export function ResalePage() {
   }
 
   function updateRow(index: number, patch: Partial<UpdatedResaleItemModel>) {
-    if (isCompleted) {
+    if (changedToInvoice && typeof patch.QtyToReSale !== 'undefined') {
+      return
+    }
+
+    if (isCompleted && (typeof patch.SalePrice !== 'undefined' || typeof patch.Amount !== 'undefined')) {
       return
     }
 
@@ -1484,14 +1483,14 @@ export function ResalePage() {
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <ResaleClientSelect
-              disabled={!canEditDetail || changedToInvoice}
+              disabled={changedToInvoice || isSaving}
               label={t('Клієнт')}
               selectedClient={detailInfo.client}
               onSelectClient={(client) => setDetailInfo((current) => ({ ...current, client, clientAgreement: null }))}
             />
             <Select
               searchable
-              disabled={!canEditDetail || changedToInvoice || !detailInfo.client}
+              disabled={changedToInvoice || isSaving || !detailInfo.client}
               data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
               label={t('Угода')}
               value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
@@ -1502,7 +1501,7 @@ export function ResalePage() {
             />
           </SimpleGrid>
           <Textarea
-            disabled={!canEditDetail || isSaving}
+            disabled={isSaving}
             label={t('Коментар')}
             minRows={2}
             value={detailInfo.comment}
@@ -1528,16 +1527,16 @@ export function ResalePage() {
             <Button disabled={isCompleted || isSaving} loading={isSaving} variant="light" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
-            <Button disabled={!canEditDetail || isSaving} loading={isSaving} onClick={saveResale}>
+            <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
               {t('Зберегти')}
             </Button>
             {!changedToInvoice && detailInfo.clientAgreement && (
-              <Button disabled={isSaving || !canEditDetail} loading={isSaving} color="green" onClick={changeToInvoice}>
+              <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={changeToInvoice}>
                 {t('Зробити інвойсом')}
               </Button>
             )}
             {changedToInvoice && detailInfo.clientAgreement && !model.ReSale.IsCompleted && (
-              <Button disabled={isSaving || !canEditDetail} loading={isSaving} color="green" onClick={completeInvoice}>
+              <Button disabled={isSaving || isCompleted} loading={isSaving} color="green" onClick={completeInvoice}>
                 {t('Завершити')}
               </Button>
             )}
