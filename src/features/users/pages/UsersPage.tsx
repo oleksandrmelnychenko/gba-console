@@ -14,12 +14,23 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconBriefcase,
+  IconBuildingWarehouse,
+  IconCalculator,
+  IconCar,
+  IconChartLine,
+  IconCoins,
+  IconCrown,
   IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconShieldLock,
+  IconShoppingCart,
+  IconTruckDelivery,
+  IconUserShield,
+  IconUsersGroup,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -293,6 +304,7 @@ export function UsersPage() {
             <div className="users-roster-table">
               <div className="users-roster-head">
                 <span>{t('Профіль')}</span>
+                <span>{t('Роль')}</span>
                 <span>{t('Контакти')}</span>
                 <span>{t('Регіон')}</span>
                 <span>{t('Стан')}</span>
@@ -355,11 +367,20 @@ function UserRosterRow({
           {getUserInitials(user)}
         </Avatar>
         <div className="users-profile-copy">
-          <Text className="users-profile-name">{getUserFullName(user)}</Text>
-          <Text className="users-profile-role">
-            {displayValue(getUserRoleName(user.UserRole))}
+          <Text className="users-profile-last-name">
+            {displayValue(user.LastName)}
+          </Text>
+          <Text className="users-profile-first-name">
+            {getUserGivenName(user)}
           </Text>
         </div>
+      </div>
+
+      <div className="users-role-cell">
+        <span className="users-role-marker" aria-hidden="true">
+          {renderRoleIcon(user.UserRole)}
+        </span>
+        <strong>{displayValue(getUserRoleName(user.UserRole))}</strong>
       </div>
 
       <div className="users-contact-cell">
@@ -456,6 +477,60 @@ function getUserStatusLabel(user: UserProfile) {
   return status === USER_STATUS_INACTIVE ? 'Неактивний' : 'Активний'
 }
 
+function renderRoleIcon(role?: UserRole | null) {
+  const roleName = getUserRoleName(role).toLocaleLowerCase('uk')
+
+  if (roleName.includes('gba') || roleName.includes('топ')) {
+    return <IconCrown size={13} />
+  }
+
+  if (roleName.includes('адміністратор') || roleName.includes('admin')) {
+    return <IconUserShield size={13} />
+  }
+
+  if (roleName.includes('керівник')) {
+    return <IconBriefcase size={13} />
+  }
+
+  if (roleName.includes('аналітик') && roleName.includes('закуп')) {
+    return <IconShoppingCart size={13} />
+  }
+
+  if (roleName.includes('аналітик')) {
+    return <IconChartLine size={13} />
+  }
+
+  if (roleName.includes('бухгалтер')) {
+    return <IconCalculator size={13} />
+  }
+
+  if (roleName.includes('фінанс')) {
+    return <IconCoins size={13} />
+  }
+
+  if (
+    roleName.includes('завсклад') ||
+    roleName.includes('кладов') ||
+    roleName.includes('склад')
+  ) {
+    return <IconBuildingWarehouse size={13} />
+  }
+
+  if (roleName.includes('водій')) {
+    return <IconCar size={13} />
+  }
+
+  if (roleName.includes('логіст')) {
+    return <IconTruckDelivery size={13} />
+  }
+
+  if (roleName.includes('client')) {
+    return <IconUsersGroup size={13} />
+  }
+
+  return <IconShieldLock size={13} />
+}
+
 function getUserInitials(user: UserProfile) {
   if (user.Abbreviation?.trim()) {
     return user.Abbreviation.trim().slice(0, 2).toLocaleUpperCase('uk')
@@ -472,4 +547,13 @@ function getUserInitials(user: UserProfile) {
       .join('')
       .toLocaleUpperCase('uk') || '?'
   )
+}
+
+function getUserGivenName(user: UserProfile) {
+  const givenName = [user.FirstName, user.MiddleName]
+    .map((value) => value?.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  return displayValue(givenName)
 }
