@@ -83,7 +83,7 @@ export function RolePermissionsEditor({
     <Box className="role-tree">
       <Group className="role-tree-toolbar" justify="space-between" wrap="nowrap">
         <button className="role-tree-text-action" type="button" onClick={onSelectAllPages}>
-          {t('Вибрати всі сторінки')}
+          {t('Вибрати все')}
         </button>
         <Group className="role-tree-toolbar-stats" gap="xs" justify="flex-end" wrap="wrap">
           <Badge color="gray" variant="light">

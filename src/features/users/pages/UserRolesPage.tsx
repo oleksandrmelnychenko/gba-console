@@ -65,7 +65,6 @@ import {
   getUserRoleName,
   isNodeSelected,
   isPermissionSelected,
-  toggleAllPages,
   togglePermissionSelection,
 } from '../utils'
 import './user-roles-page.css'
@@ -356,6 +355,28 @@ export function UserRolesPage() {
     )
   }
 
+  function handleToggleAll() {
+    const nodes = modules.flatMap(getDashboardModuleNodes)
+    const permissions = modules.flatMap(getDashboardModulePermissions)
+    const allSelected =
+      nodes.length > 0 &&
+      nodes.every((node) => isNodeSelected(selectedNodes, node)) &&
+      permissions.every((permission) =>
+        isPermissionSelected(selectedPermissions, permission),
+      )
+
+    setSelectedNodes((current) =>
+      allSelected
+        ? removeNodes(current, nodes)
+        : addMissingNodes(current, nodes),
+    )
+    setSelectedPermissions((current) =>
+      allSelected
+        ? removePermissions(current, permissions)
+        : addMissingPermissions(current, permissions),
+    )
+  }
+
   async function submitPermission(values: RolePermissionSubmit) {
     setSaving(true)
     setError(null)
@@ -492,11 +513,7 @@ export function UserRolesPage() {
                 onEditPermission={(node, permission) =>
                   setPermissionModalState({ node, permission })
                 }
-                onSelectAllPages={() =>
-                  setSelectedNodes((current) =>
-                    toggleAllPages(current, modules),
-                  )
-                }
+                onSelectAllPages={handleToggleAll}
                 onToggleModule={handleToggleModule}
                 onToggleNode={handleToggleNode}
                 onTogglePermission={(permission) =>
