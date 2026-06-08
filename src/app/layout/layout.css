@@ -137,26 +137,28 @@
   --console-header-brand-width: 188px;
   display: grid;
   grid-template-columns: var(--console-header-brand-width) minmax(0, 1fr) minmax(240px, auto);
-  grid-template-rows: 56px 38px;
+  grid-template-rows: 62px 46px;
   column-gap: 16px;
-  height: 94px;
-  min-height: 94px;
+  height: 108px;
+  min-height: 108px;
   align-items: center;
   padding: 0 20px;
   position: relative;
 }
 
+/* Divider between the modules row and the items row — full width */
 .console-header-main::before {
   background: var(--mantine-color-gray-2);
   content: '';
   height: 1px;
-  left: 20px;
+  left: 0;
   pointer-events: none;
   position: absolute;
-  right: 20px;
-  top: 56px;
+  right: 0;
+  top: 62px;
   z-index: 3;
 }
+
 
 .console-header-brand {
   grid-column: 1;
@@ -165,7 +167,7 @@
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  height: 56px;
+  height: 62px;
   gap: var(--mantine-spacing-xs);
 }
 
@@ -205,14 +207,14 @@
 
 .console-header-top-nav {
   grid-row: 1;
-  align-self: center;
+  align-self: end;
 }
 
 .console-header-bottom-nav {
   grid-row: 2;
   align-self: stretch;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .console-header-top-nav > .console-subnav,
@@ -221,7 +223,7 @@
 }
 
 .console-header-top-nav > .console-subnav-mode-modules {
-  align-self: center;
+  align-self: end;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -244,7 +246,7 @@
 .console-header-bottom-nav > .console-subnav-mode-items {
   align-self: stretch;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   background: transparent; /* don't paint over the header's bottom border in the centre */
   border-top: 0; /* the row divider (::before) already draws this line */
   border-bottom-left-radius: 0;
@@ -1246,9 +1248,19 @@
 .console-subnav-module.is-active:hover {
   background: transparent;
   color: var(--mantine-color-violet-7);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
+}
+
+/* Active indicator sits on the row's bottom border (a line under the pill) */
+.console-subnav-module.is-active::after,
+.console-subnav-item.is-active::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
 }
 
 .console-subnav-item-icon {
@@ -1264,9 +1276,6 @@
 .console-subnav-item.is-active:hover {
   background: transparent;
   color: var(--mantine-color-orange-light-color);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 5px;
 }
 
 .console-subnav-state {
