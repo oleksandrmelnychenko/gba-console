@@ -1102,6 +1102,7 @@ export function ResalePage() {
   const recalcRef = useRef<(itemModels: UpdatedResaleItemModel[]) => void>(() => {})
   const changedToInvoice = Boolean(model?.ReSale?.ChangedToInvoice)
   const isCompleted = Boolean(model?.ReSale?.IsCompleted)
+  const canEditDetail = !isCompleted
   const columns = useResaleDetailColumns({
     isBusy: isSaving,
     isCompleted,
@@ -1254,6 +1255,10 @@ export function ResalePage() {
   }
 
   async function saveResale() {
+    if (!canEditDetail) {
+      return
+    }
+
     cancelPendingRecalculate()
 
     const nextModel = buildUpdatedModel()
@@ -1280,7 +1285,7 @@ export function ResalePage() {
   }
 
   async function changeToInvoice() {
-    if (!model?.ReSale.NetUid) {
+    if (!canEditDetail || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1318,7 +1323,7 @@ export function ResalePage() {
   }
 
   async function completeInvoice() {
-    if (!model?.ReSale.NetUid) {
+    if (!canEditDetail || !model?.ReSale.NetUid) {
       return
     }
 
@@ -1478,14 +1483,14 @@ export function ResalePage() {
           </SimpleGrid>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="sm">
             <ResaleClientSelect
-              disabled={changedToInvoice || isCompleted}
+              disabled={!canEditDetail || changedToInvoice}
               label={t('Клієнт')}
               selectedClient={detailInfo.client}
               onSelectClient={(client) => setDetailInfo((current) => ({ ...current, client, clientAgreement: null }))}
             />
             <Select
               searchable
-              disabled={changedToInvoice || isCompleted || !detailInfo.client}
+              disabled={!canEditDetail || changedToInvoice || !detailInfo.client}
               data={buildClientAgreementOptions(detailInfo.client, model.ReSale.Organization || undefined, false)}
               label={t('Угода')}
               value={detailInfo.clientAgreement?.NetUid || detailInfo.clientAgreement?.Id ? String(detailInfo.clientAgreement.NetUid || detailInfo.clientAgreement.Id) : null}
@@ -1496,7 +1501,7 @@ export function ResalePage() {
             />
           </SimpleGrid>
           <Textarea
-            disabled={isSaving}
+            disabled={!canEditDetail || isSaving}
             label={t('Коментар')}
             minRows={2}
             value={detailInfo.comment}
@@ -1522,7 +1527,7 @@ export function ResalePage() {
             <Button disabled={isCompleted || isSaving} loading={isSaving} variant="light" onClick={() => recalculate()}>
               {t('Перерахувати')}
             </Button>
-            <Button disabled={isSaving} loading={isSaving} onClick={saveResale}>
+            <Button disabled={!canEditDetail || isSaving} loading={isSaving} onClick={saveResale}>
               {t('Зберегти')}
             </Button>
             {!changedToInvoice && detailInfo.clientAgreement && (

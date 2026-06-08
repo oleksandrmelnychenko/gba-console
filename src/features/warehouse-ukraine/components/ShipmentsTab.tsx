@@ -1032,7 +1032,7 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     () => hasShipmentListChanges(selectedShipment, shipmentDraft),
     [selectedShipment, shipmentDraft],
   )
-  const canEditShipment = Boolean(shipmentDraft)
+  const canEditShipment = Boolean(shipmentDraft && !shipmentDraft.IsSent)
 
   useEffect(() => {
     let cancelled = false
@@ -1699,6 +1699,15 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
       >
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="wrap">
+            {shipmentDraft && (
+              <Badge
+                color={shipmentDraft.IsSent ? 'green' : 'gray'}
+                leftSection={shipmentDraft.IsSent ? <IconCircleCheck size={12} /> : <IconCircleDashed size={12} />}
+                variant="light"
+              >
+                {shipmentDraft.IsSent ? t('Проведено') : t('Не проведено')}
+              </Badge>
+            )}
             <TextInput
               disabled={!canEditShipment || isSaving}
               label={t('Коментар')}

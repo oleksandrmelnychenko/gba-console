@@ -838,7 +838,7 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const model = useSpecificationModel(id)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
-  const canMutateSpecification = Boolean(model.protocol?.IsShipped)
+  const canMutateSpecification = Boolean(model.protocol?.IsShipped && !model.protocol?.IsCompleted)
   const canMerge = canMutateSpecification && invoices.length > 1
   const canDownload =
     hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&

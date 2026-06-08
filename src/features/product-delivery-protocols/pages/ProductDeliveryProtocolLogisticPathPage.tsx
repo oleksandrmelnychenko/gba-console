@@ -123,7 +123,7 @@ function useLogisticPathModel(netId: string | undefined) {
   }, [netId, setLoadState, t])
 
   const canEdit = isGba || !protocol?.IsCompleted
-  const canEditDeliveryDocuments = Boolean(protocol)
+  const canEditDeliveryDocuments = canEdit
 
   async function changeStatus() {
     if (!protocol?.NetUid) {
