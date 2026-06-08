@@ -838,21 +838,20 @@ export function ProductDeliveryProtocolSpecificationPage() {
   const model = useSpecificationModel(id)
   const [vendorCodeFilter, setVendorCodeFilter] = useValueState('')
   const invoices = model.protocol?.SupplyInvoices || []
-  const canUseSpecification = Boolean(model.protocol?.IsShipped)
-  const canMerge = canUseSpecification && invoices.length > 1
+  const canMutateSpecification = Boolean(model.protocol?.IsShipped)
+  const canMerge = canMutateSpecification && invoices.length > 1
   const canDownload =
-    canUseSpecification &&
     hasPermission(PERMISSION_DOWNLOAD_SPECIFICATION) &&
     Boolean(model.packingList && (model.packingList.Id || 0) > 0)
   const canUpload =
-    canUseSpecification &&
+    canMutateSpecification &&
     hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) &&
     Boolean(model.selectedInvoice && (model.selectedInvoice.Id || 0) > 0)
-  const canUploadDocuments = canUseSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
+  const canUploadDocuments = canMutateSpecification && hasPermission(PERMISSION_UPLOAD_DELIVERY_DOCUMENTS)
   const canOpenDeliveryDocuments =
-    canUseSpecification && Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
-  const canEditSpecification = canUseSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
-  const canSaveSpecification = canUseSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
+    canMutateSpecification && Boolean(model.selectedInvoice && (model.selectedInvoice.PackingLists?.length || 0) > 0)
+  const canEditSpecification = canMutateSpecification && hasPermission(PERMISSION_OPEN_SPECIFICATION_CODE)
+  const canSaveSpecification = canMutateSpecification && hasPermission(PERMISSION_SAVE_SPECIFICATION_CODE)
   const filteredPackingList = filterPackingListByVendorCode(model.packingList, vendorCodeFilter)
 
   return (
@@ -879,13 +878,13 @@ export function ProductDeliveryProtocolSpecificationPage() {
         <Group gap="sm" align="center">
           <SegmentedControl
             data={SPECIFICATION_CURRENCY_OPTIONS}
-            disabled={!canUseSpecification || model.isActionBusy}
+            disabled={model.isActionBusy}
             value={model.currencyIsEur ? CURRENCY_EUR : CURRENCY_UAH}
             onChange={(value) => model.setCurrencyIsEur(value === CURRENCY_EUR)}
           />
           <SegmentedControl
             data={SERVICE_MODE_OPTIONS}
-            disabled={!canUseSpecification || model.isActionBusy}
+            disabled={model.isActionBusy}
             value={model.withManagementServices ? SERVICES_MANAGEMENT : SERVICES_ACCOUNTING}
             onChange={(value) => model.setWithManagementServices(value === SERVICES_MANAGEMENT)}
           />
@@ -902,12 +901,14 @@ export function ProductDeliveryProtocolSpecificationPage() {
         <Text c="dimmed" size="sm">
           {t('Завантаження')}
         </Text>
-      ) : model.protocol && !canUseSpecification ? (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {t('Специфікації доступні після відвантаження протоколу')}
-        </Alert>
       ) : model.protocol ? (
         <Stack gap="lg">
+          {!canMutateSpecification && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {t('Редагування специфікації доступне після відвантаження протоколу')}
+            </Alert>
+          )}
+
           <Card withBorder radius="md" padding="md">
             <Stack gap="md">
               <Group justify="flex-end" gap="xs">

@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   Divider,
   Group,
   Select,
@@ -45,6 +46,7 @@ import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-
 import {
   getAllShipmentLists,
   getAutoShipmentList,
+  getManualShipmentSales,
   getShipmentCreatePageDocument,
   getShipmentDocument,
   getShipmentListById,
@@ -66,6 +68,12 @@ import type {
   ShipmentTransporterType,
 } from '../shipmentTypes'
 import type { WarehouseUkraineExportDocument } from '../types'
+import {
+  appendManualShipmentSales,
+  getShipmentSaleKey,
+  isValidManualQtyPlaces,
+  toManualShipmentQueryDate,
+} from '../shipmentManualSelection'
 import { ChangeCommentModal } from './ChangeCommentModal'
 import { displayValue, formatDateTime, getDateShiftedByDays } from './dateHelpers'
 import { DownloadDocumentModal } from './DownloadDocumentModal'
@@ -91,6 +99,11 @@ const ALL_SHIPMENTS_TABLE_DEFAULT_LAYOUT = {
 
 const EDIT_SHIPMENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: { left: ['client', 'saleNumber'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+const MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT = {
+  columnPinning: { left: ['select', 'saleNumber'] },
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
@@ -126,6 +139,14 @@ function sumQtyPlaces(items: ShipmentListItem[]): number {
 
 function getShipmentListTransporterName(shipmentList: ShipmentList): string {
   return shipmentList.Transporter?.Name || shipmentList.ShipmentListItems[0]?.Sale.Transporter?.Name || ''
+}
+
+function getShipmentListTransporterNetId(shipmentList: ShipmentList | null): string {
+  return shipmentList?.Transporter?.NetUid || shipmentList?.ShipmentListItems[0]?.Sale.Transporter?.NetUid || ''
+}
+
+function getManualSaleRowId(sale: ShipmentSale, index: number): string {
+  return getShipmentSaleKey(sale) || String(index)
 }
 
 function hasEditingMarker(shipmentList: ShipmentList): boolean {
@@ -968,6 +989,13 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const [shipmentDraft, setShipmentDraft] = useValueState<ShipmentList | null>(null)
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   const [confirmCloseShipment, setConfirmCloseShipment] = useState(false)
+  const [manualPickerOpen, setManualPickerOpen] = useState(false)
+  const [manualFilterDraft, setManualFilterDraft] = useValueState<FilterDraft>(initialFilters)
+  const [manualSales, setManualSales] = useValueState<ShipmentSale[]>([])
+  const [manualSelectedSaleKeys, setManualSelectedSaleKeys] = useValueState<Record<string, boolean>>({})
+  const [manualQtyPlaces, setManualQtyPlaces] = useValueState<Record<string, string>>({})
+  const [manualError, setManualError] = useValueState<string | null>(null)
+  const [isManualLoading, setManualLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -987,6 +1015,19 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   const listColumns = useAllShipmentColumns(listIndexMap)
   const draftItems = useMemo(() => shipmentDraft?.ShipmentListItems || [], [shipmentDraft])
   const draftIndexMap = useMemo(() => buildIndexMap(draftItems), [draftItems])
+  const draftSaleKeys = useMemo(
+    () => new Set(draftItems.flatMap((item) => {
+      const saleKey = getShipmentSaleKey(item.Sale)
+
+      return saleKey ? [saleKey] : []
+    })),
+    [draftItems],
+  )
+  const manualSelectedCount = useMemo(
+    () => Object.values(manualSelectedSaleKeys).filter(Boolean).length,
+    [manualSelectedSaleKeys],
+  )
+  const manualFilterError = getFilterError(manualFilterDraft.from, manualFilterDraft.to)
   const hasShipmentDraftChanges = useMemo(
     () => hasShipmentListChanges(selectedShipment, shipmentDraft),
     [selectedShipment, shipmentDraft],
@@ -1126,6 +1167,13 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
     onRemoveItem: removeDraftItem,
     updateItem: updateDraftItem,
   })
+  const manualColumns = useManualShipmentSalesColumns({
+    existingSaleKeys: draftSaleKeys,
+    qtyPlaces: manualQtyPlaces,
+    selectedSaleKeys: manualSelectedSaleKeys,
+    setQtyPlaces: setManualQtyPlaces,
+    setSelectedSaleKeys: setManualSelectedSaleKeys,
+  })
 
   const typeOptions = toTransporterOptions(transporterTypes)
   const transporterOptions = [
@@ -1135,6 +1183,120 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
 
   function refreshList() {
     reload()
+  }
+
+  async function loadManualSales(
+    nextFilter = manualFilterDraft,
+    transporterNetId = getShipmentListTransporterNetId(shipmentDraft),
+  ) {
+    if (!transporterNetId) {
+      setManualError(t('Не вдалося визначити перевізника відвантаження'))
+      return
+    }
+
+    const nextFilterError = getFilterError(nextFilter.from, nextFilter.to)
+
+    if (nextFilterError) {
+      setManualError(nextFilterError)
+      return
+    }
+
+    setManualLoading(true)
+    setManualError(null)
+
+    try {
+      const result = await getManualShipmentSales({
+        transporterNetId,
+        from: toManualShipmentQueryDate(nextFilter.from),
+        to: toManualShipmentQueryDate(nextFilter.to),
+      })
+
+      setManualSales(result)
+      setManualSelectedSaleKeys({})
+      setManualQtyPlaces({})
+    } catch (loadError) {
+      setManualSales([])
+      setManualError(loadError instanceof Error ? loadError.message : t('Не вдалося виконати запит'))
+    } finally {
+      setManualLoading(false)
+    }
+  }
+
+  function openManualPicker() {
+    if (!canEditShipment) {
+      return
+    }
+
+    const transporterNetId = getShipmentListTransporterNetId(shipmentDraft)
+
+    if (!transporterNetId) {
+      setEditError(t('Не вдалося визначити перевізника відвантаження'))
+      return
+    }
+
+    const nextFilter = { ...filterDraft }
+
+    setManualFilterDraft(nextFilter)
+    setManualSales([])
+    setManualSelectedSaleKeys({})
+    setManualQtyPlaces({})
+    setManualError(null)
+    setManualPickerOpen(true)
+    void loadManualSales(nextFilter, transporterNetId)
+  }
+
+  function closeManualPicker() {
+    if (isManualLoading) {
+      return
+    }
+
+    setManualPickerOpen(false)
+    setManualError(null)
+  }
+
+  function appendManualSelectedSalesToDraft() {
+    if (!shipmentDraft) {
+      return
+    }
+
+    const selectedSales = manualSales.filter((sale) => {
+      const saleKey = getShipmentSaleKey(sale)
+
+      return saleKey && manualSelectedSaleKeys[saleKey]
+    })
+
+    if (!selectedSales.length) {
+      setManualError(t('Виберіть накладні для додавання'))
+      return
+    }
+
+    const invalidQtySale = selectedSales.find((sale) => !isValidManualQtyPlaces(manualQtyPlaces[getShipmentSaleKey(sale)]))
+
+    if (invalidQtySale) {
+      setManualError(t('Кількість місць не може бути від’ємною'))
+      return
+    }
+
+    const result = appendManualShipmentSales(shipmentDraft, selectedSales, manualQtyPlaces)
+
+    if (!result.appendedCount) {
+      setManualError(
+        result.skippedDuplicateCount > 0
+          ? t('Вибрані накладні вже є у відвантаженні')
+          : t('Не вдалося додати накладні'),
+      )
+      return
+    }
+
+    setShipmentDraft(result.shipmentList)
+    setManualPickerOpen(false)
+    setManualError(null)
+    notifications.show({
+      color: result.skippedDuplicateCount > 0 ? 'yellow' : 'green',
+      message: result.skippedDuplicateCount > 0
+        ? t('Додано тільки нові накладні, дублікати пропущено')
+        : t('Накладні додано до відвантаження'),
+    })
   }
 
   function openShipment(shipmentList: ShipmentList) {
@@ -1148,6 +1310,8 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
   function closeShipment() {
     setEditError(null)
     setConfirmCloseShipment(false)
+    setManualPickerOpen(false)
+    setManualError(null)
     setSelectedShipment(null)
     setShipmentDraft(null)
   }
@@ -1543,6 +1707,14 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
               onChange={(event) => updateDraftField('FromDate', event.currentTarget.value)}
             />
             <Button
+              leftSection={<IconPlus size={18} />}
+              variant="light"
+              onClick={openManualPicker}
+              disabled={!canEditShipment || isSaving}
+            >
+              {t('Додати накладні')}
+            </Button>
+            <Button
               leftSection={<IconPrinter size={18} />}
               variant="light"
               onClick={printSelectedShipment}
@@ -1583,6 +1755,78 @@ function AllShipmentsPanel({ onCreate }: AllShipmentsPanelProps) {
             minWidth={1650}
             tableId="warehouse-ukraine-edit-shipment"
           />
+        </Stack>
+      </AppDrawer>
+
+      <AppDrawer
+        opened={manualPickerOpen}
+        size="wide"
+        title={t('Додати накладні до відвантаження')}
+        onClose={closeManualPicker}
+      >
+        <Stack gap="md">
+          <Card withBorder radius="md" padding="md">
+            <Group align="end" gap="sm" wrap="wrap">
+              <TextInput
+                label={t('Початкова дата')}
+                max={manualFilterDraft.to || undefined}
+                type="date"
+                value={manualFilterDraft.from}
+                onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                label={t('Кінцева дата')}
+                min={manualFilterDraft.from || undefined}
+                type="date"
+                value={manualFilterDraft.to}
+                onChange={(event) => setManualFilterDraft({ ...manualFilterDraft, to: event.currentTarget.value })}
+              />
+              <Button
+                disabled={Boolean(manualFilterError) || isManualLoading}
+                leftSection={<IconRefresh size={18} />}
+                loading={isManualLoading}
+                variant="light"
+                onClick={() => void loadManualSales(manualFilterDraft)}
+              >
+                {t('Оновити')}
+              </Button>
+              <Text c="dimmed" size="sm">
+                {t('Вибрано')}: {manualSelectedCount}
+              </Text>
+            </Group>
+          </Card>
+
+          {(manualError || manualFilterError) && (
+            <Alert color={manualFilterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+              {manualFilterError || manualError}
+            </Alert>
+          )}
+
+          <DataTable
+            columns={manualColumns}
+            data={manualSales}
+            defaultLayout={MANUAL_SHIPMENT_SALES_TABLE_DEFAULT_LAYOUT}
+            emptyText={t('Накладних не знайдено')}
+            getRowId={getManualSaleRowId}
+            isLoading={isManualLoading}
+            layoutVersion="warehouse-ukraine-manual-shipment-sales-1"
+            maxHeight="calc(100vh - 360px)"
+            minWidth={980}
+            tableId="warehouse-ukraine-manual-shipment-sales"
+          />
+
+          <Group justify="flex-end" gap="sm">
+            <Button color="gray" disabled={isManualLoading} variant="light" onClick={closeManualPicker}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              disabled={isManualLoading || manualSelectedCount === 0}
+              leftSection={<IconPlus size={18} />}
+              onClick={appendManualSelectedSalesToDraft}
+            >
+              {t('Додати')}
+            </Button>
+          </Group>
         </Stack>
       </AppDrawer>
 
@@ -1747,6 +1991,151 @@ function useAllShipmentColumns(indexMap: Map<ShipmentList, number>): DataTableCo
       },
     ],
     [indexMap, t],
+  )
+}
+
+type ManualShipmentSalesColumnsModel = {
+  existingSaleKeys: Set<string>
+  qtyPlaces: Record<string, string>
+  selectedSaleKeys: Record<string, boolean>
+  setQtyPlaces: (updater: (current: Record<string, string>) => Record<string, string>) => void
+  setSelectedSaleKeys: (updater: (current: Record<string, boolean>) => Record<string, boolean>) => void
+}
+
+function useManualShipmentSalesColumns(model: ManualShipmentSalesColumnsModel): DataTableColumn<ShipmentSale>[] {
+  const { t } = useI18n()
+
+  return useMemo<DataTableColumn<ShipmentSale>[]>(
+    () => [
+      {
+        id: 'select',
+        header: '',
+        width: 54,
+        minWidth: 48,
+        align: 'center',
+        enableSorting: false,
+        accessor: getShipmentSaleKey,
+        cell: (sale) => {
+          const saleKey = getShipmentSaleKey(sale)
+          const disabled = !saleKey || model.existingSaleKeys.has(saleKey)
+
+          return (
+            <Checkbox
+              checked={Boolean(saleKey && model.selectedSaleKeys[saleKey])}
+              disabled={disabled}
+              onChange={(event) => {
+                if (!saleKey) {
+                  return
+                }
+
+                const checked = event.currentTarget.checked
+
+                model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: checked }))
+              }}
+            />
+          )
+        },
+      },
+      {
+        id: 'saleNumber',
+        header: t('Номер'),
+        width: 140,
+        minWidth: 110,
+        accessor: (sale) => sale.SaleNumber?.Value,
+        cell: (sale) => (
+          <Text fw={700} c={model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? 'dimmed' : undefined}>
+            {displayValue(sale.SaleNumber?.Value)}
+          </Text>
+        ),
+      },
+      {
+        id: 'fromDate',
+        header: t('Від якої дати'),
+        width: 160,
+        minWidth: 140,
+        accessor: (sale) => sale.ChangedToInvoice,
+        cell: (sale) => formatDateTime(sale.ChangedToInvoice),
+      },
+      {
+        id: 'client',
+        header: t('Клієнт'),
+        minWidth: 220,
+        accessor: getClientName,
+        cell: (sale) => displayValue(getClientName(sale)),
+      },
+      {
+        id: 'qtyPlaces',
+        header: t('К-сть місць'),
+        width: 120,
+        minWidth: 100,
+        enableSorting: false,
+        accessor: getShipmentSaleKey,
+        cell: (sale) => {
+          const saleKey = getShipmentSaleKey(sale)
+          const disabled = !saleKey || model.existingSaleKeys.has(saleKey)
+
+          return (
+            <TextInput
+              disabled={disabled}
+              error={saleKey ? !isValidManualQtyPlaces(model.qtyPlaces[saleKey]) : false}
+              size="xs"
+              type="number"
+              value={saleKey ? model.qtyPlaces[saleKey] || '' : ''}
+              onChange={(event) => {
+                if (!saleKey) {
+                  return
+                }
+
+                const value = event.currentTarget.value
+
+                model.setQtyPlaces((current) => ({ ...current, [saleKey]: value }))
+                model.setSelectedSaleKeys((current) => ({ ...current, [saleKey]: true }))
+              }}
+            />
+          )
+        },
+      },
+      {
+        id: 'totalAmount',
+        header: t('Вся сума'),
+        width: 120,
+        minWidth: 100,
+        align: 'right',
+        accessor: (sale) => sale.TotalAmountLocal,
+        cell: (sale) => displayValue(sale.TotalAmountLocal),
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        width: 160,
+        minWidth: 120,
+        accessor: getResponsible,
+        cell: (sale) => displayValue(getResponsible(sale)),
+      },
+      {
+        id: 'comment',
+        header: t('Коментар'),
+        minWidth: 240,
+        accessor: (sale) => sale.WarehousesShipment?.Comment || sale.Comment,
+        cell: (sale) => displayValue(sale.WarehousesShipment?.Comment || sale.Comment),
+      },
+      {
+        id: 'status',
+        header: t('Стан'),
+        width: 130,
+        minWidth: 110,
+        accessor: getShipmentSaleKey,
+        cell: (sale) =>
+          model.existingSaleKeys.has(getShipmentSaleKey(sale)) ? (
+            <Badge color="gray" size="sm" variant="light">
+              {t('Вже додано')}
+            </Badge>
+          ) : (
+            ''
+          ),
+      },
+    ],
+    [model, t],
   )
 }
 

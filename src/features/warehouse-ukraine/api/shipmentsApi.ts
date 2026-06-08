@@ -5,6 +5,7 @@ import type {
   ShipmentDeliveryRecipientAddress,
   ShipmentList,
   ShipmentListItem,
+  ShipmentSale,
   ShipmentTransporter,
   ShipmentTransporterType,
 } from '../shipmentTypes'
@@ -37,6 +38,18 @@ export type ShipmentListSearchParams = {
   from: string
   to: string
   limit?: number
+}
+
+export async function getManualShipmentSales(params: AutoShipmentListParams): Promise<ShipmentSale[]> {
+  const result = await apiRequest<unknown>('/sales/all/transporter/filtered', {
+    query: {
+      netId: params.transporterNetId,
+      from: params.from,
+      to: params.to,
+    },
+  })
+
+  return normalizeArray<ShipmentSale>(result)
 }
 
 export async function getAutoShipmentList(params: AutoShipmentListParams): Promise<ShipmentList> {

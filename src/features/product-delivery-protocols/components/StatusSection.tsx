@@ -4,6 +4,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import type { ProtocolDetail } from '../detailTypes'
+import { getProtocolStatusLabel } from '../protocolStatus'
 
 const CHANGE_STATUS_PERMISSION = 'ProductDeliveryProtocols_unified_services_ChangeStatusBtn_PKEY'
 
@@ -22,16 +23,7 @@ export function StatusSection({
   const { hasPermission } = useAuth()
   const [confirmOpen, setConfirmOpen] = useValueState(false)
   const canChangeStatus = canEdit && hasPermission(CHANGE_STATUS_PERMISSION) && !protocol.IsCompleted
-
-  let statusLabel = t('В дорозі')
-
-  if (protocol.IsShipped) {
-    statusLabel = t('Прибув')
-  }
-
-  if (protocol.IsCompleted) {
-    statusLabel = t('Завершено')
-  }
+  const statusLabel = getProtocolStatusLabel(protocol, t)
 
   return (
     <>

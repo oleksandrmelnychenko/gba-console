@@ -3,7 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import { getDocumentVerification } from './documentVerificationApi'
 import { getWarehouseUkraineOrders } from './ordersApi'
 import { getSaleActProtocolEditDocument, getSalePrintDocument } from './salesApi'
-import { getAllShipmentLists } from './shipmentsApi'
+import { getAllShipmentLists, getManualShipmentSales } from './shipmentsApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -98,6 +98,24 @@ describe('warehouse Ukraine migrated gap request contracts', () => {
         from: '2026-06-01',
         to: '2026-06-08',
         limit: 20,
+      },
+    })
+  })
+
+  it('requests manual shipment sale candidates by transporter and explicit date range', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await getManualShipmentSales({
+      transporterNetId: 'transporter-net-id',
+      from: '2026-06-01T00:00:00.000Z',
+      to: '2026-06-08T00:00:00.000Z',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/all/transporter/filtered', {
+      query: {
+        netId: 'transporter-net-id',
+        from: '2026-06-01T00:00:00.000Z',
+        to: '2026-06-08T00:00:00.000Z',
       },
     })
   })
