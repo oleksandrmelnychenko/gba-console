@@ -41,7 +41,7 @@ export function OfferCard({
   const { t } = useI18n()
   const status = offer.OfferProcessingStatus ?? OFFER_PROCESSING_STATUS.NotProcessed
   const notProcessedCount = getNotProcessedCount(offer)
-  const currencyCode = offer.ClientAgreement?.Agreement?.Currency?.Code ?? 'EUR'
+  const currencyCode = 'EUR'
   const daysToEnd = getDaysToEnd(offer.ValidUntil)
   const reasonStatus = getReasonStatus(offer)
   const showNotProcessed = offer.IsOfferProcessed === true && notProcessedCount !== 0
