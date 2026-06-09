@@ -1642,14 +1642,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                           key={entry.locale}
                         >
                           <div className="seo-settings-tree-module-header">
-                            <button
-                              className="seo-settings-tree-module-title"
-                              disabled={isSaving}
-                              type="button"
-                              onClick={() => openGeneralLocaleEditor(entry)}
-                            >
+                            <div className="seo-settings-tree-module-title">
                               <Text className="seo-settings-tree-module-name">{entry.locale}</Text>
-                            </button>
+                            </div>
                             <Tooltip label={t('Редагувати')}>
                               <ActionIcon
                                 aria-label={`${t('Редагувати')} ${entry.locale}`}
@@ -1679,17 +1674,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                     <span className="seo-settings-tree-node-icon">
                                       {section.group === 'contact' ? <IconInfoCircle size={15} /> : <IconCreditCard size={15} />}
                                     </span>
-                                    <button
-                                      className="seo-settings-tree-node-title"
-                                      disabled={isSaving}
-                                      type="button"
-                                      onClick={() => openGeneralLocaleEditor(entry)}
-                                    >
+                                    <div className="seo-settings-tree-node-title">
                                       <Text className="seo-settings-tree-node-name">{t(section.label)}</Text>
                                       <span className="seo-settings-tree-node-meta">
                                         {isSectionMissing ? t('Запис відсутній') : `${filledFieldCount}/${section.fields.length} ${t('полів')}`}
                                       </span>
-                                    </button>
+                                    </div>
                                   </div>
 
                                   <div className="seo-settings-tree-field-list">
@@ -1706,34 +1696,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                           <span className="seo-settings-tree-field-icon">
                                             {field.group === 'contact' ? <IconInfoCircle size={13} /> : <IconCreditCard size={13} />}
                                           </span>
-                                          <button
-                                            className="seo-settings-tree-field-body"
-                                            disabled={isSaving}
-                                            type="button"
-                                            onClick={() => openGeneralLocaleEditor(entry)}
-                                          >
-                                            <div className="seo-settings-tree-field-copy">
+                                          <div className="seo-settings-tree-field-content">
+                                            <div className="seo-settings-tree-field-body">
                                               <Text className="seo-settings-tree-field-name">{t(field.label)}</Text>
-                                              <span className="seo-settings-tree-field-meta">
-                                                {isMissingRecord ? t('Запис відсутній') : displayValue(value, t('Не заповнено'))}
-                                              </span>
                                             </div>
                                             <span className="seo-settings-tree-field-line" aria-hidden />
-                                          </button>
-                                          <div className="seo-settings-tree-field-actions">
-                                            <Tooltip label={t('Редагувати')}>
-                                              <ActionIcon
-                                                aria-label={`${t('Редагувати')} ${entry.locale} ${t(field.label)}`}
-                                                color="gray"
-                                                disabled={isSaving}
-                                                size="sm"
-                                                type="button"
-                                                variant="subtle"
-                                                onClick={() => openGeneralLocaleEditor(entry)}
-                                              >
-                                                <IconPencil size={16} />
-                                              </ActionIcon>
-                                            </Tooltip>
+                                            <span className="seo-settings-tree-field-value">
+                                              {isMissingRecord ? t('Запис відсутній') : displayValue(value, t('Не заповнено'))}
+                                            </span>
                                           </div>
                                         </div>
                                       )

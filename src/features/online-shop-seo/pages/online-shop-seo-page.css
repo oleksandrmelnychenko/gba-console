@@ -313,26 +313,15 @@
 
 .seo-settings-tree-node-icon svg,
 .seo-settings-tree-field-icon svg,
-.seo-settings-tree-action svg,
-.seo-settings-tree-field-actions svg {
+.seo-settings-tree-action svg {
   stroke-width: 1.7;
 }
 
 .seo-settings-tree-module-title,
 .seo-settings-tree-node-title,
 .seo-settings-tree-field-body {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
   min-width: 0;
-  padding: 0;
   text-align: left;
-}
-
-.seo-settings-tree-module-title:disabled,
-.seo-settings-tree-node-title:disabled,
-.seo-settings-tree-field-body:disabled {
-  cursor: default;
 }
 
 .seo-settings-tree-module-name,
@@ -386,11 +375,6 @@
   transition: background-color 110ms var(--tx-ease-smooth);
 }
 
-.seo-settings-tree-node-row:hover,
-.seo-settings-tree-field:hover {
-  background: var(--mantine-color-gray-0);
-}
-
 .seo-settings-tree-connector {
   align-self: stretch;
   position: relative;
@@ -423,8 +407,7 @@
   justify-content: center;
 }
 
-.seo-settings-tree-node-meta,
-.seo-settings-tree-field-meta {
+.seo-settings-tree-node-meta {
   align-items: center;
   color: var(--mantine-color-gray-6);
   display: flex;
@@ -448,7 +431,7 @@
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: 40px 24px minmax(0, 1fr) auto;
+  grid-template-columns: 40px 24px minmax(0, 1fr);
   min-height: 40px;
   padding: 4px 10px 4px 13px;
   position: relative;
@@ -461,24 +444,33 @@
 
 .seo-settings-tree-field-body {
   align-items: center;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: fit-content(56%) minmax(24px, 1fr);
-  width: 100%;
-}
-
-.seo-settings-tree-field-copy {
-  display: grid;
-  gap: 1px;
+  align-self: center;
+  display: flex;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
 .seo-settings-tree-field-name {
+  display: block;
   font-weight: 500;
+  line-height: 1.2;
+  max-width: none;
+  overflow: visible;
+  padding-right: 6px;
+  text-overflow: clip;
+  white-space: normal;
 }
 
-.seo-settings-tree-field.is-empty .seo-settings-tree-field-meta {
-  color: var(--mantine-color-gray-5);
+.seo-settings-tree-field-content {
+  align-items: center;
+  align-self: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: max-content minmax(42px, 1fr) fit-content(260px);
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
 }
 
 .seo-settings-tree-field-line {
@@ -511,12 +503,28 @@
   right: -3px;
 }
 
-.seo-settings-tree-field-actions {
+.seo-settings-tree-field-value {
   align-items: center;
-  display: flex;
-  flex: 0 0 auto;
-  gap: 2px;
-  justify-content: flex-end;
+  align-self: center;
+  color: var(--mantine-color-gray-6);
+  display: -webkit-box;
+  flex: 0 1 auto;
+  font-size: 11px;
+  line-height: 1.2;
+  max-width: 260px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  justify-self: end;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.seo-settings-tree-field.is-empty .seo-settings-tree-field-value {
+  color: var(--mantine-color-gray-5);
 }
 
 .seo-matrix-empty {
@@ -633,12 +641,13 @@
   }
 
   .seo-settings-tree-field {
-    grid-template-columns: 32px 24px minmax(0, 1fr) auto;
+    grid-template-columns: 32px 24px minmax(0, 1fr);
     padding-left: 1px;
   }
 
-  .seo-settings-tree-field-body {
-    grid-template-columns: 1fr;
+  .seo-settings-tree-field-content {
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr) minmax(76px, max-content);
   }
 
   .seo-settings-tree-field-line {
