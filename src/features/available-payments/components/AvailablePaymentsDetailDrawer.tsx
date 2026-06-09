@@ -55,6 +55,7 @@ import {
 import { getAvailablePaymentSourceRoute } from '../models/availablePaymentSourceRoute'
 import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
+  calculateAvailablePaymentConvertedAmount,
   createAvailablePaymentOutcome,
   getAvailablePaymentAccountingCashFlow,
   getAvailablePaymentExchangeRate,
@@ -261,12 +262,18 @@ function useAvailablePaymentsDetailDrawerModel({
     [form.movementValue, movements],
   )
 
-  const sourceCurrency = selectedCurrencyRegister?.Currency || null
-  const targetCurrency = outcomeModels[0]?.currency || null
-  const sourceCurrencyNetUid = sourceCurrency?.NetUid || ''
-  const sourceCurrencyCode = sourceCurrency?.Code || ''
-  const targetCurrencyNetUid = targetCurrency?.NetUid || ''
-  const targetCurrencyCode = targetCurrency?.Code || ''
+  const paymentCurrency = selectedCurrencyRegister?.Currency || null
+  const taskCurrency = outcomeModels[0]?.currency || null
+  const paymentCurrencyNetUid = paymentCurrency?.NetUid || ''
+  const paymentCurrencyCode = paymentCurrency?.Code || ''
+  const paymentCurrencyId = paymentCurrency?.Id || 0
+  const taskCurrencyNetUid = taskCurrency?.NetUid || ''
+  const taskCurrencyCode = taskCurrency?.Code || ''
+  const taskCurrencyId = taskCurrency?.Id || 0
+  const baseOutcomeAmount = useMemo(
+    () => uniqueOutcomeModels(outcomeModels).reduce((total, model) => total + (model.grossPrice || 0), 0),
+    [outcomeModels],
+  )
   const organizationName = selectedOrganization?.Name || outcomeModels[0]?.organization?.Name || ''
   const exchangeFromDate = form.date
 
@@ -276,22 +283,26 @@ function useAvailablePaymentsDetailDrawerModel({
     }
 
     if (
-      !sourceCurrencyNetUid
-      || !targetCurrencyNetUid
-      || sourceCurrencyNetUid === targetCurrencyNetUid
-      || (Boolean(sourceCurrencyCode) && sourceCurrencyCode === targetCurrencyCode)
+      !paymentCurrencyNetUid
+      || !taskCurrencyNetUid
+      || paymentCurrencyNetUid === taskCurrencyNetUid
+      || (Boolean(paymentCurrencyCode) && paymentCurrencyCode === taskCurrencyCode)
     ) {
-      setForm((current) => (current.exchangeRate === 0 ? current : { ...current, exchangeRate: 0 }))
+      setForm((current) => ({
+        ...current,
+        amount: baseOutcomeAmount,
+        exchangeRate: 0,
+      }))
       return
     }
 
     let cancelled = false
 
     void getAvailablePaymentExchangeRate({
-      fromCurrencyNetId: sourceCurrencyNetUid,
+      fromCurrencyNetId: taskCurrencyNetUid,
       fromDate: toQueryDate(exchangeFromDate),
       organizationName,
-      toCurrencyNetId: targetCurrencyNetUid,
+      toCurrencyNetId: paymentCurrencyNetUid,
     })
       .then((rate) => {
         if (!cancelled) {
@@ -305,13 +316,64 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }, [
     exchangeFromDate,
+    baseOutcomeAmount,
     organizationName,
     outcomeModels.length,
+    paymentCurrencyCode,
+    paymentCurrencyNetUid,
     setForm,
-    sourceCurrencyCode,
-    sourceCurrencyNetUid,
-    targetCurrencyCode,
-    targetCurrencyNetUid,
+    taskCurrencyCode,
+    taskCurrencyNetUid,
+  ])
+
+  useEffect(() => {
+    if (outcomeModels.length === 0) {
+      return
+    }
+
+    if (!baseOutcomeAmount || !paymentCurrencyId || !taskCurrencyId) {
+      return
+    }
+
+    if (
+      paymentCurrencyId === taskCurrencyId
+      || (Boolean(paymentCurrencyCode) && paymentCurrencyCode === taskCurrencyCode)
+    ) {
+      setForm((current) => (current.amount === baseOutcomeAmount ? current : { ...current, amount: baseOutcomeAmount }))
+      return
+    }
+
+    if (form.exchangeRate <= 0) {
+      return
+    }
+
+    let cancelled = false
+
+    void calculateAvailablePaymentConvertedAmount({
+      amount: baseOutcomeAmount,
+      exchangeRate: form.exchangeRate,
+      fromCurrencyId: taskCurrencyId,
+      toCurrencyId: paymentCurrencyId,
+    })
+      .then((amount) => {
+        if (!cancelled && amount > 0) {
+          setForm((current) => ({ ...current, amount }))
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    baseOutcomeAmount,
+    form.exchangeRate,
+    outcomeModels.length,
+    paymentCurrencyCode,
+    paymentCurrencyId,
+    setForm,
+    taskCurrencyCode,
+    taskCurrencyId,
   ])
 
   function updateForm(patch: Partial<OutcomeFormState>) {
@@ -1856,12 +1918,14 @@ function getAvailableOrganizations(
   models: AvailablePaymentTaskModel[],
   registers: AvailablePaymentRegister[],
 ): AvailablePaymentsOrganization[] {
-  const organizations = [
-    ...models.map((model) => model.organization).filter((organization): organization is AvailablePaymentsOrganization => Boolean(organization)),
-    ...registers
-      .map((register) => register.Organization)
-      .filter((organization): organization is AvailablePaymentsOrganization => Boolean(organization)),
-  ]
+  const modelOrganizations = models
+    .map((model) => model.organization)
+    .filter((organization): organization is AvailablePaymentsOrganization => Boolean(organization))
+  const organizations = modelOrganizations.length > 0
+    ? modelOrganizations
+    : registers
+        .map((register) => register.Organization)
+        .filter((organization): organization is AvailablePaymentsOrganization => Boolean(organization))
   const seen = new Set<string>()
 
   return organizations.filter((organization) => {

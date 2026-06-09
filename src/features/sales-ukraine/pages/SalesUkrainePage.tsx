@@ -42,6 +42,7 @@ import {
   IconRestore,
   IconSearch,
   IconTag,
+  IconTruckDelivery,
 } from '@tabler/icons-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -67,7 +68,7 @@ import {
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
-import { getStatusTypeKey, isStatusType } from '../saleStatus'
+import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLifecycle, isStatusType } from '../saleStatus'
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
@@ -158,6 +159,7 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   1: 'Оплачено',
   2: 'Оплачено',
   3: 'Оплачено частково',
+  4: 'Повернення',
 }
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -725,6 +727,7 @@ export function SalesUkrainePage() {
                       onOpenSale={setSelectedSale}
                       onOpenEditor={setEditorSale}
                       onOpenEditShift={setEditShiftSale}
+                      onOpenDetails={setDetailsSale}
                       onOpenConsignment={setConsignmentSale}
                       onOpenAudit={openAudit}
                       onUnlock={requestUnlock}
@@ -849,6 +852,7 @@ type SaleGridRowProps = {
   onOpenSale: (sale: SalesUkraineSale) => void
   onOpenEditor: (sale: SalesUkraineSale) => void
   onOpenEditShift: (sale: SalesUkraineSale) => void
+  onOpenDetails: (sale: SalesUkraineSale) => void
   onOpenConsignment: (sale: SalesUkraineSale) => void
   onOpenAudit: (sale: SalesUkraineSale) => void
   onUnlock: (sale: SalesUkraineSale) => void
@@ -868,6 +872,7 @@ function SaleGridRow({
   onOpenSale,
   onOpenEditor,
   onOpenEditShift,
+  onOpenDetails,
   onOpenConsignment,
   onOpenAudit,
   onUnlock,
@@ -888,8 +893,8 @@ function SaleGridRow({
   const positions = getOrderItemCount(sale)
   const paymentColor = getPaymentStatusColor(sale)
 
-  const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
+  const lifecycleStatusKey = getSaleStatusKey(sale)
+  const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
   const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
   const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
@@ -1065,9 +1070,12 @@ function SaleGridRow({
             )}
             {showEditShift && (
               <Menu.Item leftSection={<IconArrowsLeftRight size={16} />} onClick={() => onOpenEditShift(sale)}>
-                {lifeCycleType === 0 ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
+                {lifecycleStatusKey === 'New' ? t('Акт редагування рахунку') : t('Акт редагування накладної')}
               </Menu.Item>
             )}
+            <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
+              {t('Дані доставки')}
+            </Menu.Item>
             {showTtn && (
               <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
                 {t('Друк ТТН')}
@@ -1293,13 +1301,7 @@ function getSaleUserName(sale: SalesUkraineSale): string {
 }
 
 function getSaleStatusKey(sale: SalesUkraineSale): string {
-  const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-  if (typeof status === 'number') {
-    return lifecycleStatusFromNumber(status)
-  }
-
-  return String(status || sale.BaseLifeCycleStatus?.Name || '')
+  return getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
 }
 
 function resolveRealtimeSale(payload: unknown): { NetUid?: string; SaleNumber?: { Value?: string } } | null {
@@ -1316,8 +1318,8 @@ function resolveRealtimeSale(payload: unknown): { NetUid?: string; SaleNumber?: 
 function SaleSourceIcon({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const source = sale.Order?.OrderSource
-  const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const isInvoiceStage = lifeCycleType === 1 || lifeCycleType === 2
+  const lifecycleStatusKey = getSaleStatusKey(sale)
+  const isInvoiceStage = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
   const indicator =
     source === 0
@@ -1360,8 +1362,12 @@ function getPaymentStatusColor(sale: SalesUkraineSale): string | undefined {
       return 'red'
     case '1':
       return 'green'
+    case '2':
+      return 'green'
     case '3':
       return 'orange'
+    case '4':
+      return 'blue'
     default:
       return undefined
   }
@@ -1392,9 +1398,7 @@ function getSecondaryAmountCode(sale: SalesUkraineSale): string {
 }
 
 function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
-  const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-  return status === 0 || status === 1 || status === 2
+  return isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
 }
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
@@ -1407,33 +1411,6 @@ function getOrderItemProductName(item: SalesUkraineOrderItem): string {
 
 function getOrderItemProductCode(item: SalesUkraineOrderItem): string {
   return item.Product?.VendorCode || item.Product?.Articul || item.Product?.MainOriginalNumber || ''
-}
-
-function lifecycleStatusFromNumber(status: number): string {
-  switch (status) {
-    case 0:
-      return 'New'
-    case 1:
-      return 'Packaging'
-    case 2:
-      return 'Packaged'
-    case 3:
-      return 'Shipping'
-    case 4:
-      return 'Received'
-    case 5:
-      return 'Await'
-    case 6:
-      return 'All'
-    case 100:
-      return 'OrderClosed'
-    case 101:
-      return 'TransporterChanged'
-    case 102:
-      return 'InvoiceChanged'
-    default:
-      return String(status)
-  }
 }
 
 function parseDate(value: unknown): Date | null {

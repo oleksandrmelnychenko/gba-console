@@ -12,6 +12,7 @@ import {
   Loader,
   NumberInput,
   SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -46,27 +47,39 @@ import { useAuth } from '../../auth/useAuth'
 import {
   deletePackingList,
   deleteSupplyInvoice,
+  deleteSupplyInvoiceDocument,
   getDirectSupplyOrderById,
+  getSupplyInformationDeliveryProtocolKeys,
   getSupplyInvoiceItems,
   getSupplyOrderInvoiceTotals,
   getSupplyOrderItems,
+  getSupplyPaymentDeliveryProtocolKeys,
+  getSupplyProtocolResponsibleUsers,
   updatePackingLists,
+  updateSupplyInvoice,
   updateSupplyInvoiceItems,
   uploadPackingListDocuments,
   uploadPackingListFile,
+  uploadSupplyInvoiceDocuments,
   uploadSupplyInvoiceFile,
 } from '../api/supplyUkraineOrdersApi'
 import type {
   DirectSupplyOrder,
+  EntityFields,
   PackingList,
   PackingListDocumentParseConfiguration,
   PackingListPackageOrderItem,
+  SupplyInformationDeliveryProtocol,
+  SupplyInformationDeliveryProtocolKey,
   SupplyInvoice,
   SupplyInvoiceDeliveryDocument,
   SupplyInvoiceOrderItem,
+  SupplyOrderPaymentDeliveryProtocol,
+  SupplyOrderPaymentDeliveryProtocolKey,
   SupplyOrderDocumentParseConfiguration,
   SupplyOrderInvoiceTotals,
   SupplyOrderItem,
+  User,
 } from '../types'
 
 type NumberFieldValue = number | ''
@@ -114,6 +127,37 @@ type PackListBalanceRow = QuantityBalanceRow & {
 type PackListEditorState = {
   packList: PackingList | null
 }
+type InvoiceEditorState = {
+  invoice: SupplyInvoice
+}
+type SelectOption = {
+  label: string
+  value: string
+}
+type PaymentProtocolDraft = {
+  amount: NumberFieldValue
+  comment: string
+  discount: NumberFieldValue
+  isAccounting: boolean
+  keyId: string | null
+  keyText: string
+  payToDate: string
+  userId: string | null
+}
+type InformationProtocolDraft = {
+  keyId: string | null
+  keyText: string
+  userId: string | null
+  value: NumberFieldValue
+}
+type InvoiceMetadataForm = {
+  dateFrom: string
+  deliveryAmount: NumberFieldValue
+  discountAmount: NumberFieldValue
+  documents: SupplyInvoiceDeliveryDocument[]
+  files: File[]
+  number: string
+}
 type PackListMetadataForm = {
   comment: string
   dateFrom: string
@@ -130,14 +174,19 @@ type PageState = {
   deletePackListCandidate: PackingList | null
   error: string | null
   invoiceDetailsByNetId: Record<string, SupplyInvoice>
+  invoiceEditor: InvoiceEditorState | null
   invoiceUploadOpen: boolean
+  informationProtocolKeys: SupplyInformationDeliveryProtocolKey[]
   isInvoiceLoading: boolean
   isLoading: boolean
+  isProtocolDictionariesLoading: boolean
   isSaving: boolean
   order: DirectSupplyOrder | null
   orderItems: SupplyOrderItem[]
   packListEditor: PackListEditorState | null
   packListUploadOpen: boolean
+  paymentProtocolKeys: SupplyOrderPaymentDeliveryProtocolKey[]
+  responsibleUsers: User[]
   selectedInvoiceNetId: string | null
   selectedPackListNetId: string | null
   totals: SupplyOrderInvoiceTotals
@@ -149,14 +198,19 @@ const INITIAL_PAGE_STATE: PageState = {
   deletePackListCandidate: null,
   error: null,
   invoiceDetailsByNetId: {},
+  invoiceEditor: null,
   invoiceUploadOpen: false,
+  informationProtocolKeys: [],
   isInvoiceLoading: false,
   isLoading: true,
+  isProtocolDictionariesLoading: false,
   isSaving: false,
   order: null,
   orderItems: [],
   packListEditor: null,
   packListUploadOpen: false,
+  paymentProtocolKeys: [],
+  responsibleUsers: [],
   selectedInvoiceNetId: null,
   selectedPackListNetId: null,
   totals: {},
@@ -226,14 +280,19 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     deletePackListCandidate,
     error,
     invoiceDetailsByNetId,
+    invoiceEditor,
     invoiceUploadOpen,
+    informationProtocolKeys,
     isInvoiceLoading,
     isLoading,
+    isProtocolDictionariesLoading,
     isSaving,
     order,
     orderItems,
     packListEditor,
     packListUploadOpen,
+    paymentProtocolKeys,
+    responsibleUsers,
     selectedInvoiceNetId,
     selectedPackListNetId,
     totals,
@@ -366,6 +425,47 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
       cancelled = true
     }
   }, [id, t])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadProtocolDictionaries() {
+      setPageState({ isProtocolDictionariesLoading: true })
+
+      try {
+        const [nextPaymentKeys, nextInformationKeys, nextUsers] = await Promise.all([
+          getSupplyPaymentDeliveryProtocolKeys(),
+          getSupplyInformationDeliveryProtocolKeys(),
+          getSupplyProtocolResponsibleUsers(),
+        ])
+
+        if (!cancelled) {
+          setPageState({
+            informationProtocolKeys: nextInformationKeys,
+            paymentProtocolKeys: nextPaymentKeys,
+            responsibleUsers: nextUsers,
+          })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          notifications.show({
+            color: 'red',
+            message: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити довідники протоколів'),
+          })
+        }
+      } finally {
+        if (!cancelled) {
+          setPageState({ isProtocolDictionariesLoading: false })
+        }
+      }
+    }
+
+    void loadProtocolDictionaries()
+
+    return () => {
+      cancelled = true
+    }
+  }, [t])
 
   useEffect(() => {
     if (!selectedInvoiceNetId || invoiceDetailsByNetId[selectedInvoiceNetId]) {
@@ -726,6 +826,92 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     }
   }
 
+  async function saveInvoiceMetadata(form: InvoiceMetadataForm) {
+    if (!canEditInvoice) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
+    if (!id || !selectedInvoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+      return
+    }
+
+    const validationMessage = getInvoiceMetadataValidationMessage(form, selectedInvoice)
+
+    if (validationMessage) {
+      notifications.show({ color: 'red', message: t(validationMessage) })
+      return
+    }
+
+    const deletedDocumentNetIds = form.documents.reduce<string[]>((result, document) => {
+      if (document.Deleted && document.NetUid) {
+        result.push(document.NetUid)
+      }
+
+      return result
+    }, [])
+    const invoicePayload = createInvoiceMetadataPayload(selectedInvoice, form)
+
+    setPageState({ isSaving: true })
+
+    try {
+      const updatedInvoice = await updateSupplyInvoice(id, invoicePayload)
+      const invoiceForUpload = updatedInvoice || invoicePayload
+
+      await Promise.all(deletedDocumentNetIds.map(deleteSupplyInvoiceDocument))
+
+      if (form.files.length > 0) {
+        await uploadSupplyInvoiceDocuments({
+          files: form.files,
+          invoice: invoiceForUpload,
+          supplyOrderNetId: id,
+        })
+      }
+
+      notifications.show({ color: 'green', message: t('Інвойс збережено') })
+      setPageState({ invoiceEditor: null })
+      await reloadOrder(selectedInvoice.NetUid)
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інвойс') })
+    } finally {
+      setPageState({ isSaving: false })
+    }
+  }
+
+  async function saveInvoiceProtocols(invoice: SupplyInvoice) {
+    if (!canEditInvoice) {
+      notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
+      return
+    }
+
+    if (!id || !selectedInvoice?.NetUid) {
+      notifications.show({ color: 'red', message: t('Оберіть інвойс') })
+      return
+    }
+
+    setPageState({ isSaving: true })
+
+    try {
+      const invoicePayload = createInvoiceProtocolsPayload(invoice)
+      const updatedInvoice = await updateSupplyInvoice(id, invoicePayload)
+      const invoiceForReload = updatedInvoice?.NetUid || invoice.NetUid || selectedInvoice.NetUid
+
+      if (updatedInvoice) {
+        setPageState((current) => ({
+          invoiceDetailsByNetId: mergeInvoiceDetails(current.invoiceDetailsByNetId, [updatedInvoice]),
+        }))
+      }
+
+      notifications.show({ color: 'green', message: t('Протоколи інвойса збережено') })
+      await reloadOrder(invoiceForReload)
+    } catch (saveError) {
+      notifications.show({ color: 'red', message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти протоколи') })
+    } finally {
+      setPageState({ isSaving: false })
+    }
+  }
+
   async function savePackListMetadata(form: PackListMetadataForm) {
     if (!canAddPackList) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
@@ -780,12 +966,15 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     invoiceBalanceByOrderItemKey,
     invoiceBalanceRows,
     invoiceDetailsByNetId,
+    invoiceEditor,
     invoiceItemColumns,
     invoiceUploadOpen,
     invoices,
+    informationProtocolKeys,
     isBusy,
     isInvoiceLoading,
     isLoading,
+    isProtocolDictionariesLoading,
     isSaving,
     order,
     orderItemColumns,
@@ -797,8 +986,12 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     packListItemColumns,
     packListEditor,
     packListUploadOpen,
+    paymentProtocolKeys,
     reloadOrder,
+    responsibleUsers,
+    saveInvoiceMetadata,
     saveInvoiceItems,
+    saveInvoiceProtocols,
     savePackListMetadata,
     savePackingLists,
     selectedInvoice,
@@ -951,6 +1144,18 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
           <InvoiceSelector model={model} />
+          {model.selectedInvoice && <InvoiceDocumentsSummary invoice={model.selectedInvoice} />}
+          {model.selectedInvoice && (
+            <InvoiceProtocolsSection
+              key={[
+                model.selectedInvoice.NetUid || model.selectedInvoice.Id || 'invoice',
+                model.paymentProtocolKeys.length,
+                model.informationProtocolKeys.length,
+                model.responsibleUsers.length,
+              ].join('-')}
+              model={model}
+            />
+          )}
           {model.isInvoiceLoading ? (
             <Group justify="center" py="md"><Loader size="sm" /></Group>
           ) : (
@@ -1021,6 +1226,28 @@ function InvoiceSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
           >
             {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
           </Button>
+          {model.canEditInvoice && (
+            <Tooltip label={t('Редагувати')}>
+              <ActionIcon
+                aria-label={t('Редагувати')}
+                disabled={model.isBusy}
+                size="xs"
+                variant="subtle"
+                onClick={() => {
+                  const invoiceNetId = invoice.NetUid || null
+                  const invoiceForEdit = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices) || invoice
+
+                  model.setPageState({
+                    invoiceEditor: { invoice: invoiceForEdit },
+                    selectedInvoiceNetId: invoiceNetId,
+                    selectedPackListNetId: getValidPackListNetId(model.selectedPackListNetId, invoiceForEdit),
+                  })
+                }}
+              >
+                <IconEdit size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           {model.canRemoveInvoice && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
@@ -1165,6 +1392,12 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
         opened={model.packListUploadOpen}
         onClose={() => model.setPageState({ packListUploadOpen: false })}
         onSubmit={model.submitPackList}
+      />
+      <InvoiceMetadataModal
+        editor={model.invoiceEditor}
+        isSaving={model.isSaving}
+        onClose={() => model.setPageState({ invoiceEditor: null })}
+        onSubmit={model.saveInvoiceMetadata}
       />
       <PackListMetadataModal
         editor={model.packListEditor}
@@ -1344,6 +1577,152 @@ function PackListUploadModal({
   )
 }
 
+function InvoiceMetadataModal({
+  editor,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  editor: InvoiceEditorState | null
+  isSaving: boolean
+  onClose: () => void
+  onSubmit: (form: InvoiceMetadataForm) => void
+}) {
+  const { t } = useI18n()
+  const opened = Boolean(editor)
+
+  return (
+    <AppModal centered opened={opened} size="lg" title={t('Редагувати інвойс')} onClose={onClose}>
+      {editor && (
+        <InvoiceMetadataModalBody
+          key={editor.invoice.NetUid || editor.invoice.Id || 'invoice'}
+          editor={editor}
+          isSaving={isSaving}
+          onClose={onClose}
+          onSubmit={onSubmit}
+        />
+      )}
+    </AppModal>
+  )
+}
+
+function InvoiceMetadataModalBody({
+  editor,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  editor: InvoiceEditorState
+  isSaving: boolean
+  onClose: () => void
+  onSubmit: (form: InvoiceMetadataForm) => void
+}) {
+  const { t } = useI18n()
+  const [form, setForm] = useState<InvoiceMetadataForm>(() => createInvoiceMetadataForm(editor.invoice))
+
+  function addFiles(files: File[] | null) {
+    if (!files?.length) {
+      return
+    }
+
+    setForm((current) => ({
+      ...current,
+      documents: [
+        ...current.documents,
+        ...createNewInvoiceDocuments(files),
+      ],
+      files: [...current.files, ...files],
+    }))
+  }
+
+  function removeDocument(document: SupplyInvoiceDeliveryDocument, index: number) {
+    setForm((current) => {
+      const documents = [...current.documents]
+
+      if (document.Id || document.NetUid) {
+        documents[index] = { ...document, Deleted: true }
+      } else {
+        documents.splice(index, 1)
+      }
+
+      return {
+        ...current,
+        documents,
+        files: document.Id || document.NetUid
+          ? current.files
+          : removePendingFile(current.files, document),
+      }
+    })
+  }
+
+  function restoreDocument(document: SupplyInvoiceDeliveryDocument, index: number) {
+    setForm((current) => {
+      const documents = [...current.documents]
+
+      documents[index] = { ...document, Deleted: false }
+
+      return { ...current, documents }
+    })
+  }
+
+  return (
+    <Stack gap="md">
+      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+        <TextInput
+          disabled={isSaving}
+          label={t('Номер')}
+          value={form.number}
+          onChange={(event) => setForm((current) => ({ ...current, number: event.currentTarget.value }))}
+        />
+        <TextInput
+          disabled={isSaving}
+          label={t('Дата')}
+          type="datetime-local"
+          value={form.dateFrom}
+          onChange={(event) => setForm((current) => ({ ...current, dateFrom: event.currentTarget.value }))}
+        />
+        <NumberInput
+          allowNegative={false}
+          decimalScale={2}
+          disabled={isSaving}
+          label={t('Доставка')}
+          min={0}
+          value={form.deliveryAmount}
+          onChange={(value) => setForm((current) => ({ ...current, deliveryAmount: toNonNegativeAmount(value) }))}
+        />
+        <NumberInput
+          allowNegative={false}
+          decimalScale={2}
+          disabled={isSaving}
+          label={t('Знижка')}
+          min={0}
+          value={form.discountAmount}
+          onChange={(value) => setForm((current) => ({ ...current, discountAmount: toNonNegativeAmount(value) }))}
+        />
+      </SimpleGrid>
+      <FileInput
+        clearable
+        multiple
+        disabled={isSaving}
+        label={t('Документи інвойсу')}
+        leftSection={<IconFileUpload size={16} />}
+        value={[]}
+        onChange={addFiles}
+      />
+      <PackListDocumentsList
+        documents={form.documents}
+        onRemove={removeDocument}
+        onRestore={restoreDocument}
+      />
+      <Divider />
+      <Group justify="flex-end">
+        <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
+        <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+      </Group>
+    </Stack>
+  )
+}
+
 function PackListMetadataModal({
   editor,
   isSaving,
@@ -1493,8 +1872,8 @@ function PackListDocumentsList({
       {documents.map((document, index) => (
         <Group key={document.NetUid || document.Id || `${document.FileName}-${index}`} justify="space-between" wrap="nowrap">
           <Stack gap={0}>
-            {document.DocumentUrl && !document.Deleted ? (
-              <Anchor href={upgradeHttpToHttps(document.DocumentUrl)} rel="noreferrer" size="sm" target="_blank">
+            {getDocumentUrl(document) && !document.Deleted ? (
+              <Anchor href={upgradeHttpToHttps(getDocumentUrl(document))} rel="noreferrer" size="sm" target="_blank">
                 {document.FileName || document.GeneratedName || t('Документ')}
               </Anchor>
             ) : (
@@ -1691,6 +2070,410 @@ function usePackListItemColumns({
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
     ],
     [balanceByInvoiceItemKey, disabled, onQtyChange, t],
+  )
+}
+
+function InvoiceDocumentsSummary({ invoice }: { invoice: SupplyInvoice }) {
+  const { t } = useI18n()
+  const documents = getActiveInvoiceDocuments(invoice.InvoiceDocuments || [])
+
+  if (documents.length === 0) {
+    return null
+  }
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      <Text c="dimmed" size="sm">{t('Документи інвойсу')}:</Text>
+      {documents.map((document, index) => {
+        const documentUrl = getDocumentUrl(document)
+        const label = document.FileName || document.GeneratedName || t('Документ')
+
+        return documentUrl ? (
+          <Anchor
+            key={document.NetUid || document.Id || `${label}-${index}`}
+            href={upgradeHttpToHttps(documentUrl)}
+            rel="noreferrer"
+            size="sm"
+            target="_blank"
+          >
+            {label}
+          </Anchor>
+        ) : (
+          <Badge key={document.NetUid || document.Id || `${label}-${index}`} color="gray" variant="light">
+            {label}
+          </Badge>
+        )
+      })}
+    </Group>
+  )
+}
+
+function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageModel }) {
+  const { t } = useI18n()
+  const invoice = model.selectedInvoice
+  const [paymentDraft, setPaymentDraft] = useState<PaymentProtocolDraft>(() =>
+    createEmptyPaymentProtocolDraft(model.paymentProtocolKeys, model.responsibleUsers),
+  )
+  const [informationDraft, setInformationDraft] = useState<InformationProtocolDraft>(() =>
+    createEmptyInformationProtocolDraft(model.informationProtocolKeys, model.responsibleUsers),
+  )
+  const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
+  const [editingInformationIndex, setEditingInformationIndex] = useState<number | null>(null)
+
+  const paymentKeyOptions = useMemo(
+    () => toSelectOptions(model.paymentProtocolKeys, (key) => key.Key || t('Форма')),
+    [model.paymentProtocolKeys, t],
+  )
+  const informationKeyOptions = useMemo(
+    () => toSelectOptions(model.informationProtocolKeys, (key) => key.Key || t('Протокол')),
+    [model.informationProtocolKeys, t],
+  )
+  const userOptions = useMemo(
+    () => toSelectOptions(model.responsibleUsers, getUserName),
+    [model.responsibleUsers],
+  )
+  const paymentRows = useMemo(() => getActivePaymentProtocolRows(invoice), [invoice])
+  const informationRows = useMemo(() => getActiveInformationProtocolRows(invoice), [invoice])
+  const isDisabled = model.isBusy || !model.canEditInvoice
+
+  if (!invoice) {
+    return null
+  }
+
+  const currentInvoice = invoice
+
+  function selectPaymentKey(keyId: string | null) {
+    const key = findEntityBySelectValue(model.paymentProtocolKeys, keyId)
+
+    setPaymentDraft((current) => ({
+      ...current,
+      keyId,
+      keyText: key?.Key || current.keyText,
+    }))
+  }
+
+  function selectInformationKey(keyId: string | null) {
+    const key = findEntityBySelectValue(model.informationProtocolKeys, keyId)
+
+    setInformationDraft((current) => ({
+      ...current,
+      keyId,
+      keyText: key?.Key || current.keyText,
+    }))
+  }
+
+  function resetPaymentDraft() {
+    setPaymentDraft(createEmptyPaymentProtocolDraft(model.paymentProtocolKeys, model.responsibleUsers))
+    setEditingPaymentIndex(null)
+  }
+
+  function resetInformationDraft() {
+    setInformationDraft(createEmptyInformationProtocolDraft(model.informationProtocolKeys, model.responsibleUsers))
+    setEditingInformationIndex(null)
+  }
+
+  function editPaymentProtocol(protocol: SupplyOrderPaymentDeliveryProtocol, index: number) {
+    setPaymentDraft(createPaymentProtocolDraft(protocol, model.paymentProtocolKeys, model.responsibleUsers))
+    setEditingPaymentIndex(index)
+  }
+
+  function editInformationProtocol(protocol: SupplyInformationDeliveryProtocol, index: number) {
+    setInformationDraft(createInformationProtocolDraft(protocol, model.informationProtocolKeys, model.responsibleUsers))
+    setEditingInformationIndex(index)
+  }
+
+  function savePaymentProtocol() {
+    const validationMessage = getPaymentProtocolValidationMessage(paymentDraft)
+
+    if (validationMessage) {
+      notifications.show({ color: 'red', message: t(validationMessage) })
+      return
+    }
+
+    const nextInvoice = upsertPaymentProtocol(currentInvoice, paymentDraft, {
+      key: getPaymentProtocolKeyFromDraft(paymentDraft, model.paymentProtocolKeys),
+      protocolIndex: editingPaymentIndex,
+      user: getUserFromDraft(paymentDraft.userId, model.responsibleUsers),
+    })
+
+    resetPaymentDraft()
+    void model.saveInvoiceProtocols(nextInvoice)
+  }
+
+  function saveInformationProtocol() {
+    const validationMessage = getInformationProtocolValidationMessage(informationDraft)
+
+    if (validationMessage) {
+      notifications.show({ color: 'red', message: t(validationMessage) })
+      return
+    }
+
+    const nextInvoice = upsertInformationProtocol(currentInvoice, informationDraft, {
+      key: getInformationProtocolKeyFromDraft(informationDraft, model.informationProtocolKeys),
+      protocolIndex: editingInformationIndex,
+      user: getUserFromDraft(informationDraft.userId, model.responsibleUsers),
+    })
+
+    resetInformationDraft()
+    void model.saveInvoiceProtocols(nextInvoice)
+  }
+
+  return (
+    <Stack gap="md">
+      <Divider />
+      <Group justify="space-between" align="center">
+        <Text fw={700}>{t('Протоколи інвойса')}</Text>
+        {model.isProtocolDictionariesLoading && <Loader size="xs" />}
+      </Group>
+      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+        <Stack gap="sm">
+          <Group justify="space-between" align="center">
+            <Text fw={600} size="sm">{t('Платіжні протоколи')}</Text>
+            <Badge color="gray" variant="light">{paymentRows.length}</Badge>
+          </Group>
+          {paymentRows.length === 0 ? (
+            <Text c="dimmed" size="sm">{t('Платіжних протоколів немає')}</Text>
+          ) : (
+            <Stack gap="xs">
+              {paymentRows.map(({ index, protocol }) => (
+                <Group key={getProtocolRowKey(protocol, index)} justify="space-between" align="flex-start" wrap="nowrap">
+                  <Stack gap={2}>
+                    <Group gap="xs" wrap="wrap">
+                      <Badge variant="light">{getPaymentProtocolKeyText(protocol)}</Badge>
+                      <Text fw={700} size="sm">{formatMoney(protocol.Value)}</Text>
+                      {protocol.Discount ? <Text c="dimmed" size="sm">{formatNumber(protocol.Discount)}%</Text> : null}
+                      {protocol.IsAccounting && <Badge color="teal" variant="light">{t('Бухгалтерія')}</Badge>}
+                    </Group>
+                    <Text c="dimmed" size="xs">
+                      {t('Оплатити до')}: {formatDate(protocol.SupplyPaymentTask?.PayToDate)}
+                      {' · '}
+                      {t('Відповідальний')}: {getUserName(protocol.SupplyPaymentTask?.User || protocol.User)}
+                    </Text>
+                    {protocol.SupplyPaymentTask?.Comment && (
+                      <Text size="xs">{protocol.SupplyPaymentTask.Comment}</Text>
+                    )}
+                  </Stack>
+                  {model.canEditInvoice && (
+                    <Group gap={4} wrap="nowrap">
+                      <Tooltip label={t('Редагувати')}>
+                        <ActionIcon
+                          aria-label={t('Редагувати')}
+                          disabled={isDisabled}
+                          size="sm"
+                          variant="subtle"
+                          onClick={() => editPaymentProtocol(protocol, index)}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                      <Tooltip label={t('Видалити')}>
+                        <ActionIcon
+                          aria-label={t('Видалити')}
+                          color="red"
+                          disabled={isDisabled}
+                          size="sm"
+                          variant="subtle"
+                          onClick={() => model.saveInvoiceProtocols(markPaymentProtocolDeleted(currentInvoice, index))}
+                        >
+                          <IconTrash size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Group>
+                  )}
+                </Group>
+              ))}
+            </Stack>
+          )}
+          {model.canEditInvoice && (
+            <Stack gap="xs">
+              <Divider />
+              <Text fw={600} size="sm">
+                {editingPaymentIndex === null ? t('Новий платіжний протокол') : t('Редагувати платіжний протокол')}
+              </Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                <Select
+                  clearable
+                  data={paymentKeyOptions}
+                  disabled={isDisabled}
+                  label={t('Шаблон форми')}
+                  searchable
+                  value={paymentDraft.keyId}
+                  onChange={selectPaymentKey}
+                />
+                <TextInput
+                  disabled={isDisabled}
+                  label={t('Форма оплати')}
+                  value={paymentDraft.keyText}
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, keyText: event.currentTarget.value }))}
+                />
+                <NumberInput
+                  allowNegative={false}
+                  decimalScale={2}
+                  disabled={isDisabled}
+                  label={t('Відсоток')}
+                  min={0}
+                  value={paymentDraft.discount}
+                  onChange={(value) => setPaymentDraft((current) => ({ ...current, discount: toNonNegativeAmount(value) }))}
+                />
+                <NumberInput
+                  allowNegative={false}
+                  decimalScale={2}
+                  disabled={isDisabled}
+                  label={t('Сума')}
+                  min={0}
+                  value={paymentDraft.amount}
+                  onChange={(value) => setPaymentDraft((current) => ({ ...current, amount: toNonNegativeAmount(value) }))}
+                />
+                <TextInput
+                  disabled={isDisabled}
+                  label={t('Оплатити до')}
+                  type="date"
+                  value={paymentDraft.payToDate}
+                  onChange={(event) => setPaymentDraft((current) => ({ ...current, payToDate: event.currentTarget.value }))}
+                />
+                <Select
+                  data={userOptions}
+                  disabled={isDisabled}
+                  label={t('Відповідальний')}
+                  searchable
+                  value={paymentDraft.userId}
+                  onChange={(value) => setPaymentDraft((current) => ({ ...current, userId: value }))}
+                />
+              </SimpleGrid>
+              <Checkbox
+                checked={paymentDraft.isAccounting}
+                disabled={isDisabled}
+                label={t('Бухгалтерський платіж')}
+                onChange={(event) => setPaymentDraft((current) => ({ ...current, isAccounting: event.currentTarget.checked }))}
+              />
+              <Textarea
+                autosize
+                disabled={isDisabled}
+                label={t('Коментар')}
+                minRows={2}
+                value={paymentDraft.comment}
+                onChange={(event) => setPaymentDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
+              />
+              <Group justify="flex-end">
+                {editingPaymentIndex !== null && (
+                  <Button disabled={isDisabled} variant="subtle" onClick={resetPaymentDraft}>{t('Скасувати')}</Button>
+                )}
+                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
+                  {t('Зберегти')}
+                </Button>
+              </Group>
+            </Stack>
+          )}
+        </Stack>
+        <Stack gap="sm">
+          <Group justify="space-between" align="center">
+            <Text fw={600} size="sm">{t('Інформаційні протоколи')}</Text>
+            <Badge color="gray" variant="light">{informationRows.length}</Badge>
+          </Group>
+          {informationRows.length === 0 ? (
+            <Text c="dimmed" size="sm">{t('Інформаційних протоколів немає')}</Text>
+          ) : (
+            <Stack gap="xs">
+              {informationRows.map(({ index, protocol }) => (
+                <Group key={getProtocolRowKey(protocol, index)} justify="space-between" align="flex-start" wrap="nowrap">
+                  <Stack gap={2}>
+                    <Group gap="xs" wrap="wrap">
+                      <Badge variant="light">{getInformationProtocolKeyText(protocol)}</Badge>
+                      <Text fw={700} size="sm">{protocol.Value || 0} {t('днів')}</Text>
+                      {protocol.IsDefault && <Badge color="gray" variant="light">{t('За замовчуванням')}</Badge>}
+                    </Group>
+                    <Text c="dimmed" size="xs">
+                      {t('Початок')}: {formatDate(protocol.Created)}
+                      {' · '}
+                      {t('Відповідальний')}: {getUserName(protocol.User)}
+                    </Text>
+                  </Stack>
+                  {model.canEditInvoice && (
+                    <Group gap={4} wrap="nowrap">
+                      <Tooltip label={t('Редагувати')}>
+                        <ActionIcon
+                          aria-label={t('Редагувати')}
+                          disabled={isDisabled}
+                          size="sm"
+                          variant="subtle"
+                          onClick={() => editInformationProtocol(protocol, index)}
+                        >
+                          <IconEdit size={16} />
+                        </ActionIcon>
+                      </Tooltip>
+                      {!protocol.IsDefault && (
+                        <Tooltip label={t('Видалити')}>
+                          <ActionIcon
+                            aria-label={t('Видалити')}
+                            color="red"
+                            disabled={isDisabled}
+                            size="sm"
+                            variant="subtle"
+                            onClick={() => model.saveInvoiceProtocols(markInformationProtocolDeleted(currentInvoice, index))}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Tooltip>
+                      )}
+                    </Group>
+                  )}
+                </Group>
+              ))}
+            </Stack>
+          )}
+          {model.canEditInvoice && (
+            <Stack gap="xs">
+              <Divider />
+              <Text fw={600} size="sm">
+                {editingInformationIndex === null ? t('Новий інформаційний протокол') : t('Редагувати інформаційний протокол')}
+              </Text>
+              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
+                <Select
+                  clearable
+                  data={informationKeyOptions}
+                  disabled={isDisabled}
+                  label={t('Шаблон протоколу')}
+                  searchable
+                  value={informationDraft.keyId}
+                  onChange={selectInformationKey}
+                />
+                <TextInput
+                  disabled={isDisabled}
+                  label={t('Назва протоколу')}
+                  value={informationDraft.keyText}
+                  onChange={(event) => setInformationDraft((current) => ({ ...current, keyText: event.currentTarget.value }))}
+                />
+                <NumberInput
+                  allowNegative={false}
+                  allowDecimal={false}
+                  disabled={isDisabled}
+                  label={t('Днів')}
+                  min={0}
+                  value={informationDraft.value}
+                  onChange={(value) => setInformationDraft((current) => ({ ...current, value: toNonNegativeAmount(value) }))}
+                />
+                <Select
+                  data={userOptions}
+                  disabled={isDisabled}
+                  label={t('Відповідальний')}
+                  searchable
+                  value={informationDraft.userId}
+                  onChange={(value) => setInformationDraft((current) => ({ ...current, userId: value }))}
+                />
+              </SimpleGrid>
+              <Group justify="flex-end">
+                {editingInformationIndex !== null && (
+                  <Button disabled={isDisabled} variant="subtle" onClick={resetInformationDraft}>{t('Скасувати')}</Button>
+                )}
+                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
+                  {t('Зберегти')}
+                </Button>
+              </Group>
+            </Stack>
+          )}
+        </Stack>
+      </SimpleGrid>
+    </Stack>
   )
 }
 
@@ -2036,6 +2819,429 @@ function createPackListOrderItem(invoiceItem: SupplyInvoiceOrderItem, qty: numbe
     TotalNetPrice: (invoiceItem.UnitPrice || 0) * qty,
     UnitPrice: invoiceItem.UnitPrice,
   }
+}
+
+function createInvoiceMetadataForm(invoice: SupplyInvoice): InvoiceMetadataForm {
+  return {
+    dateFrom: formatDateTimeInput(invoice.DateFrom ? new Date(invoice.DateFrom) : new Date()),
+    deliveryAmount: toNumberInputValue(invoice.DeliveryAmount),
+    discountAmount: toNumberInputValue(invoice.DiscountAmount),
+    documents: (invoice.InvoiceDocuments || []).map((document) => ({ ...document })),
+    files: [],
+    number: invoice.Number || '',
+  }
+}
+
+function createInvoiceMetadataPayload(invoice: SupplyInvoice, form: InvoiceMetadataForm): SupplyInvoice {
+  return {
+    ...stripEntityGraph(invoice),
+    DateFrom: normalizeDateTimeInput(form.dateFrom),
+    DeliveryAmount: toAmountNumber(form.deliveryAmount),
+    DiscountAmount: toAmountNumber(form.discountAmount),
+    InformationDeliveryProtocols: invoice.InformationDeliveryProtocols || [],
+    InvoiceDocuments: form.documents,
+    Number: form.number.trim(),
+    PackingLists: invoice.PackingLists || [],
+    PaymentDeliveryProtocols: invoice.PaymentDeliveryProtocols || [],
+    SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
+    SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
+    SupplyOrder: null,
+  }
+}
+
+function createInvoiceProtocolsPayload(invoice: SupplyInvoice): SupplyInvoice {
+  return {
+    ...stripEntityGraph(invoice),
+    InformationDeliveryProtocols: sanitizeInformationDeliveryProtocols(invoice),
+    InvoiceDocuments: invoice.InvoiceDocuments || [],
+    PackingLists: invoice.PackingLists || [],
+    PaymentDeliveryProtocols: sanitizePaymentDeliveryProtocols(invoice),
+    SupplyInvoiceDeliveryDocuments: invoice.SupplyInvoiceDeliveryDocuments || [],
+    SupplyInvoiceOrderItems: invoice.SupplyInvoiceOrderItems || [],
+    SupplyOrder: null,
+  }
+}
+
+function sanitizePaymentDeliveryProtocols(invoice: SupplyInvoice): SupplyOrderPaymentDeliveryProtocol[] {
+  return (invoice.PaymentDeliveryProtocols || []).map((protocol) => {
+    const key = protocol.SupplyOrderPaymentDeliveryProtocolKey || null
+    const task = protocol.SupplyPaymentTask || null
+    const user = task?.User || protocol.User || null
+    const value = protocol.Value || 0
+
+    return {
+      ...stripEntityGraph(protocol),
+      IsAccounting: Boolean(protocol.IsAccounting),
+      SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
+      SupplyOrderPaymentDeliveryProtocolKey: key,
+      SupplyOrderPaymentDeliveryProtocolKeyId: protocol.SupplyOrderPaymentDeliveryProtocolKeyId || key?.Id,
+      SupplyPaymentTask: task
+        ? {
+            ...stripEntityGraph(task),
+            GrossPrice: task.GrossPrice ?? value,
+            IsAccounting: protocol.IsAccounting ?? task.IsAccounting,
+            NetPrice: task.NetPrice ?? value,
+            User: user,
+            UserId: task.UserId || user?.Id,
+          }
+        : null,
+      SupplyPaymentTaskId: protocol.SupplyPaymentTaskId || task?.Id,
+      User: protocol.User || user,
+      UserId: protocol.UserId || user?.Id,
+      Value: value,
+    }
+  })
+}
+
+function sanitizeInformationDeliveryProtocols(invoice: SupplyInvoice): SupplyInformationDeliveryProtocol[] {
+  return (invoice.InformationDeliveryProtocols || []).map((protocol) => {
+    const key = protocol.SupplyInformationDeliveryProtocolKey || null
+    const user = protocol.User || null
+
+    return {
+      ...stripEntityGraph(protocol),
+      Created: protocol.Created || invoice.DateFrom || new Date().toISOString(),
+      SupplyInformationDeliveryProtocolKey: key,
+      SupplyInformationDeliveryProtocolKeyId: protocol.SupplyInformationDeliveryProtocolKeyId || key?.Id,
+      SupplyInvoiceId: protocol.SupplyInvoiceId || invoice.Id,
+      User: user,
+      UserId: protocol.UserId || user?.Id,
+      Value: protocol.Value || '0',
+    }
+  })
+}
+
+function createEmptyPaymentProtocolDraft(
+  keys: SupplyOrderPaymentDeliveryProtocolKey[],
+  users: User[],
+): PaymentProtocolDraft {
+  const key = keys[0] || null
+  const user = users[0] || null
+
+  return {
+    amount: '',
+    comment: '',
+    discount: '',
+    isAccounting: false,
+    keyId: toSelectValue(key),
+    keyText: key?.Key || '',
+    payToDate: formatDateInput(new Date()),
+    userId: toSelectValue(user),
+  }
+}
+
+function createPaymentProtocolDraft(
+  protocol: SupplyOrderPaymentDeliveryProtocol,
+  keys: SupplyOrderPaymentDeliveryProtocolKey[],
+  users: User[],
+): PaymentProtocolDraft {
+  const key = protocol.SupplyOrderPaymentDeliveryProtocolKey
+  const user = protocol.SupplyPaymentTask?.User || protocol.User || null
+  const keyId = toSelectValue(key)
+  const userId = toSelectValue(user)
+
+  return {
+    amount: toNumberInputValue(protocol.Value),
+    comment: protocol.SupplyPaymentTask?.Comment || '',
+    discount: toNumberInputValue(protocol.Discount),
+    isAccounting: Boolean(protocol.IsAccounting),
+    keyId: keyId && keys.some((item) => toSelectValue(item) === keyId) ? keyId : null,
+    keyText: key?.Key || '',
+    payToDate: formatDateInput(protocol.SupplyPaymentTask?.PayToDate ? new Date(protocol.SupplyPaymentTask.PayToDate) : new Date()),
+    userId: userId && users.some((item) => toSelectValue(item) === userId) ? userId : null,
+  }
+}
+
+function createEmptyInformationProtocolDraft(
+  keys: SupplyInformationDeliveryProtocolKey[],
+  users: User[],
+): InformationProtocolDraft {
+  const key = keys[0] || null
+  const user = users[0] || null
+
+  return {
+    keyId: toSelectValue(key),
+    keyText: key?.Key || '',
+    userId: toSelectValue(user),
+    value: '',
+  }
+}
+
+function createInformationProtocolDraft(
+  protocol: SupplyInformationDeliveryProtocol,
+  keys: SupplyInformationDeliveryProtocolKey[],
+  users: User[],
+): InformationProtocolDraft {
+  const key = protocol.SupplyInformationDeliveryProtocolKey
+  const user = protocol.User || null
+  const keyId = toSelectValue(key)
+  const userId = toSelectValue(user)
+
+  return {
+    keyId: keyId && keys.some((item) => toSelectValue(item) === keyId) ? keyId : null,
+    keyText: key?.Key || '',
+    userId: userId && users.some((item) => toSelectValue(item) === userId) ? userId : null,
+    value: toNumberInputValue(Number(protocol.Value || 0)),
+  }
+}
+
+function upsertPaymentProtocol(
+  invoice: SupplyInvoice,
+  draft: PaymentProtocolDraft,
+  options: {
+    key: SupplyOrderPaymentDeliveryProtocolKey
+    protocolIndex: number | null
+    user: User
+  },
+): SupplyInvoice {
+  const existingProtocols = invoice.PaymentDeliveryProtocols || []
+  const protocol = options.protocolIndex === null ? null : existingProtocols[options.protocolIndex] || null
+  const value = toAmountNumber(draft.amount)
+  const nextProtocol: SupplyOrderPaymentDeliveryProtocol = {
+    ...(protocol || {}),
+    Deleted: false,
+    Discount: toAmountNumber(draft.discount),
+    IsAccounting: draft.isAccounting,
+    SupplyInvoiceId: invoice.Id,
+    SupplyOrderPaymentDeliveryProtocolKey: options.key,
+    SupplyOrderPaymentDeliveryProtocolKeyId: options.key.Id,
+    SupplyPaymentTask: {
+      ...(protocol?.SupplyPaymentTask || {}),
+      Comment: draft.comment.trim(),
+      Deleted: false,
+      GrossPrice: value,
+      IsAccounting: draft.isAccounting,
+      NetPrice: value,
+      PayToDate: normalizeDateInput(draft.payToDate),
+      User: options.user,
+      UserId: options.user.Id,
+    },
+    User: options.user,
+    UserId: options.user.Id,
+    Value: value,
+  }
+  const nextProtocols = [...existingProtocols]
+
+  if (options.protocolIndex === null) {
+    nextProtocols.push(nextProtocol)
+  } else {
+    nextProtocols[options.protocolIndex] = nextProtocol
+  }
+
+  return {
+    ...invoice,
+    PaymentDeliveryProtocols: nextProtocols,
+  }
+}
+
+function upsertInformationProtocol(
+  invoice: SupplyInvoice,
+  draft: InformationProtocolDraft,
+  options: {
+    key: SupplyInformationDeliveryProtocolKey
+    protocolIndex: number | null
+    user: User
+  },
+): SupplyInvoice {
+  const existingProtocols = invoice.InformationDeliveryProtocols || []
+  const protocol = options.protocolIndex === null ? null : existingProtocols[options.protocolIndex] || null
+  const nextProtocol: SupplyInformationDeliveryProtocol = {
+    ...(protocol || {}),
+    Created: protocol?.Created || invoice.DateFrom || new Date().toISOString(),
+    Deleted: false,
+    IsDefault: protocol?.IsDefault || false,
+    SupplyInformationDeliveryProtocolKey: options.key,
+    SupplyInformationDeliveryProtocolKeyId: options.key.Id,
+    SupplyInvoiceId: invoice.Id,
+    User: options.user,
+    UserId: options.user.Id,
+    Value: String(toAmountNumber(draft.value)),
+  }
+  const nextProtocols = [...existingProtocols]
+
+  if (options.protocolIndex === null) {
+    nextProtocols.push(nextProtocol)
+  } else {
+    nextProtocols[options.protocolIndex] = nextProtocol
+  }
+
+  return {
+    ...invoice,
+    InformationDeliveryProtocols: nextProtocols,
+  }
+}
+
+function markPaymentProtocolDeleted(invoice: SupplyInvoice, protocolIndex: number): SupplyInvoice {
+  const nextProtocols = [...(invoice.PaymentDeliveryProtocols || [])]
+  const protocol = nextProtocols[protocolIndex]
+
+  if (!protocol) {
+    return invoice
+  }
+
+  if (!protocol.Id && !protocol.NetUid) {
+    nextProtocols.splice(protocolIndex, 1)
+  } else {
+    nextProtocols[protocolIndex] = {
+      ...protocol,
+      Deleted: true,
+      SupplyPaymentTask: protocol.SupplyPaymentTask
+        ? { ...protocol.SupplyPaymentTask, Deleted: true }
+        : protocol.SupplyPaymentTask,
+    }
+  }
+
+  return {
+    ...invoice,
+    PaymentDeliveryProtocols: nextProtocols,
+  }
+}
+
+function markInformationProtocolDeleted(invoice: SupplyInvoice, protocolIndex: number): SupplyInvoice {
+  const nextProtocols = [...(invoice.InformationDeliveryProtocols || [])]
+  const protocol = nextProtocols[protocolIndex]
+
+  if (!protocol) {
+    return invoice
+  }
+
+  if (!protocol.Id && !protocol.NetUid) {
+    nextProtocols.splice(protocolIndex, 1)
+  } else {
+    nextProtocols[protocolIndex] = { ...protocol, Deleted: true }
+  }
+
+  return {
+    ...invoice,
+    InformationDeliveryProtocols: nextProtocols,
+  }
+}
+
+function getPaymentProtocolValidationMessage(draft: PaymentProtocolDraft): string | null {
+  if (!draft.keyText.trim()) {
+    return 'Вкажіть форму оплати'
+  }
+
+  if (!toAmountNumber(draft.amount)) {
+    return 'Вкажіть суму'
+  }
+
+  if (!draft.payToDate) {
+    return 'Вкажіть дату оплати'
+  }
+
+  if (!draft.userId) {
+    return 'Оберіть відповідального'
+  }
+
+  return null
+}
+
+function getInformationProtocolValidationMessage(draft: InformationProtocolDraft): string | null {
+  if (!draft.keyText.trim()) {
+    return 'Вкажіть назву протоколу'
+  }
+
+  if (!draft.userId) {
+    return 'Оберіть відповідального'
+  }
+
+  return null
+}
+
+function getPaymentProtocolKeyFromDraft(
+  draft: PaymentProtocolDraft,
+  keys: SupplyOrderPaymentDeliveryProtocolKey[],
+): SupplyOrderPaymentDeliveryProtocolKey {
+  const key = findEntityBySelectValue(keys, draft.keyId)
+
+  return key || { Key: draft.keyText.trim() }
+}
+
+function getInformationProtocolKeyFromDraft(
+  draft: InformationProtocolDraft,
+  keys: SupplyInformationDeliveryProtocolKey[],
+): SupplyInformationDeliveryProtocolKey {
+  const key = findEntityBySelectValue(keys, draft.keyId)
+
+  return key || { Key: draft.keyText.trim() }
+}
+
+function getUserFromDraft(userId: string | null, users: User[]): User {
+  return findEntityBySelectValue(users, userId) || {}
+}
+
+function getActivePaymentProtocolRows(invoice: SupplyInvoice | null): Array<{ index: number, protocol: SupplyOrderPaymentDeliveryProtocol }> {
+  return (invoice?.PaymentDeliveryProtocols || []).reduce<Array<{ index: number, protocol: SupplyOrderPaymentDeliveryProtocol }>>(
+    (rows, protocol, index) => {
+      if (!protocol.Deleted) {
+        rows.push({ index, protocol })
+      }
+
+      return rows
+    },
+    [],
+  )
+}
+
+function getActiveInformationProtocolRows(invoice: SupplyInvoice | null): Array<{ index: number, protocol: SupplyInformationDeliveryProtocol }> {
+  return (invoice?.InformationDeliveryProtocols || []).reduce<Array<{ index: number, protocol: SupplyInformationDeliveryProtocol }>>(
+    (rows, protocol, index) => {
+      if (!protocol.Deleted) {
+        rows.push({ index, protocol })
+      }
+
+      return rows
+    },
+    [],
+  )
+}
+
+function getPaymentProtocolKeyText(protocol: SupplyOrderPaymentDeliveryProtocol): string {
+  return protocol.SupplyOrderPaymentDeliveryProtocolKey?.Key || '-'
+}
+
+function getInformationProtocolKeyText(protocol: SupplyInformationDeliveryProtocol): string {
+  return protocol.SupplyInformationDeliveryProtocolKey?.Key || '-'
+}
+
+function getProtocolRowKey(protocol: EntityFields, index: number): string {
+  return protocol.NetUid || String(protocol.Id || index)
+}
+
+function toSelectOptions<T extends EntityFields>(
+  items: T[],
+  getLabel: (item: T) => string,
+): SelectOption[] {
+  return items.reduce<SelectOption[]>((options, item) => {
+    const value = toSelectValue(item)
+
+    if (value) {
+      options.push({ label: getLabel(item), value })
+    }
+
+    return options
+  }, [])
+}
+
+function findEntityBySelectValue<T extends EntityFields>(items: T[], value: string | null): T | null {
+  if (!value) {
+    return null
+  }
+
+  return items.find((item) => toSelectValue(item) === value) || null
+}
+
+function toSelectValue(entity?: EntityFields | null): string | null {
+  if (entity?.NetUid) {
+    return `net-${entity.NetUid}`
+  }
+
+  if (entity?.Id) {
+    return `id-${entity.Id}`
+  }
+
+  return null
 }
 
 function createPackListMetadataForm(packList: PackingList | null): PackListMetadataForm {
@@ -2403,6 +3609,18 @@ function toNonNegativeNumber(value: number | string): number {
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
 }
 
+function toNonNegativeAmount(value: number | string): NumberFieldValue {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : ''
+}
+
+function toAmountNumber(value: NumberFieldValue): number {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
+}
+
 function toNumberInputValue(value?: number): number | '' {
   return typeof value === 'number' && Number.isFinite(value) ? value : ''
 }
@@ -2437,6 +3655,24 @@ function sumPackingListQty(invoice: SupplyInvoice): number {
     ),
     0,
   )
+}
+
+function getActiveInvoiceDocuments(documents: SupplyInvoiceDeliveryDocument[]): SupplyInvoiceDeliveryDocument[] {
+  return documents.filter((document) => !document.Deleted)
+}
+
+function getDocumentUrl(document: SupplyInvoiceDeliveryDocument): string {
+  return document.DocumentUrl || document.Url || ''
+}
+
+function removePendingFile(files: File[], document: SupplyInvoiceDeliveryDocument): File[] {
+  const fileName = document.FileName
+
+  if (!fileName) {
+    return files
+  }
+
+  return files.filter((file) => file.name !== fileName)
 }
 
 function TotalsBadges({ totals }: { totals: SupplyOrderInvoiceTotals }) {
@@ -2565,6 +3801,26 @@ function getInvoiceUploadValidationMessage(form: InvoiceUploadForm): string | nu
   return null
 }
 
+function getInvoiceMetadataValidationMessage(form: InvoiceMetadataForm, invoice: SupplyInvoice): string | null {
+  if (!form.number.trim()) {
+    return 'Вкажіть номер інвойсу'
+  }
+
+  if (!form.dateFrom) {
+    return 'Вкажіть дату інвойсу'
+  }
+
+  const deliveryAmount = toAmountNumber(form.deliveryAmount)
+  const discountAmount = toAmountNumber(form.discountAmount)
+  const invoiceNetPrice = invoice.NetPrice || invoice.TotalNetPrice || 0
+
+  if (discountAmount > invoiceNetPrice + deliveryAmount) {
+    return 'Некоректна сума знижки'
+  }
+
+  return null
+}
+
 function getPackListUploadValidationMessage(form: PackListUploadForm): string | null {
   if (!form.file || !isExcelFile(form.file)) {
     return 'Оберіть Excel файл'
@@ -2644,6 +3900,22 @@ function toPositiveNumber(value: number | string): NumberFieldValue {
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : ''
 }
 
+function formatDateInput(date: Date): string {
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function normalizeDateInput(value: string): string {
+  return value ? `${value}T00:00:00` : ''
+}
+
 function formatDateTimeInput(date: Date): string {
   return formatLocalDateTime(date).slice(0, 16)
 }
@@ -2660,7 +3932,15 @@ function getEntityName(entity?: { FullName?: string, Name?: string } | null): st
   return entity?.FullName || entity?.Name || '-'
 }
 
-function formatDate(value?: Date | string): string {
+function getUserName(user?: User | null): string {
+  if (!user) {
+    return '-'
+  }
+
+  return user.FullName || [user.LastName, user.FirstName, user.MiddleName].filter(Boolean).join(' ') || user.Name || '-'
+}
+
+function formatDate(value?: Date | string | null): string {
   if (!value) {
     return '-'
   }

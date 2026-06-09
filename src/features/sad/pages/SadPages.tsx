@@ -507,6 +507,7 @@ export function AllSadsPage() {
         opened={Boolean(outcomeSource)}
         source={outcomeSource}
         onClose={() => setOutcomeSource(null)}
+        onCreated={reload}
       />
 
       <SadPaymentFromSadModal
@@ -514,6 +515,7 @@ export function AllSadsPage() {
         opened={Boolean(paymentAction)}
         sad={paymentAction?.sad || null}
         onClose={() => setPaymentAction(null)}
+        onCreated={reload}
       />
 
       <SadSupplyOrderFromSadModal

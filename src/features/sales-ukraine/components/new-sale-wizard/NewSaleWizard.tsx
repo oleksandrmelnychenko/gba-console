@@ -15,10 +15,17 @@ import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
 import {
+  newDeliveryRecipient,
+  newDeliveryRecipientAddress,
+  type WizardDeliveryRecipient,
+  type WizardDeliveryRecipientAddress,
+} from './newSaleWizardApi'
+import {
   canAdvanceToProducts,
   canAdvanceToReview,
   getCartItemCount,
   getReviewError,
+  hasDeliveryAddressDraft,
   isSelfCheckout,
   NEW_SALE_REVIEW_INITIAL,
   NEW_SALE_WIZARD_INITIAL,
@@ -165,16 +172,21 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       }
 
       if (!selfCheckout) {
-        const recipient = review.recipient ?? state.sale.DeliveryRecipient
-        const address = review.address ?? state.sale.DeliveryRecipientAddress
+        const recipient = await resolveDeliveryRecipient(review, state)
+        const address = await resolveDeliveryAddress(review, recipient)
 
         payload.DeliveryRecipient = recipient
           ? ({ ...recipient, MobilePhone: review.mobilePhone || recipient.MobilePhone } as SalesUkraineSale['DeliveryRecipient'])
           : recipient
         payload.DeliveryRecipientAddress = address
-          ? ({ ...address, City: review.city || address.City, Department: review.department || address.Department } as SalesUkraineSale['DeliveryRecipientAddress'])
+          ? ({
+              ...address,
+              City: review.city || address.City,
+              Department: review.department || address.Department,
+              Value: review.addressValue || address.Value,
+            } as SalesUkraineSale['DeliveryRecipientAddress'])
           : address
-        payload.DeliveryRecipientAddressId = review.address?.Id ?? state.sale.DeliveryRecipientAddressId
+        payload.DeliveryRecipientAddressId = address?.Id ?? state.sale.DeliveryRecipientAddressId
         payload.IsCashOnDelivery = review.isCashOnDelivery
         payload.CashOnDeliveryAmount = review.isCashOnDelivery ? toAmount(review.codAmount) : state.sale.CashOnDeliveryAmount
         payload.TTN = review.hasOwnTtn ? review.ttnNumber || state.sale.TTN : state.sale.TTN
@@ -202,8 +214,11 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       notifications.show({ color: 'green', message: t('Продаж створено') })
       onCreated(state.sale)
       onClose()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
+    } catch (finalizeError) {
+      notifications.show({
+        color: 'red',
+        message: finalizeError instanceof Error ? t(finalizeError.message) : t('Не вдалося завершити продаж'),
+      })
     } finally {
       setBusy(false)
     }
@@ -331,6 +346,64 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       </Group>
     </Box>
   )
+}
+
+async function resolveDeliveryRecipient(
+  review: NewSaleReviewValue,
+  state: NewSaleWizardState,
+): Promise<WizardDeliveryRecipient | SalesUkraineSale['DeliveryRecipient'] | null> {
+  if (!review.isNewRecipient) {
+    return review.recipient ?? state.sale?.DeliveryRecipient ?? null
+  }
+
+  const clientId = state.agreement?.Client?.Id ?? state.sale?.ClientAgreement?.Client?.Id
+
+  if (!clientId) {
+    throw new Error('Не вдалося визначити клієнта для отримувача')
+  }
+
+  const recipient = await newDeliveryRecipient({
+    ClientId: clientId,
+    FullName: review.recipientName.trim(),
+    MobilePhone: review.mobilePhone.trim(),
+  })
+
+  if (!recipient?.Id) {
+    throw new Error('Не вдалося створити отримувача')
+  }
+
+  return recipient
+}
+
+async function resolveDeliveryAddress(
+  review: NewSaleReviewValue,
+  recipient: WizardDeliveryRecipient | SalesUkraineSale['DeliveryRecipient'] | null,
+): Promise<WizardDeliveryRecipientAddress | SalesUkraineSale['DeliveryRecipientAddress'] | null> {
+  if (!review.isNewAddress && review.address) {
+    return review.address
+  }
+
+  if (!hasDeliveryAddressDraft(review)) {
+    return null
+  }
+
+  if (!recipient?.Id) {
+    throw new Error('Не вдалося визначити отримувача для адреси')
+  }
+
+  const address = await newDeliveryRecipientAddress({
+    City: review.city.trim(),
+    DeliveryRecipient: recipient as WizardDeliveryRecipient,
+    DeliveryRecipientId: recipient.Id,
+    Department: review.department.trim(),
+    Value: review.addressValue.trim(),
+  })
+
+  if (!address?.Id) {
+    throw new Error('Не вдалося створити адресу доставки')
+  }
+
+  return address
 }
 
 function toAmount(value: number | string): number | undefined {

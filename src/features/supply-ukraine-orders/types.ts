@@ -39,6 +39,53 @@ export type User = NamedEntity & {
   MiddleName?: string
 }
 
+export type SupplyPaymentTask = EntityFields & {
+  Comment?: string
+  GrossPrice?: number
+  IsAccounting?: boolean
+  IsAvailableForPayment?: boolean
+  NetPrice?: number
+  PayToDate?: Date | string | null
+  TaskStatus?: number
+  TaskStatusUpdated?: Date | string | null
+  User?: User | null
+  UserId?: number
+}
+
+export type SupplyOrderPaymentDeliveryProtocolKey = EntityFields & {
+  Key?: string
+}
+
+export type SupplyOrderPaymentDeliveryProtocol = EntityFields & {
+  Discount?: number
+  IsAccounting?: boolean
+  SupplyInvoiceId?: number
+  SupplyOrderPaymentDeliveryProtocolKey?: SupplyOrderPaymentDeliveryProtocolKey | null
+  SupplyOrderPaymentDeliveryProtocolKeyId?: number
+  SupplyPaymentTask?: SupplyPaymentTask | null
+  SupplyPaymentTaskId?: number
+  User?: User | null
+  UserId?: number
+  Value?: number
+}
+
+export type SupplyInformationDeliveryProtocolKey = EntityFields & {
+  IsDefault?: boolean
+  Key?: string
+  KeyAssignedTo?: number
+  TransportationType?: SupplyTransportationTypeValue
+}
+
+export type SupplyInformationDeliveryProtocol = EntityFields & {
+  IsDefault?: boolean
+  SupplyInformationDeliveryProtocolKey?: SupplyInformationDeliveryProtocolKey | null
+  SupplyInformationDeliveryProtocolKeyId?: number
+  SupplyInvoiceId?: number
+  User?: User | null
+  UserId?: number
+  Value?: string
+}
+
 export type Organization = NamedEntity & {
   Culture?: string
 }
@@ -169,6 +216,8 @@ export type SupplyInvoiceDeliveryDocument = EntityFields & {
   GeneratedName?: string
   PackingListId?: number
   SupplyInvoiceId?: number
+  Type?: number
+  Url?: string
 }
 
 export type SupplyOrderUkraineDocument = EntityFields & {
@@ -184,11 +233,20 @@ export type SupplyInvoice = EntityFields & {
   DateCustomDeclaration?: Date | string | null
   DateFrom?: Date | string
   DeliveryAmount?: number
+  DiscountAmount?: number
+  InformationDeliveryProtocols?: SupplyInformationDeliveryProtocol[]
+  InvoiceDocuments?: SupplyInvoiceDeliveryDocument[]
   IsFullyPlaced?: boolean
   MergedSupplyInvoices?: SupplyInvoice[]
+  NetPrice?: number
   Number?: string
   NumberCustomDeclaration?: string
   PackingLists?: PackingList[]
+  PaymentDeliveryProtocols?: SupplyOrderPaymentDeliveryProtocol[]
+  SupplyOrganization?: SupplyServiceOrganization | null
+  SupplyOrganizationAgreement?: SupplyServiceOrganizationAgreement | null
+  SupplyOrganizationAgreementId?: number
+  SupplyOrganizationId?: number
   SupplyInvoiceDeliveryDocuments?: SupplyInvoiceDeliveryDocument[]
   SupplyInvoiceOrderItems?: SupplyInvoiceOrderItem[]
   SupplyOrder?: DirectSupplyOrder | null

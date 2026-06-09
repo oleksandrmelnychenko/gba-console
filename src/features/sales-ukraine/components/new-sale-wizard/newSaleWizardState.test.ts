@@ -23,15 +23,27 @@ describe('new sale wizard state guards', () => {
     expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter: { Id: 2 } as SalesUkraineTransporter })).toBe('Оберіть отримувача')
   })
 
-  it('requires a delivery address and mobile phone once carrier and recipient are chosen', () => {
+  it('requires mobile phone once carrier and recipient are chosen while address remains optional', () => {
     const transporter = { Id: 2 } as SalesUkraineTransporter
     const recipient = { Id: 5 }
 
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, recipient, transporter })).toBe('Оберіть адресу доставки')
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, recipient, transporter })).toBe(
-      'Вкажіть мобільний телефон отримувача',
-    )
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, recipient, transporter })).toBe('Вкажіть мобільний телефон отримувача')
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, recipient, transporter })).toBe('Вкажіть мобільний телефон отримувача')
     expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, mobilePhone: '380501112233', recipient, transporter })).toBeNull()
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, city: 'Київ', mobilePhone: '380501112233', recipient, transporter })).toBeNull()
+  })
+
+  it('allows a new free-form recipient with entered delivery address', () => {
+    const transporter = { Id: 2 } as SalesUkraineTransporter
+
+    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, isNewRecipient: true, transporter })).toBe('Вкажіть отримувача')
+    expect(getReviewError({
+      ...NEW_SALE_REVIEW_INITIAL,
+      isNewRecipient: true,
+      mobilePhone: '380501112233',
+      recipientName: 'Новий отримувач',
+      transporter,
+    })).toBeNull()
   })
 
   it('requires COD amount and own-TTN number when those options are enabled', () => {

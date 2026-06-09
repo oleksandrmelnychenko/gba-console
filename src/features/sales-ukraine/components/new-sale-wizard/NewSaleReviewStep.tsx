@@ -115,6 +115,7 @@ export function NewSaleReviewStep({
   }, [clientNetId])
 
   const addresses = value.recipient?.DeliveryRecipientAddresses || []
+  const canCreateAddress = value.isNewRecipient || Boolean(value.recipient)
 
   return (
     <Stack gap="md">
@@ -167,42 +168,111 @@ export function NewSaleReviewStep({
 
       {!selfCheckout && (
         <Stack gap="md">
+          <Group gap="xl" wrap="wrap">
+            <Checkbox
+              checked={value.isNewRecipient}
+              label={t('Новий отримувач')}
+              onChange={(event) => {
+                const checked = event.currentTarget.checked
+
+                onChange({
+                  address: null,
+                  addressValue: '',
+                  city: '',
+                  department: '',
+                  isNewAddress: checked,
+                  isNewRecipient: checked,
+                  mobilePhone: '',
+                  recipient: null,
+                  recipientName: '',
+                })
+              }}
+            />
+            <Checkbox
+              checked={value.isNewAddress}
+              disabled={!canCreateAddress}
+              label={t('Нова адреса')}
+              onChange={(event) => {
+                const checked = event.currentTarget.checked
+
+                onChange({
+                  address: null,
+                  addressValue: '',
+                  city: checked ? value.city : value.address?.City || '',
+                  department: checked ? value.department : value.address?.Department || '',
+                  isNewAddress: checked,
+                })
+              }}
+            />
+          </Group>
+
           <Group grow align="start">
-            <Select
-              searchable
-              clearable
-              data={recipients.reduce<{ label: string; value: string }[]>((acc, item) => {
-                if (item.NetUid) {
-                  acc.push({ label: getRecipientLabel(item), value: item.NetUid || '' })
-                }
-                return acc
-              }, [])}
-              label={t('Отримувач')}
-              placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
-              value={value.recipient?.NetUid ?? null}
-              onChange={(next) => {
-                const recipient = recipients.find((item) => item.NetUid === next) || null
-                onChange({ address: null, city: '', department: '', mobilePhone: recipient?.MobilePhone || '', recipient })
-              }}
-            />
-            <Select
-              searchable
-              clearable
-              data={addresses.reduce<{ label: string; value: string }[]>((acc, item) => {
-                if (item.NetUid) {
-                  acc.push({ label: getAddressLabel(item), value: item.NetUid || '' })
-                }
-                return acc
-              }, [])}
-              disabled={!value.recipient}
-              label={t('Адреса доставки')}
-              placeholder={t('Оберіть адресу')}
-              value={value.address?.NetUid ?? null}
-              onChange={(next) => {
-                const address = addresses.find((item) => item.NetUid === next) || null
-                onChange({ address, city: address?.City || '', department: address?.Department || '' })
-              }}
-            />
+            {value.isNewRecipient ? (
+              <TextInput
+                label={t('Отримувач')}
+                value={value.recipientName}
+                onChange={(event) => onChange({ recipientName: event.currentTarget.value })}
+              />
+            ) : (
+              <Select
+                searchable
+                clearable
+                data={recipients.reduce<{ label: string; value: string }[]>((acc, item) => {
+                  if (item.NetUid) {
+                    acc.push({ label: getRecipientLabel(item), value: item.NetUid || '' })
+                  }
+                  return acc
+                }, [])}
+                label={t('Отримувач')}
+                placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
+                value={value.recipient?.NetUid ?? null}
+                onChange={(next) => {
+                  const recipient = recipients.find((item) => item.NetUid === next) || null
+                  onChange({
+                    address: null,
+                    addressValue: '',
+                    city: '',
+                    department: '',
+                    isNewAddress: false,
+                    mobilePhone: recipient?.MobilePhone || '',
+                    recipient,
+                    recipientName: recipient?.FullName || '',
+                  })
+                }}
+              />
+            )}
+            {value.isNewAddress ? (
+              <TextInput
+                disabled={!canCreateAddress}
+                label={t('Адреса доставки')}
+                value={value.addressValue}
+                onChange={(event) => onChange({ addressValue: event.currentTarget.value })}
+              />
+            ) : (
+              <Select
+                searchable
+                clearable
+                data={addresses.reduce<{ label: string; value: string }[]>((acc, item) => {
+                  if (item.NetUid) {
+                    acc.push({ label: getAddressLabel(item), value: item.NetUid || '' })
+                  }
+                  return acc
+                }, [])}
+                disabled={!value.recipient}
+                label={t('Адреса доставки')}
+                placeholder={t('Оберіть адресу')}
+                value={value.address?.NetUid ?? null}
+                onChange={(next) => {
+                  const address = addresses.find((item) => item.NetUid === next) || null
+                  onChange({
+                    address,
+                    addressValue: address?.Value || '',
+                    city: address?.City || '',
+                    department: address?.Department || '',
+                  })
+                }}
+              />
+            )}
           </Group>
 
           <Group grow align="start">

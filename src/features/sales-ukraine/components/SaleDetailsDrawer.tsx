@@ -22,10 +22,8 @@ import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
+import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
-
-const PACKAGING_TYPE = 1
-const PACKAGED_TYPE = 2
 
 export function SaleDetailsDrawer({
   sale,
@@ -53,8 +51,8 @@ export function SaleDetailsDrawer({
 
 function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: SalesUkraineSale }) {
   const { t } = useI18n()
-  const lifecycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const showShipmentDate = lifecycleType === PACKAGING_TYPE || lifecycleType === PACKAGED_TYPE
+  const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
+  const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
   const [isEditMode, setEditMode] = useState(false)
   const [isSaving, setSaving] = useState(false)
@@ -326,8 +324,8 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
 function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
-  const lifecycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-  const showShipmentDate = lifecycleType === PACKAGING_TYPE || lifecycleType === PACKAGED_TYPE
+  const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
+  const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
 
   return (
     <Stack gap={6}>

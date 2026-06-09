@@ -12,6 +12,8 @@ import type {
   SupplyServiceConsumableProduct,
   SupplyServiceOrganization,
   SupplyInvoice,
+  SupplyInformationDeliveryProtocolKey,
+  SupplyOrderPaymentDeliveryProtocolKey,
   SupplyOrderInvoiceTotals,
   SupplyOrderItem,
   SupplyProForm,
@@ -26,6 +28,7 @@ import type {
   SupplyUkraineOrdersResponse,
   SupplyUkraineOrdersSearchParams,
   SupplyOrderUkraineSupplierCreatePayload,
+  User,
   UkraineOrderFromSupplierParseConfiguration,
 } from '../types'
 
@@ -168,6 +171,16 @@ export async function updateSupplyInvoiceItems(invoice: SupplyInvoice): Promise<
   return normalizeSupplyInvoice(result)
 }
 
+export async function updateSupplyInvoice(supplyOrderNetId: string, invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
+  const result = await apiRequest<unknown>('/supplies/invoices/update', {
+    body: invoice,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeSupplyInvoice(result)
+}
+
 export async function updatePackingLists(invoice: SupplyInvoice): Promise<SupplyInvoice | null> {
   const result = await apiRequest<unknown>('/supplies/packinglists/update', {
     body: invoice,
@@ -192,6 +205,52 @@ export async function uploadPackingListDocuments(packingList: PackingList, docum
   })
 
   return normalizePackingList(result)
+}
+
+export async function addDeliveryDocumentsToDirectSupplyInvoice(
+  invoice: SupplyInvoice,
+  documents: File[],
+): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  formData.append('invoice', JSON.stringify(invoice))
+
+  for (const document of documents) {
+    formData.append('documents', document)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/invoices/order/documents/add', {
+    body: formData,
+    method: 'POST',
+  })
+
+  return normalizeDirectSupplyOrder(result)
+}
+
+export async function uploadSupplyInvoiceDocuments({
+  files,
+  invoice,
+  supplyOrderNetId,
+}: {
+  files: File[]
+  invoice: SupplyInvoice
+  supplyOrderNetId: string
+}): Promise<DirectSupplyOrder | null> {
+  const formData = new FormData()
+
+  formData.append('invoice', JSON.stringify(invoice))
+
+  for (const file of files) {
+    formData.append('invoiceFiles', file)
+  }
+
+  const result = await apiRequest<unknown>('/supplies/invoices/upload/documents', {
+    body: formData,
+    method: 'POST',
+    query: { netId: supplyOrderNetId },
+  })
+
+  return normalizeDirectSupplyOrder(result)
 }
 
 export async function uploadSupplyInvoiceFile({
@@ -253,6 +312,13 @@ export async function deleteSupplyInvoice(netId: string): Promise<void> {
   })
 }
 
+export async function deleteSupplyInvoiceDocument(netId: string): Promise<void> {
+  await apiRequest<unknown>('/supplies/invoices/delete/document', {
+    method: 'DELETE',
+    query: { netId },
+  })
+}
+
 export async function deletePackingList(netId: string): Promise<void> {
   await apiRequest<unknown>('/supplies/packinglists/delete', {
     method: 'DELETE',
@@ -305,6 +371,26 @@ export async function getSupplyOrderServiceConsumableProducts(value = ''): Promi
   }
 
   return readArrayPayload(result, ['ConsumableProducts', 'Items', 'Data']) as SupplyServiceConsumableProduct[]
+}
+
+export async function getSupplyPaymentDeliveryProtocolKeys(): Promise<SupplyOrderPaymentDeliveryProtocolKey[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/payments/all/keys')
+
+  return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyOrderPaymentDeliveryProtocolKey[]
+}
+
+export async function getSupplyInformationDeliveryProtocolKeys(): Promise<SupplyInformationDeliveryProtocolKey[]> {
+  const result = await apiRequest<unknown>('/supplies/orders/informations/all/keys')
+
+  return readArrayPayload(result, ['Items', 'Keys', 'Data']) as SupplyInformationDeliveryProtocolKey[]
+}
+
+export async function getSupplyProtocolResponsibleUsers(): Promise<User[]> {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/all/by', {
+    query: { types: 7 },
+  })
+
+  return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as User[]
 }
 
 export async function createSupplyOrderUkraineDeliveryExpense(
@@ -555,7 +641,12 @@ function normalizePackingList(result: unknown): PackingList | null {
 function ensureSupplyInvoice(invoice: SupplyInvoice): SupplyInvoice {
   return {
     ...invoice,
+    InformationDeliveryProtocols: Array.isArray(invoice.InformationDeliveryProtocols)
+      ? invoice.InformationDeliveryProtocols
+      : [],
+    InvoiceDocuments: Array.isArray(invoice.InvoiceDocuments) ? invoice.InvoiceDocuments : [],
     PackingLists: Array.isArray(invoice.PackingLists) ? invoice.PackingLists.map(ensurePackingList) : [],
+    PaymentDeliveryProtocols: Array.isArray(invoice.PaymentDeliveryProtocols) ? invoice.PaymentDeliveryProtocols : [],
     SupplyInvoiceDeliveryDocuments: Array.isArray(invoice.SupplyInvoiceDeliveryDocuments)
       ? invoice.SupplyInvoiceDeliveryDocuments
       : [],
@@ -566,6 +657,7 @@ function ensureSupplyInvoice(invoice: SupplyInvoice): SupplyInvoice {
 function ensurePackingList(packingList: PackingList): PackingList {
   return {
     ...packingList,
+    InvoiceDocuments: Array.isArray(packingList.InvoiceDocuments) ? packingList.InvoiceDocuments : [],
     PackingListPackageOrderItems: Array.isArray(packingList.PackingListPackageOrderItems)
       ? packingList.PackingListPackageOrderItems
       : [],

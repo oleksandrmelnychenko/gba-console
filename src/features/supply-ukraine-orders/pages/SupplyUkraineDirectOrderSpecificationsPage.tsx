@@ -25,7 +25,6 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import {
-  addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
   getPackingListSpecificationProducts,
   getSpecificationDownloadUrls,
@@ -52,10 +51,17 @@ import type {
 } from '../../product-delivery-protocols/specificationTypes'
 import { useAuth } from '../../auth/useAuth'
 import {
+  addDeliveryDocumentsToDirectSupplyInvoice,
   getDirectSupplyOrderById,
   getSupplyInvoiceItems,
+  getSupplyOrderServiceOrganizations,
 } from '../api/supplyUkraineOrdersApi'
-import type { DirectSupplyOrder, SupplyInvoice, SupplyInvoiceDeliveryDocument } from '../types'
+import type {
+  DirectSupplyOrder,
+  SupplyInvoice,
+  SupplyInvoiceDeliveryDocument,
+  SupplyServiceOrganization,
+} from '../types'
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadFilesFromTheApplication_PKEY'
@@ -65,6 +71,12 @@ const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = 'SPECIFICATION_CODES_ordersUkraineA
 const PERMISSION_UPLOAD_SPECIFICATIONS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingSpecificationDocuments_PKEY'
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {
+  const model = useSupplyUkraineDirectOrderSpecificationsPageModel()
+
+  return <SupplyUkraineDirectOrderSpecificationsView model={model} />
+}
+
+function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const { t } = useI18n()
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
@@ -93,6 +105,9 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const [newDocuments, setNewDocuments] = useState<DeliveryDocumentDraft[]>([])
   const [numberCustomDeclaration, setNumberCustomDeclaration] = useState('')
   const [dateCustomDeclaration, setDateCustomDeclaration] = useState('')
+  const [documentOrganizations, setDocumentOrganizations] = useState<SupplyServiceOrganization[]>([])
+  const [documentOrganizationNetId, setDocumentOrganizationNetId] = useState<string | null>(null)
+  const [documentAgreementNetId, setDocumentAgreementNetId] = useState<string | null>(null)
 
   const [isDownloadOpen, setDownloadOpen] = useState(false)
   const [isDownloading, setDownloading] = useState(false)
@@ -113,6 +128,20 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
   const canUploadSpecifications = hasPermission(PERMISSION_UPLOAD_SPECIFICATIONS) && Boolean(selectedInvoice)
   const isActionBusy = isUploading || isSavingDocuments || isDownloading || isSavingSpecification || isInvoiceLoading
   const filteredPackingList = filterPackingListByVendorCode(packingList, vendorCodeFilter)
+  const selectedDocumentOrganization =
+    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) || null
+  const selectedDocumentAgreement =
+    selectedDocumentOrganization?.SupplyOrganizationAgreements?.find(
+      (agreement) => agreement.NetUid === documentAgreementNetId,
+    ) || null
+  const documentOrganizationForSave =
+    selectedDocumentOrganization
+    || (selectedInvoice?.SupplyOrganization?.NetUid === documentOrganizationNetId ? selectedInvoice.SupplyOrganization : null)
+  const documentAgreementForSave =
+    selectedDocumentAgreement
+    || (selectedInvoice?.SupplyOrganizationAgreement?.NetUid === documentAgreementNetId
+      ? selectedInvoice.SupplyOrganizationAgreement
+      : null)
 
   useEffect(() => {
     let cancelled = false
@@ -253,6 +282,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
     setSavingDocuments(false)
     setDownloading(false)
     setSavingSpecification(false)
+    setVendorCodeFilter('')
     setSelectedInvoiceNetId(invoice.NetUid || null)
   }
 
@@ -267,7 +297,30 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
     setUploading(false)
     setDownloading(false)
     setSavingSpecification(false)
+    setVendorCodeFilter('')
     setSelectedPackListNetId(packList.NetUid || null)
+  }
+
+  async function loadDocumentOrganizations() {
+    try {
+      const organizations = await getSupplyOrderServiceOrganizations()
+      setDocumentOrganizations(organizations)
+    } catch (lookupError) {
+      notifications.show({
+        color: 'red',
+        message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
+      })
+    }
+  }
+
+  function selectDocumentOrganization(netUid: string | null) {
+    if (isSavingDocuments) {
+      return
+    }
+
+    const organization = documentOrganizations.find((item) => item.NetUid === netUid) || null
+    setDocumentOrganizationNetId(netUid)
+    setDocumentAgreementNetId(organization?.SupplyOrganizationAgreements?.[0]?.NetUid || null)
   }
 
   async function submitUpload(parseConfiguration: ProductSpecificationParseConfiguration, file: File) {
@@ -332,8 +385,14 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
       })),
     )
     setNewDocuments([])
+    setDocumentOrganizationNetId(selectedInvoice.SupplyOrganization?.NetUid || null)
+    setDocumentAgreementNetId(selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
     setDocumentsOpen(true)
     setDocumentsCloseConfirmOpen(false)
+
+    if (documentOrganizations.length === 0) {
+      void loadDocumentOrganizations()
+    }
   }
 
   function hasDeliveryDocumentDraftChanges(): boolean {
@@ -343,7 +402,7 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
       return (
         newDocuments.length > 0 ||
         existingDocuments.some((document) => document.deleted) ||
-        Boolean(numberCustomDeclaration || dateCustomDeclaration)
+        Boolean(numberCustomDeclaration || dateCustomDeclaration || documentOrganizationNetId || documentAgreementNetId)
       )
     }
 
@@ -357,7 +416,9 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
         return Boolean(document.deleted) !== Boolean(sourceDocument?.Deleted)
       }) ||
       numberCustomDeclaration !== (selectedInvoice.NumberCustomDeclaration || '') ||
-      dateCustomDeclaration !== getInvoiceCustomDeclarationDate(selectedInvoice)
+      dateCustomDeclaration !== getInvoiceCustomDeclarationDate(selectedInvoice) ||
+      documentOrganizationNetId !== (selectedInvoice.SupplyOrganization?.NetUid || null) ||
+      documentAgreementNetId !== (selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
     )
   }
 
@@ -454,13 +515,20 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
 
           return draft ? { ...document, Deleted: draft.deleted } : document
         }),
+        SupplyOrganization: documentOrganizationForSave,
+        SupplyOrganizationAgreement: documentAgreementForSave,
       }
       const files = newDocuments.map((document) => document.file).filter((file): file is File => Boolean(file))
 
-      await addDeliveryDocumentsToInvoice(invoicePayload, files)
+      const updatedOrder = await addDeliveryDocumentsToDirectSupplyInvoice(invoicePayload as unknown as SupplyInvoice, files)
       const updatedInvoice = await getSupplyInvoiceItems(invoice.NetUid)
 
       if (isCurrentDocumentsSave()) {
+        if (updatedOrder) {
+          setOrder(updatedInvoice ? mergeInvoiceIntoOrder(updatedOrder, updatedInvoice) : updatedOrder)
+        } else if (updatedInvoice) {
+          setOrder((current) => mergeInvoiceIntoOrder(current, updatedInvoice))
+        }
         closeDocumentsDraft()
         setSelectedInvoice(updatedInvoice)
         notifications.show({ color: 'green', message: t('Документи збережено') })
@@ -560,236 +628,382 @@ export function SupplyUkraineDirectOrderSpecificationsPage() {
     }
   }
 
+  return {
+    addDocumentFiles,
+    canDownload,
+    canEditSpecification,
+    canSaveSpecification,
+    canUploadDocuments,
+    canUploadSpecifications,
+    closeDocumentsDraft,
+    currencyIsEur,
+    dateCustomDeclaration,
+    documentAgreementNetId,
+    documentOrganizationNetId,
+    documentOrganizations,
+    downloadDocument,
+    downloadError,
+    editingSpecificationItem,
+    error,
+    existingDocuments,
+    filteredPackingList,
+    goBack: () => navigate(`/orders/ukraine/all/edit/${id || ''}`),
+    invoices,
+    isActionBusy,
+    isDocumentsCloseConfirmOpen,
+    isDocumentsOpen,
+    isDownloadOpen,
+    isDownloading,
+    isInvoiceLoading,
+    isLoading,
+    isPackingListLoading,
+    isSavingDocuments,
+    isSavingSpecification,
+    isUploadOpen,
+    isUploading,
+    newDocuments,
+    numberCustomDeclaration,
+    openDocuments,
+    openDownload,
+    order,
+    packingList,
+    packingListError,
+    removeExistingDocument,
+    removeNewDocument,
+    requestCloseDocuments,
+    saveDocuments,
+    saveSpecification,
+    selectDocumentOrganization,
+    selectInvoice,
+    selectPackList,
+    selectedInvoice,
+    selectedInvoiceNetId,
+    selectedPackListNetId,
+    setCurrencyIsEur,
+    setDateCustomDeclaration,
+    setDocumentAgreementNetId,
+    setDocumentsCloseConfirmOpen,
+    setDownloadOpen,
+    setEditingSpecificationItem,
+    setNumberCustomDeclaration,
+    setUploadOpen,
+    setUploadResult,
+    setVendorCodeFilter,
+    setWithManagementServices,
+    submitUpload,
+    uploadResult,
+    vendorCodeFilter,
+    withManagementServices,
+  }
+}
+
+type DirectOrderSpecificationsPageModel = ReturnType<typeof useSupplyUkraineDirectOrderSpecificationsPageModel>
+
+function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOrderSpecificationsPageModel }) {
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="center">
-        <Group gap="sm">
-          <Tooltip label={t('Назад')}>
-            <ActionIcon
-              aria-label={t('Назад')}
-              color="gray"
-              variant="light"
-              onClick={() => navigate(`/orders/ukraine/all/edit/${id || ''}`)}
-            >
-              <IconArrowLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Stack gap={2}>
-            <Text fw={700} size="xl">{t('Специфікації')} {getOrderNumber(order)}</Text>
-            <Text c="dimmed" size="sm">{t('Постачальник')}: {order?.Client?.FullName || order?.Client?.Name || '-'}</Text>
-          </Stack>
-        </Group>
-        <Group gap="sm" align="center">
-          <SegmentedControl
-            data={[
-              { label: t('EUR'), value: 'eur' },
-              { label: t('UAH'), value: 'uah' },
-            ]}
-            disabled={isActionBusy}
-            value={currencyIsEur ? 'eur' : 'uah'}
-            onChange={(value) => setCurrencyIsEur(value === 'eur')}
-          />
-          <SegmentedControl
-            data={[
-              { label: 'УО', value: 'management' },
-              { label: 'БО', value: 'base' },
-            ]}
-            disabled={isActionBusy}
-            value={withManagementServices ? 'management' : 'base'}
-            onChange={(value) => setWithManagementServices(value === 'management')}
-          />
-        </Group>
-      </Group>
+      <DirectOrderSpecificationsHeader model={model} />
 
-      {error && (
+      {model.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
+          {model.error}
         </Alert>
       )}
 
-      {isLoading ? (
-        <Group justify="center" py="xl"><Loader /></Group>
-      ) : order ? (
-        <Card withBorder radius="md" padding="md">
-          <Stack gap="md">
-            <Group justify="flex-end" gap="xs">
-                {canUploadSpecifications && (
-                <Button
-                  disabled={isActionBusy}
-                  leftSection={<IconFileImport size={16} />}
-                  loading={isUploading}
-                  variant="light"
-                  onClick={() => setUploadOpen(true)}
-                >
-                  {t('Завантаження митних кодів')}
-                </Button>
-              )}
-                {canUploadDocuments && (
-                <Button
-                  disabled={!selectedInvoice || isActionBusy}
-                  leftSection={<IconFileImport size={16} />}
-                  loading={isSavingDocuments}
-                  variant="light"
-                  onClick={openDocuments}
-                >
-                  {t('Завантаження документів доставки')}
-                </Button>
-              )}
-                {canDownload && (
-                <Button
-                  disabled={isActionBusy}
-                  leftSection={<IconDownload size={16} />}
-                  loading={isDownloading}
-                  variant="light"
-                  onClick={openDownload}
-                >
-                  {t('Завантажити')}
-                </Button>
-              )}
-            </Group>
+      <DirectOrderSpecificationsBody model={model} />
+      <DirectOrderSpecificationTotals model={model} />
+      <DirectOrderSpecificationsModals model={model} />
+    </Stack>
+  )
+}
 
-            <Group gap="xs" wrap="wrap">
-              {invoices.map((invoice) => (
-	                <Button
-	                  key={invoice.NetUid || invoice.Id}
-	                  color={invoice.NetUid === selectedInvoiceNetId ? 'blue' : 'gray'}
-	                  disabled={isActionBusy}
-	                  loading={isInvoiceLoading && invoice.NetUid === selectedInvoiceNetId}
-                  variant={invoice.NetUid === selectedInvoiceNetId ? 'filled' : 'light'}
-                  onClick={() => selectInvoice(invoice)}
-                >
-                  {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
-                </Button>
-              ))}
-            </Group>
+function DirectOrderSpecificationsHeader({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
 
-            {selectedInvoice && (selectedInvoice.PackingLists?.length || 0) > 0 && (
-              <Group gap="xs" wrap="wrap">
-                {(selectedInvoice.PackingLists || []).map((packList) => (
-	                  <Button
-	                    key={packList.NetUid || packList.Id}
-	                    color={packList.NetUid === selectedPackListNetId ? 'blue' : 'gray'}
-	                    disabled={isActionBusy}
-	                    size="xs"
-                    variant={packList.NetUid === selectedPackListNetId ? 'outline' : 'subtle'}
-                    onClick={() => selectPackList(packList)}
-                  >
-                    {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
-                  </Button>
-                ))}
-              </Group>
-            )}
+  return (
+    <Group justify="space-between" align="center">
+      <Group gap="sm">
+        <Tooltip label={t('Назад')}>
+          <ActionIcon aria-label={t('Назад')} color="gray" variant="light" onClick={model.goBack}>
+            <IconArrowLeft size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <Stack gap={2}>
+          <Text fw={700} size="xl">{t('Специфікації')} {getOrderNumber(model.order)}</Text>
+          <Text c="dimmed" size="sm">
+            {t('Постачальник')}: {model.order?.Client?.FullName || model.order?.Client?.Name || '-'}
+          </Text>
+        </Stack>
+      </Group>
+      <Group gap="sm" align="center">
+        <SegmentedControl
+          data={[
+            { label: t('EUR'), value: 'eur' },
+            { label: t('UAH'), value: 'uah' },
+          ]}
+          disabled={model.isActionBusy}
+          value={model.currencyIsEur ? 'eur' : 'uah'}
+          onChange={(value) => model.setCurrencyIsEur(value === 'eur')}
+        />
+        <SegmentedControl
+          data={[
+            { label: 'УО', value: 'management' },
+            { label: 'БО', value: 'base' },
+          ]}
+          disabled={model.isActionBusy}
+          value={model.withManagementServices ? 'management' : 'base'}
+          onChange={(value) => model.setWithManagementServices(value === 'management')}
+        />
+      </Group>
+    </Group>
+  )
+}
 
-            {packingListError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {packingListError}
-              </Alert>
-            )}
+function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
 
-            {packingList && (packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
-              <TextInput
-                label={t('Пошук')}
-                placeholder={t('Код товару')}
-                disabled={isActionBusy}
-                value={vendorCodeFilter}
-                w={260}
-                onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
-              />
-            )}
+  if (model.isLoading) {
+    return <Group justify="center" py="xl"><Loader /></Group>
+  }
 
-            {isPackingListLoading ? (
-              <Group justify="center" py="lg"><Loader /></Group>
-            ) : filteredPackingList && (filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
-              <SpecificationProductsGrid
-                canEditSpecification={canEditSpecification}
-                currencyIsEur={currencyIsEur}
-                packingList={filteredPackingList}
-                withManagementServices={withManagementServices}
-                onEditSpecification={setEditingSpecificationItem}
-              />
-            ) : (
-              <Group gap="xs" c="dimmed">
-                <IconFilesOff size={18} />
-                <Text size="sm">{t('Немає даних')}</Text>
-              </Group>
-            )}
-          </Stack>
-        </Card>
-      ) : (
-        <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
+  if (!model.order) {
+    return <Text c="dimmed">{t('Замовлення не знайдено')}</Text>
+  }
+
+  return (
+    <Card withBorder radius="md" padding="md">
+      <Stack gap="md">
+        <SpecificationActionButtons model={model} />
+        <InvoiceButtons model={model} />
+        <PackListButtons model={model} />
+        <SpecificationGridArea model={model} />
+      </Stack>
+    </Card>
+  )
+}
+
+function SpecificationActionButtons({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group justify="flex-end" gap="xs">
+      {model.canUploadSpecifications && (
+        <Button
+          disabled={model.isActionBusy}
+          leftSection={<IconFileImport size={16} />}
+          loading={model.isUploading}
+          variant="light"
+          onClick={() => model.setUploadOpen(true)}
+        >
+          {t('Завантаження митних кодів')}
+        </Button>
+      )}
+      {model.canUploadDocuments && (
+        <Button
+          disabled={!model.selectedInvoice || model.isActionBusy}
+          leftSection={<IconFileImport size={16} />}
+          loading={model.isSavingDocuments}
+          variant="light"
+          onClick={model.openDocuments}
+        >
+          {t('Завантаження документів доставки')}
+        </Button>
+      )}
+      {model.canDownload && (
+        <Button
+          disabled={model.isActionBusy}
+          leftSection={<IconDownload size={16} />}
+          loading={model.isDownloading}
+          variant="light"
+          onClick={model.openDownload}
+        >
+          {t('Завантажити')}
+        </Button>
+      )}
+    </Group>
+  )
+}
+
+function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      {model.invoices.map((invoice) => (
+        <Button
+          key={invoice.NetUid || invoice.Id}
+          color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+          disabled={model.isActionBusy}
+          loading={model.isInvoiceLoading && invoice.NetUid === model.selectedInvoiceNetId}
+          variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
+          onClick={() => model.selectInvoice(invoice)}
+        >
+          {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
+        </Button>
+      ))}
+    </Group>
+  )
+}
+
+function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  if (!model.selectedInvoice || (model.selectedInvoice.PackingLists?.length || 0) === 0) {
+    return null
+  }
+
+  return (
+    <Group gap="xs" wrap="wrap">
+      {(model.selectedInvoice.PackingLists || []).map((packList) => (
+        <Button
+          key={packList.NetUid || packList.Id}
+          color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+          disabled={model.isActionBusy}
+          size="xs"
+          variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
+          onClick={() => model.selectPackList(packList)}
+        >
+          {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
+        </Button>
+      ))}
+    </Group>
+  )
+}
+
+function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      {model.packingListError && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {model.packingListError}
+        </Alert>
       )}
 
-      {packingList && (packingList.Id || 0) > 0 && (
-        <SpecificationTotals
-          currencyIsEur={currencyIsEur}
-          invoice={selectedInvoice as unknown as SpecificationSupplyInvoice}
-          packingList={packingList}
+      {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
+        <TextInput
+          label={t('Пошук')}
+          placeholder={t('Код товару')}
+          disabled={model.isActionBusy}
+          value={model.vendorCodeFilter}
+          w={260}
+          onChange={(event) => model.setVendorCodeFilter(event.currentTarget.value)}
         />
       )}
 
+      {model.isPackingListLoading ? (
+        <Group justify="center" py="lg"><Loader /></Group>
+      ) : model.filteredPackingList && (model.filteredPackingList.PackingListPackageOrderItems?.length || 0) > 0 ? (
+        <SpecificationProductsGrid
+          canEditSpecification={model.canEditSpecification}
+          currencyIsEur={model.currencyIsEur}
+          packingList={model.filteredPackingList}
+          withManagementServices={model.withManagementServices}
+          onEditSpecification={model.setEditingSpecificationItem}
+        />
+      ) : (
+        <Group gap="xs" c="dimmed">
+          <IconFilesOff size={18} />
+          <Text size="sm">{t('Немає даних')}</Text>
+        </Group>
+      )}
+    </>
+  )
+}
+
+function DirectOrderSpecificationTotals({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  if (!model.packingList || (model.packingList.Id || 0) <= 0) {
+    return null
+  }
+
+  return (
+    <SpecificationTotals
+      currencyIsEur={model.currencyIsEur}
+      invoice={model.selectedInvoice as unknown as SpecificationSupplyInvoice}
+      packingList={model.packingList}
+    />
+  )
+}
+
+function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecificationsPageModel }) {
+  const { t } = useI18n()
+
+  return (
+    <>
       <UploadProductSpecificationModal
-	        isLoading={isUploading}
-        opened={isUploadOpen}
+        isLoading={model.isUploading}
+        opened={model.isUploadOpen}
         onClose={() => {
-          if (!isUploading) {
-            setUploadOpen(false)
+          if (!model.isUploading) {
+            model.setUploadOpen(false)
           }
         }}
-        onSubmit={submitUpload}
+        onSubmit={model.submitUpload}
       />
-      <UploadProductSpecificationResultModal result={uploadResult} onClose={() => setUploadResult(null)} />
+      <UploadProductSpecificationResultModal result={model.uploadResult} onClose={() => model.setUploadResult(null)} />
       <UploadDeliveryDocumentsModal
-        dateCustomDeclaration={dateCustomDeclaration}
-        existingDocuments={existingDocuments}
-        isSaving={isSavingDocuments}
-        newDocuments={newDocuments}
-        numberCustomDeclaration={numberCustomDeclaration}
-        opened={isDocumentsOpen}
-        onAddFiles={addDocumentFiles}
-        onChangeDateCustomDeclaration={setDateCustomDeclaration}
-        onChangeNumberCustomDeclaration={setNumberCustomDeclaration}
-        onClose={requestCloseDocuments}
-        onRemoveExistingDocument={removeExistingDocument}
-        onRemoveNewDocument={removeNewDocument}
-        onSave={saveDocuments}
+        dateCustomDeclaration={model.dateCustomDeclaration}
+        existingDocuments={model.existingDocuments}
+        isSaving={model.isSavingDocuments}
+        newDocuments={model.newDocuments}
+        numberCustomDeclaration={model.numberCustomDeclaration}
+        opened={model.isDocumentsOpen}
+        selectedSupplyOrganizationAgreementNetId={model.documentAgreementNetId}
+        selectedSupplyOrganizationNetId={model.documentOrganizationNetId}
+        supplyOrganizations={model.documentOrganizations}
+        onAddFiles={model.addDocumentFiles}
+        onChangeDateCustomDeclaration={model.setDateCustomDeclaration}
+        onChangeNumberCustomDeclaration={model.setNumberCustomDeclaration}
+        onChangeSupplyOrganization={model.selectDocumentOrganization}
+        onChangeSupplyOrganizationAgreement={model.setDocumentAgreementNetId}
+        onClose={model.requestCloseDocuments}
+        onRemoveExistingDocument={model.removeExistingDocument}
+        onRemoveNewDocument={model.removeNewDocument}
+        onSave={model.saveDocuments}
       />
       <AppModal
         centered
-        opened={isDocumentsCloseConfirmOpen}
+        opened={model.isDocumentsCloseConfirmOpen}
         title={t('Є незбережені зміни')}
         onClose={() => {
-          if (!isSavingDocuments) {
-            setDocumentsCloseConfirmOpen(false)
+          if (!model.isSavingDocuments) {
+            model.setDocumentsCloseConfirmOpen(false)
           }
         }}
       >
         <Stack gap="md">
           <Text>{t('Якщо закрити вікно, зміни по документах доставки не будуть збережені.')}</Text>
           <Group justify="flex-end">
-            <Button color="gray" disabled={isSavingDocuments} variant="light" onClick={() => setDocumentsCloseConfirmOpen(false)}>
+            <Button
+              color="gray"
+              disabled={model.isSavingDocuments}
+              variant="light"
+              onClick={() => model.setDocumentsCloseConfirmOpen(false)}
+            >
               {t('Залишитися')}
             </Button>
-            <Button color="red" disabled={isSavingDocuments} onClick={closeDocumentsDraft}>
+            <Button color="red" disabled={model.isSavingDocuments} onClick={model.closeDocumentsDraft}>
               {t('Закрити без збереження')}
             </Button>
           </Group>
         </Stack>
       </AppModal>
       <SpecificationDownloadModal
-        document={downloadDocument}
-        error={downloadError}
-        isLoading={isDownloading}
-        opened={isDownloadOpen}
-        onClose={() => setDownloadOpen(false)}
+        document={model.downloadDocument}
+        error={model.downloadError}
+        isLoading={model.isDownloading}
+        opened={model.isDownloadOpen}
+        onClose={() => model.setDownloadOpen(false)}
       />
       <ProductSpecificationEditDrawer
-        canSave={canSaveSpecification}
-        isSaving={isSavingSpecification}
-        item={editingSpecificationItem}
-        onClose={() => setEditingSpecificationItem(null)}
-        onSave={saveSpecification}
+        canSave={model.canSaveSpecification}
+        isSaving={model.isSavingSpecification}
+        item={model.editingSpecificationItem}
+        onClose={() => model.setEditingSpecificationItem(null)}
+        onSave={model.saveSpecification}
       />
-    </Stack>
+    </>
   )
 }
 
@@ -833,6 +1047,31 @@ function filterPackingListByVendorCode(
 
 function getOrderNumber(order: DirectSupplyOrder | null): string {
   return order?.SupplyOrderNumber?.Number ? `№ ${order.SupplyOrderNumber.Number}` : ''
+}
+
+function mergeInvoiceIntoOrder(order: DirectSupplyOrder | null, invoice: SupplyInvoice): DirectSupplyOrder | null {
+  if (!order) {
+    return order
+  }
+
+  return {
+    ...order,
+    SupplyInvoices: (order.SupplyInvoices || []).map((orderInvoice) =>
+      isSameInvoice(orderInvoice, invoice) ? { ...orderInvoice, ...invoice } : orderInvoice,
+    ),
+  }
+}
+
+function isSameInvoice(left: SupplyInvoice, right: SupplyInvoice): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  if (left.Id && right.Id) {
+    return left.Id === right.Id
+  }
+
+  return false
 }
 
 function formatDate(value?: Date | string): string {

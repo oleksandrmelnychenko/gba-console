@@ -5,14 +5,18 @@ export const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
 
 export type NewSaleReviewValue = {
   address: WizardDeliveryRecipientAddress | null
+  addressValue: string
   city: string
   codAmount: number | string
   comment: string
   department: string
   hasOwnTtn: boolean
+  isNewAddress: boolean
+  isNewRecipient: boolean
   isCashOnDelivery: boolean
   mobilePhone: string
   recipient: WizardDeliveryRecipient | null
+  recipientName: string
   transporter: SalesUkraineTransporter | null
   ttnFile: File | null
   ttnNumber: string
@@ -20,14 +24,18 @@ export type NewSaleReviewValue = {
 
 export const NEW_SALE_REVIEW_INITIAL: NewSaleReviewValue = {
   address: null,
+  addressValue: '',
   city: '',
   codAmount: '',
   comment: '',
   department: '',
   hasOwnTtn: false,
+  isNewAddress: false,
+  isNewRecipient: false,
   isCashOnDelivery: false,
   mobilePhone: '',
   recipient: null,
+  recipientName: '',
   transporter: null,
   ttnFile: null,
   ttnNumber: '',
@@ -43,12 +51,12 @@ export function getReviewError(value: NewSaleReviewValue): string | null {
   }
 
   if (!isSelfCheckout(value.transporter)) {
-    if (!value.recipient) {
+    if (value.isNewRecipient) {
+      if (!value.recipientName.trim()) {
+        return 'Вкажіть отримувача'
+      }
+    } else if (!value.recipient) {
       return 'Оберіть отримувача'
-    }
-
-    if (!value.address) {
-      return 'Оберіть адресу доставки'
     }
 
     if (!value.mobilePhone.trim()) {
@@ -65,6 +73,10 @@ export function getReviewError(value: NewSaleReviewValue): string | null {
   }
 
   return null
+}
+
+export function hasDeliveryAddressDraft(value: NewSaleReviewValue): boolean {
+  return Boolean(value.addressValue.trim() || value.city.trim() || value.department.trim())
 }
 
 function parseReviewAmount(value: number | string): number {

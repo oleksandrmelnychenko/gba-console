@@ -181,8 +181,23 @@ export async function printResaleConsignmentNoteDocument(
 
 export async function getResaleAvailabilityFilterOptions(): Promise<ResaleAvailabilityFilterOptions> {
   const result = await apiRequest<unknown>('/resales/availabilities/filter/options')
+  const options = normalizeFilterOptions(result)
 
-  return normalizeFilterOptions(result)
+  if (options.SpecificationCodes.length > 0) {
+    return options
+  }
+
+  return {
+    ...options,
+    SpecificationCodes: await getResaleAvailabilitySpecificationCodes(),
+  }
+}
+
+export async function getResaleAvailabilitySpecificationCodes(): Promise<string[]> {
+  const result = await apiRequest<unknown>('/resales/availabilities/specification/codes')
+
+  return readArrayPayload(result, ['Items', 'SpecificationCodes', 'Data'])
+    .filter((code): code is string => typeof code === 'string')
 }
 
 export async function getResaleAvailabilities(

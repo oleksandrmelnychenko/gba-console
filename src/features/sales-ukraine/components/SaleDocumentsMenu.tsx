@@ -16,6 +16,7 @@ import {
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
 } from '../api/salesUkraineApi'
+import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SaleDocumentResult, SalesUkraineSale } from '../types'
 
 type DocumentAction = {
@@ -153,8 +154,8 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
     return []
   }
 
-  const lifecycleType = getLifecycleType(sale)
-  const isPackaging = lifecycleType === 1 || lifecycleType === 2
+  const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
+  const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
   const hasTransporter = Boolean(sale.TransporterId)
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)
@@ -234,10 +235,4 @@ function buildDocumentFiles(
   }
 
   return documents
-}
-
-function getLifecycleType(sale: SalesUkraineSale): number | null {
-  const status = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-
-  return typeof status === 'number' ? status : null
 }

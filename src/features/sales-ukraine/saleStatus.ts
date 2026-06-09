@@ -55,7 +55,7 @@ export function getSaleLifecycleStatusKey(value: number | string | null | undefi
   }
 }
 
-function getSaleLifecycleTypeKey(value: number | string | null | undefined): string {
+export function getSaleLifecycleTypeKey(value: number | string | null | undefined): string {
   if (value === null || typeof value === 'undefined') {
     return ''
   }
@@ -69,5 +69,5 @@ function getSaleLifecycleTypeKey(value: number | string | null | undefined): str
 export function isDiscountEditableSaleLifecycle(value: number | string | null | undefined): boolean {
   const key = getSaleLifecycleTypeKey(value)
 
-  return key === '0'
+  return key === '0' || key === '1' || key === '2'
 }

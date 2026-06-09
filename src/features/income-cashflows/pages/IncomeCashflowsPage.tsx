@@ -704,12 +704,15 @@ function useIncomeCashflowColumns({
         enableHiding: false,
         enablePinning: false,
         enableReorder: false,
-        cell: (row) => (
-          <Tooltip label={row.isCanceled ? t('Уже скасовано') : t('Скасувати')}>
+        cell: (row) => {
+          const cancelUnavailableReason = getIncomeCancelUnavailableReason(row.income, t)
+
+          return (
+          <Tooltip label={cancelUnavailableReason || t('Скасувати')}>
             <ActionIcon
               aria-label={t('Скасувати')}
               color="red"
-              disabled={row.isCanceled || !row.income.NetUid}
+              disabled={Boolean(cancelUnavailableReason)}
               size="sm"
               variant="subtle"
               onClick={(event) => {
@@ -720,7 +723,8 @@ function useIncomeCashflowColumns({
               <IconX size={16} />
             </ActionIcon>
           </Tooltip>
-        ),
+          )
+        },
       },
       {
         id: 'actions',
@@ -1396,6 +1400,50 @@ function getIncomeOperationTypeName(income: IncomePaymentOrder): string {
     default:
       return 'Невідомий тип операції'
   }
+}
+
+function getIncomeCancelUnavailableReason(income: IncomePaymentOrder, t: (key: string) => string): string | null {
+  if (income.IsCanceled) {
+    return t('Уже скасовано')
+  }
+
+  if (!income.NetUid) {
+    return t('Документ недоступний для скасування')
+  }
+
+  if (!isSameLocalDate(income.Created, new Date())) {
+    return t('Скасування доступне тільки в день створення')
+  }
+
+  return null
+}
+
+function isSameLocalDate(value: unknown, target: Date): boolean {
+  const date = parseDateValue(value)
+
+  if (!date) {
+    return false
+  }
+
+  return (
+    date.getFullYear() === target.getFullYear() &&
+    date.getMonth() === target.getMonth() &&
+    date.getDate() === target.getDate()
+  )
+}
+
+function parseDateValue(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value
+  }
+
+  if (typeof value !== 'string' || !value) {
+    return null
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
 function hasIncomeDocumentStructure(income: IncomePaymentOrder): boolean {

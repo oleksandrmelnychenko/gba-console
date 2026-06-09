@@ -111,6 +111,24 @@ export async function getAvailablePaymentExchangeRate(params: {
   return readExchangeRate(result)
 }
 
+export async function calculateAvailablePaymentConvertedAmount(params: {
+  amount: number
+  exchangeRate: number
+  fromCurrencyId: number
+  toCurrencyId: number
+}): Promise<number> {
+  const result = await apiRequest<unknown>('/payments/orders/income/exchange/calculate', {
+    query: {
+      amount: params.amount,
+      exchangeRate: params.exchangeRate,
+      fromCurrencyId: params.fromCurrencyId,
+      toCurrencyId: params.toCurrencyId,
+    },
+  })
+
+  return readConvertedAmount(result)
+}
+
 export async function getAvailablePaymentTaskByNetId(netId: string): Promise<SupplyPaymentTask | null> {
   const result = await apiRequest<unknown>('/payments/tasks/get', {
     query: {
@@ -291,6 +309,31 @@ function readExchangeRate(result: unknown): number {
 
     if (typeof value === 'number' && Number.isFinite(value)) {
       return value
+    }
+  }
+
+  return 0
+}
+
+function readConvertedAmount(result: unknown): number {
+  if (typeof result === 'number') {
+    return Number.isFinite(result) ? result : 0
+  }
+
+  if (result && typeof result === 'object') {
+    const record = result as Record<string, unknown>
+    const body = record.Body
+
+    if (body && typeof body === 'object') {
+      const convertedAmount = (body as Record<string, unknown>).ConvertedAmount
+
+      if (typeof convertedAmount === 'number' && Number.isFinite(convertedAmount)) {
+        return convertedAmount
+      }
+    }
+
+    if (typeof record.ConvertedAmount === 'number' && Number.isFinite(record.ConvertedAmount)) {
+      return record.ConvertedAmount
     }
   }
 
