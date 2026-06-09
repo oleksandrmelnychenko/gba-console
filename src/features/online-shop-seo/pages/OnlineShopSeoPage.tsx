@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   FileInput,
   Group,
   SimpleGrid,
@@ -26,16 +25,24 @@ import {
   IconPhoto,
   IconPlus,
   IconRefresh,
+  IconRestore,
+  IconSearch,
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import {
+  CREATE_ACTION_COLOR,
+  PageHeaderActions,
+} from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
 import {
   addEcommerceStorage,
   createSeoContact,
@@ -88,6 +95,7 @@ import {
   validateContact,
   validatePage,
 } from '../utils'
+import './online-shop-seo-page.css'
 
 const SEO_PAGES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -149,13 +157,15 @@ const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'warehouses', label: 'Склади' },
 ]
 
+const DEFAULT_SEO_TAB: SeoTab = 'pages'
+const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
+
 const EMPTY_PAGE_FORM_VALUES = pageToFormValues(null)
 const EMPTY_CONTACT_FORM_VALUES = contactToFormValues(null)
 
-function useOnlineShopSeoPageModel() {
+function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab) => void) {
   const { t } = useI18n()
   const [settings, setSettings] = useValueState<SeoLocaleEntry[]>([])
-  const [activeTab, setActiveTab] = useValueState<SeoTab>('pages')
   const [pageSearchDraft, setPageSearchDraft] = useValueState('')
   const [pageSearchValue, setPageSearchValue] = useValueState('')
   const [contactSearchDraft, setContactSearchDraft] = useValueState('')
@@ -1352,7 +1362,27 @@ function useOnlineShopSeoPageModel() {
 }
 
 export function OnlineShopSeoPage() {
-  const model = useOnlineShopSeoPageModel()
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const { tab } = useParams<{ tab?: string }>()
+  const activeTab = getSeoTabFromSlug(tab)
+  const activeTabLabel = SEO_TABS.find((item) => item.value === activeTab)?.label || 'Сторінки'
+  const setActiveTab = useCallback(
+    (nextTab: SeoTab) => {
+      navigate(getSeoTabHref(nextTab))
+    },
+    [navigate],
+  )
+
+  useEffect(() => {
+    if (!isSeoTabSlug(tab)) {
+      navigate(getSeoTabHref(activeTab), { replace: true })
+    }
+  }, [activeTab, navigate, tab])
+
+  usePageBreadcrumb(t(activeTabLabel))
+
+  const model = useOnlineShopSeoPageModel(activeTab, setActiveTab)
 
   return renderOnlineShopSeoPage(model)
 }
@@ -1375,18 +1405,120 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetStorageSearch, setActiveTab, setContactField, setFormError, setPageField, setPriorityValue,
     setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
   } = model
+  const activeTabLabel = SEO_TABS.find((tab) => tab.value === activeTab)?.label || 'Сторінки'
+  const commandSearch = getSeoCommandSearchConfig(activeTab, {
+    cardSearchDraft,
+    changeCardSearch,
+    changeClientSearch,
+    changeContactSearch,
+    changePageSearch,
+    changeStorageSearch,
+    clientSearchDraft,
+    contactSearchDraft,
+    pageSearchDraft,
+    resetCardSearch,
+    resetClientSearch,
+    resetContactSearch,
+    resetPageSearch,
+    resetStorageSearch,
+    storageSearchDraft,
+  })
+  const headerAction = activeTab === 'contacts'
+    ? (
+      <Button
+        color={CREATE_ACTION_COLOR}
+        leftSection={<IconPlus size={14} />}
+        size="xs"
+        type="button"
+        onClick={() => openContactEditor()}
+      >
+        {t('Новий контакт')}
+      </Button>
+    )
+    : activeTab === 'warehouses'
+      ? (
+        <Button
+          color={CREATE_ACTION_COLOR}
+          leftSection={<IconPlus size={14} />}
+          size="xs"
+          type="button"
+          onClick={() => setStorageDrawerOpen(true)}
+        >
+          {t('Додати склад')}
+        </Button>
+      )
+      : null
 
   return (
-    <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group justify="space-between" gap="sm" wrap="nowrap">
-            <div className="pill-tabs">
+    <Stack className="seo-page" gap="md">
+      <PageHeaderActions>
+        {headerAction}
+      </PageHeaderActions>
+
+      <Box className="seo-page-shell">
+        <div className="seo-page-command-bar">
+          {commandSearch ? (
+            <TextInput
+              className="seo-page-search-input"
+              leftSection={<IconSearch size={15} />}
+              label={t(commandSearch.label)}
+              placeholder={t(commandSearch.placeholder)}
+              value={commandSearch.value}
+              onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
+            />
+          ) : (
+            <div className="seo-page-command-placeholder">
+              <Text className="seo-page-command-title">{t(activeTabLabel)}</Text>
+            </div>
+          )}
+          <div className="seo-page-toolbar-actions">
+            {commandSearch && (
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  disabled={!commandSearch.value}
+                  size={34}
+                  type="button"
+                  variant="light"
+                  onClick={commandSearch.onReset}
+                >
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
+
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <div className="seo-page-workspace">
+          <aside className="seo-page-rail">
+            <div className="seo-page-rail-header">
+              <span>{t('Розділи')}</span>
+            </div>
+            <div className="seo-page-nav">
               {SEO_TABS.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
-                  className={`pill-tab${activeTab === tab.value ? ' is-active' : ''}`}
+                  className={`seo-page-nav-item${activeTab === tab.value ? ' is-active' : ''}`}
                   aria-pressed={activeTab === tab.value}
                   onClick={() => setActiveTab(tab.value)}
                 >
@@ -1394,37 +1526,13 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 </button>
               ))}
             </div>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={36}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+          </aside>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          <Box>
+          <section className="seo-page-panel">
+          <Box className="seo-page-panel-body">
             {activeTab === 'pages' && (
               <Box pt="md">
               <Stack gap="md">
-                <SearchToolbar
-                  placeholder={t('Назва, URL або текст')}
-                  value={pageSearchDraft}
-                  onChange={changePageSearch}
-                  onReset={resetPageSearch}
-                />
-
                 <DataTable
                   columns={pageColumns}
                   data={pageRows}
@@ -1463,24 +1571,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'contacts' && (
               <Box pt="md">
               <Stack gap="md">
-                <SearchToolbar
-                  action={(
-                    <Button
-                      color="violet"
-                      leftSection={<IconPlus size={16} />}
-                      type="button"
-                      onClick={() => openContactEditor()}
-                      style={{ flex: '0 0 auto' }}
-                    >
-                      {t('Новий контакт')}
-                    </Button>
-                  )}
-                  placeholder={t('Імʼя, телефон або e-mail')}
-                  value={contactSearchDraft}
-                  onChange={changeContactSearch}
-                  onReset={resetContactSearch}
-                />
-
                 <DataTable
                   columns={contactColumns}
                   data={contacts}
@@ -1519,13 +1609,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'shop-clients' && (
               <Box pt="md">
               <Stack gap="md">
-                <SearchToolbar
-                  placeholder={t('Назва, телефон або e-mail')}
-                  value={clientSearchDraft}
-                  onChange={changeClientSearch}
-                  onReset={resetClientSearch}
-                />
-
                 <DataTable
                   columns={clientColumns}
                   data={clients}
@@ -1548,13 +1631,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'bank-cards' && (
               <Box pt="md">
               <Stack gap="md">
-                <SearchToolbar
-                  placeholder={t('Рахунок, назва, банк або організація')}
-                  value={cardSearchDraft}
-                  onChange={changeCardSearch}
-                  onReset={resetCardSearch}
-                />
-
                 <DataTable
                   columns={paymentRegisterColumns}
                   data={cards}
@@ -1577,24 +1653,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'warehouses' && (
               <Box pt="md">
               <Stack gap="md">
-                <SearchToolbar
-                  action={(
-                    <Button
-                      color="violet"
-                      leftSection={<IconPlus size={16} />}
-                      type="button"
-                      onClick={() => setStorageDrawerOpen(true)}
-                      style={{ flex: '0 0 auto' }}
-                    >
-                      {t('Додати склад')}
-                    </Button>
-                  )}
-                  placeholder={t('Назва або організація')}
-                  value={storageSearchDraft}
-                  onChange={changeStorageSearch}
-                  onReset={resetStorageSearch}
-                />
-
                 <DataTable
                   columns={ecommerceStorageColumns}
                   data={activeStorages}
@@ -1613,8 +1671,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               </Box>
             )}
           </Box>
-        </Stack>
-      </Card>
+          </section>
+        </div>
+      </Box>
 
       <AppModal centered opened={isPageEditorOpen} size="xl" title={t('Редагування SEO сторінки')} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
@@ -1856,6 +1915,97 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       </AppDrawer>
     </Stack>
   )
+}
+
+function isSeoTabSlug(slug: string | undefined): slug is SeoTab {
+  return Boolean(slug && SEO_TAB_VALUES.has(slug as SeoTab))
+}
+
+function getSeoTabFromSlug(slug: string | undefined): SeoTab {
+  return isSeoTabSlug(slug) ? slug : DEFAULT_SEO_TAB
+}
+
+function getSeoTabHref(tab: SeoTab) {
+  return `/online-shop-seo/${tab}`
+}
+
+type SeoCommandSearchConfig = {
+  label: TranslationKey
+  placeholder: TranslationKey
+  value: string
+  onChange: (value: string) => void
+  onReset: () => void
+}
+
+type SeoCommandSearchState = {
+  cardSearchDraft: string
+  changeCardSearch: (value: string) => void
+  changeClientSearch: (value: string) => void
+  changeContactSearch: (value: string) => void
+  changePageSearch: (value: string) => void
+  changeStorageSearch: (value: string) => void
+  clientSearchDraft: string
+  contactSearchDraft: string
+  pageSearchDraft: string
+  resetCardSearch: () => void
+  resetClientSearch: () => void
+  resetContactSearch: () => void
+  resetPageSearch: () => void
+  resetStorageSearch: () => void
+  storageSearchDraft: string
+}
+
+function getSeoCommandSearchConfig(
+  activeTab: SeoTab,
+  state: SeoCommandSearchState,
+): SeoCommandSearchConfig | null {
+  switch (activeTab) {
+    case 'pages':
+      return {
+        label: 'Пошук',
+        placeholder: 'Назва, URL або текст',
+        value: state.pageSearchDraft,
+        onChange: state.changePageSearch,
+        onReset: state.resetPageSearch,
+      }
+    case 'contacts':
+      return {
+        label: 'Пошук',
+        placeholder: 'Імʼя, телефон або e-mail',
+        value: state.contactSearchDraft,
+        onChange: state.changeContactSearch,
+        onReset: state.resetContactSearch,
+      }
+    case 'shop-clients':
+      return {
+        label: 'Пошук',
+        placeholder: 'Назва, телефон або e-mail',
+        value: state.clientSearchDraft,
+        onChange: state.changeClientSearch,
+        onReset: state.resetClientSearch,
+      }
+    case 'bank-cards':
+      return {
+        label: 'Пошук',
+        placeholder: 'Рахунок, назва, банк або організація',
+        value: state.cardSearchDraft,
+        onChange: state.changeCardSearch,
+        onReset: state.resetCardSearch,
+      }
+    case 'warehouses':
+      return {
+        label: 'Пошук',
+        placeholder: 'Назва або організація',
+        value: state.storageSearchDraft,
+        onChange: state.changeStorageSearch,
+        onReset: state.resetStorageSearch,
+      }
+    case 'contact-info':
+    case 'payment':
+      return null
+    default:
+      return null
+  }
 }
 
 function filterPageRows(rows: SeoPageRow[], searchValue: string) {

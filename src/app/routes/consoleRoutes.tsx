@@ -200,6 +200,7 @@ const clientMigrationRoutes: ConsoleRoute[] = [
   { path: '/incomplete-sales-online-shop', element: lazyRoute(<IncompleteSalesOnlineShopPage />) },
   { path: '/online-shop-cities', element: lazyRoute(<OnlineShopCitiesPage />) },
   { path: '/online-shop-seo', element: lazyRoute(<OnlineShopSeoPage />) },
+  { path: '/online-shop-seo/:tab', element: lazyRoute(<OnlineShopSeoPage />) },
   { path: '/suppliers', element: lazyRoute(<SuppliersPage />) },
   { path: '/suppliers/edit/:netid/:step/:productNetId', element: lazyRoute(<ClientEditPage />) },
   { path: '/suppliers/edit/:netid/:step', element: lazyRoute(<ClientEditPage />) },
