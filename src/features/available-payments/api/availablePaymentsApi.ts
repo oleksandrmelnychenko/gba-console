@@ -65,6 +65,17 @@ export async function searchAvailablePaymentMovements(value: string): Promise<Av
   return readArrayPayload(result, ['Items', 'PaymentMovements', 'Data']) as AvailablePaymentMovement[]
 }
 
+export async function createAvailablePaymentMovement(operationName: string): Promise<AvailablePaymentMovement | null> {
+  const result = await apiRequest<unknown>('/payments/movements/new', {
+    body: {
+      OperationName: operationName,
+    },
+    method: 'POST',
+  })
+
+  return result && typeof result === 'object' ? (result as AvailablePaymentMovement) : null
+}
+
 export async function getAvailablePaymentAccountingCashFlow(params: {
   from: string
   netId: string
@@ -195,6 +206,7 @@ export async function createAvailablePaymentOutcome({
       })),
       PaymentCurrencyRegister: selectedCurrencyRegister,
       PaymentMovementOperation: {
+        PaymentMovementId: selectedMovement.Id || undefined,
         PaymentMovement: selectedMovement,
       },
       PaymentPurpose: paymentPurpose,

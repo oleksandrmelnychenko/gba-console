@@ -38,9 +38,11 @@ import {
   isOutcomePaymentTasksMode,
   parseAvailablePaymentsAccountingType,
 } from '../models/availablePaymentsSearchParams'
+import { buildTaskModels } from '../models/paymentTaskModelMapper'
 import {
   AccountingTypeValue,
   TaskStatusValue,
+  type AvailablePaymentDocumentDeleteOverrides,
   type AvailablePaymentTaskModel,
   type AvailablePaymentsOrganization,
   type GroupedPaymentTask,
@@ -100,6 +102,8 @@ function useAvailablePaymentsPageModel() {
   const [pendingDetailGroup, setPendingDetailGroup] = useValueState<GroupedPaymentTask | null>(null)
   const [markedModels, setMarkedModels] = useValueState<AvailablePaymentTaskModel[]>([])
   const [outcomeRequest, setOutcomeRequest] = useValueState<OutcomeRequest | null>(null)
+  const [documentDeleteOverridesByTaskId, setDocumentDeleteOverridesByTaskId] =
+    useValueState<AvailablePaymentDocumentDeleteOverrides>({})
   const [filesByTaskId, setFilesByTaskId] = useValueState<Record<string, File[]>>({})
   const [confirmCloseDetailOpen, setConfirmCloseDetailOpen] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
@@ -119,6 +123,11 @@ function useAvailablePaymentsPageModel() {
   const groupIndexMap = useMemo(() => buildIndexMap(groups), [groups])
   const markedTaskIds = useMemo(() => markedModels.map((model) => model.id), [markedModels])
   const hasPendingFiles = useMemo(() => Object.values(filesByTaskId).some((files) => files.length > 0), [filesByTaskId])
+  const hasPendingDocumentChanges = useMemo(
+    () => Object.values(documentDeleteOverridesByTaskId).some((overrides) => Object.keys(overrides).length > 0),
+    [documentDeleteOverridesByTaskId],
+  )
+  const hasPendingChanges = hasPendingFiles || hasPendingDocumentChanges
 
   useEffect(() => {
     listRequestKeyRef.current = listRequestKey
@@ -137,8 +146,10 @@ function useAvailablePaymentsPageModel() {
     setLoading(false)
     setSelectedGroup(null)
     setFilesByTaskId({})
+    setDocumentDeleteOverridesByTaskId({})
     setMarkedModels([])
   }, [
+    setDocumentDeleteOverridesByTaskId,
     setFilesByTaskId,
     setGroups,
     setHasMore,
@@ -209,7 +220,7 @@ function useAvailablePaymentsPageModel() {
           setGroups(nextGroups)
           setPriceTotals(result.PriceTotals)
           setTotalGrossPrice(result.TotalGrossPrice)
-          setTotalNotDoneTasks(countNotDoneTasks(nextGroups))
+          setTotalNotDoneTasks(countNotDoneTasks(nextGroups, t))
           setHasMore(result.GroupedPaymentTasks.length === pageSize)
         }
       }
@@ -226,7 +237,7 @@ function useAvailablePaymentsPageModel() {
 
   const openDetail = useCallback(
     (group: GroupedPaymentTask) => {
-      if (hasPendingFiles && selectedGroup && getPaymentGroupKey(selectedGroup) !== getPaymentGroupKey(group)) {
+      if (hasPendingChanges && selectedGroup && getPaymentGroupKey(selectedGroup) !== getPaymentGroupKey(group)) {
         setPendingDetailGroup(group)
         setConfirmCloseDetailOpen(true)
         return
@@ -234,17 +245,17 @@ function useAvailablePaymentsPageModel() {
 
       setSelectedGroup(group)
     },
-    [hasPendingFiles, selectedGroup, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup],
+    [hasPendingChanges, selectedGroup, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup],
   )
   const closeDetail = useCallback(() => {
-    if (hasPendingFiles) {
+    if (hasPendingChanges) {
       setPendingDetailGroup(null)
       setConfirmCloseDetailOpen(true)
       return
     }
 
     setSelectedGroup(null)
-  }, [hasPendingFiles, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup])
+  }, [hasPendingChanges, setConfirmCloseDetailOpen, setPendingDetailGroup, setSelectedGroup])
   const cancelCloseDetail = useCallback(() => {
     setConfirmCloseDetailOpen(false)
     setPendingDetailGroup(null)
@@ -254,13 +265,22 @@ function useAvailablePaymentsPageModel() {
 
     setConfirmCloseDetailOpen(false)
     setFilesByTaskId({})
+    setDocumentDeleteOverridesByTaskId({})
     setPendingDetailGroup(null)
     setSelectedGroup(nextGroup)
-  }, [pendingDetailGroup, setConfirmCloseDetailOpen, setFilesByTaskId, setPendingDetailGroup, setSelectedGroup])
+  }, [
+    pendingDetailGroup,
+    setConfirmCloseDetailOpen,
+    setDocumentDeleteOverridesByTaskId,
+    setFilesByTaskId,
+    setPendingDetailGroup,
+    setSelectedGroup,
+  ])
   const clearMarked = useCallback(() => {
     setMarkedModels([])
     setFilesByTaskId({})
-  }, [setFilesByTaskId, setMarkedModels])
+    setDocumentDeleteOverridesByTaskId({})
+  }, [setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setMarkedModels])
   const openMarkedOutcome = useCallback(() => {
     const selectionError = validateAvailablePaymentSelection(markedModels, t)
 
@@ -294,13 +314,39 @@ function useAvailablePaymentsPageModel() {
     setSelectedGroup(null)
     setMarkedModels([])
     setFilesByTaskId({})
+    setDocumentDeleteOverridesByTaskId({})
     reload()
-  }, [reload, setFilesByTaskId, setMarkedModels, setSelectedGroup])
+  }, [reload, setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setMarkedModels, setSelectedGroup])
   const handleFilesChanged = useCallback(
     (taskId: string, files: File[]) => {
       setFilesByTaskId((current) => ({ ...current, [taskId]: files }))
     },
     [setFilesByTaskId],
+  )
+  const handleDocumentDeletedChange = useCallback(
+    (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => {
+      setDocumentDeleteOverridesByTaskId((current) => {
+        const currentTaskOverrides = current[taskId] || {}
+        const nextTaskOverrides = { ...currentTaskOverrides }
+
+        if (deleted === originalDeleted) {
+          delete nextTaskOverrides[documentKey]
+        } else {
+          nextTaskOverrides[documentKey] = deleted
+        }
+
+        const nextOverrides = { ...current }
+
+        if (Object.keys(nextTaskOverrides).length === 0) {
+          delete nextOverrides[taskId]
+        } else {
+          nextOverrides[taskId] = nextTaskOverrides
+        }
+
+        return nextOverrides
+      })
+    },
+    [setDocumentDeleteOverridesByTaskId],
   )
 
   const columns = useAvailablePaymentsColumns(groupIndexMap, markedModels, openDetail)
@@ -328,6 +374,7 @@ function useAvailablePaymentsPageModel() {
     error,
     filterDraft,
     filterError,
+    documentDeleteOverridesByTaskId,
     filesByTaskId,
     groups,
     hasMore,
@@ -351,6 +398,7 @@ function useAvailablePaymentsPageModel() {
     applyFilters,
     clearMarked,
     handlePaymentChanged,
+    handleDocumentDeletedChange,
     handleFilesChanged,
     reload,
     resetFilters,
@@ -457,7 +505,7 @@ function useAvailablePaymentsLoader({
           setGroups(result.GroupedPaymentTasks)
           setPriceTotals(result.PriceTotals)
           setTotalGrossPrice(result.TotalGrossPrice)
-          setTotalNotDoneTasks(countNotDoneTasks(result.GroupedPaymentTasks))
+          setTotalNotDoneTasks(countNotDoneTasks(result.GroupedPaymentTasks, t))
           setHasMore(result.GroupedPaymentTasks.length === pageSize)
         }
       } catch (loadError) {
@@ -508,6 +556,7 @@ export function AvailablePaymentsPage() {
       <AvailablePaymentsDetailDrawer
         key={String(model.selectedGroup?.NetUid || model.selectedGroup?.Id || 'closed')}
         group={model.selectedGroup}
+        documentDeleteOverridesByTaskId={model.documentDeleteOverridesByTaskId}
         filesByTaskId={model.filesByTaskId}
         markedModels={model.markedModels}
         markedTaskIds={model.markedTaskIds}
@@ -516,6 +565,7 @@ export function AvailablePaymentsPage() {
         onChanged={model.handlePaymentChanged}
         onClearMarked={model.clearMarked}
         onClose={model.closeDetail}
+        onDocumentDeletedChange={model.handleDocumentDeletedChange}
         onFilesChanged={model.handleFilesChanged}
         onToggleMarked={model.toggleMarked}
       />
@@ -526,7 +576,7 @@ export function AvailablePaymentsPage() {
         onClose={model.cancelCloseDetail}
       >
         <Stack gap="md">
-          <Text>{translate('Якщо закрити вікно, додані файли не будуть збережені.')}</Text>
+          <Text>{translate('Якщо закрити вікно, додані файли або зміни документів не будуть збережені.')}</Text>
           <Group justify="flex-end">
             <Button color="gray" variant="light" onClick={model.cancelCloseDetail}>
               {translate('Залишитися')}
@@ -810,8 +860,8 @@ function useAvailablePaymentsColumns(
         minWidth: 110,
         align: 'right',
         enableSorting: false,
-        accessor: (group) => countNotDone(group),
-        cell: (group) => renderTasksCell(group, markedModels),
+        accessor: (group) => countNotDoneModels(group, t),
+        cell: (group) => renderTasksCell(group, markedModels, t),
       },
       {
         id: 'eur',
@@ -892,10 +942,14 @@ function useAvailablePaymentsColumns(
   )
 }
 
-function renderTasksCell(group: GroupedPaymentTask, markedModels: AvailablePaymentTaskModel[]) {
-  const tasks = group.SupplyPaymentTasks || []
-  const notDone = countNotDone(group)
-  const done = tasks.length - notDone
+function renderTasksCell(
+  group: GroupedPaymentTask,
+  markedModels: AvailablePaymentTaskModel[],
+  t: (key: string) => string,
+) {
+  const models = buildTaskModels(group, t)
+  const notDone = countNotDoneModels(group, t)
+  const done = models.length - notDone
   const marked = countMarkedModels(group, markedModels)
 
   return (
@@ -964,12 +1018,12 @@ function getCurrencyTotal(group: GroupedPaymentTask, code: string): number {
     .reduce((sum, priceTotal) => sum + (priceTotal.TotalPrice || 0), 0)
 }
 
-function countNotDone(group: GroupedPaymentTask): number {
-  return (group.SupplyPaymentTasks || []).filter((task) => task.TaskStatus === TaskStatusValue.NotDone).length
+function countNotDoneModels(group: GroupedPaymentTask, t: (key: string) => string): number {
+  return buildTaskModels(group, t).filter((model) => model.task.TaskStatus === TaskStatusValue.NotDone).length
 }
 
-function countNotDoneTasks(groups: GroupedPaymentTask[]): number {
-  return groups.reduce((total, group) => total + countNotDone(group), 0)
+function countNotDoneTasks(groups: GroupedPaymentTask[], t: (key: string) => string): number {
+  return groups.reduce((total, group) => total + countNotDoneModels(group, t), 0)
 }
 
 function getFilterError(from: string, to: string): string | null {
