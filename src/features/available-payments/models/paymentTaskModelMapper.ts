@@ -248,6 +248,8 @@ function buildUkraineProtocolModel(service: DataRecord, context: BuildContext): 
     netPrice: roundTwo(readNumber(supplyOrderUkraine, ['TotalNetPriceLocal'])),
     number: readString(supplyOrderUkraine, ['InvNumber']),
     date: readDate(supplyOrderUkraine, ['FromDate']),
+    currency: readString(currency, ['Code']),
+    paymentType: t('Прихід на Україну'),
     serviceNumber: readString(supplyOrderUkraine, ['Number']),
     symbol: paymentSymbol(task, t),
     vatAmount: roundTwo(readNumber(supplyOrderUkraine, ['TotalVatAmount'])),
@@ -260,6 +262,7 @@ function buildUkraineProtocolModel(service: DataRecord, context: BuildContext): 
     organization: organization as AvailablePaymentsOrganization | null,
     organizationName: supplierName,
     organizationNetUid: readString(organization, ['NetUid']),
+    paymentAmount: readNumber(task as DataRecord, ['NetPrice']) || readNumber(task as DataRecord, ['GrossPrice']),
     payForOrganization: organization,
     rows: [row],
     serviceAgreementNetId: readString(clientAgreement, ['NetUid']),
@@ -287,6 +290,8 @@ function buildPaymentDeliveryProtocolModel(service: DataRecord, context: BuildCo
       netPrice: readNumber(supplyOrder, ['NetPrice']),
       number: readString(proForm, ['Number']),
       date: readDate(proForm, ['DateFrom']),
+      currency: readString(currency, ['Code']),
+      paymentType: t('Проформа'),
       serviceNumber: readString(proForm, ['ServiceNumber']),
       symbol: paymentSymbol(task, t),
       vatAmount: undefined,
@@ -321,6 +326,8 @@ function buildPaymentDeliveryProtocolModel(service: DataRecord, context: BuildCo
     netPrice: readNumber(invoice, ['NetPrice']) - readNumber(invoice, ['DiscountAmount']),
     number: readString(invoice, ['Number']),
     date: readDate(invoice, ['DateFrom']),
+    currency: readString(currency, ['Code']),
+    paymentType: t('Інвойс'),
     serviceNumber: readString(invoice, ['ServiceNumber']),
     symbol: paymentSymbol(task, t),
     vatAmount: undefined,
@@ -365,7 +372,7 @@ function buildMergedServiceModel(service: DataRecord, context: BuildContext): Av
     : serviceName('Об’єднаний сервіс', task, t)
 
   return baseModel(context, {
-    columns: serviceColumns(t),
+    columns: mergedServiceColumns(t),
     currency: asRecord(agreement?.Currency) as AvailablePaymentsCurrency | null,
     documents: readDocuments(service.InvoiceDocuments),
     organization: supplyOrganization as AvailablePaymentsOrganization | null,
@@ -394,7 +401,7 @@ function buildContainerServiceModel(service: DataRecord, context: BuildContext):
     organization: organization as AvailablePaymentsOrganization | null,
     organizationName: readString(organization, ['Name']),
     payForOrganization: asRecord(agreement?.Organization),
-    rows: [deliveryRow(service, task, agreement, readString(service, ['ContainerNumber']))],
+    rows: [containerServiceRow(service, task, agreement)],
     serviceAgreementNetId: readString(agreement, ['NetUid']),
     serviceName: serviceName('Контейнер', task, t),
     serviceNumber: readString(service, ['ServiceNumber']),
@@ -442,7 +449,7 @@ function buildBillOfLadingServiceModel(service: DataRecord, context: BuildContex
     organization: supplyOrganization as AvailablePaymentsOrganization | null,
     organizationName: readString(supplyOrganization, ['Name']),
     payForOrganization: asRecord(agreement?.Organization),
-    rows: [deliveryRow(service, task, agreement, readString(service, ['BillOfLadingNumber']))],
+    rows: billOfLadingRows(service, task, agreement),
     serviceAgreementNetId: readString(agreement, ['NetUid']),
     serviceName: serviceName(isContainer ? 'Контейнер' : 'Вантажівка', task, t),
     serviceNumber: readString(service, ['ServiceNumber']),
@@ -474,7 +481,7 @@ function buildServiceModel(
       : readString(supplyOrder, ['NetUid']) || readString(supplyOrders[0] || null, ['NetUid'])
 
   return baseModel(context, {
-    columns: serviceColumns(t),
+    columns: serviceColumns(t, hasServiceDetails(service)),
     currency: asRecord(agreement?.Currency) as AvailablePaymentsCurrency | null,
     documents: readDocuments(service.InvoiceDocuments),
     organization: options.organization as AvailablePaymentsOrganization | null,
@@ -509,19 +516,76 @@ function rowsFromBaseService(
   agreement: DataRecord | null,
 ): AvailablePaymentTaskRow[] {
   const isAccounting = Boolean(task.IsAccounting)
+  const currency = readString(asRecord(agreement?.Currency), ['Code'])
+  const details = readArray(service.ServiceDetailItems)
+
+  if (details.length > 0) {
+    return details.map((detail) => {
+      const key = asRecord(detail.ServiceDetailItemKey)
+
+      return {
+        currency,
+        grossPrice: readNumber(detail, ['GrossPrice']),
+        name: readString(key, ['Name']),
+        netPrice: readNumber(detail, ['NetPrice']),
+        number: readString(service, ['Number']),
+        date: readDate(service, ['FromDate']),
+        quantity: readNumber(detail, ['Qty']),
+        serviceNumber: readString(service, ['ServiceNumber']),
+        symbol: readString(key, ['Symbol']),
+        vatAmount: readNumber(detail, ['Vat']),
+        vatPercent: readNumber(detail, ['VatPercent']),
+      }
+    })
+  }
 
   return [
     {
-      currency: readString(asRecord(agreement?.Currency), ['Code']),
+      currency,
       grossPrice: readNumber(service, isAccounting ? ['AccountingGrossPrice'] : ['GrossPrice']),
+      mergedServiceNumber: readString(service, ['Number']),
+      name: readString(service, ['Name']) || readString(service, ['Number']),
       netPrice: readNumber(service, isAccounting ? ['AccountingNetPrice'] : ['NetPrice']),
       number: readString(service, ['Number']),
       date: readDate(service, ['FromDate']),
       serviceNumber: readString(service, ['ServiceNumber']),
+      symbol: '',
       vatAmount: readNumber(service, isAccounting ? ['AccountingVat'] : ['Vat']),
       vatPercent: readNumber(service, isAccounting ? ['AccountingVatPercent'] : ['VatPercent']),
     },
   ]
+}
+
+function containerServiceRow(
+  service: DataRecord,
+  task: SupplyPaymentTask,
+  agreement: DataRecord | null,
+): AvailablePaymentTaskRow {
+  const billOfLadingDocument = asRecord(service.BillOfLadingDocument)
+
+  return deliveryRow(
+    service,
+    task,
+    agreement,
+    readString(service, ['ContainerNumber']),
+    billOfLadingDocument,
+  )
+}
+
+function billOfLadingRows(
+  service: DataRecord,
+  task: SupplyPaymentTask,
+  agreement: DataRecord | null,
+): AvailablePaymentTaskRow[] {
+  const documents = readArray(service.BillOfLadingDocuments)
+
+  if (documents.length === 0) {
+    return [deliveryRow(service, task, agreement, readString(service, ['BillOfLadingNumber']))]
+  }
+
+  return documents.map((document) =>
+    deliveryRow(service, task, agreement, readString(service, ['BillOfLadingNumber']), document),
+  )
 }
 
 function deliveryRow(
@@ -529,6 +593,7 @@ function deliveryRow(
   task: SupplyPaymentTask,
   agreement: DataRecord | null,
   containerNumber: string,
+  document?: DataRecord | null,
 ): AvailablePaymentTaskRow {
   const isAccounting = Boolean(task.IsAccounting)
 
@@ -537,8 +602,8 @@ function deliveryRow(
     currency: readString(asRecord(agreement?.Currency), ['Code']),
     grossPrice: readNumber(service, isAccounting ? ['AccountingGrossPrice'] : ['GrossPrice']),
     netPrice: readNumber(service, isAccounting ? ['AccountingNetPrice'] : ['NetPrice']),
-    number: readString(service, ['Number']),
-    date: readDate(service, ['FromDate']),
+    number: readString(document, ['Number']) || readString(service, ['Number']),
+    date: readDate(document, ['Date']) || readDate(service, ['FromDate']),
     serviceNumber: readString(service, ['ServiceNumber']),
   }
 }
@@ -555,6 +620,7 @@ function baseModel(
     organization?: AvailablePaymentsOrganization | null
     organizationName: string
     organizationNetUid?: string
+    paymentAmount?: number
     payForClient?: NamedEntity | null
     payForOrganization?: DataRecord | null
     rows: AvailablePaymentTaskRow[]
@@ -584,6 +650,7 @@ function baseModel(
     organizationName: init.organizationName,
     organizationNetUid: init.organizationNetUid ?? getEntityValue(payForOrganization || organization),
     paidOrder: getPaidOrder(task),
+    paymentAmount: init.paymentAmount ?? task.GrossPrice ?? 0,
     payForClient: init.payForClient ?? null,
     rows: init.rows,
     serviceAgreementNetId: init.serviceAgreementNetId || '',
@@ -609,11 +676,34 @@ function consumableOrderColumns(t: Translate): AvailablePaymentColumn[] {
   ]
 }
 
-function serviceColumns(t: Translate): AvailablePaymentColumn[] {
+function serviceColumns(t: Translate, includeQuantityColumn = false): AvailablePaymentColumn[] {
+  const quantityColumn: AvailablePaymentColumn[] = includeQuantityColumn
+    ? [
+        { align: 'right', format: 'text', header: t('Кількість'), key: 'quantity' },
+      ]
+    : []
+
   return [
     { format: 'date', header: t('Дата'), key: 'date' },
     { format: 'text', header: t('Номер документу'), key: 'serviceNumber' },
     { format: 'text', header: t('Номер'), key: 'number' },
+    { format: 'text', header: t('Назва'), key: 'name' },
+    { format: 'text', header: t('Символ'), key: 'symbol' },
+    ...quantityColumn,
+    { format: 'text', header: t('Валюта'), key: 'currency' },
+    { align: 'right', format: 'price', header: t('Вартість Нетто'), key: 'netPrice' },
+    { align: 'right', format: 'text', header: `${t('ПДВ')} %`, key: 'vatPercent' },
+    { align: 'right', format: 'price', header: t('ПДВ'), key: 'vatAmount' },
+    { align: 'right', format: 'price', header: t('Вартість'), key: 'grossPrice' },
+  ]
+}
+
+function mergedServiceColumns(t: Translate): AvailablePaymentColumn[] {
+  return [
+    { format: 'date', header: t('Дата'), key: 'date' },
+    { format: 'text', header: t('Номер документу'), key: 'serviceNumber' },
+    { format: 'text', header: t('Номер'), key: 'number' },
+    { format: 'text', header: t('Номер об’єднаного сервісу'), key: 'mergedServiceNumber' },
     { format: 'text', header: t('Валюта'), key: 'currency' },
     { align: 'right', format: 'price', header: t('Вартість Нетто'), key: 'netPrice' },
     { align: 'right', format: 'text', header: `${t('ПДВ')} %`, key: 'vatPercent' },
@@ -629,6 +719,7 @@ function deliveryServiceColumns(t: Translate, isContainer: boolean): AvailablePa
     { format: 'text', header: t('Номер'), key: 'number' },
     { format: 'text', header: t(isContainer ? 'Номер контейнера' : 'Номер Автомобіля'), key: 'containerNumber' },
     { format: 'text', header: t('Валюта'), key: 'currency' },
+    { align: 'right', format: 'price', header: t('Вартість Нетто'), key: 'netPrice' },
     { align: 'right', format: 'price', header: t('Вартість'), key: 'grossPrice' },
   ]
 }
@@ -653,7 +744,9 @@ function paymentDeliveryProtocolColumns(t: Translate): AvailablePaymentColumn[] 
     { format: 'date', header: t('Дата'), key: 'date' },
     { format: 'text', header: t('Номер документу'), key: 'serviceNumber' },
     { format: 'text', header: t('Номер'), key: 'number' },
+    { format: 'text', header: t('Тип'), key: 'paymentType' },
     { format: 'text', header: t('Назва'), key: 'name' },
+    { format: 'text', header: t('Валюта'), key: 'currency' },
     { format: 'text', header: t('Стан документа'), key: 'symbol' },
     { align: 'right', format: 'text', header: t('Відсоток оплати'), key: 'discount' },
     { align: 'right', format: 'text', header: `${t('ПДВ')} %`, key: 'vatPercent' },
@@ -693,6 +786,10 @@ function getEntityValue(entity?: { Id?: number; NetUid?: string } | null): strin
 
 function roundTwo(value: number): number {
   return Math.round(value * 100) / 100
+}
+
+function hasServiceDetails(service: DataRecord): boolean {
+  return readArray(service.ServiceDetailItems).length > 0
 }
 
 function readDocuments(value: unknown): AvailablePaymentDocument[] {

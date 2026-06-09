@@ -280,7 +280,7 @@ function useAvailablePaymentsDetailDrawerModel({
   const taskCurrencyCode = taskCurrency?.Code || ''
   const taskCurrencyId = taskCurrency?.Id || 0
   const baseOutcomeAmount = useMemo(
-    () => uniqueOutcomeModels(outcomeModels).reduce((total, model) => total + (model.grossPrice || 0), 0),
+    () => uniqueOutcomeModels(outcomeModels).reduce((total, model) => total + getModelPaymentAmount(model), 0),
     [outcomeModels],
   )
   const organizationName = selectedOrganization?.Name || outcomeModels[0]?.organization?.Name || ''
@@ -1096,7 +1096,7 @@ function AvailablePaymentTaskList({
               </Group>
               <Group gap="sm">
                 <Text fw={700}>
-                  {formatAmount(model.grossPrice)} {model.currencyCode}
+                  {formatAmount(getModelPaymentAmount(model))} {model.currencyCode}
                 </Text>
                 <RedirectToSourceButton model={model} onRedirectToSource={onRedirectToSource} />
                 <Button color="gray" size="xs" variant="light" onClick={() => onToggleExpanded(model)}>
@@ -1481,7 +1481,26 @@ function InvoiceTab({ model }: { model: AvailablePaymentTaskModel }) {
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
+      <InvoicePaymentSummary model={model} />
     </Stack>
+  )
+}
+
+function InvoicePaymentSummary({ model }: { model: AvailablePaymentTaskModel }) {
+  const { t } = useI18n()
+  const isDone = model.task.TaskStatus === TaskStatusValue.Done
+
+  return (
+    <Group justify="flex-end" gap="xs">
+      <Text c="dimmed" size="sm">
+        {isDone ? t('Оплачено') : t('До оплати')}
+      </Text>
+      {!isDone && (
+        <Text fw={700} size="sm">
+          {formatAmount(getModelPaymentAmount(model))} {model.currencyCode}
+        </Text>
+      )}
+    </Group>
   )
 }
 
@@ -2159,7 +2178,7 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
   const uniqueModels = uniqueOutcomeModels(models)
 
   return {
-    amount: uniqueModels.reduce((total, model) => total + (model.grossPrice || 0), 0),
+    amount: uniqueModels.reduce((total, model) => total + getModelPaymentAmount(model), 0),
     comment: '',
     customNumber: '',
     date: formatLocalDate(now),
@@ -2174,6 +2193,10 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
     selectedCurrencyValue: '',
     time: toTimeValue(now),
   }
+}
+
+function getModelPaymentAmount(model: AvailablePaymentTaskModel): number {
+  return model.paymentAmount ?? model.grossPrice ?? 0
 }
 
 function validateOutcomeForm({

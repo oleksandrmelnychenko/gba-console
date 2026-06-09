@@ -158,9 +158,11 @@ export type AvailablePaymentColumnKey =
   | 'date'
   | 'discount'
   | 'grossPrice'
+  | 'mergedServiceNumber'
   | 'name'
   | 'netPrice'
   | 'number'
+  | 'paymentType'
   | 'pricePerUnit'
   | 'quantity'
   | 'serviceNumber'
@@ -194,6 +196,7 @@ export type AvailablePaymentTaskModel = {
   organizationName: string
   organizationNetUid: string
   paidOrder?: AvailablePaymentOrderSummary | null
+  paymentAmount?: number
   payForClient?: NamedEntity | null
   rows: AvailablePaymentTaskRow[]
   serviceAgreementNetId: string
