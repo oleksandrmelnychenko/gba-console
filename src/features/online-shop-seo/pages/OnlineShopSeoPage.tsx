@@ -145,19 +145,18 @@ const ALL_STORAGES_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-type SeoTab = 'pages' | 'contact-info' | 'contacts' | 'payment' | 'shop-clients' | 'bank-cards' | 'warehouses'
+type SeoTab = 'pages' | 'info-payment' | 'contacts' | 'shop-clients' | 'bank-cards' | 'warehouses'
 
 const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
+  { value: 'info-payment', label: 'Загальна інформація та оплата' },
   { value: 'pages', label: 'Сторінки' },
-  { value: 'contact-info', label: 'Загальна інформація' },
   { value: 'contacts', label: 'Персонал' },
-  { value: 'payment', label: 'Оплата' },
   { value: 'shop-clients', label: 'Інтернет клієнти' },
   { value: 'bank-cards', label: 'Банківські картки' },
   { value: 'warehouses', label: 'Склади' },
 ]
 
-const DEFAULT_SEO_TAB: SeoTab = 'pages'
+const DEFAULT_SEO_TAB: SeoTab = 'info-payment'
 const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
 
 const EMPTY_PAGE_FORM_VALUES = pageToFormValues(null)
@@ -1366,7 +1365,7 @@ export function OnlineShopSeoPage() {
   const navigate = useNavigate()
   const { tab } = useParams<{ tab?: string }>()
   const activeTab = getSeoTabFromSlug(tab)
-  const activeTabLabel = SEO_TABS.find((item) => item.value === activeTab)?.label || 'Сторінки'
+  const activeTabLabel = SEO_TABS.find((item) => item.value === activeTab)?.label || 'Загальна інформація та оплата'
   const setActiveTab = useCallback(
     (nextTab: SeoTab) => {
       navigate(getSeoTabHref(nextTab))
@@ -1405,7 +1404,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetStorageSearch, setActiveTab, setContactField, setFormError, setPageField, setPriorityValue,
     setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
   } = model
-  const activeTabLabel = SEO_TABS.find((tab) => tab.value === activeTab)?.label || 'Сторінки'
   const commandSearch = getSeoCommandSearchConfig(activeTab, {
     cardSearchDraft,
     changeCardSearch,
@@ -1448,7 +1446,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         </Button>
       )
       : null
-
   return (
     <Stack className="seo-page" gap="md">
       <PageHeaderActions>
@@ -1467,8 +1464,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               onChange={(event) => commandSearch.onChange(event.currentTarget.value)}
             />
           ) : (
-            <div className="seo-page-command-placeholder">
-              <Text className="seo-page-command-title">{t(activeTabLabel)}</Text>
+            <div className="seo-page-command-summary">
+              <Text className="seo-page-command-summary-description">
+                {t('Контактна інформація та дані оплати для інтернет-магазину.')}
+              </Text>
+              <Text className="seo-page-command-summary-title">{t('Основні налаштування')}</Text>
             </div>
           )}
           <div className="seo-page-toolbar-actions">
@@ -1552,19 +1552,38 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               </Box>
             )}
 
-            {activeTab === 'contact-info' && (
+            {activeTab === 'info-payment' && (
               <Box pt="md">
-              <LocaleAccordion entries={settings} emptyText={t('Контактної інформації не знайдено')}>
-                {(entry) => (
-                  <ContactInfoForm
-                    key={`${entry.locale}-${entry.settings.EcommerceContactInfo?.NetUid || 'new'}`}
-                    contactInfo={entry.settings.EcommerceContactInfo || null}
-                    isSaving={isSaving}
-                    locale={entry.locale}
-                    onSave={handleSaveContactInfo}
-                  />
-                )}
-              </LocaleAccordion>
+                <Stack gap="md">
+                  <div className="seo-page-form-section" id="seo-general-info-section">
+                    <Text className="seo-page-form-section-title">{t('Загальна інформація')}</Text>
+                    <LocaleAccordion entries={settings} emptyText={t('Контактної інформації не знайдено')}>
+                      {(entry) => (
+                        <ContactInfoForm
+                          key={`${entry.locale}-${entry.settings.EcommerceContactInfo?.NetUid || 'new'}`}
+                          contactInfo={entry.settings.EcommerceContactInfo || null}
+                          isSaving={isSaving}
+                          locale={entry.locale}
+                          onSave={handleSaveContactInfo}
+                        />
+                      )}
+                    </LocaleAccordion>
+                  </div>
+                  <div className="seo-page-form-section" id="seo-payment-section">
+                    <Text className="seo-page-form-section-title">{t('Оплата')}</Text>
+                    <LocaleAccordion entries={settings} emptyText={t('Інформації про оплату не знайдено')}>
+                      {(entry) => (
+                        <PaymentInfoForm
+                          key={`${entry.locale}-${entry.settings.RetailPaymentTypeTranslate?.NetUid || 'new'}`}
+                          isSaving={isSaving}
+                          locale={entry.locale}
+                          payment={entry.settings.RetailPaymentTypeTranslate || null}
+                          onSave={handleSavePayment}
+                        />
+                      )}
+                    </LocaleAccordion>
+                  </div>
+                </Stack>
               </Box>
             )}
 
@@ -1587,22 +1606,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   onRowClick={openContactEditor}
                 />
               </Stack>
-              </Box>
-            )}
-
-            {activeTab === 'payment' && (
-              <Box pt="md">
-              <LocaleAccordion entries={settings} emptyText={t('Інформації про оплату не знайдено')}>
-                {(entry) => (
-                  <PaymentInfoForm
-                    key={`${entry.locale}-${entry.settings.RetailPaymentTypeTranslate?.NetUid || 'new'}`}
-                    isSaving={isSaving}
-                    locale={entry.locale}
-                    payment={entry.settings.RetailPaymentTypeTranslate || null}
-                    onSave={handleSavePayment}
-                  />
-                )}
-              </LocaleAccordion>
               </Box>
             )}
 
@@ -1922,6 +1925,10 @@ function isSeoTabSlug(slug: string | undefined): slug is SeoTab {
 }
 
 function getSeoTabFromSlug(slug: string | undefined): SeoTab {
+  if (slug === 'contact-info' || slug === 'payment') {
+    return 'info-payment'
+  }
+
   return isSeoTabSlug(slug) ? slug : DEFAULT_SEO_TAB
 }
 
@@ -2000,8 +2007,7 @@ function getSeoCommandSearchConfig(
         onChange: state.changeStorageSearch,
         onReset: state.resetStorageSearch,
       }
-    case 'contact-info':
-    case 'payment':
+    case 'info-payment':
       return null
     default:
       return null
