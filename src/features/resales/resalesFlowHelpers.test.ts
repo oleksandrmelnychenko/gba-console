@@ -6,6 +6,7 @@ import {
   getDateRangeError,
   getProcessFromStorageId,
   mapAvailabilityToItemModel,
+  rowsShareSingleStorage,
 } from './resalesFlowHelpers'
 import type { CreatedResaleAvailabilityWithTotals, GroupingResaleAvailability } from './types'
 
@@ -45,15 +46,21 @@ describe('resales flow helpers', () => {
     })
   })
 
-  it('allows manual processing across multiple storages while preserving per-row storage ids', () => {
-    const rows = [availability(1, 10), availability(2, 20)]
-
-    expect(canProcessAvailabilityRows(rows)).toBe(true)
-    expect(rows.map(mapAvailabilityToItemModel).map((item) => item.FromStorageId)).toEqual([10, 20])
-  })
-
   it('requires storage id for manual processing rows', () => {
     expect(canProcessAvailabilityRows([availability(1, 10), availability(2)])).toBe(false)
+  })
+
+  it('blocks manual processing when selected rows span more than one storage', () => {
+    expect(rowsShareSingleStorage([availability(1, 10), availability(2, 20)])).toBe(false)
+    expect(rowsShareSingleStorage([availability(1, 10), availability(2, 10)])).toBe(true)
+    expect(rowsShareSingleStorage([])).toBe(false)
+  })
+
+  it('preserves per-row storage ids for a single-storage selection', () => {
+    const rows = [availability(1, 10), availability(2, 10)]
+
+    expect(canProcessAvailabilityRows(rows) && rowsShareSingleStorage(rows)).toBe(true)
+    expect(rows.map(mapAvailabilityToItemModel).map((item) => item.FromStorageId)).toEqual([10, 10])
   })
 
   it('uses result storage first and falls back to selected rows for the process drawer', () => {

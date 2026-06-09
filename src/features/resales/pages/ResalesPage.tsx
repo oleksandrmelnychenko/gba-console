@@ -100,6 +100,7 @@ import {
   getProcessFromStorageId,
   mapAvailabilityToItemModel,
   readAvailabilityStorageId,
+  rowsShareSingleStorage,
   type ResaleAvailabilityForm,
 } from '../resalesFlowHelpers'
 
@@ -562,7 +563,8 @@ export function NewResalePage() {
     () => availabilities.filter((availability) => selectedKeys.includes(getAvailabilityKey(availability))),
     [availabilities, selectedKeys],
   )
-  const canProcessSelected = canProcessAvailabilityRows(selectedRows)
+  const selectionSpansMultipleStorages = canProcessAvailabilityRows(selectedRows) && !rowsShareSingleStorage(selectedRows)
+  const canProcessSelected = canProcessAvailabilityRows(selectedRows) && rowsShareSingleStorage(selectedRows)
   const columns = useResaleAvailabilityColumns({
     selectedKeys,
     onToggle: toggleAvailability,
@@ -703,7 +705,11 @@ export function NewResalePage() {
     }
 
     if (!canProcessSelected) {
-      setWarning({ Message: t('Для обробки оберіть товари зі складом') })
+      setWarning({
+        Message: selectionSpansMultipleStorages
+          ? t('Оберіть товари з одного складу')
+          : t('Для обробки оберіть товари зі складом'),
+      })
       return
     }
 
@@ -720,7 +726,9 @@ export function NewResalePage() {
 
     if (!canProcessSelected) {
       setWarning({
-        Message: t('Для обробки оберіть товари зі складом'),
+        Message: selectionSpansMultipleStorages
+          ? t('Оберіть товари з одного складу')
+          : t('Для обробки оберіть товари зі складом'),
       })
       return
     }

@@ -46,6 +46,16 @@ export function canProcessAvailabilityRows(rows: GroupingResaleAvailability[]): 
   return rows.length > 0 && rows.every((row) => Number.isFinite(readAvailabilityStorageId(row)))
 }
 
+export function rowsShareSingleStorage(rows: GroupingResaleAvailability[]): boolean {
+  if (rows.length === 0) {
+    return false
+  }
+
+  const firstStorageId = readAvailabilityStorageId(rows[0])
+
+  return rows.every((row) => readAvailabilityStorageId(row) === firstStorageId)
+}
+
 export function mapAvailabilityToItemModel(row: GroupingResaleAvailability): ResaleAvailabilityItemModel {
   const fromStorageId = readAvailabilityStorageId(row) || 0
 
