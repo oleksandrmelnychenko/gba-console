@@ -1663,11 +1663,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
                           <div className="seo-settings-tree-node-list">
                             {SEO_GENERAL_MATRIX_SECTIONS.map((section) => {
-                              const isSectionMissing = section.group === 'payment' && !hasPaymentRecord(entry.settings.RetailPaymentTypeTranslate)
-                              const filledFieldCount = isSectionMissing
-                                ? 0
-                                : section.fields.filter((field) => getSeoGeneralMatrixValue(entry, field)).length
-
                               return (
                                 <article className="seo-settings-tree-node" key={`${entry.locale}-${section.group}`}>
                                   <div className="seo-settings-tree-node-row">
@@ -1676,9 +1671,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                                     </span>
                                     <div className="seo-settings-tree-node-title">
                                       <Text className="seo-settings-tree-node-name">{t(section.label)}</Text>
-                                      <span className="seo-settings-tree-node-meta">
-                                        {isSectionMissing ? t('Запис відсутній') : `${filledFieldCount}/${section.fields.length} ${t('полів')}`}
-                                      </span>
                                     </div>
                                   </div>
 

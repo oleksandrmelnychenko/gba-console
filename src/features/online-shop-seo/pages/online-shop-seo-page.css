@@ -407,21 +407,6 @@
   justify-content: center;
 }
 
-.seo-settings-tree-node-meta {
-  align-items: center;
-  color: var(--mantine-color-gray-6);
-  display: flex;
-  flex-wrap: nowrap;
-  font-size: 11px;
-  gap: 8px;
-  line-height: 1.2;
-  margin-top: 2px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .seo-settings-tree-field-list {
   background: var(--mantine-color-white);
   padding: 2px 0 4px;
