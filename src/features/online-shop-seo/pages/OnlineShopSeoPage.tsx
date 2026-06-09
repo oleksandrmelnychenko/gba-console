@@ -7,6 +7,7 @@ import {
   Button,
   FileInput,
   Group,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Text,
@@ -19,10 +20,13 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconBuildingWarehouse,
   IconCheck,
   IconCreditCard,
   IconDeviceFloppy,
+  IconFileText,
   IconInfoCircle,
+  IconLink,
   IconPencil,
   IconPhoto,
   IconPlus,
@@ -32,14 +36,12 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type CSSProperties, type FormEvent, type MouseEventHandler, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import type { TranslationKey } from '../../../shared/i18n/types'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   CREATE_ACTION_COLOR,
   PageHeaderActions,
@@ -68,7 +70,6 @@ import {
   ContactInfoForm,
   PaymentInfoForm,
   SearchToolbar,
-  StatusBadge,
 } from '../components/OnlineShopSeoControls'
 import type {
   OnlineShopClient,
@@ -98,55 +99,25 @@ import {
 } from '../utils'
 import './online-shop-seo-page.css'
 
-const SEO_PAGES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['locale', 'page'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const SEO_CONTACTS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['contact'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['status', 'client'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const PAYMENT_REGISTERS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['status', 'accountNumber'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const ECOMMERCE_STORAGES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['priority', 'storage'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const ALL_STORAGES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['status', 'storage'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
 type SeoTab = 'pages' | 'info-payment' | 'contacts' | 'shop-clients' | 'bank-cards' | 'warehouses'
+
+type SeoRosterColumn<TData> = {
+  id: string
+  header: ReactNode
+  accessor?: (row: TData) => unknown
+  cell?: (row: TData) => ReactNode
+  width?: number
+  minWidth?: number
+  maxWidth?: number
+  align?: 'left' | 'center' | 'right'
+  className?: string
+  fill?: boolean
+  enableHiding?: boolean
+  enablePinning?: boolean
+  enableReorder?: boolean
+  enableResizing?: boolean
+  enableSorting?: boolean
+}
 
 const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'info-payment', label: 'Загальна інформація та оплата' },
@@ -322,28 +293,32 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     setFormError(null)
   }, [setFormError, setRemoveStorageTarget])
 
-  const pageColumns = useMemo<DataTableColumn<SeoPageRow>[]>(
+  const pageColumns = useMemo<SeoRosterColumn<SeoPageRow>[]>(
     () => [
-      {
-        id: 'locale',
-        header: 'Мова',
-        width: 96,
-        minWidth: 84,
-        accessor: (row) => row.locale,
-        cell: (row) => (
-          <Badge color="violet" variant="light">
-            {getLocaleLabel(row.locale)}
-          </Badge>
-        ),
-      },
       {
         id: 'page',
         header: 'Сторінка',
-        width: 220,
+        width: 250,
         minWidth: 180,
         accessor: (row) => getPageTitle(row.page),
         cell: (row) => (
-          <Text fw={600}>{displayValue(getPageTitle(row.page))}</Text>
+          <SeoTablePrimaryCell
+            icon={<IconFileText size={15} />}
+            subtitle={shortText(row.page.Description, 120)}
+            title={displayValue(getPageTitle(row.page))}
+          />
+        ),
+      },
+      {
+        id: 'url',
+        header: 'URL',
+        width: 220,
+        minWidth: 180,
+        accessor: (row) => row.page.Url,
+        cell: (row) => (
+          <SeoTableRoleLikeCell icon={<IconLink size={14} />} tone="url">
+            {displayValue(row.page.Url)}
+          </SeoTableRoleLikeCell>
         ),
       },
       {
@@ -352,23 +327,17 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 260,
         minWidth: 220,
         accessor: (row) => row.page.Title,
-        cell: (row) => shortText(row.page.Title, 120),
+        cell: (row) => (
+          <SeoTableTextCell primary={shortText(row.page.Title, 120)} />
+        ),
       },
       {
-        id: 'url',
-        header: 'URL',
-        width: 220,
-        minWidth: 180,
-        accessor: (row) => row.page.Url,
-        cell: (row) => displayValue(row.page.Url),
-      },
-      {
-        id: 'description',
-        header: 'Description',
-        width: 360,
-        minWidth: 260,
-        accessor: (row) => row.page.Description,
-        cell: (row) => shortText(row.page.Description, 160),
+        id: 'locale',
+        header: 'Мова',
+        width: 96,
+        minWidth: 84,
+        accessor: (row) => row.locale,
+        cell: (row) => <SeoTableLocaleTag>{getLocaleLabel(row.locale)}</SeoTableLocaleTag>,
       },
       {
         id: 'updated',
@@ -376,7 +345,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 152,
         minWidth: 132,
         accessor: (row) => formatDateTime(row.page.Updated),
-        cell: (row) => displayValue(formatDateTime(row.page.Updated)),
+        cell: (row) => <SeoTableDateCell value={row.page.Updated} />,
       },
       {
         id: 'actions',
@@ -390,20 +359,20 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (row) => (
-          <Box onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати')} color="gray" variant="subtle" onClick={() => openPageEditor(row)}>
                 <IconPencil size={18} />
               </ActionIcon>
             </Tooltip>
-          </Box>
+          </SeoTableActionCell>
         ),
       },
     ],
     [openPageEditor, t],
   )
 
-  const contactColumns = useMemo<DataTableColumn<SeoContact>[]>(
+  const contactColumns = useMemo<SeoRosterColumn<SeoContact>[]>(
     () => [
       {
         id: 'contact',
@@ -412,14 +381,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 220,
         accessor: (contact) => contact.Name,
         cell: (contact) => (
-          <Group gap="sm" wrap="nowrap">
-            <Avatar color="violet" name={contact.Name || undefined} radius="xl" src={contact.ImgUrl || undefined}>
-              {getContactInitials(contact)}
-            </Avatar>
-            <Box>
-              <Text fw={600}>{displayValue(contact.Name)}</Text>
-            </Box>
-          </Group>
+          <SeoTablePrimaryCell
+            avatar={(
+              <Avatar className="seo-table-avatar" name={contact.Name || undefined} radius="xl" src={contact.ImgUrl || undefined}>
+                {getContactInitials(contact)}
+              </Avatar>
+            )}
+            title={displayValue(contact.Name)}
+          />
         ),
       },
       {
@@ -428,7 +397,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 180,
         minWidth: 150,
         accessor: (contact) => contact.Phone,
-        cell: (contact) => displayValue(contact.Phone),
+        cell: (contact) => <SeoTableTextCell primary={displayValue(contact.Phone)} />,
       },
       {
         id: 'email',
@@ -436,7 +405,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 240,
         minWidth: 190,
         accessor: (contact) => contact.Email,
-        cell: (contact) => displayValue(contact.Email),
+        cell: (contact) => <SeoTableMutedCell>{displayValue(contact.Email)}</SeoTableMutedCell>,
       },
       {
         id: 'skype',
@@ -444,7 +413,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 160,
         minWidth: 130,
         accessor: (contact) => contact.Skype,
-        cell: (contact) => displayValue(contact.Skype),
+        cell: (contact) => <SeoTableTag>{displayValue(contact.Skype)}</SeoTableTag>,
       },
       {
         id: 'icq',
@@ -452,7 +421,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 140,
         minWidth: 110,
         accessor: (contact) => contact.Icq,
-        cell: (contact) => displayValue(contact.Icq),
+        cell: (contact) => <SeoTableTag>{displayValue(contact.Icq)}</SeoTableTag>,
       },
       {
         id: 'updated',
@@ -460,7 +429,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 152,
         minWidth: 132,
         accessor: (contact) => formatDateTime(contact.Updated),
-        cell: (contact) => displayValue(formatDateTime(contact.Updated)),
+        cell: (contact) => <SeoTableDateCell value={contact.Updated} />,
       },
       {
         id: 'actions',
@@ -474,7 +443,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (contact) => (
-          <Group gap={4} justify="center" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
@@ -496,21 +465,21 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 <IconTrash size={18} />
               </ActionIcon>
             </Tooltip>
-          </Group>
+          </SeoTableActionCell>
         ),
       },
     ],
     [openContactEditor, requestRemoveContact, t],
   )
 
-  const clientColumns: DataTableColumn<OnlineShopClient>[] = [
+  const clientColumns: SeoRosterColumn<OnlineShopClient>[] = [
       {
         id: 'status',
         header: 'Статус',
         width: 132,
         minWidth: 118,
         accessor: (client) => Boolean(client.IsForRetail),
-        cell: (client) => <StatusBadge active={Boolean(client.IsForRetail)} activeLabel="Активний" inactiveLabel="Не активний" />,
+        cell: (client) => <SeoTableStatusPill active={Boolean(client.IsForRetail)} activeLabel="Активний" inactiveLabel="Не активний" />,
       },
       {
         id: 'client',
@@ -519,7 +488,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 220,
         accessor: (client) => getClientDisplayName(client),
         cell: (client) => (
-          <Text fw={600}>{displayValue(getClientDisplayName(client))}</Text>
+          <SeoTablePrimaryCell
+            avatar={(
+              <Avatar className="seo-table-avatar" radius="xl">
+                {getClientInitials(client)}
+              </Avatar>
+            )}
+            title={displayValue(getClientDisplayName(client))}
+          />
         ),
       },
       {
@@ -528,7 +504,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 140,
         minWidth: 110,
         accessor: (client) => client.ClientNumber,
-        cell: (client) => displayValue(client.ClientNumber),
+        cell: (client) => <SeoTableTag>{displayValue(client.ClientNumber)}</SeoTableTag>,
       },
       {
         id: 'phone',
@@ -536,7 +512,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 180,
         minWidth: 150,
         accessor: (client) => getClientPhone(client),
-        cell: (client) => displayValue(getClientPhone(client)),
+        cell: (client) => <SeoTableTextCell primary={displayValue(getClientPhone(client))} />,
       },
       {
         id: 'email',
@@ -544,7 +520,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 240,
         minWidth: 190,
         accessor: (client) => client.EmailAddress,
-        cell: (client) => displayValue(client.EmailAddress),
+        cell: (client) => <SeoTableMutedCell>{displayValue(client.EmailAddress)}</SeoTableMutedCell>,
       },
       {
         id: 'clientActive',
@@ -552,7 +528,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 128,
         minWidth: 118,
         accessor: (client) => Boolean(client.IsActive),
-        cell: (client) => <StatusBadge active={Boolean(client.IsActive)} activeLabel="Активний" inactiveLabel="Не активний" />,
+        cell: (client) => <SeoTableStatusPill active={Boolean(client.IsActive)} activeLabel="Активний" inactiveLabel="Не активний" />,
       },
       {
         id: 'actions',
@@ -566,7 +542,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (client) => (
-          <Box onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
             <Tooltip label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}>
               <ActionIcon
                 aria-label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
@@ -578,19 +554,19 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 {client.IsForRetail ? <IconX size={18} /> : <IconCheck size={18} />}
               </ActionIcon>
             </Tooltip>
-          </Box>
+          </SeoTableActionCell>
         ),
       },
   ]
 
-  const paymentRegisterColumns: DataTableColumn<OnlineShopPaymentRegister>[] = [
+  const paymentRegisterColumns: SeoRosterColumn<OnlineShopPaymentRegister>[] = [
       {
         id: 'status',
         header: 'Статус',
         width: 128,
         minWidth: 116,
         accessor: (register) => Boolean(register.IsSelected),
-        cell: (register) => <StatusBadge active={Boolean(register.IsSelected)} activeLabel="Активна" inactiveLabel="Не активна" />,
+        cell: (register) => <SeoTableStatusPill active={Boolean(register.IsSelected)} activeLabel="Активна" inactiveLabel="Не активна" />,
       },
       {
         id: 'accountNumber',
@@ -598,7 +574,12 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 180,
         minWidth: 150,
         accessor: (register) => register.AccountNumber || register.IBAN,
-        cell: (register) => displayValue(register.AccountNumber || register.IBAN),
+        cell: (register) => (
+          <SeoTablePrimaryCell
+            icon={<IconCreditCard size={15} />}
+            title={displayValue(register.AccountNumber || register.IBAN)}
+          />
+        ),
       },
       {
         id: 'currency',
@@ -606,7 +587,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 112,
         minWidth: 92,
         accessor: (register) => getPaymentRegisterCurrency(register),
-        cell: (register) => displayValue(getPaymentRegisterCurrency(register)),
+        cell: (register) => <SeoTableTag tone="accent">{displayValue(getPaymentRegisterCurrency(register))}</SeoTableTag>,
       },
       {
         id: 'name',
@@ -614,7 +595,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 240,
         minWidth: 190,
         accessor: (register) => register.Name,
-        cell: (register) => displayValue(register.Name),
+        cell: (register) => <SeoTableTextCell primary={displayValue(register.Name)} />,
       },
       {
         id: 'bankName',
@@ -622,7 +603,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 220,
         minWidth: 180,
         accessor: (register) => register.BankName,
-        cell: (register) => displayValue(register.BankName),
+        cell: (register) => <SeoTableMutedCell>{displayValue(register.BankName)}</SeoTableMutedCell>,
       },
       {
         id: 'organization',
@@ -630,7 +611,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 280,
         minWidth: 220,
         accessor: (register) => getOrganizationName(register.Organization),
-        cell: (register) => displayValue(getOrganizationName(register.Organization)),
+        cell: (register) => <SeoTableMutedCell>{displayValue(getOrganizationName(register.Organization))}</SeoTableMutedCell>,
       },
       {
         id: 'registerActive',
@@ -638,7 +619,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 128,
         minWidth: 118,
         accessor: (register) => Boolean(register.IsActive),
-        cell: (register) => <StatusBadge active={Boolean(register.IsActive)} activeLabel="Активна" inactiveLabel="Не активна" />,
+        cell: (register) => <SeoTableStatusPill active={Boolean(register.IsActive)} activeLabel="Активна" inactiveLabel="Не активна" />,
       },
       {
         id: 'actions',
@@ -652,7 +633,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (register) => (
-          <Box onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Обрати')}>
               <ActionIcon
                 aria-label={t('Обрати')}
@@ -664,12 +645,12 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 <IconCheck size={18} />
               </ActionIcon>
             </Tooltip>
-          </Box>
+          </SeoTableActionCell>
         ),
       },
   ]
 
-  const ecommerceStorageColumns = useMemo<DataTableColumn<OnlineShopStorage>[]>(
+  const ecommerceStorageColumns = useMemo<SeoRosterColumn<OnlineShopStorage>[]>(
     () => [
       {
         id: 'priority',
@@ -677,11 +658,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 112,
         minWidth: 100,
         accessor: (storage) => Number(storage.RetailPriority || 0),
-        cell: (storage) => (
-          <Badge color="violet" variant="light">
-            {displayValue(storage.RetailPriority)}
-          </Badge>
-        ),
+        cell: (storage) => <SeoTableTag tone="accent">{displayValue(storage.RetailPriority)}</SeoTableTag>,
       },
       {
         id: 'storage',
@@ -690,7 +667,10 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 220,
         accessor: (storage) => storage.Name,
         cell: (storage) => (
-          <Text fw={600}>{displayValue(storage.Name)}</Text>
+          <SeoTablePrimaryCell
+            icon={<IconBuildingWarehouse size={15} />}
+            title={displayValue(storage.Name)}
+          />
         ),
       },
       {
@@ -699,7 +679,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 280,
         minWidth: 220,
         accessor: (storage) => getOrganizationName(storage.Organization),
-        cell: (storage) => displayValue(getOrganizationName(storage.Organization)),
+        cell: (storage) => <SeoTableMutedCell>{displayValue(getOrganizationName(storage.Organization))}</SeoTableMutedCell>,
       },
       {
         id: 'locale',
@@ -707,7 +687,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 96,
         minWidth: 84,
         accessor: (storage) => storage.Locale,
-        cell: (storage) => displayValue(storage.Locale),
+        cell: (storage) => <SeoTableLocaleTag>{displayValue(storage.Locale)}</SeoTableLocaleTag>,
       },
       {
         id: 'status',
@@ -715,7 +695,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 126,
         minWidth: 112,
         accessor: (storage) => Boolean(storage.ForEcommerce),
-        cell: (storage) => <StatusBadge active={Boolean(storage.ForEcommerce)} activeLabel="Активний" inactiveLabel="Не активний" />,
+        cell: (storage) => <SeoTableStatusPill active={Boolean(storage.ForEcommerce)} activeLabel="Активний" inactiveLabel="Не активний" />,
       },
       {
         id: 'actions',
@@ -729,7 +709,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (storage) => (
-          <Group gap={4} justify="center" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
             <Tooltip label={t('Змінити пріоритет')}>
               <ActionIcon
                 aria-label={t('Змінити пріоритет')}
@@ -752,14 +732,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                 <IconTrash size={18} />
               </ActionIcon>
             </Tooltip>
-          </Group>
+          </SeoTableActionCell>
         ),
       },
     ],
     [isSaving, openPriorityEditor, requestRemoveStorage, t],
   )
 
-  const allStorageColumns: DataTableColumn<OnlineShopStorage>[] = [
+  const allStorageColumns: SeoRosterColumn<OnlineShopStorage>[] = [
       {
         id: 'status',
         header: 'Статус',
@@ -767,7 +747,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 112,
         accessor: (storage) => isStorageActive(storage, ecommerceStorages),
         cell: (storage) => (
-          <StatusBadge
+          <SeoTableStatusPill
             active={isStorageActive(storage, ecommerceStorages)}
             activeLabel="Активний"
             inactiveLabel="Не активний"
@@ -781,7 +761,10 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 220,
         accessor: (storage) => storage.Name,
         cell: (storage) => (
-          <Text fw={600}>{displayValue(storage.Name)}</Text>
+          <SeoTablePrimaryCell
+            icon={<IconBuildingWarehouse size={15} />}
+            title={displayValue(storage.Name)}
+          />
         ),
       },
       {
@@ -790,7 +773,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 280,
         minWidth: 220,
         accessor: (storage) => getOrganizationName(storage.Organization),
-        cell: (storage) => displayValue(getOrganizationName(storage.Organization)),
+        cell: (storage) => <SeoTableMutedCell>{displayValue(getOrganizationName(storage.Organization))}</SeoTableMutedCell>,
       },
       {
         id: 'locale',
@@ -798,7 +781,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 96,
         minWidth: 84,
         accessor: (storage) => storage.Locale,
-        cell: (storage) => displayValue(storage.Locale),
+        cell: (storage) => <SeoTableLocaleTag>{displayValue(storage.Locale)}</SeoTableLocaleTag>,
       },
       {
         id: 'priority',
@@ -806,7 +789,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 112,
         minWidth: 100,
         accessor: (storage) => Number(storage.RetailPriority || 0),
-        cell: (storage) => displayValue(storage.RetailPriority),
+        cell: (storage) => <SeoTableTag tone="accent">{displayValue(storage.RetailPriority)}</SeoTableTag>,
       },
       {
         id: 'actions',
@@ -823,7 +806,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
           const active = isStorageActive(storage, ecommerceStorages)
 
           return (
-            <Box onClick={(event) => event.stopPropagation()}>
+            <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
               <Tooltip label={active ? t('Вже додано') : t('Додати')}>
                 <ActionIcon
                   aria-label={active ? t('Вже додано') : t('Додати')}
@@ -835,65 +818,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
                   <IconPlus size={18} />
                 </ActionIcon>
               </Tooltip>
-            </Box>
+            </SeoTableActionCell>
           )
         },
       },
   ]
-
-  const pagesToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {pageSearchValue ? `${t('пошук')}: ${pageSearchValue}` : ''}
-      </Text>
-    ),
-    [pageSearchValue, t],
-  )
-
-  const contactsToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {contactSearchValue ? `${t('пошук')}: ${contactSearchValue}` : ''}
-      </Text>
-    ),
-    [contactSearchValue, t],
-  )
-
-  const clientsToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {clientSearchValue ? `${t('пошук')}: ${clientSearchValue}` : ''}
-      </Text>
-    ),
-    [clientSearchValue, t],
-  )
-
-  const cardsToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {cardSearchValue ? `${t('пошук')}: ${cardSearchValue}` : ''}
-      </Text>
-    ),
-    [cardSearchValue, t],
-  )
-
-  const storagesToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {storageSearchValue ? `${t('пошук')}: ${storageSearchValue}` : ''}
-      </Text>
-    ),
-    [storageSearchValue, t],
-  )
-
-  const allStoragesToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {allStorageSearchValue ? `${t('пошук')}: ${allStorageSearchValue}` : ''}
-      </Text>
-    ),
-    [allStorageSearchValue, t],
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -1414,14 +1343,14 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   }
 
   return {
-    t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft, allStoragesToolbarLeft,
-    availableStorages, cardSearchDraft, cards, cardsToolbarLeft, clientColumns, clientSearchDraft, clients,
-    clientsToolbarLeft, contactColumns, contactFormValues, contactSearchDraft, contacts, contactsToolbarLeft,
+    t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft,
+    availableStorages, cardSearchDraft, cards, clientColumns, clientSearchDraft, clients,
+    contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
-    pagesToolbarLeft, paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    removeStorageTarget, settings, storageSearchDraft, storagesToolbarLeft, allStorageSearchValue,
+    paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
+    removeStorageTarget, settings, storageSearchDraft, allStorageSearchValue,
     cardSearchValue, clientSearchValue, contactSearchValue, pageSearchValue, storageSearchValue,
     changeAllStorageSearch, changeCardSearch, changeClientSearch, changeContactSearch, changePageSearch,
     changeStorageSearch, closeContactEditor, closeGeneralLocaleEditor, closePageEditor, closePriorityEditor, handleAddStorage, handleContactImageChange,
@@ -1462,14 +1391,14 @@ export function OnlineShopSeoPage() {
 
 function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageModel>) {
   const {
-    t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft, allStoragesToolbarLeft,
-    availableStorages, cardSearchDraft, cards, cardsToolbarLeft, clientColumns, clientSearchDraft, clients,
-    clientsToolbarLeft, contactColumns, contactFormValues, contactSearchDraft, contacts, contactsToolbarLeft,
+    t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft,
+    availableStorages, cardSearchDraft, cards, clientColumns, clientSearchDraft, clients,
+    contactColumns, contactFormValues, contactSearchDraft, contacts,
     ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
-    pagesToolbarLeft, paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    removeStorageTarget, settings, storageSearchDraft, storagesToolbarLeft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
+    paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
+    removeStorageTarget, settings, storageSearchDraft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
     closePriorityEditor, handleAddStorage, handleContactImageChange, handleRemoveContact, handleRemoveStorage,
     handleSaveContact, handleSaveContactInfo, handleSavePage, handleSavePayment, handleSaveStoragePriority,
     handleSelectPaymentRegister, handleToggleOnlineShopClient, changeAllStorageSearch, changeCardSearch,
@@ -1612,19 +1541,17 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'pages' && (
               <Box pt="md">
               <Stack gap="md">
-                <DataTable
+                <SeoRosterTable
                   columns={pageColumns}
+                  columnsTemplate="minmax(280px, 1.25fr) minmax(180px, 0.74fr) minmax(140px, 0.64fr) 88px 138px 42px"
                   data={pageRows}
-                  defaultLayout={SEO_PAGES_TABLE_DEFAULT_LAYOUT}
                   emptyText={t('Сторінок не знайдено')}
+                  getRowClassName={(row) => (row.locale === 'ru' ? 'is-ru' : undefined)}
                   getRowId={(row, index) => `${row.locale}-${row.page.NetUid || row.page.Id || index}`}
                   isLoading={isLoading}
-                  layoutVersion="online-shop-seo-pages-table-1"
                   loadingText={t('Завантаження сторінок')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1260}
-                  tableId="online-shop-seo-pages"
-                  toolbarLeft={pagesToolbarLeft}
+                  minWidth={900}
                   onRowClick={openPageEditor}
                 />
               </Stack>
@@ -1720,19 +1647,16 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'contacts' && (
               <Box pt="md">
               <Stack gap="md">
-                <DataTable
+                <SeoRosterTable
                   columns={contactColumns}
+                  columnsTemplate="minmax(240px, 1fr) 170px 220px 130px 110px 138px 74px"
                   data={contacts}
-                  defaultLayout={SEO_CONTACTS_TABLE_DEFAULT_LAYOUT}
                   emptyText={t('Контактів не знайдено')}
                   getRowId={(contact, index) => String(contact.NetUid || contact.Id || index)}
                   isLoading={isLoading}
-                  layoutVersion="online-shop-seo-contacts-table-1"
                   loadingText={t('Завантаження контактів')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1220}
-                  tableId="online-shop-seo-contacts"
-                  toolbarLeft={contactsToolbarLeft}
+                  minWidth={1080}
                   onRowClick={openContactEditor}
                 />
               </Stack>
@@ -1742,19 +1666,16 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'shop-clients' && (
               <Box pt="md">
               <Stack gap="md">
-                <DataTable
+                <SeoRosterTable
                   columns={clientColumns}
+                  columnsTemplate="118px minmax(250px, 1fr) 118px 170px 220px 118px 54px"
                   data={clients}
-                  defaultLayout={ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT}
                   emptyText={t('Клієнтів не знайдено')}
                   getRowId={(client, index) => String(client.NetUid || client.Id || index)}
                   isLoading={isClientsLoading}
-                  layoutVersion="online-shop-seo-clients-table-1"
                   loadingText={t('Завантаження клієнтів')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1170}
-                  tableId="online-shop-seo-clients"
-                  toolbarLeft={clientsToolbarLeft}
+                  minWidth={1048}
                   onRowClick={(client) => void handleToggleOnlineShopClient(client)}
                 />
               </Stack>
@@ -1764,19 +1685,16 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'bank-cards' && (
               <Box pt="md">
               <Stack gap="md">
-                <DataTable
+                <SeoRosterTable
                   columns={paymentRegisterColumns}
+                  columnsTemplate="118px minmax(220px, 0.9fr) 88px minmax(210px, 1fr) minmax(190px, 0.85fr) minmax(240px, 1fr) 118px 54px"
                   data={cards}
-                  defaultLayout={PAYMENT_REGISTERS_TABLE_DEFAULT_LAYOUT}
                   emptyText={t('Банківських карток не знайдено')}
                   getRowId={(register, index) => String(register.NetUid || register.Id || index)}
                   isLoading={isCardsLoading}
-                  layoutVersion="online-shop-seo-payment-registers-table-1"
                   loadingText={t('Завантаження карток')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1370}
-                  tableId="online-shop-seo-payment-registers"
-                  toolbarLeft={cardsToolbarLeft}
+                  minWidth={1236}
                   onRowClick={(register) => void handleSelectPaymentRegister(register)}
                 />
               </Stack>
@@ -1786,19 +1704,16 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'warehouses' && (
               <Box pt="md">
               <Stack gap="md">
-                <DataTable
+                <SeoRosterTable
                   columns={ecommerceStorageColumns}
+                  columnsTemplate="100px minmax(250px, 1fr) minmax(260px, 1fr) 88px 118px 82px"
                   data={activeStorages}
-                  defaultLayout={ECOMMERCE_STORAGES_TABLE_DEFAULT_LAYOUT}
                   emptyText={t('Активних складів не знайдено')}
                   getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
                   isLoading={isStoragesLoading}
-                  layoutVersion="online-shop-seo-ecommerce-storages-table-1"
                   loadingText={t('Завантаження складів')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1000}
-                  tableId="online-shop-seo-ecommerce-storages"
-                  toolbarLeft={storagesToolbarLeft}
+                  minWidth={898}
                 />
               </Stack>
               </Box>
@@ -2102,24 +2017,227 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             onReset={resetAllStorageSearch}
           />
 
-          <DataTable
+          <SeoRosterTable
             columns={allStorageColumns}
+            columnsTemplate="118px minmax(250px, 1fr) minmax(260px, 1fr) 88px 100px 64px"
             data={availableStorages}
-            defaultLayout={ALL_STORAGES_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Складів не знайдено')}
             getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
             isLoading={isStoragesLoading}
-            layoutVersion="online-shop-seo-all-storages-table-1"
             loadingText={t('Завантаження складів')}
             maxHeight="calc(100vh - 220px)"
-            minWidth={980}
-            tableId="online-shop-seo-all-storages"
-            toolbarLeft={allStoragesToolbarLeft}
+            minWidth={880}
             onRowClick={(storage) => void handleAddStorage(storage)}
           />
         </Stack>
       </AppDrawer>
     </Stack>
+  )
+}
+
+function SeoRosterTable<TData>({
+  columns,
+  columnsTemplate,
+  data,
+  emptyText,
+  getRowClassName,
+  getRowId,
+  isLoading,
+  loadingText,
+  maxHeight,
+  minWidth,
+  onRowClick,
+}: {
+  columns: SeoRosterColumn<TData>[]
+  columnsTemplate: string
+  data: TData[]
+  emptyText: ReactNode
+  getRowClassName?: (row: TData, index: number) => string | undefined
+  getRowId: (row: TData, index: number) => string
+  isLoading?: boolean
+  loadingText: ReactNode
+  maxHeight: string
+  minWidth: number
+  onRowClick?: (row: TData) => void
+}) {
+  const tableStyle = {
+    '--seo-roster-columns': columnsTemplate,
+    '--seo-roster-min-width': `${minWidth}px`,
+  } as CSSProperties
+
+  return (
+    <div className="seo-roster-table" style={tableStyle}>
+      <div className="seo-roster-head">
+        {columns.map((column) => (
+          <span className={`seo-roster-head-cell is-${column.id}`} key={column.id}>
+            {column.header}
+          </span>
+        ))}
+      </div>
+
+      <ScrollArea.Autosize mah={maxHeight} type="auto">
+        <div className="seo-roster-body">
+          {isLoading ? (
+            <div className="seo-roster-empty">{loadingText}</div>
+          ) : data.length ? (
+            data.map((row, index) => {
+              const rowClassName = getRowClassName?.(row, index)
+              const rowId = getRowId(row, index)
+
+              return (
+                <div className="seo-roster-row-frame" key={rowId}>
+                  <div
+                    className={[
+                      'seo-roster-row',
+                      rowClassName,
+                      onRowClick ? 'is-clickable' : undefined,
+                    ].filter(Boolean).join(' ')}
+                    role={onRowClick ? 'button' : undefined}
+                    tabIndex={onRowClick ? 0 : undefined}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    onKeyDown={onRowClick
+                      ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          onRowClick(row)
+                        }
+                      }
+                      : undefined}
+                  >
+                    {columns.map((column) => (
+                      <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
+                        {column.cell ? column.cell(row) : displayValue(column.accessor?.(row))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="seo-roster-empty">{emptyText}</div>
+          )}
+        </div>
+      </ScrollArea.Autosize>
+    </div>
+  )
+}
+
+function SeoTablePrimaryCell({
+  avatar,
+  icon,
+  subtitle,
+  title,
+}: {
+  avatar?: ReactNode
+  icon?: ReactNode
+  subtitle?: ReactNode
+  title: ReactNode
+}) {
+  return (
+    <div className="seo-table-primary-cell">
+      {avatar || (
+        <span className="seo-table-primary-icon" aria-hidden>
+          {icon}
+        </span>
+      )}
+      <span className="seo-table-primary-copy">
+        <Text className="seo-table-primary-title">{title}</Text>
+        {subtitle ? (
+          <Text className="seo-table-primary-subtitle">{subtitle}</Text>
+        ) : null}
+      </span>
+    </div>
+  )
+}
+
+function SeoTableTextCell({ primary }: { primary: ReactNode }) {
+  return (
+    <span className="seo-table-text-cell">
+      <Text className="seo-table-text-primary">{primary}</Text>
+    </span>
+  )
+}
+
+function SeoTableDateCell({ value }: { value?: Date | string }) {
+  const formattedValue = formatDateTime(value)
+  const [datePart, timePart] = formattedValue.split(',').map((part) => part.trim())
+
+  return (
+    <span className="seo-table-date-cell">
+      <Text className="seo-table-date-primary">{displayValue(datePart)}</Text>
+      {timePart ? (
+        <Text className="seo-table-date-secondary">{timePart}</Text>
+      ) : null}
+    </span>
+  )
+}
+
+function SeoTableMutedCell({
+  children,
+  tone = 'default',
+}: {
+  children: ReactNode
+  tone?: 'date' | 'default' | 'url'
+}) {
+  return <span className={`seo-table-muted-cell is-${tone}`}>{children}</span>
+}
+
+function SeoTableRoleLikeCell({
+  children,
+  icon,
+  tone = 'default',
+}: {
+  children: ReactNode
+  icon: ReactNode
+  tone?: 'date' | 'default' | 'url'
+}) {
+  return (
+    <span className="seo-table-role-like-cell">
+      <span className="seo-table-role-like-icon" aria-hidden>
+        {icon}
+      </span>
+      <SeoTableMutedCell tone={tone}>{children}</SeoTableMutedCell>
+    </span>
+  )
+}
+
+function SeoTableTag({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'accent' | 'locale' | 'neutral' }) {
+  return <span className={`seo-table-tag is-${tone}`}>{children}</span>
+}
+
+function SeoTableLocaleTag({ children }: { children: ReactNode }) {
+  return <SeoTableTag tone="locale">{children}</SeoTableTag>
+}
+
+function SeoTableStatusPill({
+  active,
+  activeLabel,
+  inactiveLabel,
+}: {
+  active: boolean
+  activeLabel: TranslationKey
+  inactiveLabel: TranslationKey
+}) {
+  const { t } = useI18n()
+
+  return (
+    <span className={`seo-table-status-pill ${active ? 'is-active' : 'is-inactive'}`}>
+      {active ? t(activeLabel) : t(inactiveLabel)}
+    </span>
+  )
+}
+
+function SeoTableActionCell({
+  children,
+  onClick,
+}: {
+  children: ReactNode
+  onClick?: MouseEventHandler<HTMLDivElement>
+}) {
+  return (
+    <div className="seo-table-action-cell" onClick={onClick}>
+      {children}
+    </div>
   )
 }
 
@@ -2298,6 +2416,21 @@ function shortText(value: string | undefined, maxLength: number) {
 
 function getContactInitials(contact: SeoContact) {
   const name = contact.Name?.trim()
+
+  if (!name) {
+    return '?'
+  }
+
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+}
+
+function getClientInitials(client: OnlineShopClient) {
+  const name = getClientDisplayName(client).trim()
 
   if (!name) {
     return '?'
