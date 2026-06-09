@@ -20,7 +20,9 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCheck,
+  IconCreditCard,
   IconDeviceFloppy,
+  IconInfoCircle,
   IconPencil,
   IconPhoto,
   IconPlus,
@@ -64,7 +66,6 @@ import {
 } from '../api/onlineShopSeoApi'
 import {
   ContactInfoForm,
-  LocaleAccordion,
   PaymentInfoForm,
   SearchToolbar,
   StatusBadge,
@@ -162,6 +163,66 @@ const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
 const EMPTY_PAGE_FORM_VALUES = pageToFormValues(null)
 const EMPTY_CONTACT_FORM_VALUES = contactToFormValues(null)
 
+type SeoGeneralMatrixGroup = 'contact' | 'payment'
+type SeoGeneralContactFieldId = keyof SeoContactInfoFormValues
+type SeoGeneralPaymentFieldId = keyof SeoPaymentFormValues
+
+type SeoGeneralMatrixField =
+  | {
+    description: TranslationKey
+    group: 'contact'
+    id: SeoGeneralContactFieldId
+    input: 'text' | 'textarea'
+    label: TranslationKey
+  }
+  | {
+    description: TranslationKey
+    group: 'payment'
+    id: SeoGeneralPaymentFieldId
+    input: 'text' | 'textarea'
+    label: TranslationKey
+  }
+
+type SeoGeneralMatrixSection = {
+  description: TranslationKey
+  fields: SeoGeneralMatrixField[]
+  group: SeoGeneralMatrixGroup
+  label: TranslationKey
+}
+
+const SEO_GENERAL_MATRIX_SECTIONS: SeoGeneralMatrixSection[] = [
+  {
+    description: 'Адреса, телефон, пошта, сайт і Pixel ID',
+    fields: [
+      { description: 'Публічна адреса магазину', group: 'contact', id: 'Address', input: 'textarea', label: 'Адреса' },
+      { description: 'Основний телефон для клієнтів', group: 'contact', id: 'Phone', input: 'text', label: 'Телефон' },
+      { description: 'Поштова скринька магазину', group: 'contact', id: 'Email', input: 'text', label: 'E-mail' },
+      { description: 'Посилання на сайт', group: 'contact', id: 'SiteUrl', input: 'text', label: 'Site URL' },
+      { description: 'Ідентифікатор рекламного пікселя', group: 'contact', id: 'PixelId', input: 'text', label: 'Pixel ID' },
+    ],
+    group: 'contact',
+    label: 'Загальна інформація',
+  },
+  {
+    description: 'Суми, коментарі та повідомлення оформлення',
+    fields: [
+      { description: 'Текст або сума передплати', group: 'payment', id: 'LowPrice', input: 'text', label: 'Передплата' },
+      { description: 'Текст або сума повної ціни', group: 'payment', id: 'FullPrice', input: 'text', label: 'Повна ціна' },
+      { description: 'Коментар для платіжної картки', group: 'payment', id: 'Comment', input: 'textarea', label: 'Коментар для картки' },
+      {
+        description: 'Текст після швидкого замовлення',
+        group: 'payment',
+        id: 'FastOrderSuccessMessage',
+        input: 'textarea',
+        label: 'Повідомлення про успішне замовлення',
+      },
+      { description: 'Повідомлення для сценарію зі скріншотом', group: 'payment', id: 'ScreenshotMessage', input: 'textarea', label: 'Повідомлення' },
+    ],
+    group: 'payment',
+    label: 'Оплата',
+  },
+]
+
 function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab) => void) {
   const { t } = useI18n()
   const [settings, setSettings] = useValueState<SeoLocaleEntry[]>([])
@@ -177,6 +238,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const [storageSearchValue, setStorageSearchValue] = useValueState('')
   const [allStorageSearchDraft, setAllStorageSearchDraft] = useValueState('')
   const [allStorageSearchValue, setAllStorageSearchValue] = useValueState('')
+  const [editingGeneralLocale, setEditingGeneralLocale] = useValueState<string | null>(null)
   const [onlineShopClients, setOnlineShopClients] = useValueState<OnlineShopClient[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<OnlineShopPaymentRegister[]>([])
   const [ecommerceStorages, setEcommerceStorages] = useValueState<OnlineShopStorage[]>([])
@@ -229,7 +291,6 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     () => filterStorages(markEcommerceStorages(allStorages, ecommerceStorages), allStorageSearchValue),
     [allStorageSearchValue, allStorages, ecommerceStorages],
   )
-
   const openPageEditor = useCallback((row: SeoPageRow) => {
     setSelectedPageRow(row)
     setPageFormValues(pageToFormValues(row.page))
@@ -1102,9 +1163,20 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     }
   }
 
+  const openGeneralLocaleEditor = useCallback((entry: SeoLocaleEntry) => {
+    setEditingGeneralLocale(entry.locale)
+    setFormError(null)
+  }, [setEditingGeneralLocale, setFormError])
+
+  function closeGeneralLocaleEditor() {
+    setEditingGeneralLocale(null)
+    setFormError(null)
+  }
+
   async function handleSaveContactInfo(locale: string, contactInfo: SeoContactInfo | null, values: SeoContactInfoFormValues) {
     setSaving(true)
     setError(null)
+    setFormError(null)
 
     try {
       const nextSettings = await updateSeoContactInfo({
@@ -1116,7 +1188,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Контактну інформацію оновлено') })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти контактну інформацію'))
+      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти контактну інформацію'))
     } finally {
       setSaving(false)
     }
@@ -1129,6 +1201,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
     setSaving(true)
     setError(null)
+    setFormError(null)
 
     try {
       const nextSettings = await updateSeoPaymentInfo({
@@ -1140,7 +1213,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
       setSettings(nextSettings)
       notifications.show({ color: 'green', message: t('Інформацію про оплату оновлено') })
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інформацію про оплату'))
+      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти інформацію про оплату'))
     } finally {
       setSaving(false)
     }
@@ -1344,19 +1417,20 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft, allStoragesToolbarLeft,
     availableStorages, cardSearchDraft, cards, cardsToolbarLeft, clientColumns, clientSearchDraft, clients,
     clientsToolbarLeft, contactColumns, contactFormValues, contactSearchDraft, contacts, contactsToolbarLeft,
-    ecommerceStorageColumns, ecommerceStorages, editingContact, error, formError, isCardsLoading,
+    ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     pagesToolbarLeft, paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
     removeStorageTarget, settings, storageSearchDraft, storagesToolbarLeft, allStorageSearchValue,
     cardSearchValue, clientSearchValue, contactSearchValue, pageSearchValue, storageSearchValue,
     changeAllStorageSearch, changeCardSearch, changeClientSearch, changeContactSearch, changePageSearch,
-    changeStorageSearch, closeContactEditor, closePageEditor, closePriorityEditor, handleAddStorage, handleContactImageChange,
+    changeStorageSearch, closeContactEditor, closeGeneralLocaleEditor, closePageEditor, closePriorityEditor, handleAddStorage, handleContactImageChange,
     handleRemoveContact, handleRemoveStorage, handleSaveContact, handleSaveContactInfo, handleSavePage,
     handleSavePayment, handleSaveStoragePriority, handleSelectPaymentRegister, handleToggleOnlineShopClient,
-    openContactEditor, openPageEditor, reload, resetAllStorageSearch, resetCardSearch, resetClientSearch,
+    openContactEditor, openGeneralLocaleEditor, openPageEditor, reload, resetAllStorageSearch, resetCardSearch, resetClientSearch,
     resetContactSearch, resetPageSearch, resetStorageSearch, setActiveTab, setContactField, setFormError,
-    setPageField, setPriorityValue, setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
+    setPageField, setPriorityValue, setRemoveContactTarget, setRemoveStorageTarget,
+    setStorageDrawerOpen,
   }
 }
 
@@ -1391,15 +1465,15 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     t, activeStorages, activeTab, allStorageColumns, allStorageSearchDraft, allStoragesToolbarLeft,
     availableStorages, cardSearchDraft, cards, cardsToolbarLeft, clientColumns, clientSearchDraft, clients,
     clientsToolbarLeft, contactColumns, contactFormValues, contactSearchDraft, contacts, contactsToolbarLeft,
-    ecommerceStorageColumns, ecommerceStorages, editingContact, error, formError, isCardsLoading,
+    ecommerceStorageColumns, ecommerceStorages, editingContact, editingGeneralLocale, error, formError, isCardsLoading,
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     pagesToolbarLeft, paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    removeStorageTarget, settings, storageSearchDraft, storagesToolbarLeft, closeContactEditor, closePageEditor,
+    removeStorageTarget, settings, storageSearchDraft, storagesToolbarLeft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
     closePriorityEditor, handleAddStorage, handleContactImageChange, handleRemoveContact, handleRemoveStorage,
     handleSaveContact, handleSaveContactInfo, handleSavePage, handleSavePayment, handleSaveStoragePriority,
     handleSelectPaymentRegister, handleToggleOnlineShopClient, changeAllStorageSearch, changeCardSearch,
-    changeClientSearch, changeContactSearch, changePageSearch, changeStorageSearch, openContactEditor, openPageEditor, reload,
+    changeClientSearch, changeContactSearch, changePageSearch, changeStorageSearch, openContactEditor, openGeneralLocaleEditor, openPageEditor, reload,
     resetAllStorageSearch, resetCardSearch, resetClientSearch, resetContactSearch, resetPageSearch,
     resetStorageSearch, setActiveTab, setContactField, setFormError, setPageField, setPriorityValue,
     setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
@@ -1446,6 +1520,11 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         </Button>
       )
       : null
+  const generalEntries = getOrderedSeoGeneralEntries(settings)
+  const generalEditorEntry = editingGeneralLocale
+    ? settings.find((entry) => entry.locale === editingGeneralLocale) || null
+    : null
+
   return (
     <Stack className="seo-page" gap="md">
       <PageHeaderActions>
@@ -1553,37 +1632,126 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             )}
 
             {activeTab === 'info-payment' && (
-              <Box pt="md">
-                <Stack gap="md">
-                  <div className="seo-page-form-section" id="seo-general-info-section">
-                    <Text className="seo-page-form-section-title">{t('Загальна інформація')}</Text>
-                    <LocaleAccordion entries={settings} emptyText={t('Контактної інформації не знайдено')}>
-                      {(entry) => (
-                        <ContactInfoForm
-                          key={`${entry.locale}-${entry.settings.EcommerceContactInfo?.NetUid || 'new'}`}
-                          contactInfo={entry.settings.EcommerceContactInfo || null}
-                          isSaving={isSaving}
-                          locale={entry.locale}
-                          onSave={handleSaveContactInfo}
-                        />
-                      )}
-                    </LocaleAccordion>
-                  </div>
-                  <div className="seo-page-form-section" id="seo-payment-section">
-                    <Text className="seo-page-form-section-title">{t('Оплата')}</Text>
-                    <LocaleAccordion entries={settings} emptyText={t('Інформації про оплату не знайдено')}>
-                      {(entry) => (
-                        <PaymentInfoForm
-                          key={`${entry.locale}-${entry.settings.RetailPaymentTypeTranslate?.NetUid || 'new'}`}
-                          isSaving={isSaving}
-                          locale={entry.locale}
-                          payment={entry.settings.RetailPaymentTypeTranslate || null}
-                          onSave={handleSavePayment}
-                        />
-                      )}
-                    </LocaleAccordion>
-                  </div>
-                </Stack>
+              <Box className="seo-general-content" pt="md">
+                <div className="seo-matrix">
+                  {generalEntries.length ? (
+                    <div className="seo-settings-tree">
+                      {generalEntries.map((entry, localeIndex) => (
+                        <section
+                          className={`seo-settings-tree-module${localeIndex > 0 ? ' is-separated' : ''}`}
+                          key={entry.locale}
+                        >
+                          <div className="seo-settings-tree-module-header">
+                            <button
+                              className="seo-settings-tree-module-title"
+                              disabled={isSaving}
+                              type="button"
+                              onClick={() => openGeneralLocaleEditor(entry)}
+                            >
+                              <Text className="seo-settings-tree-module-name">{entry.locale}</Text>
+                            </button>
+                            <Tooltip label={t('Редагувати')}>
+                              <ActionIcon
+                                aria-label={`${t('Редагувати')} ${entry.locale}`}
+                                className="seo-settings-tree-action"
+                                color="gray"
+                                disabled={isSaving}
+                                size={26}
+                                type="button"
+                                variant="subtle"
+                                onClick={() => openGeneralLocaleEditor(entry)}
+                              >
+                                <IconPencil size={14} />
+                              </ActionIcon>
+                            </Tooltip>
+                          </div>
+
+                          <div className="seo-settings-tree-node-list">
+                            {SEO_GENERAL_MATRIX_SECTIONS.map((section) => {
+                              const isSectionMissing = section.group === 'payment' && !hasPaymentRecord(entry.settings.RetailPaymentTypeTranslate)
+                              const filledFieldCount = isSectionMissing
+                                ? 0
+                                : section.fields.filter((field) => getSeoGeneralMatrixValue(entry, field)).length
+
+                              return (
+                                <article className="seo-settings-tree-node" key={`${entry.locale}-${section.group}`}>
+                                  <div className="seo-settings-tree-node-row">
+                                    <span className="seo-settings-tree-node-icon">
+                                      {section.group === 'contact' ? <IconInfoCircle size={15} /> : <IconCreditCard size={15} />}
+                                    </span>
+                                    <button
+                                      className="seo-settings-tree-node-title"
+                                      disabled={isSaving}
+                                      type="button"
+                                      onClick={() => openGeneralLocaleEditor(entry)}
+                                    >
+                                      <Text className="seo-settings-tree-node-name">{t(section.label)}</Text>
+                                      <span className="seo-settings-tree-node-meta">
+                                        {isSectionMissing ? t('Запис відсутній') : `${filledFieldCount}/${section.fields.length} ${t('полів')}`}
+                                      </span>
+                                    </button>
+                                  </div>
+
+                                  <div className="seo-settings-tree-field-list">
+                                    {section.fields.map((field) => {
+                                      const value = getSeoGeneralMatrixValue(entry, field)
+                                      const isMissingRecord = !isSeoGeneralMatrixFieldEditable(entry, field)
+
+                                      return (
+                                        <div
+                                          className={`seo-settings-tree-field${value ? '' : ' is-empty'}${isMissingRecord ? ' is-disabled' : ''}`}
+                                          key={`${entry.locale}-${field.group}-${field.id}`}
+                                        >
+                                          <span className="seo-settings-tree-connector" aria-hidden />
+                                          <span className="seo-settings-tree-field-icon">
+                                            {field.group === 'contact' ? <IconInfoCircle size={13} /> : <IconCreditCard size={13} />}
+                                          </span>
+                                          <button
+                                            className="seo-settings-tree-field-body"
+                                            disabled={isSaving}
+                                            type="button"
+                                            onClick={() => openGeneralLocaleEditor(entry)}
+                                          >
+                                            <div className="seo-settings-tree-field-copy">
+                                              <Text className="seo-settings-tree-field-name">{t(field.label)}</Text>
+                                              <span className="seo-settings-tree-field-meta">
+                                                {isMissingRecord ? t('Запис відсутній') : displayValue(value, t('Не заповнено'))}
+                                              </span>
+                                            </div>
+                                            <span className="seo-settings-tree-field-line" aria-hidden />
+                                          </button>
+                                          <div className="seo-settings-tree-field-actions">
+                                            <Tooltip label={t('Редагувати')}>
+                                              <ActionIcon
+                                                aria-label={`${t('Редагувати')} ${entry.locale} ${t(field.label)}`}
+                                                color="gray"
+                                                disabled={isSaving}
+                                                size="sm"
+                                                type="button"
+                                                variant="subtle"
+                                                onClick={() => openGeneralLocaleEditor(entry)}
+                                              >
+                                                <IconPencil size={16} />
+                                              </ActionIcon>
+                                            </Tooltip>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </article>
+                              )
+                            })}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="seo-matrix-empty">
+                      <Text c="dimmed" size="sm">{t('Даних для редагування не знайдено')}</Text>
+                    </div>
+                  )}
+                </div>
               </Box>
             )}
 
@@ -1677,6 +1845,79 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
           </section>
         </div>
       </Box>
+
+      <AppDrawer
+        opened={Boolean(generalEditorEntry)}
+        size="standard"
+        title={generalEditorEntry ? `${t('Редагування')} ${getLocaleLabel(generalEditorEntry.locale)}` : t('Редагування')}
+        onClose={closeGeneralLocaleEditor}
+      >
+        {generalEditorEntry && (
+          <Stack className="seo-general-sheet" gap="md">
+            {formError && (
+              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                {formError}
+              </Alert>
+            )}
+            <div className="seo-general-sheet-context">
+              <div className="seo-matrix-editor-context">
+                <Badge className="seo-matrix-locale-pill" variant="light">
+                  {getLocaleLabel(generalEditorEntry.locale)}
+                </Badge>
+                <span>
+                  <Text className="seo-matrix-editor-eyebrow">{t('Мовна версія')}</Text>
+                  <Text className="seo-matrix-editor-title">{generalEditorEntry.locale}</Text>
+                </span>
+              </div>
+              <Button color="gray" size="xs" type="button" variant="light" onClick={closeGeneralLocaleEditor}>
+                {t('Закрити')}
+              </Button>
+            </div>
+
+            <section className="seo-general-sheet-section">
+              <div className="seo-general-sheet-section-header">
+                <span className="seo-matrix-section-icon">
+                  <IconInfoCircle size={15} />
+                </span>
+                <span>
+                  <Text className="seo-matrix-section-title">{t('Загальна інформація')}</Text>
+                  <Text className="seo-matrix-section-description">
+                    {t('Адреса, телефон, пошта, сайт і Pixel ID для вибраної мови.')}
+                  </Text>
+                </span>
+              </div>
+              <ContactInfoForm
+                key={`${generalEditorEntry.locale}-${generalEditorEntry.settings.EcommerceContactInfo?.NetUid || 'new'}`}
+                contactInfo={generalEditorEntry.settings.EcommerceContactInfo || null}
+                isSaving={isSaving}
+                locale={generalEditorEntry.locale}
+                onSave={handleSaveContactInfo}
+              />
+            </section>
+
+            <section className="seo-general-sheet-section">
+              <div className="seo-general-sheet-section-header">
+                <span className="seo-matrix-section-icon">
+                  <IconCreditCard size={15} />
+                </span>
+                <span>
+                  <Text className="seo-matrix-section-title">{t('Оплата')}</Text>
+                  <Text className="seo-matrix-section-description">
+                    {t('Суми, коментарі та повідомлення, які бачить клієнт під час оформлення.')}
+                  </Text>
+                </span>
+              </div>
+              <PaymentInfoForm
+                key={`${generalEditorEntry.locale}-${generalEditorEntry.settings.RetailPaymentTypeTranslate?.NetUid || 'new'}`}
+                isSaving={isSaving}
+                locale={generalEditorEntry.locale}
+                payment={generalEditorEntry.settings.RetailPaymentTypeTranslate || null}
+                onSave={handleSavePayment}
+              />
+            </section>
+          </Stack>
+        )}
+      </AppDrawer>
 
       <AppModal centered opened={isPageEditorOpen} size="xl" title={t('Редагування SEO сторінки')} onClose={closePageEditor}>
         <form onSubmit={handleSavePage}>
@@ -1918,6 +2159,43 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       </AppDrawer>
     </Stack>
   )
+}
+
+function getOrderedSeoGeneralEntries(entries: SeoLocaleEntry[]) {
+  const localeOrder = new Map<string, number>([
+    ['uk', 0],
+    ['ua', 0],
+    ['ru', 1],
+  ])
+
+  return [...entries].sort((leftEntry, rightEntry) => {
+    const leftLocale = leftEntry.locale.toLowerCase()
+    const rightLocale = rightEntry.locale.toLowerCase()
+    const leftOrder = localeOrder.get(leftLocale) ?? 10
+    const rightOrder = localeOrder.get(rightLocale) ?? 10
+
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder
+    }
+
+    return leftLocale.localeCompare(rightLocale)
+  })
+}
+
+function getSeoGeneralMatrixValue(entry: SeoLocaleEntry, field: SeoGeneralMatrixField) {
+  if (field.group === 'contact') {
+    const record = entry.settings.EcommerceContactInfo as Partial<Record<SeoGeneralContactFieldId, string>> | null | undefined
+
+    return record?.[field.id] || ''
+  }
+
+  const record = entry.settings.RetailPaymentTypeTranslate as Partial<Record<SeoGeneralPaymentFieldId, string>> | null | undefined
+
+  return record?.[field.id] || ''
+}
+
+function isSeoGeneralMatrixFieldEditable(entry: SeoLocaleEntry, field: SeoGeneralMatrixField) {
+  return field.group === 'contact' || hasPaymentRecord(entry.settings.RetailPaymentTypeTranslate)
 }
 
 function isSeoTabSlug(slug: string | undefined): slug is SeoTab {
