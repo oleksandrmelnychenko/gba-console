@@ -124,31 +124,46 @@ function buildModelsFromTask(
     }
   }
 
-  readArray(record.PortWorkServices).forEach((service) =>
-    models.push(
-      buildServiceModel(service, next(), {
-        iconServiceNameKey: 'Портові роботи',
-        mergeKind: 'portWorkService',
-        organization: asRecord(service.PortWorkOrganization),
-      }),
-    ),
-  )
+  const portWorkServices = readArray(record.PortWorkServices)
+  if (portWorkServices.length >= 2) {
+    models.push(buildPortWorkServicesModel(portWorkServices, next()))
+  } else {
+    portWorkServices.forEach((service) =>
+      models.push(
+        buildServiceModel(service, next(), {
+          iconServiceNameKey: 'Портові роботи',
+          mergeKind: 'portWorkService',
+          organization: asRecord(service.PortWorkOrganization),
+        }),
+      ),
+    )
+  }
 
   readArray(record.MergedServices).forEach((service) =>
     models.push(buildMergedServiceModel(service, next())),
   )
 
-  readArray(record.ContainerServices).forEach((service) =>
-    models.push(buildContainerServiceModel(service, next())),
-  )
+  const containerServices = readArray(record.ContainerServices)
+  if (containerServices.length >= 2) {
+    models.push(buildContainerServicesModel(containerServices, next()))
+  } else {
+    containerServices.forEach((service) =>
+      models.push(buildContainerServiceModel(service, next())),
+    )
+  }
 
   readArray(record.VehicleServices).forEach((service) =>
     models.push(buildVehicleServiceModel(service, next())),
   )
 
-  readArray(record.BillOfLadingServices).forEach((service) =>
-    models.push(buildBillOfLadingServiceModel(service, next())),
-  )
+  const billOfLadingServices = readArray(record.BillOfLadingServices)
+  if (billOfLadingServices.length >= 2) {
+    models.push(buildBillOfLadingServicesModel(billOfLadingServices, next()))
+  } else {
+    billOfLadingServices.forEach((service) =>
+      models.push(buildBillOfLadingServiceModel(service, next())),
+    )
+  }
 
   if (models.length === 0) {
     models.push(buildFallbackModel(next()))
@@ -189,8 +204,6 @@ function buildConsumableOrderModel(consumableOrder: DataRecord, context: BuildCo
     documents: readDocuments(consumableOrder.ConsumablesOrderDocuments),
     organization: organization as AvailablePaymentsOrganization | null,
     organizationName: readString(organization, ['Name']),
-    mergeKind: 'containerService',
-    mergeOrganizationNetUid: getEntityValue(organization),
     payForOrganization: asRecord(agreement?.Organization),
     rows,
     serviceAgreementNetId: readString(agreement, ['NetUid']),
@@ -392,6 +405,31 @@ function buildMergedServiceModel(service: DataRecord, context: BuildContext): Av
   })
 }
 
+function buildPortWorkServicesModel(services: DataRecord[], context: BuildContext): AvailablePaymentTaskModel {
+  const { t, task } = context
+  const firstService = services[0] || {}
+  const agreement = asRecord(firstService.SupplyOrganizationAgreement)
+  const organization = asRecord(firstService.PortWorkOrganization)
+  const supplyOrder = asRecord(firstService.SupplyOrder)
+  const supplyOrders = readArray(firstService.SupplyOrders)
+
+  return baseModel(context, {
+    columns: serviceColumns(t, services.some(hasServiceDetails)),
+    currency: asRecord(agreement?.Currency) as AvailablePaymentsCurrency | null,
+    documents: services.flatMap((service) => readDocuments(service.InvoiceDocuments)),
+    organization: organization as AvailablePaymentsOrganization | null,
+    organizationName: readString(organization, ['Name']),
+    mergeKind: 'portWorkService',
+    mergeOrganizationNetUid: getEntityValue(organization),
+    payForOrganization: asRecord(supplyOrders[0]?.Organization),
+    rows: services.flatMap((service) => rowsFromBaseService(service, task, asRecord(service.SupplyOrganizationAgreement))),
+    serviceAgreementNetId: readString(agreement, ['NetUid']),
+    serviceName: serviceName('Портові роботи', task, t),
+    serviceNumber: readString(firstService, ['ServiceNumber']),
+    supplyOrderNetUid: readString(supplyOrder, ['NetUid']) || readString(supplyOrders[0] || null, ['NetUid']),
+  })
+}
+
 function buildContainerServiceModel(service: DataRecord, context: BuildContext): AvailablePaymentTaskModel {
   const { t, task } = context
   const agreement = asRecord(service.SupplyOrganizationAgreement)
@@ -404,11 +442,37 @@ function buildContainerServiceModel(service: DataRecord, context: BuildContext):
     documents: readDocuments(service.InvoiceDocuments),
     organization: organization as AvailablePaymentsOrganization | null,
     organizationName: readString(organization, ['Name']),
+    mergeKind: 'containerService',
+    mergeOrganizationNetUid: getEntityValue(organization),
     payForOrganization: asRecord(agreement?.Organization),
     rows: [containerServiceRow(service, task, agreement)],
     serviceAgreementNetId: readString(agreement, ['NetUid']),
     serviceName: serviceName('Контейнер', task, t),
     serviceNumber: readString(service, ['ServiceNumber']),
+    supplyOrderNetUid: readString(asRecord(firstLink?.SupplyOrder), ['NetUid']),
+  })
+}
+
+function buildContainerServicesModel(services: DataRecord[], context: BuildContext): AvailablePaymentTaskModel {
+  const { t, task } = context
+  const firstService = services[0] || {}
+  const agreement = asRecord(firstService.SupplyOrganizationAgreement)
+  const organization = asRecord(firstService.ContainerOrganization)
+  const firstLink = readArray(firstService.SupplyOrderContainerServices)[0] || null
+
+  return baseModel(context, {
+    columns: deliveryServiceColumns(t, true),
+    currency: asRecord(agreement?.Currency) as AvailablePaymentsCurrency | null,
+    documents: services.flatMap((service) => readDocuments(service.InvoiceDocuments)),
+    organization: organization as AvailablePaymentsOrganization | null,
+    organizationName: readString(organization, ['Name']),
+    mergeKind: 'containerService',
+    mergeOrganizationNetUid: getEntityValue(organization),
+    payForOrganization: asRecord(agreement?.Organization),
+    rows: services.map((service) => containerServiceRow(service, task, asRecord(service.SupplyOrganizationAgreement))),
+    serviceAgreementNetId: readString(agreement, ['NetUid']),
+    serviceName: serviceName('Контейнер', task, t),
+    serviceNumber: readString(firstService, ['ServiceNumber']),
     supplyOrderNetUid: readString(asRecord(firstLink?.SupplyOrder), ['NetUid']),
   })
 }
@@ -431,6 +495,34 @@ function buildVehicleServiceModel(service: DataRecord, context: BuildContext): A
     serviceName: serviceName('Вантажівка', task, t),
     serviceNumber: readString(service, ['ServiceNumber']),
     supplyOrderNetUid: readString(asRecord(firstLink?.SupplyOrder), ['NetUid']),
+  })
+}
+
+function buildBillOfLadingServicesModel(services: DataRecord[], context: BuildContext): AvailablePaymentTaskModel {
+  const { t, task } = context
+  const firstService = services[0] || {}
+  const agreement = asRecord(firstService.SupplyOrganizationAgreement)
+  const supplyOrganization = asRecord(firstService.SupplyOrganization)
+  const deliveryProtocol = asRecord(firstService.DeliveryProductProtocol)
+  const isContainer = readNumber(firstService, ['TypeBillOfLadingService']) === 0
+
+  const documents = services.flatMap((service) => [
+    ...readDocuments(service.InvoiceDocuments),
+    ...readDocuments(service.BillOfLadingDocuments),
+  ])
+
+  return baseModel(context, {
+    columns: deliveryServiceColumns(t, isContainer),
+    currency: asRecord(agreement?.Currency) as AvailablePaymentsCurrency | null,
+    documents,
+    organization: supplyOrganization as AvailablePaymentsOrganization | null,
+    organizationName: readString(supplyOrganization, ['Name']),
+    payForOrganization: asRecord(agreement?.Organization),
+    rows: services.flatMap((service) => billOfLadingRows(service, task, asRecord(service.SupplyOrganizationAgreement))),
+    serviceAgreementNetId: readString(agreement, ['NetUid']),
+    serviceName: serviceName(isContainer ? 'Контейнер' : 'Вантажівка', task, t),
+    serviceNumber: readString(firstService, ['ServiceNumber']),
+    deliveryProductProtocolNetUid: readString(deliveryProtocol, ['NetUid']),
   })
 }
 

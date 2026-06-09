@@ -72,6 +72,34 @@ describe('payment task model mapper', () => {
     })
   })
 
+  it('does not mark consumable orders as mergeable container services', () => {
+    const models = buildTaskModels(
+      {
+        SupplyPaymentTasks: [
+          {
+            ConsumablesOrder: {
+              ConsumableProductOrganization: { Name: 'Consumables org', NetUid: 'consumables-org' },
+              ConsumablesOrderItems: [],
+              Number: 'CO-1',
+              SupplyOrganizationAgreement: {
+                Currency: { Code: 'UAH' },
+                NetUid: 'agreement-1',
+                Organization: { Name: 'AMG', NetUid: 'payer-org' },
+              },
+            },
+            GrossPrice: 100,
+            NetUid: 'task-1',
+            TaskStatus: TaskStatusValue.NotDone,
+          },
+        ],
+      } satisfies GroupedPaymentTask,
+      t,
+    )
+
+    expect(models[0].mergeKind).toBeUndefined()
+    expect(models[0].mergeOrganizationNetUid).toBeUndefined()
+  })
+
   it('keeps service detail rows for supplier services', () => {
     const models = buildTaskModels(
       {
@@ -177,6 +205,64 @@ describe('payment task model mapper', () => {
       netPrice: 100,
       number: 'BL-77',
     })
+    expect(models[0]).toMatchObject({
+      mergeKind: 'containerService',
+      mergeOrganizationNetUid: 'container-org',
+    })
+  })
+
+  it('groups multiple container services into one table model', () => {
+    const models = buildTaskModels(
+      {
+        SupplyPaymentTasks: [
+          {
+            ContainerServices: [
+              {
+                BillOfLadingDocument: { Date: '2026-05-20T00:00:00Z', Number: 'BL-77' },
+                ContainerNumber: 'CONT-1',
+                ContainerOrganization: { Name: 'Container org', NetUid: 'container-org' },
+                GrossPrice: 120,
+                InvoiceDocuments: [{ FileName: 'first.pdf', NetUid: 'doc-1' }],
+                NetPrice: 100,
+                ServiceNumber: 'SV-1',
+                SupplyOrganizationAgreement: {
+                  Currency: { Code: 'USD' },
+                  Organization: { Name: 'AMG', NetUid: 'payer-org' },
+                },
+              },
+              {
+                BillOfLadingDocument: { Date: '2026-05-21T00:00:00Z', Number: 'BL-78' },
+                ContainerNumber: 'CONT-2',
+                ContainerOrganization: { Name: 'Container org', NetUid: 'container-org' },
+                GrossPrice: 240,
+                InvoiceDocuments: [{ FileName: 'second.pdf', NetUid: 'doc-2' }],
+                NetPrice: 200,
+                ServiceNumber: 'SV-2',
+                SupplyOrganizationAgreement: {
+                  Currency: { Code: 'USD' },
+                  Organization: { Name: 'AMG', NetUid: 'payer-org' },
+                },
+              },
+            ],
+            GrossPrice: 360,
+            NetUid: 'task-1',
+            TaskStatus: TaskStatusValue.NotDone,
+          },
+        ],
+      } satisfies GroupedPaymentTask,
+      t,
+    )
+
+    expect(models).toHaveLength(1)
+    expect(models[0]).toMatchObject({
+      mergeKind: 'containerService',
+      mergeOrganizationNetUid: 'container-org',
+    })
+    expect(models[0].documents).toHaveLength(2)
+    expect(models[0].rows).toMatchObject([
+      { containerNumber: 'CONT-1', date: '2026-05-20T00:00:00Z', number: 'BL-77' },
+      { containerNumber: 'CONT-2', date: '2026-05-21T00:00:00Z', number: 'BL-78' },
+    ])
   })
 
   it('expands bill-of-lading service rows per document', () => {
@@ -214,6 +300,123 @@ describe('payment task model mapper', () => {
     expect(models[0].rows).toMatchObject([
       { containerNumber: 'SHIP-1', date: '2026-05-21T00:00:00Z', number: 'BL-1' },
       { containerNumber: 'SHIP-1', date: '2026-05-22T00:00:00Z', number: 'BL-2' },
+    ])
+  })
+
+  it('groups multiple bill-of-lading services into one table model', () => {
+    const models = buildTaskModels(
+      {
+        SupplyPaymentTasks: [
+          {
+            BillOfLadingServices: [
+              {
+                BillOfLadingDocuments: [
+                  { Date: '2026-05-21T00:00:00Z', Number: 'BL-1', NetUid: 'bl-doc-1' },
+                  { Date: '2026-05-22T00:00:00Z', Number: 'BL-2', NetUid: 'bl-doc-2' },
+                ],
+                BillOfLadingNumber: 'SHIP-1',
+                GrossPrice: 240,
+                InvoiceDocuments: [{ FileName: 'first.pdf', NetUid: 'invoice-doc-1' }],
+                NetPrice: 200,
+                ServiceNumber: 'SV-3',
+                SupplyOrganization: { Name: 'BL org', NetUid: 'bl-org' },
+                SupplyOrganizationAgreement: {
+                  Currency: { Code: 'USD' },
+                  Organization: { Name: 'AMG', NetUid: 'payer-org' },
+                },
+                TypeBillOfLadingService: 0,
+              },
+              {
+                BillOfLadingDocuments: [
+                  { Date: '2026-05-23T00:00:00Z', Number: 'BL-3', NetUid: 'bl-doc-3' },
+                ],
+                BillOfLadingNumber: 'SHIP-2',
+                GrossPrice: 120,
+                NetPrice: 100,
+                ServiceNumber: 'SV-4',
+                SupplyOrganization: { Name: 'BL org', NetUid: 'bl-org' },
+                SupplyOrganizationAgreement: {
+                  Currency: { Code: 'USD' },
+                  Organization: { Name: 'AMG', NetUid: 'payer-org' },
+                },
+                TypeBillOfLadingService: 0,
+              },
+            ],
+            GrossPrice: 360,
+            NetUid: 'task-1',
+            TaskStatus: TaskStatusValue.NotDone,
+          },
+        ],
+      } satisfies GroupedPaymentTask,
+      t,
+    )
+
+    expect(models).toHaveLength(1)
+    expect(models[0].mergeKind).toBeUndefined()
+    expect(models[0].documents).toHaveLength(4)
+    expect(models[0].rows).toMatchObject([
+      { containerNumber: 'SHIP-1', date: '2026-05-21T00:00:00Z', number: 'BL-1' },
+      { containerNumber: 'SHIP-1', date: '2026-05-22T00:00:00Z', number: 'BL-2' },
+      { containerNumber: 'SHIP-2', date: '2026-05-23T00:00:00Z', number: 'BL-3' },
+    ])
+  })
+
+  it('groups multiple port work services into one table model', () => {
+    const models = buildTaskModels(
+      {
+        SupplyPaymentTasks: [
+          {
+            GrossPrice: 180,
+            NetUid: 'task-1',
+            PortWorkServices: [
+              {
+                FromDate: '2026-06-01T00:00:00Z',
+                GrossPrice: 120,
+                InvoiceDocuments: [{ FileName: 'first.pdf', NetUid: 'doc-1' }],
+                NetPrice: 100,
+                Number: 'PW-1',
+                PortWorkOrganization: { Name: 'Port org', NetUid: 'port-org' },
+                ServiceDetailItems: [
+                  {
+                    GrossPrice: 60,
+                    NetPrice: 50,
+                    Qty: 2,
+                    ServiceDetailItemKey: { Name: 'Port fee', Symbol: 'PORT' },
+                    Vat: 10,
+                    VatPercent: 20,
+                  },
+                ],
+                ServiceNumber: 'SV-5',
+                SupplyOrganizationAgreement: { Currency: { Code: 'EUR' }, NetUid: 'agreement-1' },
+              },
+              {
+                FromDate: '2026-06-02T00:00:00Z',
+                GrossPrice: 60,
+                InvoiceDocuments: [{ FileName: 'second.pdf', NetUid: 'doc-2' }],
+                Name: 'Warehouse handling',
+                NetPrice: 50,
+                Number: 'PW-2',
+                PortWorkOrganization: { Name: 'Port org', NetUid: 'port-org' },
+                ServiceNumber: 'SV-6',
+                SupplyOrganizationAgreement: { Currency: { Code: 'EUR' }, NetUid: 'agreement-1' },
+              },
+            ],
+            TaskStatus: TaskStatusValue.NotDone,
+          },
+        ],
+      } satisfies GroupedPaymentTask,
+      t,
+    )
+
+    expect(models).toHaveLength(1)
+    expect(models[0]).toMatchObject({
+      mergeKind: 'portWorkService',
+      mergeOrganizationNetUid: 'port-org',
+    })
+    expect(models[0].documents).toHaveLength(2)
+    expect(models[0].rows).toMatchObject([
+      { grossPrice: 60, name: 'Port fee', quantity: 2, symbol: 'PORT' },
+      { grossPrice: 60, name: 'Warehouse handling', symbol: '' },
     ])
   })
 
