@@ -514,7 +514,7 @@
   max-width: 260px;
   min-width: 0;
   overflow: hidden;
-  padding: 0;
+  padding: 0 0 0 8px;
   justify-self: end;
   text-align: right;
   text-overflow: ellipsis;
