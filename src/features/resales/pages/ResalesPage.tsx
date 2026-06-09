@@ -566,8 +566,10 @@ export function NewResalePage() {
   const selectionSpansMultipleStorages = canProcessAvailabilityRows(selectedRows) && !rowsShareSingleStorage(selectedRows)
   const canProcessSelected = canProcessAvailabilityRows(selectedRows) && rowsShareSingleStorage(selectedRows)
   const columns = useResaleAvailabilityColumns({
+    rows: availabilities,
     selectedKeys,
     onToggle: toggleAvailability,
+    onToggleAll: toggleAllAvailabilities,
   })
   const loadAvailabilities = useCallback(
     async (nextPayload: ResaleAvailabilityFilterPayload) => {
@@ -823,6 +825,15 @@ export function NewResalePage() {
       }
 
       return [...currentKeys, key]
+    })
+  }
+
+  function toggleAllAvailabilities() {
+    setSelectedKeys((currentKeys) => {
+      const allKeys = availabilities.map(getAvailabilityKey).filter(Boolean)
+      const everySelected = allKeys.length > 0 && allKeys.every((key) => currentKeys.includes(key))
+
+      return everySelected ? [] : allKeys
     })
   }
 
@@ -1485,6 +1496,13 @@ export function ResalePage() {
 
       <Card withBorder radius="md" padding="md">
         <Stack gap="md">
+          <Group justify="space-between" align="flex-end" wrap="nowrap">
+            <Text fw={700} size="lg">
+              {changedToInvoice ? t('Інвойс') : t('Рахунок')}
+              {model.ReSale.SaleNumber?.Value ? ` ${model.ReSale.SaleNumber.Value}` : ''}
+            </Text>
+            <DetailValue label={t('Дата створення')} value={formatDateTime(model.ReSale.Created)} />
+          </Group>
           <SimpleGrid cols={{ base: 1, md: 3 }} spacing="sm">
             <DetailValue label={t('Статус')} value={getResaleStatusLabel(model.ReSale)} />
             <DetailValue label={t('Відповідальний')} value={model.ReSale.ChangedToInvoiceBy?.LastName || model.ReSale.User?.LastName} />
@@ -1798,19 +1816,39 @@ function useResalesColumns({
 }
 
 function useResaleAvailabilityColumns({
+  rows,
   selectedKeys,
   onToggle,
+  onToggleAll,
 }: {
+  rows: GroupingResaleAvailability[]
   selectedKeys: string[]
   onToggle: (row: GroupingResaleAvailability) => void
+  onToggleAll: () => void
 }): DataTableColumn<GroupingResaleAvailability>[] {
   const { t } = useI18n()
+  const allSelected =
+    rows.length > 0 && rows.every((row) => selectedKeys.includes(getAvailabilityKey(row)))
 
   return useMemo<DataTableColumn<GroupingResaleAvailability>[]>(
     () => [
       {
         id: 'select',
-        header: '',
+        header: (
+          <ActionIcon
+            aria-label={t('Обрати всі')}
+            color={allSelected ? 'violet' : 'gray'}
+            disabled={rows.length === 0}
+            size={28}
+            variant={allSelected ? 'filled' : 'light'}
+            onClick={(event) => {
+              event.stopPropagation()
+              onToggleAll()
+            }}
+          >
+            {allSelected ? '✓' : '+'}
+          </ActionIcon>
+        ),
         width: 54,
         minWidth: 48,
         enableSorting: false,
@@ -1938,7 +1976,7 @@ function useResaleAvailabilityColumns({
         cell: (row) => formatMoney(row.TotalSalePrice),
       },
     ],
-    [onToggle, selectedKeys, t],
+    [allSelected, onToggle, onToggleAll, rows, selectedKeys, t],
   )
 }
 
@@ -1980,6 +2018,28 @@ function useProcessColumns({
         cell: (row) => formatAmount(row.Qty),
       },
       {
+        id: 'measure',
+        header: t('Од. виміру'),
+        width: 116,
+        accessor: (row) => row.MeasureUnit,
+        cell: (row) => displayValue(row.MeasureUnit),
+      },
+      {
+        id: 'specification',
+        header: t('Специфікація'),
+        width: 132,
+        accessor: (row) => row.SpecificationCode,
+        cell: (row) => displayValue(row.SpecificationCode),
+      },
+      {
+        id: 'price',
+        header: t('Собівартість'),
+        width: 128,
+        align: 'right',
+        accessor: (row) => row.Price,
+        cell: (row) => formatMoney(row.Price),
+      },
+      {
         id: 'qtyToResale',
         header: t('Кількість'),
         width: 132,
@@ -2004,6 +2064,14 @@ function useProcessColumns({
             onChange={(value) => onChangeSalePrice(row.__rowIndex, value)}
           />
         ),
+      },
+      {
+        id: 'vat',
+        header: t('ПДВ'),
+        width: 116,
+        align: 'right',
+        accessor: (row) => row.Vat,
+        cell: (row) => formatMoney(row.Vat),
       },
       {
         id: 'amount',
