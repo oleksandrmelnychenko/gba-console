@@ -1,6 +1,7 @@
 import type {
   AvailablePaymentColumn,
   AvailablePaymentDocument,
+  AvailablePaymentMergeKind,
   AvailablePaymentTaskModel,
   AvailablePaymentTaskRow,
   AvailablePaymentsCurrency,
@@ -127,6 +128,7 @@ function buildModelsFromTask(
     models.push(
       buildServiceModel(service, next(), {
         iconServiceNameKey: 'Портові роботи',
+        mergeKind: 'portWorkService',
         organization: asRecord(service.PortWorkOrganization),
       }),
     ),
@@ -187,6 +189,8 @@ function buildConsumableOrderModel(consumableOrder: DataRecord, context: BuildCo
     documents: readDocuments(consumableOrder.ConsumablesOrderDocuments),
     organization: organization as AvailablePaymentsOrganization | null,
     organizationName: readString(organization, ['Name']),
+    mergeKind: 'containerService',
+    mergeOrganizationNetUid: getEntityValue(organization),
     payForOrganization: asRecord(agreement?.Organization),
     rows,
     serviceAgreementNetId: readString(agreement, ['NetUid']),
@@ -462,6 +466,7 @@ function buildServiceModel(
   context: BuildContext,
   options: {
     iconServiceNameKey: string
+    mergeKind?: AvailablePaymentMergeKind
     organization: DataRecord | null
     payForOrganization?: DataRecord | null
     supplyOrderNetUid?: string
@@ -486,6 +491,8 @@ function buildServiceModel(
     documents: readDocuments(service.InvoiceDocuments),
     organization: options.organization as AvailablePaymentsOrganization | null,
     organizationName: readString(options.organization, ['Name']),
+    mergeKind: options.mergeKind,
+    mergeOrganizationNetUid: options.mergeKind ? getEntityValue(options.organization) : undefined,
     payForOrganization,
     rows: rowsFromBaseService(service, task, agreement),
     serviceAgreementNetId: readString(agreement, ['NetUid']),
@@ -620,6 +627,8 @@ function baseModel(
     organization?: AvailablePaymentsOrganization | null
     organizationName: string
     organizationNetUid?: string
+    mergeKind?: AvailablePaymentMergeKind
+    mergeOrganizationNetUid?: string
     paymentAmount?: number
     payForClient?: NamedEntity | null
     payForOrganization?: DataRecord | null
@@ -653,6 +662,8 @@ function baseModel(
     paymentAmount: init.paymentAmount ?? task.GrossPrice ?? 0,
     payForClient: init.payForClient ?? null,
     rows: init.rows,
+    mergeKind: init.mergeKind,
+    mergeOrganizationNetUid: init.mergeOrganizationNetUid,
     serviceAgreementNetId: init.serviceAgreementNetId || '',
     serviceName: init.serviceName,
     serviceNumber: init.serviceNumber,

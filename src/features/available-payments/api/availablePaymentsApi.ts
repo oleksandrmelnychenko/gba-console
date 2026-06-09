@@ -166,6 +166,15 @@ export async function setAvailablePaymentTaskToActive(
   return result && typeof result === 'object' ? (result as SupplyPaymentTask) : null
 }
 
+export async function mergeAvailablePaymentTasks(tasks: SupplyPaymentTask[]): Promise<SupplyPaymentTask | null> {
+  const result = await apiRequest<unknown>('/payments/tasks/merge', {
+    body: tasks,
+    method: 'POST',
+  })
+
+  return result && typeof result === 'object' ? (result as SupplyPaymentTask) : null
+}
+
 export async function createAvailablePaymentOutcome({
   amount,
   comment,

@@ -27,6 +27,7 @@ import {
   IconDeviceFloppy,
   IconExternalLink,
   IconFileUpload,
+  IconGitMerge,
   IconInfoCircle,
   IconPlus,
   IconRestore,
@@ -51,6 +52,11 @@ import {
   validateAvailablePaymentSelection,
 } from '../models/availablePaymentSelection'
 import {
+  getAvailablePaymentMergeError,
+  uniqueTaskModels,
+  validateAvailablePaymentMerge,
+} from '../models/availablePaymentMerge'
+import {
   countActiveDocuments,
 } from '../models/availablePaymentDocuments'
 import { getAvailablePaymentSourceRoute } from '../models/availablePaymentSourceRoute'
@@ -62,6 +68,7 @@ import {
   getAvailablePaymentAccountingCashFlow,
   getAvailablePaymentExchangeRate,
   getAvailablePaymentMovements,
+  mergeAvailablePaymentTasks,
   searchAvailablePaymentMovements,
   searchAvailablePaymentRegisters,
   setAvailablePaymentTaskToActive,
@@ -672,6 +679,33 @@ function useAvailablePaymentsDetailDrawerModel({
     }
   }
 
+  async function handleMergeMarked(models: AvailablePaymentTaskModel[]) {
+    if (isSaving) {
+      return
+    }
+
+    const mergeValidationError = validateAvailablePaymentMerge(models, t)
+
+    if (mergeValidationError) {
+      setError(mergeValidationError)
+      return
+    }
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      await mergeAvailablePaymentTasks(uniqueTaskModels(models).map((model) => model.task))
+      notifications.show({ color: 'green', message: t('Платіжні задачі об’єднано') })
+      onClearMarked()
+      onChanged()
+    } catch (mergeError) {
+      setError(mergeError instanceof Error ? mergeError.message : t('Не вдалося об’єднати платіжні задачі'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function handleToggleExpanded(model: AvailablePaymentTaskModel) {
     const isOpening = expandedId !== model.id
     setExpandedId(isOpening ? model.id : null)
@@ -821,6 +855,7 @@ function useAvailablePaymentsDetailDrawerModel({
     handleCreateOutcome,
     handleCreateMovement,
     handleMovementSearchChange,
+    handleMergeMarked,
     handleMoveToDone,
     handleRedirectToSource,
     handleToggleExpanded,
@@ -873,6 +908,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
     handleCreateOutcome,
     handleCreateMovement,
     handleMovementSearchChange,
+    handleMergeMarked,
     handleMoveToDone,
     handleRedirectToSource,
     handleToggleExpanded,
@@ -920,6 +956,7 @@ function AvailablePaymentsDetailDrawerView({ model }: { model: AvailablePayments
               onCreateOutcome={openOutcomeForm}
               onDocumentDeletedChange={onDocumentDeletedChange}
               onFilesChanged={onFilesChanged}
+              onMergeMarked={handleMergeMarked}
               onMoveToDone={handleMoveToDone}
               onRedirectToSource={handleRedirectToSource}
               onToggleExpanded={handleToggleExpanded}
@@ -998,6 +1035,7 @@ function AvailablePaymentTaskList({
   onCreateOutcome,
   onDocumentDeletedChange,
   onFilesChanged,
+  onMergeMarked,
   onMoveToDone,
   onRedirectToSource,
   onToggleExpanded,
@@ -1020,6 +1058,7 @@ function AvailablePaymentTaskList({
   onCreateOutcome: (models: AvailablePaymentTaskModel[], options?: OutcomeOpenOptions) => void
   onDocumentDeletedChange: (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => void
   onFilesChanged: (taskId: string, files: File[]) => void
+  onMergeMarked: (models: AvailablePaymentTaskModel[]) => Promise<void>
   onMoveToDone: (model: AvailablePaymentTaskModel) => Promise<void>
   onRedirectToSource: (model: AvailablePaymentTaskModel) => void
   onToggleExpanded: (model: AvailablePaymentTaskModel) => void
@@ -1027,6 +1066,7 @@ function AvailablePaymentTaskList({
 }) {
   const { t } = useI18n()
   const markedSelectionError = markedModels.length > 0 ? validateAvailablePaymentSelection(markedModels, t) : null
+  const markedMergeError = markedModels.length > 0 ? validateAvailablePaymentMerge(markedModels, t) : null
 
   return (
     <Stack gap="sm">
@@ -1049,6 +1089,19 @@ function AvailablePaymentTaskList({
                   </Button>
                 </span>
               </Tooltip>
+              <Tooltip disabled={!markedMergeError} label={markedMergeError}>
+                <span>
+                  <Button
+                    disabled={isSaving || Boolean(markedMergeError)}
+                    leftSection={<IconGitMerge size={16} />}
+                    size="xs"
+                    variant="light"
+                    onClick={() => void onMergeMarked(markedModels)}
+                  >
+                    {t('Об’єднати задачі')}
+                  </Button>
+                </span>
+              </Tooltip>
               <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
                 {t('Очистити')}
               </Button>
@@ -1061,7 +1114,11 @@ function AvailablePaymentTaskList({
         const activeTab = resolveTaskDetailTab(model, activeTabs[model.id])
         const tabs = getTaskDetailTabs(model)
         const isMarked = markedTaskIds.includes(model.id)
-        const selectionError = isMarked ? null : getAvailablePaymentSelectionError(markedModels, model, t)
+        const paymentSelectionError = isMarked ? null : getAvailablePaymentSelectionError(markedModels, model, t)
+        const mergeSelectionError = isMarked ? null : getAvailablePaymentMergeError(markedModels, model, t)
+        const selectionError = paymentSelectionError && mergeSelectionError
+          ? `${paymentSelectionError}. ${mergeSelectionError}`
+          : null
         const isMarkingDisabled = isSaving || Boolean(selectionError)
 
         return (

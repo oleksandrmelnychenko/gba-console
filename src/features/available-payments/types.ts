@@ -151,6 +151,8 @@ export type AvailablePaymentOutcomeRequest = {
   selectedRegister: AvailablePaymentRegister
 }
 
+export type AvailablePaymentMergeKind = 'containerService' | 'portWorkService'
+
 export type AvailablePaymentColumnKey =
   | 'category'
   | 'containerNumber'
@@ -199,6 +201,8 @@ export type AvailablePaymentTaskModel = {
   paymentAmount?: number
   payForClient?: NamedEntity | null
   rows: AvailablePaymentTaskRow[]
+  mergeKind?: AvailablePaymentMergeKind
+  mergeOrganizationNetUid?: string
   serviceAgreementNetId: string
   serviceName: string
   serviceNumber: string
