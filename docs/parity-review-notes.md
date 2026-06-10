@@ -389,11 +389,13 @@ sales-ukraine gaps:
 
 ### Missing (sales-ukraine relevant)
 - **Invoice button uses the wrong endpoint.** Legacy «друк видаткової накладної» = `GET /sales/get/document?netId=&isFromStorages=` and toggles `IsPrinted` + re-saves the sale. Console `getSaleInvoiceDocument` calls `/sales/get/last/document` (the LAST/most-recent-revision form) and has no `isFromStorages` / no `IsPrinted` side-effect. If the two endpoints differ, the printed накладна can differ.
-- **Рахунок bundles a накладна that the console drops.** `/sales/get/payment/document` can return `InvoiceDocumentURL`/`PdfInvoiceDocumentURL` (a second «Видаткова накладна») alongside the рахунок — revealed when `IsAcceptedToPacking` OR the user is GBA/Administrator/FinanceDirector/Accountant. Console `extractDocumentResult` only reads `DocumentURL`/`PdfDocumentURL`, so the bundled накладна + the role gate are dropped.
-- **VAT convert-to-invoice path missing.** Confirming a VAT sale legacy hits `POST /sales/update/get/payment/document` (persists + returns the рахунок inline). Console `SaleEditorDrawer.convertToInvoice` ALWAYS uses the non-VAT `POST /sales/update/file` (IsPrintedPaymentInvoice=true), never branching on `IsVatSale` — so the рахунок isn't auto-generated at VAT confirmation.
-- **Current Act-protocol-edit document.** `/sales/get/shifted/document?netId=&IsPrintedActProtocolEdit=` (+ the `IsPrintedActProtocolEdit` flag toggle). Console only has the per-history-edit «C» form (`/sales/get/shifted/hisotry/document`), not the current-state one.
 - **Cannot CREATE an invoice edit (Акт редагування).** Legacy `edit.sale.view.tsx` shifts order-item qty bill↔store (`/orders/items/shift/current`), which CREATES `HistoryInvoiceEdit` entries. Console is **read/print-only** for invoice history — there is no console flow to edit an issued накладна.
 - **`ConfirmProcessing` approve** (set/edit/act/for/editing) — the per-sale approve button from the legacy audit timeline is not in the console audit drawer.
+
+### Done Since This Extraction
+- **Рахунок bundles a накладна** — console now normalizes `InvoiceDocumentURL`/`PdfInvoiceDocumentURL` in `extractDocumentResult`, renders the bundled «Видаткова накладна» behind the same role/accepted-to-packing gate, and has API coverage in `salesUkraineApi.test.ts`.
+- **VAT convert-to-invoice path** — `SaleEditorDrawer.convertToInvoice` branches on `IsVatSale` and calls `POST /sales/update/get/payment/document` through `convertVatSaleAndGetPaymentDocument`, opening the returned document URL.
+- **Current Act-protocol-edit document** — `SaleDocumentsMenu` adds the current `/sales/get/shifted/document` action for the latest invoice edit in addition to history documents.
 
 ### Belongs to warehouse-ukraine (verify there, not a sales-ukraine gap)
 Invoice register (`/sales/get/register/invoice` + `/document`), shipment create/modal exports
