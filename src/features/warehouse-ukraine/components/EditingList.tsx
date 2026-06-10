@@ -1,4 +1,5 @@
 import { ActionIcon, Alert, Anchor, Badge, Button, Checkbox, Group, Select, SimpleGrid, Stack, Text, TextInput, Tooltip } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconRefresh, IconRestore } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -169,7 +170,7 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
   }
 
   function openProcessConfirm(item: EditingActItem) {
-    if (kind === 'carrier' && !item.Sale?.IsPrinted) {
+    if (!item.Sale?.IsPrinted) {
       setError(t('Накладну не роздруковано'))
 
       return
@@ -235,6 +236,13 @@ export function EditingList({ kind, layoutVersion, loader, onProcessed, processo
 
     try {
       await processor(confirmItem.NetUid)
+      notifications.show({
+        color: 'green',
+        message:
+          kind === 'carrier'
+            ? t('Накладна успішно перенесена до нового перевізника')
+            : t('Акт редагування накладної опрацьовано'),
+      })
       closeConfirm()
       reload()
       onProcessed?.()
