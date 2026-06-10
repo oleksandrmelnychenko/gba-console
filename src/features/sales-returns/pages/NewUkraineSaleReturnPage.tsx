@@ -31,6 +31,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -165,6 +166,7 @@ export function NewUkraineSaleReturnPage() {
   const [editorVatWarning, setEditorVatWarning] = useState<string | null>(null)
   const [editorError, setEditorError] = useState<string | null>(null)
   const [isLoadingEditorStorages, setLoadingEditorStorages] = useState(false)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
 
   const { items, isLoading } = listState
   const offset = (page - 1) * pageSize
@@ -193,11 +195,12 @@ export function NewUkraineSaleReturnPage() {
   const saleItemColumns = useSaleItemColumns({
     drafts,
     onEdit: openEditor,
+    onOpenProductCard: setProductCardNetId,
     onRemove: removeDraft,
     searchedVendorCode: saleSearch.trim(),
     t,
   })
-  const detailColumns = useDetailColumns(t)
+  const detailColumns = useDetailColumns({ onOpenProductCard: setProductCardNetId, t })
 
   useEffect(() => {
     let cancelled = false
@@ -241,6 +244,16 @@ export function NewUkraineSaleReturnPage() {
       cancelled = true
     }
   }, [fromDate, offset, pageSize, reloadKey, searchValue, t, toDate])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setSearchValue(searchDraft.trim())
+    }, 200)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [searchDraft])
 
   useEffect(() => {
     if (!createOpened) {
@@ -300,7 +313,6 @@ export function NewUkraineSaleReturnPage() {
   function updateListSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
-    setSearchValue(nextSearchValue.trim())
   }
 
   const loadSales = useCallback(async () => {
@@ -721,12 +733,46 @@ export function NewUkraineSaleReturnPage() {
                 {group.drafts.map((draft) => (
                   <Group key={getOrderItemKey(draft.orderItem)} justify="space-between" wrap="nowrap" gap="md">
                     <div style={{ minWidth: 0 }}>
-                      <Text fw={600} truncate>
-                        {displayValue(draft.orderItem.Product?.VendorCode)}
-                      </Text>
-                      <Text size="sm" c="dimmed" truncate>
-                        {displayValue(draft.orderItem.Product?.Name)}
-                      </Text>
+                      {draft.orderItem.Product?.NetUid ? (
+                        <Anchor
+                          component="button"
+                          display="block"
+                          fw={600}
+                          maw="100%"
+                          truncate
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setProductCardNetId(draft.orderItem.Product?.NetUid || null)
+                          }}
+                        >
+                          {displayValue(draft.orderItem.Product?.VendorCode)}
+                        </Anchor>
+                      ) : (
+                        <Text fw={600} truncate>
+                          {displayValue(draft.orderItem.Product?.VendorCode)}
+                        </Text>
+                      )}
+                      {draft.orderItem.Product?.NetUid ? (
+                        <Anchor
+                          component="button"
+                          display="block"
+                          maw="100%"
+                          size="sm"
+                          truncate
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setProductCardNetId(draft.orderItem.Product?.NetUid || null)
+                          }}
+                        >
+                          {displayValue(draft.orderItem.Product?.Name)}
+                        </Anchor>
+                      ) : (
+                        <Text size="sm" c="dimmed" truncate>
+                          {displayValue(draft.orderItem.Product?.Name)}
+                        </Text>
+                      )}
                       <Text size="xs" c="dimmed">
                         {formatAmount(draft.qty)} · {getStatusLabel(draft.status, t)} · {displayValue(draft.storage?.Name)}
                       </Text>
@@ -762,8 +808,37 @@ export function NewUkraineSaleReturnPage() {
         {editor ? (
           <Stack gap="md">
             <div>
-              <Text fw={600}>{displayValue(editor.row.item.Product?.VendorCode)}</Text>
-              <Text size="sm" c="dimmed">{displayValue(editor.row.item.Product?.Name)}</Text>
+              {editor.row.item.Product?.NetUid ? (
+                <Anchor
+                  component="button"
+                  fw={600}
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setProductCardNetId(editor.row.item.Product?.NetUid || null)
+                  }}
+                >
+                  {displayValue(editor.row.item.Product?.VendorCode)}
+                </Anchor>
+              ) : (
+                <Text fw={600}>{displayValue(editor.row.item.Product?.VendorCode)}</Text>
+              )}
+              {editor.row.item.Product?.NetUid ? (
+                <Anchor
+                  component="button"
+                  display="block"
+                  size="sm"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setProductCardNetId(editor.row.item.Product?.NetUid || null)
+                  }}
+                >
+                  {displayValue(editor.row.item.Product?.Name)}
+                </Anchor>
+              ) : (
+                <Text size="sm" c="dimmed">{displayValue(editor.row.item.Product?.Name)}</Text>
+              )}
             </div>
             {editorError ? (
               <Alert color="red" icon={<IconAlertCircle size={16} />}>
@@ -842,6 +917,8 @@ export function NewUkraineSaleReturnPage() {
           </Group>
         </Stack>
       </AppModal>
+
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Box>
   )
 }
@@ -994,12 +1071,14 @@ function useReturnsColumns({
 function useSaleItemColumns({
   drafts,
   onEdit,
+  onOpenProductCard,
   onRemove,
   searchedVendorCode,
   t,
 }: {
   drafts: ReturnOrderItemDraft[]
   onEdit: (row: SaleItemRow) => void
+  onOpenProductCard: (netId: string) => void
   onRemove: (row: SaleItemRow) => void
   searchedVendorCode: string
   t: (value: string) => string
@@ -1034,21 +1113,61 @@ function useSaleItemColumns({
         id: 'vendorCode',
         header: t('Артикул'),
         accessor: (row) => row.item.Product?.VendorCode,
-        cell: (row) =>
-          searchedVendorCode && row.item.Product?.VendorCode === searchedVendorCode ? (
-            <Text fw={600} bg="#78ff33" px={4}>
+        cell: (row) => {
+          const netId = row.item.Product?.NetUid
+          const isHighlighted = Boolean(searchedVendorCode && row.item.Product?.VendorCode === searchedVendorCode)
+
+          if (!netId) {
+            return isHighlighted ? (
+              <Text fw={600} bg="#78ff33" px={4}>
+                {displayValue(row.item.Product?.VendorCode)}
+              </Text>
+            ) : (
+              displayValue(row.item.Product?.VendorCode)
+            )
+          }
+
+          return (
+            <Anchor
+              bg={isHighlighted ? '#78ff33' : undefined}
+              component="button"
+              fw={600}
+              px={isHighlighted ? 4 : undefined}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
               {displayValue(row.item.Product?.VendorCode)}
-            </Text>
-          ) : (
-            displayValue(row.item.Product?.VendorCode)
-          ),
+            </Anchor>
+          )
+        },
         width: 140,
       },
       {
         id: 'product',
         header: t('Товар'),
         accessor: (row) => row.item.Product?.Name,
-        cell: (row) => displayValue(row.item.Product?.Name),
+        cell: (row) => {
+          const netId = row.item.Product?.NetUid
+
+          return netId ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(row.item.Product?.Name)}
+            </Anchor>
+          ) : (
+            displayValue(row.item.Product?.Name)
+          )
+        },
         width: 260,
       },
       {
@@ -1110,25 +1229,67 @@ function useSaleItemColumns({
         width: 110,
       },
     ],
-    [drafts, onEdit, onRemove, searchedVendorCode, t],
+    [drafts, onEdit, onOpenProductCard, onRemove, searchedVendorCode, t],
   )
 }
 
-function useDetailColumns(t: (value: string) => string): DataTableColumn<SalesReturnItem>[] {
+function useDetailColumns({
+  onOpenProductCard,
+  t,
+}: {
+  onOpenProductCard: (netId: string) => void
+  t: (value: string) => string
+}): DataTableColumn<SalesReturnItem>[] {
   return useMemo(
     () => [
       {
         id: 'vendorCode',
         header: t('Артикул'),
         accessor: (item) => item.OrderItem?.Product?.VendorCode,
-        cell: (item) => <Text fw={600}>{displayValue(item.OrderItem?.Product?.VendorCode)}</Text>,
+        cell: (item) => {
+          const netId = item.OrderItem?.Product?.NetUid
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={600}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(item.OrderItem?.Product?.VendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={600}>{displayValue(item.OrderItem?.Product?.VendorCode)}</Text>
+          )
+        },
         width: 140,
       },
       {
         id: 'product',
         header: t('Товар'),
         accessor: (item) => item.OrderItem?.Product?.Name,
-        cell: (item) => displayValue(item.OrderItem?.Product?.Name),
+        cell: (item) => {
+          const netId = item.OrderItem?.Product?.NetUid
+
+          return netId ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(item.OrderItem?.Product?.Name)}
+            </Anchor>
+          ) : (
+            displayValue(item.OrderItem?.Product?.Name)
+          )
+        },
         width: 260,
       },
       {
@@ -1170,7 +1331,7 @@ function useDetailColumns(t: (value: string) => string): DataTableColumn<SalesRe
         width: 120,
       },
     ],
-    [t],
+    [onOpenProductCard, t],
   )
 }
 

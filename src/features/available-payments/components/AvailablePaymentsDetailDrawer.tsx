@@ -32,6 +32,7 @@ import {
   IconPlus,
   IconRestore,
   IconTrash,
+  IconX,
 } from '@tabler/icons-react'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -68,6 +69,7 @@ import {
   getAvailablePaymentAccountingCashFlow,
   getAvailablePaymentExchangeRate,
   getAvailablePaymentMovements,
+  getAvailablePaymentTaskByNetId,
   mergeAvailablePaymentTasks,
   searchAvailablePaymentMovements,
   searchAvailablePaymentRegisters,
@@ -107,6 +109,7 @@ type AvailablePaymentsDetailDrawerProps = {
   onClose: () => void
   onDocumentDeletedChange: (taskId: string, documentKey: string, deleted: boolean, originalDeleted: boolean) => void
   onFilesChanged: (taskId: string, files: File[]) => void
+  onTaskUpdated: (taskId: string, task: SupplyPaymentTask) => void
   onToggleMarked: (model: AvailablePaymentTaskModel) => void
 }
 
@@ -125,6 +128,7 @@ type OutcomeFormState = {
   registerValue: string
   selectedCurrencyValue: string
   time: string
+  vatRate: number
 }
 
 type CashFlowState = {
@@ -175,6 +179,7 @@ function useAvailablePaymentsDetailDrawerModel({
   onClose,
   onDocumentDeletedChange,
   onFilesChanged,
+  onTaskUpdated,
   onToggleMarked,
 }: AvailablePaymentsDetailDrawerProps) {
   const { t } = useI18n()
@@ -672,7 +677,15 @@ function useAvailablePaymentsDetailDrawerModel({
     try {
       await setAvailablePaymentTaskToActive(taskWithDocuments, localFiles)
       notifications.show({ color: 'green', message: t('Платіжну задачу оновлено') })
-      onChanged()
+
+      const taskNetId = String(model.task.NetUid || '')
+      const updatedTask = taskNetId ? await getAvailablePaymentTaskByNetId(taskNetId).catch(() => null) : null
+
+      if (updatedTask) {
+        onTaskUpdated(model.id, updatedTask)
+      } else {
+        onChanged()
+      }
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося оновити платіжну задачу'))
     } finally {
@@ -1073,41 +1086,60 @@ function AvailablePaymentTaskList({
     <Stack gap="sm">
       {markedModels.length > 0 && (
         <Alert color="blue" icon={<IconInfoCircle size={18} />} variant="light">
-          <Group justify="space-between" gap="sm">
-            <Text size="sm">
-              {t('Вибрано платіжних задач')}: {markedModels.length}
-            </Text>
-            <Group gap="xs">
-              <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
-                <span>
-                  <Button
-                    disabled={isSaving || Boolean(markedSelectionError)}
-                    size="xs"
-                    variant="light"
-                    onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
-                  >
-                    {t('Створити видатковий')}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Tooltip disabled={!markedMergeError} label={markedMergeError}>
-                <span>
-                  <Button
-                    disabled={isSaving || Boolean(markedMergeError)}
-                    leftSection={<IconGitMerge size={16} />}
-                    size="xs"
-                    variant="light"
-                    onClick={() => void onMergeMarked(markedModels)}
-                  >
-                    {t('Об’єднати задачі')}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
-                {t('Очистити')}
-              </Button>
+          <Stack gap="xs">
+            <Group justify="space-between" gap="sm">
+              <Text size="sm">
+                {t('Вибрано платіжних задач')}: {markedModels.length}
+              </Text>
+              <Group gap="xs">
+                <Tooltip disabled={!markedSelectionError} label={markedSelectionError}>
+                  <span>
+                    <Button
+                      disabled={isSaving || Boolean(markedSelectionError)}
+                      size="xs"
+                      variant="light"
+                      onClick={() => onCreateOutcome(markedModels, { requireDocuments: false })}
+                    >
+                      {t('Створити видатковий')}
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Tooltip disabled={!markedMergeError} label={markedMergeError}>
+                  <span>
+                    <Button
+                      disabled={isSaving || Boolean(markedMergeError)}
+                      leftSection={<IconGitMerge size={16} />}
+                      size="xs"
+                      variant="light"
+                      onClick={() => void onMergeMarked(markedModels)}
+                    >
+                      {t('Об’єднати задачі')}
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Button color="gray" disabled={isSaving} size="xs" variant="subtle" onClick={onClearMarked}>
+                  {t('Очистити')}
+                </Button>
+              </Group>
             </Group>
-          </Group>
+            <Stack gap={4}>
+              {markedModels.map((markedModel) => (
+                <Group key={markedModel.id} gap="xs" wrap="nowrap">
+                  <ActionIcon
+                    aria-label={t('Прибрати')}
+                    color="gray"
+                    disabled={isSaving}
+                    size="xs"
+                    variant="subtle"
+                    onClick={() => onToggleMarked(markedModel)}
+                  >
+                    <IconX size={14} />
+                  </ActionIcon>
+                  <Text size="sm">{`${markedModel.serviceName} (${markedModel.organizationName})`}</Text>
+                </Group>
+              ))}
+            </Stack>
+          </Stack>
         </Alert>
       )}
 
@@ -1429,6 +1461,21 @@ function AvailablePaymentOutcomeForm({
                 min={0}
                 value={form.exchangeRate}
                 onChange={(value) => updateForm({ exchangeRate: toNumber(value) })}
+              />
+              <NumberInput
+                allowNegative={false}
+                decimalScale={2}
+                disabled={isSaving}
+                label={t('Ставка ПДВ')}
+                min={0}
+                value={form.vatRate}
+                onChange={(value) => updateForm({ vatRate: toNumber(value) })}
+              />
+              <NumberInput
+                decimalScale={2}
+                label={t('Сума ПДВ')}
+                readOnly
+                value={calculateVatAmount(form.amount, form.vatRate)}
               />
               <Stack gap={6}>
                 <Select
@@ -2282,11 +2329,20 @@ function createInitialOutcomeForm(models: AvailablePaymentTaskModel[] = []): Out
     registerValue: '',
     selectedCurrencyValue: '',
     time: toTimeValue(now),
+    vatRate: 0,
   }
 }
 
 function getModelPaymentAmount(model: AvailablePaymentTaskModel): number {
   return model.paymentAmount ?? model.grossPrice ?? 0
+}
+
+function calculateVatAmount(amount: number, vatRate: number): number {
+  if (!vatRate || vatRate <= 0) {
+    return 0
+  }
+
+  return Math.round((amount * vatRate / (100 + vatRate)) * 100) / 100
 }
 
 function validateOutcomeForm({

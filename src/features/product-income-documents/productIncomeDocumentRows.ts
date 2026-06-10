@@ -80,7 +80,7 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       organization: getEntityName(saleReturnItem.OrderItem?.Order?.Sale?.ClientAgreement?.Agreement?.Organization),
       qty: document.TotalQty,
       specificationDate: saleReturnItem.SaleReturn.FromDate,
-      type: translate('Повернення продажу'),
+      type: translate('Прихідна накладна (повернення)'),
     }
   }
 
@@ -101,7 +101,7 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       organization: getEntityName(packingInvoice.SupplyOrder?.Organization),
       qty: sumItems(items, (item) => item.PackingListPackageOrderItem?.Qty),
       specificationDate: packingInvoice.DateCustomDeclaration || packingInvoice.Created,
-      type: translate('Інвойс від постачальника'),
+      type: translate('Прихідна накладна від виробника'),
     }
   }
 
@@ -114,11 +114,12 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       client: getEntityName(ukraineOrder.Supplier),
       comment: ukraineOrder.Comment || document.Comment,
       docState: getDocumentState(documentIsActive),
-      invDate: ukraineOrder.InvDate || ukraineOrder.FromDate,
+      invDate: ukraineOrder.FromDate || ukraineOrder.InvDate,
       invNumber: ukraineOrder.InvNumber,
       organization: getEntityName(ukraineOrder.Organization),
       qty: sumItems(items, (item) => item.Qty),
-      type: translate('Прихідний інвойс в Україну'),
+      specificationDate: ukraineOrder.InvDate,
+      type: translate('Прихідна накладна на Україну'),
     }
   }
 
@@ -135,18 +136,18 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       comment: reconciliationItem.Comment || document.Comment,
       docState: getDocumentState(documentIsActive),
       invDate: sourceOrder
-        ? sourceOrder.InvDate || sourceOrder.FromDate || reconciliation?.InvDate || reconciliation?.FromDate || document.FromDate
+        ? sourceOrder.FromDate || sourceOrder.InvDate || reconciliation?.FromDate || reconciliation?.InvDate || document.FromDate
         : reconciliation?.InvDate || reconciliation?.FromDate || document.FromDate,
       invNumber: sourceOrder?.InvNumber || reconciliation?.InvNumber || document.Number,
       organization: sourceOrder
         ? getEntityName(sourceOrder.Organization)
         : getEntityName(sourceInvoice?.SupplyOrder?.Organization || document.Storage?.Organization),
       qty: sumItems(items, (item) => item.Qty),
-      specificationDate: sourceOrder ? undefined : reconciliation?.InvDate || document.FromDate,
+      specificationDate: sourceOrder ? sourceOrder.InvDate : reconciliation?.InvDate || document.FromDate,
       type: sourceOrder
-        ? translate('Прихідний інвойс в Україну')
+        ? translate('Прихідна накладна на Україну')
         : sourceInvoice
-          ? translate('Інвойс від постачальника')
+          ? translate('Прихідна накладна від виробника')
           : translate('Акт звірки'),
     }
   }
@@ -165,7 +166,7 @@ export function mapDocumentRow(document: ProductIncomeDocument): DocumentRow {
       organization: getEntityName(capitalization.Organization),
       qty: sumItems(items, (item) => item.Qty),
       specificationDate: capitalization.FromDate,
-      type: translate('Оприбуткування товару'),
+      type: translate('Прихідна накладна (Оприходування)'),
     }
   }
 
@@ -194,7 +195,7 @@ function getEntityName(entity?: NamedEntity | null): string | undefined {
 }
 
 function getDocumentState(isActive: boolean): string {
-  return isActive ? translate('Проведено') : translate('Видалено')
+  return isActive ? translate('Виконано') : translate('Видалено')
 }
 
 function sumItems(items: ProductIncomeItem[], getValue: (item: ProductIncomeItem) => number | undefined): number {

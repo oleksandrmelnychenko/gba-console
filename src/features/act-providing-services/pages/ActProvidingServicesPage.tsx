@@ -385,7 +385,7 @@ function ActProvidingServiceOptionsModal({
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
   const canViewAct = hasPermission(PERMISSION_VIEW_ACT)
   const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
-  const canOpenViewOption = Boolean(row?.netId) && canViewAct
+  const canOpenViewOption = Boolean(row?.netId) && (canViewAct || canOpenSupplyOrder)
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
 
@@ -495,8 +495,8 @@ function useActProvidingServiceColumns(
         header: t('Дата інвойсу'),
         width: 150,
         minWidth: 132,
-        accessor: (row) => row.invDate,
-        cell: (row) => <ActProvidingServiceTableValue value={formatDateTime(row.invDate)} />,
+        accessor: (row) => row.listInvDate ?? row.invDate,
+        cell: (row) => <ActProvidingServiceTableValue value={formatDateTime(row.listInvDate ?? row.invDate)} />,
       },
       {
         id: 'invNumber',

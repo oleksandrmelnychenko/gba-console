@@ -204,4 +204,55 @@ describe('cashFlowDetailMapper', () => {
       },
     ])
   })
+
+  it('marks the Poland supply-order link as non-navigable', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Container service',
+      Type: 2,
+      ContainerService: {
+        FromDate: '2026-06-07',
+        Number: 'CS-2',
+        ServiceNumber: 'DOC-2',
+        SupplyOrder: { NetUid: 'poland-uid' },
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.orderLink).toEqual({
+      isNavigable: false,
+      route: '/orders/poland/all/edit/poland-uid',
+    })
+  })
+
+  it('keeps the Ukraine protocols link navigable', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Merged service',
+      Type: 17,
+      MergedService: {
+        FromDate: '2026-06-08',
+        Number: 'MS-17',
+        ServiceNumber: 'DOC-17',
+        SupplyOrderUkraine: { NetUid: 'ukraine-uid' },
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.orderLink).toEqual({
+      isNavigable: true,
+      route: '/orders/ukraine/protocols/ukraine-uid',
+    })
+  })
+
+  it('returns no order link when the supply order has no identifier', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Transportation service',
+      Type: 5,
+      TransportationService: {
+        FromDate: '2026-06-09',
+        Number: 'TS-5',
+        ServiceNumber: 'DOC-5',
+        SupplyOrder: {},
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.orderLink).toBeNull()
+  })
 })

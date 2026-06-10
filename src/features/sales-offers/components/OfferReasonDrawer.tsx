@@ -1,8 +1,9 @@
-import { Badge, Button, Group, Stack, Text, Textarea } from '@mantine/core'
+import { Anchor, Badge, Button, Group, Stack, Text, Textarea } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { processOffer } from '../api/salesOffersApi'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { getItemNotProcessed } from './offerHelpers'
@@ -47,6 +48,7 @@ function OfferReasonForm({
   const [offerComment, setOfferComment] = useState(offer.Comment ?? '')
   const [reasons, setReasons] = useState<Record<string, string>>(() => buildInitialReasons(notProcessedItems))
   const [isSaving, setSaving] = useState(false)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
 
   async function save() {
     setSaving(true)
@@ -96,9 +98,25 @@ function OfferReasonForm({
       {notProcessedItems.map((item) => (
         <Stack key={item.NetUid} gap={4}>
           <Group gap="xs" justify="space-between">
-            <Text fw={500} size="sm">
-              {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
-            </Text>
+            {item.Product?.NetUid ? (
+              <Anchor
+                component="button"
+                fw={500}
+                size="sm"
+                style={{ textAlign: 'left' }}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setProductCardNetId(item.Product?.NetUid as string)
+                }}
+              >
+                {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+              </Anchor>
+            ) : (
+              <Text fw={500} size="sm">
+                {[item.Product?.VendorCode, item.Product?.Name].filter(Boolean).join(' ')}
+              </Text>
+            )}
             <Group gap="xs">
               <Badge color="gray" variant="light">
                 {t('Замовлено')}: {item.OrderedQty ?? 0}
@@ -130,6 +148,7 @@ function OfferReasonForm({
           {t('Зберегти')}
         </Button>
       </Group>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }

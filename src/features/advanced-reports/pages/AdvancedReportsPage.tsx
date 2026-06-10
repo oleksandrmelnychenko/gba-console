@@ -832,6 +832,7 @@ function AdvancedReportDocumentStructureDrawer({
           )}
 
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
+            <DetailItem label={t('Документ')} value={getOutcomePaymentOrderTypeLabel(row.order, t)} />
             <DetailItem label={t('Видатковий ордер')} value={displayValue(row.order.Number || row.order.CustomNumber || row.number)} />
             <DetailItem label={t('Дата')} value={formatDateTime(row.fromDate)} />
             <DetailItem label={t('Сума')} value={formatMoney(row.amount)} />
@@ -847,7 +848,13 @@ function AdvancedReportDocumentStructureDrawer({
             <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
             <DetailItem label={t('Рахунок')} value={displayValue(row.paymentRegister)} />
             <DetailItem label={t('Стаття руху')} value={displayValue(row.paymentMovement)} />
+            <DetailItem label={t('Вхідний номер')} value={displayValue(row.order.ArrivalNumber)} />
             <DetailItem label={t('Призначення платежу')} value={displayValue(row.order.PaymentPurpose)} />
+            <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
+            <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            <DetailItem label={t('Коментар')} value={displayValue(row.comment)} />
+            <DetailItem label={t('Бухгалтерський')} value={row.order.IsAccounting ? t('Так') : t('Ні')} />
+            <DetailItem label={t('Управлінський')} value={row.order.IsManagementAccounting ? t('Так') : t('Ні')} />
             <DetailItem label={t('Підзвіт')} value={row.isUnderReport ? t('Так') : t('Ні')} />
             <DetailItem label={t('Авансовий звіт')} value={displayValue(row.order.AdvanceNumber || row.number)} />
           </SimpleGrid>
@@ -1078,8 +1085,7 @@ function getEntityName(entity?: NamedEntity | null): string | undefined {
 }
 
 function hasDocumentStructure(order: OutcomePaymentOrder): boolean {
-  return Boolean(order.IsUnderReport) ||
-    Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
+  return Boolean(order.RootAssignedPaymentOrder && !order.RootAssignedPaymentOrder.Deleted) ||
     Boolean((order.AssignedPaymentOrders || []).some((assignedPaymentOrder) => !assignedPaymentOrder.Deleted))
 }
 
@@ -1092,7 +1098,7 @@ function getDocumentStructureOutcomeToCalculate(order: OutcomePaymentOrder): Out
     return rootOutcome
   }
 
-  if (order.IsUnderReport || getActiveAssignedPaymentOrders(order.AssignedPaymentOrders).length > 0) {
+  if (getActiveAssignedPaymentOrders(order.AssignedPaymentOrders).length > 0) {
     return order
   }
 

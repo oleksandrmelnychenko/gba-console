@@ -74,6 +74,7 @@ export type ResaleProductLocation = EntityFields & {
 }
 
 export type ResaleConsignmentItem = EntityFields & {
+  Product?: ResaleProduct | null
   ProductSpecification?: {
     SpecificationCode?: string
   } | null

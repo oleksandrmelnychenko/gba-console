@@ -945,7 +945,7 @@ function IncomeCashflowDetailDrawer({
   const orderSales = income?.IncomePaymentOrderSales || []
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Прибутковий ордер')} onClose={onClose}>
+    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={getIncomePaymentOrderTitle(income, t)} onClose={onClose}>
       {row && income && (
         <Stack gap="md">
           {isClientPaymentReassignable(income) && (
@@ -964,7 +964,14 @@ function IncomeCashflowDetailDrawer({
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
             <DetailItem label={t('Дата')} value={formatDateTime(income.FromDate)} />
             <DetailItem label={t('Номер')} value={displayValue(income.Number)} />
-            <DetailItem label={t('Платник')} value={displayValue(row.payer)} />
+            <DetailItem
+              label={t('Платник')}
+              value={displayValue(
+                income.Colleague && (income.AssignedPaymentOrders?.length || 0) > 0
+                  ? joinTruthyParts(row.payer, t('Повернення'))
+                  : row.payer,
+              )}
+            />
             <DetailItem label={t('Тип операції')} value={displayValue(row.operationType)} />
             <DetailItem label={t('Сума')} value={formatMoney(income.Amount)} />
             <DetailItem label={t('Валюта')} value={displayValue(income.Currency?.Code || income.Currency?.Name)} />
@@ -1662,6 +1669,24 @@ function getIncomeAgreementName(income: IncomePaymentOrder): string | undefined 
   }
 
   return undefined
+}
+
+function getIncomePaymentOrderTitle(income: IncomePaymentOrder | undefined, t: (value: string) => string): string {
+  const registerType = income?.PaymentRegister?.Type
+
+  if (registerType === PaymentRegisterType.Cash) {
+    return t('Прибутковий касовий ордер')
+  }
+
+  if (registerType === PaymentRegisterType.Bank) {
+    return t('Прибутковий банківський ордер')
+  }
+
+  if (registerType === PaymentRegisterType.Card) {
+    return t('Прибутковий картковий ордер')
+  }
+
+  return t('Прибутковий ордер')
 }
 
 function getOutcomePaymentOrderTypeLabel(order: OutcomePaymentOrder, t: (value: string) => string): string {

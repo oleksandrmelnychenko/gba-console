@@ -27,10 +27,15 @@ export type CashFlowDetailDocument = {
 
 export type CashFlowDetailColumnKind = 'baseService' | 'supplyPaymentTask'
 
+export type CashFlowDetailOrderLink = {
+  isNavigable: boolean
+  route: string
+}
+
 export type CashFlowDetailViewModel = {
   columnKind: CashFlowDetailColumnKind
   documents: CashFlowDetailDocument[]
-  linkToOrder: string
+  orderLink: CashFlowDetailOrderLink | null
   rows: CashFlowDetailRow[]
   title: string
 }
@@ -165,7 +170,7 @@ function mapBaseService(
   return {
     columnKind: 'baseService',
     documents: collectServiceDocuments(service),
-    linkToOrder: getLinkToOrder(service),
+    orderLink: getOrderLink(service),
     rows: getRowsFromBaseService(service, Boolean(item.IsAccounting), getAccountingCashFlowPaymentStatus(item)),
     title: stringValue(item.Name),
   }
@@ -275,7 +280,7 @@ function mapSupplyPaymentTask(
       ...taskDocuments,
       ...services.flatMap((service) => collectServiceDocuments(toRecord(service) || {})),
     ]),
-    linkToOrder: getLinkToOrder(toRecord(services[0])),
+    orderLink: getOrderLink(toRecord(services[0])),
     rows,
     title: stringValue(item.Name),
   }
@@ -346,31 +351,26 @@ function getDocumentUrl(document: Record<string, unknown>): string {
     || stringValue(document.url)
 }
 
-function getLinkToOrder(service: Record<string, unknown> | null): string {
+function getOrderLink(service: Record<string, unknown> | null): CashFlowDetailOrderLink | null {
   if (!service) {
-    return ''
+    return null
   }
 
-  const supplyOrder = toRecord(service.SupplyOrder)
+  const supplyOrder = toRecord(service.SupplyOrder) || toRecord(readArray(service, 'SupplyOrders')[0])
+  const supplyOrderNetUid = stringValue(supplyOrder?.NetUid)
 
-  if (supplyOrder) {
-    return '/orders/poland/all/edit/' + stringValue(supplyOrder.NetUid)
-  }
-
-  const supplyOrders = readArray(service, 'SupplyOrders')
-  const firstSupplyOrder = toRecord(supplyOrders[0])
-
-  if (firstSupplyOrder) {
-    return '/orders/poland/all/edit/' + stringValue(firstSupplyOrder.NetUid)
+  if (supplyOrderNetUid) {
+    return { isNavigable: false, route: '/orders/poland/all/edit/' + supplyOrderNetUid }
   }
 
   const supplyOrderUkraine = toRecord(service.SupplyOrderUkraine)
+  const supplyOrderUkraineNetUid = stringValue(supplyOrderUkraine?.NetUid)
 
-  if (supplyOrderUkraine) {
-    return '/orders/ukraine/protocols/' + stringValue(supplyOrderUkraine.NetUid)
+  if (supplyOrderUkraineNetUid) {
+    return { isNavigable: true, route: '/orders/ukraine/protocols/' + supplyOrderUkraineNetUid }
   }
 
-  return ''
+  return null
 }
 
 function readArray(record: Record<string, unknown> | null, key: string): unknown[] {

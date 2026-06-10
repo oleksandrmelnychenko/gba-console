@@ -50,6 +50,7 @@ import type {
   UploadProductSpecificationResult,
 } from '../../product-delivery-protocols/specificationTypes'
 import { useAuth } from '../../auth/useAuth'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   addDeliveryDocumentsToDirectSupplyInvoice,
   getDirectSupplyOrderById,
@@ -115,6 +116,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [editingSpecificationItem, setEditingSpecificationItem] = useState<PackingListPackageOrderItem | null>(null)
   const [isSavingSpecification, setSavingSpecification] = useState(false)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [vendorCodeFilter, setVendorCodeFilter] = useState('')
   const uploadRequestRef = useRef(0)
   const documentsSaveRequestRef = useRef(0)
@@ -668,6 +670,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     order,
     packingList,
     packingListError,
+    productCardNetId,
     removeExistingDocument,
     removeNewDocument,
     requestCloseDocuments,
@@ -686,6 +689,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setDownloadOpen,
     setEditingSpecificationItem,
     setNumberCustomDeclaration,
+    setProductCardNetId,
     setUploadOpen,
     setUploadResult,
     setVendorCodeFilter,
@@ -901,6 +905,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
           packingList={model.filteredPackingList}
           withManagementServices={model.withManagementServices}
           onEditSpecification={model.setEditingSpecificationItem}
+          onOpenProductCard={model.setProductCardNetId}
         />
       ) : (
         <Group gap="xs" c="dimmed">
@@ -1003,6 +1008,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
         onClose={() => model.setEditingSpecificationItem(null)}
         onSave={model.saveSpecification}
       />
+      <ProductCardModal productNetId={model.productCardNetId} onClose={() => model.setProductCardNetId(null)} />
     </>
   )
 }

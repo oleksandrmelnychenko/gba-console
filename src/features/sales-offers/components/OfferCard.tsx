@@ -1,6 +1,8 @@
-import { ActionIcon, Badge, Box, Card, Collapse, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Box, Card, Collapse, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconChevronDown, IconChevronRight, IconLink, IconMessage, IconRestore, IconTrash } from '@tabler/icons-react'
+import { useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import type { ClientShoppingCart, OfferOrderItem } from '../types'
 import { OFFER_PROCESSING_STATUS } from '../types'
 import {
@@ -39,6 +41,7 @@ export function OfferCard({
   onToggle: (offer: ClientShoppingCart) => void
 }) {
   const { t } = useI18n()
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const status = offer.OfferProcessingStatus ?? OFFER_PROCESSING_STATUS.NotProcessed
   const notProcessedCount = getNotProcessedCount(offer)
   const currencyCode = 'EUR'
@@ -142,11 +145,13 @@ export function OfferCard({
               currencyCode={currencyCode}
               isOfferProcessed={offer.IsOfferProcessed === true}
               item={item}
+              onOpenProductCard={setProductCardNetId}
               onOpenReason={() => onOpenItemReason(offer, item)}
             />
           ))}
         </Stack>
       </Collapse>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Card>
   )
 }
@@ -155,11 +160,13 @@ function OfferLine({
   currencyCode,
   isOfferProcessed,
   item,
+  onOpenProductCard,
   onOpenReason,
 }: {
   currencyCode: string
   isOfferProcessed: boolean
   item: OfferOrderItem
+  onOpenProductCard: (productNetId: string) => void
   onOpenReason: () => void
 }) {
   const { t } = useI18n()
@@ -177,9 +184,29 @@ function OfferLine({
       }}
     >
       <Stack gap={2}>
-        <Text fw={500} size="sm">
-          {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name].filter(Boolean).join(' ')}
-        </Text>
+        {item.Product?.NetUid ? (
+          <Anchor
+            component="button"
+            fw={500}
+            size="sm"
+            style={{ textAlign: 'left' }}
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpenProductCard(item.Product?.NetUid as string)
+            }}
+          >
+            {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name]
+              .filter(Boolean)
+              .join(' ')}
+          </Anchor>
+        ) : (
+          <Text fw={500} size="sm">
+            {[item.Product?.VendorCode, item.Product?.MainOriginalNumber, item.Product?.Name]
+              .filter(Boolean)
+              .join(' ')}
+          </Text>
+        )}
         <Text c="dimmed" size="xs">
           {t('Від')} {formatDateTime(item.Created)} {item.User?.LastName ?? ''}
         </Text>

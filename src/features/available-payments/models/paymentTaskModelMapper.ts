@@ -628,6 +628,7 @@ function rowsFromBaseService(
       return {
         currency,
         grossPrice: readNumber(detail, ['GrossPrice']),
+        mergedServiceNumber: readString(service, ['Number']),
         name: readString(key, ['Name']),
         netPrice: readNumber(detail, ['NetPrice']),
         number: readString(service, ['Number']),

@@ -44,6 +44,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   deletePackingList,
   deleteSupplyInvoice,
@@ -67,6 +68,7 @@ import type {
   DirectSupplyOrder,
   EntityFields,
   PackingList,
+  Product,
   PackingListDocumentParseConfiguration,
   PackingListPackageOrderItem,
   SupplyInformationDeliveryProtocol,
@@ -274,6 +276,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const { hasPermission } = useAuth()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const [state, setPageState] = useReducer(pageStateReducer, INITIAL_PAGE_STATE)
   const {
     deleteInvoiceCandidate,
@@ -358,15 +361,17 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const hasInvoiceMismatch = invoiceBalanceRows.some((row) => row.isError)
   const hasPackListMismatch = packListBalanceRows.some((row) => row.isError)
 
-  const orderItemColumns = useOrderItemColumns()
+  const orderItemColumns = useOrderItemColumns(setProductCardNetId)
   const invoiceItemColumns = useInvoiceItemColumns({
     balanceByOrderItemKey: invoiceBalanceByOrderItemKey,
     disabled: isBusy || !selectedInvoice || !canEditInvoice,
+    onOpenProductCard: setProductCardNetId,
     onQtyChange: handleInvoiceQtyChange,
   })
   const packListItemColumns = usePackListItemColumns({
     balanceByInvoiceItemKey: packListBalanceByInvoiceItemKey,
     disabled: isBusy || !selectedPackList || !canAddPackList,
+    onOpenProductCard: setProductCardNetId,
     onQtyChange: handlePackListQtyChange,
   })
   const orderTotalsToolbar = useMemo(() => <TotalsBadges totals={totals} />, [totals])
@@ -987,6 +992,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     packListEditor,
     packListUploadOpen,
     paymentProtocolKeys,
+    productCardNetId,
     reloadOrder,
     responsibleUsers,
     saveInvoiceMetadata,
@@ -1001,6 +1007,7 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     selectedPackListItems,
     selectedPackListNetId,
     setPageState,
+    setProductCardNetId,
     submitInvoice,
     submitPackList,
     goBack: () => navigate(`/orders/ukraine/all/edit/${id || ''}`),
@@ -1421,6 +1428,7 @@ function DirectOrderInvoicesModals({ model }: { model: DirectOrderInvoicesPageMo
         onClose={() => model.setPageState({ deletePackListCandidate: null })}
         onConfirm={model.confirmDeletePackList}
       />
+      <ProductCardModal productNetId={model.productCardNetId} onClose={() => model.setProductCardNetId(null)} />
     </>
   )
 }
@@ -1955,38 +1963,40 @@ function DeleteModal({
   )
 }
 
-function useOrderItemColumns(): DataTableColumn<SupplyOrderItem>[] {
+function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void): DataTableColumn<SupplyOrderItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<SupplyOrderItem>[]>(
     () => [
-      { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.Product?.VendorCode, cell: (item) => item.Product?.VendorCode || '-' },
-      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.Product?.Name, cell: (item) => item.Product?.Name || item.Product?.NameUA || '-' },
+      { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.Product?.VendorCode, cell: (item) => <ProductCodeCell product={item.Product} onOpenProductCard={onOpenProductCard} /> },
+      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.Product?.Name, cell: (item) => <ProductNameCell product={item.Product} onOpenProductCard={onOpenProductCard} /> },
       { id: 'qty', header: t('Кількість'), width: 120, align: 'right', accessor: (item) => item.Qty, cell: (item) => formatNumber(item.Qty) },
       { id: 'leftToInvoice', header: t('Залишок'), width: 120, align: 'right', accessor: (item) => item.QtyDifference, cell: (item) => <BalanceBadge value={item.QtyDifference || 0} /> },
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => getOrderItemTotal(item), cell: (item) => formatMoney(getOrderItemTotal(item)) },
       { id: 'placed', header: t('Розміщено'), width: 120, accessor: (item) => item.IsPlaced, cell: (item) => <Badge color={item.IsPlaced ? 'green' : 'gray'} variant="light">{item.IsPlaced ? t('Так') : t('Ні')}</Badge> },
     ],
-    [t],
+    [onOpenProductCard, t],
   )
 }
 
 function useInvoiceItemColumns({
   balanceByOrderItemKey,
   disabled,
+  onOpenProductCard,
   onQtyChange,
 }: {
   balanceByOrderItemKey: Map<string, InvoiceBalanceRow>
   disabled: boolean
+  onOpenProductCard: (productNetId: string) => void
   onQtyChange: (item: SupplyInvoiceOrderItem, value: number | string) => void
 }): DataTableColumn<SupplyInvoiceOrderItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<SupplyInvoiceOrderItem>[]>(
     () => [
-      { id: 'code', header: t('Код'), width: 130, accessor: (item) => getInvoiceItemProduct(item)?.VendorCode, cell: (item) => getInvoiceItemProduct(item)?.VendorCode || '-' },
-      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => getInvoiceItemProduct(item)?.Name, cell: (item) => getInvoiceItemProduct(item)?.Name || getInvoiceItemProduct(item)?.NameUA || '-' },
+      { id: 'code', header: t('Код'), width: 130, accessor: (item) => getInvoiceItemProduct(item)?.VendorCode, cell: (item) => <ProductCodeCell product={getInvoiceItemProduct(item)} onOpenProductCard={onOpenProductCard} /> },
+      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => getInvoiceItemProduct(item)?.Name, cell: (item) => <ProductNameCell product={getInvoiceItemProduct(item)} onOpenProductCard={onOpenProductCard} /> },
       {
         id: 'qty',
         header: t('Кількість'),
@@ -2017,25 +2027,27 @@ function useInvoiceItemColumns({
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0)) },
       { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge color={item.ProductIsImported ? 'green' : 'gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
-    [balanceByOrderItemKey, disabled, onQtyChange, t],
+    [balanceByOrderItemKey, disabled, onOpenProductCard, onQtyChange, t],
   )
 }
 
 function usePackListItemColumns({
   balanceByInvoiceItemKey,
   disabled,
+  onOpenProductCard,
   onQtyChange,
 }: {
   balanceByInvoiceItemKey: Map<string, PackListBalanceRow>
   disabled: boolean
+  onOpenProductCard: (productNetId: string) => void
   onQtyChange: (item: PackingListPackageOrderItem, value: number | string) => void
 }): DataTableColumn<PackingListPackageOrderItem>[] {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<PackingListPackageOrderItem>[]>(
     () => [
-      { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode, cell: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode || '-' },
-      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.Name, cell: (item) => item.SupplyInvoiceOrderItem?.Product?.Name || item.SupplyInvoiceOrderItem?.Product?.NameUA || '-' },
+      { id: 'code', header: t('Код'), width: 130, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.VendorCode, cell: (item) => <ProductCodeCell product={item.SupplyInvoiceOrderItem?.Product} onOpenProductCard={onOpenProductCard} /> },
+      { id: 'name', header: t('Товар'), minWidth: 260, accessor: (item) => item.SupplyInvoiceOrderItem?.Product?.Name, cell: (item) => <ProductNameCell product={item.SupplyInvoiceOrderItem?.Product} onOpenProductCard={onOpenProductCard} /> },
       { id: 'netUnit', header: t('Нетто од.'), width: 120, align: 'right', accessor: (item) => item.NetWeight, cell: (item) => formatNumber(item.NetWeight) },
       { id: 'grossUnit', header: t('Брутто од.'), width: 120, align: 'right', accessor: (item) => item.GrossWeight, cell: (item) => formatNumber(item.GrossWeight) },
       {
@@ -2069,7 +2081,61 @@ function usePackListItemColumns({
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
     ],
-    [balanceByInvoiceItemKey, disabled, onQtyChange, t],
+    [balanceByInvoiceItemKey, disabled, onOpenProductCard, onQtyChange, t],
+  )
+}
+
+function ProductCodeCell({
+  onOpenProductCard,
+  product,
+}: {
+  onOpenProductCard: (productNetId: string) => void
+  product?: Product | null
+}) {
+  const netId = product?.NetUid
+  const code = product?.VendorCode || '-'
+
+  return netId ? (
+    <Anchor
+      component="button"
+      fw={600}
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpenProductCard(netId)
+      }}
+    >
+      {code}
+    </Anchor>
+  ) : (
+    <Text fw={600} size="sm">{code}</Text>
+  )
+}
+
+function ProductNameCell({
+  onOpenProductCard,
+  product,
+}: {
+  onOpenProductCard: (productNetId: string) => void
+  product?: Product | null
+}) {
+  const netId = product?.NetUid
+  const name = product?.Name || product?.NameUA || '-'
+
+  return netId ? (
+    <Anchor
+      component="button"
+      size="sm"
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpenProductCard(netId)
+      }}
+    >
+      {name}
+    </Anchor>
+  ) : (
+    <Text size="sm">{name}</Text>
   )
 }
 

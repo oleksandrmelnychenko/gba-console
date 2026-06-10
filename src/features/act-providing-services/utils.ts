@@ -11,6 +11,7 @@ const TYPE_BILL_OF_LADING_CONTAINER = 0
 export type ActProvidingServiceDisplayModel = {
   accountingMarker: string
   actNumber?: string
+  actResponsible?: string
   agreement?: string
   amount?: number
   amountVat?: number
@@ -19,6 +20,7 @@ export type ActProvidingServiceDisplayModel = {
   date?: string
   invDate?: string
   invNumber?: string
+  listInvDate?: string
   managementMarker: string
   name?: string
   netId?: string
@@ -41,6 +43,7 @@ export function toActProvidingServiceDisplayModel(
   const baseModel: ActProvidingServiceDisplayModel = {
     accountingMarker: act.IsAccounting ? '+' : '',
     actNumber: act.Number,
+    actResponsible: getEntityName(act.User),
     comment: act.Comment,
     date: act.FromDate,
     managementMarker: act.IsAccounting ? '' : '+',
@@ -52,12 +55,14 @@ export function toActProvidingServiceDisplayModel(
   if (source.kind === 'deliveryExpense') {
     return {
       ...baseModel,
+      actResponsible: getEntityName(source.value.User),
       agreement: source.value.SupplyOrganizationAgreement?.Name,
       amount: source.value.AccountingGrossAmount,
       amountVat: source.value.VatAmount,
       currency: getCurrencyCode(source.value.SupplyOrganizationAgreement?.Currency),
       invDate: source.value.FromDate,
       invNumber: source.value.InvoiceNumber,
+      listInvDate: act.FromDate,
       name: source.value.ConsumableProduct?.Name,
       number: source.value.InvoiceNumber || baseModel.number,
       organization: getEntityName(source.value.SupplyOrderUkraine?.Organization),

@@ -41,6 +41,28 @@ export function formatDate(value?: Date | string | null): string {
   return dateFormatter.format(date)
 }
 
+export function formatDateTime(value?: Date | string | null): string {
+  if (!value) {
+    return '-'
+  }
+
+  if (typeof value === 'string') {
+    const dateTimePartMatch = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(value)
+
+    if (dateTimePartMatch) {
+      return `${dateTimePartMatch[3]}.${dateTimePartMatch[2]}.${dateTimePartMatch[1]} ${dateTimePartMatch[4]}:${dateTimePartMatch[5]}`
+    }
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === 'string' ? value : '-'
+  }
+
+  return `${padTwoDigits(date.getDate())}.${padTwoDigits(date.getMonth() + 1)}.${date.getFullYear()} ${padTwoDigits(date.getHours())}:${padTwoDigits(date.getMinutes())}`
+}
+
 export function formatAmount(value?: number): string {
   const numberValue = toFiniteNumber(value)
 
@@ -77,6 +99,10 @@ export function getSupplierDisplayName(supplier: ProductRemainSupplier): string 
     || supplier.NetUid
     || '-'
   )
+}
+
+function padTwoDigits(value: number): string {
+  return String(value).padStart(2, '0')
 }
 
 function toFiniteNumber(value?: number): number | null {

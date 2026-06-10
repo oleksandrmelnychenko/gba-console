@@ -60,6 +60,8 @@ const TABLE_DEFAULT_LAYOUT = {
 
 const DEFAULT_LOOKBACK_DAYS = 7
 
+const FILTERS_STORAGE_KEY = 'accountable-expenses-filters'
+
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
   timeStyle: 'short',
@@ -88,8 +90,8 @@ export function AccountableExpensesPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-DEFAULT_LOOKBACK_DAYS))
-  const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
+  const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || shiftDate(-DEFAULT_LOOKBACK_DAYS))
+  const [toDate, setToDate] = useValueState(() => readStoredFilters().to || formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
@@ -138,6 +140,10 @@ export function AccountableExpensesPage() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadOrders])
+
+  useEffect(() => {
+    writeStoredFilters({ from: fromDate, to: toDate })
+  }, [fromDate, toDate])
 
   const rows = useMemo(() => buildExpenseRows(orders), [orders])
   const openPayment = useCallback(
@@ -589,6 +595,39 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+type StoredFilters = {
+  from?: string
+  to?: string
+}
+
+function readStoredFilters(): StoredFilters {
+  try {
+    const raw = window.sessionStorage.getItem(FILTERS_STORAGE_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : null
+
+    if (!parsed || typeof parsed !== 'object') {
+      return {}
+    }
+
+    const filters = parsed as Record<string, unknown>
+
+    return {
+      from: typeof filters.from === 'string' ? filters.from : undefined,
+      to: typeof filters.to === 'string' ? filters.to : undefined,
+    }
+  } catch {
+    return {}
+  }
+}
+
+function writeStoredFilters(filters: StoredFilters) {
+  try {
+    window.sessionStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
+  } catch {
+    return
+  }
 }
 
 function getDateRangeError(fromDate: string, toDate: string): string | null {

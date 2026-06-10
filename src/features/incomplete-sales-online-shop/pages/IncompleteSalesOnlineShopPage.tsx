@@ -29,7 +29,6 @@ import {
 } from '@tabler/icons-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
-import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
@@ -71,11 +70,34 @@ type PendingStatusAction = {
   status: 1 | 2
 }
 
-const DEFAULT_FILTER_DRAFT: FilterDraft = {
-  from: '',
-  isAccepted: false,
-  number: '',
-  to: '',
+function toDateInputValue(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function createDefaultFilterDraft(): FilterDraft {
+  const today = toDateInputValue(new Date())
+
+  return {
+    from: today,
+    isAccepted: false,
+    number: '',
+    to: today,
+  }
+}
+
+function toIncompleteSalesFilter(draft: FilterDraft): IncompleteSalesOnlineShopFilter {
+  const number = draft.number.trim()
+
+  return {
+    from: draft.from || undefined,
+    isAccepted: draft.isAccepted,
+    number: number.length > 6 ? number : undefined,
+    to: draft.to || undefined,
+  }
 }
 
 const INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT = {
@@ -94,11 +116,10 @@ const STATUS_COLORS: Record<IncompleteSalesOnlineShopStatus, string> = {
 
 function useIncompleteSalesOnlineShopPageModel() {
   const { t } = useI18n()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const [sales, setSales] = useValueState<IncompleteSalesOnlineShopItem[]>([])
-  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(DEFAULT_FILTER_DRAFT)
-  const [activeFilters, setActiveFilters] = useValueState<IncompleteSalesOnlineShopFilter>({})
+  const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(createDefaultFilterDraft)
+  const [activeFilters, setActiveFilters] = useValueState<IncompleteSalesOnlineShopFilter>(() => toIncompleteSalesFilter(createDefaultFilterDraft()))
   const [error, setError] = useValueState<string | null>(null)
   const [detailError, setDetailError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -150,16 +171,13 @@ function useIncompleteSalesOnlineShopPageModel() {
     setDetailError(null)
   }, [setDetailError, setSelectedSale])
 
-  const openClientSales = useCallback(
-    (sale: IncompleteSalesOnlineShopItem) => {
-      const netUid = getRetailClientNetUid(sale.RetailClient)
+  const openClientSales = useCallback((sale: IncompleteSalesOnlineShopItem) => {
+    const netUid = getRetailClientNetUid(sale.RetailClient)
 
-      if (netUid) {
-        navigate(`/clients-online-shop/client/${netUid}`)
-      }
-    },
-    [navigate],
-  )
+    if (netUid) {
+      window.open(`/clients-online-shop/client/${netUid}`, '_blank', 'noopener,noreferrer')
+    }
+  }, [])
 
   const columns = useIncompleteSalesOnlineShopColumns({
     onOpenClientSales: openClientSales,
@@ -199,23 +217,24 @@ function useIncompleteSalesOnlineShopPageModel() {
 
     const number = nextDraft.number.trim()
 
+    if (number.length > 0 && number.length <= 6) {
+      return
+    }
+
     if (nextDraft.from && nextDraft.to && nextDraft.from > nextDraft.to) {
       return
     }
 
     setSelectedSale(null)
-    setActiveFilters({
-      from: nextDraft.from || undefined,
-      isAccepted: nextDraft.isAccepted,
-      number: number.length > 6 ? number : undefined,
-      to: nextDraft.to || undefined,
-    })
+    setActiveFilters(toIncompleteSalesFilter(nextDraft))
   }
 
   function resetFilters() {
+    const defaultDraft = createDefaultFilterDraft()
+
     closeDetail()
-    setFilterDraft({ ...DEFAULT_FILTER_DRAFT })
-    setActiveFilters({})
+    setFilterDraft(defaultDraft)
+    setActiveFilters(toIncompleteSalesFilter(defaultDraft))
     reload()
   }
 
@@ -788,7 +807,13 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
 
       <IncompleteSaleItemsList
         emptyText={t('Товарів не знайдено')}
-        items={(sale.OrderItems || []).filter((item) => item.Product).map(toSaleOrderItem)}
+        items={(sale.OrderItems || []).reduce<SaleOrderItem[]>((items, item) => {
+          if (item.Product) {
+            items.push(toSaleOrderItem(item))
+          }
+
+          return items
+        }, [])}
       />
     </Stack>
   )

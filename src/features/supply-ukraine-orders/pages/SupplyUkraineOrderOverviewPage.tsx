@@ -28,6 +28,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -84,6 +85,7 @@ type OverviewRow = {
   measureUnit?: string
   netWeight?: number
   productName?: string
+  productNetId?: string
   qty?: number
   specificationCode?: string
   totalWithVat?: number
@@ -110,6 +112,7 @@ export function SupplyUkraineOrderOverviewPage() {
   const [documentDrafts, setDocumentDrafts] = useState<SupplyOrderUkraineDocument[]>([])
   const [newDocuments, setNewDocuments] = useState<UkraineOrderNewDocument[]>([])
   const [hasVatItemChanges, setVatItemChanges] = useState(false)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const canCalculateVat = hasPermission(CALCULATE_VAT_PERMISSION)
   const canManageDocuments = hasPermission(MANAGE_DOCUMENTS_PERMISSION)
   const canOpenPlacement = hasPermission(PLACEMENT_PERMISSION)
@@ -410,6 +413,7 @@ export function SupplyUkraineOrderOverviewPage() {
   const columns = useOverviewColumns({
     isSavingVatItems,
     onChangeVatPercent: changeItemVatPercent,
+    onOpenProductCard: setProductCardNetId,
   })
   const documentColumns = useDocumentColumns()
   const documents = order?.SupplyOrderUkraineDocuments || []
@@ -642,6 +646,7 @@ export function SupplyUkraineOrderOverviewPage() {
           </Group>
         </Stack>
       </AppModal>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }
@@ -649,9 +654,11 @@ export function SupplyUkraineOrderOverviewPage() {
 function useOverviewColumns({
   isSavingVatItems,
   onChangeVatPercent,
+  onOpenProductCard,
 }: {
   isSavingVatItems: boolean
   onChangeVatPercent: (row: OverviewRow, value: string | number) => void
+  onOpenProductCard: (productNetId: string) => void
 }): DataTableColumn<OverviewRow>[] {
   const { t } = useI18n()
 
@@ -663,14 +670,44 @@ function useOverviewColumns({
         header: t('Код товару'),
         width: 150,
         accessor: (row) => row.vendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.vendorCode)}</Text>,
+        cell: (row) =>
+          row.productNetId ? (
+            <Anchor
+              component="button"
+              fw={700}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(row.productNetId as string)
+              }}
+            >
+              {displayValue(row.vendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={700}>{displayValue(row.vendorCode)}</Text>
+          ),
       },
       {
         id: 'productName',
         header: t('Назва'),
         minWidth: 240,
         accessor: (row) => row.productName,
-        cell: (row) => displayValue(row.productName),
+        cell: (row) =>
+          row.productNetId ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(row.productNetId as string)
+              }}
+            >
+              {displayValue(row.productName)}
+            </Anchor>
+          ) : (
+            displayValue(row.productName)
+          ),
       },
       {
         id: 'specificationCode',
@@ -804,7 +841,7 @@ function useOverviewColumns({
         cell: (row) => formatMoney(row.managementCost),
       },
     ],
-    [isSavingVatItems, onChangeVatPercent, t],
+    [isSavingVatItems, onChangeVatPercent, onOpenProductCard, t],
   )
 }
 
@@ -907,6 +944,7 @@ function mapRows(items: SupplyOrderUkraineItem[]): OverviewRow[] {
       measureUnit: readString(measureUnit.Name),
       netWeight: readNumber(itemRecord.TotalNetWeight),
       productName: readString(product.Name) || readString(product.NameUA),
+      productNetId: readString(product.NetUid),
       qty: readNumber(itemRecord.Qty),
       specificationCode: readString(productSpecification.SpecificationCode),
       totalWithVat: readNumber(itemRecord.GrossPriceLocal),

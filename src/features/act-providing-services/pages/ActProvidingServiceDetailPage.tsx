@@ -291,7 +291,7 @@ function ActProvidingServiceDetailPageView({
               <DetailValue label={t('Валюта')} value={displayModel.currency} />
               <DetailValue label={t('Дата інвойсу')} value={formatDateTime(displayModel.invDate)} />
               <DetailValue label={t('Номер інвойсу')} value={displayModel.invNumber} />
-              <DetailValue label={t('Відповідальний')} value={displayModel.responsible} />
+              <DetailValue label={t('Відповідальний')} value={displayModel.actResponsible} />
               <DetailValue label={t('Послуга')} value={displayModel.name} />
               <DetailValue label={t('Сума')} value={formatMoney(displayModel.amount)} />
               <DetailValue label={t('ПДВ %')} value={formatPercent(displayModel.percentVat)} />

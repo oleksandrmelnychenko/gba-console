@@ -40,6 +40,7 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -549,6 +550,7 @@ export function NewResalePage() {
     id: 0,
     opened: false,
   })
+  const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const productGroupOptions = useMemo(() => buildProductGroupOptions(filterOptions?.ProductGroups || []), [filterOptions?.ProductGroups])
   const storageOptions = useMemo(() => buildStorageOptions(filterOptions?.Storages || []), [filterOptions?.Storages])
@@ -565,9 +567,23 @@ export function NewResalePage() {
   )
   const selectionSpansMultipleStorages = canProcessAvailabilityRows(selectedRows) && !rowsShareSingleStorage(selectedRows)
   const canProcessSelected = canProcessAvailabilityRows(selectedRows) && rowsShareSingleStorage(selectedRows)
+  const productNetIdByProductId = useMemo(() => {
+    const map = new Map<number, string>()
+
+    availabilities.forEach((availability) => {
+      const netId = getAvailabilityProductNetId(availability)
+
+      if (netId) {
+        map.set(availability.ProductId, netId)
+      }
+    })
+
+    return map
+  }, [availabilities])
   const columns = useResaleAvailabilityColumns({
     rows: availabilities,
     selectedKeys,
+    onOpenProductCard: setProductCardNetId,
     onToggle: toggleAvailability,
     onToggleAll: toggleAllAvailabilities,
   })
@@ -830,7 +846,11 @@ export function NewResalePage() {
 
   function toggleAllAvailabilities() {
     setSelectedKeys((currentKeys) => {
-      const allKeys = availabilities.map(getAvailabilityKey).filter(Boolean)
+      const allKeys = availabilities.flatMap((availability) => {
+        const key = getAvailabilityKey(availability)
+
+        return key ? [key] : []
+      })
       const everySelected = allKeys.length > 0 && allKeys.every((key) => currentKeys.includes(key))
 
       return everySelected ? [] : allKeys
@@ -1078,6 +1098,7 @@ export function NewResalePage() {
         isSaving={isProcessing}
         opened={processState.opened}
         processData={processState.data}
+        productNetIdByProductId={productNetIdByProductId}
         onClose={() => setProcessState((currentState) => ({
           ...currentState,
           data: null,
@@ -1094,6 +1115,8 @@ export function NewResalePage() {
         title={t('Документ підбору')}
         onClose={() => setDownloadModalOpened(false)}
       />
+
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
     </AppDrawer>
   )
@@ -1117,6 +1140,7 @@ export function ResalePage() {
   const [downloadDocument, setDownloadDocument] = useValueState<ResaleExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [consignmentNoteOpened, setConsignmentNoteOpened] = useValueState(false)
+  const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const detailRequestRef = useRef(0)
@@ -1130,6 +1154,7 @@ export function ResalePage() {
     onChangeAmount: updateRowAmount,
     onChangeQty: updateRowQty,
     onChangeSalePrice: updateRowSalePrice,
+    onOpenProductCard: setProductCardNetId,
   })
   const applyDetailResult = useCallback(
     (result: ResaleActionResult<UpdatedResaleModel>) => {
@@ -1608,6 +1633,8 @@ export function ResalePage() {
         resale={model.ReSale}
         onClose={() => setConsignmentNoteOpened(false)}
       />
+
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }
@@ -1818,11 +1845,13 @@ function useResalesColumns({
 function useResaleAvailabilityColumns({
   rows,
   selectedKeys,
+  onOpenProductCard,
   onToggle,
   onToggleAll,
 }: {
   rows: GroupingResaleAvailability[]
   selectedKeys: string[]
+  onOpenProductCard: (netId: string) => void
   onToggle: (row: GroupingResaleAvailability) => void
   onToggleAll: () => void
 }): DataTableColumn<GroupingResaleAvailability>[] {
@@ -1884,7 +1913,25 @@ function useResaleAvailabilityColumns({
         width: 130,
         minWidth: 110,
         accessor: (row) => row.VendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.VendorCode)}</Text>,
+        cell: (row) => {
+          const netId = getAvailabilityProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={700}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(row.VendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={700}>{displayValue(row.VendorCode)}</Text>
+          )
+        },
       },
       {
         id: 'productName',
@@ -1892,11 +1939,28 @@ function useResaleAvailabilityColumns({
         width: 300,
         minWidth: 240,
         accessor: (row) => row.ProductName,
-        cell: (row) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(row.ProductName)}
-          </Text>
-        ),
+        cell: (row) => {
+          const netId = getAvailabilityProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              lineClamp={2}
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(row.ProductName)}
+            </Anchor>
+          ) : (
+            <Text size="sm" lineClamp={2}>
+              {displayValue(row.ProductName)}
+            </Text>
+          )
+        },
       },
       {
         id: 'specification',
@@ -1976,18 +2040,22 @@ function useResaleAvailabilityColumns({
         cell: (row) => formatMoney(row.TotalSalePrice),
       },
     ],
-    [allSelected, onToggle, onToggleAll, rows, selectedKeys, t],
+    [allSelected, onOpenProductCard, onToggle, onToggleAll, rows, selectedKeys, t],
   )
 }
 
 function useProcessColumns({
+  getProductNetId,
   onChangeAmount,
   onChangeQty,
   onChangeSalePrice,
+  onOpenProductCard,
 }: {
+  getProductNetId: (row: ResaleAvailabilityItemModel) => string | null
   onChangeAmount: (index: number, value: number | string) => void
   onChangeQty: (index: number, value: number | string) => void
   onChangeSalePrice: (index: number, value: number | string) => void
+  onOpenProductCard: (netId: string) => void
 }): DataTableColumn<ResaleAvailabilityItemModel & { __rowIndex: number }>[] {
   const { t } = useI18n()
 
@@ -1999,7 +2067,25 @@ function useProcessColumns({
         width: 130,
         minWidth: 110,
         accessor: (row) => row.VendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.VendorCode)}</Text>,
+        cell: (row) => {
+          const netId = getProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={700}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(row.VendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={700}>{displayValue(row.VendorCode)}</Text>
+          )
+        },
       },
       {
         id: 'productName',
@@ -2007,7 +2093,25 @@ function useProcessColumns({
         width: 260,
         minWidth: 220,
         accessor: (row) => row.ProductName,
-        cell: (row) => displayValue(row.ProductName),
+        cell: (row) => {
+          const netId = getProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(row.ProductName)}
+            </Anchor>
+          ) : (
+            displayValue(row.ProductName)
+          )
+        },
       },
       {
         id: 'qty',
@@ -2103,7 +2207,7 @@ function useProcessColumns({
         cell: (row) => `${percentFormatter.format(row.Profitability || 0)}%`,
       },
     ],
-    [onChangeAmount, onChangeQty, onChangeSalePrice, t],
+    [getProductNetId, onChangeAmount, onChangeQty, onChangeSalePrice, onOpenProductCard, t],
   )
 }
 
@@ -2114,6 +2218,7 @@ function useResaleDetailColumns({
   onChangeAmount,
   onChangeQty,
   onChangeSalePrice,
+  onOpenProductCard,
 }: {
   changedToInvoice: boolean
   isBusy: boolean
@@ -2121,6 +2226,7 @@ function useResaleDetailColumns({
   onChangeAmount: (index: number, value: number | string) => void
   onChangeQty: (index: number, value: number | string) => void
   onChangeSalePrice: (index: number, value: number | string) => void
+  onOpenProductCard: (netId: string) => void
 }): DataTableColumn<UpdatedResaleItemModel & { __rowIndex: number }>[] {
   const { t } = useI18n()
 
@@ -2132,7 +2238,25 @@ function useResaleDetailColumns({
         width: 130,
         minWidth: 110,
         accessor: getUpdatedRowVendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(getUpdatedRowVendorCode(row))}</Text>,
+        cell: (row) => {
+          const netId = getUpdatedRowProduct(row)?.NetUid
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={700}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(getUpdatedRowVendorCode(row))}
+            </Anchor>
+          ) : (
+            <Text fw={700}>{displayValue(getUpdatedRowVendorCode(row))}</Text>
+          )
+        },
       },
       {
         id: 'productName',
@@ -2140,11 +2264,28 @@ function useResaleDetailColumns({
         width: 260,
         minWidth: 220,
         accessor: getUpdatedRowProductName,
-        cell: (row) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(getUpdatedRowProductName(row))}
-          </Text>
-        ),
+        cell: (row) => {
+          const netId = getUpdatedRowProduct(row)?.NetUid
+
+          return netId ? (
+            <Anchor
+              component="button"
+              lineClamp={2}
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(netId)
+              }}
+            >
+              {displayValue(getUpdatedRowProductName(row))}
+            </Anchor>
+          ) : (
+            <Text size="sm" lineClamp={2}>
+              {displayValue(getUpdatedRowProductName(row))}
+            </Text>
+          )
+        },
       },
       {
         id: 'qty',
@@ -2257,7 +2398,7 @@ function useResaleDetailColumns({
         cell: (row) => `${percentFormatter.format(row.Profitability || 0)}%`,
       },
     ],
-    [changedToInvoice, isBusy, isCompleted, onChangeAmount, onChangeQty, onChangeSalePrice, t],
+    [changedToInvoice, isBusy, isCompleted, onChangeAmount, onChangeQty, onChangeSalePrice, onOpenProductCard, t],
   )
 }
 
@@ -2275,6 +2416,7 @@ function ProcessSelectionConfirmDrawer({
   onConfirm: () => void
 }) {
   const { t } = useI18n()
+  const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const totals = useMemo(
     () => rows.reduce(
       (result, row) => ({
@@ -2294,7 +2436,25 @@ function ProcessSelectionConfirmDrawer({
         width: 132,
         minWidth: 112,
         accessor: (row) => row.VendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(row.VendorCode)}</Text>,
+        cell: (row) => {
+          const netId = getAvailabilityProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              fw={700}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setProductCardNetId(netId)
+              }}
+            >
+              {displayValue(row.VendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={700}>{displayValue(row.VendorCode)}</Text>
+          )
+        },
       },
       {
         id: 'productName',
@@ -2302,11 +2462,28 @@ function ProcessSelectionConfirmDrawer({
         width: 300,
         minWidth: 240,
         accessor: (row) => row.ProductName,
-        cell: (row) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(row.ProductName)}
-          </Text>
-        ),
+        cell: (row) => {
+          const netId = getAvailabilityProductNetId(row)
+
+          return netId ? (
+            <Anchor
+              component="button"
+              lineClamp={2}
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setProductCardNetId(netId)
+              }}
+            >
+              {displayValue(row.ProductName)}
+            </Anchor>
+          ) : (
+            <Text size="sm" lineClamp={2}>
+              {displayValue(row.ProductName)}
+            </Text>
+          )
+        },
       },
       {
         id: 'storage',
@@ -2352,7 +2529,7 @@ function ProcessSelectionConfirmDrawer({
         cell: (row) => formatMoney(row.TotalSalePrice),
       },
     ],
-    [t],
+    [setProductCardNetId, t],
   )
 
   return (
@@ -2404,6 +2581,7 @@ function ProcessSelectionConfirmDrawer({
           </Button>
         </Group>
       </Stack>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </AppDrawer>
   )
 }
@@ -2413,6 +2591,7 @@ function ResaleProcessDrawer({
   isSaving,
   opened,
   processData,
+  productNetIdByProductId,
   onClose,
   onCreate,
   onRecalculate,
@@ -2421,6 +2600,7 @@ function ResaleProcessDrawer({
   isSaving: boolean
   opened: boolean
   processData: CreatedResaleAvailabilityWithTotals | null
+  productNetIdByProductId: Map<number, string>
   onClose: () => void
   onCreate: (payload: ResaleCreatePayload) => void
   onRecalculate: (payload: ResaleAvailabilityItemModel[]) => Promise<ResaleActionResult<CreatedResaleAvailabilityWithTotals>>
@@ -2428,12 +2608,19 @@ function ResaleProcessDrawer({
   const { t } = useI18n()
   const [processForm, setProcessForm] = useValueState<ProcessDrawerState>(() => createProcessDrawerState(processData))
   const [isRecalculating, setRecalculating] = useValueState(false)
+  const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const recalculateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recalculateRequestRef = useRef(0)
+  const getProductNetId = useCallback(
+    (row: ResaleAvailabilityItemModel) => productNetIdByProductId.get(row.ProductId) || null,
+    [productNetIdByProductId],
+  )
   const columns = useProcessColumns({
+    getProductNetId,
     onChangeAmount: updateAmount,
     onChangeQty: updateQty,
     onChangeSalePrice: updateSalePrice,
+    onOpenProductCard: setProductCardNetId,
   })
   const totals = useMemo(
     () => getProcessTotals(processForm.activeProcessData, processForm.rows),
@@ -2665,6 +2852,7 @@ function ResaleProcessDrawer({
           </Button>
         </Group>
       </Stack>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </AppDrawer>
   )
 }
@@ -3292,6 +3480,10 @@ function collectStorageIds(storages: ResaleStorage[]): string[] {
 
 function getAvailabilityKey(row: GroupingResaleAvailability): string {
   return `${row.ProductId}-${readAvailabilityStorageId(row) || 0}-${row.SpecificationCode || ''}`
+}
+
+function getAvailabilityProductNetId(row: GroupingResaleAvailability): string | null {
+  return row.ConsignmentItems?.find((item) => item.Product?.NetUid)?.Product?.NetUid || null
 }
 
 function createProcessDrawerState(processData: CreatedResaleAvailabilityWithTotals | null): ProcessDrawerState {

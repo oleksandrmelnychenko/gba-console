@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   Alert,
+  Anchor,
   Box,
   Button,
   Card,
@@ -13,7 +14,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { IconAlertCircle, IconChevronDown, IconChevronRight, IconDownload, IconRefresh } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -27,6 +28,7 @@ import {
   getClientProductMovements,
   searchClientProductMovementClients,
 } from '../api/clientProductMovementApi'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DownloadDocumentModal } from '../components/DownloadDocumentModal'
 import type {
   ClientProductMovementClientOption,
@@ -548,6 +550,7 @@ function useColumns({
 
 function MovementInfoItemsTable({ document }: { document: ClientProductMovementDocument }) {
   const { t } = useI18n()
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const items = Array.isArray(document.InfoItems) ? document.InfoItems : []
   const itemColumns = useMemo<DataTableColumn<ClientProductMovementInfoItem>[]>(
     () => [
@@ -557,16 +560,52 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         width: 320,
         minWidth: 220,
         accessor: (item) => item.Product?.VendorCode,
-        cell: (item) => (
-          <Box>
-            <Text fw={600} size="sm">
-              {displayValue(item.Product?.VendorCode)}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {displayValue(item.Product?.Name)}
-            </Text>
-          </Box>
-        ),
+        cell: (item) => {
+          const netId = item.Product?.NetUid
+          const code = displayValue(item.Product?.VendorCode)
+          const name = displayValue(item.Product?.Name)
+
+          return (
+            <Stack align="flex-start" gap={0}>
+              {netId ? (
+                <Anchor
+                  component="button"
+                  fw={600}
+                  size="sm"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setProductCardNetId(netId)
+                  }}
+                >
+                  {code}
+                </Anchor>
+              ) : (
+                <Text fw={600} size="sm">
+                  {code}
+                </Text>
+              )}
+              {netId ? (
+                <Anchor
+                  c="dimmed"
+                  component="button"
+                  size="xs"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setProductCardNetId(netId)
+                  }}
+                >
+                  {name}
+                </Anchor>
+              ) : (
+                <Text c="dimmed" size="xs">
+                  {name}
+                </Text>
+              )}
+            </Stack>
+          )
+        },
       },
       {
         id: 'specificationCode',
@@ -619,6 +658,7 @@ function MovementInfoItemsTable({ document }: { document: ClientProductMovementD
         minWidth={960}
         tableId={`client-product-movement-items-${document.DocumentId ?? document.DocumentNumber ?? 'doc'}`}
       />
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Box>
   )
 }

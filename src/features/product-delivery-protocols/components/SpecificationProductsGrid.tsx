@@ -1,4 +1,4 @@
-import { ActionIcon, Badge, Group, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Group, Text, Tooltip } from '@mantine/core'
 import { IconEdit } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -22,6 +22,7 @@ type SpecificationRow = {
   name: string
   netPrice: number
   netWeight: number
+  productNetId: string
   qty: number
   serviceValues: Record<string, number>
   specificationCode: string
@@ -48,6 +49,7 @@ type SpecificationProductsGridProps = {
   currencyIsEur: boolean
   invoiceDeliveryAmount?: number
   onEditSpecification?: (item: PackingListPackageOrderItem) => void
+  onOpenProductCard?: (productNetId: string) => void
   packingList: SpecificationPackingList
   withManagementServices: boolean
 }
@@ -67,6 +69,7 @@ export function SpecificationProductsGrid({
   currencyIsEur,
   invoiceDeliveryAmount,
   onEditSpecification,
+  onOpenProductCard,
   packingList,
   withManagementServices,
 }: SpecificationProductsGridProps) {
@@ -110,18 +113,46 @@ export function SpecificationProductsGrid({
         width: 110,
         minWidth: 90,
         accessor: (row) => row.vendorCode,
-        cell: (row) => <Text fw={600}>{displayText(row.vendorCode)}</Text>,
+        cell: (row) =>
+          onOpenProductCard && row.productNetId ? (
+            <Anchor
+              component="button"
+              fw={600}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(row.productNetId)
+              }}
+            >
+              {displayText(row.vendorCode)}
+            </Anchor>
+          ) : (
+            <Text fw={600}>{displayText(row.vendorCode)}</Text>
+          ),
       },
       {
         id: 'name',
         header: t('Назва товару'),
         minWidth: 220,
         accessor: (row) => row.name,
-        cell: (row) => (
-          <Text size="sm" lineClamp={2}>
-            {displayText(row.name)}
-          </Text>
-        ),
+        cell: (row) =>
+          onOpenProductCard && row.productNetId ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenProductCard(row.productNetId)
+              }}
+            >
+              {displayText(row.name)}
+            </Anchor>
+          ) : (
+            <Text size="sm" lineClamp={2}>
+              {displayText(row.name)}
+            </Text>
+          ),
       },
       {
         id: 'specificationCode',
@@ -323,6 +354,7 @@ export function SpecificationProductsGrid({
     managementServiceColumns,
     netServiceColumns,
     onEditSpecification,
+    onOpenProductCard,
     t,
     withManagementServices,
   ])
@@ -506,6 +538,7 @@ function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEu
     name: product?.Name || '',
     netPrice: item.TotalNetPrice || 0,
     netWeight: roundTo(item.TotalNetWeight || 0, 1000),
+    productNetId: product?.NetUid || '',
     qty: item.Qty || 0,
     serviceValues,
     specificationCode: lastSpecification?.SpecificationCode || '',

@@ -60,6 +60,7 @@ import {
   displayValue,
   formatAmount,
   formatDate,
+  formatDateTime,
   formatMoney,
   getProductName,
   getSupplierDisplayName,
@@ -1020,7 +1021,7 @@ function useProductRemainBatchColumns() {
       width: 126,
       minWidth: 112,
       accessor: (batch) => batch.FromDate,
-      cell: (batch) => formatDate(batch.FromDate),
+      cell: (batch) => formatDateTime(batch.FromDate),
     },
     {
       id: 'productIncomeNumber',
@@ -1119,7 +1120,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
       width: 126,
       minWidth: 112,
       accessor: (row) => row.FromDate,
-      cell: (row) => formatDate(row.FromDate),
+      cell: (row) => formatDateTime(row.FromDate),
     },
     {
       id: 'vendorCode',
@@ -1160,7 +1161,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
     },
     {
       id: 'netPrice',
-      header: 'Ціна net',
+      header: 'Вартість нетто',
       width: 124,
       minWidth: 108,
       align: 'right',
@@ -1169,7 +1170,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
     },
     {
       id: 'grossPrice',
-      header: 'Ціна gross',
+      header: 'Вартість брутто',
       width: 124,
       minWidth: 108,
       align: 'right',
@@ -1178,7 +1179,7 @@ function useProductRemainProductColumns(onOpenMovement: (row: RemainingConsignme
     },
     {
       id: 'accountingGrossPrice',
-      header: 'Облік gross',
+      header: 'Вартість брутто (Бух.)',
       width: 136,
       minWidth: 116,
       align: 'right',
@@ -1268,7 +1269,7 @@ function useProductRemainBatchDetailColumns() {
       width: 124,
       minWidth: 108,
       accessor: (item) => item.FromDate,
-      cell: (item) => formatDate(item.FromDate),
+      cell: (item) => formatDateTime(item.FromDate),
     },
     {
       id: 'remainingQty',
@@ -1281,7 +1282,7 @@ function useProductRemainBatchDetailColumns() {
     },
     {
       id: 'grossPrice',
-      header: 'Gross',
+      header: 'Вартість брутто',
       width: 124,
       minWidth: 108,
       align: 'right',
@@ -1290,7 +1291,7 @@ function useProductRemainBatchDetailColumns() {
     },
     {
       id: 'accountingGrossPrice',
-      header: 'Облік gross',
+      header: 'Вартість брутто (Бух.)',
       width: 136,
       minWidth: 116,
       align: 'right',
@@ -1640,7 +1641,7 @@ function useProductRemainMovementColumns() {
         width: 126,
         minWidth: 112,
         accessor: (row) => row.IncomeDocumentFromDate,
-        cell: (row) => formatDate(row.IncomeDocumentFromDate),
+        cell: (row) => formatDateTime(row.IncomeDocumentFromDate),
       },
       {
         id: 'documentType',
@@ -1664,7 +1665,7 @@ function useProductRemainMovementColumns() {
         width: 126,
         minWidth: 112,
         accessor: (row) => row.DocumentFromDate,
-        cell: (row) => formatDate(row.DocumentFromDate),
+        cell: (row) => formatDateTime(row.DocumentFromDate),
       },
       {
         id: 'clientName',

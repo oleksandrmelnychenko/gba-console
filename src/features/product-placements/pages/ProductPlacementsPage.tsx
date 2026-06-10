@@ -38,6 +38,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -124,6 +125,7 @@ function useProductPlacementsPageModel() {
   const [returnError, setReturnError] = useValueState<string | null>(null)
   const [returnedRows, setReturnedRows] = useValueState<ProductPlacementRow[]>([])
   const [isSubmittingReturned, setSubmittingReturned] = useValueState(false)
+  const [productCardNetId, setProductCardNetId] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('product-placements', PLACEMENTS_TABLE_DEFAULT_LAYOUT.density)
   const { isLoading, placements, total } = listState
@@ -133,10 +135,11 @@ function useProductPlacementsPageModel() {
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : placements.length === pageSize
-  const columns = useProductPlacementColumns(placements, offset)
+  const columns = useProductPlacementColumns(placements, offset, setProductCardNetId)
   const returnedColumns = useReturnedProductPlacementColumns({
     onChangePlacement: updateReturnedPlacement,
     onChangeQty: updateReturnedQty,
+    onOpenProductCard: setProductCardNetId,
   })
   const toolbarLeft = useMemo(
     () => (
@@ -441,6 +444,7 @@ function useProductPlacementsPageModel() {
     page,
     pageSize,
     placements,
+    productCardNetId,
     returnError,
     returnModalOpened,
     returnedColumns,
@@ -461,6 +465,7 @@ function useProductPlacementsPageModel() {
     setImportModalOpened,
     setPage,
     setPageSize,
+    setProductCardNetId,
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
@@ -497,6 +502,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     page,
     pageSize,
     placements,
+    productCardNetId,
     returnError,
     returnModalOpened,
     returnedColumns,
@@ -517,6 +523,7 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
     setImportModalOpened,
     setPage,
     setPageSize,
+    setProductCardNetId,
     setReturnError,
     setReturnModalOpened,
     setSelectedStorageIds,
@@ -745,6 +752,8 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
           )}
         </Stack>
       </AppModal>
+
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }
@@ -940,6 +949,7 @@ function ReturnedProductsModal({
 function useProductPlacementColumns(
   placements: ProductPlacementRow[],
   offset: number,
+  onOpenProductCard: (productNetId: string) => void,
 ): DataTableColumn<ProductPlacementRow>[] {
   const { t } = useI18n()
 
@@ -968,7 +978,7 @@ function useProductPlacementColumns(
         width: 150,
         minWidth: 122,
         accessor: getVendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(getVendorCode(row))}</Text>,
+        cell: (row) => renderVendorCodeCell(row, onOpenProductCard),
       },
       {
         id: 'productName',
@@ -976,11 +986,7 @@ function useProductPlacementColumns(
         width: 320,
         minWidth: 240,
         accessor: getProductName,
-        cell: (row) => (
-          <Text size="sm" lineClamp={2}>
-            {displayValue(getProductName(row))}
-          </Text>
-        ),
+        cell: (row) => renderProductNameCell(row, onOpenProductCard),
       },
       {
         id: 'qty',
@@ -1020,16 +1026,18 @@ function useProductPlacementColumns(
         cell: (row) => displayValue(getResponsibleName(row)),
       },
     ],
-    [offset, placements, t],
+    [offset, onOpenProductCard, placements, t],
   )
 }
 
 function useReturnedProductPlacementColumns({
   onChangePlacement,
   onChangeQty,
+  onOpenProductCard,
 }: {
   onChangePlacement: (index: number, placement: string) => void
   onChangeQty: (index: number, qty: number | string) => void
+  onOpenProductCard: (productNetId: string) => void
 }): DataTableColumn<ProductPlacementRow>[] {
   const { t } = useI18n()
 
@@ -1041,7 +1049,7 @@ function useReturnedProductPlacementColumns({
         width: 150,
         minWidth: 122,
         accessor: getVendorCode,
-        cell: (row) => <Text fw={700}>{displayValue(getVendorCode(row))}</Text>,
+        cell: (row) => renderVendorCodeCell(row, onOpenProductCard),
       },
       {
         id: 'productName',
@@ -1049,7 +1057,7 @@ function useReturnedProductPlacementColumns({
         width: 260,
         minWidth: 220,
         accessor: getProductName,
-        cell: (row) => displayValue(getProductName(row)),
+        cell: (row) => renderProductNameCell(row, onOpenProductCard),
       },
       {
         id: 'placement',
@@ -1093,7 +1101,52 @@ function useReturnedProductPlacementColumns({
         ),
       },
     ],
-    [onChangePlacement, onChangeQty, t],
+    [onChangePlacement, onChangeQty, onOpenProductCard, t],
+  )
+}
+
+function renderVendorCodeCell(row: ProductPlacementRow, onOpenProductCard: (productNetId: string) => void) {
+  const netId = row.Product?.NetUid
+  const code = displayValue(getVendorCode(row))
+
+  return netId ? (
+    <Anchor
+      component="button"
+      fw={700}
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpenProductCard(netId)
+      }}
+    >
+      {code}
+    </Anchor>
+  ) : (
+    <Text fw={700}>{code}</Text>
+  )
+}
+
+function renderProductNameCell(row: ProductPlacementRow, onOpenProductCard: (productNetId: string) => void) {
+  const netId = row.Product?.NetUid
+  const name = displayValue(getProductName(row))
+
+  return netId ? (
+    <Anchor
+      component="button"
+      lineClamp={2}
+      size="sm"
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onOpenProductCard(netId)
+      }}
+    >
+      {name}
+    </Anchor>
+  ) : (
+    <Text size="sm" lineClamp={2}>
+      {name}
+    </Text>
   )
 }
 

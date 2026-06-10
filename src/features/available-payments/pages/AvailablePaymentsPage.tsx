@@ -12,7 +12,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconListDetails, IconRefresh, IconRestore } from '@tabler/icons-react'
+import { IconAlertCircle, IconListDetails, IconRefresh, IconRestore, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatDateInputForQuery, formatLocalDate } from '../../../shared/date/dateTime'
@@ -322,6 +322,32 @@ function useAvailablePaymentsPageModel() {
     setDocumentDeleteOverridesByTaskId({})
     reload()
   }, [reload, setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setMarkedModels, setSelectedGroup])
+  const handleTaskUpdated = useCallback(
+    (taskId: string, task: SupplyPaymentTask) => {
+      const taskKey = getSupplyPaymentTaskKey(task)
+      const patchTasks = (tasks: SupplyPaymentTask[]) =>
+        tasks.map((item) => (taskKey && getSupplyPaymentTaskKey(item) === taskKey ? task : item))
+
+      setSelectedGroup((current) =>
+        current ? { ...current, SupplyPaymentTasks: patchTasks(current.SupplyPaymentTasks || []) } : current,
+      )
+      setGroups((current) =>
+        current.map((group) => ({ ...group, SupplyPaymentTasks: patchTasks(group.SupplyPaymentTasks || []) })),
+      )
+      setFilesByTaskId((current) => {
+        const next = { ...current }
+        delete next[taskId]
+        return next
+      })
+      setDocumentDeleteOverridesByTaskId((current) => {
+        const next = { ...current }
+        delete next[taskId]
+        return next
+      })
+      reload()
+    },
+    [reload, setDocumentDeleteOverridesByTaskId, setFilesByTaskId, setGroups, setSelectedGroup],
+  )
   const handleFilesChanged = useCallback(
     (taskId: string, files: File[]) => {
       setFilesByTaskId((current) => ({ ...current, [taskId]: files }))
@@ -405,6 +431,7 @@ function useAvailablePaymentsPageModel() {
     handlePaymentChanged,
     handleDocumentDeletedChange,
     handleFilesChanged,
+    handleTaskUpdated,
     reload,
     resetFilters,
     setPageSize,
@@ -572,6 +599,7 @@ export function AvailablePaymentsPage() {
         onClose={model.closeDetail}
         onDocumentDeletedChange={model.handleDocumentDeletedChange}
         onFilesChanged={model.handleFilesChanged}
+        onTaskUpdated={model.handleTaskUpdated}
         onToggleMarked={model.toggleMarked}
       />
       <AppModal
@@ -620,6 +648,7 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
     resetFilters,
     setPageSize,
     toggleDensity,
+    toggleMarked,
     toolbarLeft,
     totalGrossPrice,
     totalNotDoneTasks,
@@ -726,19 +755,37 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
 
         {markedModels.length > 0 && (
           <Alert color="violet" icon={<IconListDetails size={18} />} variant="light">
-            <Group justify="space-between" gap="sm">
-              <Text size="sm">
-                {t('Вибрано платіжних задач')}: {markedModels.length}
-              </Text>
-              <Group gap="xs">
-                <Button size="xs" variant="light" onClick={openMarkedOutcome}>
-                  {t('Створити видатковий')}
-                </Button>
-                <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
-                  {t('Очистити')}
-                </Button>
+            <Stack gap="xs">
+              <Group justify="space-between" gap="sm">
+                <Text size="sm">
+                  {t('Вибрано платіжних задач')}: {markedModels.length}
+                </Text>
+                <Group gap="xs">
+                  <Button size="xs" variant="light" onClick={openMarkedOutcome}>
+                    {t('Створити видатковий')}
+                  </Button>
+                  <Button color="gray" size="xs" variant="subtle" onClick={clearMarked}>
+                    {t('Очистити')}
+                  </Button>
+                </Group>
               </Group>
-            </Group>
+              <Stack gap={4}>
+                {markedModels.map((markedModel) => (
+                  <Group key={markedModel.id} gap="xs" wrap="nowrap">
+                    <ActionIcon
+                      aria-label={t('Прибрати')}
+                      color="gray"
+                      size="xs"
+                      variant="subtle"
+                      onClick={() => toggleMarked(markedModel)}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                    <Text size="sm">{`${markedModel.serviceName} (${markedModel.organizationName})`}</Text>
+                  </Group>
+                ))}
+              </Stack>
+            </Stack>
           </Alert>
         )}
 

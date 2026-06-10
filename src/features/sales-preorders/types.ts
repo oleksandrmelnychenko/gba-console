@@ -7,6 +7,7 @@ export type PreOrderClient = {
 }
 
 export type PreOrderProduct = {
+  NetUid?: string | null
   VendorCode?: string | null
   Name?: string | null
   NameUA?: string | null

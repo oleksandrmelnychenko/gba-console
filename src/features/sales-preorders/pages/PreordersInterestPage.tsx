@@ -1,12 +1,13 @@
-import { ActionIcon, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getPreorders } from '../api/salesPreordersApi'
 import type { PreOrder } from '../types'
 
@@ -69,6 +70,7 @@ export function PreordersInterestPage() {
   const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [reloadToken, setReloadToken] = useValueState(0)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
   const { density, toggleDensity } = useDataTableDensity('sales-preorders', PREORDERS_TABLE_DEFAULT_LAYOUT.density)
 
   useEffect(() => {
@@ -143,14 +145,52 @@ export function PreordersInterestPage() {
         id: 'vendorCode',
         header: t('Код Виробника'),
         accessor: (preOrder) => preOrder.Product?.VendorCode || '',
-        cell: (preOrder) => preOrder.Product?.VendorCode || '',
+        cell: (preOrder) => {
+          const netId = preOrder.Product?.NetUid
+          const code = preOrder.Product?.VendorCode || ''
+
+          return netId && code ? (
+            <Anchor
+              component="button"
+              fw={600}
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setProductCardNetId(netId)
+              }}
+            >
+              {code}
+            </Anchor>
+          ) : (
+            code
+          )
+        },
         width: 140,
       },
       {
         id: 'productName',
         header: t('Назва товару'),
         accessor: (preOrder) => preOrder.Product?.NameUA || preOrder.Product?.Name || '',
-        cell: (preOrder) => preOrder.Product?.NameUA || preOrder.Product?.Name || '',
+        cell: (preOrder) => {
+          const netId = preOrder.Product?.NetUid
+          const name = preOrder.Product?.NameUA || preOrder.Product?.Name || ''
+
+          return netId && name ? (
+            <Anchor
+              component="button"
+              size="sm"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                setProductCardNetId(netId)
+              }}
+            >
+              {name}
+            </Anchor>
+          ) : (
+            name
+          )
+        },
         minWidth: 240,
       },
       {
@@ -216,6 +256,8 @@ export function PreordersInterestPage() {
           </Button>
         </Center>
       )}
+
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }

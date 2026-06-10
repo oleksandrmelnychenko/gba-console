@@ -1,9 +1,10 @@
-import { ActionIcon, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Group, Loader, NumberInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconCopy, IconSearch, IconTrash } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
   createOffer,
   getOfferProductAvailableQtyUk,
@@ -114,6 +115,7 @@ function NewOfferForm({
   const [productOptions, setProductOptions] = useState<OffersProduct[]>([])
   const [lines, setLines] = useState<OffersNewLine[]>([])
   const [isCreating, setCreating] = useState(false)
+  const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
 
   useEffect(() => {
     const value = clientQuery.trim()
@@ -429,7 +431,24 @@ function NewOfferForm({
           <Table.Tbody>
             {lines.map((line) => (
               <Table.Tr key={line.key}>
-                <Table.Td>{getProductLabel(line.product)}</Table.Td>
+                <Table.Td>
+                  {line.product.NetUid ? (
+                    <Anchor
+                      component="button"
+                      size="sm"
+                      style={{ textAlign: 'left' }}
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setProductCardNetId(line.product.NetUid as string)
+                      }}
+                    >
+                      {getProductLabel(line.product)}
+                    </Anchor>
+                  ) : (
+                    <Text size="sm">{getProductLabel(line.product)}</Text>
+                  )}
+                </Table.Td>
                 <Table.Td>
                   <NumberInput
                     hideControls
@@ -470,6 +489,7 @@ function NewOfferForm({
           {t('Створити')}
         </Button>
       </Group>
+      <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>
   )
 }

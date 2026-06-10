@@ -303,7 +303,12 @@ currency-convertors exchange-rate precision (2 fixed decimals) + rate-row date.
   `0,00`, never «—»). The legacy non-localized dot-format is a deliberate console-localization divergence.
 - Skipped (recorded): income detail-drawer extra fields; cash-flow per-type drill-in document panels +
   Poland `/orders/poland/all/edit` link (route not yet registered); payment-accounts filter-cookie
-  persistence; advanced-reports Document-Structure action; date-serialization toDateString-vs-ISO
+  persistence; ~~advanced-reports Document-Structure action~~ (CLOSED 2026-06-10: operations-menu
+  «Структура документів» drawer + `POST /payments/orders/outcome/calculate`, gated like legacy on
+  assigned/root payment orders; drawer header extended with Документ/Кому видано/Вхідний
+  номер/Відповідальний/Коментар/Бухгалтерський/Управлінський to match the legacy modal; menu label
+  kept as the console-wide «Структура документів» instead of legacy «Структура підпорядкованості
+  документа» for consistency with income/outgoing cashflows); date-serialization toDateString-vs-ISO
   (console uses ISO app-wide; backend accepts). All medium/large or convention.
 
 ### Clients/org (5 screens, run `wf_8ac8e34c`) — fixes in commit `fa53c81`

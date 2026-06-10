@@ -1,4 +1,4 @@
-import { Anchor, Badge, Button, Divider, Group, Stack } from '@mantine/core'
+import { Anchor, Badge, Button, Divider, Group, Stack, Text } from '@mantine/core'
 import { IconExternalLink, IconFileTypePdf } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -42,11 +42,11 @@ export function CashFlowDetailContent({ item }: { item: AccountingCashFlowHeadIt
 function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
   const { t } = useI18n()
   const columns = useDetailColumns(detail.columnKind)
-  const hasOrderLink = Boolean(detail.linkToOrder)
+  const orderLink = detail.orderLink
 
   return (
     <Stack gap="md">
-      {(detail.documents.length > 0 || hasOrderLink) && (
+      {(detail.documents.length > 0 || orderLink) && (
         <>
           <Group gap="xs" wrap="wrap">
             {detail.documents.map((document) => (
@@ -63,16 +63,22 @@ function CashFlowDetailView({ detail }: { detail: CashFlowDetailViewModel }) {
                 <span>{document.name || t('Документ')}</span>
               </Anchor>
             ))}
-            {hasOrderLink ? (
-              <Button
-                color="gray"
-                component={Link}
-                leftSection={<IconExternalLink size={16} />}
-                to={detail.linkToOrder}
-                variant="light"
-              >
-                {t('На логістичний шлях')}
-              </Button>
+            {orderLink ? (
+              orderLink.isNavigable ? (
+                <Button
+                  color="gray"
+                  component={Link}
+                  leftSection={<IconExternalLink size={16} />}
+                  to={orderLink.route}
+                  variant="light"
+                >
+                  {t('На логістичний шлях')}
+                </Button>
+              ) : (
+                <Text c="dimmed" size="sm">
+                  {t('На логістичний шлях')}
+                </Text>
+              )
             ) : null}
           </Group>
           <Divider />

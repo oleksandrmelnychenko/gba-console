@@ -14,6 +14,7 @@ export type ClientProductMovementOrganizationOption = {
 }
 
 export type ClientProductMovementProduct = {
+  NetUid?: string
   VendorCode?: string
   Name?: string
 }

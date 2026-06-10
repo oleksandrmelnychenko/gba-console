@@ -76,6 +76,15 @@ describe('accountable expense rows', () => {
     expect(row.paymentStatus).toBe('partial')
   })
 
+  it('does not create payable placeholder rows for orders without items', () => {
+    expect(buildExpenseRows([
+      {
+        ConsumablesOrderItems: [],
+        TotalAmount: 250,
+      } satisfies ConsumablesOrder,
+    ])).toEqual([])
+  })
+
   it('builds encoded advance-report links from linked outcome payment orders', () => {
     expect(getAdvanceReportLink({ NetUid: 'report/1 2' })).toBe('/accounting/outgoing-cashflow/report%2F1%202/advanced-report/view')
     expect(getAdvanceReportLink({ NetUid: '   ' })).toBeNull()

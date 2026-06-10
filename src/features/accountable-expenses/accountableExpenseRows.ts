@@ -15,11 +15,10 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
 
   orders.forEach((order, orderIndex) => {
     const outcomeSummary = summarizeOutcomePaymentOrders(order)
-    const hasItems = Boolean(order.ConsumablesOrderItems?.length)
-    const items = hasItems ? order.ConsumablesOrderItems ?? [{}] : [{}]
+    const items = order.ConsumablesOrderItems || []
 
     items.forEach((item, itemIndex) => {
-      const amount = hasItems ? item.TotalPriceWithVAT : order.TotalAmount
+      const amount = item.TotalPriceWithVAT
 
       rows.push({
         advanceNumber: outcomeSummary.advanceNumber,
@@ -36,7 +35,7 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
         payedTo: outcomeSummary.payedTo,
         paidAmount: outcomeSummary.paidAmount,
         paymentStatus: outcomeSummary.paymentStatus,
-        pricePerItem: hasItems ? item.PricePerItem : amount,
+        pricePerItem: item.PricePerItem,
         productName: item.ConsumableProduct?.Name || outcomeSummary.paymentMovement,
         qty: item.Qty,
         responsible: order.User?.LastName || order.User?.FullName || order.User?.Name
@@ -156,7 +155,9 @@ function getConsumablesOrderPaidAmount(order: ConsumablesOrder): number | undefi
 }
 
 function getPaymentStatus(order: ConsumablesOrder, paidAmount: number | undefined): AccountableExpensePaymentStatus {
-  if (order.IsPayed || (typeof paidAmount === 'number' && paidAmount >= getOrderPaymentTotal(order) - MONEY_EPSILON)) {
+  const total = getOrderPaymentTotal(order)
+
+  if (order.IsPayed || (typeof paidAmount === 'number' && total > MONEY_EPSILON && paidAmount >= total - MONEY_EPSILON)) {
     return 'paid'
   }
 
