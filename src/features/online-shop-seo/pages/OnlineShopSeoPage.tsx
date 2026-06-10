@@ -36,7 +36,7 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { type CSSProperties, type FormEvent, type MouseEventHandler, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
@@ -360,7 +360,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (row) => (
-          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon aria-label={t('Редагувати')} color="gray" variant="subtle" onClick={() => openPageEditor(row)}>
                 <IconPencil size={18} />
@@ -432,7 +432,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (contact) => (
-          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell>
             <Tooltip label={t('Редагувати')}>
               <ActionIcon
                 aria-label={t('Редагувати')}
@@ -531,7 +531,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (client) => (
-          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell>
             <Tooltip label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}>
               <ActionIcon
                 aria-label={client.IsForRetail ? t('Вимкнути') : t('Увімкнути')}
@@ -622,7 +622,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (register) => (
-          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell>
             <Tooltip label={t('Обрати')}>
               <ActionIcon
                 aria-label={t('Обрати')}
@@ -698,7 +698,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         enableResizing: false,
         enableSorting: false,
         cell: (storage) => (
-          <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+          <SeoTableActionCell>
             <Tooltip label={t('Змінити пріоритет')}>
               <ActionIcon
                 aria-label={t('Змінити пріоритет')}
@@ -795,7 +795,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
           const active = isStorageActive(storage, ecommerceStorages)
 
           return (
-            <SeoTableActionCell onClick={(event) => event.stopPropagation()}>
+            <SeoTableActionCell>
               <Tooltip label={active ? t('Вже додано') : t('Додати')}>
                 <ActionIcon
                   aria-label={active ? t('Вже додано') : t('Додати')}
@@ -1413,6 +1413,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetStorageSearch,
     storageSearchDraft,
   })
+  const isActiveTabRefreshing = getSeoTabLoadingState(activeTab, {
+    isCardsLoading,
+    isClientsLoading,
+    isLoading,
+    isStoragesLoading,
+  })
   const headerAction = activeTab === 'contacts'
     ? (
       <Button
@@ -1488,7 +1494,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <ActionIcon
                 aria-label={t('Оновити')}
                 color="gray"
-                loading={isLoading}
+                loading={isActiveTabRefreshing}
                 size={34}
                 variant="light"
                 onClick={() => reload()}
@@ -1638,14 +1644,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Stack gap="md">
                 <SeoRosterTable
                   columns={contactColumns}
-                  columnsTemplate="minmax(240px, 1fr) 170px 220px 130px 110px 138px 74px"
+                  columnsTemplate="minmax(240px, 1fr) 170px 220px 138px 94px"
                   data={contacts}
                   emptyText={t('Контактів не знайдено')}
                   getRowId={(contact, index) => String(contact.NetUid || contact.Id || index)}
                   isLoading={isLoading}
                   loadingText={t('Завантаження контактів')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={1080}
+                  minWidth={862}
                   onRowClick={openContactEditor}
                 />
               </Stack>
@@ -2079,33 +2085,51 @@ function SeoRosterTable<TData>({
             data.map((row, index) => {
               const rowClassName = getRowClassName?.(row, index)
               const rowId = getRowId(row, index)
+              const rowClassNames = [
+                'seo-roster-row',
+                rowClassName,
+                onRowClick ? 'is-clickable' : undefined,
+              ].filter(Boolean).join(' ')
+              const rowCells = columns.map((column) => (
+                <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
+                  {column.cell ? column.cell(row) : displayValue(column.accessor?.(row))}
+                </div>
+              ))
 
-              return (
-                <div className="seo-roster-row-frame" key={rowId}>
-                  <div
-                    className={[
-                      'seo-roster-row',
-                      rowClassName,
-                      onRowClick ? 'is-clickable' : undefined,
-                    ].filter(Boolean).join(' ')}
-                    role={onRowClick ? 'button' : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    onKeyDown={onRowClick
-                      ? (event) => {
+              if (onRowClick) {
+                return (
+                  <div className="seo-roster-row-frame" key={rowId}>
+                    <div
+                      className={rowClassNames}
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        if (isSeoActionCellEventTarget(event.target)) {
+                          return
+                        }
+
+                        onRowClick(row)
+                      }}
+                      onKeyDown={(event) => {
+                        if (isSeoActionCellEventTarget(event.target)) {
+                          return
+                        }
+
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault()
                           onRowClick(row)
                         }
-                      }
-                      : undefined}
-                  >
-                    {columns.map((column) => (
-                      <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
-                        {column.cell ? column.cell(row) : displayValue(column.accessor?.(row))}
-                      </div>
-                    ))}
+                      }}
+                    >
+                      {rowCells}
+                    </div>
                   </div>
+                )
+              }
+
+              return (
+                <div className="seo-roster-row-frame" key={rowId}>
+                  <div className={rowClassNames}>{rowCells}</div>
                 </div>
               )
             })
@@ -2223,18 +2247,16 @@ function SeoTableStatusPill({
   )
 }
 
-function SeoTableActionCell({
-  children,
-  onClick,
-}: {
-  children: ReactNode
-  onClick?: MouseEventHandler<HTMLDivElement>
-}) {
+function SeoTableActionCell({ children }: { children: ReactNode }) {
   return (
-    <div className="seo-table-action-cell" onClick={onClick}>
+    <div className="seo-table-action-cell">
       {children}
     </div>
   )
+}
+
+function isSeoActionCellEventTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('.seo-table-action-cell'))
 }
 
 function getOrderedSeoGeneralEntries(entries: SeoLocaleEntry[]) {
@@ -2244,7 +2266,7 @@ function getOrderedSeoGeneralEntries(entries: SeoLocaleEntry[]) {
     ['ru', 1],
   ])
 
-  return [...entries].sort((leftEntry, rightEntry) => {
+  return entries.toSorted((leftEntry, rightEntry) => {
     const leftLocale = leftEntry.locale.toLowerCase()
     const rightLocale = rightEntry.locale.toLowerCase()
     const leftOrder = localeOrder.get(leftLocale) ?? 10
@@ -2314,6 +2336,29 @@ type SeoCommandSearchState = {
   resetPageSearch: () => void
   resetStorageSearch: () => void
   storageSearchDraft: string
+}
+
+type SeoTabLoadingState = {
+  isCardsLoading: boolean
+  isClientsLoading: boolean
+  isLoading: boolean
+  isStoragesLoading: boolean
+}
+
+function getSeoTabLoadingState(activeTab: SeoTab, state: SeoTabLoadingState) {
+  switch (activeTab) {
+    case 'shop-clients':
+      return state.isClientsLoading
+    case 'bank-cards':
+      return state.isCardsLoading
+    case 'warehouses':
+      return state.isStoragesLoading
+    case 'pages':
+    case 'contacts':
+    case 'info-payment':
+    default:
+      return state.isLoading
+  }
 }
 
 function getSeoCommandSearchConfig(

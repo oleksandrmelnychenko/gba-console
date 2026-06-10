@@ -120,6 +120,15 @@ export function UserRolesPage() {
         : null,
     [filteredRoles, selectedRole, selectedRoleKey],
   )
+  const hasSelectionChanges = useMemo(
+    () =>
+      Boolean(
+        visibleSelectedRole &&
+        (!haveSameEntitySelection(visibleSelectedRole.DashboardNodes || [], selectedNodes) ||
+          !haveSameEntitySelection(visibleSelectedRole.Permissions || [], selectedPermissions)),
+      ),
+    [selectedNodes, selectedPermissions, visibleSelectedRole],
+  )
 
   useEffect(() => {
     selectedRoleKeyRef.current = selectedRoleKey
@@ -281,7 +290,7 @@ export function UserRolesPage() {
   }
 
   async function handleSavePermissions() {
-    if (!visibleSelectedRole) {
+    if (!visibleSelectedRole || !hasSelectionChanges) {
       return
     }
 
@@ -410,7 +419,7 @@ export function UserRolesPage() {
             <Button
               color="gray"
               className="user-roles-cancel-action"
-              disabled={isSaving}
+              disabled={isLoading || isSaving || !hasSelectionChanges}
               size="xs"
               variant="subtle"
               onClick={cancelSelection}
@@ -419,6 +428,7 @@ export function UserRolesPage() {
             </Button>
             <Button
               color={CREATE_ACTION_COLOR}
+              disabled={isLoading || !hasSelectionChanges}
               leftSection={<IconDeviceFloppy size={14} />}
               loading={isSaving}
               size="xs"
@@ -771,4 +781,21 @@ function filterRoles(roles: UserRole[], value: string): UserRole[] {
   return roles.filter((role) =>
     getUserRoleName(role).toLocaleLowerCase('uk').includes(normalizedValue),
   )
+}
+
+function haveSameEntitySelection<T extends { Id?: number; NetUid?: string }>(
+  savedItems: T[],
+  selectedItems: T[],
+): boolean {
+  if (savedItems.length !== selectedItems.length) {
+    return false
+  }
+
+  const selectedKeys = new Set(selectedItems.map(getEntitySelectionKey))
+
+  return savedItems.every((item) => selectedKeys.has(getEntitySelectionKey(item)))
+}
+
+function getEntitySelectionKey(item: { Id?: number; NetUid?: string }) {
+  return item.NetUid || String(item.Id || '')
 }
