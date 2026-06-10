@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 export const realtimeEvents = {
   crossExchangeRateUpdated: 'crossExchangeRateUpdated',
@@ -85,9 +85,19 @@ export function useRealtimeEvent<TEvent extends RealtimeEventName>(
   eventName: TEvent,
   listener: RealtimeListener<RealtimeEventPayloads[TEvent]>,
 ): void {
-  useEffect(() => {
-    const unsubscribe = realtimeBus.on(eventName, listener)
+  const listenerRef = useRef(listener)
 
-    return unsubscribe
-  }, [eventName, listener])
+  useEffect(() => {
+    listenerRef.current = listener
+  }, [listener])
+
+  useEffect(() => {
+    const unsubscribe = realtimeBus.on(eventName, (payload) => {
+      listenerRef.current(payload)
+    })
+
+    return () => {
+      unsubscribe()
+    }
+  }, [eventName])
 }
