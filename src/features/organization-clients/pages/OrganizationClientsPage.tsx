@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Card,
   Group,
   Stack,
   Text,
@@ -16,13 +15,12 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getOrganizationClients } from '../api/organizationClientsApi'
 import type { OrganizationClient } from '../types'
 import { displayValue, getOrganizationClientName } from '../utils'
+import './organization-clients-page.css'
 
 const ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -42,10 +40,6 @@ export function OrganizationClientsPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity(
-    'organization-clients',
-    ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT.density,
-  )
   const openClient = useCallback(
     (client: OrganizationClient) => {
       if (!client.NetUid) {
@@ -206,8 +200,21 @@ export function OrganizationClientsPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="organization-clients-page" gap={6}>
       <PageHeaderActions>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoading}
+            size={38}
+            type="button"
+            variant="light"
+            onClick={() => reload()}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
         <Button
           color={CREATE_ACTION_COLOR}
           size="sm"
@@ -225,69 +232,56 @@ export function OrganizationClientsPage() {
           {t('Нова організація')}
         </Button>
       </PageHeaderActions>
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <TextInput
-              leftSection={<IconSearch size={16} />}
-              label={t('Пошук')}
-              placeholder={t('Назва організації')}
-              value={searchDraft}
-              onChange={(event) => updateSearch(event.currentTarget.value)}
-              style={{ flex: '1 1 auto', minWidth: 160 }}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={resetSearch}
-              >
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-          </Group>
+      <Stack gap={6}>
+        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+          <TextInput
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук')}
+            placeholder={t('Назва організації')}
+            value={searchDraft}
+            onChange={(event) => updateSearch(event.currentTarget.value)}
+            style={{ flex: '1 1 auto', minWidth: 160 }}
+          />
+          <Tooltip label={t('Скинути')}>
+            <ActionIcon
+              aria-label={t('Скинути')}
+              color="violet"
+              size={36}
+              style={{ flex: '0 0 auto' }}
+              variant="light"
+              onClick={resetSearch}
+            >
+              <IconRestore size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
+        <div className="organization-clients-page__table">
           <DataTable
             columns={columns}
             data={clients}
             defaultLayout={ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT}
-            density={density}
+            density={ORGANIZATION_CLIENT_TABLE_DEFAULT_LAYOUT.density}
             emptyText={t('Організацій не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="organization-clients-table-1"
             loadingText={t('Завантаження організацій')}
-            maxHeight="calc(100vh - 260px)"
             minWidth={1120}
+            showDensityToggle={false}
             tableId="organization-clients"
             toolbarLeft={toolbarLeft}
             onRowClick={openClient}
           />
-        </Stack>
-      </Card>
+        </div>
+      </Stack>
     </Stack>
   )
 }

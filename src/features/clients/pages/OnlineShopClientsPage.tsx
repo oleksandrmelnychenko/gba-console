@@ -19,8 +19,6 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getRetailClientCart, getRetailClients, searchRetailClients } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
@@ -39,7 +37,7 @@ const ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const ONLINE_SHOP_CLIENT_TABLE_CELL_STYLE = {
@@ -69,7 +67,6 @@ export function OnlineShopClientsPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
-  const { density, toggleDensity } = useDataTableDensity('online-shop-clients', ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT.density)
   const clientColumns = useRetailClientColumns()
   const tableToolbarLeft = useMemo(
     () =>
@@ -185,17 +182,17 @@ export function OnlineShopClientsPage() {
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
+                label={t('Пошук')}
                 placeholder={t('Клієнт, телефон або email')}
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.currentTarget.value)}
                 style={{ flex: 1 }}
               />
               <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={resetSearch}>
+                <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetSearch}>
                   <IconRestore size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
             </Group>
 
             {error && (
@@ -208,7 +205,7 @@ export function OnlineShopClientsPage() {
               columns={clientColumns}
               data={clients}
               defaultLayout={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT}
-              density={density}
+              density={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT.density}
               emptyText={t('Клієнтів інтернет-магазину не знайдено')}
               getRowId={(client, index) => getRetailClientRowKey(client, index)}
               height="100%"
@@ -217,6 +214,7 @@ export function OnlineShopClientsPage() {
               loadingText={isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
               minWidth={880}
               rowClassName={(client) => (isSameRetailClient(client, selectedClient) ? 'is-selected' : undefined)}
+              showDensityToggle={false}
               showLayoutControls={false}
               tableId="online-shop-clients"
               toolbarLeft={tableToolbarLeft}
@@ -227,7 +225,7 @@ export function OnlineShopClientsPage() {
           </Stack>
         </div>
 
-        <Card withBorder radius="md" padding="md" style={{ minWidth: 0 }}>
+        <Card withBorder radius="md" padding="md" style={{ minWidth: 0, paddingTop: 0 }}>
           <Stack gap="md">
             <OnlineShopSalesFilter onSelectFastClient={selectFastClient} />
 

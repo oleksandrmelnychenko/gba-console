@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   NumberInput,
+  Pagination,
   Select,
   Stack,
   Text,
@@ -19,11 +20,7 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconBaselineDensityMedium,
-  IconBaselineDensitySmall,
   IconCash,
-  IconChevronLeft,
-  IconChevronRight,
   IconClock,
   IconDotsVertical,
   IconExternalLink,
@@ -49,7 +46,6 @@ import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-
 import type {
   DataTableColumn,
   DataTableDefaultLayout,
-  DataTableDensity,
   DataTableSortingState,
 } from '../../../shared/ui/data-table/types'
 import { useAuth } from '../../auth/useAuth'
@@ -108,7 +104,6 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
-const CLIENT_TABLE_DENSITY_STORAGE_KEY = 'gba-data-table:clients:density'
 const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 30
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
 const CLIENT_TABLE_CELL_STYLE = {
@@ -144,7 +139,6 @@ function useClientsPageModel() {
   const [reserveDays, setReserveDays] = useValueState(0)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readClientTablePageSize)
-  const [density, setDensity] = useValueState<DataTableDensity>(readClientTableDensity)
   const urlActiveFilter = useMemo(() => parseActiveFilterSearchParams(urlSearchParams), [urlSearchParams])
   const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>(() => urlActiveFilter)
   const [roleFilter, setRoleFilter] = useValueState<string[]>(() => parseRoleFilterSearchParam(urlSearchParams.get('roleIds')))
@@ -153,8 +147,8 @@ function useClientsPageModel() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, CLIENT_SEARCH_DEBOUNCE_MS)
   const [sorting, setSorting] = useValueState<DataTableSortingState>([])
   const offset = (page - 1) * pageSize
-  const canMoveBack = page > 1
   const canMoveForward = clients.length === pageSize
+  const totalPages = typeof totalCount === 'number' && totalCount > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : page + (canMoveForward ? 1 : 0)
   const canCreateClient = hasPermission(CLIENT_CREATE_PERMISSION)
   const canOpenCashFlow = hasPermission(CLIENT_CASH_FLOW_PERMISSION)
   const canViewClient = hasPermission(CLIENT_VIEW_PERMISSION)
@@ -191,13 +185,6 @@ function useClientsPageModel() {
     setPageSize(nextPageSize)
     writeClientTablePageSize(nextPageSize)
   }, [setPage, setPageSize])
-  const changeDensity = useCallback((nextDensity: DataTableDensity) => {
-    setDensity(nextDensity)
-    writeClientTableDensity(nextDensity)
-  }, [setDensity])
-  const toggleDensity = useCallback(() => {
-    changeDensity(density === 'compact' ? 'normal' : 'compact')
-  }, [changeDensity, density])
   const setActiveFilterInUrl = useCallback((nextFilter: ActiveFilter) => {
     setActiveFilter(nextFilter)
     setUrlSearchParams((currentParams) => {
@@ -226,19 +213,18 @@ function useClientsPageModel() {
     ),
     [normalizedSearchValue, page, totalCount],
   )
-  const tableToolbarRight = useMemo(
+  const tablePagination = useMemo(
     () => (
       <ClientTablePagination
-        canMoveBack={canMoveBack}
-        canMoveForward={canMoveForward}
         isTableBusy={isTableBusy}
         page={page}
         pageSize={pageSize}
+        totalPages={totalPages}
         onPageSizeChange={changePageSize}
         onSetPage={setPage}
       />
     ),
-    [canMoveBack, canMoveForward, changePageSize, isTableBusy, page, pageSize, setPage],
+    [changePageSize, isTableBusy, page, pageSize, setPage, totalPages],
   )
 
   useEffect(() => {
@@ -517,8 +503,8 @@ function useClientsPageModel() {
     selectedClient,
     sorting,
     structureClient,
+    tablePagination,
     tableToolbarLeft,
-    tableToolbarRight,
     handleExport,
     handleReserveSubmit,
     handleSwitchActive,
@@ -528,9 +514,6 @@ function useClientsPageModel() {
     openCreateClient,
     openReserveDays,
     resetSearch,
-    changeDensity,
-    density,
-    toggleDensity,
     setActiveFilter: setActiveFilterInUrl,
     setDownloadModalOpened,
     setPage,
@@ -577,8 +560,8 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     selectedClient,
     sorting,
     structureClient,
+    tablePagination,
     tableToolbarLeft,
-    tableToolbarRight,
     handleExport,
     handleReserveSubmit,
     handleSwitchActive,
@@ -588,9 +571,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     openCreateClient,
     openReserveDays,
     resetSearch,
-    changeDensity,
-    density,
-    toggleDensity,
     setActiveFilter,
     setDownloadModalOpened,
     setPage,
@@ -617,11 +597,9 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
       <ClientsFilterToolbar
         activeFilter={activeFilter}
         clientTypes={clientTypes}
-        density={density}
         isExporting={clientAction === 'export'}
         isTableBusy={isTableBusy}
         roleFilter={roleFilter}
-        onToggleDensity={toggleDensity}
         searchField={searchField}
         searchFieldOptions={searchFieldOptions}
         searchInputRef={searchInputRef}
@@ -646,8 +624,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             columns={clientColumns.filter((column) => column.id !== 'actions')}
             data={clients}
             defaultLayout={CLIENT_TABLE_DEFAULT_LAYOUT}
-            density={density}
-            onDensityChange={changeDensity}
+            density={CLIENT_TABLE_DEFAULT_LAYOUT.density}
             showDensityToggle={false}
             emptyText={t('Клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
@@ -661,7 +638,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             tableId="clients"
             sorting={sorting}
             toolbarLeft={tableToolbarLeft}
-            toolbarRight={tableToolbarRight}
             onRowClick={setSelectedClient}
             onSortingChange={(nextSorting) => {
               setPage(1)
@@ -669,6 +645,8 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             }}
           />
       </div>
+
+      {tablePagination}
 
       <ClientActionsModal
         canOpenCashFlow={canOpenCashFlow}
@@ -822,7 +800,6 @@ function ClientActionsModal({
 function ClientsFilterToolbar({
   activeFilter,
   clientTypes,
-  density,
   isExporting,
   isTableBusy,
   roleFilter,
@@ -837,11 +814,9 @@ function ClientsFilterToolbar({
   onSetRoleFilter,
   onSetSearchField,
   onSetSearchValue,
-  onToggleDensity,
 }: {
   activeFilter: ActiveFilter
   clientTypes: ClientType[]
-  density: DataTableDensity
   isExporting: boolean
   isTableBusy: boolean
   roleFilter: string[]
@@ -856,7 +831,6 @@ function ClientsFilterToolbar({
   onSetRoleFilter: (value: string[]) => void
   onSetSearchField: (value: string) => void
   onSetSearchValue: (value: string) => void
-  onToggleDensity: () => void
 }) {
   const { t } = useI18n()
 
@@ -910,20 +884,8 @@ function ClientsFilterToolbar({
           onSetRoleFilter(value)
         }}
       />
-      <Tooltip label={density === 'compact' ? t('Звичайні рядки') : t('Компактні рядки')}>
-        <ActionIcon
-          variant="light"
-          color="gray"
-          size={36}
-          aria-label={t('Щільність рядків')}
-          onClick={onToggleDensity}
-          style={{ flex: '0 0 auto' }}
-        >
-          {density === 'compact' ? <IconBaselineDensitySmall size={18} /> : <IconBaselineDensityMedium size={18} />}
-        </ActionIcon>
-      </Tooltip>
       <Tooltip label={t('Скинути')}>
-        <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
+        <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
           <IconRestore size={18} />
         </ActionIcon>
       </Tooltip>
@@ -1267,58 +1229,40 @@ function ClientTableSummary({
 }
 
 function ClientTablePagination({
-  canMoveBack,
-  canMoveForward,
   isTableBusy,
   page,
   pageSize,
+  totalPages,
   onPageSizeChange,
   onSetPage,
 }: {
-  canMoveBack: boolean
-  canMoveForward: boolean
   isTableBusy: boolean
   page: number
   pageSize: number
+  totalPages: number
   onPageSizeChange: (value: string | null) => void
   onSetPage: (value: number | ((currentPage: number) => number)) => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Group gap={4} wrap="nowrap">
-      <Select
-        aria-label={t('Розмір сторінки')}
-        data={pageSizeOptions}
-        disabled={isTableBusy}
-        size="xs"
-        value={String(pageSize)}
-        w={68}
-        onChange={onPageSizeChange}
-      />
-      <Text size="xs" c="dark" fw={700} style={{ whiteSpace: 'nowrap' }}>
-        {t('стор.')} {page}
-      </Text>
-      <ActionIcon
-        aria-label={t('Попередня сторінка')}
-        color="gray"
-        disabled={!canMoveBack || isTableBusy}
-        size="sm"
-        variant="subtle"
-        onClick={() => onSetPage((currentPage) => Math.max(1, currentPage - 1))}
-      >
-        <IconChevronLeft size={16} />
-      </ActionIcon>
-      <ActionIcon
-        aria-label={t('Наступна сторінка')}
-        color="gray"
-        disabled={!canMoveForward || isTableBusy}
-        size="sm"
-        variant="subtle"
-        onClick={() => onSetPage((currentPage) => currentPage + 1)}
-      >
-        <IconChevronRight size={16} />
-      </ActionIcon>
+    <Group justify="flex-end" className="clients-page__pagination">
+      <Group gap={6}>
+        <Text c="dimmed" size="xs">{t('Рядків')}</Text>
+        <Select
+          allowDeselect={false}
+          aria-label={t('Рядків')}
+          data={pageSizeOptions.map((value) => ({ label: value, value }))}
+          disabled={isTableBusy}
+          size="xs"
+          value={String(pageSize)}
+          w={82}
+          onChange={onPageSizeChange}
+        />
+      </Group>
+      {totalPages > 1 && (
+        <Pagination disabled={isTableBusy} total={totalPages} value={Math.min(page, totalPages)} onChange={onSetPage} />
+      )}
     </Group>
   )
 }
@@ -1387,24 +1331,6 @@ function writeClientTablePageSize(pageSize: number) {
   }
 
   window.localStorage.setItem(CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY, String(pageSize))
-}
-
-function readClientTableDensity(): DataTableDensity {
-  if (typeof window === 'undefined') {
-    return 'normal'
-  }
-
-  const stored = window.localStorage.getItem(CLIENT_TABLE_DENSITY_STORAGE_KEY)
-
-  return stored === 'compact' || stored === 'normal' ? stored : 'normal'
-}
-
-function writeClientTableDensity(density: DataTableDensity) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.setItem(CLIENT_TABLE_DENSITY_STORAGE_KEY, density)
 }
 
 function parseActiveFilterSearchParams(params: URLSearchParams): ActiveFilter {

@@ -94,6 +94,7 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
       <Popover.Target>
         <TextInput
           leftSection={<IconSearch size={16} />}
+          label={t('Пошук')}
           placeholder={t('Пошук по номеру телефону')}
           value={searchValue}
           onChange={(event) => setSearchValue(event.currentTarget.value)}

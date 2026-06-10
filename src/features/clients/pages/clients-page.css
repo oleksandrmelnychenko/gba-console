@@ -34,3 +34,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.clients-page__pagination {
+  flex: 0 0 auto;
+}

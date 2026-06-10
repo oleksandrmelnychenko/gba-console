@@ -21,7 +21,7 @@ const NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT = {
     left: [],
     right: [],
   },
-  density: 'compact',
+  density: 'normal',
 } satisfies DataTableDefaultLayout
 
 const NEW_ECOMMERCE_CLIENT_TABLE_CELL_STYLE = {
