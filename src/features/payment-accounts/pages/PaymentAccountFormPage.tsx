@@ -2713,10 +2713,13 @@ function toSelectOptions<T extends { Id?: number; NetUid?: string }>(items: T[],
 }
 
 function toBankOptions(banks: BankItem[]) {
-  return banks.reduce<Array<{ label: string; value: string }>>((options, bank) => {
-    const value = bank.Name || ''
+  const seenValues = new Set<string>()
 
-    if (value) {
+  return banks.reduce<Array<{ label: string; value: string }>>((options, bank) => {
+    const value = bank.Name?.trim() || ''
+
+    if (value && !seenValues.has(value)) {
+      seenValues.add(value)
       options.push({
         label: value,
         value,
