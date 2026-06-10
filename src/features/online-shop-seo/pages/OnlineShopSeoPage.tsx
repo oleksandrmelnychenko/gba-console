@@ -116,6 +116,7 @@ type SeoShopDataSearchField =
   | 'phone'
   | 'priority'
   | 'status'
+type PaymentCardBrand = 'mastercard' | 'unknown' | 'visa'
 
 type SeoRosterColumn<TData> = {
   id: string
@@ -1773,6 +1774,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 <div className="seo-shop-data-grid">
                   <SeoShopDataSection
                     count={shopDataClients.length}
+                    hideCount
                     title={t('Інтернет клієнти')}
                   >
                     <SeoShopClientList
@@ -1787,6 +1789,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
                   <SeoShopDataSection
                     count={shopDataCards.length}
+                    hideCount
                     title={t('Банківські картки')}
                   >
                     <SeoShopCardList
@@ -2216,12 +2219,14 @@ function SeoShopDataSection({
   children,
   className,
   count,
+  hideCount,
   title,
 }: {
   action?: ReactNode
   children: ReactNode
   className?: string
   count: number
+  hideCount?: boolean
   title: ReactNode
 }) {
   return (
@@ -2234,7 +2239,7 @@ function SeoShopDataSection({
         </div>
 
         <div className="seo-shop-data-section-meta">
-          <Text className="seo-shop-data-section-count">{count}</Text>
+          {!hideCount ? <Text className="seo-shop-data-section-count">{count}</Text> : null}
           {action ? <div className="seo-shop-data-section-actions">{action}</div> : null}
         </div>
       </div>
@@ -2262,13 +2267,14 @@ function SeoShopClientList({
   return (
     <div className="seo-shop-data-list">
       <ScrollArea.Autosize mah={maxHeight} type="auto">
-        <div className="seo-shop-data-list-body">
+        <div className="seo-shop-data-list-body is-client-tiles">
           {isLoading ? (
             <div className="seo-shop-data-list-empty">{loadingText}</div>
           ) : clients.length ? (
             clients.map((client, index) => {
               const clientKey = String(client.NetUid || client.Id || index)
               const isForRetail = Boolean(client.IsForRetail)
+              const clientName = displayValue(client.FullName || getClientDisplayName(client))
 
               return (
                 <div
@@ -2294,17 +2300,18 @@ function SeoShopClientList({
                     }
                   }}
                 >
-                  <div className="seo-shop-data-list-main">
-                    <span className={`seo-shop-data-client-status-icon${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
-                      <IconUserCheck size={13} />
-                    </span>
+                  <span className="seo-shop-client-tile-icon" aria-hidden>
+                    <IconUserCheck size={15} />
+                  </span>
 
-                    <div className="seo-shop-data-list-copy">
-                      <Text className="seo-shop-data-list-title">{displayValue(client.FullName || getClientDisplayName(client))}</Text>
-                    </div>
+                  <div className="seo-shop-client-tile-copy">
+                    <Text className="seo-shop-client-tile-title">{clientName}</Text>
+                    <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
                   </div>
 
-                  <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
+                  <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
+                    {isForRetail ? <IconCheck size={16} /> : <IconX size={16} />}
+                  </span>
                 </div>
               )
             })
@@ -2336,17 +2343,19 @@ function SeoShopCardList({
   return (
     <div className="seo-shop-data-list">
       <ScrollArea.Autosize mah={maxHeight} type="auto">
-        <div className="seo-shop-data-list-body">
+        <div className="seo-shop-data-list-body is-bank-card-tiles">
           {isLoading ? (
             <div className="seo-shop-data-list-empty">{loadingText}</div>
           ) : cards.length ? (
             cards.map((register, index) => {
               const registerKey = String(register.NetUid || register.Id || index)
               const isSelected = Boolean(register.IsSelected)
+              const cardBrand = getPaymentCardBrand(register)
+              const organizationName = displayValue(getCompactOrganizationName(register.Organization))
 
               return (
                 <div
-                  className={`seo-shop-data-list-item is-card${isSelected ? ' is-active' : ''}`}
+                  className={`seo-shop-data-list-item is-bank-card is-${cardBrand}${isSelected ? ' is-active' : ''}`}
                   key={registerKey}
                   role="button"
                   tabIndex={0}
@@ -2368,24 +2377,32 @@ function SeoShopCardList({
                     }
                   }}
                 >
-                  <div className="seo-shop-data-list-main">
-                    <span className="seo-shop-data-list-glyph" aria-hidden>
-                      <IconCreditCard size={15} />
-                    </span>
-                    <div className="seo-shop-data-list-copy">
-                      <Text className="seo-shop-data-list-title">
-                        {displayValue(getMaskedPaymentRegisterNumber(register))}
-                      </Text>
-                      <div className="seo-shop-data-list-subline">
-                        <span>{displayValue(getOrganizationName(register.Organization))}</span>
-                      </div>
+                  <div className="seo-shop-bank-card-surface">
+                    <div className="seo-shop-bank-card-top">
+                      <span className="seo-shop-bank-card-chip" aria-hidden>
+                        <IconCreditCard size={16} />
+                      </span>
+                      <span className={`seo-shop-bank-card-brand is-${cardBrand}`}>
+                        <span className="seo-shop-bank-card-brand-mark" aria-hidden />
+                        {getPaymentCardBrandLabel(cardBrand)}
+                      </span>
                     </div>
-                  </div>
 
-                  <div className="seo-shop-data-list-meta">
-                    <span className="seo-shop-data-mini-tag is-accent">
-                      {displayValue(getPaymentRegisterCurrency(register))}
-                    </span>
+                    <Text className="seo-shop-bank-card-number">
+                      {displayValue(getMaskedPaymentRegisterNumber(register))}
+                    </Text>
+
+                    <div className="seo-shop-bank-card-bottom">
+                      <Text className="seo-shop-bank-card-organization">{organizationName}</Text>
+                      <span className="seo-shop-bank-card-badges">
+                        <span className={`seo-shop-bank-card-state${isSelected ? ' is-active' : ' is-inactive'}`}>
+                          {isSelected ? 'Вибрана' : 'Не вибрана'}
+                        </span>
+                        <span className="seo-shop-bank-card-currency">
+                          {displayValue(getPaymentRegisterCurrency(register))}
+                        </span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               )
@@ -3077,10 +3094,12 @@ function getPaymentRegisterCurrency(register: OnlineShopPaymentRegister) {
   )
 }
 
-function getMaskedPaymentRegisterNumber(register: OnlineShopPaymentRegister) {
-  const rawNumber = register.AccountNumber || register.IBAN || register.Name || ''
+function getPaymentRegisterNumber(register: OnlineShopPaymentRegister) {
+  return register.AccountNumber || register.Name || register.IBAN || ''
+}
 
-  return maskPaymentCardNumber(rawNumber)
+function getMaskedPaymentRegisterNumber(register: OnlineShopPaymentRegister) {
+  return maskPaymentCardNumber(getPaymentRegisterNumber(register))
 }
 
 function maskPaymentCardNumber(value: string) {
@@ -3096,8 +3115,39 @@ function maskPaymentCardNumber(value: string) {
   return maskedNumber.replace(/(.{4})/g, '$1 ').trim()
 }
 
+function getPaymentCardBrand(register: OnlineShopPaymentRegister): PaymentCardBrand {
+  const digits = getPaymentRegisterNumber(register).replace(/\D/g, '')
+  const firstTwo = Number(digits.slice(0, 2))
+  const firstFour = Number(digits.slice(0, 4))
+
+  if (digits.startsWith('4')) {
+    return 'visa'
+  }
+
+  if ((firstTwo >= 51 && firstTwo <= 55) || (firstFour >= 2221 && firstFour <= 2720)) {
+    return 'mastercard'
+  }
+
+  return 'unknown'
+}
+
+function getPaymentCardBrandLabel(brand: PaymentCardBrand) {
+  switch (brand) {
+    case 'mastercard':
+      return 'Mastercard'
+    case 'visa':
+      return 'Visa'
+    default:
+      return 'Card'
+  }
+}
+
 function getOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
   return organization?.FullName || organization?.Name || organization?.Abbreviation || ''
+}
+
+function getCompactOrganizationName(organization?: OnlineShopPaymentRegister['Organization']) {
+  return organization?.Abbreviation || organization?.Name || organization?.FullName || ''
 }
 
 function sortStoragesByPriority(storages: OnlineShopStorage[]) {
