@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { requireExportDocument, type ExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   DynamicProductPlacementColumn,
   DynamicProductPlacementRow,
@@ -58,6 +59,14 @@ export async function getSupplyOrderInvoiceItems(invoiceNetId: string): Promise<
   })
 
   return normalizeInvoice(result)
+}
+
+export async function getPzDocumentBySupplyInvoiceId(invoiceNetId: string): Promise<ExportDocument> {
+  const result = await apiRequest<unknown>('/supplies/invoices/get/documents/pz', {
+    query: { netId: invoiceNetId },
+  })
+
+  return requireExportDocument(result, 'Документ PZ недоступний для завантаження')
 }
 
 export async function getProductIncomeByDeliveryProtocolNetId(protocolNetId: string): Promise<IncomeProductIncome | null> {
