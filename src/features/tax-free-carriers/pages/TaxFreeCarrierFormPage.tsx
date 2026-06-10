@@ -47,7 +47,7 @@ export function TaxFreeCarrierFormPage() {
   const { hasPermission } = useAuth()
   const { id } = useParams<{ id?: string }>()
   const isEditMode = Boolean(id)
-  const canSave = hasPermission(TAX_FREE_CARRIER_MANAGE_PERMISSION)
+  const canSave = isEditMode || hasPermission(TAX_FREE_CARRIER_MANAGE_PERMISSION)
   const [carrier, setCarrier] = useValueState<TaxFreeCarrier>(() => createEmptyCarrier())
   const [form, setForm] = useValueState<CarrierFormState>(() => createEmptyForm())
   const [cars, setCars] = useValueState<TaxFreeCarrierCar[]>([])
