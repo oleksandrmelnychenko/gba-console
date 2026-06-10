@@ -28,7 +28,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { getAccountingCashFlowRecordPaymentStatus } from '../../accounting-cash-flow/accountingCashFlowPaymentStatus'
 import { calculateAdvanceReportOrder } from '../../outgoing-cashflows/api/advanceReportApi'
 import {
@@ -96,18 +96,17 @@ const INCOME_DOCUMENT_STRUCTURE_CALCULATION_IDLE: IncomeDocumentStructureCalcula
   isCalculating: false,
 }
 
-export function IncomeCashflowsPage() {
+function useIncomeCashflowsPageModel(): IncomeCashflowsPageModel {
   const { t } = useI18n()
-  const navigate = useNavigate()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
+  const focusedOrderNetId = searchParams.get('orderNetId') || searchParams.get('netId') || ''
   const [incomeOrders, setIncomeOrders] = useValueState<IncomePaymentOrder[]>([])
   const [currencies, setCurrencies] = useValueState<Currency[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [selectedOrganizationIds, setSelectedOrganizationIds] = useValueState<string[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
-  const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
+  const [fromDate, setFromDate] = useValueState(() => readDateSearchParam(searchParams.get('from'), shiftDate(-7)))
+  const [toDate, setToDate] = useValueState(() => readDateSearchParam(searchParams.get('to'), formatLocalDate(new Date())))
   const [searchValue, setSearchValue] = useValueState('')
   const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
@@ -130,6 +129,7 @@ export function IncomeCashflowsPage() {
   const requestRef = useRef(0)
   const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
+  const dismissedFocusedOrderNetIdRef = useRef('')
 
   const organizationOptions = useMemo(
     () =>
@@ -182,14 +182,19 @@ export function IncomeCashflowsPage() {
     [setSelectedRow, t],
   )
 
+  const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
+  const totalQty = incomeOrders[0]?.TotalQty || incomeOrders.length
+
   const closeIncomeDetails = useCallback(() => {
+    if (focusedOrderNetId && selectedRow?.income.NetUid === focusedOrderNetId) {
+      dismissedFocusedOrderNetIdRef.current = focusedOrderNetId
+    }
+
     structureCalculationRequestRef.current += 1
     setSelectedRow(null)
     dispatchSelectedStructureCalculation({ type: 'idle' })
-  }, [setSelectedRow])
+  }, [focusedOrderNetId, selectedRow?.income.NetUid, setSelectedRow])
 
-  const rows = useMemo(() => buildIncomeCashflowRows(incomeOrders), [incomeOrders])
-  const totalQty = incomeOrders[0]?.TotalQty || incomeOrders.length
   const columns = useIncomeCashflowColumns({
     onCancel: setCancelRow,
     onOpen: openIncomeDetails,
@@ -304,6 +309,23 @@ export function IncomeCashflowsPage() {
     void loadIncomeOrders(0, false)
   }, [loadIncomeOrders])
 
+  useEffect(() => {
+    if (
+      !focusedOrderNetId ||
+      isLoading ||
+      dismissedFocusedOrderNetIdRef.current === focusedOrderNetId ||
+      selectedRow?.income.NetUid === focusedOrderNetId
+    ) {
+      return
+    }
+
+    const focusedRow = rows.find((row) => row.income.NetUid === focusedOrderNetId)
+
+    if (focusedRow) {
+      openIncomeDetails(focusedRow)
+    }
+  }, [focusedOrderNetId, isLoading, openIncomeDetails, rows, selectedRow?.income.NetUid])
+
   const resetFilters = useCallback(() => {
     setFromDate(shiftDate(-7))
     setToDate(formatLocalDate(new Date()))
@@ -339,6 +361,161 @@ export function IncomeCashflowsPage() {
       setCanceling(false)
     }
   }, [cancelRow, loadIncomeOrders, setCancelRow, setCanceling, setError, t])
+
+  return {
+    cancelRow,
+    columns,
+    currencies,
+    currencyNetId,
+    density,
+    error,
+    filterError,
+    fromDate,
+    hasMore,
+    incomeOrders,
+    isCanceling,
+    isLoading,
+    isLoadingLookups,
+    isLoadingMore,
+    isTableBusy,
+    organizationOptions,
+    paymentRegisterNetId,
+    paymentRegisters,
+    reassignRow,
+    rows,
+    searchValue,
+    selectedOrganizationIds,
+    selectedRow,
+    selectedStructureCalculationState,
+    toDate,
+    totalQty,
+    onCancel: handleCancel,
+    onCloseCancel: () => setCancelRow(null),
+    onCloseDetails: closeIncomeDetails,
+    onCloseReassign: () => setReassignRow(null),
+    onLoadIncomeOrders: loadIncomeOrders,
+    onLoadLookups: loadLookups,
+    onOpenDetails: openIncomeDetails,
+    onReassignFromDetails: (row) => {
+      closeIncomeDetails()
+      setReassignRow(row)
+    },
+    onReassignSaved: () => {
+      setReassignRow(null)
+      void loadIncomeOrders(0, false)
+    },
+    onResetFilters: resetFilters,
+    onSetCurrencyNetId: setCurrencyNetId,
+    onSetFromDate: setFromDate,
+    onSetPaymentRegisterNetId: setPaymentRegisterNetId,
+    onSetSearchValue: setSearchValue,
+    onSetSelectedOrganizationIds: setSelectedOrganizationIds,
+    onSetToDate: setToDate,
+    onToggleDensity: toggleDensity,
+  }
+}
+
+export function IncomeCashflowsPage() {
+  const model = useIncomeCashflowsPageModel()
+
+  return <IncomeCashflowsContent model={model} />
+}
+
+type IncomeCashflowsPageModel = {
+  cancelRow: IncomeCashflowRow | null
+  columns: DataTableColumn<IncomeCashflowRow>[]
+  currencies: Currency[]
+  currencyNetId: string
+  density: DataTableDensity
+  error: string | null
+  filterError: string | null
+  fromDate: string
+  hasMore: boolean
+  incomeOrders: IncomePaymentOrder[]
+  isCanceling: boolean
+  isLoading: boolean
+  isLoadingLookups: boolean
+  isLoadingMore: boolean
+  isTableBusy: boolean
+  organizationOptions: SelectOption[]
+  paymentRegisterNetId: string
+  paymentRegisters: PaymentRegister[]
+  reassignRow: IncomeCashflowRow | null
+  rows: IncomeCashflowRow[]
+  searchValue: string
+  selectedOrganizationIds: string[]
+  selectedRow: IncomeCashflowRow | null
+  selectedStructureCalculationState: IncomeDocumentStructureCalculationState
+  toDate: string
+  totalQty: number
+  onCancel: () => void
+  onCloseCancel: () => void
+  onCloseDetails: () => void
+  onCloseReassign: () => void
+  onLoadIncomeOrders: (offset: number, append: boolean) => Promise<void>
+  onLoadLookups: () => Promise<void>
+  onOpenDetails: (row: IncomeCashflowRow) => void
+  onReassignFromDetails: (row: IncomeCashflowRow) => void
+  onReassignSaved: () => void
+  onResetFilters: () => void
+  onSetCurrencyNetId: (value: string) => void
+  onSetFromDate: (value: string) => void
+  onSetPaymentRegisterNetId: (value: string) => void
+  onSetSearchValue: (value: string) => void
+  onSetSelectedOrganizationIds: (value: string[]) => void
+  onSetToDate: (value: string) => void
+  onToggleDensity: () => void
+}
+
+function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) {
+  const {
+    cancelRow,
+    columns,
+    currencies,
+    currencyNetId,
+    density,
+    error,
+    filterError,
+    fromDate,
+    hasMore,
+    incomeOrders,
+    isCanceling,
+    isLoading,
+    isLoadingLookups,
+    isLoadingMore,
+    isTableBusy,
+    organizationOptions,
+    paymentRegisterNetId,
+    paymentRegisters,
+    reassignRow,
+    rows,
+    searchValue,
+    selectedOrganizationIds,
+    selectedRow,
+    selectedStructureCalculationState,
+    toDate,
+    totalQty,
+    onCancel,
+    onCloseCancel,
+    onCloseDetails,
+    onCloseReassign,
+    onLoadIncomeOrders,
+    onLoadLookups,
+    onOpenDetails,
+    onReassignFromDetails,
+    onReassignSaved,
+    onResetFilters,
+    onSetCurrencyNetId,
+    onSetFromDate,
+    onSetPaymentRegisterNetId,
+    onSetSearchValue,
+    onSetSelectedOrganizationIds,
+    onSetToDate,
+    onToggleDensity,
+  } = model
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const location = useLocation()
 
   return (
     <Stack gap="md">
@@ -393,21 +570,21 @@ export function IncomeCashflowsPage() {
 
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, платник, рахунок або коментар')}
             value={searchValue}
             w={340}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            onChange={(event) => onSetSearchValue(event.currentTarget.value)}
           />
         </Group>
 
         <Group align="end" gap="xs">
           <Tooltip label={t('Скинути фільтри')}>
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
+            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={onResetFilters}>
               {t('Скинути')}
             </Button>
           </Tooltip>
@@ -419,14 +596,14 @@ export function IncomeCashflowsPage() {
               size={38}
               variant="light"
               onClick={() => {
-                void loadLookups()
-                void loadIncomeOrders(0, false)
+                void onLoadLookups()
+                void onLoadIncomeOrders(0, false)
               }}
             >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
+          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -439,7 +616,7 @@ export function IncomeCashflowsPage() {
           placeholder={t('Усі')}
           value={currencyNetId || null}
           w={190}
-          onChange={(value) => setCurrencyNetId(value || '')}
+          onChange={(value) => onSetCurrencyNetId(value || '')}
         />
         <Select
           clearable
@@ -449,7 +626,7 @@ export function IncomeCashflowsPage() {
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={250}
-          onChange={(value) => setPaymentRegisterNetId(value || '')}
+          onChange={(value) => onSetPaymentRegisterNetId(value || '')}
         />
         <MultiSelect
           clearable
@@ -459,7 +636,7 @@ export function IncomeCashflowsPage() {
           placeholder={t('Без фільтра')}
           value={selectedOrganizationIds}
           w={360}
-          onChange={setSelectedOrganizationIds}
+          onChange={onSetSelectedOrganizationIds}
         />
       </Group>
 
@@ -499,12 +676,12 @@ export function IncomeCashflowsPage() {
         maxHeight="calc(100vh - 365px)"
         minWidth={1680}
         tableId="income-cashflows"
-        onRowClick={openIncomeDetails}
+        onRowClick={onOpenDetails}
       />
 
       {hasMore && (
         <Group justify="center">
-          <Button loading={isLoadingMore} variant="light" onClick={() => void loadIncomeOrders(incomeOrders.length, true)}>
+          <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
             {t('Завантажити ще')}
           </Button>
         </Group>
@@ -513,25 +690,19 @@ export function IncomeCashflowsPage() {
       <IncomeCashflowDetailDrawer
         row={selectedRow}
         structureCalculation={selectedStructureCalculationState}
-        onClose={closeIncomeDetails}
-        onReassign={(row) => {
-          closeIncomeDetails()
-          setReassignRow(row)
-        }}
+        onClose={onCloseDetails}
+        onReassign={onReassignFromDetails}
       />
       <CancelIncomeCashflowModal
         isSaving={isCanceling}
         row={cancelRow}
-        onCancel={handleCancel}
-        onClose={() => setCancelRow(null)}
+        onCancel={onCancel}
+        onClose={onCloseCancel}
       />
       <ReassignIncomeClientModal
         row={reassignRow}
-        onClose={() => setReassignRow(null)}
-        onSaved={() => {
-          setReassignRow(null)
-          void loadIncomeOrders(0, false)
-        }}
+        onClose={onCloseReassign}
+        onSaved={onReassignSaved}
       />
     </Stack>
   )
@@ -1631,6 +1802,10 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function readDateSearchParam(value: string | null, fallback: string): string {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback
 }
 
 function getDateRangeError(fromDate: string, toDate: string): string | null {

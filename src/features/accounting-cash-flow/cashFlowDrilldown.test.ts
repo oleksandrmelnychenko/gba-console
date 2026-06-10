@@ -106,27 +106,33 @@ describe('cashFlowDrilldown', () => {
     ).toBe('/accounting/outgoing-cashflow/outcome-1/advanced-report/view')
   })
 
+  it('routes plain payment orders to their cashflow lists with focused order params', () => {
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 11,
+        OutcomePaymentOrder: {
+          FromDate: '2026-06-10T08:15:00Z',
+          NetUid: 'outcome-plain-1',
+        },
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/accounting/outgoing-cashflow?orderNetId=outcome-plain-1&from=2026-06-10&to=2026-06-10')
+
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        FromDate: '2026-06-09T10:00:00Z',
+        IncomePaymentOrder: {
+          NetUid: 'income-1',
+        },
+        Type: 12,
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/accounting/income-cashflows?orderNetId=income-1&from=2026-06-09&to=2026-06-09')
+  })
+
   it('does not create routes for skipped or unsupported rows', () => {
     expect(
       getAccountingCashFlowDrilldownRoute({
         Type: 19,
         ProductIncome: { NetUid: 'product-income-pl' },
-      } as AccountingCashFlowHeadItem),
-    ).toBeNull()
-
-    expect(
-      getAccountingCashFlowDrilldownRoute({
-        Type: 11,
-        OutcomePaymentOrder: {
-          NetUid: 'outcome-without-detail-route',
-        },
-      } as AccountingCashFlowHeadItem),
-    ).toBeNull()
-
-    expect(
-      getAccountingCashFlowDrilldownRoute({
-        Type: 12,
-        IncomePaymentOrder: { NetUid: 'income-1' },
       } as AccountingCashFlowHeadItem),
     ).toBeNull()
 

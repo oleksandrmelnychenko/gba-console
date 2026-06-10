@@ -48,7 +48,22 @@ export function getAccountingCashFlowDrilldownRoute(item: AccountingCashFlowHead
 
 function resolveDirectRoute(record: Record<string, unknown>, type?: number): string | null {
   if (type === JOIN_SERVICE_TYPE.OutcomePaymentOrder) {
-    const route = resolveOutcomePaymentOrderRoute(toRecord(record.OutcomePaymentOrder) || record)
+    const outcomeOrder = toRecord(record.OutcomePaymentOrder) || record
+    const route =
+      resolveOutcomePaymentOrderRoute(outcomeOrder) ||
+      resolvePaymentOrderListRoute('/accounting/outgoing-cashflow', outcomeOrder, record)
+
+    if (route) {
+      return route
+    }
+  }
+
+  if (type === JOIN_SERVICE_TYPE.IncomePaymentOrder) {
+    const route = resolvePaymentOrderListRoute(
+      '/accounting/income-cashflows',
+      toRecord(record.IncomePaymentOrder) || record,
+      record,
+    )
 
     if (route) {
       return route
@@ -166,6 +181,28 @@ function resolveOutcomeConsumablesOrderRoute(outcome: Record<string, unknown> | 
   return null
 }
 
+function resolvePaymentOrderListRoute(
+  path: string,
+  order: Record<string, unknown> | null,
+  fallbackRecord?: Record<string, unknown>,
+): string | null {
+  const orderNetUid = getNetUid(order)
+
+  if (!orderNetUid) {
+    return null
+  }
+
+  const searchParams = new URLSearchParams({ orderNetId: orderNetUid })
+  const date = getDateParam(order?.FromDate) || getDateParam(fallbackRecord?.FromDate)
+
+  if (date) {
+    searchParams.set('from', date)
+    searchParams.set('to', date)
+  }
+
+  return `${path}?${searchParams.toString()}`
+}
+
 function resolveUkraineProtocolRoute(protocol: Record<string, unknown> | null): string | null {
   return resolveUkraineOrderRoute(toRecord(protocol?.SupplyOrderUkraine), 'protocols')
 }
@@ -207,6 +244,16 @@ function resolveResaleRoute(record: Record<string, unknown>): string | null {
 
 function getNetUid(record: Record<string, unknown> | null): string {
   return stringValue(record?.NetUid) || stringValue(record?.NetUID) || stringValue(record?.NetUidSimple)
+}
+
+function getDateParam(value: unknown): string {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const trimmed = value.trim()
+
+  return /^\d{4}-\d{2}-\d{2}/.test(trimmed) ? trimmed.slice(0, 10) : ''
 }
 
 function stringValue(value: unknown): string {

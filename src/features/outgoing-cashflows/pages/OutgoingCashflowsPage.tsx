@@ -26,7 +26,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { calculateAdvanceReportOrder } from '../api/advanceReportApi'
 import {
   cancelOutgoingCashflow,
@@ -74,11 +74,11 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-export function OutgoingCashflowsPage() {
+function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
   const { t } = useI18n()
   const navigate = useNavigate()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
+  const focusedOrderNetId = searchParams.get('orderNetId') || searchParams.get('netId') || ''
   const [cashflows, setCashflows] = useValueState<OutgoingCashflowsResponse>({
     Collection: [],
     NegativeDifferenceAmount: 0,
@@ -89,8 +89,8 @@ export function OutgoingCashflowsPage() {
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
   const [selectedOrganizationIds, setSelectedOrganizationIds] = useValueState<string[]>([])
-  const [fromDate, setFromDate] = useValueState(() => shiftDate(-7))
-  const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
+  const [fromDate, setFromDate] = useValueState(() => readDateSearchParam(searchParams.get('from'), shiftDate(-7)))
+  const [toDate, setToDate] = useValueState(() => readDateSearchParam(searchParams.get('to'), formatLocalDate(new Date())))
   const [searchValue, setSearchValue] = useValueState('')
   const [currencyNetId, setCurrencyNetId] = useValueState(() => searchParams.get('currencyNetId') || '')
   const [paymentRegisterNetId, setPaymentRegisterNetId] = useValueState(() => searchParams.get('registerNetId') || '')
@@ -114,6 +114,7 @@ export function OutgoingCashflowsPage() {
   const requestRef = useRef(0)
   const structureCalculationRequestRef = useRef(0)
   const didInitOrganizationsRef = useRef(false)
+  const dismissedFocusedOrderNetIdRef = useRef('')
 
   const organizationOptions = useMemo(() => toOrganizationOptions(organizations), [organizations])
   const selectedOrganizationFilterIds = useMemo(
@@ -310,15 +311,46 @@ export function OutgoingCashflowsPage() {
     setCalculatingStructure(false)
   }, [setCalculatingStructure, setStructureCalculatedOrder, setStructureCalculationError, setStructureRow])
 
+  const openCashflowDetails = useCallback(
+    (row: OutgoingCashflowRow) => {
+      setSelectedRow(row)
+    },
+    [setSelectedRow],
+  )
+
   const { density, toggleDensity } = useDataTableDensity('outgoing-cashflows', TABLE_DEFAULT_LAYOUT.density)
   const rows = useMemo(() => buildCashflowRows(cashflows.Collection), [cashflows.Collection])
+  const closeCashflowDetails = useCallback(() => {
+    if (focusedOrderNetId && selectedRow?.order.NetUid === focusedOrderNetId) {
+      dismissedFocusedOrderNetIdRef.current = focusedOrderNetId
+    }
+
+    setSelectedRow(null)
+  }, [focusedOrderNetId, selectedRow?.order.NetUid, setSelectedRow])
   const columns = useOutgoingCashflowColumns({
     onCancel: setCancelRow,
     onEditReport: openAdvanceReport,
     onOpenDocumentStructure: openDocumentStructure,
-    onOpen: setSelectedRow,
+    onOpen: openCashflowDetails,
   })
   const isTableBusy = isLoading || isSearchSettling
+
+  useEffect(() => {
+    if (
+      !focusedOrderNetId ||
+      isLoading ||
+      dismissedFocusedOrderNetIdRef.current === focusedOrderNetId ||
+      selectedRow?.order.NetUid === focusedOrderNetId
+    ) {
+      return
+    }
+
+    const focusedRow = rows.find((row) => row.order.NetUid === focusedOrderNetId)
+
+    if (focusedRow) {
+      openCashflowDetails(focusedRow)
+    }
+  }, [focusedOrderNetId, isLoading, openCashflowDetails, rows, selectedRow?.order.NetUid])
 
   const resetFilters = useCallback(() => {
     setFromDate(shiftDate(-7))
@@ -358,6 +390,161 @@ export function OutgoingCashflowsPage() {
     }
   }, [cancelRow, isCanceling, loadCashflows, setCancelRow, setCanceling, setError, t])
 
+  return {
+    cancelRow,
+    cashflows,
+    columns,
+    currencies,
+    currencyNetId,
+    density,
+    error,
+    filterError,
+    fromDate,
+    hasMore,
+    isCalculatingStructure,
+    isCanceling,
+    isLoading,
+    isLoadingLookups,
+    isLoadingMore,
+    isTableBusy,
+    organizationOptions,
+    paymentMovementNetId,
+    paymentMovements,
+    paymentRegisterNetId,
+    paymentRegisters,
+    rows,
+    searchValue,
+    selectedOrganizationIds,
+    selectedRow,
+    structureCalculatedOrder,
+    structureCalculationError,
+    structureRow,
+    toDate,
+    onCancel: handleCancel,
+    onCloseCancel: () => setCancelRow(null),
+    onCloseDetails: closeCashflowDetails,
+    onCloseDocumentStructure: closeDocumentStructure,
+    onLoadCashflows: loadCashflows,
+    onLoadLookups: loadLookups,
+    onOpenDetails: openCashflowDetails,
+    onResetFilters: resetFilters,
+    onSetCurrencyNetId: setCurrencyNetId,
+    onSetFromDate: setFromDate,
+    onSetPaymentMovementNetId: setPaymentMovementNetId,
+    onSetPaymentRegisterNetId: setPaymentRegisterNetId,
+    onSetSearchValue: setSearchValue,
+    onSetSelectedOrganizationIds: setSelectedOrganizationIds,
+    onSetToDate: setToDate,
+    onToggleDensity: toggleDensity,
+  }
+}
+
+export function OutgoingCashflowsPage() {
+  const model = useOutgoingCashflowsPageModel()
+
+  return <OutgoingCashflowsContent model={model} />
+}
+
+type OutgoingCashflowsPageModel = {
+  cancelRow: OutgoingCashflowRow | null
+  cashflows: OutgoingCashflowsResponse
+  columns: DataTableColumn<OutgoingCashflowRow>[]
+  currencies: Currency[]
+  currencyNetId: string
+  density: DataTableDensity
+  error: string | null
+  filterError: string | null
+  fromDate: string
+  hasMore: boolean
+  isCalculatingStructure: boolean
+  isCanceling: boolean
+  isLoading: boolean
+  isLoadingLookups: boolean
+  isLoadingMore: boolean
+  isTableBusy: boolean
+  organizationOptions: Array<{ label: string; value: string }>
+  paymentMovementNetId: string
+  paymentMovements: PaymentMovement[]
+  paymentRegisterNetId: string
+  paymentRegisters: PaymentRegister[]
+  rows: OutgoingCashflowRow[]
+  searchValue: string
+  selectedOrganizationIds: string[]
+  selectedRow: OutgoingCashflowRow | null
+  structureCalculatedOrder: OutcomePaymentOrder | null
+  structureCalculationError: string | null
+  structureRow: OutgoingCashflowRow | null
+  toDate: string
+  onCancel: () => void
+  onCloseCancel: () => void
+  onCloseDetails: () => void
+  onCloseDocumentStructure: () => void
+  onLoadCashflows: (offset: number, append: boolean) => Promise<void>
+  onLoadLookups: () => Promise<void>
+  onOpenDetails: (row: OutgoingCashflowRow) => void
+  onResetFilters: () => void
+  onSetCurrencyNetId: (value: string) => void
+  onSetFromDate: (value: string) => void
+  onSetPaymentMovementNetId: (value: string) => void
+  onSetPaymentRegisterNetId: (value: string) => void
+  onSetSearchValue: (value: string) => void
+  onSetSelectedOrganizationIds: (value: string[]) => void
+  onSetToDate: (value: string) => void
+  onToggleDensity: () => void
+}
+
+function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel }) {
+  const {
+    cancelRow,
+    cashflows,
+    columns,
+    currencies,
+    currencyNetId,
+    density,
+    error,
+    filterError,
+    fromDate,
+    hasMore,
+    isCalculatingStructure,
+    isCanceling,
+    isLoading,
+    isLoadingLookups,
+    isLoadingMore,
+    isTableBusy,
+    organizationOptions,
+    paymentMovementNetId,
+    paymentMovements,
+    paymentRegisterNetId,
+    paymentRegisters,
+    rows,
+    searchValue,
+    selectedOrganizationIds,
+    selectedRow,
+    structureCalculatedOrder,
+    structureCalculationError,
+    structureRow,
+    toDate,
+    onCancel,
+    onCloseCancel,
+    onCloseDetails,
+    onCloseDocumentStructure,
+    onLoadCashflows,
+    onLoadLookups,
+    onOpenDetails,
+    onResetFilters,
+    onSetCurrencyNetId,
+    onSetFromDate,
+    onSetPaymentMovementNetId,
+    onSetPaymentRegisterNetId,
+    onSetSearchValue,
+    onSetSelectedOrganizationIds,
+    onSetToDate,
+    onToggleDensity,
+  } = model
+  const { t } = useI18n()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   return (
     <Stack gap="md">
       <PageHeaderActions>
@@ -373,21 +560,21 @@ export function OutgoingCashflowsPage() {
 
       <Group align="end" justify="space-between" gap="sm">
         <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
           <TextInput
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, отримувач, рахунок або коментар')}
             value={searchValue}
             w={340}
-            onChange={(event) => setSearchValue(event.currentTarget.value)}
+            onChange={(event) => onSetSearchValue(event.currentTarget.value)}
           />
         </Group>
 
         <Group align="end" gap="xs">
           <Tooltip label={t('Скинути фільтри')}>
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
+            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={onResetFilters}>
               {t('Скинути')}
             </Button>
           </Tooltip>
@@ -399,14 +586,14 @@ export function OutgoingCashflowsPage() {
               size={38}
               variant="light"
               onClick={() => {
-                void loadLookups()
-                void loadCashflows(0, false)
+                void onLoadLookups()
+                void onLoadCashflows(0, false)
               }}
             >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
+          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={38} />
         </Group>
       </Group>
 
@@ -419,7 +606,7 @@ export function OutgoingCashflowsPage() {
           placeholder={t('Усі')}
           value={currencyNetId || null}
           w={190}
-          onChange={(value) => setCurrencyNetId(value || '')}
+          onChange={(value) => onSetCurrencyNetId(value || '')}
         />
         <Select
           clearable
@@ -429,7 +616,7 @@ export function OutgoingCashflowsPage() {
           placeholder={t('Усі')}
           value={paymentRegisterNetId || null}
           w={250}
-          onChange={(value) => setPaymentRegisterNetId(value || '')}
+          onChange={(value) => onSetPaymentRegisterNetId(value || '')}
         />
         <Select
           clearable
@@ -439,7 +626,7 @@ export function OutgoingCashflowsPage() {
           placeholder={t('Усі')}
           value={paymentMovementNetId || null}
           w={280}
-          onChange={(value) => setPaymentMovementNetId(value || '')}
+          onChange={(value) => onSetPaymentMovementNetId(value || '')}
         />
         <MultiSelect
           clearable
@@ -449,7 +636,7 @@ export function OutgoingCashflowsPage() {
           placeholder={t('Без фільтра')}
           value={selectedOrganizationIds}
           w={360}
-          onChange={setSelectedOrganizationIds}
+          onChange={onSetSelectedOrganizationIds}
         />
       </Group>
 
@@ -492,30 +679,30 @@ export function OutgoingCashflowsPage() {
         maxHeight="calc(100vh - 365px)"
         minWidth={1860}
         tableId="outgoing-cashflows"
-        onRowClick={setSelectedRow}
+        onRowClick={onOpenDetails}
       />
 
       {hasMore && (
         <Group justify="center">
-          <Button loading={isLoadingMore} variant="light" onClick={() => void loadCashflows(cashflows.Collection.length, true)}>
+          <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
             {t('Завантажити ще')}
           </Button>
         </Group>
       )}
 
-      <OutgoingCashflowDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
+      <OutgoingCashflowDetailDrawer row={selectedRow} onClose={onCloseDetails} />
       <OutgoingCashflowDocumentStructureDrawer
         calculatedOrder={structureCalculatedOrder}
         calculationError={structureCalculationError}
         isCalculating={isCalculatingStructure}
         row={structureRow}
-        onClose={closeDocumentStructure}
+        onClose={onCloseDocumentStructure}
       />
       <CancelOutgoingCashflowModal
         isSaving={isCanceling}
         row={cancelRow}
-        onCancel={handleCancel}
-        onClose={() => setCancelRow(null)}
+        onCancel={onCancel}
+        onClose={onCloseCancel}
       />
     </Stack>
   )
@@ -1338,6 +1525,10 @@ function shiftDate(days: number): string {
   date.setDate(date.getDate() + days)
 
   return formatLocalDate(date)
+}
+
+function readDateSearchParam(value: string | null, fallback: string): string {
+  return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : fallback
 }
 
 function getDateRangeError(fromDate: string, toDate: string): string | null {
