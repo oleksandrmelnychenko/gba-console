@@ -168,7 +168,7 @@ export function PaymentCashflowArticleFormPage() {
         color: 'green',
         message: isEditMode ? t('Статтю руху коштів оновлено') : t('Статтю руху коштів створено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (saveError) {
       setFormState({
         error: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти статтю руху коштів'),
@@ -199,7 +199,7 @@ export function PaymentCashflowArticleFormPage() {
         color: 'green',
         message: t('Статтю руху коштів видалено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       setFormState({
         error: deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити статтю руху коштів'),

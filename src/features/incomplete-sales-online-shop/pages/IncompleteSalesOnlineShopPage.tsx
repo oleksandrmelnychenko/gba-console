@@ -33,11 +33,13 @@ import { useNavigate } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getIncompleteSales, updateIncompleteSale } from '../../clients/api/onlineShopClientsApi'
-import { OnlineShopOrderItemsList } from '../../clients/components/OnlineShopOrderItemsList'
+import { IncompleteSaleItemsList } from '../../clients/components/IncompleteSaleItemsList'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
+import type { RetailCartItem } from '../../clients/onlineShopTypes'
+import type { SaleOrderItem } from '../../clients/salesTypes'
 import type {
   IncompleteSalesOnlineShopFilter,
   IncompleteSalesOnlineShopItem,
@@ -784,12 +786,51 @@ function IncompleteSaleDetail({ error, isLoading, sale, onOpenClientSales }: Inc
         </Stack>
       </Card>
 
-      <OnlineShopOrderItemsList
+      <IncompleteSaleItemsList
         emptyText={t('Товарів не знайдено')}
-        items={(sale.OrderItems || []).filter((item) => item.Product)}
+        items={(sale.OrderItems || []).filter((item) => item.Product).map(toSaleOrderItem)}
       />
     </Stack>
   )
+}
+
+function toSaleOrderItem(item: RetailCartItem): SaleOrderItem {
+  const product = item.Product
+  const user = item.User as SaleOrderItem['User']
+
+  return {
+    Id: item.Id,
+    NetUid: item.NetUid,
+    Created: item.Created as SaleOrderItem['Created'],
+    Product: product
+      ? {
+          Id: product.Id,
+          NetUid: product.NetUid,
+          Name: product.Name,
+          VendorCode: product.VendorCode,
+          MainOriginalNumber: product.MainOriginalNumber,
+        }
+      : undefined,
+    Qty: toNumber(item.Qty),
+    TotalAmount: toNumber(item.TotalAmount),
+    TotalAmountLocal: toNumber(item.TotalAmountLocal),
+    TotalWeight: toNumber(item.TotalWeight),
+    User: user,
+  }
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+
+  return undefined
 }
 
 function findSaleByKey(sales: IncompleteSalesOnlineShopItem[], rowKey: string) {

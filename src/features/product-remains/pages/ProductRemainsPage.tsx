@@ -643,7 +643,11 @@ function useProductRemainProductsLoader({
         })
 
         if (!cancelled) {
-          setProductRows((currentRows) => (currentOffset > 0 ? currentRows.concat(response.Collection) : response.Collection))
+          setProductRows((currentRows) => {
+            const previousRows = currentOffset > 0 ? currentRows : []
+            const combinedRows = previousRows.concat(response.Collection)
+            return combinedRows.map((row, index) => ({ ...row, RowNumber: index + 1 }))
+          })
           setProductTotals(response)
           setProductHasMore(hasMoreCollectionPage(currentOffset, response, pageSize))
         }

@@ -177,7 +177,7 @@ export function TaxFreeCarrierFormPage() {
         message: isEditMode ? t('Перевізника оновлено') : t('Перевізника створено'),
       })
       void savedCarrier
-      navigate(CARRIERS_PATH, { replace: true })
+      navigate(CARRIERS_PATH, { replace: true, state: { refresh: Date.now() } })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти перевізника'))
     } finally {

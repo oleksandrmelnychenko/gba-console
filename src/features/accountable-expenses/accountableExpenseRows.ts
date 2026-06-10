@@ -25,7 +25,7 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
         advanceNumber: outcomeSummary.advanceNumber,
         amount,
         comment: order.Comment || outcomeSummary.comment,
-        created: order.OrganizationFromDate || outcomeSummary.created || order.Created,
+        created: order.Created,
         currency: outcomeSummary.currency,
         id: String(item.NetUid || item.Id || `${order.NetUid || order.Id || orderIndex}-${itemIndex}`),
         isPayed: outcomeSummary.paymentStatus === 'paid',

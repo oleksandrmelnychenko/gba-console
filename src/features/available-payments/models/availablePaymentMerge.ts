@@ -7,13 +7,15 @@ export type AvailablePaymentMergeFailureReason =
   | 'done'
   | 'kind'
   | 'organization'
+  | 'currency'
   | 'minimum'
 
 const mergeFailureMessages = {
   unsupported: 'Об’єднання підтримується тільки для контейнерних та портових платіжних задач',
-  done: 'Можна об’єднувати тільки незавершені платіжні задачі',
+  done: 'Можна об’єднувати тільки неоплачені платіжні задачі',
   kind: 'Можна об’єднувати тільки платіжні задачі одного типу',
   organization: 'Можна об’єднувати тільки платіжні задачі однієї сервісної організації',
+  currency: 'Можна об’єднувати тільки платіжні задачі в одній валюті',
   minimum: 'Виберіть щонайменше дві платіжні задачі для об’єднання',
 } satisfies Record<AvailablePaymentMergeFailureReason, string>
 
@@ -25,7 +27,7 @@ export function getAvailablePaymentMergeFailureReason(
     return 'unsupported'
   }
 
-  if (candidate.task.TaskStatus === TaskStatusValue.Done) {
+  if (candidate.task.TaskStatus !== TaskStatusValue.NotDone) {
     return 'done'
   }
 
@@ -45,6 +47,10 @@ export function getAvailablePaymentMergeFailureReason(
     && reference.mergeOrganizationNetUid !== candidate.mergeOrganizationNetUid
   ) {
     return 'organization'
+  }
+
+  if (reference.currencyCode !== candidate.currencyCode) {
+    return 'currency'
   }
 
   return null

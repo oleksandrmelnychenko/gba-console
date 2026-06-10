@@ -1,13 +1,17 @@
-import { ActionIcon, Alert, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconArrowLeft, IconMapPin } from '@tabler/icons-react'
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Group, SimpleGrid, Stack, Text, Title, Tooltip } from '@mantine/core'
+import { IconAlertCircle, IconArrowLeft, IconFileTypePdf, IconMapPin } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
+  exportProductIncomeDocument,
   getSupplyOrderProductIncomeByNetId,
   getSupplyOrderUkraineProductIncomeByNetId,
 } from '../api/productIncomeDocumentsApi'
@@ -15,6 +19,7 @@ import { getActiveProductIncomeItems } from '../productIncomeDocumentItems'
 import { mapSupplyPlacementRows, type SupplyPlacementRow } from '../supplyOrderProductPlacementRows'
 import type {
   NamedEntity,
+  ProductIncomeDocumentsExportDocument,
   ProductIncomeInfo,
   ProductIncomePackingList,
   ProductIncomePlacement,
@@ -68,6 +73,9 @@ function SupplyOrderProductPlacementContent({
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [placementDetailsRow, setPlacementDetailsRow] = useValueState<SupplyPlacementRow | null>(null)
+  const [isExporting, setExporting] = useValueState(false)
+  const [downloadDocument, setDownloadDocument] = useValueState<ProductIncomeDocumentsExportDocument | null>(null)
+  const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
 
   useEffect(() => {
     let isActive = true
@@ -123,15 +131,42 @@ function SupplyOrderProductPlacementContent({
     || ukraineOrder?.ClientAgreement?.Agreement?.Currency?.Code
     || income?.Currency?.Code
     || ''
-  const exchangeRate = firstPackingItem?.ExchangeRateAmount
+  const exchangeRate = firstPackingItem?.ExchangeRateAmount ?? income?.ExchangeRateToUah
   const status = firstUkraineItem ? getUkrainePlacementStatus(rows) : getPlacementStatus(packingList)
+
+  async function handleExport() {
+    if (!income?.NetUid) {
+      return
+    }
+
+    setExporting(true)
+    setError(null)
+
+    try {
+      const nextDocument = await exportProductIncomeDocument(income.NetUid)
+
+      setDownloadDocument(nextDocument)
+      setDownloadModalOpened(true)
+    } catch (exportError) {
+      setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
   return (
     <Stack gap="lg">
       <Group justify="space-between" align="center">
-        <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
-          {t('Назад')}
-        </Button>
+        <Group gap="sm" align="center">
+          <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate(-1)}>
+            {t('Назад')}
+          </Button>
+          {firstUkraineItem && income?.NetUid && (
+            <Button loading={isExporting} variant="light" onClick={() => void handleExport()}>
+              {t('Експорт')}
+            </Button>
+          )}
+        </Group>
         <Stack gap={2} align="flex-end">
           <Text fw={700} size="lg">
             {t(title)}
@@ -206,7 +241,7 @@ function SupplyOrderProductPlacementContent({
           <TotalValue label={t('Всього товарів')} value={rows.length} />
           <TotalValue label={t('Всього кількість')} value={formatAmount(packingList?.TotalQuantity || income?.TotalQty)} />
           <TotalValue label={t('Всього нетто')} value={formatMoney(packingList?.TotalNetPrice || income?.TotalNetPrice)} />
-          <TotalValue label={t('Всього з ПДВ')} value={formatMoney(packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat)} />
+          <TotalValue label={t('Всього з ПДВ')} value={formatMoney(firstUkraineItem ? (income?.TotalGrossPrice || packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat) : (packingList?.TotalNetPriceWithVat || income?.TotalNetWithVat))} />
           <TotalValue label={t('ПДВ')} value={formatMoney(packingList?.TotalVatAmount || income?.TotalVatAmount)} />
           <TotalValue label={t('Вага нетто')} value={formatAmount(packingList?.TotalNetWeight || income?.TotalNetWeight)} />
           <TotalValue label={t('Вага брутто')} value={formatAmount(packingList?.TotalGrossWeight || income?.TotalGrossWeight)} />
@@ -214,6 +249,50 @@ function SupplyOrderProductPlacementContent({
       </Card>
 
       <PlacementDetailsDrawer row={placementDetailsRow} onClose={() => setPlacementDetailsRow(null)} />
+
+      <AppModal
+        centered
+        opened={downloadModalOpened}
+        title={t('Документ приходу')}
+        onClose={() => setDownloadModalOpened(false)}
+      >
+        <Stack gap="sm">
+          {downloadDocument?.DocumentURL || downloadDocument?.PdfDocumentURL ? (
+            <>
+              {downloadDocument.DocumentURL && (
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.DocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
+                  <span className="document-link-badge document-link-badge-excel">
+                    <ExcelIcon size={22} />
+                  </span>
+                  <span>{t('Excel документ')}</span>
+                </Anchor>
+              )}
+              {downloadDocument.PdfDocumentURL && (
+                <Anchor
+                  href={upgradeHttpToHttps(downloadDocument.PdfDocumentURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="document-link"
+                >
+                  <span className="document-link-badge document-link-badge-pdf">
+                    <IconFileTypePdf size={22} stroke={1.8} />
+                  </span>
+                  <span>{t('PDF документ')}</span>
+                </Anchor>
+              )}
+            </>
+          ) : (
+            <Text c="dimmed" size="sm">
+              {t('Документ недоступний для завантаження')}
+            </Text>
+          )}
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }

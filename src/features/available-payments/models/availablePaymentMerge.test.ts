@@ -38,8 +38,8 @@ function buildModel(overrides: ModelOverride = {}): AvailablePaymentTaskModel {
     serviceNumber: '',
     supplyOrderNetUid: '',
     supplyOrderUkraineNetUid: '',
-    task,
     ...overrides,
+    task,
   }
 }
 
@@ -70,6 +70,19 @@ describe('available payment merge validation', () => {
     })
 
     expect(getAvailablePaymentMergeFailureReason([first], second)).toBe('organization')
+  })
+
+  it('rejects partially done payment tasks', () => {
+    const candidate = buildModel({ task: { TaskStatus: TaskStatusValue.PartiallyDone } })
+
+    expect(getAvailablePaymentMergeFailureReason([], candidate)).toBe('done')
+  })
+
+  it('rejects payment tasks in different currencies', () => {
+    const first = buildModel()
+    const second = buildModel({ id: 'model-2', currencyCode: 'EUR', task: { NetUid: 'task-2' } })
+
+    expect(getAvailablePaymentMergeFailureReason([first], second)).toBe('currency')
   })
 
   it('does not allow starting a merge set after a non-merge task is selected', () => {

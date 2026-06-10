@@ -30,6 +30,7 @@ import {
   getGroupedPaymentTasks,
 } from '../api/availablePaymentsApi'
 import { AvailablePaymentsDetailDrawer } from '../components/AvailablePaymentsDetailDrawer'
+import { getAvailablePaymentMergeError } from '../models/availablePaymentMerge'
 import {
   getAvailablePaymentSelectionError,
   validateAvailablePaymentSelection,
@@ -298,7 +299,11 @@ function useAvailablePaymentsPageModel() {
           return current.filter((item) => item.id !== model.id)
         }
 
-        const selectionError = getAvailablePaymentSelectionError(current, model, t)
+        const paymentSelectionError = getAvailablePaymentSelectionError(current, model, t)
+        const mergeSelectionError = getAvailablePaymentMergeError(current, model, t)
+        const selectionError = paymentSelectionError && mergeSelectionError
+          ? `${paymentSelectionError}. ${mergeSelectionError}`
+          : null
 
         if (selectionError) {
           setError(selectionError)

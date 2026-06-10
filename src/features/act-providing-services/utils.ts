@@ -10,6 +10,7 @@ const TYPE_BILL_OF_LADING_CONTAINER = 0
 
 export type ActProvidingServiceDisplayModel = {
   accountingMarker: string
+  actNumber?: string
   agreement?: string
   amount?: number
   amountVat?: number
@@ -39,6 +40,7 @@ export function toActProvidingServiceDisplayModel(
   const source = getActSource(act)
   const baseModel: ActProvidingServiceDisplayModel = {
     accountingMarker: act.IsAccounting ? '+' : '',
+    actNumber: act.Number,
     comment: act.Comment,
     date: act.FromDate,
     managementMarker: act.IsAccounting ? '' : '+',

@@ -1170,6 +1170,12 @@ function CapitalizationOverview({
           minWidth={760}
           tableId="product-income-capitalization-overview"
         />
+
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+          <DetailValue label={t('Вся кількість')} value={formatAmount(sumRows(items, (item) => item.Qty))} />
+          <DetailValue label={t('Загальна сума')} value={formatMoney(sumRows(items, (item) => item.TotalAmount))} />
+          <DetailValue label={t('Загальна вага')} value={formatAmount(sumRows(items, (item) => (item.Weight || 0) * (item.Qty || 0)))} />
+        </SimpleGrid>
       </Stack>
     </Card>
   )
@@ -1201,6 +1207,15 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         ),
       },
       {
+        id: 'weight',
+        header: t('Вага'),
+        width: 116,
+        minWidth: 104,
+        align: 'right',
+        accessor: (item) => item.Weight,
+        cell: (item) => formatAmount(item.Weight),
+      },
+      {
         id: 'qty',
         header: t('Кількість'),
         width: 110,
@@ -1226,6 +1241,15 @@ function useCapitalizationOverviewColumns(): DataTableColumn<CapitalizationOverv
         align: 'right',
         accessor: (item) => item.TotalAmount,
         cell: (item) => formatMoney(item.TotalAmount),
+      },
+      {
+        id: 'remainingQty',
+        header: t('Залишок'),
+        width: 116,
+        minWidth: 104,
+        align: 'right',
+        accessor: (item) => item.RemainingQty,
+        cell: (item) => formatAmount(item.RemainingQty),
       },
     ],
     [t],

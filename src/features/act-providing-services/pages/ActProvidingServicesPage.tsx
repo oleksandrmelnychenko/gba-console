@@ -487,8 +487,8 @@ function useActProvidingServiceColumns(
         header: t('Номер'),
         width: 150,
         minWidth: 120,
-        accessor: (row) => row.number,
-        cell: (row) => <ActProvidingServiceTableValue fw={700} value={displayValue(row.number)} />,
+        accessor: (row) => row.actNumber,
+        cell: (row) => <ActProvidingServiceTableValue fw={700} value={displayValue(row.actNumber)} />,
       },
       {
         id: 'invDate',

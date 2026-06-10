@@ -80,6 +80,19 @@ function useTaxFreeCarriersPageModel() {
 
   useTaxFreeCarriersLoader({ activeSearch, reloadKey, setCarriers, setError, setLoading })
 
+  const refreshSignal = (location.state as { refresh?: number } | null)?.refresh
+  const lastRefreshSignal = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    if (refreshSignal === undefined || refreshSignal === lastRefreshSignal.current) {
+      return
+    }
+
+    lastRefreshSignal.current = refreshSignal
+    reload()
+    navigate(location.pathname, { replace: true, state: null })
+  }, [location.pathname, navigate, refreshSignal])
+
   function updateSearchDraft(value: string) {
     setSearchDraft(value)
 

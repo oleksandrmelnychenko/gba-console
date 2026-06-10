@@ -202,12 +202,14 @@ export type ProductIncomeDocumentsExportDocument = {
 export type ProductIncomeInfo = EntityFields & {
   Comment?: string
   Currency?: NamedEntity | null
+  ExchangeRateToUah?: number
   FromDate?: string
   Number?: string
   Organization?: NamedEntity | null
   PackingList?: ProductIncomePackingList | null
   ProductIncomeItems?: ProductIncomeItem[]
   Storage?: ProductIncomeStorage | null
+  TotalGrossPrice?: number
   TotalGrossWeight?: number
   TotalNetPrice?: number
   TotalNetWeight?: number

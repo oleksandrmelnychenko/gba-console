@@ -220,7 +220,9 @@ function buildPolandProtocolModel(service: DataRecord, context: BuildContext): A
   const clientAgreementId = supplyOrder?.ClientAgreementId
   const clientAgreement =
     clientAgreements.find((agreement) => agreement.Id === clientAgreementId) || null
-  const currency = asRecord(asRecord(clientAgreement?.Agreement)?.Currency)
+  const agreement = asRecord(clientAgreement?.Agreement)
+  const currency = asRecord(agreement?.Currency)
+  const organization = asRecord(agreement?.Organization)
 
   const row: AvailablePaymentTaskRow = {
     discount: undefined,
@@ -242,6 +244,7 @@ function buildPolandProtocolModel(service: DataRecord, context: BuildContext): A
     organizationName: t('Фактура'),
     organizationNetUid: readString(supplyOrder, ['NetUid']),
     payForClient: client as NamedEntity | null,
+    payForOrganization: organization,
     rows: [row],
     serviceName: serviceName('Інвойс', task, t),
     serviceNumber: readString(service, ['ServiceNumber']),

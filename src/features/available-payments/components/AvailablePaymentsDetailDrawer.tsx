@@ -1294,6 +1294,16 @@ function AvailablePaymentOutcomeForm({
     label: organization.Name || organization.FullName || getEntityValue(organization),
     value: getEntityValue(organization),
   }))
+  const recipientName =
+    outcomeModels[0]?.payForClient?.Name
+    || outcomeModels[0]?.payForClient?.FullName
+    || selectedOrganization?.Name
+    || outcomeModels[0]?.organization?.Name
+    || ''
+  const baseOutcomeAmount = outcomeModels.reduce((sum, model) => sum + (model.paymentAmount ?? model.grossPrice ?? 0), 0)
+  const taskCurrencyCode = outcomeModels[0]?.currencyCode || ''
+  const selectedCurrencyRegister =
+    (selectedRegister?.PaymentCurrencyRegisters || []).find((currencyRegister) => getEntityValue(currencyRegister) === form.selectedCurrencyValue) || null
 
   return (
     <form onSubmit={onSubmit}>
@@ -1309,6 +1319,14 @@ function AvailablePaymentOutcomeForm({
           </Group>
         ) : (
           <>
+            <SimpleGrid cols={{ base: 1, md: 2 }}>
+              <InfoCell label={t('Отримувач')} value={displayValue(recipientName)} />
+              <InfoCell
+                label={t('Сума до оплати')}
+                value={`${formatAmount(baseOutcomeAmount)} ${taskCurrencyCode}`.trim()}
+              />
+            </SimpleGrid>
+
             <SimpleGrid cols={{ base: 1, md: 3 }}>
               <TextInput
                 disabled={isSaving}
@@ -1373,17 +1391,24 @@ function AvailablePaymentOutcomeForm({
                   })
                 }}
               />
-              <Select
-                data={(selectedRegister?.PaymentCurrencyRegisters || []).map((currencyRegister) => ({
-                  label: currencyRegister.Currency?.Code || currencyRegister.Currency?.Name || getEntityValue(currencyRegister),
-                  value: getEntityValue(currencyRegister),
-                }))}
-                disabled={isSaving || !selectedRegister}
-                label={t('Валюта')}
-                searchable
-                value={form.selectedCurrencyValue || null}
-                onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
-              />
+              <Stack gap={6}>
+                <Select
+                  data={(selectedRegister?.PaymentCurrencyRegisters || []).map((currencyRegister) => ({
+                    label: currencyRegister.Currency?.Code || currencyRegister.Currency?.Name || getEntityValue(currencyRegister),
+                    value: getEntityValue(currencyRegister),
+                  }))}
+                  disabled={isSaving || !selectedRegister}
+                  label={t('Валюта')}
+                  searchable
+                  value={form.selectedCurrencyValue || null}
+                  onChange={(value) => updateForm({ selectedCurrencyValue: value || '' })}
+                />
+                {selectedCurrencyRegister && (
+                  <Text c="dimmed" size="xs">
+                    {`${t('Залишки')}: ${formatAmount(selectedCurrencyRegister.Amount)} ${selectedCurrencyRegister.Currency?.Code || ''}`.trim()}
+                  </Text>
+                )}
+              </Stack>
             </SimpleGrid>
 
             <SimpleGrid cols={{ base: 1, md: 3 }}>
@@ -1881,26 +1906,33 @@ function TransferTab({ model }: { model: AvailablePaymentTaskModel }) {
   const { t } = useI18n()
   const order = model.paidOrder
 
-  if (!order) {
-    return (
-      <Text c="dimmed" size="sm">
-        {t('Переказ ще не створено')}
-      </Text>
-    )
-  }
-
   return (
-    <SimpleGrid cols={{ base: 1, md: 3 }}>
-      <InfoCell label={t('Документ')} value={getTransferOrderTypeLabel(order, t)} />
-      <InfoCell label={t('Номер')} value={displayValue(order.Number)} />
-      <InfoCell label={t('Дата')} value={formatDateTime(order.FromDate)} />
-      <InfoCell
-        label={t('Сума')}
-        value={`${formatAmount(order.Amount)} ${order.PaymentCurrencyRegister?.Currency?.Code || ''}`}
-      />
-      <InfoCell label={t('Рахунок')} value={displayValue(order.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
-      <InfoCell label={t('Оплатив')} value={displayValue(order.User?.LastName || order.User?.FullName || order.User?.Name)} />
-    </SimpleGrid>
+    <Stack gap="md">
+      {order ? (
+        <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <InfoCell label={t('Документ')} value={getTransferOrderTypeLabel(order, t)} />
+          <InfoCell label={t('Номер')} value={displayValue(order.Number)} />
+          <InfoCell label={t('Дата')} value={formatDateTime(order.FromDate)} />
+          <InfoCell
+            label={t('Сума')}
+            value={`${formatAmount(order.Amount)} ${order.PaymentCurrencyRegister?.Currency?.Code || ''}`}
+          />
+          <InfoCell label={t('Рахунок')} value={displayValue(order.PaymentCurrencyRegister?.PaymentRegister?.Name)} />
+          <InfoCell label={t('Оплатив')} value={displayValue(order.User?.LastName || order.User?.FullName || order.User?.Name)} />
+        </SimpleGrid>
+      ) : (
+        <Text c="dimmed" size="sm">
+          {t('Переказ ще не створено')}
+        </Text>
+      )}
+      <Divider />
+      <Stack gap={4}>
+        <Text fw={600} size="sm">
+          {t('Документи')}
+        </Text>
+        <DocumentsList documents={model.task.SupplyPaymentTaskDocuments || []} />
+      </Stack>
+    </Stack>
   )
 }
 
