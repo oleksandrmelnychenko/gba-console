@@ -37,7 +37,6 @@ import {
   IconRestore,
   IconSearch,
   IconTrash,
-  IconUserCheck,
   IconX,
 } from '@tabler/icons-react'
 import { type CSSProperties, type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
@@ -1514,7 +1513,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
         {t('Новий контакт')}
       </Button>
     )
-    : activeTab === 'warehouses'
+    : activeTab === 'warehouses' || activeTab === 'shop-data'
       ? (
         <Button
           color={CREATE_ACTION_COLOR}
@@ -1808,19 +1807,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   </SeoShopDataSection>
 
                   <SeoShopDataSection
-                    action={(
-                      <Button
-                        color={CREATE_ACTION_COLOR}
-                        leftSection={<IconPlus size={14} />}
-                        size="xs"
-                        type="button"
-                        onClick={() => setStorageDrawerOpen(true)}
-                      >
-                        {t('Додати склад')}
-                      </Button>
-                    )}
                     className="is-wide"
                     count={shopDataStorages.length}
+                    hideCount
                     title={t('Склади')}
                   >
                     <SeoRosterTable
@@ -2306,28 +2295,38 @@ function SeoShopClientList({
                     }
                   }}
                 >
-                  <span className="seo-shop-client-tile-avatar" aria-hidden>
-                    <IconBasket size={22} />
-                    <span className="seo-shop-client-tile-avatar-mark">
-                      <IconUserCheck size={12} />
-                    </span>
-                  </span>
-
                   <div className="seo-shop-client-tile-copy">
+                    <div className="seo-shop-client-tile-top">
+                      <span className="seo-shop-client-tile-avatar" aria-hidden>
+                        <IconBasket size={21} />
+                      </span>
+                      <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
+                    </div>
+
                     <Text className="seo-shop-client-tile-title">{clientName}</Text>
-                    <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
-                    {agreementName ? (
-                      <span className="seo-shop-client-tile-contract">
+
+                    {agreementName || agreementOrganizationName ? (
+                      <div className="seo-shop-client-tile-strip">
+                        {agreementName ? (
+                          <span className="seo-shop-client-tile-strip-part">
+                            <IconFileText size={12} />
+                            <span>{agreementName}</span>
+                          </span>
+                        ) : null}
+                        {agreementName && agreementOrganizationName ? <span className="seo-shop-client-tile-strip-separator" aria-hidden /> : null}
+                        {agreementOrganizationName ? (
+                          <span className="seo-shop-client-tile-strip-part is-muted">
+                            <IconBuilding size={12} />
+                            <span>{agreementOrganizationName}</span>
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <div className="seo-shop-client-tile-strip is-empty">
                         <IconFileText size={12} />
-                        <span>{agreementName}</span>
-                      </span>
-                    ) : null}
-                    {agreementOrganizationName ? (
-                      <span className="seo-shop-client-tile-organization">
-                        <IconBuilding size={12} />
-                        <span>{agreementOrganizationName}</span>
-                      </span>
-                    ) : null}
+                        <span>Договір не вказано</span>
+                      </div>
+                    )}
                   </div>
 
                   <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
