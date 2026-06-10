@@ -46,11 +46,29 @@ export async function getSalesUkraineOrganizations(): Promise<SalesUkraineOrgani
 }
 
 export async function searchSalesUkraineClients(value: string): Promise<SalesUkraineClientOption[]> {
-  const result = await apiRequest<unknown>('/clients/payers/search/all', {
+  const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      limit: 50,
-      offset: 0,
-      value: value.trim(),
+      filter: JSON.stringify({
+        Table: 'Client',
+        Offset: 0,
+        Limit: 50,
+        BooleanFilter: '',
+        TypeRoleFilter: '',
+        SortDescriptors: [],
+        Filter: JSON.stringify({
+          Value: value.trim(),
+          FilterItem: {
+            Name: '',
+            SQL: 'RegionCode.Value/Client.FullName',
+            Description: '',
+            Type: 0,
+            FilterOperationItem: {
+              Name: '',
+              SQL: 'Contains',
+            },
+          },
+        }),
+      }),
     },
   })
 
