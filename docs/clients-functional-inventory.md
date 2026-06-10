@@ -469,14 +469,10 @@ Clients slice depends on these shared datasets and controls:
 - Avoid hidden draft state in `localStorage` for new code; use route-safe React state plus explicit persistence where a reload must survive.
 - Keep source disabled/commented features out of the first UI pass, but record them here so the decision is visible.
 
-## First Parity Gaps To Close
+## Remaining Verification
 
-1. Finish the remaining `/clients` parity details: source grid virtualization behavior and live backend verification of sort descriptor effect.
-2. Finish the remaining `/suppliers` list details: dynamic filter metadata, sorting parity, and grid virtualization behavior if needed.
-3. Continue `/clients/resources` parity review; simple resource create actions are exposed in the section header, region validation now matches the 20-character source limit, protected carriers cannot be archived, perfect-client creation defaults to toggle, and product-reserve roles deep-link to `/clients?roleIds=...`.
-4. Add shared permission helper for repeated route/page action checks.
-5. Build edit shell with tabs and load/save/delete before moving individual tab internals.
-6. Build new client wizard shell and typed draft model before implementing pricing/agreement internals.
-7. Move accounting cash flow for clients and suppliers.
-8. Move resources as separate capability modules; do not block client edit on all resources unless the edit tab needs a specific lookup.
-9. Move online-shop clients as its own retail-client slice.
+The first-pass parity backlog above is historical. The current client/supplier surface is considered migrated; remaining work is targeted runtime verification and polish:
+
+1. Verify `/clients` and `/suppliers` sort descriptors against deployed backend data.
+2. Re-check source grid virtualization only if real list sizes make the current table interaction too slow.
+3. Re-run `/clients/resources` endpoint checks after backend/API changes, especially region map behavior and multipart carrier upload.

@@ -92,18 +92,16 @@ Core client actions:
 
 Full endpoint inventory is in `docs/clients-functional-inventory.md`.
 
-## Implementation Order
+## Current Verification
 
-1. Finish remaining `/clients` list details: source grid virtualization behavior and live backend verification of sort descriptor effect.
-2. Finish remaining `/suppliers` list details: source grid virtualization behavior and live backend verification of sort descriptor effect.
-3. Expand the shared client permission model as deeper edit/new actions are moved.
-4. Complete edit tab internals in this order: general info, contact info, pricing, client structure, bank details, perfect client, e-commerce, sales/recommendations.
-5. Complete new client wizard internals: lookup-backed general/contact/bank fields, persisted draft, perfect-client, pricing/agreement, documents, parent subclient flow.
-6. Add route/component tests for new/edit shells and permission-gated controls.
-7. Continue client resources parity review for add/edit/delete affordances and source-specific field behavior.
-8. Move accounting cash flow for clients and suppliers.
-9. Move new e-commerce clients.
-10. Move online-shop clients as a separate retail-client slice.
+This file is the historical migration plan. The active client/supplier implementation is now tracked in
+`docs/clients-functional-inventory.md` and `docs/migration-route-matrix.md`.
+
+Remaining client work is verification rather than first-pass migration:
+
+1. Verify `/clients` and `/suppliers` sort descriptors against live backend data.
+2. Revisit source grid virtualization only if production-sized lists show real interaction cost.
+3. Re-run `/clients/resources` endpoint checks after backend/API changes.
 
 ## Done So Far
 
