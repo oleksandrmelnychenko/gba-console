@@ -388,11 +388,12 @@ Exhaustive extraction of the sale **Видаткова Накладна** + **Р
 sales-ukraine gaps:
 
 ### Missing (sales-ukraine relevant)
-- **Invoice button uses the wrong endpoint.** Legacy «друк видаткової накладної» = `GET /sales/get/document?netId=&isFromStorages=` and toggles `IsPrinted` + re-saves the sale. Console `getSaleInvoiceDocument` calls `/sales/get/last/document` (the LAST/most-recent-revision form) and has no `isFromStorages` / no `IsPrinted` side-effect. If the two endpoints differ, the printed накладна can differ.
-- **Cannot CREATE an invoice edit (Акт редагування).** Legacy `edit.sale.view.tsx` shifts order-item qty bill↔store (`/orders/items/shift/current`), which CREATES `HistoryInvoiceEdit` entries. Console is **read/print-only** for invoice history — there is no console flow to edit an issued накладна.
-- **`ConfirmProcessing` approve** (set/edit/act/for/editing) — the per-sale approve button from the legacy audit timeline is not in the console audit drawer.
+No open Sales Ukraine document/action parity gaps remain in this extraction. Keep new findings below this line only after checking the refutations in §10.
 
 ### Done Since This Extraction
+- **Invoice button endpoint** — verified false-positive. Legacy sales dashboard uses `/sales/get/last/document` without `isFromStorages`; warehouse print uses `/sales/get/document?isFromStorages=true`. Console keeps the same split (`sales-ukraine/getSaleInvoiceDocument` vs `warehouse-ukraine/getSalePrintDocument`), and adding `isFromStorages` to Sales would be a regression.
+- **Create invoice edit (Акт редагування)** — console has `SaleEditDrawer` wired from Sales Ukraine rows and posts `POST /orders/items/shift/current` with `ShiftStatuses`; edit data now loads from legacy `/sales/get/shifted`, and New-sale edit hides/suppresses bill/account shifts like legacy.
+- **`ConfirmProcessing` approve** — verified false-positive for Sales Ukraine. Legacy only showed that button when the shared audit panel was opened from the warehouse edit-acts approval queue with an explicit `HistoryInvoiceEdit.NetUid`; console implements that primary queue in `warehouse-ukraine` (`approveEditingAct` → `/protocol/act/invoice/set/edit/act/for/editing`). The normal Sales audit drawer should not infer an approval target.
 - **Рахунок bundles a накладна** — console now normalizes `InvoiceDocumentURL`/`PdfInvoiceDocumentURL` in `extractDocumentResult`, renders the bundled «Видаткова накладна» behind the same role/accepted-to-packing gate, and has API coverage in `salesUkraineApi.test.ts`.
 - **VAT convert-to-invoice path** — `SaleEditorDrawer.convertToInvoice` branches on `IsVatSale` and calls `POST /sales/update/get/payment/document` through `convertVatSaleAndGetPaymentDocument`, opening the returned document URL.
 - **Current Act-protocol-edit document** — `SaleDocumentsMenu` adds the current `/sales/get/shifted/document` action for the latest invoice edit in addition to history documents.
@@ -430,13 +431,15 @@ expandable-row support + a SaleExpandContent (order items + transport services).
   VAT → `convertVatSaleAndGetPaymentDocument` (`POST /sales/update/get/payment/document`, FormData
   sale+file) and opens the returned рахунок; non-VAT → `/sales/update/file` as before. Lifecycle → Packaging(1).
 - **Create-invoice-edit (Акт редагування) — DONE.** New `SaleEditDrawer`: per-item bill↔store qty grid
-  (NumberInput, clamp bill+store ≤ Qty), bulk «Все в рахунок» / «Все на склад», `DoShift` →
+  (NumberInput, clamp bill+store ≤ Qty), edit payload loaded through legacy `/sales/get/shifted`, bulk
+  «Все в рахунок» (non-New only) / «Все на склад», `DoShift` →
   `shiftOrderItemsCurrent` (`POST /orders/items/shift/current` with the whole Sale; ShiftStatuses use the
   flat enum Bill=1/Store=0, no `$type` — confirmed against legacy entities). Menu trigger gated exactly
   like the legacy `moving` icon: `canEditSale` (= `UkraineAllActOfEdit_Change_PKEY`) + no merges + items>0
   — **no lifecycle gate** (legacy's lifecycle/ShiftStatus condition is on the *audit* `time_line_icon`,
-  not the shift-edit icon; shift-edit is available on New «Рахунок» sales too). Title «Акт редагування
-  рахунку» (New) / «…накладної» (else) — matches legacy `ActForEditingAnAccount`/`…ConsignmentNote`.
+  not the shift-edit icon; shift-edit is available on New «Рахунок» sales too, but New hides the
+  bill/account input as legacy does). Title «Акт редагування рахунку» (New) / «…накладної» (else) —
+  matches legacy `ActForEditingAnAccount`/`…ConsignmentNote`.
 - **`ConfirmProcessing` approve — already present** in `warehouse-ukraine` (`approveEditingAct` →
   `/protocol/act/invoice/set/edit/act/for/editing`, EditingList approval queue). The per-sale audit-timeline
   duplicate entry point remains optional (low value, the warehouse queue is the primary).

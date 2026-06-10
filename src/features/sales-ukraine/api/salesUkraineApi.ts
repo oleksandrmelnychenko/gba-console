@@ -72,6 +72,24 @@ export async function getSaleById(netId: string): Promise<SalesUkraineSale | nul
   return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
 }
 
+export async function getShiftedSaleById(netId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/get/shifted', {
+    query: { netId },
+  })
+
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    return null
+  }
+
+  const sale = (result as { Sale?: unknown }).Sale
+
+  if (sale && typeof sale === 'object' && !Array.isArray(sale)) {
+    return sale as SalesUkraineSale
+  }
+
+  return result as SalesUkraineSale
+}
+
 export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
   const result = await apiRequest<unknown>('/sales/get/current', {
     query: { netId: clientAgreementNetId },

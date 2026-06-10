@@ -9,6 +9,8 @@ import {
   getSalePzDocument,
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
+  getShiftedSaleById,
+  shiftOrderItemsCurrent,
 } from './salesUkraineApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -74,6 +76,35 @@ describe('sales Ukraine document request contracts', () => {
       invoicePdfUrl: 'https://example.test/invoice.pdf',
       isAcceptedToPacking: true,
       pdfUrl: 'https://example.test/payment.pdf',
+    })
+  })
+
+  it('loads the edit-shift sale through the shifted legacy endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Sale: {
+        NetUid: 'sale-net-id',
+        Order: { OrderItems: [] },
+      },
+    })
+
+    await expect(getShiftedSaleById('sale-net-id')).resolves.toEqual({
+      NetUid: 'sale-net-id',
+      Order: { OrderItems: [] },
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/shifted', { query: { netId: 'sale-net-id' } })
+  })
+
+  it('posts edit-shift payload to the current shift endpoint', async () => {
+    const sale = { NetUid: 'sale-net-id' }
+
+    apiRequestMock.mockResolvedValueOnce({ Sale: { NetUid: 'updated-sale-net-id' } })
+
+    await expect(shiftOrderItemsCurrent(sale)).resolves.toEqual({ NetUid: 'updated-sale-net-id' })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/orders/items/shift/current', {
+      body: sale,
+      method: 'POST',
     })
   })
 })

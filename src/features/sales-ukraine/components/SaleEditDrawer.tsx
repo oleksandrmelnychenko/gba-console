@@ -12,11 +12,11 @@ import {
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconArrowsLeftRight, IconBuildingWarehouse, IconReceipt } from '@tabler/icons-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { getSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
-import { isStatusType } from '../saleStatus'
+import { getShiftedSaleById, shiftOrderItemsCurrent } from '../api/salesUkraineApi'
+import { getSaleLifecycleStatusKey } from '../saleStatus'
 import {
   OrderItemShiftStatusType,
   type SalesUkraineOrderItem,
@@ -29,6 +29,21 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 
 
 type ShiftDraftEntry = { bill: number | string; store: number | string }
 type ShiftDraft = Record<string, ShiftDraftEntry>
+type SaleEditState = {
+  draft: ShiftDraft
+  error: string | null
+  isLoading: boolean
+  isSaving: boolean
+  sale: SalesUkraineSale
+}
+type SaleEditAction =
+  | { type: 'draftEntryChanged'; key: string; patch: Partial<ShiftDraftEntry> }
+  | { type: 'draftReplaced'; draft: ShiftDraft }
+  | { type: 'loadFailed'; error: string }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; sale: SalesUkraineSale }
+  | { type: 'savingFinished' }
+  | { type: 'savingStarted' }
 
 export function SaleEditDrawer({
   sale,
@@ -40,7 +55,7 @@ export function SaleEditDrawer({
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
-  const isNew = isStatusType(sale?.BaseLifeCycleStatus?.SaleLifeCycleType, 0)
+  const isNew = isNewSale(sale)
   const title = isNew ? t('Акт редагування рахунку') : t('Акт редагування накладної')
 
   return (
@@ -59,6 +74,52 @@ export function SaleEditDrawer({
   )
 }
 
+function createInitialSaleEditState(initialSale: SalesUkraineSale): SaleEditState {
+  return {
+    draft: buildDraft(getOrderItems(initialSale)),
+    error: null,
+    isLoading: Boolean(initialSale.NetUid),
+    isSaving: false,
+    sale: initialSale,
+  }
+}
+
+function saleEditReducer(state: SaleEditState, action: SaleEditAction): SaleEditState {
+  switch (action.type) {
+    case 'draftEntryChanged':
+      return {
+        ...state,
+        draft: {
+          ...state.draft,
+          [action.key]: {
+            ...state.draft[action.key],
+            ...action.patch,
+          },
+        },
+      }
+    case 'draftReplaced':
+      return { ...state, draft: action.draft }
+    case 'loadFailed':
+      return { ...state, error: action.error, isLoading: false }
+    case 'loadStarted':
+      return { ...state, error: null, isLoading: true }
+    case 'loadSucceeded':
+      return {
+        ...state,
+        draft: buildDraft(getOrderItems(action.sale)),
+        error: null,
+        isLoading: false,
+        sale: action.sale,
+      }
+    case 'savingFinished':
+      return { ...state, isSaving: false }
+    case 'savingStarted':
+      return { ...state, isSaving: true }
+    default:
+      return state
+  }
+}
+
 function SaleEditContent({
   initialSale,
   onClose,
@@ -69,11 +130,11 @@ function SaleEditContent({
   onSaved: () => void
 }) {
   const { t } = useI18n()
-  const [sale, setSale] = useState<SalesUkraineSale>(initialSale)
-  const [draft, setDraft] = useState<ShiftDraft>(() => buildDraft(getOrderItems(initialSale)))
-  const [isLoading, setLoading] = useState(() => Boolean(initialSale.NetUid))
-  const [isSaving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [{ draft, error, isLoading, isSaving, sale }, dispatch] = useReducer(
+    saleEditReducer,
+    initialSale,
+    createInitialSaleEditState,
+  )
 
   useEffect(() => {
     const netId = initialSale.NetUid
@@ -85,23 +146,24 @@ function SaleEditContent({
     let cancelled = false
 
     async function load(id: string) {
-      setLoading(true)
-      setError(null)
+      dispatch({ type: 'loadStarted' })
 
       try {
-        const next = await getSaleById(id)
+        const next = await getShiftedSaleById(id)
 
-        if (!cancelled && next) {
-          setSale(next)
-          setDraft(buildDraft(getOrderItems(next)))
+        if (!cancelled) {
+          if (next) {
+            dispatch({ sale: next, type: 'loadSucceeded' })
+          } else {
+            dispatch({ error: t('Не вдалося завантажити продаж'), type: 'loadFailed' })
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
+          dispatch({
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'),
+            type: 'loadFailed',
+          })
         }
       }
     }
@@ -115,49 +177,32 @@ function SaleEditContent({
 
   const orderItems = getOrderItems(sale)
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || 'EUR'
+  const isNew = isNewSale(sale)
 
   function updateEntry(key: string, patch: Partial<ShiftDraftEntry>) {
-    setDraft((current) => ({ ...current, [key]: { ...current[key], ...patch } }))
+    dispatch({ key, patch, type: 'draftEntryChanged' })
   }
 
   function allToBill() {
-    setDraft(() => {
-      const next: ShiftDraft = {}
-
-      orderItems.forEach((item, index) => {
-        const qty = getNumber(item.Qty) ?? 0
-        next[itemKey(item, index)] = { bill: qty || '', store: '' }
-      })
-
-      return next
-    })
+    dispatch({ draft: buildBulkDraft(orderItems, 'bill'), type: 'draftReplaced' })
   }
 
   function allToStore() {
-    setDraft(() => {
-      const next: ShiftDraft = {}
-
-      orderItems.forEach((item, index) => {
-        const qty = getNumber(item.Qty) ?? 0
-        next[itemKey(item, index)] = { bill: '', store: qty || '' }
-      })
-
-      return next
-    })
+    dispatch({ draft: buildBulkDraft(orderItems, 'store'), type: 'draftReplaced' })
   }
 
   async function doShift() {
-    setSaving(true)
+    dispatch({ type: 'savingStarted' })
 
     try {
-      const payload = buildShiftPayload(sale, draft)
+      const payload = buildShiftPayload(sale, draft, { allowBillShift: !isNew })
       await shiftOrderItemsCurrent(payload)
       notifications.show({ color: 'green', message: t('Зсув виконано') })
       onSaved()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося виконати зсув') })
     } finally {
-      setSaving(false)
+      dispatch({ type: 'savingFinished' })
     }
   }
 
@@ -192,9 +237,11 @@ function SaleEditContent({
           {t('Товарів')}: {orderItems.length}
         </Badge>
         <Group gap="xs">
-          <Button leftSection={<IconReceipt size={16} />} variant="light" onClick={allToBill}>
-            {t('Все в рахунок')}
-          </Button>
+          {!isNew && (
+            <Button leftSection={<IconReceipt size={16} />} variant="light" onClick={allToBill}>
+              {t('Все в рахунок')}
+            </Button>
+          )}
           <Button leftSection={<IconBuildingWarehouse size={16} />} variant="light" onClick={allToStore}>
             {t('Все на склад')}
           </Button>
@@ -211,9 +258,11 @@ function SaleEditContent({
               <Table.Th ta="right">{t('Сума')}</Table.Th>
               <Table.Th>{t('Валюта')}</Table.Th>
               <Table.Th ta="right">{t('К-сть')}</Table.Th>
-              <Table.Th ta="right" style={{ minWidth: 120 }}>
-                {t('В рахунок')}
-              </Table.Th>
+              {!isNew && (
+                <Table.Th ta="right" style={{ minWidth: 120 }}>
+                  {t('В рахунок')}
+                </Table.Th>
+              )}
               <Table.Th ta="right" style={{ minWidth: 120 }}>
                 {t('На склад')}
               </Table.Th>
@@ -239,26 +288,28 @@ function SaleEditContent({
                   </Table.Td>
                   <Table.Td>{currencyCode}</Table.Td>
                   <Table.Td ta="right">{displayValue(qty)}</Table.Td>
+                  {!isNew && (
+                    <Table.Td>
+                      <NumberInput
+                        allowDecimal={false}
+                        allowNegative={false}
+                        clampBehavior="strict"
+                        hideControls
+                        max={Math.max(0, qty - storeNum)}
+                        min={0}
+                        size="xs"
+                        value={entry.bill}
+                        onChange={(value) => updateEntry(key, { bill: value })}
+                      />
+                    </Table.Td>
+                  )}
                   <Table.Td>
                     <NumberInput
                       allowDecimal={false}
                       allowNegative={false}
                       clampBehavior="strict"
                       hideControls
-                      max={Math.max(0, qty - storeNum)}
-                      min={0}
-                      size="xs"
-                      value={entry.bill}
-                      onChange={(value) => updateEntry(key, { bill: value })}
-                    />
-                  </Table.Td>
-                  <Table.Td>
-                    <NumberInput
-                      allowDecimal={false}
-                      allowNegative={false}
-                      clampBehavior="strict"
-                      hideControls
-                      max={Math.max(0, qty - billNum)}
+                      max={Math.max(0, qty - (isNew ? 0 : billNum))}
                       min={0}
                       size="xs"
                       value={entry.store}
@@ -286,7 +337,11 @@ function SaleEditContent({
   )
 }
 
-function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkraineSale {
+function buildShiftPayload(
+  sale: SalesUkraineSale,
+  draft: ShiftDraft,
+  { allowBillShift = true }: { allowBillShift?: boolean } = {},
+): SalesUkraineSale {
   const orderItems = getOrderItems(sale)
 
   const nextItems = orderItems.map((item, index) => {
@@ -297,7 +352,7 @@ function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkra
     const existing = Array.isArray(item.ShiftStatuses) ? item.ShiftStatuses : []
     const nextStatuses: SalesUkraineOrderItemShiftStatus[] = []
 
-    if (billQty > 0) {
+    if (allowBillShift && billQty > 0) {
       nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Bill, billQty, item))
     }
 
@@ -356,8 +411,28 @@ function buildDraft(orderItems: SalesUkraineOrderItem[]): ShiftDraft {
   return draft
 }
 
+function buildBulkDraft(orderItems: SalesUkraineOrderItem[], target: 'bill' | 'store'): ShiftDraft {
+  const draft: ShiftDraft = {}
+
+  orderItems.forEach((item, index) => {
+    const qty = getNumber(item.Qty) ?? 0
+    draft[itemKey(item, index)] = {
+      bill: target === 'bill' ? qty || '' : '',
+      store: target === 'store' ? qty || '' : '',
+    }
+  })
+
+  return draft
+}
+
 function getOrderItems(sale: SalesUkraineSale): SalesUkraineOrderItem[] {
   return Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
+}
+
+function isNewSale(sale: SalesUkraineSale | null): boolean {
+  return getSaleLifecycleStatusKey(
+    sale?.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale?.BaseLifeCycleStatus?.Name,
+  ) === 'New'
 }
 
 function itemKey(item: SalesUkraineOrderItem, index: number): string {
