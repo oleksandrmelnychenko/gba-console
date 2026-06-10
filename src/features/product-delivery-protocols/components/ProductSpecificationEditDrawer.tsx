@@ -10,6 +10,7 @@ import type {
   ProductSpecificationEntity,
   SpecificationProduct,
 } from '../specificationTypes'
+import { getLatestProductSpecification, getProductSpecificationDateTime } from '../productSpecificationLatest'
 
 export type ProductSpecificationDraft = {
   customsValue: number | ''
@@ -126,7 +127,10 @@ function ProductSpecificationEditDrawerContent({
             label={t('Митний код')}
             required
             value={draft.specificationCode}
-            onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, specificationCode: nextValue })) }}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value
+              setDraft((current) => ({ ...current, specificationCode: nextValue }))
+            }}
           />
           <NumberInput
             decimalScale={2}
@@ -216,7 +220,7 @@ function ProductSpecificationEditDrawerContent({
 }
 
 function buildDraft(product: SpecificationProduct | null): ProductSpecificationDraft {
-  const specification = getLastSpecification(product)
+  const specification = getLatestProductSpecification(product)
 
   return {
     customsValue: toNumberOrZero(specification?.CustomsValue),
@@ -237,7 +241,7 @@ function areDraftsEqual(left: ProductSpecificationDraft, right: ProductSpecifica
 
 function buildSpecificationHistory(product: SpecificationProduct | null): ProductSpecificationEntity[] {
   return (product?.ProductSpecifications || []).toSorted((left, right) => {
-    const timeDiff = getDateTime(right.Created) - getDateTime(left.Created)
+    const timeDiff = getProductSpecificationDateTime(right.Created) - getProductSpecificationDateTime(left.Created)
 
     if (timeDiff !== 0) {
       return timeDiff
@@ -247,34 +251,13 @@ function buildSpecificationHistory(product: SpecificationProduct | null): Produc
   })
 }
 
-function getLastSpecification(product: SpecificationProduct | null): ProductSpecificationEntity | null {
-  return (product?.ProductSpecifications || []).reduce<ProductSpecificationEntity | null>((latest, current) => {
-    if (!latest) {
-      return current
-    }
-
-    const currentTime = getDateTime(current.Created)
-    const latestTime = getDateTime(latest.Created)
-
-    if (currentTime > latestTime) {
-      return current
-    }
-
-    if (currentTime === latestTime && (current.Id || 0) > (latest.Id || 0)) {
-      return current
-    }
-
-    return latest
-  }, null)
-}
-
 function getProductDrawerKey(item: PackingListPackageOrderItem | null): string {
   if (!item) {
     return 'closed'
   }
 
   const product = item.SupplyInvoiceOrderItem?.Product || null
-  const specification = getLastSpecification(product)
+  const specification = getLatestProductSpecification(product)
   const keyParts = [
     getProductKey(product),
     specification?.NetUid,
@@ -306,16 +289,6 @@ function formatDate(value?: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
 
   return Number.isNaN(date.getTime()) ? String(value) : dateFormatter.format(date)
-}
-
-function getDateTime(value?: Date | string): number {
-  if (!value) {
-    return 0
-  }
-
-  const date = value instanceof Date ? value : new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
 
 function toNumberOrEmpty(value: number | string): number | '' {

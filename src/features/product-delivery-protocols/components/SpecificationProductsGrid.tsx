@@ -8,8 +8,8 @@ import type {
   PackingListPackageOrderItem,
   PackingListPackageOrderItemSupplyService,
   SpecificationPackingList,
-  ProductSpecificationEntity,
 } from '../specificationTypes'
+import { getLatestProductSpecificationFromList } from '../productSpecificationLatest'
 
 type SpecificationRow = {
   customsValue: number
@@ -464,7 +464,7 @@ function buildServiceName(
 
 function buildRow(item: PackingListPackageOrderItem, index: number, currencyIsEur: boolean): SpecificationRow {
   const product = item.SupplyInvoiceOrderItem?.Product
-  const lastSpecification = getLastSpecification(product?.ProductSpecifications || [])
+  const lastSpecification = getLatestProductSpecificationFromList(product?.ProductSpecifications)
   const services = item.PackingListPackageOrderItemSupplyServices || []
   const serviceValues: Record<string, number> = {}
 
@@ -527,10 +527,6 @@ type EntityWithKey = {
 
 function addServiceValue(values: Record<string, number>, id: string, value: number) {
   values[id] = (values[id] || 0) + value
-}
-
-function getLastSpecification(specifications: ProductSpecificationEntity[]): ProductSpecificationEntity | null {
-  return specifications.length > 0 ? specifications[specifications.length - 1] : null
 }
 
 function roundTo(value: number, factor: number): number {
