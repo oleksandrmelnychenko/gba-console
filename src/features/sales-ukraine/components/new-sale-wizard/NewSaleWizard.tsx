@@ -1,7 +1,8 @@
-import { Box, Button, Group, Modal, Text, UnstyledButton } from '@mantine/core'
-import { IconBox, IconShoppingCart, IconUser } from '@tabler/icons-react'
+import { Box, Button, Group, Modal, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { IconBox, IconTruckDelivery, IconUser } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   convertVatSaleAndGetPaymentDocument,
@@ -32,6 +33,14 @@ import {
   type NewSaleReviewValue,
   type NewSaleWizardState,
 } from './newSaleWizardState'
+import {
+  dispatchWizardKey,
+  initializeWizardKeyboard,
+  useWizardKeyboardSnapshot,
+  WIZARD_STEP_TITLES,
+  type WizardStepIndex,
+} from './wizardKeyboard'
+import { WizardSaleHeader } from './WizardSaleHeader'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
@@ -51,6 +60,7 @@ export function NewSaleWizard({
       opened={opened}
       title={t('Нова продажа')}
       withCloseButton
+      closeOnEscape={false}
       size="100%"
       padding="lg"
       overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
@@ -75,10 +85,10 @@ export function NewSaleWizard({
   )
 }
 
-const WIZARD_STEPS = [
-  { icon: IconUser, label: 'Клієнт' },
-  { icon: IconBox, label: 'Товари' },
-  { icon: IconShoppingCart, label: 'Рев’ю' },
+const WIZARD_STEPS: { icon: typeof IconUser; index: WizardStepIndex }[] = [
+  { icon: IconUser, index: 0 },
+  { icon: IconBox, index: 1 },
+  { icon: IconTruckDelivery, index: 2 },
 ]
 
 function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onCreated: (sale: SalesUkraineSale) => void }) {
@@ -87,6 +97,11 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
   const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
+  const keyboard = useWizardKeyboardSnapshot()
+
+  useEffect(() => {
+    initializeWizardKeyboard(active as WizardStepIndex)
+  }, [active])
 
   async function reloadCart() {
     const netId = state.sale?.NetUid
@@ -244,23 +259,76 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     (active === 1 && getCartItemCount(state.sale) === 0)
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
 
+  function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.altKey) {
+      if (event.code === 'Digit1') {
+        event.preventDefault()
+        event.stopPropagation()
+
+        if (!busy) {
+          setActive(0)
+        }
+      } else if (event.code === 'Digit2') {
+        event.preventDefault()
+        event.stopPropagation()
+
+        if (!busy && canAdvanceToProducts(state)) {
+          void goToProducts()
+        }
+      } else if (event.code === 'Digit3') {
+        event.preventDefault()
+        event.stopPropagation()
+
+        if (!busy && canAdvanceToProducts(state)) {
+          if (canAdvanceToReview(state)) {
+            goToReview()
+          } else {
+            notifications.show({ color: 'red', message: t('Потрібно створити рахунок, або вибрати рахунок') })
+          }
+        }
+      } else {
+        event.stopPropagation()
+      }
+
+      return
+    }
+
+    if (event.key === 'F1' || event.key === 'F3') {
+      event.preventDefault()
+      event.stopPropagation()
+
+      return
+    }
+
+    if (event.key === 'F2') {
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    if (dispatchWizardKey(event)) {
+      return
+    }
+
+    if (event.ctrlKey && event.key === 'Enter' && !nextDisabled) {
+      void handleNext()
+    }
+  }
+
   return (
     <Box
       aria-label={t('Майстер нової продажі')}
       role="group"
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
-      onKeyDown={(event) => {
-        if (event.altKey && event.key === '1') {
-          setActive(0)
-        } else if (event.altKey && event.key === '2') {
-          void goToProducts()
-        } else if (event.altKey && event.key === '3') {
-          goToReview()
-        } else if (event.ctrlKey && event.key === 'Enter' && !nextDisabled) {
-          void handleNext()
-        }
-      }}
+      onKeyDown={handleRootKeyDown}
     >
+      <WizardSaleHeader
+        clientNetId={state.clientNetId}
+        sale={state.sale}
+        withVatAccounting={Boolean(
+          state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
+        )}
+      />
+
       <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
         {active === 0 && (
           <NewSaleClientStep
@@ -268,6 +336,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             clientNetId={state.clientNetId}
             onAgreementChange={(agreementNetId, agreement) => setState((current) => ({ ...current, agreement, agreementNetId }))}
             onClientChange={(clientNetId) => setState((current) => ({ ...current, clientNetId }))}
+            onRequestClose={onClose}
           />
         )}
         {active === 1 && (
@@ -276,6 +345,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             clientNetId={state.clientNetId}
             sale={state.sale}
             onCartChanged={reloadCart}
+            onRequestClose={onClose}
           />
         )}
         {active === 2 && (
@@ -284,66 +354,80 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             sale={state.sale}
             value={review}
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
+            onClose={onClose}
+            onCreated={onCreated}
           />
         )}
       </Box>
 
-      <Group
-        justify="space-between"
-        align="center"
+      <Box
         mt="md"
-        pt="md"
-        style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}
+        px="md"
+        py={8}
+        style={{
+          alignItems: 'center',
+          background: '#2f3339',
+          borderRadius: 10,
+          display: 'flex',
+          gap: 12,
+          minHeight: 56,
+        }}
       >
-        <Button
-          color="gray"
-          disabled={busy}
-          variant="subtle"
-          onClick={active === 0 ? onClose : () => setActive((index) => Math.max(0, index - 1))}
-        >
-          {active === 0 ? t('Скасувати') : t('Назад')}
-        </Button>
+        <Group gap={6} style={{ flex: 1 }} wrap="nowrap">
+          <Text c="gray.4" size="xs" style={{ whiteSpace: 'nowrap' }}>
+            {t('Стан режиму клавіатури')}:
+          </Text>
+          {keyboard.label && (
+            <Text fw={600} size="xs" style={{ color: '#37a000', whiteSpace: 'nowrap' }}>
+              {keyboard.label}
+            </Text>
+          )}
+        </Group>
 
-        <Group gap={6}>
+        <Group gap={10} justify="center" wrap="nowrap">
           {WIZARD_STEPS.map((step, index) => {
             const Icon = step.icon
+            const title = t(WIZARD_STEP_TITLES[step.index])
             const isActive = index === active
             const isDone = index < active
 
             return (
-              <UnstyledButton
-                key={step.label}
-                aria-current={isActive ? 'step' : undefined}
-                aria-label={t(step.label)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 2,
-                  padding: '4px 16px',
-                  borderRadius: 10,
-                  color: isActive
-                    ? 'var(--mantine-color-violet-7)'
-                    : isDone
-                      ? 'var(--mantine-color-teal-7)'
-                      : 'var(--mantine-color-gray-5)',
-                  background: isActive ? 'var(--mantine-color-violet-0)' : 'transparent',
-                }}
-                onClick={() => onStepClick(index)}
-              >
-                <Icon size={20} stroke={1.8} />
-                <Text fw={600} size="xs">
-                  {t(step.label)}
-                </Text>
-              </UnstyledButton>
+              <Tooltip key={step.index} label={title} position="top">
+                <UnstyledButton
+                  aria-current={isActive ? 'step' : undefined}
+                  aria-label={title}
+                  style={{
+                    alignItems: 'center',
+                    borderBottom: isActive ? '2px solid #37a000' : '2px solid transparent',
+                    color: isActive ? '#ffffff' : isDone ? '#37a000' : '#8b9096',
+                    display: 'flex',
+                    height: 38,
+                    justifyContent: 'center',
+                    width: 38,
+                  }}
+                  onClick={() => onStepClick(index)}
+                >
+                  <Icon size={22} stroke={1.8} />
+                </UnstyledButton>
+              </Tooltip>
             )
           })}
         </Group>
 
-        <Button color={active === 2 ? 'teal' : undefined} disabled={nextDisabled} loading={busy} onClick={handleNext}>
-          {nextLabel}
-        </Button>
-      </Group>
+        <Group gap="xs" justify="flex-end" style={{ flex: 1 }} wrap="nowrap">
+          <Button
+            color="gray"
+            disabled={busy}
+            variant="light"
+            onClick={active === 0 ? onClose : () => setActive((index) => Math.max(0, index - 1))}
+          >
+            {active === 0 ? t('Скасувати') : t('Назад')}
+          </Button>
+          <Button color={active === 2 ? 'teal' : undefined} disabled={nextDisabled} loading={busy} onClick={handleNext}>
+            {nextLabel}
+          </Button>
+        </Group>
+      </Box>
     </Box>
   )
 }

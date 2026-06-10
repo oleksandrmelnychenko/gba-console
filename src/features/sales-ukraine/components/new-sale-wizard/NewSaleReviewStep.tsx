@@ -1,12 +1,31 @@
-import { Card, Checkbox, FileInput, Group, NumberInput, Select, Stack, Text, Textarea, TextInput } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { ActionIcon, Box, Button, Card, Checkbox, FileInput, Group, Stack, Text, TextInput } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { IconCircleX, IconUpload } from '@tabler/icons-react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { getSaleTransporterTypes, getSaleTransportersByType } from '../../api/salesUkraineApi'
-import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineTransporterType } from '../../types'
-import { getClientDeliveryRecipients, type WizardDeliveryRecipient } from './newSaleWizardApi'
-import { isSelfCheckout, type NewSaleReviewValue } from './newSaleWizardState'
+import {
+  convertVatSaleAndGetPaymentDocument,
+  getRetailPaymentStatusBySaleId,
+  getSaleTransporterTypes,
+  getSaleTransportersByType,
+  updateSaleFromData,
+} from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
+import { getSaleLifecycleTypeKey } from '../../saleStatus'
+import type { SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
+import {
+  getClientDeliveryRecipients,
+  newDeliveryRecipient,
+  newDeliveryRecipientAddress,
+  type WizardDeliveryRecipient,
+  type WizardDeliveryRecipientAddress,
+} from './newSaleWizardApi'
+import { isSelfCheckout, type NewSaleReviewValue } from './newSaleWizardState'
+import { useWizardKeyboard, useWizardKeyHandler } from './wizardKeyboard'
+import { WizardReviewCombobox, type WizardReviewComboboxOption } from './WizardReviewCombobox'
+import { WizardReviewConfirmModal } from './WizardReviewConfirmModal'
 
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
 export function NewSaleReviewStep({
@@ -14,39 +33,119 @@ export function NewSaleReviewStep({
   sale,
   value,
   onChange,
+  onClose,
+  onCreated,
 }: {
   clientNetId: string | null
   onChange: (patch: Partial<NewSaleReviewValue>) => void
+  onClose?: () => void
+  onCreated?: (sale: SalesUkraineSale) => void
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
 }) {
   const { t } = useI18n()
-  const [types, setTypes] = useState<SalesUkraineTransporterType[]>([])
-  const [typeNetId, setTypeNetId] = useState<string | null>(null)
   const [transporters, setTransporters] = useState<SalesUkraineTransporter[]>([])
   const [recipients, setRecipients] = useState<WizardDeliveryRecipient[]>([])
+  const [retailStatus, setRetailStatus] = useState<SalesUkraineRetailPaymentStatus | null>(null)
+  const [confirmOpened, setConfirmOpened] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const submitRef = useRef<HTMLButtonElement>(null)
+  const busyRef = useRef(false)
+  const enterLatchRef = useRef(false)
+  const transporterSeededRef = useRef(false)
+  const recipientSeededRef = useRef(false)
+  const flagsSeededRef = useRef(false)
 
-  const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const useEurToUah = isNonVatEurSale(sale)
-  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
-  const total = useEurToUah
-    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
-    : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
-  const selfCheckout = isSelfCheckout(value.transporter)
+  const latestRef = useRef({ onChange, sale, value })
+
+  useEffect(() => {
+    latestRef.current = { onChange, sale, value }
+  })
+
+  useWizardKeyboard(2)
+
+  useWizardKeyHandler((event) => {
+    if (event.hotkey === 'Escape') {
+      if (!confirmOpened) {
+        setConfirmOpened(true)
+      }
+
+      return true
+    }
+
+    if (event.hotkey === 'Enter') {
+      if (!enterLatchRef.current) {
+        enterLatchRef.current = true
+        void submitSale()
+      }
+
+      return true
+    }
+
+    return false
+  })
+
+  useEffect(() => {
+    submitRef.current?.focus()
+  }, [])
+
+  useEffect(() => {
+    const { onChange: change, value: current } = latestRef.current
+
+    if (flagsSeededRef.current || !sale) {
+      return
+    }
+
+    flagsSeededRef.current = true
+
+    const patch: Partial<NewSaleReviewValue> = {}
+
+    if (!current.hasOwnTtn && (sale.CustomersOwnTtnId ?? 0) > 0) {
+      patch.hasOwnTtn = true
+    }
+
+    if (!current.ttnNumber && sale.CustomersOwnTtn?.Number) {
+      patch.ttnNumber = sale.CustomersOwnTtn.Number
+    }
+
+    if (!current.isCashOnDelivery && sale.IsCashOnDelivery) {
+      patch.isCashOnDelivery = true
+    }
+
+    if (current.codAmount === '' && typeof sale.CashOnDeliveryAmount === 'number' && sale.CashOnDeliveryAmount !== 0) {
+      patch.codAmount = sale.CashOnDeliveryAmount
+    }
+
+    if (Object.keys(patch).length > 0) {
+      change(patch)
+    }
+  }, [sale])
 
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       try {
-        const next = await getSaleTransporterTypes()
+        const types = await getSaleTransporterTypes()
+        const firstType = types[0]
+
+        if (!firstType?.NetUid) {
+          if (!cancelled) {
+            setTransporters([])
+          }
+
+          return
+        }
+
+        const next = await getSaleTransportersByType(firstType.NetUid)
 
         if (!cancelled) {
-          setTypes(next)
+          setTransporters(next)
         }
       } catch {
         if (!cancelled) {
-          setTypes([])
+          setTransporters([])
         }
       }
     }
@@ -59,32 +158,22 @@ export function NewSaleReviewStep({
   }, [])
 
   useEffect(() => {
-    if (!typeNetId) {
+    const { onChange: change, sale: currentSale, value: current } = latestRef.current
+
+    if (transporterSeededRef.current || transporters.length === 0) {
       return
     }
 
-    let cancelled = false
+    transporterSeededRef.current = true
 
-    async function load(id: string) {
-      try {
-        const next = await getSaleTransportersByType(id)
+    if (!current.transporter && currentSale?.Transporter?.NetUid) {
+      const match = transporters.find((item) => item.NetUid === currentSale.Transporter?.NetUid)
 
-        if (!cancelled) {
-          setTransporters(next)
-        }
-      } catch {
-        if (!cancelled) {
-          setTransporters([])
-        }
+      if (match) {
+        change({ transporter: match })
       }
     }
-
-    void load(typeNetId)
-
-    return () => {
-      cancelled = true
-    }
-  }, [typeNetId])
+  }, [transporters])
 
   useEffect(() => {
     if (!clientNetId) {
@@ -114,8 +203,344 @@ export function NewSaleReviewStep({
     }
   }, [clientNetId])
 
-  const addresses = value.recipient?.DeliveryRecipientAddresses || []
-  const canCreateAddress = value.isNewRecipient || Boolean(value.recipient)
+  useEffect(() => {
+    const { onChange: change, sale: currentSale, value: current } = latestRef.current
+
+    if (recipientSeededRef.current || recipients.length === 0) {
+      return
+    }
+
+    recipientSeededRef.current = true
+
+    if (current.recipient) {
+      return
+    }
+
+    const patch: Partial<NewSaleReviewValue> = {}
+    const saleRecipient = currentSale?.DeliveryRecipient
+
+    if (saleRecipient) {
+      patch.comment = currentSale?.Comment || current.comment
+
+      const match = recipients.find((item) => item.NetUid === saleRecipient.NetUid)
+
+      if (match) {
+        applyRecipientSelection(patch, match, currentSale?.DeliveryRecipientAddress?.NetUid)
+      }
+    } else if (recipients[0]) {
+      applyRecipientSelection(patch, recipients[0], undefined)
+    }
+
+    if (Object.keys(patch).length > 0) {
+      change(patch)
+    }
+  }, [recipients])
+
+  useEffect(() => {
+    const saleId = sale?.RetailClient ? sale.Id : undefined
+
+    if (!saleId) {
+      return
+    }
+
+    let cancelled = false
+
+    async function load(id: number) {
+      try {
+        const next = await getRetailPaymentStatusBySaleId(id)
+
+        if (!cancelled) {
+          setRetailStatus(next)
+        }
+      } catch {
+        if (!cancelled) {
+          setRetailStatus(null)
+        }
+      }
+    }
+
+    void load(saleId)
+
+    return () => {
+      cancelled = true
+    }
+  }, [sale?.Id, sale?.RetailClient])
+
+  const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
+  const useEurToUah = isNonVatEurSale(sale)
+  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
+  const total = useEurToUah
+    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
+    : getNumber(sale?.TotalAmountLocal) ?? getNumber(sale?.Order?.TotalAmountLocal) ?? 0
+  const selfCheckout = isSelfCheckout(value.transporter)
+
+  const transporterOptions: WizardReviewComboboxOption<SalesUkraineTransporter>[] = transporters.map((item, index) => ({
+    entity: item,
+    key: item.Id != null ? String(item.Id) : `transporter-${index}`,
+    label: item.Name ? item.Name : '---',
+  }))
+  const transporterKey = value.transporter?.Id != null ? String(value.transporter.Id) : null
+
+  const syntheticClientId = sale?.ClientAgreement?.Client?.Id
+  const recipientSource =
+    selfCheckout && !recipients.some((item) => item.FullName === t('Не вибраний перевізник'))
+      ? [{ FullName: '', ...(syntheticClientId ? { ClientId: syntheticClientId } : {}) } as WizardDeliveryRecipient]
+      : recipients
+  const recipientOptions: WizardReviewComboboxOption<WizardDeliveryRecipient>[] = recipientSource.map((item, index) => ({
+    entity: item,
+    key: item.Id != null ? String(item.Id) : `recipient-${index}`,
+    label: item.FullName ? item.FullName : '---',
+  }))
+  const recipientKey = value.recipient ? (value.recipient.Id != null ? String(value.recipient.Id) : 'recipient-0') : null
+
+  const recipientAddresses = value.recipient?.DeliveryRecipientAddresses ?? []
+  const addressOptions: WizardReviewComboboxOption<WizardDeliveryRecipientAddress>[] = recipientAddresses.map(
+    (item, index) => ({
+      entity: item,
+      key: item.Id != null ? String(item.Id) : `address-${index}`,
+      label: item.Value ?? '',
+    }),
+  )
+  const addressKey = value.address?.Id != null ? String(value.address.Id) : null
+
+  const lifecycleKey = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType)
+  const primaryLabel = sale
+    ? sale.IsVatSale
+      ? t('Завантажити рахунок на оплату')
+      : lifecycleKey === '0'
+        ? t('Створити накладну')
+        : t('Оновити накладну')
+    : null
+
+  function selectTransporter(transporter: SalesUkraineTransporter) {
+    onChange({ transporter })
+  }
+
+  function selectRecipient(recipient: WizardDeliveryRecipient) {
+    const addresses = recipient.DeliveryRecipientAddresses ?? []
+
+    onChange({
+      address: addresses[0] ?? null,
+      addressValue: '',
+      isNewRecipient: false,
+      recipient,
+      recipientName: recipient.FullName || '',
+    })
+  }
+
+  function selectAddress(address: WizardDeliveryRecipientAddress) {
+    onChange({ address, addressValue: '' })
+  }
+
+  function clearAddress() {
+    const empty = recipientAddresses.find((item) => item.Value === '')
+
+    onChange({ address: empty ?? null, addressValue: '' })
+  }
+
+  async function createRecipient(fullName: string) {
+    const clientId = syntheticClientId
+
+    if (!clientId) {
+      notifications.show({ color: 'red', message: t('Не вдалося визначити клієнта для отримувача') })
+
+      return
+    }
+
+    try {
+      const created = await newDeliveryRecipient({ ClientId: clientId, FullName: fullName })
+
+      if (created && (created.Id ?? 0) > 0) {
+        setRecipients((current) => [...current, created])
+        onChange({ isNewRecipient: false, recipient: created, recipientName: created.FullName || '' })
+      } else {
+        notifications.show({ color: 'red', message: t('Не вдалося створити отримувача') })
+      }
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося створити отримувача') })
+    }
+  }
+
+  async function createAddress(input: string) {
+    const recipient = value.recipient
+    const recipientId = recipient?.Id
+
+    if (!recipient || !recipientId || recipientId <= 0) {
+      return
+    }
+
+    const addresses = recipient.DeliveryRecipientAddresses ?? []
+    const duplicate = addresses.some((item) => (item.Value ?? '').toLowerCase() === input.toLowerCase())
+
+    if (duplicate || input.length <= 3) {
+      return
+    }
+
+    try {
+      const created = await newDeliveryRecipientAddress({
+        DeliveryRecipient: recipient,
+        DeliveryRecipientId: recipientId,
+        Value: input,
+      })
+
+      if (created && (created.Id ?? 0) > 0) {
+        const updated = { ...recipient, DeliveryRecipientAddresses: [...addresses, created] }
+
+        setRecipients((current) => current.map((item) => (item.Id === recipientId ? updated : item)))
+        onChange({ address: created, addressValue: '', recipient: updated })
+      } else {
+        notifications.show({ color: 'red', message: t('Не вдалося створити адресу доставки') })
+      }
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося створити адресу доставки') })
+    }
+  }
+
+  function getCarrierValidationError(): string | null {
+    if (!((value.transporter?.Id ?? 0) > 0)) {
+      return 'Не вибраний перевізник'
+    }
+
+    if (!isSelfCheckout(value.transporter) && !((value.recipient?.Id ?? 0) > 0)) {
+      return 'Не вибраний одержувач'
+    }
+
+    return null
+  }
+
+  function buildPayload(mode: 'create' | 'save', current: SalesUkraineSale): SalesUkraineSale & { IsEdited?: boolean } {
+    const addressId = value.address?.Id ?? 0
+    const payload: SalesUkraineSale & { IsEdited?: boolean } = {
+      ...current,
+      CashOnDeliveryAmount: Number(value.codAmount),
+      Comment: value.comment,
+      DeliveryRecipient: { ...(value.recipient ?? {}), MobilePhone: value.mobilePhone } as SalesUkraineSale['DeliveryRecipient'],
+      DeliveryRecipientAddress: {
+        ...(value.address ?? {}),
+        City: value.city,
+        Department: value.department,
+        Id: addressId,
+      } as SalesUkraineSale['DeliveryRecipientAddress'],
+      IsCashOnDelivery: value.isCashOnDelivery,
+      Transporter: value.transporter ?? current.Transporter,
+    }
+
+    payload.CustomersOwnTtn =
+      current.CustomersOwnTtn || value.ttnNumber
+        ? { ...(current.CustomersOwnTtn ?? {}), Number: value.ttnNumber }
+        : current.CustomersOwnTtn ?? null
+
+    if (mode === 'create') {
+      payload.BaseLifeCycleStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 }
+      payload.BaseSalePaymentStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 }
+      payload.IsPrintedPaymentInvoice = true
+    } else {
+      payload.DeliveryRecipientAddressId = addressId
+      payload.IsEdited = true
+    }
+
+    return payload
+  }
+
+  async function submitSale() {
+    if (!sale || busyRef.current) {
+      return
+    }
+
+    const error = getCarrierValidationError()
+
+    if (error) {
+      notifications.show({ color: 'red', message: t(error) })
+
+      return
+    }
+
+    if (sale.RetailClient && retailStatus && String(retailStatus.Id ?? 0) !== '0' && (retailStatus.Amount ?? 0) <= 0) {
+      notifications.show({
+        autoClose: 990000,
+        color: 'red',
+        message: t('Замовлення не буде відвантажено (створено видаткову накладну) поки не буде здійснена оплата (передплата)'),
+      })
+
+      return
+    }
+
+    busyRef.current = true
+    setSubmitting(true)
+
+    try {
+      const payload = buildPayload('create', sale)
+
+      if (payload.IsVatSale) {
+        const documentResult = await convertVatSaleAndGetPaymentDocument(payload, value.ttnFile)
+        const url = documentResult.pdfUrl || documentResult.excelUrl
+
+        if (url) {
+          window.open(url, '_blank', 'noopener,noreferrer')
+        }
+      } else {
+        await updateSaleFromData(payload, value.ttnFile)
+      }
+
+      notifications.show({ color: 'green', message: t('Продаж створено') })
+      onCreated?.(payload)
+      onClose?.()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
+    } finally {
+      busyRef.current = false
+      setSubmitting(false)
+    }
+  }
+
+  async function saveSale(): Promise<boolean> {
+    if (!sale || busyRef.current) {
+      return false
+    }
+
+    const error = getCarrierValidationError()
+
+    if (error) {
+      notifications.show({ color: 'red', message: t(error) })
+
+      return false
+    }
+
+    busyRef.current = true
+    setSaving(true)
+
+    try {
+      await updateSaleFromData(buildPayload('save', sale), value.ttnFile)
+      notifications.show({ color: 'green', message: t('Збережено') })
+      onCreated?.(sale)
+
+      return true
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося зберегти продаж') })
+
+      return false
+    } finally {
+      busyRef.current = false
+      setSaving(false)
+    }
+  }
+
+  async function handleSave() {
+    if (await saveSale()) {
+      onClose?.()
+    }
+  }
+
+  function handleConfirmClose() {
+    setConfirmOpened(false)
+    void saveSale()
+    onClose?.()
+  }
+
+  function handleCancelClose() {
+    setConfirmOpened(false)
+    window.setTimeout(() => submitRef.current?.focus(), 0)
+  }
 
   return (
     <Stack gap="md">
@@ -130,223 +555,151 @@ export function NewSaleReviewStep({
         </Group>
       </Card>
 
-      <Group grow align="start">
-        <Select
-          searchable
-          clearable
-          data={types.reduce<{ label: string; value: string }[]>((acc, item) => {
-            if (item.NetUid) {
-              acc.push({ label: item.Name || '', value: item.NetUid || '' })
-            }
-            return acc
-          }, [])}
-          label={t('Тип перевізника')}
-          placeholder={t('Оберіть тип')}
-          value={typeNetId}
-          onChange={(next) => {
-            setTypeNetId(next)
-            setTransporters([])
-            onChange({ transporter: null })
-          }}
-        />
-        <Select
-          searchable
-          clearable
-          data={transporters.reduce<{ label: string; value: string }[]>((acc, item) => {
-            if (item.NetUid) {
-              acc.push({ label: item.Name || item.Title || '', value: item.NetUid || '' })
-            }
-            return acc
-          }, [])}
-          disabled={!typeNetId}
+      <Stack gap="sm" maw={520} mx="auto" w="100%">
+        <WizardReviewCombobox
           label={t('Перевізник')}
-          placeholder={t('Оберіть перевізника')}
-          value={value.transporter?.NetUid ?? null}
-          onChange={(next) => onChange({ transporter: transporters.find((item) => item.NetUid === next) || null })}
+          options={transporterOptions}
+          selectedKey={transporterKey}
+          tabIndex={-1}
+          onSelect={selectTransporter}
         />
-      </Group>
 
-      {!selfCheckout && (
-        <Stack gap="md">
-          <Group gap="xl" wrap="wrap">
-            <Checkbox
-              checked={value.isNewRecipient}
-              label={t('Новий отримувач')}
-              onChange={(event) => {
-                const checked = event.currentTarget.checked
+        <WizardReviewCombobox
+          allowFreeForm
+          label={t('Одержувач')}
+          options={recipientOptions}
+          selectedKey={recipientKey}
+          onFreeText={(input) => void createRecipient(input)}
+          onSelect={selectRecipient}
+        />
 
-                onChange({
-                  address: null,
-                  addressValue: '',
-                  city: '',
-                  department: '',
-                  isNewAddress: checked,
-                  isNewRecipient: checked,
-                  mobilePhone: '',
-                  recipient: null,
-                  recipientName: '',
-                })
-              }}
-            />
-            <Checkbox
-              checked={value.isNewAddress}
-              disabled={!canCreateAddress}
-              label={t('Нова адреса')}
-              onChange={(event) => {
-                const checked = event.currentTarget.checked
+        {!selfCheckout && (
+          <>
+            <Group align="flex-end" gap={4} wrap="nowrap">
+              <Box style={{ flex: 1 }}>
+                <WizardReviewCombobox
+                  allowFreeForm
+                  label={t('Адреса')}
+                  options={addressOptions}
+                  selectedKey={addressKey}
+                  onFreeText={(input) => void createAddress(input)}
+                  onSelect={selectAddress}
+                />
+              </Box>
+              <ActionIcon aria-label={t('Очистити адресу')} color="gray" mb={4} size="lg" variant="subtle" onClick={clearAddress}>
+                <IconCircleX size={18} />
+              </ActionIcon>
+            </Group>
 
-                onChange({
-                  address: null,
-                  addressValue: '',
-                  city: checked ? value.city : value.address?.City || '',
-                  department: checked ? value.department : value.address?.Department || '',
-                  isNewAddress: checked,
-                })
-              }}
-            />
-          </Group>
-
-          <Group grow align="start">
-            {value.isNewRecipient ? (
-              <TextInput
-                label={t('Отримувач')}
-                value={value.recipientName}
-                onChange={(event) => onChange({ recipientName: event.currentTarget.value })}
-              />
-            ) : (
-              <Select
-                searchable
-                clearable
-                data={recipients.reduce<{ label: string; value: string }[]>((acc, item) => {
-                  if (item.NetUid) {
-                    acc.push({ label: getRecipientLabel(item), value: item.NetUid || '' })
-                  }
-                  return acc
-                }, [])}
-                label={t('Отримувач')}
-                placeholder={recipients.length === 0 ? t('Немає отримувачів') : t('Оберіть отримувача')}
-                value={value.recipient?.NetUid ?? null}
-                onChange={(next) => {
-                  const recipient = recipients.find((item) => item.NetUid === next) || null
-                  onChange({
-                    address: null,
-                    addressValue: '',
-                    city: '',
-                    department: '',
-                    isNewAddress: false,
-                    mobilePhone: recipient?.MobilePhone || '',
-                    recipient,
-                    recipientName: recipient?.FullName || '',
-                  })
-                }}
-              />
-            )}
-            {value.isNewAddress ? (
-              <TextInput
-                disabled={!canCreateAddress}
-                label={t('Адреса доставки')}
-                value={value.addressValue}
-                onChange={(event) => onChange({ addressValue: event.currentTarget.value })}
-              />
-            ) : (
-              <Select
-                searchable
-                clearable
-                data={addresses.reduce<{ label: string; value: string }[]>((acc, item) => {
-                  if (item.NetUid) {
-                    acc.push({ label: getAddressLabel(item), value: item.NetUid || '' })
-                  }
-                  return acc
-                }, [])}
-                disabled={!value.recipient}
-                label={t('Адреса доставки')}
-                placeholder={t('Оберіть адресу')}
-                value={value.address?.NetUid ?? null}
-                onChange={(next) => {
-                  const address = addresses.find((item) => item.NetUid === next) || null
-                  onChange({
-                    address,
-                    addressValue: address?.Value || '',
-                    city: address?.City || '',
-                    department: address?.Department || '',
-                  })
-                }}
-              />
-            )}
-          </Group>
-
-          <Group grow align="start">
             <TextInput label={t('Місто')} value={value.city} onChange={(event) => onChange({ city: event.currentTarget.value })} />
             <TextInput
               label={t('Відділення')}
               value={value.department}
               onChange={(event) => onChange({ department: event.currentTarget.value })}
             />
+          </>
+        )}
+
+        <TextInput
+          label={t('Мобільний телефон')}
+          value={value.mobilePhone}
+          onChange={(event) => onChange({ mobilePhone: event.currentTarget.value })}
+        />
+        <TextInput
+          label={t('Коментар')}
+          value={value.comment}
+          onChange={(event) => onChange({ comment: event.currentTarget.value === '' ? ' ' : event.currentTarget.value })}
+        />
+
+        <Checkbox
+          checked={value.isCashOnDelivery}
+          label={t('Наложений платіж')}
+          onChange={() => onChange({ isCashOnDelivery: !value.isCashOnDelivery })}
+        />
+        {value.isCashOnDelivery && (
+          <TextInput
+            label={t('Рекомендована Покупцем')}
+            value={String(value.codAmount)}
+            onChange={(event) => onChange({ codAmount: event.currentTarget.value })}
+          />
+        )}
+
+        <Checkbox
+          checked={value.hasOwnTtn}
+          label={t('Власне ТТН')}
+          onChange={() => onChange({ hasOwnTtn: !value.hasOwnTtn })}
+        />
+        {value.hasOwnTtn && (
+          <>
             <TextInput
-              label={t('Мобільний телефон')}
-              value={value.mobilePhone}
-              onChange={(event) => onChange({ mobilePhone: event.currentTarget.value })}
+              autoFocus
+              aria-label={t('Номер ТТН')}
+              value={value.ttnNumber}
+              onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
             />
+            <FileInput
+              label={t('Завантажити ТТН')}
+              leftSection={<IconUpload size={16} />}
+              placeholder={t('Завантажити')}
+              value={value.ttnFile}
+              onChange={(file) => {
+                if (file) {
+                  onChange({ ttnFile: file })
+                }
+              }}
+            />
+          </>
+        )}
+
+        {(sale?.Id ?? 0) > 0 && sale?.CustomersOwnTtn?.TtnPDFPath ? (
+          <Group justify="center">
+            <Button
+              component="a"
+              href={sale.CustomersOwnTtn.TtnPDFPath}
+              rel="noopener noreferrer"
+              target="_blank"
+              variant="light"
+            >
+              {t('Завантажити ТТН')}
+            </Button>
           </Group>
+        ) : null}
 
-          <Checkbox
-            checked={value.isCashOnDelivery}
-            label={t('Накладений платіж')}
-            onChange={(event) => onChange({ isCashOnDelivery: event.currentTarget.checked })}
-          />
-          {value.isCashOnDelivery && (
-            <NumberInput
-              allowNegative={false}
-              decimalScale={2}
-              label={t('Сума накладеного платежу')}
-              min={0}
-              value={value.codAmount}
-              onChange={(next) => onChange({ codAmount: next })}
-            />
-          )}
+        <Group gap="sm" justify="center" mt="md">
+          <Button ref={submitRef} loading={submitting} onClick={() => void submitSale()}>
+            {primaryLabel}
+          </Button>
+          {sale ? (
+            <Button color="gray" loading={saving} variant="light" onClick={() => void handleSave()}>
+              {t('Зберегти')}
+            </Button>
+          ) : null}
+        </Group>
+      </Stack>
 
-          <Checkbox
-            checked={value.hasOwnTtn}
-            label={t('Власна ТТН')}
-            onChange={(event) => onChange({ hasOwnTtn: event.currentTarget.checked })}
-          />
-          {value.hasOwnTtn && (
-            <Group grow align="start">
-              <TextInput
-                label={t('Номер ТТН')}
-                value={value.ttnNumber}
-                onChange={(event) => onChange({ ttnNumber: event.currentTarget.value })}
-              />
-              <FileInput
-                accept="application/pdf"
-                clearable
-                label={t('Файл ТТН')}
-                placeholder={t('Оберіть PDF')}
-                value={value.ttnFile}
-                onChange={(file) => onChange({ ttnFile: file })}
-              />
-            </Group>
-          )}
-        </Stack>
-      )}
-
-      <Textarea
-        autosize
-        label={t('Коментар')}
-        minRows={2}
-        value={value.comment}
-        onChange={(event) => onChange({ comment: event.currentTarget.value })}
-      />
+      <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={handleConfirmClose} />
     </Stack>
   )
 }
 
-function getRecipientLabel(recipient: WizardDeliveryRecipient): string {
-  return [recipient.FullName, recipient.MobilePhone].filter(Boolean).join(' · ') || recipient.NetUid || ''
-}
+function applyRecipientSelection(
+  patch: Partial<NewSaleReviewValue>,
+  recipient: WizardDeliveryRecipient,
+  preferredAddressNetUid: string | undefined,
+) {
+  patch.recipient = recipient
+  patch.recipientName = recipient.FullName || ''
+  patch.isNewRecipient = false
+  patch.mobilePhone = recipient.MobilePhone || ''
 
-function getAddressLabel(address: { City?: string; Department?: string; Value?: string; NetUid?: string }): string {
-  return [address.City, address.Department, address.Value].filter(Boolean).join(', ') || address.NetUid || ''
+  const addresses = recipient.DeliveryRecipientAddresses ?? []
+  const preferred = preferredAddressNetUid ? addresses.find((item) => item.NetUid === preferredAddressNetUid) : undefined
+  const address = preferred ?? addresses[0] ?? null
+
+  patch.address = address
+  patch.addressValue = ''
+  patch.city = address?.City || ''
+  patch.department = address?.Department || ''
 }
 
 function getNumber(value: unknown): number | null {

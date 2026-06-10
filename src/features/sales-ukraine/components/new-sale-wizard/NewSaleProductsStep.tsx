@@ -1,28 +1,88 @@
-import { ActionIcon, Anchor, Box, Group, Loader, NumberInput, ScrollArea, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
+import { Box, Group, Loader, Select, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconSearch, IconTrash } from '@tabler/icons-react'
+import { IconBox, IconSearch, IconSettings } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { FocusEvent as ReactFocusEvent, KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
+import { updateProduct } from '../../../products/api/productsApi'
+import type { Product } from '../../../products/types'
+import { getRelatedProductRowColor } from '../../../products/utils'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
 import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { ProductInterestModal } from '../../../sales-preorders'
 import { addOrderItem, deleteOrderItem, updateOrderItem } from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
+import { getSaleLifecycleTypeKey } from '../../saleStatus'
+import type { SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineUser } from '../../types'
+import { ChangeQtyModal } from './ChangeQtyModal'
+import { EditShoppingCartOverlay, type WizardCartSelection, type WizardSplitOrderItem } from './EditShoppingCartOverlay'
 import { FutureReservationModal } from './FutureReservationModal'
 import {
+  getAllProductAvailabilities,
+  getNearestSupplyOrder,
+  getProductAnalogues,
+  getProductAvailabilityBuckets,
   getProductCalculatedPricingsByAgreement,
   getProductCurrentPriceByAgreement,
   getProductReservationsByAgreement,
   searchSaleProductsWithAvailability,
+  shiftOrderItemFromSale,
+  type WizardAvailabilityRow,
   type WizardCalculatedProductPricing,
+  type WizardNearestSupplyOrder,
   type WizardProductReservation,
+  type WizardTotalProductAvailabilities,
 } from './newSaleWizardApi'
-import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
+import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
+import { ProductImageViewModal } from './ProductImageViewModal'
+import { ShiftOrderItemModal } from './ShiftOrderItemModal'
+import { WizardConfirmModal } from './WizardConfirmModal'
+import {
+  getWizardKeyboardState,
+  setWizardKeyboardState,
+  useWizardKeyboard,
+  useWizardKeyHandler,
+  WIZARD_PRODUCT_KEYBOARD_STATES,
+  type WizardKeyEvent,
+  type WizardProductKeyboardState,
+} from './wizardKeyboard'
+import {
+  getComponentCarouselEntries,
+  getWizardProductNumber,
+  getWizardSellableQty,
+  type WizardSaleProduct,
+} from './wizardSaleProduct'
+import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+const CHANGE_PRODUCT_DESCRIPTION_PERMISSION = 'Sales_Ukraine_all_Change_Products_Btn_PKEY'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
+const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
+
+const SEARCH_MODE_OPTIONS = [
+  { label: 'Всі', value: '5' },
+  { label: 'Код виробника', value: '0' },
+  { label: 'Оригінальний/Кросс номер', value: '1' },
+  { label: 'Розмір', value: '2' },
+  { label: 'Назва', value: '3' },
+  { label: 'Опис', value: '4' },
+]
+
+const SORT_MODE_OPTIONS = [
+  { label: 'Назва товару', value: '2' },
+  { label: 'Топ', value: '0' },
+  { label: 'Код Виробника', value: '1' },
+]
+
+const MAIN_CHIP_DEFS = [
+  { index: 0, key: 'InAccount', label: 'В рахунках' },
+  { index: 1, key: 'StorageUkrVat', label: 'Склади Україна (ПДВ)' },
+  { index: 2, key: 'StorageUkrNotVat', label: 'Склади Україна' },
+  { index: 3, key: 'StoragePl', label: 'Склади Польща' },
+  { index: 4, key: 'OnWayToPl', label: 'До Польщі' },
+  { index: 5, key: 'OnWayToUkr', label: 'До України' },
+] as const
 
 type ProductPricingSnapshot = {
   calculatedPricings: WizardCalculatedProductPricing[]
@@ -30,13 +90,17 @@ type ProductPricingSnapshot = {
   reservation?: WizardProductReservation
 }
 
-type ProductPricingLoadResult = ProductPricingSnapshot & {
-  product: SalesUkraineProductWithPricing
-}
+type ActiveProductSource = 'main' | 'analogue' | 'component'
 
-type SalesUkraineProductWithPricing = SalesUkraineProduct & {
-  CalculatedPrices?: WizardCalculatedProductPricing[]
-  CurrentPrice?: number
+type QtyModalState =
+  | { available: number; item: SalesUkraineOrderItem; kind: 'add' }
+  | { available: number; item: SalesUkraineOrderItem; kind: 'edit-current' }
+  | { available: number; item: WizardSplitOrderItem; kind: 'edit-split' }
+
+type EditCartState = {
+  isSplit: boolean
+  selected: WizardCartSelection | null
+  splitItems: WizardSplitOrderItem[]
 }
 
 const EMPTY_PRODUCT_PRICING = new Map<string, ProductPricingSnapshot>()
@@ -47,64 +111,88 @@ export function NewSaleProductsStep({
   clientNetId,
   sale,
   onCartChanged,
+  onRequestClose,
 }: {
   agreementNetId: string | null
   clientNetId: string | null
   onCartChanged: () => void | Promise<void>
+  onRequestClose?: () => void
   sale: SalesUkraineSale | null
 }) {
   const { t } = useI18n()
+  const { hasPermission, user } = useAuth()
+  const keyboard = useWizardKeyboard(1)
+
+  const [searchMode, setSearchMode] = useState('4')
+  const [sortMode, setSortMode] = useState('2')
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SalesUkraineProduct[]>([])
+  const [results, setResults] = useState<WizardSaleProduct[]>([])
   const [isSearching, setSearching] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [mainIndex, setMainIndex] = useState(0)
+  const [active, setActive] = useState<{ product: WizardSaleProduct; source: ActiveProductSource } | null>(null)
+  const [analogueState, setAnalogueState] = useState<{ items: WizardSaleProduct[]; parentNetUid: string | null }>({
+    items: [],
+    parentNetUid: null,
+  })
+  const [analogueIndex, setAnalogueIndex] = useState<number | null>(null)
+  const [componentParent, setComponentParent] = useState<WizardSaleProduct | null>(null)
+  const [componentIndex, setComponentIndex] = useState<number | null>(null)
+  const [detail, setDetail] = useState<{ chipIndex: number | null; rowIndex: number | null } | null>(null)
+  const [totalAvailabilities, setTotalAvailabilities] = useState<WizardTotalProductAvailabilities | null>(null)
+  const [nearestOrder, setNearestOrder] = useState<WizardNearestSupplyOrder | null>(null)
+  const [reservationRows, setReservationRows] = useState<WizardProductReservation[]>([])
+  const [editCart, setEditCart] = useState<EditCartState | null>(null)
+  const [qtyModal, setQtyModal] = useState<QtyModalState | null>(null)
+  const [shiftRow, setShiftRow] = useState<WizardAvailabilityRow | null>(null)
+  const [interestProduct, setInterestProduct] = useState<WizardSaleProduct | null>(null)
+  const [futureProduct, setFutureProduct] = useState<WizardSaleProduct | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
+  const [editingDescription, setEditingDescription] = useState(false)
+  const [descriptionDraft, setDescriptionDraft] = useState('')
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
-  const [interestProduct, setInterestProduct] = useState<SalesUkraineProduct | null>(null)
-  const [futureProduct, setFutureProduct] = useState<SalesUkraineProduct | null>(null)
-  const [focusedItemNetUid, setFocusedItemNetUid] = useState<string | null>(null)
-  const [cartFocused, setCartFocused] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [refreshTick, setRefreshTick] = useState(0)
+
   const busyRef = useRef(false)
-  const cartBoxRef = useRef<HTMLDivElement>(null)
-  const qtyInputRefs = useRef<Map<string, HTMLInputElement | null> | null>(null)
-
-  if (qtyInputRefs.current === null) {
-    qtyInputRefs.current = new Map()
-  }
-
-  const qtyInputs = qtyInputRefs.current
-
-  const [reservationsState, setReservationsState] = useState<{ agreementNetId: string | null; values: Map<string, WizardProductReservation> }>({
-    agreementNetId: null,
-    values: EMPTY_RESERVATIONS,
-  })
-  const [productPricingState, setProductPricingState] = useState<{ agreementNetId: string | null; values: Map<string, ProductPricingSnapshot> }>({
-    agreementNetId: null,
-    values: EMPTY_PRODUCT_PRICING,
-  })
-
-  const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const cartCount = orderItems.length
-  const focusedIndexByNetUid = focusedItemNetUid ? orderItems.findIndex((item) => item.NetUid === focusedItemNetUid) : -1
-  const focusedRow = cartCount === 0 ? -1 : focusedIndexByNetUid >= 0 ? focusedIndexByNetUid : 0
-  const isVatSale = Boolean(sale?.IsVatSale)
-  const useEurToUah = isNonVatEurSale(sale)
-  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
-  const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
-  const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
-  const totalLocal = useEurToUah
-    ? roundMoney(orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountEurToUah) ?? 0), 0))
-    : getNumber(sale?.Order?.TotalAmountLocal) ??
-      orderItems.reduce((sum, item) => sum + (getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0), 0)
-  const totalVat = getNumber(sale?.Order?.TotalVat) ?? 0
-
+  const virtualLoadingRef = useRef(false)
+  const virtualExhaustedRef = useRef(false)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
   const pricingCacheGenerationRef = useRef(0)
 
-  const clearProductPricingCache = useCallback(() => {
-    pricingCacheGenerationRef.current += 1
-    setReservationsState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_RESERVATIONS }))
-    setProductPricingState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_PRODUCT_PRICING }))
+  const [reservationsState, setReservationsState] = useState<{
+    agreementNetId: string | null
+    values: Map<string, WizardProductReservation>
+  }>({ agreementNetId: null, values: EMPTY_RESERVATIONS })
+  const [productPricingState, setProductPricingState] = useState<{
+    agreementNetId: string | null
+    values: Map<string, ProductPricingSnapshot>
+  }>({ agreementNetId: null, values: EMPTY_PRODUCT_PRICING })
+
+  const orderItems = getOrderItemsNewestFirst(sale)
+  const isVatSale = Boolean(sale?.IsVatSale)
+  const useEurToUah = isNonVatEurSale(sale)
+  const localCurrencyCode = getSaleLocalCurrencyCode(sale)
+  const totalVat = getWizardProductNumber(sale?.Order?.TotalVat) ?? 0
+  const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
+  const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
+
+  const componentEntries = getComponentCarouselEntries(componentParent)
+  const activeProduct = active?.product ?? null
+  const mainProduct = results[mainIndex] ?? null
+  const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
+  const focusedComponent = componentIndex !== null ? componentEntries.entries[componentIndex]?.product ?? null : null
+  const kbState = isProductKeyboardState(keyboard.state) ? keyboard.state : 'ProductSearch'
+
+  useEffect(() => {
+    setWizardKeyboardState('ProductSearch')
+
+    return () => {
+      setWizardKeyboardState('ProductSearch')
+    }
   }, [])
 
   useEffect(() => {
@@ -112,14 +200,40 @@ export function NewSaleProductsStep({
     onCartChangedRef.current = onCartChanged
   })
 
-  const handleRealtimeSale = useCallback((payload: unknown) => {
-    const netId = resolveSaleNetId(payload)
+  const clearProductPricingCache = useCallback(() => {
+    pricingCacheGenerationRef.current += 1
+    setReservationsState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_RESERVATIONS }))
+    setProductPricingState((previous) => ({ agreementNetId: previous.agreementNetId, values: EMPTY_PRODUCT_PRICING }))
+  }, [])
 
-    if (netId && netId === cartNetIdRef.current) {
-      clearProductPricingCache()
-      void onCartChangedRef.current()
-    }
-  }, [clearProductPricingCache])
+  const resetDetail = useCallback(() => {
+    setDetail(null)
+    setEditingDescription(false)
+  }, [])
+
+  const clearActiveProductData = useCallback(() => {
+    setActive(null)
+    setTotalAvailabilities(null)
+    setNearestOrder(null)
+    setReservationRows([])
+    setAnalogueState({ items: [], parentNetUid: null })
+    setAnalogueIndex(null)
+    setComponentParent(null)
+    setComponentIndex(null)
+    resetDetail()
+  }, [resetDetail])
+
+  const handleRealtimeSale = useCallback(
+    (payload: unknown) => {
+      const netId = resolveSaleNetId(payload)
+
+      if (netId && netId === cartNetIdRef.current) {
+        clearProductPricingCache()
+        void onCartChangedRef.current()
+      }
+    },
+    [clearProductPricingCache],
+  )
 
   const handleReservationSignal = useCallback(() => {
     clearProductPricingCache()
@@ -129,40 +243,44 @@ export function NewSaleProductsStep({
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSale)
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleReservationSignal)
 
-  const getProductMeta = useCallback(
-    (product: SalesUkraineProduct) => {
-      const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
-      const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
-      const preciseReservation = pricing?.reservation
-      const available = getSellableQty(product, isVatSale)
-      const price = pricing?.currentPrice ?? getReservationPrice(preciseReservation) ?? getReservationPrice(reservation)
-
-      if (available == null && price == null) {
-        return undefined
-      }
-
-      return { available, price }
-    },
-    [productPricing, reservations, isVatSale],
-  )
-
   useEffect(() => {
     const value = query.trim()
 
-    if (value.length < 2 || !agreementNetId) {
+    if (value.length < 4 || !agreementNetId) {
       return
     }
 
     const searchAgreementNetId = agreementNetId
     let cancelled = false
     const handle = setTimeout(async () => {
-      setSearching(true)
-
       try {
-        const next = await searchSaleProductsWithAvailability(value, searchAgreementNetId)
+        const next = await searchSaleProductsWithAvailability(value, searchAgreementNetId, {
+          limit: 20,
+          mode: searchMode,
+          offset: 0,
+          sortMode,
+        })
 
-        if (!cancelled) {
+        if (cancelled) {
+          return
+        }
+
+        virtualExhaustedRef.current = false
+
+        if (next.length === 1 && next[0]) {
+          const single = next[0]
+          setResults([single, ...(single.NextSearchedProducts ?? [])])
+          setMainIndex(0)
+          focusMainProduct(single)
+          setWizardKeyboardState('ProductSelection')
+        } else {
           setResults(next)
+          setMainIndex(0)
+          clearActiveProductData()
+
+          if (getWizardKeyboardState(1) !== 'ProductSearch') {
+            setWizardKeyboardState('ProductSearch')
+          }
         }
       } catch {
         if (!cancelled) {
@@ -173,78 +291,102 @@ export function NewSaleProductsStep({
           setSearching(false)
         }
       }
-    }, 300)
+    }, 360)
 
     return () => {
       cancelled = true
       clearTimeout(handle)
     }
-  }, [query, agreementNetId])
+  }, [query, agreementNetId, searchMode, sortMode, clearActiveProductData])
 
-  async function addProduct(product: SalesUkraineProduct) {
-    if (!agreementNetId || !sale?.NetUid) {
+  useEffect(() => {
+    const netUid = activeProduct?.NetUid
+    const source = active?.source
+
+    if (!netUid || !agreementNetId) {
       return
     }
 
-    const alreadyInCart = orderItems.some((item) => item.Product?.NetUid === product.NetUid)
+    const requestAgreementNetId = agreementNetId
+    const requestProduct = activeProduct
+    const saleNetId = sale?.NetUid || EMPTY_GUID
+    let cancelled = false
+    const handle = setTimeout(() => {
+      void (async () => {
+        const [pricing, nearest, totals, productReservations, analogues] = await Promise.all([
+          loadPricingSnapshot(netUid, requestAgreementNetId),
+          getNearestSupplyOrder(netUid).catch(() => null),
+          getAllProductAvailabilities(netUid, requestAgreementNetId, saleNetId).catch(() => null),
+          getProductReservationsByAgreement(requestAgreementNetId, netUid).catch(() => [] as WizardProductReservation[]),
+          source !== 'analogue' && requestProduct?.HasAnalogue
+            ? getProductAnalogues(netUid, requestAgreementNetId).catch(() => [] as WizardSaleProduct[])
+            : Promise.resolve<WizardSaleProduct[] | null>(null),
+        ])
 
-    if (!beginBusy()) {
-      return
+        if (cancelled) {
+          return
+        }
+
+        setNearestOrder(nearest)
+        setTotalAvailabilities(totals)
+        setReservationRows(productReservations)
+
+        if (pricing) {
+          storePricingSnapshot(netUid, requestAgreementNetId, pricing, productReservations)
+        }
+
+        if (source !== 'analogue') {
+          if (analogues) {
+            const filtered = analogues
+              .filter((item) => (item.ProductAvailabilities?.length ?? 0) > 0)
+              .sort((a, b) => (getWizardSellableQty(b, isVatSale) ?? 0) - (getWizardSellableQty(a, isVatSale) ?? 0))
+            setAnalogueState({ items: filtered, parentNetUid: netUid })
+          } else {
+            setAnalogueState({ items: [], parentNetUid: null })
+          }
+
+          setAnalogueIndex(null)
+        }
+      })()
+    }, 240)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
     }
+  }, [activeProduct, active?.source, agreementNetId, isVatSale, refreshTick, sale?.NetUid])
 
-    const existing = orderItems.find((item) => item.Product?.NetUid === product.NetUid)
-
+  async function loadPricingSnapshot(productNetUid: string, clientAgreementNetId: string): Promise<ProductPricingSnapshot | null> {
     try {
-      const pricing = await loadProductPricing(product, agreementNetId)
-      const sellable = getSellableQty(pricing.product, isVatSale)
+      const [currentPrice, calculatedPricings] = await Promise.all([
+        getProductCurrentPriceByAgreement(productNetUid, clientAgreementNetId),
+        getProductCalculatedPricingsByAgreement(productNetUid, clientAgreementNetId),
+      ])
 
-      if (!alreadyInCart && typeof sellable === 'number' && sellable === 0) {
-        setFutureProduct(pricing.product)
-
-        return
-      }
-
-      if (existing) {
-        await updateOrderItem({ ...existing, Qty: (getNumber(existing.Qty) || 0) + 1 })
-      } else {
-        await addOrderItem(agreementNetId, sale.NetUid, { Deleted: false, Id: 0, NetUid: EMPTY_GUID, Product: pricing.product, Qty: 1 })
-      }
-
-      await onCartChanged()
+      return { calculatedPricings, currentPrice }
     } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
-    } finally {
-      endBusy()
+      return null
     }
   }
 
-  async function loadProductPricing(product: SalesUkraineProduct, clientAgreementNetId: string): Promise<ProductPricingLoadResult> {
-    if (!product.NetUid) {
-      return { calculatedPricings: [], currentPrice: null, product }
+  function storePricingSnapshot(
+    productNetUid: string,
+    clientAgreementNetId: string,
+    snapshot: ProductPricingSnapshot,
+    productReservations: WizardProductReservation[],
+  ) {
+    const reservation =
+      productReservations.find((item) => item.ProductNetUid === productNetUid) ??
+      (productReservations.length === 1 ? productReservations[0] : undefined)
+    const stored: ProductPricingSnapshot = { ...snapshot }
+
+    if (reservation) {
+      stored.reservation = reservation
     }
-
-    const requestGeneration = pricingCacheGenerationRef.current
-    const [currentPrice, calculatedPricings, productReservations] = await Promise.all([
-      getProductCurrentPriceByAgreement(product.NetUid, clientAgreementNetId),
-      getProductCalculatedPricingsByAgreement(product.NetUid, clientAgreementNetId),
-      getProductReservationsByAgreement(clientAgreementNetId, product.NetUid),
-    ])
-
-    if (requestGeneration !== pricingCacheGenerationRef.current) {
-      return loadProductPricing(product, clientAgreementNetId)
-    }
-
-    const reservation = findReservationForProduct(product.NetUid, productReservations)
 
     setProductPricingState((previous) => {
       const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_PRODUCT_PRICING)
-      const snapshot: ProductPricingSnapshot = { calculatedPricings, currentPrice }
-
-      if (reservation) {
-        snapshot.reservation = reservation
-      }
-
-      next.set(product.NetUid as string, snapshot)
+      next.set(productNetUid, stored)
 
       return { agreementNetId: clientAgreementNetId, values: next }
     })
@@ -252,67 +394,29 @@ export function NewSaleProductsStep({
     if (reservation) {
       setReservationsState((previous) => {
         const next = new Map(previous.agreementNetId === clientAgreementNetId ? previous.values : EMPTY_RESERVATIONS)
-        next.set(product.NetUid as string, { ...reservation, ProductNetUid: reservation.ProductNetUid || product.NetUid })
+        next.set(productNetUid, { ...reservation, ProductNetUid: reservation.ProductNetUid || productNetUid })
 
         return { agreementNetId: clientAgreementNetId, values: next }
       })
     }
-
-    const pricedProduct: SalesUkraineProductWithPricing = {
-      ...product,
-      CalculatedPrices: calculatedPricings,
-    }
-
-    if (currentPrice != null) {
-      pricedProduct.CurrentPrice = currentPrice
-    }
-
-    const result: ProductPricingLoadResult = { calculatedPricings, currentPrice, product: pricedProduct }
-
-    if (reservation) {
-      result.reservation = reservation
-    }
-
-    return result
   }
 
-  async function changeQty(netId: string | undefined, item: (typeof orderItems)[number], qty: number) {
-    if (!netId || !Number.isFinite(qty) || qty <= 0) {
-      return
-    }
+  const getProductMeta = useCallback(
+    (product: WizardSaleProduct) => {
+      const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
+      const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
+      const available = getWizardSellableQty(product, isVatSale)
+      const price =
+        pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
 
-    if (!beginBusy()) {
-      return
-    }
+      if (available == null && price == null) {
+        return undefined
+      }
 
-    try {
-      await updateOrderItem({ ...item, Qty: qty })
-      await onCartChanged()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
-    } finally {
-      endBusy()
-    }
-  }
-
-  async function removeItem(netId: string | undefined) {
-    if (!netId) {
-      return
-    }
-
-    if (!beginBusy()) {
-      return
-    }
-
-    try {
-      await deleteOrderItem(netId)
-      await onCartChanged()
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
-    } finally {
-      endBusy()
-    }
-  }
+      return { available, price }
+    },
+    [productPricing, reservations, isVatSale],
+  )
 
   function beginBusy(): boolean {
     if (busyRef.current) {
@@ -321,6 +425,7 @@ export function NewSaleProductsStep({
 
     busyRef.current = true
     setBusy(true)
+
     return true
   }
 
@@ -329,220 +434,1602 @@ export function NewSaleProductsStep({
     setBusy(false)
   }
 
+  function focusSearchInput() {
+    searchInputRef.current?.focus()
+  }
+
+  function focusMainProduct(product: WizardSaleProduct) {
+    setActive({ product, source: 'main' })
+    setComponentParent(product)
+    setComponentIndex(null)
+    setAnalogueIndex(null)
+  }
+
+  function focusMain(index: number, options?: { keepDetail?: boolean }) {
+    const product = results[index]
+
+    if (!product) {
+      return
+    }
+
+    setMainIndex(index)
+    focusMainProduct(product)
+
+    if (options?.keepDetail) {
+      setDetail({ chipIndex: null, rowIndex: null })
+    } else {
+      resetDetail()
+    }
+
+    if (index >= results.length - 1) {
+      void loadMoreResults()
+    }
+  }
+
+  function focusAnalogue(index: number, options?: { keepDetail?: boolean }) {
+    const product = analogueState.items[index]
+
+    if (!product) {
+      return
+    }
+
+    setAnalogueIndex(index)
+    setActive({ product, source: 'analogue' })
+
+    if (options?.keepDetail) {
+      setDetail({ chipIndex: null, rowIndex: null })
+    } else {
+      resetDetail()
+    }
+  }
+
+  function focusComponent(index: number, options?: { keepDetail?: boolean }) {
+    const entry = componentEntries.entries[index]
+
+    if (!entry) {
+      return
+    }
+
+    setComponentIndex(index)
+    setActive({ product: entry.product, source: 'component' })
+
+    if (options?.keepDetail) {
+      setDetail({ chipIndex: null, rowIndex: null })
+    } else {
+      resetDetail()
+    }
+  }
+
+  async function loadMoreResults() {
+    const value = query.trim()
+
+    if (virtualLoadingRef.current || virtualExhaustedRef.current || value.length < 4 || !agreementNetId) {
+      return
+    }
+
+    virtualLoadingRef.current = true
+
+    try {
+      const next = await searchSaleProductsWithAvailability(value, agreementNetId, {
+        limit: 10,
+        mode: searchMode,
+        offset: results.length,
+        sortMode,
+      })
+
+      if (next.length === 0) {
+        virtualExhaustedRef.current = true
+      } else {
+        setResults((previous) => [...previous, ...next.filter((item) => !previous.some((existing) => existing.NetUid === item.NetUid))])
+      }
+    } catch {
+      virtualExhaustedRef.current = true
+    } finally {
+      virtualLoadingRef.current = false
+    }
+  }
+
   function handleQueryChange(value: string) {
     setQuery(value)
 
-    if (value.trim().length < 2) {
+    if (value.trim().length < 4) {
       setResults([])
       setSearching(false)
+      clearActiveProductData()
+    } else if (agreementNetId) {
+      setSearching(true)
     }
   }
 
-  function handleCartBlur(event: ReactFocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setCartFocused(false)
+  function handleSearchSettingsChange(nextMode: string | null, nextSort: string | null) {
+    if (nextMode) {
+      setSearchMode(nextMode)
+    }
+
+    if (nextSort) {
+      setSortMode(nextSort)
+    }
+
+    setResults([])
+    clearActiveProductData()
+
+    if (query.trim().length >= 4) {
+      setSearching(true)
     }
   }
 
-  function focusFocusedRowQty() {
-    const item = orderItems[focusedRow]
-    const input = item?.NetUid ? qtyInputs.get(item.NetUid) : null
+  function canChangePrintedSale(): boolean {
+    if (sale?.IsPrinted) {
+      const approved = (sale.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
 
-    if (input) {
-      input.focus()
-      input.select()
-    }
-  }
+      if (!approved) {
+        notifications.show({ color: 'red', message: t('Зміни заборонені') })
 
-  function handleCartKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const target = event.target as HTMLElement
-    const inEditable = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
-
-    if (inEditable) {
-      if (event.key === 'Enter' || event.key === 'Escape') {
-        event.preventDefault()
-        target.blur()
-        cartBoxRef.current?.focus()
+        return false
       }
+    }
+
+    return true
+  }
+
+  async function prepareAddToCart(product: WizardSaleProduct | null) {
+    if (!product?.NetUid) {
+      return
+    }
+
+    if (!canChangePrintedSale()) {
+      return
+    }
+
+    if (!agreementNetId || !sale?.NetUid) {
+      notifications.show({ color: 'orange', message: t('Сесія поточного клієнта була видалена відкриттям іншої вкладки') })
 
       return
     }
 
-    if (cartCount === 0) {
+    const sellable = getWizardSellableQty(product, isVatSale)
+
+    if (typeof sellable === 'number' && sellable === 0) {
+      setFutureProduct(product)
+
       return
     }
 
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setFocusedItemNetUid(orderItems[(focusedRow + 1) % cartCount]?.NetUid ?? null)
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setFocusedItemNetUid(orderItems[(focusedRow - 1 + cartCount) % cartCount]?.NetUid ?? null)
-    } else if (event.key === 'Delete') {
-      event.preventDefault()
-
-      if (!busy) {
-        void removeItem(orderItems[focusedRow]?.NetUid)
-      }
-    } else if (event.key === 'F2' || event.key === 'Enter') {
-      event.preventDefault()
-      focusFocusedRowQty()
+    if (!beginBusy()) {
+      return
     }
+
+    try {
+      const buckets = await getProductAvailabilityBuckets(product.NetUid, agreementNetId)
+      const available = isVatSale
+        ? buckets?.AvailableQtyUkVAT ?? 0
+        : (buckets?.AvailableQtyUk ?? 0) + (buckets?.AvailableQtyUkReSale ?? 0)
+      const existing = orderItems.find((item) => item.Product?.NetUid === product.NetUid)
+      const item: SalesUkraineOrderItem = existing ?? { Deleted: false, Id: 0, NetUid: EMPTY_GUID, Product: product, Qty: 0 }
+
+      setQtyModal({ available: (getWizardProductNumber(item.Qty) ?? 0) + available, item, kind: 'add' })
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося додати товар') })
+    } finally {
+      endBusy()
+    }
+  }
+
+  function resetSearchAfterAdd(product: WizardSaleProduct | undefined) {
+    const hasFollowUps = Boolean(
+      product &&
+        (product.HasAnalogue ||
+          product.HasComponent ||
+          (product.ComponentProducts?.length ?? 0) > 0 ||
+          (product.BaseSetProducts?.length ?? 0) > 0),
+    )
+
+    if (!hasFollowUps) {
+      setQuery('')
+      setResults([])
+      setActive(null)
+      resetDetail()
+      keyboard.setState('ProductSearch')
+    }
+
+    focusSearchInput()
+  }
+
+  async function acceptQtyModal(qty: number, comment: string) {
+    const modal = qtyModal
+
+    if (!modal) {
+      return
+    }
+
+    setQtyModal(null)
+
+    if (!beginBusy()) {
+      return
+    }
+
+    try {
+      if (modal.kind === 'add') {
+        if (!agreementNetId || !sale?.NetUid) {
+          return
+        }
+
+        await addOrderItem(agreementNetId, sale.NetUid, { ...modal.item, Comment: comment, Qty: qty })
+        await onCartChanged()
+        resetSearchAfterAdd(modal.item.Product as WizardSaleProduct | undefined)
+      } else if (modal.kind === 'edit-current') {
+        if (editCart?.isSplit) {
+          const ordered = getWizardProductNumber(modal.item.Qty) ?? 0
+          const rest = ordered - qty
+
+          if (rest < 0) {
+            return
+          }
+
+          const product = modal.item.Product as WizardSaleProduct | undefined
+
+          if (product) {
+            setEditCart((previous) =>
+              previous
+                ? { ...previous, splitItems: addToSplitItems(previous.splitItems, product, qty, comment || modal.item.Comment, user as unknown as SalesUkraineUser) }
+                : previous,
+            )
+          }
+
+          if (rest > 0) {
+            await updateOrderItem({ ...modal.item, Comment: comment, Qty: rest })
+          } else if (modal.item.NetUid) {
+            await deleteOrderItem(modal.item.NetUid)
+          }
+
+          await onCartChanged()
+        } else {
+          await updateOrderItem({ ...modal.item, Comment: comment, Qty: qty })
+          await onCartChanged()
+        }
+      } else {
+        const rest = modal.item.Qty - qty
+
+        if (rest < 0) {
+          return
+        }
+
+        const existing = orderItems.find((item) => item.Product?.NetUid === modal.item.Product.NetUid)
+
+        if (existing) {
+          await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + qty })
+        } else if (agreementNetId && sale?.NetUid) {
+          await addOrderItem(agreementNetId, sale.NetUid, {
+            Comment: modal.item.Comment,
+            Deleted: false,
+            Id: 0,
+            NetUid: EMPTY_GUID,
+            Product: modal.item.Product,
+            Qty: qty,
+          })
+        }
+
+        setEditCart((previous) => {
+          if (!previous) {
+            return previous
+          }
+
+          const splitItems = previous.splitItems
+            .map((item) => (item.Product.NetUid === modal.item.Product.NetUid ? rebuildSplitItem(item, rest) : item))
+            .filter((item) => item.Qty > 0)
+
+          return { ...previous, splitItems }
+        })
+        await onCartChanged()
+      }
+
+      clearProductPricingCache()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
+    } finally {
+      endBusy()
+    }
+  }
+
+  function cancelQtyModal() {
+    setQtyModal(null)
+    focusSearchInput()
+  }
+
+  async function removeItem(item: SalesUkraineOrderItem) {
+    if (!item.NetUid) {
+      return
+    }
+
+    if (!beginBusy()) {
+      return
+    }
+
+    try {
+      await deleteOrderItem(item.NetUid)
+      await onCartChanged()
+      clearProductPricingCache()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
+    } finally {
+      endBusy()
+    }
+  }
+
+  async function onEditOrderItem(item: SalesUkraineOrderItem) {
+    const isLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
+    const approved = (sale?.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
+
+    if (!sale || !(isLifecycleNew || (sale.IsPrinted && approved))) {
+      notifications.show({ color: 'red', message: t('Зміни заборонені') })
+
+      return
+    }
+
+    if (!item.Product?.NetUid || !agreementNetId) {
+      return
+    }
+
+    if (!beginBusy()) {
+      return
+    }
+
+    try {
+      const buckets = await getProductAvailabilityBuckets(item.Product.NetUid, agreementNetId)
+      const available = isVatSale
+        ? buckets?.AvailableQtyUkVAT ?? 0
+        : (buckets?.AvailableQtyUk ?? 0) + (buckets?.AvailableQtyUkReSale ?? 0)
+
+      setQtyModal({ available: (getWizardProductNumber(item.Qty) ?? 0) + available, item, kind: 'edit-current' })
+    } catch {
+      setQtyModal({ available: getWizardProductNumber(item.Qty) ?? 0, item, kind: 'edit-current' })
+    } finally {
+      endBusy()
+    }
+  }
+
+  function openEditCart() {
+    if (orderItems.length === 0) {
+      notifications.show({ color: 'orange', message: t('Немає позицій для редагування') })
+
+      return
+    }
+
+    if (!sale?.NetUid) {
+      notifications.show({ color: 'orange', message: t('Завантаження рахунку') })
+
+      return
+    }
+
+    if (getSaleLifecycleTypeKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType) !== '0') {
+      notifications.show({ color: 'red', message: t('Неможливо редагувати накладну') })
+
+      return
+    }
+
+    setEditCart({ isSplit: false, selected: { index: 0, list: 'current' }, splitItems: [] })
+    resetDetail()
+    keyboard.setState('EditShoppingCart')
+  }
+
+  async function exitEditCart() {
+    const cart = editCart
+
+    if (!cart) {
+      return
+    }
+
+    if (cart.splitItems.length > 0 && agreementNetId && sale?.NetUid) {
+      if (!beginBusy()) {
+        return
+      }
+
+      try {
+        for (const item of cart.splitItems) {
+          const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
+
+          if (existing) {
+            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
+          } else {
+            await addOrderItem(agreementNetId, sale.NetUid, {
+              Comment: item.Comment,
+              Deleted: false,
+              Id: 0,
+              NetUid: EMPTY_GUID,
+              Product: item.Product,
+              Qty: item.Qty,
+            })
+          }
+        }
+
+        await onCartChanged()
+        clearProductPricingCache()
+      } catch {
+        notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
+      } finally {
+        endBusy()
+      }
+    }
+
+    setEditCart(null)
+    keyboard.setState('ProductSearch')
+    focusSearchInput()
+  }
+
+  async function editSelectedCartRow() {
+    const cart = editCart
+
+    if (!cart?.selected) {
+      return
+    }
+
+    if (!canChangePrintedSale()) {
+      return
+    }
+
+    if (cart.selected.list === 'current') {
+      const item = orderItems[cart.selected.index]
+
+      if (item) {
+        await onEditOrderItem(item)
+      }
+    } else {
+      const item = cart.splitItems[cart.selected.index]
+
+      if (item) {
+        setQtyModal({ available: item.Qty, item, kind: 'edit-split' })
+      }
+    }
+  }
+
+  async function confirmRemoveSelected() {
+    setRemoveConfirmOpen(false)
+    const cart = editCart
+    const selected = cart?.selected
+
+    if (!cart || !selected) {
+      return
+    }
+
+    if (!beginBusy()) {
+      return
+    }
+
+    try {
+      if (selected.list === 'current') {
+        const item = orderItems[selected.index]
+
+        if (item) {
+          const product = item.Product as WizardSaleProduct | undefined
+
+          if (cart.isSplit && product) {
+            setEditCart((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    splitItems: addToSplitItems(
+                      previous.splitItems,
+                      product,
+                      getWizardProductNumber(item.Qty) ?? 0,
+                      item.Comment,
+                      user as unknown as SalesUkraineUser,
+                    ),
+                  }
+                : previous,
+            )
+          }
+
+          if (item.NetUid) {
+            await deleteOrderItem(item.NetUid)
+          }
+
+          await onCartChanged()
+          setEditCart((previous) =>
+            previous ? { ...previous, selected: { index: Math.max(0, selected.index - 1), list: 'current' } } : previous,
+          )
+        }
+      } else {
+        const item = cart.splitItems[selected.index]
+
+        if (item) {
+          const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
+
+          if (existing) {
+            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
+          } else if (agreementNetId && sale?.NetUid) {
+            await addOrderItem(agreementNetId, sale.NetUid, {
+              Comment: item.Comment,
+              Deleted: false,
+              Id: 0,
+              NetUid: EMPTY_GUID,
+              Product: item.Product,
+              Qty: item.Qty,
+            })
+          }
+
+          setEditCart((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  selected: previous.splitItems.length > 1 ? { index: Math.max(0, selected.index - 1), list: 'split' } : null,
+                  splitItems: previous.splitItems.filter((_, index) => index !== selected.index),
+                }
+              : previous,
+          )
+          await onCartChanged()
+        }
+      }
+
+      clearProductPricingCache()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося видалити товар') })
+    } finally {
+      endBusy()
+    }
+  }
+
+  function moveCartSelection(direction: 1 | -1) {
+    const items = orderItems
+
+    setEditCart((previous) => {
+      if (!previous) {
+        return previous
+      }
+
+      const flat: WizardCartSelection[] = []
+
+      for (let index = 0; index < items.length; index += 1) {
+        flat.push({ index, list: 'current' })
+      }
+
+      if (previous.isSplit) {
+        for (let index = 0; index < previous.splitItems.length; index += 1) {
+          flat.push({ index, list: 'split' })
+        }
+      }
+
+      if (flat.length === 0) {
+        return { ...previous, selected: null }
+      }
+
+      const selected = previous.selected
+      const currentIndex = selected ? flat.findIndex((entry) => entry.list === selected.list && entry.index === selected.index) : -1
+      const nextIndex =
+        currentIndex === -1 ? (direction === 1 ? 0 : flat.length - 1) : (currentIndex + direction + flat.length) % flat.length
+
+      return { ...previous, selected: flat[nextIndex] ?? null }
+    })
+  }
+
+  function toggleSplitMode() {
+    const items = orderItems
+
+    setEditCart((previous) => {
+      if (!previous) {
+        return previous
+      }
+
+      const isSplit = !previous.isSplit
+      let selected = previous.selected
+
+      if (!isSplit && (!selected || selected.list === 'split')) {
+        selected = items.length > 0 ? { index: 0, list: 'current' } : null
+      }
+
+      return { ...previous, isSplit, selected }
+    })
+  }
+
+  async function applyShift(qty: number) {
+    const row = shiftRow
+
+    if (!row?.NetId || !row.OrderItem) {
+      return
+    }
+
+    setShiftRow(null)
+
+    if (!beginBusy()) {
+      return
+    }
+
+    try {
+      const saleToNetId = sale?.NetUid || agreementNetId || ''
+      await shiftOrderItemFromSale(row.NetId, saleToNetId, { ...row.OrderItem, Qty: qty })
+      await onCartChanged()
+      clearProductPricingCache()
+      setRefreshTick((tick) => tick + 1)
+      focusSearchInput()
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося перемістити') })
+    } finally {
+      endBusy()
+    }
+  }
+
+  function openImage(product: WizardSaleProduct | null) {
+    if (!product?.Image) {
+      return
+    }
+
+    setImageUrl(product.Image)
+    keyboard.setState('ViewImage')
+  }
+
+  function closeImage() {
+    setImageUrl(null)
+    keyboard.restorePreviousProductState()
+  }
+
+  function openInterest(product: WizardSaleProduct | null) {
+    if (!product?.NetUid || !agreementNetId) {
+      return
+    }
+
+    setInterestProduct(product)
+    keyboard.setState('Interest')
+  }
+
+  function closeInterest() {
+    setInterestProduct(null)
+    keyboard.restorePreviousProductState()
+  }
+
+  async function toggleDescriptionEdit() {
+    const product = activeProduct
+
+    if (!product) {
+      return
+    }
+
+    if (!editingDescription) {
+      setDescriptionDraft(product.Description ?? '')
+      setEditingDescription(true)
+      keyboard.setState('EditProductDescription')
+
+      return
+    }
+
+    setEditingDescription(false)
+    keyboard.restorePreviousProductState()
+    const updated: WizardSaleProduct = { ...product, Description: descriptionDraft }
+    applyProductPatch(updated)
+
+    try {
+      await updateProduct(updated as Product, active?.source === 'main')
+    } catch {
+      notifications.show({ color: 'red', message: t('Не вдалося зберегти товар') })
+    }
+  }
+
+  function applyProductPatch(updated: WizardSaleProduct) {
+    setActive((previous) => (previous ? { ...previous, product: updated } : previous))
+    setResults((previous) => previous.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)))
+    setAnalogueState((previous) => ({
+      ...previous,
+      items: previous.items.map((item) => (item.NetUid === updated.NetUid ? { ...item, Description: updated.Description } : item)),
+    }))
+  }
+
+  function clearSelection() {
+    clearActiveProductData()
+    setQuery('')
+    keyboard.setState('ProductSearch')
+    focusSearchInput()
+  }
+
+  function spaceFromMain() {
+    const product = mainProduct
+
+    if (!product) {
+      return
+    }
+
+    if (product.HasAnalogue && analogueState.items.length > 0 && analogueState.parentNetUid === product.NetUid) {
+      resetDetail()
+      keyboard.setState('AnalogueSelection')
+
+      return
+    }
+
+    if (componentEntries.entries.length > 0) {
+      resetDetail()
+      keyboard.setState('ComponentSelection')
+    }
+  }
+
+  function escapeFromAnalogues() {
+    resetDetail()
+    setAnalogueIndex(null)
+
+    if (componentEntries.entries.length > 0) {
+      if (componentIndex !== null) {
+        const entry = componentEntries.entries[componentIndex]
+
+        if (entry) {
+          setActive({ product: entry.product, source: 'component' })
+        }
+      }
+
+      keyboard.setState('ComponentSelection')
+
+      return
+    }
+
+    if (mainProduct) {
+      setActive({ product: mainProduct, source: 'main' })
+    }
+
+    keyboard.setState('ProductSelection')
+  }
+
+  function getMainChips(): WizardDetailChip[] {
+    const totals = totalAvailabilities?.TotalAvailabilities
+
+    return MAIN_CHIP_DEFS.map((def) => ({
+      count:
+        def.key === 'StorageUkrNotVat'
+          ? readTotalAvailability(totals, 'StorageUkrNotVat', 2) + readTotalAvailability(totals, 'AvailableQtyUkReSale', 6)
+          : def.key === 'OnWayToUkr'
+            ? readTotalAvailability(totals, 'AvailabilityInvoice', 7)
+            : readTotalAvailability(totals, def.key, def.index),
+      key: def.key,
+      name: t(def.label),
+    }))
+  }
+
+  function getMainChipRows(chipIndex: number): WizardAvailabilityRow[] {
+    if (!totalAvailabilities) {
+      return []
+    }
+
+    switch (MAIN_CHIP_DEFS[chipIndex]?.key) {
+      case 'InAccount':
+        return totalAvailabilities.InAccounts ?? []
+      case 'StorageUkrVat':
+        return totalAvailabilities.InStorageUkrVat ?? []
+      case 'StorageUkrNotVat':
+        return totalAvailabilities.InStorageUkrNotVat ?? []
+      case 'StoragePl':
+        return totalAvailabilities.InStoragePl ?? []
+      case 'OnWayToPl':
+        return totalAvailabilities.OnWayToPl ?? []
+      case 'OnWayToUkr':
+        return totalAvailabilities.AvailabilityInvoiceModel ?? []
+      default:
+        return []
+    }
+  }
+
+  function getReservationChips(product: WizardSaleProduct | null): WizardDetailChip[] {
+    const atSaleCount = reservationRows.reduce((sum, row) => sum + (getWizardProductNumber(row.Qty) ?? 0), 0)
+
+    return [
+      { count: nearestOrder?.Qty ?? 0, key: 'roadPl', name: 'По дорозі на ПЛ' },
+      { count: product?.AvailableQtyPl ?? 0, key: 'storagePl', name: 'На складах ПЛ' },
+      { count: 0, key: 'border', name: 'Єльпасо' },
+      { count: 0, key: 'ukraine', name: 'На Україні' },
+      { count: atSaleCount, key: 'atSale', name: t('В рахунках') },
+    ]
+  }
+
+  function getReservationDetailRows(): WizardDetailRow[] {
+    return reservationRows.map((row) => ({
+      amount: getWizardProductNumber(row.Qty) ?? 0,
+      analyst: row.OrderItem?.User?.LastName ?? '',
+      name: row.OrderItem?.Order?.Sales?.[0]?.SaleNumber?.Value ?? '',
+      regionCode: row.RegionCode ?? '',
+    }))
+  }
+
+  function cycleChips(direction: 1 | -1, chipCount: number) {
+    setDetail((previous) => {
+      if (!previous) {
+        return previous
+      }
+
+      const current = previous.chipIndex
+      const next = current === null ? (direction === -1 ? 0 : chipCount - 1) : (current + direction + chipCount) % chipCount
+
+      return { chipIndex: next, rowIndex: null }
+    })
+  }
+
+  function navigateChipRows(direction: 1 | -1, rowCount: number) {
+    if (rowCount === 0) {
+      return
+    }
+
+    setDetail((previous) => {
+      if (!previous) {
+        return previous
+      }
+
+      const current = previous.rowIndex
+      const next = current === null ? (direction === 1 ? 0 : rowCount - 1) : (current + direction + rowCount) % rowCount
+
+      return { ...previous, rowIndex: next }
+    })
+  }
+
+  function handleSearchKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+
+    if (hotkey === 'ArrowDown' || hotkey === 'ArrowUp') {
+      if (results.length === 0) {
+        return true
+      }
+
+      focusMain(Math.min(mainIndex, results.length - 1))
+      keyboard.setState('ProductSelection')
+
+      return true
+    }
+
+    if (hotkey === 'Enter') {
+      if (active?.source === 'main' && activeProduct) {
+        void prepareAddToCart(activeProduct)
+
+        return true
+      }
+
+      return false
+    }
+
+    if (hotkey === 'F2') {
+      openEditCart()
+
+      return true
+    }
+
+    if (hotkey === 'Escape') {
+      setCloseConfirmOpen(true)
+
+      return true
+    }
+
+    return false
+  }
+
+  function handleSelectionKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+
+    switch (hotkey) {
+      case 'ArrowDown':
+        focusMain(Math.min(mainIndex + 1, results.length - 1))
+
+        return true
+      case 'ArrowUp':
+        focusMain(Math.max(mainIndex - 1, 0))
+
+        return true
+      case 'Enter':
+        void prepareAddToCart(activeProduct)
+
+        return true
+      case 'CtrlEnter':
+        if (mainProduct) {
+          setDetail({ chipIndex: null, rowIndex: null })
+          keyboard.setState('FullDetail')
+        }
+
+        return true
+      case 'CtrlI':
+        openImage(activeProduct)
+
+        return true
+      case 'CtrlB':
+        openInterest(activeProduct)
+
+        return true
+      case 'Space':
+        spaceFromMain()
+
+        return true
+      case 'Escape':
+        clearSelection()
+
+        return true
+      case 'F2':
+        openEditCart()
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleFullDetailKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+    const rows = detail?.chipIndex != null ? getMainChipRows(detail.chipIndex) : []
+    const isInvoiceRows = detail?.chipIndex === 0
+
+    switch (hotkey) {
+      case 'ArrowLeft':
+        cycleChips(-1, MAIN_CHIP_DEFS.length)
+
+        return true
+      case 'ArrowRight':
+        cycleChips(1, MAIN_CHIP_DEFS.length)
+
+        return true
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        const direction = hotkey === 'ArrowDown' ? 1 : -1
+
+        if (isInvoiceRows && rows.length > 0) {
+          navigateChipRows(direction, rows.length)
+        } else {
+          focusMain(direction === 1 ? Math.min(mainIndex + 1, results.length - 1) : Math.max(mainIndex - 1, 0), { keepDetail: true })
+        }
+
+        return true
+      }
+      case 'Enter':
+        void prepareAddToCart(activeProduct)
+
+        return true
+      case 'Ctrl':
+        if (isInvoiceRows && detail?.rowIndex != null && rows[detail.rowIndex]) {
+          setShiftRow(rows[detail.rowIndex] ?? null)
+        }
+
+        return true
+      case 'CtrlEnter':
+        return true
+      case 'CtrlI':
+        openImage(activeProduct)
+
+        return true
+      case 'CtrlB':
+        openInterest(activeProduct)
+
+        return true
+      case 'Space':
+        spaceFromMain()
+
+        return true
+      case 'Escape':
+        resetDetail()
+        keyboard.setState('ProductSelection')
+
+        return true
+      case 'F2':
+        openEditCart()
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleAnalogueSelectionKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+    const items = analogueState.items
+
+    switch (hotkey) {
+      case 'ArrowDown':
+        focusAnalogue(analogueIndex === null ? 0 : Math.min(analogueIndex + 1, items.length - 1))
+
+        return true
+      case 'ArrowUp':
+        focusAnalogue(analogueIndex === null ? 0 : Math.max(analogueIndex - 1, 0))
+
+        return true
+      case 'Space':
+        if (analogueIndex === null && items.length > 0) {
+          focusAnalogue(0)
+        }
+
+        return true
+      case 'Enter':
+        if (focusedAnalogue) {
+          void prepareAddToCart(focusedAnalogue)
+        }
+
+        return true
+      case 'CtrlEnter':
+        if (focusedAnalogue) {
+          setDetail({ chipIndex: null, rowIndex: null })
+          keyboard.setState('AnalogueFullDetail')
+        }
+
+        return true
+      case 'CtrlI':
+        openImage(focusedAnalogue)
+
+        return true
+      case 'CtrlB':
+        openInterest(focusedAnalogue)
+
+        return true
+      case 'Escape':
+        escapeFromAnalogues()
+
+        return true
+      case 'F2':
+        openEditCart()
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleAnalogueFullDetailKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+    const rows = detail?.chipIndex === 4 ? getReservationDetailRows() : []
+
+    switch (hotkey) {
+      case 'ArrowLeft':
+        cycleChips(-1, 5)
+
+        return true
+      case 'ArrowRight':
+        cycleChips(1, 5)
+
+        return true
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        const direction = hotkey === 'ArrowDown' ? 1 : -1
+
+        if (rows.length > 0) {
+          navigateChipRows(direction, rows.length)
+        } else if (analogueIndex !== null) {
+          focusAnalogue(
+            direction === 1 ? Math.min(analogueIndex + 1, analogueState.items.length - 1) : Math.max(analogueIndex - 1, 0),
+            { keepDetail: true },
+          )
+        }
+
+        return true
+      }
+      case 'Enter':
+        if (focusedAnalogue) {
+          void prepareAddToCart(focusedAnalogue)
+        }
+
+        return true
+      case 'CtrlEnter':
+        return true
+      case 'CtrlI':
+        openImage(focusedAnalogue)
+
+        return true
+      case 'CtrlB':
+        openInterest(focusedAnalogue)
+
+        return true
+      case 'Escape':
+        if (detail?.chipIndex != null) {
+          setDetail({ chipIndex: null, rowIndex: null })
+        } else {
+          resetDetail()
+          keyboard.setState('AnalogueSelection')
+        }
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleComponentSelectionKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+    const entries = componentEntries.entries
+
+    switch (hotkey) {
+      case 'ArrowDown':
+        focusComponent(componentIndex === null ? 0 : Math.min(componentIndex + 1, entries.length - 1))
+
+        return true
+      case 'ArrowUp':
+        focusComponent(componentIndex === null ? 0 : Math.max(componentIndex - 1, 0))
+
+        return true
+      case 'Space':
+        if (componentIndex === null && entries.length > 0) {
+          focusComponent(0)
+        } else if (
+          focusedComponent &&
+          focusedComponent.HasAnalogue &&
+          analogueState.parentNetUid === focusedComponent.NetUid &&
+          analogueState.items.length > 0
+        ) {
+          keyboard.setState('AnalogueSelection')
+          focusAnalogue(0)
+        }
+
+        return true
+      case 'Enter':
+        if (focusedComponent) {
+          void prepareAddToCart(focusedComponent)
+        }
+
+        return true
+      case 'CtrlEnter':
+        if (focusedComponent) {
+          setDetail({ chipIndex: null, rowIndex: null })
+          keyboard.setState('ComponentFullDetail')
+        }
+
+        return true
+      case 'CtrlI':
+        openImage(focusedComponent)
+
+        return true
+      case 'CtrlB':
+        openInterest(focusedComponent)
+
+        return true
+      case 'Escape':
+        resetDetail()
+
+        if (mainProduct) {
+          setActive({ product: mainProduct, source: 'main' })
+        }
+
+        keyboard.setState('ProductSelection')
+
+        return true
+      case 'F2':
+        openEditCart()
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleComponentFullDetailKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+    const rows = detail?.chipIndex === 4 ? getReservationDetailRows() : []
+    const entries = componentEntries.entries
+
+    switch (hotkey) {
+      case 'ArrowLeft':
+        cycleChips(-1, 5)
+
+        return true
+      case 'ArrowRight':
+        cycleChips(1, 5)
+
+        return true
+      case 'ArrowDown':
+      case 'ArrowUp': {
+        const direction = hotkey === 'ArrowDown' ? 1 : -1
+
+        if (rows.length > 0) {
+          navigateChipRows(direction, rows.length)
+        } else if (componentIndex !== null) {
+          focusComponent(direction === 1 ? Math.min(componentIndex + 1, entries.length - 1) : Math.max(componentIndex - 1, 0), {
+            keepDetail: true,
+          })
+        }
+
+        return true
+      }
+      case 'Enter':
+        if (focusedComponent) {
+          void prepareAddToCart(focusedComponent)
+        }
+
+        return true
+      case 'CtrlEnter':
+        return true
+      case 'CtrlI':
+        openImage(focusedComponent)
+
+        return true
+      case 'CtrlB':
+        openInterest(focusedComponent)
+
+        return true
+      case 'Escape':
+        if (detail?.chipIndex != null) {
+          setDetail({ chipIndex: null, rowIndex: null })
+        } else {
+          resetDetail()
+          keyboard.setState('ComponentSelection')
+        }
+
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleEditCartKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+
+    switch (hotkey) {
+      case 'ArrowDown':
+        moveCartSelection(1)
+
+        return true
+      case 'ArrowUp':
+        moveCartSelection(-1)
+
+        return true
+      case 'Enter':
+        void editSelectedCartRow()
+
+        return true
+      case 'Space':
+        toggleSplitMode()
+
+        return true
+      case 'Delete':
+        if (editCart?.selected) {
+          setRemoveConfirmOpen(true)
+        }
+
+        return true
+      case 'Escape':
+        void exitEditCart()
+
+        return true
+      case 'CtrlEnter':
+        return true
+      default:
+        return false
+    }
+  }
+
+  function handleModalStateKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+
+    if (hotkey === 'Escape') {
+      if (kbState === 'ViewImage') {
+        closeImage()
+      } else {
+        closeInterest()
+      }
+
+      return true
+    }
+
+    return hotkey === 'ArrowDown' || hotkey === 'ArrowUp' || hotkey === 'ArrowLeft' || hotkey === 'ArrowRight' || hotkey === 'Space' || hotkey === 'Enter' || hotkey === 'CtrlEnter'
+  }
+
+  useWizardKeyHandler((event) => {
+    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || closeConfirmOpen) {
+      return false
+    }
+
+    switch (kbState) {
+      case 'ProductSearch':
+        return handleSearchKeys(event)
+      case 'ProductSelection':
+        return handleSelectionKeys(event)
+      case 'FullDetail':
+        return handleFullDetailKeys(event)
+      case 'AnalogueSelection':
+        return handleAnalogueSelectionKeys(event)
+      case 'AnalogueFullDetail':
+        return handleAnalogueFullDetailKeys(event)
+      case 'ComponentSelection':
+        return handleComponentSelectionKeys(event)
+      case 'ComponentFullDetail':
+        return handleComponentFullDetailKeys(event)
+      case 'EditShoppingCart':
+        return handleEditCartKeys(event)
+      case 'EditProductDescription':
+        return false
+      case 'ViewImage':
+      case 'Interest':
+        return handleModalStateKeys(event)
+      default:
+        return false
+    }
+  })
+
+  const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
+  const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
+  const componentStatesActive = kbState === 'ComponentSelection' || kbState === 'ComponentFullDetail'
+  const setQtyByNetUid = new Map<string, number>()
+
+  componentEntries.entries.forEach((entry) => {
+    if (entry.product.NetUid && entry.setQty != null) {
+      setQtyByNetUid.set(entry.product.NetUid, entry.setQty)
+    }
+  })
+
+  const detailPricingFor = (product: WizardSaleProduct | null): WizardCalculatedProductPricing | null => {
+    const snapshot = product?.NetUid ? productPricing.get(product.NetUid) : undefined
+
+    return snapshot?.calculatedPricings[0] ?? null
+  }
+
+  const canEditMainDescription = hasPermission(CHANGE_PRODUCT_DESCRIPTION_PERMISSION)
+
+  function renderPriceExtra(product: WizardSaleProduct, setQty?: number) {
+    return (
+      <Group gap={8} mt={4} wrap="nowrap">
+        {setQty != null && (
+          <Text c="dimmed" size="xs">
+            {t('К-сть')}: {qtyFormatter.format(setQty)}
+          </Text>
+        )}
+        <Text fw={600} size="xs">
+          {qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} {product.MeasureUnit?.Name ?? ''}
+        </Text>
+        <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
+        <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>
+      </Group>
+    )
   }
 
   return (
-    <Stack gap="md">
-      <TextInput
-        autoFocus
-        label={t('Пошук по товару')}
-        leftSection={<IconSearch size={16} />}
-        placeholder={t('Код Виробника')}
-        rightSection={isSearching ? <Loader size="xs" /> : null}
-        value={query}
-        onChange={(event) => handleQueryChange(event.currentTarget.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && query) {
-            event.preventDefault()
-            event.stopPropagation()
-            handleQueryChange('')
+    <Box style={{ position: 'relative' }}>
+      <Stack gap="md">
+        <Group align="flex-end" gap="sm" wrap="wrap">
+          <Select
+            allowDeselect={false}
+            data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+            label={t('Місце вводу для пошуку')}
+            value={searchMode}
+            w={230}
+            onChange={(value) => handleSearchSettingsChange(value, null)}
+          />
+          <Select
+            allowDeselect={false}
+            data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+            label={t('Сортувати За')}
+            value={sortMode}
+            w={180}
+            onChange={(value) => handleSearchSettingsChange(null, value)}
+          />
+        </Group>
+
+        <TextInput
+          ref={searchInputRef}
+          autoFocus
+          label={t('Пошук по товару')}
+          leftSection={<IconSearch size={16} />}
+          placeholder={t('Пошук товару')}
+          rightSection={isSearching ? <Loader size="xs" /> : null}
+          value={query}
+          onChange={(event) => handleQueryChange(event.currentTarget.value)}
+        />
+
+        <ProductPickerCarousel
+          active={mainStatesActive}
+          disabled={busy || !agreementNetId || !sale?.NetUid}
+          emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
+          focusedIndex={active ? mainIndex : -1}
+          getItemColor={(product) => getRelatedProductRowColor(product)}
+          getMeta={getProductMeta}
+          isLoading={isSearching}
+          keyboardNavigation={false}
+          products={results}
+          onFocusedChange={(index) => {
+            focusMain(index)
+
+            if (kbState === 'ProductSearch') {
+              keyboard.setState('ProductSelection')
+            }
+          }}
+          onOpenCard={setProductCardNetId}
+          onPick={(product) => void prepareAddToCart(product)}
+          onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+        />
+
+        {kbState === 'FullDetail' && mainProduct && (
+          <ProductFullDetailPanel
+            canEditDescription={canEditMainDescription}
+            chips={getMainChips()}
+            descriptionDraft={descriptionDraft}
+            isEditingDescription={editingDescription && active?.source === 'main'}
+            isVatSale={isVatSale}
+            nearestSupplyOrder={nearestOrder}
+            pricing={detailPricingFor(mainProduct)}
+            product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
+            rows={
+              detail?.chipIndex != null
+                ? getMainChipRows(detail.chipIndex).map((row) => ({
+                    amount: getWizardProductNumber(row.Amount) ?? 0,
+                    analyst: row.OrderItem?.User?.LastName ?? '',
+                    name: row.Name ?? '',
+                    regionCode: row.RegionCode ?? '',
+                  }))
+                : []
+            }
+            selectedChipIndex={detail?.chipIndex ?? null}
+            selectedRowIndex={detail?.rowIndex ?? null}
+            showRowDetails={detail?.chipIndex === 0}
+            onDescriptionDraftChange={setDescriptionDraft}
+            onToggleDescription={() => void toggleDescriptionEdit()}
+          />
+        )}
+
+        {analogueState.items.length > 0 && (
+          <Stack gap={4}>
+            <Group gap={8}>
+              <Text fw={600} size="sm">
+                {t('Аналоги')}
+              </Text>
+              <Text c="dimmed" size="sm">
+                {analogueState.items.length} {t('штук')}
+              </Text>
+            </Group>
+            <ProductPickerCarousel
+              active={analogueStatesActive}
+              disabled={busy || !agreementNetId || !sale?.NetUid}
+              focusedIndex={analogueIndex ?? -1}
+              getItemColor={(product) => getRelatedProductRowColor(product)}
+              keyboardNavigation={false}
+              products={analogueState.items}
+              renderItemExtra={(product) => renderPriceExtra(product)}
+              onFocusedChange={(index) => {
+                focusAnalogue(index)
+
+                if (!analogueStatesActive) {
+                  keyboard.setState('AnalogueSelection')
+                }
+              }}
+              onOpenCard={setProductCardNetId}
+              onPick={(product) => void prepareAddToCart(product)}
+              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+            />
+            {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
+              <ProductFullDetailPanel
+                canEditDescription
+                chips={getReservationChips(focusedAnalogue)}
+                descriptionDraft={descriptionDraft}
+                isEditingDescription={editingDescription && active?.source === 'analogue'}
+                isVatSale={isVatSale}
+                pricing={detailPricingFor(focusedAnalogue)}
+                product={focusedAnalogue}
+                rows={detail?.chipIndex === 4 ? getReservationDetailRows() : []}
+                selectedChipIndex={detail?.chipIndex ?? null}
+                selectedRowIndex={detail?.rowIndex ?? null}
+                showRowDetails
+                onDescriptionDraftChange={setDescriptionDraft}
+                onToggleDescription={() => void toggleDescriptionEdit()}
+              />
+            )}
+          </Stack>
+        )}
+
+        {componentEntries.entries.length > 0 && (
+          <Stack gap={4}>
+            {!componentEntries.isBaseSet && (
+              <Group gap={8}>
+                <Text fw={600} size="sm">
+                  {t('Комплектуючі')}
+                </Text>
+                <Text c="dimmed" size="sm">
+                  {componentEntries.entries.length} {t('штук')}
+                </Text>
+              </Group>
+            )}
+            <ProductPickerCarousel
+              active={componentStatesActive}
+              disabled={busy || !agreementNetId || !sale?.NetUid}
+              focusedIndex={componentIndex ?? -1}
+              getItemColor={(product) => getRelatedProductRowColor(product)}
+              keyboardNavigation={false}
+              products={componentEntries.entries.map((entry) => entry.product)}
+              renderItemExtra={(product) => (
+                <Group gap={6} mt={2} wrap="nowrap">
+                  {componentEntries.isBaseSet ? <IconBox size={14} /> : <IconSettings size={14} />}
+                  {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
+                </Group>
+              )}
+              onFocusedChange={(index) => {
+                focusComponent(index)
+
+                if (!componentStatesActive) {
+                  keyboard.setState('ComponentSelection')
+                }
+              }}
+              onOpenCard={setProductCardNetId}
+              onPick={(product) => void prepareAddToCart(product)}
+              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+            />
+            {kbState === 'ComponentFullDetail' && focusedComponent && (
+              <ProductFullDetailPanel
+                canEditDescription
+                chips={getReservationChips(focusedComponent)}
+                descriptionDraft={descriptionDraft}
+                isEditingDescription={editingDescription && active?.source === 'component'}
+                isVatSale={isVatSale}
+                pricing={detailPricingFor(focusedComponent)}
+                product={focusedComponent}
+                rows={detail?.chipIndex === 4 ? getReservationDetailRows() : []}
+                selectedChipIndex={detail?.chipIndex ?? null}
+                selectedRowIndex={detail?.rowIndex ?? null}
+                showRowDetails
+                onDescriptionDraftChange={setDescriptionDraft}
+                onToggleDescription={() => void toggleDescriptionEdit()}
+              />
+            )}
+          </Stack>
+        )}
+
+        <Stack gap={4}>
+          <Text fw={600} size="sm">
+            {t('Кошик')}
+          </Text>
+          <WizardShoppingCartGrid
+            busy={busy}
+            items={orderItems}
+            localCurrencyCode={localCurrencyCode}
+            useEurToUah={useEurToUah}
+            onRemove={(item) => void removeItem(item)}
+            onRowClick={(item) => void onEditOrderItem(item)}
+          />
+          {isVatSale && orderItems.length > 0 && (
+            <Group justify="flex-end">
+              <Text size="sm">
+                {t('ПДВ')}:{' '}
+                <Text fw={600} span>
+                  {amountFormatter.format(roundMoney(totalVat))}
+                </Text>
+              </Text>
+            </Group>
+          )}
+        </Stack>
+      </Stack>
+
+      {editCart && (
+        <EditShoppingCartOverlay
+          currentItems={orderItems}
+          isSplit={editCart.isSplit}
+          localCurrencyCode={localCurrencyCode}
+          selected={editCart.selected}
+          splitItems={editCart.splitItems}
+          useEurToUah={useEurToUah}
+        />
+      )}
+
+      <ChangeQtyModal
+        availableQty={qtyModal?.available ?? 0}
+        busy={busy}
+        initialComment={qtyModal?.item.Comment ?? ''}
+        initialQty={getWizardProductNumber(qtyModal?.item.Qty) ?? 0}
+        opened={Boolean(qtyModal)}
+        onAccept={(qty, comment) => void acceptQtyModal(qty, comment)}
+        onCancel={cancelQtyModal}
+      />
+
+      <ShiftOrderItemModal
+        amount={getWizardProductNumber(shiftRow?.Amount) ?? 0}
+        analyst={shiftRow?.OrderItem?.User?.LastName ?? ''}
+        busy={busy}
+        opened={Boolean(shiftRow)}
+        regionCode={shiftRow?.RegionCode ?? ''}
+        sourceName={shiftRow?.Name ?? ''}
+        onApply={(qty) => void applyShift(qty)}
+        onCancel={() => setShiftRow(null)}
+      />
+
+      <ProductImageViewModal imageUrl={imageUrl} onClose={closeImage} />
+
+      <WizardConfirmModal
+        busy={busy}
+        message={t('Видалити позицію з рахунку?')}
+        opened={removeConfirmOpen}
+        onCancel={() => setRemoveConfirmOpen(false)}
+        onConfirm={() => void confirmRemoveSelected()}
+      />
+
+      <WizardConfirmModal
+        message={t('Закрити вікно?')}
+        opened={closeConfirmOpen}
+        onCancel={() => {
+          setCloseConfirmOpen(false)
+          focusSearchInput()
+        }}
+        onConfirm={() => {
+          setCloseConfirmOpen(false)
+
+          if (onRequestClose) {
+            onRequestClose()
           }
         }}
       />
-
-      <ProductPickerCarousel
-        products={results}
-        disabled={busy || !agreementNetId || !sale?.NetUid}
-        isLoading={isSearching}
-        emptyText={query.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
-        getMeta={getProductMeta}
-        onPick={(product) => addProduct(product)}
-        onOpenCard={setProductCardNetId}
-        onProductInterest={agreementNetId ? (product) => setInterestProduct(product) : undefined}
-      />
-
-      <Box
-        ref={cartBoxRef}
-        aria-label={t('Кошик')}
-        role="group"
-        style={{
-          borderRadius: 'var(--mantine-radius-sm)',
-          outline: cartFocused ? '2px solid var(--mantine-color-blue-4)' : 'none',
-          outlineOffset: 2,
-        }}
-        tabIndex={cartCount > 0 ? 0 : -1}
-        onBlur={handleCartBlur}
-        onFocus={() => setCartFocused(true)}
-        onKeyDown={handleCartKeyDown}
-      >
-        <Text fw={600} mb={4} size="sm">
-          {t('Кошик')}
-        </Text>
-        <ScrollArea.Autosize mah={360} type="auto">
-          <Table withColumnBorders highlightOnHover stickyHeader verticalSpacing={6}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>{t('Код Виробника')}</Table.Th>
-                <Table.Th>{t('Назва товару')}</Table.Th>
-                <Table.Th ta="right">{t('Ціна')}</Table.Th>
-                <Table.Th ta="right" style={{ minWidth: 110 }}>{t('К-сть')}</Table.Th>
-                <Table.Th ta="right">{t('Сума')}</Table.Th>
-                <Table.Th w={48} />
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {orderItems.length === 0 ? (
-                <Table.Tr>
-                  <Table.Td colSpan={6}>
-                    <Text c="dimmed" size="sm" ta="center" py="sm">
-                      {t('Кошик порожній')}
-                    </Text>
-                  </Table.Td>
-                </Table.Tr>
-              ) : (
-                orderItems.map((item, index) => (
-                  <Table.Tr
-                    key={String(item.NetUid || item.Id || index)}
-                    style={cartFocused && index === focusedRow ? { background: 'var(--mantine-color-blue-light)' } : undefined}
-                    onMouseDown={() => setFocusedItemNetUid(item.NetUid ?? null)}
-                  >
-                    <Table.Td>
-                      {item.Product?.NetUid ? (
-                        <Anchor component="button" fw={600} type="button" onClick={() => setProductCardNetId(item.Product?.NetUid as string)}>
-                          {item.Product?.VendorCode || item.Product?.Articul || '—'}
-                        </Anchor>
-                      ) : (
-                        <Text fw={600}>{item.Product?.VendorCode || item.Product?.Articul || '—'}</Text>
-                      )}
-                    </Table.Td>
-                    <Table.Td>{item.Product?.NameUA || item.Product?.Name || '—'}</Table.Td>
-                    <Table.Td ta="right">{amountFormatter.format(getNumber(item.PricePerItem) ?? 0)}</Table.Td>
-                    <Table.Td>
-                      <NumberInput
-                        ref={(el) => {
-                          if (item.NetUid) {
-                            if (el) {
-                              qtyInputs.set(item.NetUid, el)
-                            } else {
-                              qtyInputs.delete(item.NetUid)
-                            }
-                          }
-                        }}
-                        allowNegative={false}
-                        decimalScale={2}
-                        disabled={busy}
-                        hideControls
-                        min={0}
-                        size="xs"
-                        value={getNumber(item.Qty) ?? 0}
-                        onBlur={(event) => {
-                          const next = Number(event.currentTarget.value.replace(',', '.'))
-                          if (!Number.isFinite(next) || next <= 0) {
-                            event.currentTarget.value = String(getNumber(item.Qty) ?? 0)
-
-                            return
-                          }
-                          if (next !== getNumber(item.Qty)) {
-                            void changeQty(item.NetUid, item, next)
-                          }
-                        }}
-                      />
-                    </Table.Td>
-                    <Table.Td ta="right">
-                      {amountFormatter.format(
-                        (useEurToUah ? getNumber(item.TotalAmountEurToUah) : getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)) ?? 0,
-                      )}{' '}
-                      {localCurrencyCode}
-                    </Table.Td>
-                    <Table.Td>
-                      <Tooltip label={t('Видалити')}>
-                        <ActionIcon aria-label={t('Видалити')} color="red" disabled={busy} variant="subtle" onClick={() => removeItem(item.NetUid)}>
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    </Table.Td>
-                  </Table.Tr>
-                ))
-              )}
-            </Table.Tbody>
-          </Table>
-        </ScrollArea.Autosize>
-
-        {orderItems.length > 0 && (
-          <Group justify="flex-end" gap="xl" mt="xs">
-            {isVatSale && (
-              <Text size="sm">
-                {t('ПДВ')}: <Text span fw={600}>{amountFormatter.format(totalVat)}</Text>
-              </Text>
-            )}
-            <Text size="sm">
-              {t('Разом')}:{' '}
-              <Text span fw={700}>
-                {amountFormatter.format(totalLocal)} {localCurrencyCode}
-              </Text>
-            </Text>
-          </Group>
-        )}
-      </Box>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
 
@@ -550,8 +2037,8 @@ export function NewSaleProductsStep({
         clientAgreementNetId={agreementNetId ?? ''}
         opened={Boolean(interestProduct?.NetUid && agreementNetId)}
         productNetId={interestProduct?.NetUid ?? ''}
-        onClose={() => setInterestProduct(null)}
-        onCreated={() => setInterestProduct(null)}
+        onClose={closeInterest}
+        onCreated={closeInterest}
       />
 
       <FutureReservationModal
@@ -563,8 +2050,109 @@ export function NewSaleProductsStep({
           void onCartChanged()
         }}
       />
-    </Stack>
+    </Box>
   )
+}
+
+function isProductKeyboardState(state: string): state is WizardProductKeyboardState {
+  return (WIZARD_PRODUCT_KEYBOARD_STATES as readonly string[]).includes(state)
+}
+
+function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOrderItem[] {
+  const items = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
+
+  return [...items].sort((a, b) => getCreatedTime(b) - getCreatedTime(a))
+}
+
+function getCreatedTime(item: SalesUkraineOrderItem): number {
+  const created = item.Created
+
+  if (created instanceof Date) {
+    return created.getTime()
+  }
+
+  if (typeof created === 'string') {
+    const parsed = Date.parse(created)
+
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+
+  return 0
+}
+
+function addToSplitItems(
+  items: WizardSplitOrderItem[],
+  product: WizardSaleProduct,
+  qty: number,
+  comment: string | undefined,
+  user: SalesUkraineUser | undefined,
+): WizardSplitOrderItem[] {
+  const existingIndex = items.findIndex((item) => item.Product.NetUid === product.NetUid)
+
+  if (existingIndex >= 0) {
+    const existing = items[existingIndex] as WizardSplitOrderItem
+    const next = [...items]
+    next[existingIndex] = rebuildSplitItem(existing, existing.Qty + qty)
+
+    return next
+  }
+
+  return [...items, buildSplitItem(product, qty, comment, user)]
+}
+
+function buildSplitItem(
+  product: WizardSaleProduct,
+  qty: number,
+  comment: string | undefined,
+  user: SalesUkraineUser | undefined,
+): WizardSplitOrderItem {
+  const price = getWizardProductNumber(product.CurrentPrice) ?? 0
+  const localPrice = getWizardProductNumber(product.CurrentLocalPrice) ?? 0
+  const eurToUahPrice = getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0
+  const item: WizardSplitOrderItem = {
+    Comment: comment ?? '',
+    Product: product,
+    Qty: qty,
+    TotalAmount: roundMoney(qty * price),
+    TotalAmountEurToUah: roundMoney(qty * eurToUahPrice),
+    TotalAmountLocal: roundMoney(qty * localPrice),
+  }
+
+  if (user) {
+    item.User = user
+  }
+
+  return item
+}
+
+function rebuildSplitItem(item: WizardSplitOrderItem, qty: number): WizardSplitOrderItem {
+  const price = getWizardProductNumber(item.Product.CurrentPrice) ?? 0
+  const localPrice = getWizardProductNumber(item.Product.CurrentLocalPrice) ?? 0
+  const eurToUahPrice = getWizardProductNumber(item.Product.CurrentPriceEurToUah) ?? 0
+
+  return {
+    ...item,
+    Qty: qty,
+    TotalAmount: roundMoney(qty * price),
+    TotalAmountEurToUah: roundMoney(qty * eurToUahPrice),
+    TotalAmountLocal: roundMoney(qty * localPrice),
+  }
+}
+
+function readTotalAvailability(totals: Record<string, number> | undefined, key: string, index: number): number {
+  if (!totals) {
+    return 0
+  }
+
+  const byName = totals[key]
+
+  if (typeof byName === 'number') {
+    return byName
+  }
+
+  const byIndex = totals[String(index)]
+
+  return typeof byIndex === 'number' ? byIndex : 0
 }
 
 function resolveSaleNetId(payload: unknown): string | undefined {
@@ -587,42 +2175,6 @@ function resolveSaleNetId(payload: unknown): string | undefined {
   const netId = sale.NetUid
 
   return typeof netId === 'string' ? netId : undefined
-}
-
-function getNumber(value: unknown): number | null {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-
-    return Number.isFinite(parsed) ? parsed : null
-  }
-
-  return null
-}
-
-function findReservationForProduct(
-  productNetUid: string,
-  reservations: WizardProductReservation[],
-): WizardProductReservation | undefined {
-  return reservations.find((reservation) => reservation.ProductNetUid === productNetUid) ?? (reservations.length === 1 ? reservations[0] : undefined)
-}
-
-function getSellableQty(product: SalesUkraineProduct, isVatSale: boolean): number | undefined {
-  if (isVatSale) {
-    return getNumber(product.AvailableQtyUkVAT) ?? undefined
-  }
-
-  const uk = getNumber(product.AvailableQtyUk)
-  const reSale = getNumber(product.AvailableQtyUkReSale)
-
-  if (uk === null && reSale === null) {
-    return undefined
-  }
-
-  return (uk ?? 0) + (reSale ?? 0)
 }
 
 function getReservationPrice(reservation?: WizardProductReservation): number | undefined {
