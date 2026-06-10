@@ -2300,33 +2300,30 @@ function SeoShopClientList({
                       <span className="seo-shop-client-tile-avatar" aria-hidden>
                         <IconBasket size={21} />
                       </span>
-                      <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
+                      <div className="seo-shop-client-tile-heading">
+                        <Text className="seo-shop-client-tile-title">{clientName}</Text>
+                        <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
+                      </div>
                     </div>
 
-                    <Text className="seo-shop-client-tile-title">{clientName}</Text>
-
-                    {agreementName || agreementOrganizationName ? (
-                      <div className="seo-shop-client-tile-strip">
-                        {agreementName ? (
-                          <span className="seo-shop-client-tile-strip-part">
+                    <div className="seo-shop-client-tile-body">
+                      <div className="seo-shop-client-tile-details">
+                        <div className="seo-shop-client-tile-detail">
+                          <span className="seo-shop-client-tile-detail-label">
                             <IconFileText size={12} />
-                            <span>{agreementName}</span>
+                            <span>Договір</span>
                           </span>
-                        ) : null}
-                        {agreementName && agreementOrganizationName ? <span className="seo-shop-client-tile-strip-separator" aria-hidden /> : null}
-                        {agreementOrganizationName ? (
-                          <span className="seo-shop-client-tile-strip-part is-muted">
+                          <span className="seo-shop-client-tile-detail-value">{agreementName || 'Не вказано'}</span>
+                        </div>
+                        <div className="seo-shop-client-tile-detail">
+                          <span className="seo-shop-client-tile-detail-label">
                             <IconBuilding size={12} />
-                            <span>{agreementOrganizationName}</span>
+                            <span>Організація</span>
                           </span>
-                        ) : null}
+                          <span className="seo-shop-client-tile-detail-value">{agreementOrganizationName || 'Не вказано'}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="seo-shop-client-tile-strip is-empty">
-                        <IconFileText size={12} />
-                        <span>Договір не вказано</span>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                   <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
