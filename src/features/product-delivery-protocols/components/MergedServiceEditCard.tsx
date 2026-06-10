@@ -32,6 +32,7 @@ import type {
   SupplyOrganizationAgreement,
   SupplyPaymentTask,
 } from '../detailTypes'
+import { toMergedServiceDateTimeInput } from '../mergedServiceDateInput'
 import type { ProtocolUser } from '../types'
 import { responsibleName } from './protocolDetailHelpers'
 
@@ -72,6 +73,11 @@ type EditDraft = {
   taskUser: ProtocolUser | null
 }
 
+type DraftUpdate = <K extends keyof EditDraft>(key: K, value: EditDraft[K]) => void
+type UserDraftKey = 'accountingTaskUser' | 'supplyInformationTaskUser' | 'taskUser'
+type SelectOption = { label: string; value: string }
+type DeletedDocumentsSetter = (value: (current: Record<string, boolean>) => Record<string, boolean>) => void
+
 function toDraft(service: MergedService): EditDraft {
   const supplyInformationTask = service.SupplyInformationTask
   const supplyPaymentTask = service.SupplyPaymentTask
@@ -82,7 +88,7 @@ function toDraft(service: MergedService): EditDraft {
     accountingGrossPrice: service.AccountingGrossPrice ? String(service.AccountingGrossPrice) : '',
     accountingPercent: service.AccountingVatPercent ? String(service.AccountingVatPercent) : '',
     accountingTaskComment: accountingPaymentTask?.Comment || '',
-    accountingTaskPayToDate: toLocalDateInput(accountingPaymentTask?.PayToDate),
+    accountingTaskPayToDate: toMergedServiceDateTimeInput(accountingPaymentTask?.PayToDate),
     accountingTaskUser: accountingPaymentTask?.User || null,
     agreement: service.SupplyOrganizationAgreement || null,
     consumableProduct: service.ConsumableProduct || null,
@@ -90,7 +96,7 @@ function toDraft(service: MergedService): EditDraft {
     createInformationTask: Boolean(supplyInformationTask),
     createTask: false,
     exchangeRate: service.ExchangeRate ? String(service.ExchangeRate) : '',
-    fromDate: service.FromDate ? formatLocalDate(new Date(service.FromDate)) : '',
+    fromDate: service.FromDate ? toMergedServiceDateTimeInput(service.FromDate) : '',
     grossPrice: service.GrossPrice ? String(service.GrossPrice) : '',
     invoiceNumber: service.Number || '',
     isIncludeAccountingValue: Boolean(service.IsIncludeAccountingValue),
@@ -98,11 +104,11 @@ function toDraft(service: MergedService): EditDraft {
     percent: service.VatPercent ? String(service.VatPercent) : '',
     supplyInformationTaskComment: supplyInformationTask?.Comment || '',
     supplyInformationTaskGrossPrice: supplyInformationTask?.GrossPrice ? String(supplyInformationTask.GrossPrice) : '',
-    supplyInformationTaskPayToDate: toLocalDateInput(supplyInformationTask?.FromDate),
+    supplyInformationTaskPayToDate: toMergedServiceDateTimeInput(supplyInformationTask?.FromDate),
     supplyInformationTaskUser: supplyInformationTask?.User || null,
     supplyOrganization: service.SupplyOrganization || null,
     taskComment: supplyPaymentTask?.Comment || '',
-    taskPayToDate: toLocalDateInput(supplyPaymentTask?.PayToDate),
+    taskPayToDate: toMergedServiceDateTimeInput(supplyPaymentTask?.PayToDate),
     taskUser: supplyPaymentTask?.User || null,
   }
 }
@@ -132,12 +138,9 @@ export function MergedServiceEditCard({
   const [deletedAccountDocuments, setDeletedAccountDocuments] = useValueState<Record<string, boolean>>({})
   const [deletedTaskDocuments, setDeletedTaskDocuments] = useValueState<Record<string, boolean>>({})
   const [deletedAccountingTaskDocuments, setDeletedAccountingTaskDocuments] = useValueState<Record<string, boolean>>({})
-  const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
-  const [products, setProducts] = useValueState<ConsumableProduct[]>([])
-  const [users, setUsers] = useValueState<ProtocolUser[]>([])
-  const [loadError, setLoadError] = useValueState<string | null>(null)
   const [validationError, setValidationError] = useValueState<string | null>(null)
   const [prevOpened, setPrevOpened] = useValueState(opened)
+  const { loadError, organizations, products, users } = useMergedServiceLookups(opened, t)
 
   if (opened !== prevOpened) {
     setPrevOpened(opened)
@@ -157,42 +160,6 @@ export function MergedServiceEditCard({
       setValidationError(null)
     }
   }
-
-  useEffect(() => {
-    if (!opened) {
-      return
-    }
-
-    let cancelled = false
-
-    async function loadLookups() {
-      setLoadError(null)
-
-      try {
-        const [nextOrganizations, nextProducts, nextUsers] = await Promise.all([
-          getSupplyOrganizations(),
-          getSupplyServiceConsumableProducts(''),
-          getResponsibleUsers(),
-        ])
-
-        if (!cancelled) {
-          setOrganizations(nextOrganizations)
-          setProducts(nextProducts)
-          setUsers(nextUsers)
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setLoadError(error instanceof Error ? error.message : t('Не вдалося завантажити довідники'))
-        }
-      }
-    }
-
-    void loadLookups()
-
-    return () => {
-      cancelled = true
-    }
-  }, [opened, setLoadError, setOrganizations, setProducts, setUsers, t])
 
   const organizationOptions = useMemo(() => {
     const list = [...organizations]
@@ -314,133 +281,25 @@ export function MergedServiceEditCard({
       return
     }
 
-    if (!draft.supplyOrganization || !draft.agreement || !draft.consumableProduct || !draft.invoiceNumber) {
-      setValidationError(t('Заповніть обовʼязкові поля'))
+    const nextValidationError = getMergedServiceValidationError(draft, service, t)
 
-      return
-    }
-
-    if (!draft.grossPrice && !draft.accountingGrossPrice) {
-      setValidationError(t('Заповніть управлінські або бухгалтерські витрати'))
-
-      return
-    }
-
-    const grossPrice = Number(draft.grossPrice) || 0
-    const accountingGrossPrice = Number(draft.accountingGrossPrice) || 0
-
-    if (draft.createInformationTask && !draft.supplyInformationTaskUser) {
-      setValidationError(t('Вкажіть відповідального за оплату в межах країни'))
-
-      return
-    }
-
-    if ((service.SupplyPaymentTask || draft.createTask) && grossPrice > 0 && !draft.taskUser) {
-      setValidationError(t('Вкажіть відповідального за платіжну задачу'))
-
-      return
-    }
-
-    if ((service.AccountingPaymentTask || draft.createAccountingTask) && accountingGrossPrice > 0 && !draft.accountingTaskUser) {
-      setValidationError(t('Вкажіть відповідального за бухгалтерську платіжну задачу'))
-
-      return
-    }
-
-    if (!areDateInputsValid([
-      draft.fromDate,
-      draft.supplyInformationTaskPayToDate,
-      draft.taskPayToDate,
-      draft.accountingTaskPayToDate,
-    ])) {
-      setValidationError(t('Вкажіть коректну дату'))
-
+    if (nextValidationError) {
+      setValidationError(nextValidationError)
       return
     }
 
     setValidationError(null)
 
-    const updatedService: MergedService = {
-      ...service,
-      AccountingExchangeRate: draft.accountingExchangeRate ? Number(draft.accountingExchangeRate) : undefined,
-      AccountingGrossPrice: accountingGrossPrice,
-      AccountingVatPercent: Number(draft.accountingPercent) || 0,
-      ConsumableProduct: draft.consumableProduct,
-      ExchangeRate: draft.exchangeRate ? Number(draft.exchangeRate) : undefined,
-      FromDate: draft.fromDate ? formatLocalInputDateTime(draft.fromDate) : service.FromDate,
-      GrossPrice: grossPrice,
-      InvoiceDocuments: markDeletedDocuments(service.InvoiceDocuments || [], deletedInvoiceDocuments),
-      IsIncludeAccountingValue: draft.isIncludeAccountingValue,
-      Name: draft.name,
-      Number: draft.invoiceNumber,
-      SupplyServiceAccountDocument: markSingleDocumentDeleted(service.SupplyServiceAccountDocument, deletedAccountDocuments),
-      ActProvidingServiceDocument: markSingleDocumentDeleted(service.ActProvidingServiceDocument, deletedActDocuments),
-      SupplyOrganization: draft.supplyOrganization,
-      SupplyOrganizationAgreement: draft.agreement,
-      VatPercent: Number(draft.percent) || 0,
-    }
-
-    if (service.SupplyPaymentTask || draft.createTask) {
-      updatedService.SupplyPaymentTask = buildPaymentTask({
-        baseTask: service.SupplyPaymentTask,
-        comment: draft.taskComment,
-        deletedDocuments: deletedTaskDocuments,
-        documents: service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || [],
-        grossPrice,
-        payToDate: draft.taskPayToDate,
-        user: draft.taskUser,
-      })
-
-      if (grossPrice <= 0) {
-        updatedService.SupplyPaymentTask.Deleted = true
-      }
-    }
-
-    if (service.AccountingPaymentTask || draft.createAccountingTask) {
-      updatedService.AccountingPaymentTask = buildPaymentTask({
-        baseTask: service.AccountingPaymentTask,
-        comment: draft.accountingTaskComment,
-        deletedDocuments: deletedAccountingTaskDocuments,
-        documents: service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || [],
-        grossPrice: accountingGrossPrice,
-        payToDate: draft.accountingTaskPayToDate,
-        user: draft.accountingTaskUser,
-      })
-
-      if (accountingGrossPrice <= 0) {
-        updatedService.AccountingPaymentTask.Deleted = true
-      }
-    }
-
-    if (draft.createInformationTask) {
-      updatedService.SupplyInformationTask = buildInformationTask({
-        baseTask: service.SupplyInformationTask,
-        comment: draft.supplyInformationTaskComment,
-        fromDate: draft.supplyInformationTaskPayToDate,
-        grossPrice: Number(draft.supplyInformationTaskGrossPrice) || 0,
-        user: draft.supplyInformationTaskUser,
-      })
-    } else if (service.SupplyInformationTask) {
-      updatedService.SupplyInformationTask = { ...service.SupplyInformationTask, Deleted: true }
-    } else {
-      updatedService.SupplyInformationTask = undefined
-    }
-
-    if (updatedService.ActProvidingService) {
-      if (grossPrice <= 0) {
-        updatedService.ActProvidingService = { ...updatedService.ActProvidingService, Deleted: true }
-      }
-    } else if (grossPrice > 0) {
-      updatedService.ActProvidingService = createActProvidingService()
-    }
-
-    if (updatedService.AccountingActProvidingService) {
-      if (accountingGrossPrice <= 0 || !hasActiveActDocument(updatedService.ActProvidingServiceDocument, actDocuments)) {
-        updatedService.AccountingActProvidingService = { ...updatedService.AccountingActProvidingService, Deleted: true }
-      }
-    } else if (accountingGrossPrice > 0 && hasActiveActDocument(updatedService.ActProvidingServiceDocument, actDocuments)) {
-      updatedService.AccountingActProvidingService = createActProvidingService()
-    }
+    const updatedService = buildMergedServiceSavePayload({
+      actDocuments,
+      deletedAccountDocuments,
+      deletedAccountingTaskDocuments,
+      deletedActDocuments,
+      deletedInvoiceDocuments,
+      deletedTaskDocuments,
+      draft,
+      service,
+    })
 
     await onSave(updatedService, {
       accountDocuments,
@@ -463,262 +322,662 @@ export function MergedServiceEditCard({
       }}
     >
       <Stack gap="sm">
-        {loadError && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {loadError}
-          </Alert>
-        )}
-        {validationError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-            {validationError}
-          </Alert>
-        )}
+        <MergedServiceAlerts loadError={loadError} validationError={validationError} />
 
-        <Select
-          data={organizationOptions}
-          disabled={isSaving}
-          label={t('Постачальник послуг')}
-          searchable
-          value={draft.supplyOrganization?.NetUid || null}
-          onChange={selectOrganization}
-        />
-        <Select
-          data={agreementOptions}
-          disabled={isSaving}
-          label={t('Договір')}
-          searchable
-          value={draft.agreement?.NetUid || null}
-          onChange={selectAgreement}
-        />
-        <Select
-          data={productOptions}
-          disabled={isSaving}
-          label={t('Тип')}
-          searchable
-          value={draft.consumableProduct?.NetUid || null}
-          onChange={selectProduct}
-        />
-        <TextInput
-          disabled={isSaving}
-          label={t('Номер інвойса')}
-          value={draft.invoiceNumber}
-          onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
-        />
-        <TextInput
-          disabled={isSaving}
-          label={t('Назва')}
-          value={draft.name}
-          onChange={(event) => update('name', event.currentTarget.value)}
+        <MergedServicePrimaryFields
+          agreementOptions={agreementOptions}
+          draft={draft}
+          isSaving={isSaving}
+          organizationOptions={organizationOptions}
+          productOptions={productOptions}
+          userOptions={userOptions}
+          selectAgreement={selectAgreement}
+          selectOrganization={selectOrganization}
+          selectProduct={selectProduct}
+          selectUser={selectUser}
+          update={update}
         />
 
-        <Group grow>
-          <TextInput
-            disabled={isSaving}
-            label={t('Вартість Брутто')}
-            type="number"
-            value={draft.grossPrice}
-            onChange={(event) => update('grossPrice', event.currentTarget.value)}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('ПДВ %')}
-            type="number"
-            value={draft.percent}
-            onChange={(event) => update('percent', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            disabled={isSaving}
-            label={t('Вартість Брутто (Бух.)')}
-            type="number"
-            value={draft.accountingGrossPrice}
-            onChange={(event) => update('accountingGrossPrice', event.currentTarget.value)}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={`${t('ПДВ %')} (${t('Бух.')})`}
-            type="number"
-            value={draft.accountingPercent}
-            onChange={(event) => update('accountingPercent', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Group grow>
-          <TextInput
-            disabled={isSaving}
-            label={t('Курс валют')}
-            type="number"
-            value={draft.exchangeRate}
-            onChange={(event) => update('exchangeRate', event.currentTarget.value)}
-          />
-          <TextInput
-            disabled={isSaving}
-            label={t('Курс валют (Бух.)')}
-            type="number"
-            value={draft.accountingExchangeRate}
-            onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
-          />
-        </Group>
-
-        <Checkbox
-          checked={draft.isIncludeAccountingValue}
+        <MergedServiceDocumentSections
+          accountDocuments={accountDocuments}
+          actDocuments={actDocuments}
+          deletedAccountDocuments={deletedAccountDocuments}
+          deletedActDocuments={deletedActDocuments}
+          deletedInvoiceDocuments={deletedInvoiceDocuments}
           disabled={isSaving}
-          label={t('Включати бух. вартість у ціну брутто')}
-          onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
+          files={files}
+          service={service}
+          setAccountDocuments={setAccountDocuments}
+          setActDocuments={setActDocuments}
+          setDeletedAccountDocuments={setDeletedAccountDocuments}
+          setDeletedActDocuments={setDeletedActDocuments}
+          setDeletedInvoiceDocuments={setDeletedInvoiceDocuments}
+          setFiles={setFiles}
         />
-
-        <TextInput
-          disabled={isSaving}
-          label={t('Від якої дати')}
-          type="date"
-          value={draft.fromDate}
-          onChange={(event) => update('fromDate', event.currentTarget.value)}
-        />
-
-        <Checkbox
-          checked={draft.createInformationTask}
-          disabled={isSaving}
-          label={t('Доставка в межах країни')}
-          onChange={(event) => update('createInformationTask', event.currentTarget.checked)}
-        />
-
-        {draft.createInformationTask && (
-          <Stack gap="sm">
-            <NumberInput
-              disabled={isSaving}
-              label={t('Вартість доставки в межах країни')}
-              value={draft.supplyInformationTaskGrossPrice}
-              onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
-            />
-            <TextInput
-              disabled={isSaving}
-              label={t('Сплатити до')}
-              type="date"
-              value={draft.supplyInformationTaskPayToDate}
-              onChange={(event) => update('supplyInformationTaskPayToDate', event.currentTarget.value)}
-            />
-            <Select
-              data={userOptions}
-              disabled={isSaving}
-              label={t('Відповідальний за оплату в межах країни')}
-              searchable
-              value={draft.supplyInformationTaskUser?.NetUid || null}
-              onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
-            />
-            <Textarea
-              disabled={isSaving}
-              label={t('Коментар')}
-              value={draft.supplyInformationTaskComment}
-              onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
-            />
-          </Stack>
-        )}
-
-        <DocumentToggleList
-          disabled={isSaving}
-          deletedDocuments={deletedAccountDocuments}
-          documents={service.SupplyServiceAccountDocument ? [service.SupplyServiceAccountDocument] : []}
-          label={t('Рахунок')}
-          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountDocuments)}
-        />
-        <FileInput
-          clearable
-          disabled={isSaving}
-          label={t('Рахунок')}
-          multiple
-          value={accountDocuments}
-          onChange={setAccountDocuments}
-        />
-        <DocumentToggleList
-          disabled={isSaving}
-          deletedDocuments={deletedActDocuments}
-          documents={service.ActProvidingServiceDocument ? [service.ActProvidingServiceDocument] : []}
-          label={t('Акт надання послуг')}
-          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedActDocuments)}
-        />
-        <FileInput
-          clearable
-          disabled={isSaving}
-          label={t('Акт надання послуг')}
-          multiple
-          value={actDocuments}
-          onChange={setActDocuments}
-        />
-        <DocumentToggleList
-          disabled={isSaving}
-          deletedDocuments={deletedInvoiceDocuments}
-          documents={service.InvoiceDocuments || []}
-          label={t('Документи інвойса')}
-          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedInvoiceDocuments)}
-        />
-        <FileInput clearable disabled={isSaving} label={t('Інші файли')} multiple value={files} onChange={setFiles} />
 
         <Divider />
 
-        {!service.SupplyPaymentTask && (
-          <Checkbox
-            checked={draft.createTask}
-            disabled={isSaving}
-            label={t('Створити платіжну задачу')}
-            onChange={(event) => update('createTask', event.currentTarget.checked)}
-          />
-        )}
-        <TaskDocumentsEditor
-          comment={draft.taskComment}
-          disabled={isSaving}
-          deletedDocuments={deletedTaskDocuments}
-          documents={service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || []}
-          files={taskDocuments}
-          hasTask={Boolean(service.SupplyPaymentTask || draft.createTask)}
-          label={t('Документи платіжної задачі')}
-          taskDate={draft.taskPayToDate}
-          taskUserValue={draft.taskUser?.NetUid || null}
+        <MergedServiceTaskSections
+          accountingTaskDocuments={accountingTaskDocuments}
+          deletedAccountingTaskDocuments={deletedAccountingTaskDocuments}
+          deletedTaskDocuments={deletedTaskDocuments}
+          draft={draft}
+          isSaving={isSaving}
+          service={service}
+          taskDocuments={taskDocuments}
           userOptions={userOptions}
-          onChangeComment={(value) => update('taskComment', value)}
-          onChangeFiles={setTaskDocuments}
-          onChangeTaskDate={(value) => update('taskPayToDate', value)}
-          onChangeTaskUser={(netUid) => selectUser('taskUser', netUid)}
-          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedTaskDocuments)}
+          selectUser={selectUser}
+          setAccountingTaskDocuments={setAccountingTaskDocuments}
+          setDeletedAccountingTaskDocuments={setDeletedAccountingTaskDocuments}
+          setDeletedTaskDocuments={setDeletedTaskDocuments}
+          setTaskDocuments={setTaskDocuments}
+          update={update}
         />
 
-        {!service.AccountingPaymentTask && (
-          <Checkbox
-            checked={draft.createAccountingTask}
-            disabled={isSaving}
-            label={`${t('Створити платіжну задачу')} (${t('Бух.')})`}
-            onChange={(event) => update('createAccountingTask', event.currentTarget.checked)}
-          />
-        )}
-        <TaskDocumentsEditor
-          comment={draft.accountingTaskComment}
-          disabled={isSaving}
-          deletedDocuments={deletedAccountingTaskDocuments}
-          documents={service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || []}
-          files={accountingTaskDocuments}
-          hasTask={Boolean(service.AccountingPaymentTask || draft.createAccountingTask)}
-          label={`${t('Документи платіжної задачі')} (${t('Бух.')})`}
-          taskDate={draft.accountingTaskPayToDate}
-          taskUserValue={draft.accountingTaskUser?.NetUid || null}
-          userOptions={userOptions}
-          onChangeComment={(value) => update('accountingTaskComment', value)}
-          onChangeFiles={setAccountingTaskDocuments}
-          onChangeTaskDate={(value) => update('accountingTaskPayToDate', value)}
-          onChangeTaskUser={(netUid) => selectUser('accountingTaskUser', netUid)}
-          onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountingTaskDocuments)}
-        />
-
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSave}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
+        <MergedServiceFormActions isSaving={isSaving} onCancel={onClose} onSave={handleSave} />
       </Stack>
     </AppDrawer>
+  )
+}
+
+function useMergedServiceLookups(opened: boolean, t: (value: string) => string) {
+  const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
+  const [products, setProducts] = useValueState<ConsumableProduct[]>([])
+  const [users, setUsers] = useValueState<ProtocolUser[]>([])
+  const [loadError, setLoadError] = useValueState<string | null>(null)
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadLookups() {
+      setLoadError(null)
+
+      try {
+        const [nextOrganizations, nextProducts, nextUsers] = await Promise.all([
+          getSupplyOrganizations(),
+          getSupplyServiceConsumableProducts(''),
+          getResponsibleUsers(),
+        ])
+
+        if (!cancelled) {
+          setOrganizations(nextOrganizations)
+          setProducts(nextProducts)
+          setUsers(nextUsers)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(error instanceof Error ? error.message : t('Не вдалося завантажити довідники'))
+        }
+      }
+    }
+
+    void loadLookups()
+
+    return () => {
+      cancelled = true
+    }
+  }, [opened, setLoadError, setOrganizations, setProducts, setUsers, t])
+
+  return { loadError, organizations, products, users }
+}
+
+function MergedServiceAlerts({
+  loadError,
+  validationError,
+}: {
+  loadError: string | null
+  validationError: string | null
+}) {
+  return (
+    <>
+      {loadError && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {loadError}
+        </Alert>
+      )}
+      {validationError && (
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {validationError}
+        </Alert>
+      )}
+    </>
+  )
+}
+
+function MergedServiceDocumentSections({
+  accountDocuments,
+  actDocuments,
+  deletedAccountDocuments,
+  deletedActDocuments,
+  deletedInvoiceDocuments,
+  disabled,
+  files,
+  service,
+  setAccountDocuments,
+  setActDocuments,
+  setDeletedAccountDocuments,
+  setDeletedActDocuments,
+  setDeletedInvoiceDocuments,
+  setFiles,
+}: {
+  accountDocuments: File[]
+  actDocuments: File[]
+  deletedAccountDocuments: Record<string, boolean>
+  deletedActDocuments: Record<string, boolean>
+  deletedInvoiceDocuments: Record<string, boolean>
+  disabled?: boolean
+  files: File[]
+  service: MergedService
+  setAccountDocuments: (files: File[]) => void
+  setActDocuments: (files: File[]) => void
+  setDeletedAccountDocuments: DeletedDocumentsSetter
+  setDeletedActDocuments: DeletedDocumentsSetter
+  setDeletedInvoiceDocuments: DeletedDocumentsSetter
+  setFiles: (files: File[]) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      <DocumentFileSection
+        deletedDocuments={deletedAccountDocuments}
+        disabled={disabled}
+        documents={service.SupplyServiceAccountDocument ? [service.SupplyServiceAccountDocument] : []}
+        files={accountDocuments}
+        label={t('Рахунок')}
+        onChangeFiles={setAccountDocuments}
+        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountDocuments)}
+      />
+      <DocumentFileSection
+        deletedDocuments={deletedActDocuments}
+        disabled={disabled}
+        documents={service.ActProvidingServiceDocument ? [service.ActProvidingServiceDocument] : []}
+        files={actDocuments}
+        label={t('Акт надання послуг')}
+        onChangeFiles={setActDocuments}
+        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedActDocuments)}
+      />
+      <DocumentFileSection
+        deletedDocuments={deletedInvoiceDocuments}
+        disabled={disabled}
+        documents={service.InvoiceDocuments || []}
+        files={files}
+        label={t('Документи інвойса')}
+        uploadLabel={t('Інші файли')}
+        onChangeFiles={setFiles}
+        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedInvoiceDocuments)}
+      />
+    </>
+  )
+}
+
+function MergedServiceTaskSections({
+  accountingTaskDocuments,
+  deletedAccountingTaskDocuments,
+  deletedTaskDocuments,
+  draft,
+  isSaving,
+  service,
+  taskDocuments,
+  userOptions,
+  selectUser,
+  setAccountingTaskDocuments,
+  setDeletedAccountingTaskDocuments,
+  setDeletedTaskDocuments,
+  setTaskDocuments,
+  update,
+}: {
+  accountingTaskDocuments: File[]
+  deletedAccountingTaskDocuments: Record<string, boolean>
+  deletedTaskDocuments: Record<string, boolean>
+  draft: EditDraft
+  isSaving: boolean
+  service: MergedService
+  selectUser: (key: UserDraftKey, netUid: string | null) => void
+  setAccountingTaskDocuments: (files: File[]) => void
+  setDeletedAccountingTaskDocuments: DeletedDocumentsSetter
+  setDeletedTaskDocuments: DeletedDocumentsSetter
+  setTaskDocuments: (files: File[]) => void
+  taskDocuments: File[]
+  update: DraftUpdate
+  userOptions: SelectOption[]
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      {!service.SupplyPaymentTask && (
+        <Checkbox
+          checked={draft.createTask}
+          disabled={isSaving}
+          label={t('Створити платіжну задачу')}
+          onChange={(event) => update('createTask', event.currentTarget.checked)}
+        />
+      )}
+      <TaskDocumentsEditor
+        comment={draft.taskComment}
+        disabled={isSaving}
+        deletedDocuments={deletedTaskDocuments}
+        documents={service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || []}
+        files={taskDocuments}
+        hasTask={Boolean(service.SupplyPaymentTask || draft.createTask)}
+        label={t('Документи платіжної задачі')}
+        taskDate={draft.taskPayToDate}
+        taskUserValue={draft.taskUser?.NetUid || null}
+        userOptions={userOptions}
+        onChangeComment={(value) => update('taskComment', value)}
+        onChangeFiles={setTaskDocuments}
+        onChangeTaskDate={(value) => update('taskPayToDate', value)}
+        onChangeTaskUser={(netUid) => selectUser('taskUser', netUid)}
+        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedTaskDocuments)}
+      />
+
+      {!service.AccountingPaymentTask && (
+        <Checkbox
+          checked={draft.createAccountingTask}
+          disabled={isSaving}
+          label={`${t('Створити платіжну задачу')} (${t('Бух.')})`}
+          onChange={(event) => update('createAccountingTask', event.currentTarget.checked)}
+        />
+      )}
+      <TaskDocumentsEditor
+        comment={draft.accountingTaskComment}
+        disabled={isSaving}
+        deletedDocuments={deletedAccountingTaskDocuments}
+        documents={service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || []}
+        files={accountingTaskDocuments}
+        hasTask={Boolean(service.AccountingPaymentTask || draft.createAccountingTask)}
+        label={`${t('Документи платіжної задачі')} (${t('Бух.')})`}
+        taskDate={draft.accountingTaskPayToDate}
+        taskUserValue={draft.accountingTaskUser?.NetUid || null}
+        userOptions={userOptions}
+        onChangeComment={(value) => update('accountingTaskComment', value)}
+        onChangeFiles={setAccountingTaskDocuments}
+        onChangeTaskDate={(value) => update('accountingTaskPayToDate', value)}
+        onChangeTaskUser={(netUid) => selectUser('accountingTaskUser', netUid)}
+        onToggleDeleted={(document, index) => toggleDeletedDocument(document, index, setDeletedAccountingTaskDocuments)}
+      />
+    </>
+  )
+}
+
+function getMergedServiceValidationError(
+  draft: EditDraft,
+  service: MergedService,
+  t: (value: string) => string,
+): string | null {
+  if (!draft.supplyOrganization || !draft.agreement || !draft.consumableProduct || !draft.invoiceNumber) {
+    return t('Заповніть обовʼязкові поля')
+  }
+
+  if (!draft.grossPrice && !draft.accountingGrossPrice) {
+    return t('Заповніть управлінські або бухгалтерські витрати')
+  }
+
+  const grossPrice = Number(draft.grossPrice) || 0
+  const accountingGrossPrice = Number(draft.accountingGrossPrice) || 0
+
+  if (draft.createInformationTask && !draft.supplyInformationTaskUser) {
+    return t('Вкажіть відповідального за оплату в межах країни')
+  }
+
+  if ((service.SupplyPaymentTask || draft.createTask) && grossPrice > 0 && !draft.taskUser) {
+    return t('Вкажіть відповідального за платіжну задачу')
+  }
+
+  if ((service.AccountingPaymentTask || draft.createAccountingTask) && accountingGrossPrice > 0 && !draft.accountingTaskUser) {
+    return t('Вкажіть відповідального за бухгалтерську платіжну задачу')
+  }
+
+  if (!areDateInputsValid([
+    draft.fromDate,
+    draft.supplyInformationTaskPayToDate,
+    draft.taskPayToDate,
+    draft.accountingTaskPayToDate,
+  ])) {
+    return t('Вкажіть коректну дату')
+  }
+
+  return null
+}
+
+function buildMergedServiceSavePayload({
+  actDocuments,
+  deletedAccountDocuments,
+  deletedAccountingTaskDocuments,
+  deletedActDocuments,
+  deletedInvoiceDocuments,
+  deletedTaskDocuments,
+  draft,
+  service,
+}: {
+  actDocuments: File[]
+  deletedAccountDocuments: Record<string, boolean>
+  deletedAccountingTaskDocuments: Record<string, boolean>
+  deletedActDocuments: Record<string, boolean>
+  deletedInvoiceDocuments: Record<string, boolean>
+  deletedTaskDocuments: Record<string, boolean>
+  draft: EditDraft
+  service: MergedService
+}): MergedService {
+  const grossPrice = Number(draft.grossPrice) || 0
+  const accountingGrossPrice = Number(draft.accountingGrossPrice) || 0
+  const updatedService: MergedService = {
+    ...service,
+    AccountingExchangeRate: draft.accountingExchangeRate ? Number(draft.accountingExchangeRate) : undefined,
+    AccountingGrossPrice: accountingGrossPrice,
+    AccountingVatPercent: Number(draft.accountingPercent) || 0,
+    ActProvidingServiceDocument: markSingleDocumentDeleted(service.ActProvidingServiceDocument, deletedActDocuments),
+    ConsumableProduct: draft.consumableProduct,
+    ExchangeRate: draft.exchangeRate ? Number(draft.exchangeRate) : undefined,
+    FromDate: draft.fromDate ? formatLocalInputDateTime(draft.fromDate) : service.FromDate,
+    GrossPrice: grossPrice,
+    InvoiceDocuments: markDeletedDocuments(service.InvoiceDocuments || [], deletedInvoiceDocuments),
+    IsIncludeAccountingValue: draft.isIncludeAccountingValue,
+    Name: draft.name,
+    Number: draft.invoiceNumber,
+    SupplyOrganization: draft.supplyOrganization,
+    SupplyOrganizationAgreement: draft.agreement,
+    SupplyServiceAccountDocument: markSingleDocumentDeleted(service.SupplyServiceAccountDocument, deletedAccountDocuments),
+    VatPercent: Number(draft.percent) || 0,
+  }
+
+  if (service.SupplyPaymentTask || draft.createTask) {
+    updatedService.SupplyPaymentTask = buildPaymentTask({
+      baseTask: service.SupplyPaymentTask,
+      comment: draft.taskComment,
+      deletedDocuments: deletedTaskDocuments,
+      documents: service.SupplyPaymentTask?.SupplyPaymentTaskDocuments || [],
+      grossPrice,
+      payToDate: draft.taskPayToDate,
+      user: draft.taskUser,
+    })
+
+    if (grossPrice <= 0) {
+      updatedService.SupplyPaymentTask.Deleted = true
+    }
+  }
+
+  if (service.AccountingPaymentTask || draft.createAccountingTask) {
+    updatedService.AccountingPaymentTask = buildPaymentTask({
+      baseTask: service.AccountingPaymentTask,
+      comment: draft.accountingTaskComment,
+      deletedDocuments: deletedAccountingTaskDocuments,
+      documents: service.AccountingPaymentTask?.SupplyPaymentTaskDocuments || [],
+      grossPrice: accountingGrossPrice,
+      payToDate: draft.accountingTaskPayToDate,
+      user: draft.accountingTaskUser,
+    })
+
+    if (accountingGrossPrice <= 0) {
+      updatedService.AccountingPaymentTask.Deleted = true
+    }
+  }
+
+  if (draft.createInformationTask) {
+    updatedService.SupplyInformationTask = buildInformationTask({
+      baseTask: service.SupplyInformationTask,
+      comment: draft.supplyInformationTaskComment,
+      fromDate: draft.supplyInformationTaskPayToDate,
+      grossPrice: Number(draft.supplyInformationTaskGrossPrice) || 0,
+      user: draft.supplyInformationTaskUser,
+    })
+  } else if (service.SupplyInformationTask) {
+    updatedService.SupplyInformationTask = { ...service.SupplyInformationTask, Deleted: true }
+  } else {
+    updatedService.SupplyInformationTask = undefined
+  }
+
+  if (updatedService.ActProvidingService) {
+    if (grossPrice <= 0) {
+      updatedService.ActProvidingService = { ...updatedService.ActProvidingService, Deleted: true }
+    }
+  } else if (grossPrice > 0) {
+    updatedService.ActProvidingService = createActProvidingService()
+  }
+
+  if (updatedService.AccountingActProvidingService) {
+    if (accountingGrossPrice <= 0 || !hasActiveActDocument(updatedService.ActProvidingServiceDocument, actDocuments)) {
+      updatedService.AccountingActProvidingService = { ...updatedService.AccountingActProvidingService, Deleted: true }
+    }
+  } else if (accountingGrossPrice > 0 && hasActiveActDocument(updatedService.ActProvidingServiceDocument, actDocuments)) {
+    updatedService.AccountingActProvidingService = createActProvidingService()
+  }
+
+  return updatedService
+}
+
+function MergedServicePrimaryFields({
+  agreementOptions,
+  draft,
+  isSaving,
+  organizationOptions,
+  productOptions,
+  userOptions,
+  selectAgreement,
+  selectOrganization,
+  selectProduct,
+  selectUser,
+  update,
+}: {
+  agreementOptions: SelectOption[]
+  draft: EditDraft
+  isSaving: boolean
+  organizationOptions: SelectOption[]
+  productOptions: SelectOption[]
+  selectAgreement: (netUid: string | null) => void
+  selectOrganization: (netUid: string | null) => void
+  selectProduct: (netUid: string | null) => void
+  selectUser: (key: UserDraftKey, netUid: string | null) => void
+  update: DraftUpdate
+  userOptions: SelectOption[]
+}) {
+  const { t } = useI18n()
+
+  return (
+    <>
+      <Select
+        data={organizationOptions}
+        disabled={isSaving}
+        label={t('Постачальник послуг')}
+        searchable
+        value={draft.supplyOrganization?.NetUid || null}
+        onChange={selectOrganization}
+      />
+      <Select
+        data={agreementOptions}
+        disabled={isSaving}
+        label={t('Договір')}
+        searchable
+        value={draft.agreement?.NetUid || null}
+        onChange={selectAgreement}
+      />
+      <Select
+        data={productOptions}
+        disabled={isSaving}
+        label={t('Тип')}
+        searchable
+        value={draft.consumableProduct?.NetUid || null}
+        onChange={selectProduct}
+      />
+      <TextInput
+        disabled={isSaving}
+        label={t('Номер інвойса')}
+        value={draft.invoiceNumber}
+        onChange={(event) => update('invoiceNumber', event.currentTarget.value)}
+      />
+      <TextInput
+        disabled={isSaving}
+        label={t('Назва')}
+        value={draft.name}
+        onChange={(event) => update('name', event.currentTarget.value)}
+      />
+
+      <Group grow>
+        <TextInput
+          disabled={isSaving}
+          label={t('Вартість Брутто')}
+          type="number"
+          value={draft.grossPrice}
+          onChange={(event) => update('grossPrice', event.currentTarget.value)}
+        />
+        <TextInput
+          disabled={isSaving}
+          label={t('ПДВ %')}
+          type="number"
+          value={draft.percent}
+          onChange={(event) => update('percent', event.currentTarget.value)}
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          disabled={isSaving}
+          label={t('Вартість Брутто (Бух.)')}
+          type="number"
+          value={draft.accountingGrossPrice}
+          onChange={(event) => update('accountingGrossPrice', event.currentTarget.value)}
+        />
+        <TextInput
+          disabled={isSaving}
+          label={`${t('ПДВ %')} (${t('Бух.')})`}
+          type="number"
+          value={draft.accountingPercent}
+          onChange={(event) => update('accountingPercent', event.currentTarget.value)}
+        />
+      </Group>
+
+      <Group grow>
+        <TextInput
+          disabled={isSaving}
+          label={t('Курс валют')}
+          type="number"
+          value={draft.exchangeRate}
+          onChange={(event) => update('exchangeRate', event.currentTarget.value)}
+        />
+        <TextInput
+          disabled={isSaving}
+          label={t('Курс валют (Бух.)')}
+          type="number"
+          value={draft.accountingExchangeRate}
+          onChange={(event) => update('accountingExchangeRate', event.currentTarget.value)}
+        />
+      </Group>
+
+      <Checkbox
+        checked={draft.isIncludeAccountingValue}
+        disabled={isSaving}
+        label={t('Включати бух. вартість у ціну брутто')}
+        onChange={(event) => update('isIncludeAccountingValue', event.currentTarget.checked)}
+      />
+
+      <TextInput
+        disabled={isSaving}
+        label={t('Від якої дати')}
+        type="datetime-local"
+        value={draft.fromDate}
+        onChange={(event) => update('fromDate', event.currentTarget.value)}
+      />
+
+      <Checkbox
+        checked={draft.createInformationTask}
+        disabled={isSaving}
+        label={t('Доставка в межах країни')}
+        onChange={(event) => update('createInformationTask', event.currentTarget.checked)}
+      />
+
+      {draft.createInformationTask && (
+        <Stack gap="sm">
+          <NumberInput
+            disabled={isSaving}
+            label={t('Вартість доставки в межах країни')}
+            value={draft.supplyInformationTaskGrossPrice}
+            onChange={(value) => update('supplyInformationTaskGrossPrice', String(value))}
+          />
+          <TextInput
+            disabled={isSaving}
+            label={t('Сплатити до')}
+            type="datetime-local"
+            value={draft.supplyInformationTaskPayToDate}
+            onChange={(event) => update('supplyInformationTaskPayToDate', event.currentTarget.value)}
+          />
+          <Select
+            data={userOptions}
+            disabled={isSaving}
+            label={t('Відповідальний за оплату в межах країни')}
+            searchable
+            value={draft.supplyInformationTaskUser?.NetUid || null}
+            onChange={(netUid) => selectUser('supplyInformationTaskUser', netUid)}
+          />
+          <Textarea
+            disabled={isSaving}
+            label={t('Коментар')}
+            value={draft.supplyInformationTaskComment}
+            onChange={(event) => update('supplyInformationTaskComment', event.currentTarget.value)}
+          />
+        </Stack>
+      )}
+    </>
+  )
+}
+
+function MergedServiceFormActions({
+  isSaving,
+  onCancel,
+  onSave,
+}: {
+  isSaving: boolean
+  onCancel: () => void
+  onSave: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group justify="flex-end" gap="sm">
+      <Button color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
+        {t('Скасувати')}
+      </Button>
+      <Button color="violet" disabled={isSaving} loading={isSaving} onClick={onSave}>
+        {t('Зберегти')}
+      </Button>
+    </Group>
+  )
+}
+
+function DocumentFileSection({
+  deletedDocuments,
+  disabled,
+  documents,
+  files,
+  label,
+  uploadLabel = label,
+  onChangeFiles,
+  onToggleDeleted,
+}: {
+  deletedDocuments: Record<string, boolean>
+  disabled?: boolean
+  documents: SupplyDocument[]
+  files: File[]
+  label: string
+  onChangeFiles: (files: File[]) => void
+  onToggleDeleted: (document: SupplyDocument, index: number) => void
+  uploadLabel?: string
+}) {
+  return (
+    <>
+      <DocumentToggleList
+        disabled={disabled}
+        deletedDocuments={deletedDocuments}
+        documents={documents}
+        label={label}
+        onToggleDeleted={onToggleDeleted}
+      />
+      <FileInput clearable disabled={disabled} label={uploadLabel} multiple value={files} onChange={onChangeFiles} />
+    </>
   )
 }
 
@@ -770,7 +1029,7 @@ function TaskDocumentsEditor({
         <TextInput
           disabled={disabled}
           label={t('Сплатити до')}
-          type="date"
+          type="datetime-local"
           value={taskDate}
           onChange={(event) => onChangeTaskDate(event.currentTarget.value)}
         />
@@ -988,28 +1247,20 @@ function hasActiveActDocument(document: SupplyDocument | null | undefined, newDo
   return Boolean(newDocuments.length > 0 || (document && !document.Deleted))
 }
 
-function toLocalDateInput(value?: Date | string): string {
-  if (!value) {
-    return formatLocalDate(new Date())
-  }
-
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? formatLocalDate(new Date()) : formatLocalDate(date)
-}
-
 function areDateInputsValid(values: string[]): boolean {
   return values.every((value) => !value || isValidDateInputValue(value))
 }
 
 function isValidDateInputValue(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  const datePart = value.split('T')[0]
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
     return false
   }
 
-  const date = new Date(`${value}T00:00:00`)
+  const date = new Date(value.includes('T') ? value : `${value}T00:00:00`)
 
-  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+  return !Number.isNaN(date.getTime()) && formatLocalDate(date) === datePart
 }
 
 function mergeUsers(users: ProtocolUser[], extraUsers: Array<ProtocolUser | null | undefined>): ProtocolUser[] {
