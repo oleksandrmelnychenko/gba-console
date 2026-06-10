@@ -20,11 +20,11 @@ export type SeoPage = EntityFields & {
 
 export type SeoContact = EntityFields & {
   Email?: string
-  Icq?: string
+  FirstName?: string
   ImgUrl?: string
-  Name?: string
+  LastName?: string
+  MiddleName?: string
   Phone?: string
-  Skype?: string
 }
 
 export type SeoContactInfo = EntityFields & {
@@ -66,11 +66,11 @@ export type SeoPageRow = {
 
 export type SeoContactFormValues = {
   Email: string
+  FirstName: string
   ImgUrl: string
-  Icq: string
-  Name: string
+  LastName: string
+  MiddleName: string
   Phone: string
-  Skype: string
 }
 
 export type SeoContactInfoFormValues = {

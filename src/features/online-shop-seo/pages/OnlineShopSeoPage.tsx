@@ -91,6 +91,7 @@ import {
   getAllPageRows,
   getLocaleLabel,
   getPageTitle,
+  getSeoContactDisplayName,
   getUniqueContacts,
   hasPaymentRecord,
   pageToFormValues,
@@ -379,17 +380,21 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         header: 'Контакт',
         width: 260,
         minWidth: 220,
-        accessor: (contact) => contact.Name,
-        cell: (contact) => (
-          <SeoTablePrimaryCell
-            avatar={(
-              <Avatar className="seo-table-avatar" name={contact.Name || undefined} radius="xl" src={contact.ImgUrl || undefined}>
-                {getContactInitials(contact)}
-              </Avatar>
-            )}
-            title={displayValue(contact.Name)}
-          />
-        ),
+        accessor: getSeoContactDisplayName,
+        cell: (contact) => {
+          const contactName = getSeoContactDisplayName(contact)
+
+          return (
+            <SeoTablePrimaryCell
+              avatar={(
+                <Avatar className="seo-table-avatar" name={contactName || undefined} radius="xl" src={contact.ImgUrl || undefined}>
+                  {getContactInitials(contact)}
+                </Avatar>
+              )}
+              title={displayValue(contactName)}
+            />
+          )
+        },
       },
       {
         id: 'phone',
@@ -406,22 +411,6 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         minWidth: 190,
         accessor: (contact) => contact.Email,
         cell: (contact) => <SeoTableMutedCell>{displayValue(contact.Email)}</SeoTableMutedCell>,
-      },
-      {
-        id: 'skype',
-        header: 'Skype',
-        width: 160,
-        minWidth: 130,
-        accessor: (contact) => contact.Skype,
-        cell: (contact) => <SeoTableTag>{displayValue(contact.Skype)}</SeoTableTag>,
-      },
-      {
-        id: 'icq',
-        header: 'ICQ',
-        width: 140,
-        minWidth: 110,
-        accessor: (contact) => contact.Icq,
-        cell: (contact) => <SeoTableTag>{displayValue(contact.Icq)}</SeoTableTag>,
       },
       {
         id: 'updated',
@@ -1867,14 +1856,29 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 {formError}
               </Alert>
             )}
-            <TextInput
-              label={t('Імʼя')}
-              value={contactFormValues.Name}
-              onChange={(event) => setContactField('Name', event.currentTarget.value)}
-            />
+            <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="sm">
+              <TextInput
+                label={t('Прізвище')}
+                maxLength={80}
+                value={contactFormValues.LastName}
+                onChange={(event) => setContactField('LastName', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('Імʼя')}
+                maxLength={80}
+                value={contactFormValues.FirstName}
+                onChange={(event) => setContactField('FirstName', event.currentTarget.value)}
+              />
+              <TextInput
+                label={t('По батькові')}
+                maxLength={80}
+                value={contactFormValues.MiddleName}
+                onChange={(event) => setContactField('MiddleName', event.currentTarget.value)}
+              />
+            </SimpleGrid>
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <Avatar color="violet" name={contactFormValues.Name || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
-                {getContactInitials({ Name: contactFormValues.Name })}
+              <Avatar color="violet" name={getSeoContactDisplayName(contactFormValues) || undefined} radius="md" size={72} src={contactFormValues.ImgUrl || undefined}>
+                {getContactInitials(contactFormValues)}
               </Avatar>
               <FileInput
                 accept="image/*"
@@ -1890,23 +1894,15 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
               <TextInput
                 label={t('Телефон')}
+                maxLength={30}
                 value={contactFormValues.Phone}
                 onChange={(event) => setContactField('Phone', event.currentTarget.value)}
               />
               <TextInput
                 label="E-mail"
+                maxLength={150}
                 value={contactFormValues.Email}
                 onChange={(event) => setContactField('Email', event.currentTarget.value)}
-              />
-              <TextInput
-                label="Skype"
-                value={contactFormValues.Skype}
-                onChange={(event) => setContactField('Skype', event.currentTarget.value)}
-              />
-              <TextInput
-                label="ICQ"
-                value={contactFormValues.Icq}
-                onChange={(event) => setContactField('Icq', event.currentTarget.value)}
               />
             </SimpleGrid>
             <Group justify="flex-end" gap="sm">
@@ -1935,7 +1931,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
       >
         <Stack gap="md">
           <Text>
-            {t('Видалити контакт')} <Text span fw={600}>{displayValue(removeContactTarget?.Name)}</Text>?
+            {t('Видалити контакт')} <Text span fw={600}>{displayValue(getSeoContactDisplayName(removeContactTarget))}</Text>?
           </Text>
           <Group justify="flex-end" gap="sm">
             <Button color="gray" disabled={isSaving} variant="light" onClick={() => setRemoveContactTarget(null)}>
@@ -2394,7 +2390,7 @@ function filterContacts(contacts: SeoContact[], searchValue: string) {
   }
 
   return contacts.filter((contact) =>
-    [contact.Name, contact.Phone, contact.Email, contact.Skype, contact.Icq, contact.NetUid]
+    [getSeoContactDisplayName(contact), contact.FirstName, contact.LastName, contact.MiddleName, contact.Phone, contact.Email, contact.NetUid]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
   )
@@ -2415,7 +2411,7 @@ function shortText(value: string | undefined, maxLength: number) {
 }
 
 function getContactInitials(contact: SeoContact) {
-  const name = contact.Name?.trim()
+  const name = getSeoContactDisplayName(contact)
 
   if (!name) {
     return '?'

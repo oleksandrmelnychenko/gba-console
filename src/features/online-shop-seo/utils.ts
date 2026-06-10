@@ -110,12 +110,24 @@ export function paymentToFormValues(payment?: SeoRetailPaymentInfo | null): SeoP
 export function contactToFormValues(contact?: SeoContact | null): SeoContactFormValues {
   return {
     Email: contact?.Email || '',
+    FirstName: contact?.FirstName || '',
     ImgUrl: contact?.ImgUrl || '',
-    Icq: contact?.Icq || '',
-    Name: contact?.Name || '',
+    LastName: contact?.LastName || '',
+    MiddleName: contact?.MiddleName || '',
     Phone: contact?.Phone || '',
-    Skype: contact?.Skype || '',
   }
+}
+
+export function getSeoContactDisplayName(contact?: Partial<SeoContactFormValues | SeoContact> | null) {
+  const legacyName = typeof (contact as { Name?: unknown } | null)?.Name === 'string'
+    ? ((contact as { Name?: string }).Name || '').trim()
+    : ''
+  const fullName = [contact?.LastName, contact?.FirstName, contact?.MiddleName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  return fullName || legacyName
 }
 
 export function validatePage(values: SeoPageFormValues) {
@@ -127,8 +139,8 @@ export function validatePage(values: SeoPageFormValues) {
 }
 
 export function validateContact(values: SeoContactFormValues) {
-  if (!values.Name.trim()) {
-    return translate('Вкажіть імʼя контакту')
+  if (!getSeoContactDisplayName(values)) {
+    return translate('Вкажіть ПІБ контакту')
   }
 
   if (!values.Phone.trim()) {
