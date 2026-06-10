@@ -21,6 +21,8 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconBasket,
+  IconBuilding,
   IconBuildingWarehouse,
   IconCheck,
   IconCreditCard,
@@ -105,6 +107,7 @@ import './online-shop-seo-page.css'
 type SeoTab = 'pages' | 'info-payment' | 'contacts' | 'shop-clients' | 'bank-cards' | 'warehouses' | 'shop-data'
 type SeoShopDataSearchField =
   | 'account'
+  | 'agreement'
   | 'all'
   | 'bank'
   | 'currency'
@@ -152,6 +155,7 @@ const SEO_SHOP_DATA_SEARCH_OPTIONS: Array<{ value: SeoShopDataSearchField; label
   { value: 'phone', label: 'Телефон' },
   { value: 'email', label: 'E-mail' },
   { value: 'number', label: 'Номер' },
+  { value: 'agreement', label: 'Договір' },
   { value: 'account', label: 'Рахунок' },
   { value: 'bank', label: 'Банк' },
   { value: 'organization', label: 'Організація' },
@@ -2275,6 +2279,8 @@ function SeoShopClientList({
               const clientKey = String(client.NetUid || client.Id || index)
               const isForRetail = Boolean(client.IsForRetail)
               const clientName = displayValue(client.FullName || getClientDisplayName(client))
+              const agreementName = getOnlineShopClientAgreementName(client)
+              const agreementOrganizationName = getOnlineShopClientAgreementOrganizationName(client)
 
               return (
                 <div
@@ -2300,13 +2306,28 @@ function SeoShopClientList({
                     }
                   }}
                 >
-                  <span className="seo-shop-client-tile-icon" aria-hidden>
-                    <IconUserCheck size={15} />
+                  <span className="seo-shop-client-tile-avatar" aria-hidden>
+                    <IconBasket size={22} />
+                    <span className="seo-shop-client-tile-avatar-mark">
+                      <IconUserCheck size={12} />
+                    </span>
                   </span>
 
                   <div className="seo-shop-client-tile-copy">
                     <Text className="seo-shop-client-tile-title">{clientName}</Text>
                     <SeoTableStatusPill active={isForRetail} activeLabel="Активний" inactiveLabel="Не активний" />
+                    {agreementName ? (
+                      <span className="seo-shop-client-tile-contract">
+                        <IconFileText size={12} />
+                        <span>{agreementName}</span>
+                      </span>
+                    ) : null}
+                    {agreementOrganizationName ? (
+                      <span className="seo-shop-client-tile-organization">
+                        <IconBuilding size={12} />
+                        <span>{agreementOrganizationName}</span>
+                      </span>
+                    ) : null}
                   </div>
 
                   <span className={`seo-shop-client-tile-action${isForRetail ? ' is-active' : ' is-inactive'}`} aria-hidden>
@@ -2887,6 +2908,33 @@ function getClientInitials(client: OnlineShopClient) {
     .toUpperCase()
 }
 
+function getOnlineShopClientAgreementName(client: OnlineShopClient) {
+  return (
+    getOnlineShopClientAgreementCandidateName(client.ClientAgreement) ||
+    client.Agreement?.Name ||
+    client.AgreementName ||
+    (client.ClientAgreements || []).map(getOnlineShopClientAgreementCandidateName).find(Boolean) ||
+    ''
+  )
+}
+
+function getOnlineShopClientAgreementCandidateName(agreement?: OnlineShopClient['ClientAgreement']) {
+  return agreement?.Agreement?.Name || agreement?.AgreementName || agreement?.Name || ''
+}
+
+function getOnlineShopClientAgreementOrganizationName(client: OnlineShopClient) {
+  return (
+    getOnlineShopClientAgreementCandidateOrganizationName(client.ClientAgreement) ||
+    getCompactOrganizationName(client.Agreement?.Organization) ||
+    (client.ClientAgreements || []).map(getOnlineShopClientAgreementCandidateOrganizationName).find(Boolean) ||
+    ''
+  )
+}
+
+function getOnlineShopClientAgreementCandidateOrganizationName(agreement?: OnlineShopClient['ClientAgreement']) {
+  return getCompactOrganizationName(agreement?.Agreement?.Organization || agreement?.Organization || null)
+}
+
 function filterOnlineShopClients(clients: OnlineShopClient[], searchValue: string) {
   const normalizedSearch = searchValue.trim().toLowerCase()
 
@@ -3011,10 +3059,21 @@ function getClientSearchValues(client: OnlineShopClient, field: SeoShopDataSearc
       return [client.EmailAddress]
     case 'number':
       return [client.ClientNumber]
+    case 'agreement':
+      return [getOnlineShopClientAgreementName(client), getOnlineShopClientAgreementOrganizationName(client)]
     case 'status':
       return statusValues
     case 'all':
-      return [getClientDisplayName(client), getClientPhone(client), client.ClientNumber, client.EmailAddress, client.NetUid, ...statusValues]
+      return [
+        getClientDisplayName(client),
+        getOnlineShopClientAgreementName(client),
+        getOnlineShopClientAgreementOrganizationName(client),
+        getClientPhone(client),
+        client.ClientNumber,
+        client.EmailAddress,
+        client.NetUid,
+        ...statusValues,
+      ]
     default:
       return []
   }

@@ -104,8 +104,24 @@ export type OnlineShopOrganization = EntityFields & {
   Name?: string
 }
 
+export type OnlineShopAgreement = EntityFields & {
+  Name?: string
+  Organization?: OnlineShopOrganization | null
+}
+
+export type OnlineShopClientAgreement = EntityFields & {
+  Agreement?: OnlineShopAgreement | null
+  AgreementName?: string
+  Name?: string
+  Organization?: OnlineShopOrganization | null
+}
+
 export type OnlineShopClient = EntityFields & {
+  Agreement?: OnlineShopAgreement | null
+  AgreementName?: string
   ClientNumber?: string
+  ClientAgreement?: OnlineShopClientAgreement | null
+  ClientAgreements?: OnlineShopClientAgreement[]
   EmailAddress?: string
   FullName?: string
   IsActive?: boolean
