@@ -30,6 +30,7 @@ import {
 import { consoleRoutes } from './routes/consoleRoutes'
 import { lazyRoute } from './routes/lazyRoute'
 import { ProtectedRoute } from '../features/auth/components/ProtectedRoute'
+import { OutgoingPaymentTasksRedirect } from '../features/outgoing-cashflows/components/OutgoingPaymentTasksRedirect'
 import { LoginPage } from '../pages/login/LoginPage'
 import { ModulePage } from '../pages/module/ModulePage'
 
@@ -89,6 +90,7 @@ export function App() {
             <Route path="/accounting/outgoing-cashflow/new/supplier" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
             <Route path="/accounting/outgoing-cashflow/new/client-return" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
             <Route path="/accounting/outgoing-cashflow/new/group" element={lazyRoute(<OutgoingCashflowCreatePage />)} />
+            <Route path="/accounting/outgoing-cashflow/new/payment-tasks" element={<OutgoingPaymentTasksRedirect />} />
             <Route path="/accounting/payment-accounts/new" element={lazyRoute(<PaymentAccountFormPage />)} />
             <Route path="/accounting/payment-accounts/edit/:id" element={lazyRoute(<PaymentAccountFormPage />)} />
             <Route path="/accounting/payment-cashflow-articles/new" element={lazyRoute(<PaymentCashflowArticleFormPage />)} />

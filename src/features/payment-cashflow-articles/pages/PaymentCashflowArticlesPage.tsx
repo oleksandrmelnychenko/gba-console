@@ -186,22 +186,6 @@ export function PaymentCashflowArticlesPage() {
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              {canCreate && (
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/payment-cashflow-articles/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Нова стаття')}
-                </Button>
-              )}
             </Group>
           </Group>
 

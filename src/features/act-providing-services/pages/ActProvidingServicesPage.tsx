@@ -41,6 +41,7 @@ const PAGE_SIZE = 20
 const DEFAULT_LOOKBACK_DAYS = 1
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
+const PERMISSION_VIEW_ACT = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -382,8 +383,9 @@ function ActProvidingServiceOptionsModal({
   const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const canOpenLogisticWay = hasPermission(PERMISSION_LOGISTIC_WAY)
+  const canViewAct = hasPermission(PERMISSION_VIEW_ACT)
   const canOpenSupplyOrder = Boolean(row?.supplyOrderUkraineNetUid)
-  const canOpenViewOption = Boolean(row?.netId)
+  const canOpenViewOption = Boolean(row?.netId) && canViewAct
   const canOpenProtocol = Boolean(row?.protocolNetId) && canOpenLogisticWay
   const hasAvailableActions = Boolean(canOpenViewOption || canOpenSupplyOrder || canOpenProtocol)
 

@@ -10,10 +10,10 @@ import { OutgoingCreateModeSelector } from '../components/OutgoingCreateModeSele
 import { OutgoingOrganizationPaymentForm } from '../components/OutgoingOrganizationPaymentForm'
 import { OutgoingPaymentGroupForm } from '../components/OutgoingPaymentGroupForm'
 import { OUTGOING_CREATE_MODE, type OutgoingCreateMode } from '../outgoingCreateTypes'
+import { buildAvailablePaymentsPaymentTasksPath } from '../outgoingPaymentTasksRoute'
 
 const OUTGOING_CASHFLOWS_PATH = '/accounting/outgoing-cashflow'
 const OUTGOING_CASHFLOW_NEW_PATH = `${OUTGOING_CASHFLOWS_PATH}/new`
-const AVAILABLE_PAYMENTS_PATH = '/accounting/available-payments'
 
 export function OutgoingCashflowCreatePage() {
   const { t } = useI18n()
@@ -25,7 +25,7 @@ export function OutgoingCashflowCreatePage() {
 
   function handleSelectMode(nextMode: OutgoingCreateMode) {
     if (nextMode === OUTGOING_CREATE_MODE.PaymentTasks) {
-      navigate(`${AVAILABLE_PAYMENTS_PATH}?type=2&operationType=4`)
+      navigate(buildAvailablePaymentsPaymentTasksPath(location.search, location.hash))
       return
     }
 

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
+import { OutgoingPaymentTasksRedirect } from '../../features/outgoing-cashflows/components/OutgoingPaymentTasksRedirect'
 import {
   AccountableExpensesPage,
   ActProvidingServiceDetailPage,
@@ -232,7 +233,7 @@ const accountingMigrationRoutes: ConsoleRoute[] = [
   { path: '/accounting/outgoing-cashflow/new/supplier', element: lazyRoute(<OutgoingCashflowCreatePage />) },
   { path: '/accounting/outgoing-cashflow/new/client-return', element: lazyRoute(<OutgoingCashflowCreatePage />) },
   { path: '/accounting/outgoing-cashflow/new/group', element: lazyRoute(<OutgoingCashflowCreatePage />) },
-  { path: '/accounting/outgoing-cashflow/new/payment-tasks', element: <Navigate to="/accounting/available-payments?type=2&operationType=4" replace /> },
+  { path: '/accounting/outgoing-cashflow/new/payment-tasks', element: <OutgoingPaymentTasksRedirect /> },
   { path: '/accounting/outgoing-cashflow/:id/advanced-report/view', element: lazyRoute(<AdvanceReportViewPage />) },
   { path: '/accounting/storages', element: lazyRoute(<ConsumableStoragesPage />) },
   { path: '/accounting/storages/new', element: lazyRoute(<ConsumableStorageFormPage />) },
