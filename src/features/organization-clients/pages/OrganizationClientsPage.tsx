@@ -158,6 +158,15 @@ export function OrganizationClientsPage() {
   )
 
   useEffect(() => {
+    const state = location.state as { mutated?: boolean } | null
+
+    if (state?.mutated) {
+      navigate(`${location.pathname}${location.search}`, { replace: true, state: null })
+      reload()
+    }
+  }, [location.pathname, location.search, location.state, navigate])
+
+  useEffect(() => {
     let cancelled = false
 
     async function loadOrganizationClients() {

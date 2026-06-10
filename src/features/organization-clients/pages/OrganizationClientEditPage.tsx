@@ -17,7 +17,7 @@ import {
   IconDeviceFloppy,
   IconTrash,
 } from '@tabler/icons-react'
-import { type FormEvent, useEffect } from 'react'
+import { type FormEvent, useEffect, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -55,6 +55,7 @@ export function OrganizationClientEditPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteModalOpened, setDeleteModalOpened] = useValueState(false)
+  const hasMutatedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -192,6 +193,7 @@ export function OrganizationClientEditPage() {
     try {
       const updatedClient = await updateOrganizationClient(payload)
       setClient(updatedClient || payload)
+      hasMutatedRef.current = true
       notifications.show({
         color: 'green',
         message: t('Організацію збережено'),
@@ -217,7 +219,7 @@ export function OrganizationClientEditPage() {
         color: 'green',
         message: t('Організацію видалено'),
       })
-      navigate(returnPath, { replace: true })
+      navigate(returnPath, { replace: true, state: { mutated: true } })
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити організацію'))
     } finally {
@@ -231,7 +233,7 @@ export function OrganizationClientEditPage() {
       return
     }
 
-    navigate(returnPath, { replace: true })
+    navigate(returnPath, { replace: true, state: hasMutatedRef.current ? { mutated: true } : null })
   }
 
   return (

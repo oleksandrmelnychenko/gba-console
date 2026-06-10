@@ -128,9 +128,10 @@ export function OrganizationClientNewPage() {
         replace: true,
         state: createdClient
           ? {
+              mutated: true,
               nodeTitle: getOrganizationClientName(createdClient),
             }
-          : undefined,
+          : { mutated: true },
       })
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : t('Не вдалося створити організацію'))
