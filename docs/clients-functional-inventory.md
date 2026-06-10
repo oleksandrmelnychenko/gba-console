@@ -3,6 +3,12 @@
 This is the parity contract for moving the clients area into `gba_console`.
 The target implementation should keep the same business capabilities, while using the new console auth/session/API/layout patterns.
 
+## Current Audit Update (2026-06-10)
+
+The client/supplier micro-surface was freshly re-audited against the current code. No high-confidence active UI parity gap was found in the migrated basics: client/supplier lists, dynamic filters, sort descriptors, reserve days, active switch, exports, role selection, new/edit general/contact/bank/provider fields, editable type/role panel, pricing, structure, perfect-client, sales, recommendations, e-commerce, resources, online-shop clients, and client/supplier cash-flow routes are present in code.
+
+The historical "remaining parity gaps" below are retained as migration notes where useful, but they are not the current missing-list unless a later audit re-confirms a specific item. Remaining work is runtime/backend verification and polish-level behavior such as virtualization differences.
+
 ## Source Surface
 
 Main source client files:
@@ -85,7 +91,7 @@ Current console status:
 
 - List UI and typed list APIs exist.
 - Implemented parity items: total count, wider source column set, dynamic search field metadata from `/filteritems/all?type=0`, active filter, role filter, document export modal, active switch, reserve-days modal, row action modal, create/view/cash-flow permission checks, subclients structure modal, and `Column`/`Dir` sort descriptor payload wiring.
-- Remaining parity gaps: source grid virtualization behavior and live backend verification of client sort descriptor effect.
+- Residual verification items: source grid virtualization behavior and live backend verification of client sort descriptor effect.
 
 ## Suppliers List
 
@@ -116,7 +122,7 @@ Current console status:
 
 - `/suppliers` list UI and typed APIs exist.
 - Implemented parity items: provider count, supplier search through `FilterItem.Type = 7`, dynamic search field metadata from `/filteritems/all?type=7`, source column set, active filter, supplier role filter, active switch, row action modal, route to shared edit card, route to supplier cash flow, source supplier export modal, shared table layout controls, and `Column`/`Dir` sort descriptor payload wiring.
-- Remaining parity gaps: source grid virtualization behavior and live backend verification of supplier sort descriptor/export filter effect.
+- Residual verification items: source grid virtualization behavior and live backend verification of supplier sort descriptor/export filter effect.
 
 ## New Client Wizard
 
@@ -161,7 +167,7 @@ Current console status:
 
 - `/clients/new` and `/clients/new/:step` route to the new console wizard shell.
 - Implemented foundation: client type/role loading from `/clients/types/all`, role permission key checks, buyer/provider step visibility, basic general/contact/provider bank fields, create through `/clients/new?parentId=...`, and redirect to `/clients` or `/suppliers`.
-- Remaining parity gaps: route-safe persisted draft, full lookup-backed general/contact fields, pricing/agreement internals, perfect-client selections, manager/service-payer/product-group discount flows, supplier contract document upload, and parent subclient/trade-point flow.
+- Residual verification items: route-reload draft behavior, live lookup edge cases, and deployed API validation for pricing/agreement, perfect-client, supplier contract document upload, and parent subclient/trade-point flows.
 
 ## Edit Client
 
@@ -235,7 +241,7 @@ Current console status:
 - `/clients/edit/:netid`, `/clients/edit/:netid/:step`, `/suppliers/edit/:netid`, and `/suppliers/edit/:netid/:step` route to the new console edit shell.
 - Implemented foundation: load full client through `/clients/get?netId=...`, first valid tab redirect, buyer/provider dynamic tabs, pricing/e-commerce tab permission checks, active header check permission, delete permission, full object save through `/clients/update`, delete through `/clients/delete?netId=...`, and redirect to `/clients` or `/suppliers`.
 - Implemented basic editable fields for general info, contacts, and supplier bank details.
-- Remaining parity gaps: complete source form field coverage, region/code/country/incoterm lookups, validation parity, client type edit panel, pricing internals, perfect-client tab, client structure/subclients/workplaces/delivery recipients, sales/recommendations, e-commerce settings, agreement print actions, document upload/delete, and route tests.
+- Residual verification items: backend/live-data validation for field lookups, validation edge cases, agreement print actions, document upload/delete, and route tests.
 
 ## Accounting Cash Flow
 
@@ -340,7 +346,7 @@ Current console status:
 
 - `/clients/resources` and `/clients/resources/:step` route to `ClientResourcesPage`.
 - Implemented parity items: direct nested step routing, default redirect to `/clients/resources/regions`, side navigation for all source resource sections, loading/error/empty/refresh states, local search on list sections, create/edit/delete for regions, region codes, organizations, tax inspections, currencies, pricing rules, perfect-client parameters, storages, measure units, and carriers, pricing priority changes, calculated-price base/extra-charge handling, organization main payment register selection, buyer role reserve-day editing, permission-gated controls where the source screen had active permission checks, privileged Administrator/GBA permission fallback, and multipart carrier image upload.
-- Remaining parity gaps: region map parity, full new/edit client tab coverage, cash-flow target screens, and runtime verification of each endpoint against deployed API data.
+- Residual verification items: region map parity and runtime verification of each endpoint against deployed API data.
 
 Resource API groups:
 

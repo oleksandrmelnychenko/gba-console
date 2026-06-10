@@ -44,6 +44,40 @@ describe('advanceReportApi', () => {
     expect(order.CompanyCarFuelings?.[0]?.NetUid).toBe('local-fueling')
   })
 
+  it('does not send deleted fuel rows to calculation but keeps them in the returned order state', async () => {
+    const order: AdvanceReportOrder = {
+      Amount: 100,
+      CompanyCarFuelings: [
+        { Id: 1, NetUid: 'active-fuel', TotalPriceWithVat: 100 },
+        { Deleted: true, Id: 2, NetUid: 'deleted-fuel', TotalPriceWithVat: 50 },
+      ],
+      NetUid: 'order-1',
+    }
+
+    apiRequestMock.mockResolvedValueOnce({
+      Amount: 100,
+      CompanyCarFuelings: [{ Id: 1, NetUid: 'active-fuel', TotalPriceWithVat: 100 }],
+      NetUid: 'order-1',
+    })
+
+    const result = await calculateAdvanceReportOrder(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/payments/orders/outcome/calculate', {
+      body: expect.objectContaining({
+        CompanyCarFuelings: [
+          expect.objectContaining({ NetUid: 'active-fuel' }),
+        ],
+      }),
+      method: 'POST',
+    })
+    expect((apiRequestMock.mock.calls[0][1]?.body as AdvanceReportOrder).CompanyCarFuelings)
+      .not.toEqual(expect.arrayContaining([expect.objectContaining({ NetUid: 'deleted-fuel' })]))
+    expect(result?.CompanyCarFuelings).toEqual([
+      expect.objectContaining({ NetUid: 'active-fuel' }),
+      expect.objectContaining({ Deleted: true, NetUid: 'deleted-fuel' }),
+    ])
+  })
+
   it('strips UI-only local NetUid values from multipart update payloads', async () => {
     const order = createOrderWithLocalNetUids()
     const document = new File(['invoice'], 'invoice.pdf', { type: 'application/pdf' })

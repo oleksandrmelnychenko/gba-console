@@ -24,10 +24,10 @@ Generated from `../gba_client/src/code/master.page/routes/route.config.ts`. Keep
 
 ## Current Status Snapshot
 
-- `ui`: 132
+- `ui`: 133
 - `route`: 0
 - `shell`: 0
-- `todo`: 3
+- `todo`: 2
 - `deferred`: 6
 - Poland-specific skipped rows: 3
 

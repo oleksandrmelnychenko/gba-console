@@ -1060,8 +1060,21 @@ function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
   )
 }
 
-function buildSupplierSearchFieldOptions(_filterItems: ClientFilterItem[]) {
-  return DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
+function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
+  const dynamicOptions: Array<{ label: string; value: string }> = []
+
+  filterItems.forEach((filterItem) => {
+    if (filterItem.SQL) {
+      dynamicOptions.push({
+        label: filterItem.Name?.trim() || filterItem.Description?.trim() || filterItem.SQL || translate('Поле'),
+        value: filterItem.SQL,
+      })
+    }
+  })
+
+  return dynamicOptions.length > 0
+    ? dynamicOptions
+    : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
 }
 
 function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {

@@ -26,9 +26,9 @@ export function calculateConsumableOrderItemTotals(item: ConsumableOrderItemTota
   let vatPercent = inputVatPercent
 
   if (pricePerItem > 0 && qty > 0) {
-    totalWithoutVat = roundConsumableMoney(pricePerItem * qty)
-    vatAmount = roundConsumableMoney(totalWithoutVat * (vatPercent / 100))
-    totalWithVat = roundConsumableMoney(totalWithoutVat + vatAmount)
+    totalWithVat = roundConsumableMoney(pricePerItem * qty)
+    vatAmount = vatPercent > 0 ? roundConsumableMoney((totalWithVat * vatPercent) / (100 + vatPercent)) : 0
+    totalWithoutVat = roundConsumableMoney(totalWithVat - vatAmount)
   } else if (totalWithVat > 0) {
     if (vatPercent > 0) {
       totalWithoutVat = roundConsumableMoney(totalWithVat / (1 + vatPercent / 100))

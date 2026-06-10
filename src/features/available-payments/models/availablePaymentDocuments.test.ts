@@ -19,6 +19,14 @@ describe('availablePaymentDocuments', () => {
 
     expect(getTaskPaymentProofDocumentCount(model, [])).toBe(0)
   })
+
+  it('treats the local files argument as optional for existing proof checks', () => {
+    const model = createModel({
+      SupplyPaymentTaskDocuments: [{ FileName: 'proof.pdf' }],
+    })
+
+    expect(getTaskPaymentProofDocumentCount(model)).toBe(1)
+  })
 })
 
 function createModel(

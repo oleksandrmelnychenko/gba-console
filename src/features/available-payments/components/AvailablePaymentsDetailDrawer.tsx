@@ -151,6 +151,7 @@ type AvailablePaymentCashFlowGridItem = CashFlowGridItem & {
 type DataRecord = Record<string, unknown>
 
 const SEARCH_DEBOUNCE_MS = 300
+const EMPTY_DOCUMENT_DELETE_OVERRIDES: Record<string, boolean> = {}
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short' })
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
@@ -1220,7 +1221,7 @@ function AvailablePaymentTaskList({
 }
 
 function getTaskDetailTabs(model: AvailablePaymentTaskModel): TaskDetailTab[] {
-  const tabs: TaskDetailTab[] = ['invoice', 'cash-flow']
+  const tabs: TaskDetailTab[] = model.serviceAgreementNetId ? ['invoice', 'cash-flow'] : ['invoice']
 
   if (model.task.TaskStatus === TaskStatusValue.Done) {
     return [...tabs, 'transfer']
@@ -1974,7 +1975,7 @@ function RedirectToSourceButton({
 }
 
 function DocumentsList({
-  documentDeleteOverrides = {},
+  documentDeleteOverrides = EMPTY_DOCUMENT_DELETE_OVERRIDES,
   documents,
   isSaving,
   onDocumentDeletedChange,

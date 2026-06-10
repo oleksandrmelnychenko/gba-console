@@ -58,6 +58,12 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
       /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
     ],
   },
+  {
+    source: '/accounting/advanced-reports',
+    targets: [
+      /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
+    ],
+  },
 ]
 
 export function normalizeNavigation(modules: NavigationModule[] | null | undefined): NavigationModule[] {

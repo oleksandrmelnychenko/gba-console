@@ -1,23 +1,23 @@
 # Products (Already-Migrated) — Parity Audit
 
-> **STATUS: PARITY CLOSED (2026-05-29).** All gaps below were closed across product slices on branch `clients/full-migration`: capitalization create/import, income-documents drill-downs, product-groups polish, transfers+storages, placements/history/remains/income-ukraine/availabilities, the product detail card, and a final 2-gap pass (shop-CDN thumbnail gallery + group root-picker search). A final 11-screen completeness re-audit returned **0 residual gaps**. Each slice verified with tsc + eslint + build + tests.
+> **CURRENT STATUS: PARITY CLOSED / REFRESHED (2026-06-10).** A fresh code re-audit found no high-confidence active gaps in the current products micro-surface. The active implementation includes the assortment carousel with input, field mode and sort controls, same-card product detail, remains by batches, movement filters/history/export surface, storages return-consignment selection, bulk action preview, capitalization create/import flows, product groups, placements/history/remains/income-ukraine/availabilities, and product detail tabs.
 >
-> Accepted deferrals (not gaps): carousel search/sort dropdowns (deliberately removed), infinite-scroll→Load-more (console convention), Poland surfaces (SynonymsPL, write-off 'pl', income.poland), cross-module overviews/creates (orders/ukraine-act/supply modules), new-product-image upload UI (dead legacy action), recommendation forecast chart (no charting lib; legacy hardcodes a stale asOfDate — data helper added). The pre-closure gap inventory below is retained as the baseline.
+> Accepted deferrals (not gaps): Poland surfaces (SynonymsPL, write-off `pl`, income.poland), cross-module overviews/creates where the owning module now provides the screen, new-product-image upload UI (dead legacy action), and recommendation forecast chart. The detailed inventory below is retained as a historical baseline and must not be read as the current missing list.
 
 Audit date: 2026-05-29. Source of truth: legacy `gba_client`. Target: `gba_console`.
 12-screen fan-out (inventory → console-code audit → adversarial re-verification).
 
 Status: **missing** = no console counterpart · **partial** = present but incomplete · *deferred* = Poland/disabled-in-legacy.
 
-## Totals
+## Historical Totals
 
 - ✅ done: **372** · 🟡 partial: **51** · ❌ missing: **71** · ⏸️ deferred: **14**
 
-**Not migrated (partial+missing): ~122.**
+**Historical pre-closure count, superseded by the current status above.**
 
 ## Accepted intentional deviations (NOT gaps — do not revert)
 
-- `/products` carousel search-mode + sort-mode dropdowns: deliberately removed (single-input assortment; see migration-state-audit.md and the 'Refine products assortment carousel' commit). Advanced search runs internally with all-fields/name defaults.
+- `/products` carousel search-mode + sort-mode dropdowns: superseded by the current `ProductAssortmentCarousel` implementation with visible field and sort controls.
 - Infinite-scroll-on-bottom replaced by explicit 'Load more' across list screens (console-wide convention).
 - Poland surfaces (SynonymsPL, write-off 'pl' locale, *.income.poland*) deferred.
 - Cross-module endpoints reachable elsewhere (manual create-transfer, SupplyOrderUkraine overview, create-from-reconciliation/packing-list).

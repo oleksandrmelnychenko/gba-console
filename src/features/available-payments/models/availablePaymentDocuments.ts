@@ -4,6 +4,6 @@ export function countActiveDocuments(documents: AvailablePaymentDocument[] = [])
   return documents.filter((document) => !document.Deleted).length
 }
 
-export function getTaskPaymentProofDocumentCount(model: AvailablePaymentTaskModel, files: File[]): number {
+export function getTaskPaymentProofDocumentCount(model: AvailablePaymentTaskModel, files: File[] = []): number {
   return countActiveDocuments(model.task.SupplyPaymentTaskDocuments) + files.length
 }

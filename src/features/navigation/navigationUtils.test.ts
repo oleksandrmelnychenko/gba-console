@@ -350,6 +350,25 @@ describe('isNavigationPathAllowed', () => {
     expect(isNavigationPathAllowed(modules, '/accounting/payment-accounts/new')).toBe(false)
   })
 
+  it('allows opening advance-report details from the advanced reports menu root', () => {
+    const modules: NavigationModule[] = [
+      {
+        Id: 1,
+        Module: 'Бухгалтерія',
+        Children: [
+          {
+            Id: 11,
+            Module: 'Авансові звіти',
+            Route: '/accounting/advanced-reports',
+          },
+        ],
+      },
+    ]
+
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/order-1/advanced-report/view')).toBe(true)
+    expect(isNavigationPathAllowed(modules, '/accounting/outgoing-cashflow/new/simple')).toBe(false)
+  })
+
   it('allows available-payments menu nodes to open the accounting canonical route', () => {
     const modules: NavigationModule[] = [
       {

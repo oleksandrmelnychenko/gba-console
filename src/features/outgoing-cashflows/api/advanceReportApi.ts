@@ -17,13 +17,13 @@ export async function getAdvanceReportOrder(netId: string): Promise<AdvanceRepor
 }
 
 export async function calculateAdvanceReportOrder(order: AdvanceReportOrder): Promise<AdvanceReportOrder | null> {
-  const payload = sanitizeAdvanceReportOrder(order)
+  const payload = sanitizeAdvanceReportOrderForCalculation(order)
   const result = await apiRequest<unknown>('/payments/orders/outcome/calculate', {
     body: payload,
     method: 'POST',
   })
 
-  return normalizeAdvanceReportOrder(result)
+  return restoreDeletedFuelings(normalizeAdvanceReportOrder(result), order)
 }
 
 export async function updateAdvanceReportOrder(
@@ -172,6 +172,36 @@ function normalizeSupplyOrganization(result: unknown): SupplyOrganization | null
 
 function sanitizeAdvanceReportOrder(order: AdvanceReportOrder): AdvanceReportOrder {
   return stripLocalNetUidFields(order)
+}
+
+function sanitizeAdvanceReportOrderForCalculation(order: AdvanceReportOrder): AdvanceReportOrder {
+  return sanitizeAdvanceReportOrder({
+    ...order,
+    CompanyCarFuelings: (order.CompanyCarFuelings || []).filter((fueling) => !fueling.Deleted),
+  })
+}
+
+function restoreDeletedFuelings(
+  calculatedOrder: AdvanceReportOrder | null,
+  sourceOrder: AdvanceReportOrder,
+): AdvanceReportOrder | null {
+  if (!calculatedOrder) {
+    return null
+  }
+
+  const deletedFuelings = (sourceOrder.CompanyCarFuelings || []).filter((fueling) => fueling.Deleted)
+
+  if (deletedFuelings.length === 0) {
+    return calculatedOrder
+  }
+
+  return {
+    ...calculatedOrder,
+    CompanyCarFuelings: [
+      ...(calculatedOrder.CompanyCarFuelings || []),
+      ...deletedFuelings,
+    ],
+  }
 }
 
 function stripLocalNetUidFields<T>(value: T): T {

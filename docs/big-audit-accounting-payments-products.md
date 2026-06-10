@@ -1,41 +1,30 @@
-# Big Audit — Accounting · Payments · Products (2026-05-31)
+# Big Audit — Accounting · Payments · Products (2026-06-10 refresh)
 
-Legacy (`gba_client`) vs ACTUAL console state (routes + feature folders). The route matrix was stale; this reflects reality after this session's work.
+Legacy (`gba_client`) vs current `gba_console` state. This file supersedes the older 2026-05-31 snapshot; use `docs/migration-route-matrix.md` as the route-level source of truth.
 
-## Headline
-- **Accounting** — all 43 `/accounting/*` routes wired. Remaining = advanced sub-flows inside two screens (intentional deferrals).
-- **Payments** — registers/banks/articles/online-shop complete; income create complete; **outcome create has only the primary mode**; payment-task per-type editors deferred; TaxFree/SAD outcome-create endpoints not migrated.
-- **Products (товари)** — module ~100%. The dominant remaining товари-adjacent gap is the **Supply Orders / Постачання module (~18 routes, ~32k LoC, not started)**. Plus act-reconciliations (2), tax-free carriers (3), Poland surfaces.
+## Current Headline
 
-## Accounting — remaining
-| Item | Severity | What's missing | Legacy ref |
-|---|---|---|---|
-| Outgoing-cashflow create modes | HIGH | Only `simple` cash-order built. Deferred: organization-payment, payment-tasks, client-return, payment-group (shown "у розробці") | `payment.registers/outcome/out.come.host.view.tsx` + the 4 `new.accounting.out.come.*` views |
-| Available-payments deep editors | HIGH | Per-task template editors (ConsumableOrder / delivery-protocol PL+UA / Custom / Vehicle / Transportation / Port / Container), create-outcome-from-marked-tasks UI, document-upload→done UI, cash-flow pivot per task. (List + mark-done + create-outcome endpoints already wired.) | `payments.available/` templates + `supply.payment.task.template.wrapper.tsx` |
-| Advance / advanced reports inline add-product/add-fuel | MEDIUM | Inline item editors (view/list present) | `advance.payments/`, `payment.registers/outcome/components/details.advance.report.view.tsx` |
-| Income user form completeness | LOW | Spot-verify VAT/exchange vs `income/user/income.order.user.view.tsx` | — |
-Correctness spot-checks (payment-accounts, consumable-orders, income forms): OK (income bugs already fixed this session).
+- **Accounting** — all 43 `/accounting/*` route rows are `ui`. Outcome create now covers the migrated host flows: simple order, service-supplier balance top-up, client return, group cash/bank operations, old subpath compatibility, and payment-task redirect into available payments.
+- **Payments** — payment registers, banks, articles, online-shop payments, income create, available-payments filters/totals/detail drawer/task documents/marked tasks/outcome creation are wired. Known legacy available-payment task source types are mapped; unknown task types fall back to read-only unsupported state.
+- **Products / Supply / Warehouse** — products, product groups, product storages/remains/placements/history/capitalization/availabilities, product-delivery-protocols, warehouse-ukraine, Ukraine supply orders, supply placement, act reconciliations, reports, and resales are marked `ui` in the route matrix.
+- **Intentional no-touch areas** — Poland-specific routes stay deferred. Allegro stays todo. SAD and Tax Free are not part of the current workstream.
 
-## Payments — remaining (overlaps accounting)
-- Outcome create modes (same as above) — the main gap.
-- Payment-task per-type template editors (deferred in available-payments).
-- **TaxFree/SAD-context outcome create NOT migrated**: `/payments/orders/outcome/new/taxfree?taxFreeNetId=`, `/payments/orders/outcome/new/sad?sadNetId=`.
-- Registers/banks/articles/online-shop: complete (console even adds get/update for movements + bank update).
+## Residual Work
 
-## Products + Supply — remaining
-| Module | Routes | Size | Status |
-|---|---|---|---|
-| Products module (товари) | — | — | ~100% (only Poland income `/products/income/poland` + `/products/pl-income-order/:id` deferred) |
-| product-delivery-protocols | 4 | — | DONE this session (Poland branch / merged-service edit-task deferred) |
-| warehouse-ukraine | 2 | — | DONE this session (`/warehouse/poland` deferred) |
-| **Supply Orders / Постачання** | **~18** | **~32k LoC** | **NOT STARTED — biggest gap.** list (AllSupplyUkraineOrdersView), create (NewSupplyOrderView), multi-step edit (SupplyLogisticsPage → supply-invoices / specifications / product-income), overview, placement, protocols (SupplyUkrainePaymentProtocolsView), `/supply-orders/product-placement/:id`. Poland + Ukraine variants. |
-| Act reconciliations | 2 | ~2.3k LoC | NOT STARTED (`/ukraine/act/reconcoliation[/:netid]`) |
-| Tax-free carriers | 3 | small | NOT STARTED (`/tax-free/carriers/*`) |
+| Item | Priority | Notes |
+| --- | --- | --- |
+| Runtime verification for accounting/payment edge cases | High | Verify against deployed API data for large available-payment task batches, outcome creation from marked tasks, and document-upload state transitions. |
+| Advance reports inline polish | Medium | List/detail routes are present; keep checking inline product/fuel edit edge cases while testing real data. |
+| Available-payments unsupported fallback monitoring | Medium | Current fallback is intentional and blocks write actions. If a real non-Poland task lands here, add a typed mapper instead of enabling generic writes. |
+| Products/client polish | Low | Current code re-audit found no high-confidence active gaps; keep differences like Load-more vs legacy virtual-scroll as accepted console convention unless product owners request exact UX parity. |
 
-Shared infra already migrated that supply-orders can reuse: basket-supply-ukraine-order, sad, tax-free-pack-lists, depreciated-orders, supply-returns, product-delivery-protocols.
+## Route-Matrix Snapshot
 
-## Recommended priority
-1. **Complete accounting+payments advanced flows** (bounded, high value): outgoing-cashflow create modes (organization-payment, payment-tasks, client-return, payment-group) + available-payments per-task editors + create-outcome-from-marked + TaxFree/SAD outcome create.
-2. **Small gaps**: tax-free carriers (3, small), act reconciliations (2).
-3. **Supply Orders module** (huge, ~32k LoC) — its own multi-slice effort; needs a dedicated plan (list → create → multi-step editor → sub-tabs). Largest товари-adjacent work.
-4. Poland surfaces (warehouse/poland, products poland income) — deferred per established Poland-deferral policy.
+- `ui`: 133
+- `todo`: 2 (`/sales/allegro/new`, `/sales/allegro`)
+- `deferred`: 6 (root redirect/obsolete alternate screens/Poland-specific routes)
+
+## Verification Notes
+
+- Product/client micro parity was refreshed on 2026-06-10; stale historical gap lists in older docs are marked as baseline notes, not active missing work.
+- Sales document endpoint parity is covered by `src/features/sales-ukraine/api/salesUkraineApi.test.ts`; warehouse sale printing remains separately covered by the warehouse Ukraine migrated-gaps tests.
