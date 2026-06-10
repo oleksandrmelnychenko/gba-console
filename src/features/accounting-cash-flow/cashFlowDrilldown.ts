@@ -51,7 +51,9 @@ function resolveDirectRoute(record: Record<string, unknown>, type?: number): str
     const outcomeOrder = toRecord(record.OutcomePaymentOrder) || record
     const route =
       resolveOutcomePaymentOrderRoute(outcomeOrder) ||
-      resolvePaymentOrderListRoute('/accounting/outgoing-cashflow', outcomeOrder, record)
+      (hasOutcomeSupplyPaymentTaskDetails(outcomeOrder)
+        ? null
+        : resolvePaymentOrderListRoute('/accounting/outgoing-cashflow', outcomeOrder, record))
 
     if (route) {
       return route
@@ -64,6 +66,14 @@ function resolveDirectRoute(record: Record<string, unknown>, type?: number): str
       toRecord(record.IncomePaymentOrder) || record,
       record,
     )
+
+    if (route) {
+      return route
+    }
+  }
+
+  if (type === JOIN_SERVICE_TYPE.Sale) {
+    const route = resolveSaleRoute(toRecord(record.Sale) || record)
 
     if (route) {
       return route
@@ -160,6 +170,12 @@ function resolveOutcomePaymentOrderRoute(outcome: Record<string, unknown> | null
   return resolveOutcomeConsumablesOrderRoute(outcome)
 }
 
+function hasOutcomeSupplyPaymentTaskDetails(outcome: Record<string, unknown> | null): boolean {
+  return toArray(outcome?.OutcomePaymentOrderSupplyPaymentTasks).some((taskLink) =>
+    Boolean(toRecord(toRecord(taskLink)?.SupplyPaymentTask)),
+  )
+}
+
 function resolveOutcomeConsumablesOrderRoute(outcome: Record<string, unknown> | null): string | null {
   const relatedOrders = toArray(outcome?.OutcomePaymentOrderConsumablesOrders)
 
@@ -211,6 +227,12 @@ function resolveConsumablesOrderRoute(order: Record<string, unknown> | null): st
   const orderNetUid = getNetUid(order)
 
   return orderNetUid ? `/accounting/consumable-orders/edit/${encodeURIComponent(orderNetUid)}` : null
+}
+
+function resolveSaleRoute(sale: Record<string, unknown> | null): string | null {
+  const saleNetUid = getNetUid(sale)
+
+  return saleNetUid ? `/sales/ukraine/all?saleNetId=${encodeURIComponent(saleNetUid)}` : null
 }
 
 function resolveProductDeliveryProtocolRoute(record: Record<string, unknown>): string | null {

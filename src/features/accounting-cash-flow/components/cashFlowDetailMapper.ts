@@ -40,6 +40,11 @@ export type CashFlowDetailViewModel = {
   title: string
 }
 
+type SupplyPaymentTaskServiceEntry = {
+  service: unknown
+  taskPaymentStatus: AccountingCashFlowPaymentStatus | null
+}
+
 const SUPPLY_PAYMENT_TASK_SERVICE_FIELDS = [
   'ConsumablesOrder',
   'SupplyOrderUkrainePaymentDeliveryProtocols',
@@ -145,6 +150,18 @@ export function mapItemToDetailViewModel(item: AccountingCashFlowHeadItem): Cash
       return mapSupplyPaymentTask(item, 'AccountingContainerPaymentTask')
     }
 
+    if (item.Type === JOIN_SERVICE_TYPE.OutcomePaymentOrder) {
+      const outcomeDetail = mapOutcomePaymentOrderSupplyPaymentTasks(item)
+
+      if (outcomeDetail) {
+        return outcomeDetail
+      }
+    }
+
+    if (item.Type === JOIN_SERVICE_TYPE.SupplyOrderPaymentDeliveryProtocol) {
+      return mapSupplyOrderPaymentDeliveryProtocol(item)
+    }
+
     const serviceField = BASE_SERVICE_FIELD_BY_TYPE[item.Type]
 
     if (serviceField) {
@@ -154,6 +171,47 @@ export function mapItemToDetailViewModel(item: AccountingCashFlowHeadItem): Cash
     return null
   } catch {
     return null
+  }
+}
+
+function mapSupplyOrderPaymentDeliveryProtocol(item: AccountingCashFlowHeadItem): CashFlowDetailViewModel | null {
+  const protocol = toRecord(item.SupplyOrderPaymentDeliveryProtocol)
+
+  if (!protocol) {
+    return null
+  }
+
+  const invoice = toRecord(protocol.SupplyInvoice)
+  const proForm = toRecord(protocol.SupplyProForm)
+  const document = invoice || proForm || protocol
+  const supplyOrder = toRecord(document.SupplyOrder) || toRecord(readArray(document, 'SupplyOrders')[0])
+  const clientAgreement = toRecord(readArray(toRecord(supplyOrder?.Client), 'ClientAgreements')[0])
+  const agreement = toRecord(clientAgreement?.Agreement)
+  const paymentStatus =
+    getAccountingCashFlowRecordPaymentStatus(protocol) ||
+    getAccountingCashFlowRecordPaymentStatus(document) ||
+    getAccountingCashFlowPaymentStatus(item)
+
+  return {
+    columnKind: 'supplyPaymentTask',
+    documents: uniqueDocuments([
+      ...collectServiceDocuments(protocol),
+      ...collectServiceDocuments(document),
+    ]),
+    orderLink: getOrderLink(document) || getOrderLink(protocol),
+    rows: [
+      {
+        Currency:
+          readPath(document, ['SupplyOrganizationAgreement', 'Currency', 'Code']) ||
+          readPath(agreement, ['Currency', 'Code']),
+        FromData: stringValue(document.DateFrom) || stringValue(protocol.FromDate),
+        NetPrice: firstNumberValue(document.NetPrice, document.TotalNetPrice, protocol.Value),
+        Number: stringValue(document.Number),
+        PaymentStatus: paymentStatus,
+        ServiceNumber: stringValue(document.ServiceNumber),
+      },
+    ],
+    title: stringValue(item.Name) || stringValue(document.Number),
   }
 }
 
@@ -233,15 +291,49 @@ function mapSupplyPaymentTask(
     return null
   }
 
-  const services = collectSupplyPaymentTaskServices(task)
-  const taskDocuments = collectServiceDocuments(task)
-  const taskPaymentStatus = getAccountingCashFlowRecordPaymentStatus(task) || getAccountingCashFlowPaymentStatus(item)
+  return mapSupplyPaymentTaskRecords(item, [task], stringValue(item.Name))
+}
 
-  const rows = services.map((serviceItem) => {
+function mapOutcomePaymentOrderSupplyPaymentTasks(item: AccountingCashFlowHeadItem): CashFlowDetailViewModel | null {
+  const outcome = toRecord(item.OutcomePaymentOrder)
+
+  if (!outcome) {
+    return null
+  }
+
+  const tasks = readArray(outcome, 'OutcomePaymentOrderSupplyPaymentTasks')
+    .map((taskLink) => toRecord(toRecord(taskLink)?.SupplyPaymentTask))
+    .filter((task): task is Record<string, unknown> => Boolean(task))
+
+  if (tasks.length === 0) {
+    return null
+  }
+
+  return mapSupplyPaymentTaskRecords(item, tasks, stringValue(item.Name) || stringValue(outcome.Number))
+}
+
+function mapSupplyPaymentTaskRecords(
+  item: AccountingCashFlowHeadItem,
+  tasks: Record<string, unknown>[],
+  title: string,
+): CashFlowDetailViewModel {
+  const entries = tasks.flatMap<SupplyPaymentTaskServiceEntry>((task) => {
+    const taskPaymentStatus = getAccountingCashFlowRecordPaymentStatus(task) || getAccountingCashFlowPaymentStatus(item)
+
+    return collectSupplyPaymentTaskServices(task).map((service) => ({
+      service,
+      taskPaymentStatus,
+    }))
+  })
+
+  const rows = entries.map(({ service: serviceItem, taskPaymentStatus }) => {
     const service = toRecord(serviceItem)
     const nestedProForm = toRecord(service?.SupplyProForm)
     const nestedInvoice = toRecord(service?.SupplyInvoice)
     const nestedUkraineOrder = toRecord(service?.SupplyOrderUkraine)
+    const nestedSupplyOrder = toRecord(nestedInvoice?.SupplyOrder) || toRecord(readArray(nestedProForm, 'SupplyOrders')[0])
+    const nestedSupplyOrderClientAgreement = toRecord(readArray(toRecord(nestedSupplyOrder?.Client), 'ClientAgreements')[0])
+    const nestedSupplyOrderAgreement = toRecord(nestedSupplyOrderClientAgreement?.Agreement)
     const nestedAgreement = toRecord(nestedUkraineOrder?.ClientAgreement)
     const nestedAgreementDetail = toRecord(nestedAgreement?.Agreement)
 
@@ -252,6 +344,9 @@ function mapSupplyPaymentTask(
         stringValue(service?.BillOfLadingNumber),
       Currency:
         readPath(service, ['SupplyOrganizationAgreement', 'Currency', 'Code']) ||
+        readPath(nestedInvoice, ['SupplyOrganizationAgreement', 'Currency', 'Code']) ||
+        readPath(nestedProForm, ['SupplyOrganizationAgreement', 'Currency', 'Code']) ||
+        readPath(nestedSupplyOrderAgreement, ['Currency', 'Code']) ||
         readPath(nestedAgreementDetail, ['Currency', 'Code']),
       FromData:
         stringValue(service?.FromDate) ||
@@ -259,30 +354,37 @@ function mapSupplyPaymentTask(
         stringValue(nestedProForm?.DateFrom) ||
         stringValue(nestedInvoice?.DateFrom) ||
         stringValue(nestedUkraineOrder?.FromDate),
-      NetPrice:
-        numberValue(service?.NetPrice) ||
-        numberValue(service?.AccountingNetPrice) ||
-        numberValue(service?.Value) ||
-        numberValue(service?.GrossPrice),
+      NetPrice: firstNumberValue(
+        service?.NetPrice,
+        service?.AccountingNetPrice,
+        nestedProForm?.NetPrice,
+        nestedInvoice?.NetPrice,
+        service?.Value,
+        service?.GrossPrice,
+      ),
       Number:
         stringValue(service?.Number) ||
         stringValue(nestedProForm?.Number) ||
         stringValue(nestedInvoice?.Number) ||
         stringValue(nestedUkraineOrder?.InvNumber),
       PaymentStatus: getAccountingCashFlowRecordPaymentStatus(service) || taskPaymentStatus,
-      ServiceNumber: stringValue(service?.ServiceNumber) || stringValue(nestedUkraineOrder?.Number),
+      ServiceNumber:
+        stringValue(service?.ServiceNumber) ||
+        stringValue(nestedProForm?.ServiceNumber) ||
+        stringValue(nestedInvoice?.ServiceNumber) ||
+        stringValue(nestedUkraineOrder?.Number),
     }
   })
 
   return {
     columnKind: 'supplyPaymentTask',
     documents: uniqueDocuments([
-      ...taskDocuments,
-      ...services.flatMap((service) => collectServiceDocuments(toRecord(service) || {})),
+      ...tasks.flatMap((task) => collectServiceDocuments(task)),
+      ...entries.flatMap((entry) => collectServiceDocuments(toRecord(entry.service) || {})),
     ]),
-    orderLink: getOrderLink(toRecord(services[0])),
+    orderLink: getOrderLink(toRecord(entries[0]?.service)),
     rows,
-    title: stringValue(item.Name),
+    title,
   }
 }
 
@@ -406,6 +508,18 @@ function numberValue(value: unknown): number | undefined {
     const parsed = Number(value)
 
     if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return undefined
+}
+
+function firstNumberValue(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    const parsed = numberValue(value)
+
+    if (parsed !== undefined) {
       return parsed
     }
   }

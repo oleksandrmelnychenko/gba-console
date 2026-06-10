@@ -45,6 +45,7 @@ import {
   IconTruckDelivery,
 } from '@tabler/icons-react'
 import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -62,6 +63,7 @@ import './sales-grid.css'
 import { useAuth } from '../../auth/useAuth'
 import { UserRoleType } from '../../../shared/auth/types'
 import {
+  getSaleById,
   getSalesUkraine,
   getSalesUkraineOrganizations,
   searchSalesUkraineClients,
@@ -169,6 +171,8 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
 
 export function SalesUkrainePage() {
   const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const focusedSaleNetId = searchParams.get('saleNetId') || ''
   const { hasPermission, user } = useAuth()
   const isAdmin =
     user?.UserRole?.UserRoleType === UserRoleType.Administrator || user?.UserRole?.UserRoleType === UserRoleType.GBA
@@ -216,6 +220,8 @@ export function SalesUkrainePage() {
   const [auditLoading, setAuditLoading] = useValueState(false)
   const [auditError, setAuditError] = useValueState<string | null>(null)
   const auditRequestRef = useRef(0)
+  const focusedSaleRequestRef = useRef(0)
+  const dismissedFocusedSaleNetIdRef = useRef('')
   const [isNewSaleOpen, setNewSaleOpen] = useValueState(false)
   const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -261,6 +267,15 @@ export function SalesUkrainePage() {
     }),
     [activeDraft, offset, pageSize],
   )
+
+  const closeSelectedSale = useCallback(() => {
+    if (focusedSaleNetId && selectedSale?.NetUid === focusedSaleNetId) {
+      dismissedFocusedSaleNetIdRef.current = focusedSaleNetId
+    }
+
+    focusedSaleRequestRef.current += 1
+    setSelectedSale(null)
+  }, [focusedSaleNetId, selectedSale?.NetUid, setSelectedSale])
 
   const openAudit = useCallback(
     (sale: SalesUkraineSale) => {
@@ -314,6 +329,38 @@ export function SalesUkrainePage() {
   useEffect(() => {
     salesRef.current = sales
   }, [sales])
+
+  useEffect(() => {
+    if (
+      !focusedSaleNetId ||
+      dismissedFocusedSaleNetIdRef.current === focusedSaleNetId ||
+      selectedSale?.NetUid === focusedSaleNetId
+    ) {
+      return
+    }
+
+    const currentSale = salesRef.current.find((sale) => sale.NetUid === focusedSaleNetId)
+
+    if (currentSale) {
+      setSelectedSale(currentSale)
+      return
+    }
+
+    const requestId = focusedSaleRequestRef.current + 1
+    focusedSaleRequestRef.current = requestId
+
+    void getSaleById(focusedSaleNetId)
+      .then((sale) => {
+        if (focusedSaleRequestRef.current === requestId && sale) {
+          setSelectedSale(sale)
+        }
+      })
+      .catch((focusedSaleError: unknown) => {
+        if (focusedSaleRequestRef.current === requestId) {
+          setError(focusedSaleError instanceof Error ? focusedSaleError.message : t('Не вдалося завантажити продаж'))
+        }
+      })
+  }, [focusedSaleNetId, sales, selectedSale?.NetUid, setError, setSelectedSale, t])
 
   const scheduleRealtimeReload = useCallback(() => {
     if (realtimeReloadRef.current !== null) {
@@ -755,7 +802,7 @@ export function SalesUkrainePage() {
         position="right"
         size="min(820px, 100vw)"
         title={t('Деталі продажу')}
-        onClose={() => setSelectedSale(null)}
+        onClose={closeSelectedSale}
       >
         {selectedSale && <SaleDetail sale={selectedSale} />}
       </AppDrawer>

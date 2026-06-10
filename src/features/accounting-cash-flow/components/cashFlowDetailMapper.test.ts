@@ -61,6 +61,147 @@ describe('cashFlowDetailMapper', () => {
     ])
   })
 
+  it('maps supplier invoice payment protocol rows', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Supplier invoice',
+      Type: 0,
+      SupplyOrderPaymentDeliveryProtocol: {
+        IsPayed: true,
+        SupplyInvoice: {
+          DateFrom: '2026-06-02T09:30:00Z',
+          InvoiceDocuments: [{ DocumentURL: 'https://example.test/invoice.pdf', FileName: 'invoice.pdf' }],
+          NetPrice: 1500,
+          Number: 'INV-10',
+          ServiceNumber: 'DOC-10',
+          SupplyOrder: {
+            Client: {
+              ClientAgreements: [
+                {
+                  Agreement: {
+                    Currency: {
+                      Code: 'EUR',
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.columnKind).toBe('supplyPaymentTask')
+    expect(detail?.rows).toMatchObject([
+      {
+        Currency: 'EUR',
+        FromData: '2026-06-02T09:30:00Z',
+        NetPrice: 1500,
+        Number: 'INV-10',
+        PaymentStatus: { kind: 'paid' },
+        ServiceNumber: 'DOC-10',
+      },
+    ])
+    expect(detail?.documents).toEqual([{ name: 'invoice.pdf', url: 'https://example.test/invoice.pdf' }])
+  })
+
+  it('maps supplier proform payment protocol rows', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Supplier proform',
+      Type: 0,
+      SupplyOrderPaymentDeliveryProtocol: {
+        SupplyProForm: {
+          DateFrom: '2026-06-03T11:00:00Z',
+          NetPrice: '990.5',
+          Number: 'PF-12',
+          ProFormDocuments: [{ URL: 'https://example.test/proform.pdf', FileName: 'proform.pdf' }],
+          ServiceNumber: 'DOC-12',
+          SupplyOrders: [
+            {
+              Client: {
+                ClientAgreements: [
+                  {
+                    Agreement: {
+                      Currency: {
+                        Code: 'USD',
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.columnKind).toBe('supplyPaymentTask')
+    expect(detail?.rows).toMatchObject([
+      {
+        Currency: 'USD',
+        FromData: '2026-06-03T11:00:00Z',
+        NetPrice: 990.5,
+        Number: 'PF-12',
+        ServiceNumber: 'DOC-12',
+      },
+    ])
+    expect(detail?.documents).toEqual([{ name: 'proform.pdf', url: 'https://example.test/proform.pdf' }])
+  })
+
+  it('maps outcome payment-order nested supply payment tasks', () => {
+    const detail = mapItemToDetailViewModel({
+      Name: 'Outcome task details',
+      Type: 11,
+      OutcomePaymentOrder: {
+        OutcomePaymentOrderSupplyPaymentTasks: [
+          {
+            SupplyPaymentTask: {
+              IsPayed: true,
+              PaymentDeliveryProtocols: [
+                {
+                  SupplyInvoice: {
+                    DateFrom: '2026-06-04T08:00:00Z',
+                    InvoiceDocuments: [{ DocumentURL: 'https://example.test/outcome-invoice.pdf', FileName: 'outcome-invoice.pdf' }],
+                    NetPrice: 700,
+                    Number: 'INV-OUT-1',
+                    ServiceNumber: 'DOC-OUT-1',
+                    SupplyOrder: {
+                      Client: {
+                        ClientAgreements: [
+                          {
+                            Agreement: {
+                              Currency: {
+                                Code: 'EUR',
+                              },
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    } as AccountingCashFlowHeadItem)
+
+    expect(detail?.columnKind).toBe('supplyPaymentTask')
+    expect(detail?.rows).toMatchObject([
+      {
+        Currency: 'EUR',
+        FromData: '2026-06-04T08:00:00Z',
+        NetPrice: 700,
+        Number: 'INV-OUT-1',
+        PaymentStatus: { kind: 'paid' },
+        ServiceNumber: 'DOC-OUT-1',
+      },
+    ])
+    expect(detail?.documents).toEqual([
+      { name: 'outcome-invoice.pdf', url: 'https://example.test/outcome-invoice.pdf' },
+    ])
+  })
+
   it('maps accounting container payment task services from type 22 payload', () => {
     const detail = mapItemToDetailViewModel({
       Name: 'Accounting container task',

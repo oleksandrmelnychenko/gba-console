@@ -94,6 +94,15 @@ describe('cashFlowDrilldown', () => {
     ).toBe('/resales/resale-1')
   })
 
+  it('routes sale rows to the focused Ukraine sale drawer', () => {
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 13,
+        Sale: { NetUid: 'sale-1' },
+      } as AccountingCashFlowHeadItem),
+    ).toBe('/sales/ukraine/all?saleNetId=sale-1')
+  })
+
   it('routes under-report outcome orders to advance reports', () => {
     expect(
       getAccountingCashFlowDrilldownRoute({
@@ -128,18 +137,29 @@ describe('cashFlowDrilldown', () => {
     ).toBe('/accounting/income-cashflows?orderNetId=income-1&from=2026-06-09&to=2026-06-09')
   })
 
+  it('keeps outcome rows with nested supply payment tasks in the cashflow detail drawer', () => {
+    expect(
+      getAccountingCashFlowDrilldownRoute({
+        Type: 11,
+        OutcomePaymentOrder: {
+          NetUid: 'outcome-with-task',
+          OutcomePaymentOrderSupplyPaymentTasks: [
+            {
+              SupplyPaymentTask: {
+                NetUid: 'task-1',
+              },
+            },
+          ],
+        },
+      } as AccountingCashFlowHeadItem),
+    ).toBeNull()
+  })
+
   it('does not create routes for skipped or unsupported rows', () => {
     expect(
       getAccountingCashFlowDrilldownRoute({
         Type: 19,
         ProductIncome: { NetUid: 'product-income-pl' },
-      } as AccountingCashFlowHeadItem),
-    ).toBeNull()
-
-    expect(
-      getAccountingCashFlowDrilldownRoute({
-        Type: 13,
-        Sale: { NetUid: 'sale-1' },
       } as AccountingCashFlowHeadItem),
     ).toBeNull()
 
