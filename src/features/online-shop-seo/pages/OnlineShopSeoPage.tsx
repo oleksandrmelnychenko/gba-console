@@ -136,6 +136,8 @@ const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'warehouses', label: 'Склади' },
 ]
 
+const SEO_VISIBLE_TABS = SEO_TABS.filter((tab) => !['shop-clients', 'bank-cards', 'warehouses'].includes(tab.value))
+
 const SEO_SHOP_DATA_SEARCH_TARGET_OPTIONS: Array<{ value: SeoShopDataSearchTarget; label: TranslationKey }> = [
   { value: 'clients', label: 'Пошук по інтернет клієнтах' },
   { value: 'bank-cards', label: 'Пошук по банківських картах' },
@@ -677,7 +679,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     () => [
       {
         id: 'storage',
-        header: 'Склад',
+        header: '',
         width: 420,
         minWidth: 320,
         accessor: (storage) => storage.Name,
@@ -748,7 +750,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const allStorageColumns: SeoRosterColumn<OnlineShopStorage>[] = [
       {
         id: 'storage',
-        header: 'Склад',
+        header: '',
         width: 420,
         minWidth: 320,
         accessor: (storage) => storage.Name,
@@ -1581,7 +1583,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <span>{t('Розділи')}</span>
             </div>
             <div className="seo-page-nav">
-              {SEO_TABS.map((tab) => (
+              {SEO_VISIBLE_TABS.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
@@ -1751,9 +1753,10 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       <SeoRosterTable
                         columns={ecommerceStorageColumns}
                         columnsTemplate="minmax(360px, 1fr) 118px 100px 82px"
-                        data={shopDataStorages}
-                        emptyText={t('Активних складів не знайдено')}
-                        getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
+                      data={shopDataStorages}
+                      emptyText={t('Активних складів не знайдено')}
+                      getRowClassName={() => 'is-hoverable'}
+                      getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
                         isLoading={isStoragesLoading}
                         loadingText={t('Завантаження складів')}
                         maxHeight="360px"
@@ -1827,6 +1830,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                   columnsTemplate="minmax(360px, 1fr) 118px 100px 82px"
                   data={activeStorages}
                   emptyText={t('Активних складів не знайдено')}
+                  getRowClassName={() => 'is-hoverable'}
                   getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
                   isLoading={isStoragesLoading}
                   loadingText={t('Завантаження складів')}

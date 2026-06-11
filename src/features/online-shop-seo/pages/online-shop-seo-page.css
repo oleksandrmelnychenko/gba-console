@@ -1181,7 +1181,8 @@
 }
 
 .seo-roster-row.is-clickable:hover,
-.seo-roster-row.is-clickable:focus-visible {
+.seo-roster-row.is-clickable:focus-visible,
+.seo-roster-row.is-hoverable:hover {
   background: #fffaf5;
   box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
   transform: translateX(4px);
@@ -1189,7 +1190,8 @@
 }
 
 .seo-roster-row.is-clickable:hover::before,
-.seo-roster-row.is-clickable:focus-visible::before {
+.seo-roster-row.is-clickable:focus-visible::before,
+.seo-roster-row.is-hoverable:hover::before {
   background: #e8782e;
 }
 
