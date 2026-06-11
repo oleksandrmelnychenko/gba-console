@@ -70,6 +70,18 @@ export function hasSelectedMergedSaleItems(sale: SalesUkraineSale, draft: Merged
   return buildMergedSaleInvoicePayload(sale, draft).Order?.OrderItems?.length ? true : false
 }
 
+export function hasMergedMainClient(merges: SalesUkraineSaleMerged[]): boolean {
+  return merges.some((merge) => {
+    const client = merge.InputSale?.ClientAgreement?.Client
+
+    return Boolean(client && !client.IsSubClient && !client.IsTradePoint)
+  })
+}
+
+export function hasCurrentUnmergedSale(sale: SalesUkraineSale | null | undefined): boolean {
+  return (sale?.Id ?? 0) > 0
+}
+
 export function getMergedSaleKey(sale: SalesUkraineSale, index: number): string {
   return String(sale.NetUid || sale.Id || index)
 }

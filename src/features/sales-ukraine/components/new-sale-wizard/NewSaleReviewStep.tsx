@@ -9,6 +9,7 @@ import {
   getRetailPaymentStatusBySaleId,
   getSaleTransporterTypes,
   getSaleTransportersByType,
+  updateMergedSale,
   updateSaleFromData,
 } from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
@@ -23,8 +24,10 @@ import {
   type WizardDeliveryRecipientAddress,
 } from './newSaleWizardApi'
 import {
+  clearWizardMergedSale,
   clearWizardSplitOrderItems,
   isSelfCheckout,
+  useWizardMergedSale,
   useWizardSplitOrderItems,
   type NewSaleReviewValue,
 } from './newSaleWizardState'
@@ -43,6 +46,7 @@ export function NewSaleReviewStep({
   onChange,
   onClose,
   onCreated,
+  onMergedSubmitted,
   onRegisterSubmit,
   onVatDocuments,
 }: {
@@ -51,6 +55,7 @@ export function NewSaleReviewStep({
   onChange: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
+  onMergedSubmitted?: () => void
   onRegisterSubmit?: (submit: (() => Promise<void>) | null) => void
   onVatDocuments?: (result: SaleDocumentResult) => void
   sale: SalesUkraineSale | null
@@ -70,6 +75,9 @@ export function NewSaleReviewStep({
   const recipientSeededRef = useRef(false)
   const flagsSeededRef = useRef(false)
   const splitItems = useWizardSplitOrderItems()
+  const mergedSale = useWizardMergedSale()
+  const isMergedMode = Boolean(mergedSale)
+  const retailSale = mergedSale?.unionSale ?? sale
 
   const latestRef = useRef({ onChange, sale, value })
 
@@ -277,7 +285,7 @@ export function NewSaleReviewStep({
   }, [recipients])
 
   useEffect(() => {
-    const saleId = sale?.RetailClient ? sale.Id : undefined
+    const saleId = retailSale?.RetailClient ? retailSale.Id : undefined
 
     if (!saleId) {
       return
@@ -304,7 +312,7 @@ export function NewSaleReviewStep({
     return () => {
       cancelled = true
     }
-  }, [sale?.Id, sale?.RetailClient])
+  }, [retailSale?.Id, retailSale?.RetailClient])
 
   const orderItems = Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems : []
   const useEurToUah = isNonVatEurSale(sale)
@@ -344,13 +352,15 @@ export function NewSaleReviewStep({
   const addressKey = value.address?.Id != null ? String(value.address.Id) : null
 
   const lifecycleKey = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType)
-  const primaryLabel = sale
-    ? sale.IsVatSale
-      ? t('Завантажити рахунок на оплату')
-      : lifecycleKey === '0'
-        ? t('Створити накладну')
-        : t('Оновити накладну')
-    : null
+  const primaryLabel = isMergedMode
+    ? t('Створити накладну')
+    : sale
+      ? sale.IsVatSale
+        ? t('Завантажити рахунок на оплату')
+        : lifecycleKey === '0'
+          ? t('Створити накладну')
+          : t('Оновити накладну')
+      : null
 
   function selectTransporter(transporter: SalesUkraineTransporter) {
     onChange({ transporter })
@@ -495,7 +505,7 @@ export function NewSaleReviewStep({
       return
     }
 
-    if (sale.RetailClient && retailStatus && String(retailStatus.Id ?? 0) !== '0' && (retailStatus.Amount ?? 0) <= 0) {
+    if (retailSale?.RetailClient && retailStatus && String(retailStatus.Id ?? 0) !== '0' && (retailStatus.Amount ?? 0) <= 0) {
       notifications.show({
         autoClose: 990000,
         color: 'red',
@@ -510,6 +520,33 @@ export function NewSaleReviewStep({
 
     try {
       const isSplitedSale = splitItems.length > 0
+
+      if (isMergedMode) {
+        try {
+          if (isSplitedSale) {
+            const result = await createSale(buildPayload('create', buildSplitSale(sale, splitItems)))
+
+            notifications.show({ color: 'green', message: result.message || t('Рахунок створено') })
+          } else {
+            const payload = buildPayload('create', sale)
+            payload.Order = { ...(sale.Order ?? {}), OrderItems: mergedSale?.orderItems ?? sale.Order?.OrderItems ?? [] }
+            payload.DeliveryRecipientAddressId = value.address?.Id ?? 0
+
+            await updateMergedSale(payload)
+            notifications.show({ color: 'green', message: t('Рахунок створено') })
+          }
+        } catch {
+          notifications.show({ color: 'red', message: t('Не вдалося створити рахунок') })
+        }
+
+        clearWizardSplitOrderItems()
+        clearWizardMergedSale()
+        onCreated?.()
+        onMergedSubmitted?.()
+
+        return
+      }
+
       const payload = buildPayload('create', isSplitedSale ? buildSplitSale(sale, splitItems) : sale)
 
       if (payload.IsVatSale) {
@@ -538,7 +575,7 @@ export function NewSaleReviewStep({
   }
 
   async function saveSale(): Promise<boolean> {
-    if (!sale || busyRef.current) {
+    if (!sale || busyRef.current || isMergedMode) {
       return false
     }
 
@@ -714,7 +751,7 @@ export function NewSaleReviewStep({
           <Button ref={submitRef} loading={submitting} onClick={() => void submitSale()}>
             {primaryLabel}
           </Button>
-          {sale ? (
+          {sale && !isMergedMode ? (
             <Button color="gray" loading={saving} variant="light" onClick={() => void handleSave()}>
               {t('Зберегти')}
             </Button>

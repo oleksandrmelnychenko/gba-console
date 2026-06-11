@@ -1,12 +1,12 @@
-import { Alert, Badge, Button, Card, Checkbox, Chip, Group, Loader, NumberInput, Stack, Table, Text } from '@mantine/core'
+import { ActionIcon, Alert, Anchor, Badge, Button, Card, Checkbox, Chip, Group, Loader, NumberInput, Stack, Table, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconFileInvoice } from '@tabler/icons-react'
+import { IconAlertCircle, IconFileInvoice, IconPencil } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
+import { getCurrentUnmergedSale, getMergedSales, updateMergedSale } from '../api/salesUkraineApi'
 import {
   buildMergedSaleInvoiceDrafts,
   buildMergedSaleInvoicePayload,
@@ -14,6 +14,8 @@ import {
   getNumber,
   getOrderItemKey,
   getOrderItems,
+  hasCurrentUnmergedSale,
+  hasMergedMainClient,
   hasSelectedMergedSaleItems,
   type MergedSaleInvoiceDraft,
   type MergedSaleInvoiceDraftBySale,
@@ -25,11 +27,19 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function MergedSalesDrawer({
   saleNetId,
+  clientAgreementNetId,
   onClose,
   onChanged,
+  onCreateNewSale,
+  onEditSale,
+  onInvoice,
 }: {
+  clientAgreementNetId?: string | null
   onChanged: () => void
   onClose: () => void
+  onCreateNewSale?: () => void
+  onEditSale?: (sale: SalesUkraineSale) => void
+  onInvoice?: (sale: SalesUkraineSale) => void
   saleNetId: string | null
 }) {
   const { t } = useI18n()
@@ -45,12 +55,36 @@ export function MergedSalesDrawer({
       title={t("Об'єднання продажів")}
       onClose={onClose}
     >
-      {saleNetId && <MergedSalesContent key={saleNetId} saleNetId={saleNetId} onChanged={onChanged} />}
+      {saleNetId && (
+        <MergedSalesContent
+          key={saleNetId}
+          clientAgreementNetId={clientAgreementNetId}
+          saleNetId={saleNetId}
+          onChanged={onChanged}
+          onCreateNewSale={onCreateNewSale}
+          onEditSale={onEditSale}
+          onInvoice={onInvoice}
+        />
+      )}
     </AppDrawer>
   )
 }
 
-function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; saleNetId: string }) {
+function MergedSalesContent({
+  saleNetId,
+  clientAgreementNetId,
+  onChanged,
+  onCreateNewSale,
+  onEditSale,
+  onInvoice,
+}: {
+  clientAgreementNetId?: string | null
+  onChanged: () => void
+  onCreateNewSale?: () => void
+  onEditSale?: (sale: SalesUkraineSale) => void
+  onInvoice?: (sale: SalesUkraineSale) => void
+  saleNetId: string
+}) {
   const { t } = useI18n()
   const [mergedSale, setMergedSale] = useValueState<SalesUkraineSale | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -59,7 +93,10 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
   const [confirmSale, setConfirmSale] = useValueState<SalesUkraineSale | null>(null)
   const [drafts, setDrafts] = useValueState<MergedSaleInvoiceDraftBySale>({})
   const [isConverting, setConverting] = useValueState(false)
+  const [hasMainClientNewSale, setHasMainClientNewSale] = useValueState<boolean | null>(null)
   const [reloadKey, reload] = useValueState(0)
+  const wantsCreateNewSale = Boolean(onCreateNewSale)
+  const agreementNetUid = clientAgreementNetId || mergedSale?.ClientAgreement?.NetUid || ''
 
   useEffect(() => {
     let cancelled = false
@@ -92,7 +129,38 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
     }
   }, [saleNetId, reloadKey, setDrafts, setError, setLoading, setMergedSale, t])
 
+  useEffect(() => {
+    if (!wantsCreateNewSale || !agreementNetUid) {
+      return
+    }
+
+    let cancelled = false
+    setHasMainClientNewSale(null)
+
+    async function check(netUid: string) {
+      try {
+        const current = await getCurrentUnmergedSale(netUid)
+
+        if (!cancelled) {
+          setHasMainClientNewSale(hasCurrentUnmergedSale(current))
+        }
+      } catch {
+        if (!cancelled) {
+          setHasMainClientNewSale(false)
+        }
+      }
+    }
+
+    void check(agreementNetUid)
+
+    return () => {
+      cancelled = true
+    }
+  }, [agreementNetUid, reloadKey, setHasMainClientNewSale, wantsCreateNewSale])
+
   const merges = Array.isArray(mergedSale?.InputSaleMerges) ? mergedSale.InputSaleMerges : []
+  const canCreateNewSaleToClient =
+    wantsCreateNewSale && !isLoading && merges.length > 0 && !hasMergedMainClient(merges) && hasMainClientNewSale === false
   const clientFilters = buildClientFilters(merges)
   const visibleMerges = merges.reduce<Array<{ index: number; merge: SalesUkraineSaleMerged }>>((acc, merge, index) => {
     if (clientFilter === 'all' || getClientNetUid(merge) === clientFilter) {
@@ -150,6 +218,12 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
       return
     }
 
+    if (onInvoice) {
+      onInvoice(payload)
+
+      return
+    }
+
     setConfirmSale(payload)
   }
 
@@ -196,6 +270,14 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
         </Alert>
       )}
 
+      {canCreateNewSaleToClient && (
+        <Group>
+          <Anchor component="button" fw={600} size="sm" type="button" onClick={onCreateNewSale}>
+            {t('Створити новий рахунок головному клієнту')}
+          </Anchor>
+        </Group>
+      )}
+
       {clientFilters.length > 1 && (
         <Chip.Group multiple={false} value={clientFilter} onChange={(value) => setClientFilter((value as string) || 'all')}>
           <Group gap="xs">
@@ -220,6 +302,7 @@ function MergedSalesContent({ saleNetId, onChanged }: { onChanged: () => void; s
             draft={drafts[getMergedSaleKey(getInputSale(merge) || {}, index)]}
             index={index}
             sale={getInputSale(merge)}
+            onEdit={onEditSale}
             onInvoice={requestConvert}
             onItemQtyChange={updateItemQty}
             onItemToggle={toggleItem}
@@ -255,6 +338,7 @@ function MergedSaleCard({
   draft,
   index,
   sale,
+  onEdit,
   onInvoice,
   onItemQtyChange,
   onItemToggle,
@@ -262,6 +346,7 @@ function MergedSaleCard({
 }: {
   draft?: MergedSaleInvoiceDraft
   index: number
+  onEdit?: (sale: SalesUkraineSale) => void
   onInvoice: (sale: SalesUkraineSale, index: number) => void
   onItemQtyChange: (sale: SalesUkraineSale, saleIndex: number, itemKey: string, qty: number | string) => void
   onItemToggle: (sale: SalesUkraineSale, saleIndex: number, itemKey: string, selected: boolean) => void
@@ -301,6 +386,11 @@ function MergedSaleCard({
               label={t('Усі товари')}
               onChange={(event) => onSaleToggle(sale, index, event.currentTarget.checked)}
             />
+            {onEdit && (
+              <ActionIcon aria-label={t('Редагувати')} color="gray" size="lg" variant="subtle" onClick={() => onEdit(sale)}>
+                <IconPencil size={18} />
+              </ActionIcon>
+            )}
             <Button
               color="teal"
               disabled={!canInvoice}
@@ -309,7 +399,7 @@ function MergedSaleCard({
               variant="light"
               onClick={() => onInvoice(sale, index)}
             >
-              {t('Зробити рахунок')}
+              {t('Створити накладну')}
             </Button>
           </Group>
         </Group>

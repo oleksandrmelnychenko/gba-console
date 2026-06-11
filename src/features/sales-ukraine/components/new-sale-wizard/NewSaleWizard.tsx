@@ -13,10 +13,13 @@ import {
   bumpWizardDebtRefresh,
   canAdvanceToProducts,
   canAdvanceToReview,
+  clearWizardMergedSale,
   clearWizardSplitOrderItems,
   getCartItemCount,
+  getWizardMergedSale,
   NEW_SALE_REVIEW_INITIAL,
   NEW_SALE_WIZARD_INITIAL,
+  setWizardMergedSale,
   type NewSaleReviewValue,
   type NewSaleWizardState,
 } from './newSaleWizardState'
@@ -123,6 +126,7 @@ function NewSaleWizardContent({
 
   useEffect(() => {
     clearWizardSplitOrderItems()
+    clearWizardMergedSale()
   }, [])
 
   useEffect(() => {
@@ -145,7 +149,14 @@ function NewSaleWizardContent({
       const next = await getSaleById(netId)
 
       if (next) {
-        setState((current) => ({ ...current, sale: next }))
+        setState((current) => {
+          const merged = getWizardMergedSale()
+
+          return {
+            ...current,
+            sale: merged ? { ...next, Order: { ...(next.Order ?? {}), OrderItems: merged.orderItems } } : next,
+          }
+        })
       }
 
       return
@@ -172,6 +183,7 @@ function NewSaleWizardContent({
     try {
       const cart = await getCurrentSaleCart(state.agreementNetId)
 
+      clearWizardMergedSale()
       setState((current) => ({ ...current, sale: cart?.NetUid ? cart : null }))
       bumpWizardDebtRefresh()
       setActive(1)
@@ -185,7 +197,7 @@ function NewSaleWizardContent({
     }
   }
 
-  async function openRegistrySale(sale: SalesUkraineSale) {
+  async function openRegistrySale(sale: SalesUkraineSale): Promise<boolean> {
     const agreement = sale.ClientAgreement ?? null
 
     setBusy(true)
@@ -194,6 +206,7 @@ function NewSaleWizardContent({
       const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
 
       clearWizardSplitOrderItems()
+      clearWizardMergedSale()
       setReview(NEW_SALE_REVIEW_INITIAL)
       setState((current) => ({
         ...current,
@@ -201,6 +214,42 @@ function NewSaleWizardContent({
         agreementNetId: agreement?.NetUid ?? current.agreementNetId,
         sale: fresh ?? sale,
       }))
+      bumpWizardDebtRefresh()
+      setActive(1)
+
+      return true
+    } catch (loadError) {
+      notifications.show({
+        color: 'red',
+        message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
+      })
+
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function openMergedSaleEdit(sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) {
+    const agreement = unionSale?.ClientAgreement ?? null
+
+    setBusy(true)
+
+    try {
+      const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
+      const next = fresh ?? sale
+
+      clearWizardSplitOrderItems()
+      setReview(NEW_SALE_REVIEW_INITIAL)
+      setState((current) => ({
+        ...current,
+        agreement: agreement ?? current.agreement,
+        agreementNetId: agreement?.NetUid ?? current.agreementNetId,
+        sale: next,
+      }))
+      setWizardMergedSale(
+        sale.NetUid ? { netUid: sale.NetUid, orderItems: next.Order?.OrderItems ?? [], unionSale } : null,
+      )
       bumpWizardDebtRefresh()
       setActive(1)
     } catch (loadError) {
@@ -213,8 +262,41 @@ function NewSaleWizardContent({
     }
   }
 
+  function openMergedSaleInvoice(sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) {
+    const agreement = unionSale?.ClientAgreement ?? null
+
+    clearWizardSplitOrderItems()
+    setReview(NEW_SALE_REVIEW_INITIAL)
+    setState((current) => ({
+      ...current,
+      agreement: agreement ?? current.agreement,
+      agreementNetId: agreement?.NetUid ?? current.agreementNetId,
+      sale,
+    }))
+    setWizardMergedSale(sale.NetUid ? { netUid: sale.NetUid, orderItems: sale.Order?.OrderItems ?? [], unionSale: null } : null)
+    bumpWizardDebtRefresh()
+    setActive(2)
+  }
+
+  function startMergedMainClientSale(unionSale: SalesUkraineSale) {
+    const agreement = unionSale.ClientAgreement ?? null
+
+    clearWizardSplitOrderItems()
+    clearWizardMergedSale()
+    setReview(NEW_SALE_REVIEW_INITIAL)
+    setState((current) => ({
+      ...current,
+      agreement: agreement ?? current.agreement,
+      agreementNetId: agreement?.NetUid ?? current.agreementNetId,
+      sale: null,
+    }))
+    bumpWizardDebtRefresh()
+    setActive(1)
+  }
+
   function goToClients() {
     clearWizardSplitOrderItems()
+    clearWizardMergedSale()
     setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({ ...current, sale: null }))
     setActive(0)
@@ -358,14 +440,19 @@ function NewSaleWizardContent({
             clientNetId={state.clientNetId}
             onAgreementChange={(agreementNetId, agreement) => {
               clearWizardSplitOrderItems()
+              clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
               setState((current) => ({ ...current, agreement, agreementNetId }))
             }}
             onClientChange={(clientNetId) => {
               clearWizardSplitOrderItems()
+              clearWizardMergedSale()
               setReview(NEW_SALE_REVIEW_INITIAL)
               setState((current) => ({ ...current, clientNetId }))
             }}
+            onCreateMergedMainClientSale={startMergedMainClientSale}
+            onEditMergedSale={(sale, unionSale) => void openMergedSaleEdit(sale, unionSale)}
+            onInvoiceMergedSale={openMergedSaleInvoice}
             onOpenSale={(sale) => void openRegistrySale(sale)}
             onRequestClose={onClose}
           />
@@ -388,6 +475,7 @@ function NewSaleWizardContent({
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
             onClose={onClose}
             onCreated={onCreated}
+            onMergedSubmitted={goToClients}
             onRegisterSubmit={registerReviewSubmit}
             onVatDocuments={onVatDocuments}
           />

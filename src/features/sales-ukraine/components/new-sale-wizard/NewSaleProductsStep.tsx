@@ -38,7 +38,10 @@ import {
   clearWizardSplitOrderItems,
   getWizardSplitAgreementNetId,
   getWizardSplitOrderItems,
+  isWizardMergedSaleMode,
+  removeWizardMergedOrderItem,
   setWizardSplitOrderItems,
+  upsertWizardMergedOrderItem,
 } from './newSaleWizardState'
 import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
 import { ProductImageViewModal } from './ProductImageViewModal'
@@ -439,6 +442,30 @@ export function NewSaleProductsStep({
     [productPricing, reservations, isVatSale, useEurToUah],
   )
 
+  async function addOrderItemToSale(clientAgreementNetId: string, saleNetId: string, item: SalesUkraineOrderItem) {
+    const created = await addOrderItem(clientAgreementNetId, saleNetId, item)
+
+    if (isWizardMergedSaleMode()) {
+      upsertWizardMergedOrderItem(created ?? item)
+    }
+  }
+
+  async function updateOrderItemInSale(item: SalesUkraineOrderItem) {
+    await updateOrderItem(item)
+
+    if (isWizardMergedSaleMode()) {
+      upsertWizardMergedOrderItem(item)
+    }
+  }
+
+  async function deleteOrderItemFromSale(orderItemNetId: string) {
+    await deleteOrderItem(orderItemNetId)
+
+    if (isWizardMergedSaleMode()) {
+      removeWizardMergedOrderItem(orderItemNetId)
+    }
+  }
+
   function beginBusy(): boolean {
     if (busyRef.current) {
       return false
@@ -677,7 +704,7 @@ export function NewSaleProductsStep({
           return
         }
 
-        await addOrderItem(agreementNetId, sale.NetUid, { ...modal.item, Comment: comment, Qty: qty })
+        await addOrderItemToSale(agreementNetId, sale.NetUid, { ...modal.item, Comment: comment, Qty: qty })
         await onCartChanged()
         resetSearchAfterAdd(modal.item.Product as WizardSaleProduct | undefined)
       } else if (modal.kind === 'edit-current') {
@@ -705,14 +732,14 @@ export function NewSaleProductsStep({
           }
 
           if (rest > 0) {
-            await updateOrderItem({ ...modal.item, Qty: rest })
+            await updateOrderItemInSale({ ...modal.item, Qty: rest })
           } else if (modal.item.NetUid) {
-            await deleteOrderItem(modal.item.NetUid)
+            await deleteOrderItemFromSale(modal.item.NetUid)
           }
 
           await onCartChanged()
         } else {
-          await updateOrderItem({ ...modal.item, Comment: comment, Qty: qty })
+          await updateOrderItemInSale({ ...modal.item, Comment: comment, Qty: qty })
           await onCartChanged()
         }
       } else {
@@ -725,9 +752,9 @@ export function NewSaleProductsStep({
         const existing = orderItems.find((item) => item.Product?.NetUid === modal.item.Product.NetUid)
 
         if (existing) {
-          await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + qty })
+          await updateOrderItemInSale({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + qty })
         } else if (agreementNetId && sale?.NetUid) {
-          await addOrderItem(agreementNetId, sale.NetUid, {
+          await addOrderItemToSale(agreementNetId, sale.NetUid, {
             Comment: modal.item.Comment,
             Deleted: false,
             Id: 0,
@@ -773,7 +800,7 @@ export function NewSaleProductsStep({
     }
 
     try {
-      await deleteOrderItem(item.NetUid)
+      await deleteOrderItemFromSale(item.NetUid)
       await onCartChanged()
       clearProductPricingCache()
     } catch {
@@ -861,9 +888,9 @@ export function NewSaleProductsStep({
           const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
 
           if (existing) {
-            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
+            await updateOrderItemInSale({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
           } else {
-            await addOrderItem(agreementNetId, sale.NetUid, {
+            await addOrderItemToSale(agreementNetId, sale.NetUid, {
               Comment: item.Comment,
               Deleted: false,
               Id: 0,
@@ -958,7 +985,7 @@ export function NewSaleProductsStep({
           }
 
           if (item.NetUid) {
-            await deleteOrderItem(item.NetUid)
+            await deleteOrderItemFromSale(item.NetUid)
           }
 
           await onCartChanged()
@@ -973,9 +1000,9 @@ export function NewSaleProductsStep({
           const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
 
           if (existing) {
-            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
+            await updateOrderItemInSale({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
           } else if (agreementNetId && sale?.NetUid) {
-            await addOrderItem(agreementNetId, sale.NetUid, {
+            await addOrderItemToSale(agreementNetId, sale.NetUid, {
               Comment: item.Comment,
               Deleted: false,
               Id: 0,

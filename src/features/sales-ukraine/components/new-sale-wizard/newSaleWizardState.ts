@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { SalesUkraineClientAgreement, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
+import type { SalesUkraineClientAgreement, SalesUkraineOrderItem, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
 import type { WizardSplitOrderItem } from './EditShoppingCartOverlay'
 import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
 
@@ -114,6 +114,81 @@ export function subscribeWizardSplitOrderItems(listener: () => void): () => void
 
 export function useWizardSplitOrderItems(): WizardSplitOrderItem[] {
   return useSyncExternalStore(subscribeWizardSplitOrderItems, getWizardSplitOrderItems)
+}
+
+export type WizardMergedSaleState = {
+  netUid: string
+  orderItems: SalesUkraineOrderItem[]
+  unionSale: SalesUkraineSale | null
+}
+
+let mergedSale: WizardMergedSaleState | null = null
+
+const mergedSaleListeners = new Set<() => void>()
+
+function notifyMergedSaleListeners(): void {
+  mergedSaleListeners.forEach((listener) => listener())
+}
+
+export function getWizardMergedSale(): WizardMergedSaleState | null {
+  return mergedSale
+}
+
+export function getWizardMergedSaleNetUid(): string | null {
+  return mergedSale?.netUid ?? null
+}
+
+export function isWizardMergedSaleMode(): boolean {
+  return mergedSale !== null
+}
+
+export function setWizardMergedSale(next: WizardMergedSaleState | null): void {
+  if (mergedSale === next) {
+    return
+  }
+
+  mergedSale = next
+  notifyMergedSaleListeners()
+}
+
+export function upsertWizardMergedOrderItem(item: SalesUkraineOrderItem): void {
+  if (!mergedSale) {
+    return
+  }
+
+  const index = mergedSale.orderItems.findIndex((existing) => existing.Product?.NetUid === item.Product?.NetUid)
+  const orderItems =
+    index >= 0
+      ? mergedSale.orderItems.map((existing, position) => (position === index ? item : existing))
+      : [item, ...mergedSale.orderItems]
+
+  mergedSale = { ...mergedSale, orderItems }
+  notifyMergedSaleListeners()
+}
+
+export function removeWizardMergedOrderItem(orderItemNetUid: string): void {
+  if (!mergedSale) {
+    return
+  }
+
+  mergedSale = { ...mergedSale, orderItems: mergedSale.orderItems.filter((item) => item.NetUid !== orderItemNetUid) }
+  notifyMergedSaleListeners()
+}
+
+export function clearWizardMergedSale(): void {
+  setWizardMergedSale(null)
+}
+
+export function subscribeWizardMergedSale(listener: () => void): () => void {
+  mergedSaleListeners.add(listener)
+
+  return () => {
+    mergedSaleListeners.delete(listener)
+  }
+}
+
+export function useWizardMergedSale(): WizardMergedSaleState | null {
+  return useSyncExternalStore(subscribeWizardMergedSale, getWizardMergedSale)
 }
 
 let debtRefreshVersion = 0

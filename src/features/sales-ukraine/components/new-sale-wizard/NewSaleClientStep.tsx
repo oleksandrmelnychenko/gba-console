@@ -53,11 +53,17 @@ export function NewSaleClientStep({
   onClientChange,
   onAgreementChange,
   onOpenSale,
+  onCreateMergedMainClientSale,
+  onEditMergedSale,
+  onInvoiceMergedSale,
   onRequestClose,
 }: {
   clientNetId: string | null
   onAgreementChange: (agreementNetId: string | null, agreement: SalesUkraineClientAgreement | null) => void
   onClientChange: (clientNetId: string | null) => void
+  onCreateMergedMainClientSale?: (unionSale: SalesUkraineSale) => void
+  onEditMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
+  onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onOpenSale: (sale: SalesUkraineSale) => void
   onRequestClose?: () => void
 }) {
@@ -81,7 +87,7 @@ export function NewSaleClientStep({
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [isOrderedProductsOpen, setOrderedProductsOpen] = useState(false)
   const [editShiftSale, setEditShiftSale] = useState<SalesUkraineSale | null>(null)
-  const [mergedSaleNetId, setMergedSaleNetId] = useState<string | null>(null)
+  const [mergedSale, setMergedSale] = useState<SalesUkraineSale | null>(null)
   const [detailsSale, setDetailsSale] = useState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useState<SalesUkraineSale | null>(null)
   const [auditStatistic, setAuditStatistic] = useState<SaleAuditStatistic | null>(null)
@@ -530,9 +536,32 @@ export function NewSaleClientStep({
 
   function openRow(sale: SalesUkraineSale) {
     if (sale.InputSaleMerges?.length) {
-      setMergedSaleNetId(sale.NetUid ?? null)
+      setMergedSale(sale)
     } else {
       onOpenSale(sale)
+    }
+  }
+
+  function handleMergedEdit(sale: SalesUkraineSale) {
+    const unionSale = mergedSale
+
+    setMergedSale(null)
+    onEditMergedSale?.(sale, unionSale)
+  }
+
+  function handleMergedInvoice(sale: SalesUkraineSale) {
+    const unionSale = mergedSale
+
+    setMergedSale(null)
+    onInvoiceMergedSale?.(sale, unionSale)
+  }
+
+  function handleMergedNewSale() {
+    const unionSale = mergedSale
+    setMergedSale(null)
+
+    if (unionSale) {
+      onCreateMergedMainClientSale?.(unionSale)
     }
   }
 
@@ -846,9 +875,13 @@ export function NewSaleClientStep({
       />
 
       <MergedSalesDrawer
-        saleNetId={mergedSaleNetId}
+        clientAgreementNetId={mergedSale?.ClientAgreement?.NetUid ?? null}
+        saleNetId={mergedSale?.NetUid ?? null}
         onChanged={() => void fetchRegister()}
-        onClose={() => setMergedSaleNetId(null)}
+        onClose={() => setMergedSale(null)}
+        onCreateNewSale={onCreateMergedMainClientSale ? handleMergedNewSale : undefined}
+        onEditSale={onEditMergedSale ? handleMergedEdit : undefined}
+        onInvoice={onInvoiceMergedSale ? handleMergedInvoice : undefined}
       />
 
       <AppModal centered opened={Boolean(printState)} size="sm" title={t('Документ')} onClose={closePrint}>

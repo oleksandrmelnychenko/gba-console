@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildMergedSaleInvoiceDrafts,
   buildMergedSaleInvoicePayload,
+  hasCurrentUnmergedSale,
+  hasMergedMainClient,
   hasSelectedMergedSaleItems,
 } from './mergedSaleInvoice'
 import type { SalesUkraineSale } from './types'
@@ -45,6 +47,37 @@ describe('merged sale invoice helpers', () => {
     ).toBe(false)
   })
 })
+
+describe('merged sale main client guards', () => {
+  it('detects a main client only when a merge client is neither sub-client nor trade point', () => {
+    expect(hasMergedMainClient([])).toBe(false)
+    expect(
+      hasMergedMainClient([
+        { InputSale: saleForClient({ IsSubClient: true, IsTradePoint: false }) },
+        { InputSale: saleForClient({ IsSubClient: false, IsTradePoint: true }) },
+      ]),
+    ).toBe(false)
+    expect(
+      hasMergedMainClient([
+        { InputSale: saleForClient({ IsSubClient: true, IsTradePoint: false }) },
+        { InputSale: saleForClient({ IsSubClient: false, IsTradePoint: false }) },
+      ]),
+    ).toBe(true)
+    expect(hasMergedMainClient([{ InputSale: { NetUid: 'sale-1' } }])).toBe(false)
+  })
+
+  it('treats only a sale body with positive id as a current unmerged sale', () => {
+    expect(hasCurrentUnmergedSale(null)).toBe(false)
+    expect(hasCurrentUnmergedSale(undefined)).toBe(false)
+    expect(hasCurrentUnmergedSale({})).toBe(false)
+    expect(hasCurrentUnmergedSale({ Id: 0 })).toBe(false)
+    expect(hasCurrentUnmergedSale({ Id: 17 })).toBe(true)
+  })
+})
+
+function saleForClient(client: { IsSubClient: boolean; IsTradePoint: boolean }): SalesUkraineSale {
+  return { ClientAgreement: { Client: client } } as SalesUkraineSale
+}
 
 function saleWithItems(netUid: string, quantities: number[]): SalesUkraineSale {
   return {

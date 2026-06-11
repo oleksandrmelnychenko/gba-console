@@ -164,12 +164,14 @@ export async function addOrderItem(
   clientAgreementNetId: string,
   saleNetId: string,
   orderItem: SalesUkraineOrderItem,
-): Promise<void> {
-  await apiRequest<unknown>('/orders/items/new', {
+): Promise<SalesUkraineOrderItem | null> {
+  const result = await apiRequest<unknown>('/orders/items/new', {
     body: orderItem,
     method: 'POST',
     query: { clientAgreementNetId, saleNetId },
   })
+
+  return result && typeof result === 'object' && !Array.isArray(result) ? (result as SalesUkraineOrderItem) : null
 }
 
 export async function getSaleClientAgreements(clientNetId: string): Promise<SalesUkraineClientAgreement[]> {
