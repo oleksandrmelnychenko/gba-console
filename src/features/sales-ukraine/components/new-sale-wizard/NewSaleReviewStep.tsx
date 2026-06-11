@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
   convertVatSaleAndGetPaymentDocument,
+  createSale,
   getRetailPaymentStatusBySaleId,
   getSaleTransporterTypes,
   getSaleTransportersByType,
@@ -12,7 +13,8 @@ import {
 } from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
 import { getSaleLifecycleTypeKey } from '../../saleStatus'
-import type { SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
+import type { SaleDocumentResult, SalesUkraineRetailPaymentStatus, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
+import type { WizardSplitOrderItem } from './EditShoppingCartOverlay'
 import {
   getClientDeliveryRecipients,
   newDeliveryRecipient,
@@ -20,7 +22,12 @@ import {
   type WizardDeliveryRecipient,
   type WizardDeliveryRecipientAddress,
 } from './newSaleWizardApi'
-import { isSelfCheckout, type NewSaleReviewValue } from './newSaleWizardState'
+import {
+  clearWizardSplitOrderItems,
+  isSelfCheckout,
+  useWizardSplitOrderItems,
+  type NewSaleReviewValue,
+} from './newSaleWizardState'
 import { useWizardKeyboard, useWizardKeyHandler } from './wizardKeyboard'
 import { WizardReviewCombobox, type WizardReviewComboboxOption } from './WizardReviewCombobox'
 import { WizardReviewConfirmModal } from './WizardReviewConfirmModal'
@@ -35,11 +42,15 @@ export function NewSaleReviewStep({
   onChange,
   onClose,
   onCreated,
+  onRegisterSubmit,
+  onVatDocuments,
 }: {
   clientNetId: string | null
   onChange: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
-  onCreated?: (sale: SalesUkraineSale) => void
+  onCreated?: () => void
+  onRegisterSubmit?: (submit: (() => Promise<void>) | null) => void
+  onVatDocuments?: (result: SaleDocumentResult) => void
   sale: SalesUkraineSale | null
   value: NewSaleReviewValue
 }) {
@@ -56,12 +67,31 @@ export function NewSaleReviewStep({
   const transporterSeededRef = useRef(false)
   const recipientSeededRef = useRef(false)
   const flagsSeededRef = useRef(false)
+  const splitItems = useWizardSplitOrderItems()
 
   const latestRef = useRef({ onChange, sale, value })
 
   useEffect(() => {
     latestRef.current = { onChange, sale, value }
   })
+
+  const submitSaleRef = useRef<() => Promise<void>>(() => Promise.resolve())
+
+  useEffect(() => {
+    submitSaleRef.current = submitSale
+  })
+
+  useEffect(() => {
+    if (!onRegisterSubmit) {
+      return
+    }
+
+    onRegisterSubmit(() => submitSaleRef.current())
+
+    return () => {
+      onRegisterSubmit(null)
+    }
+  }, [onRegisterSubmit])
 
   useWizardKeyboard(2)
 
@@ -469,21 +499,25 @@ export function NewSaleReviewStep({
     setSubmitting(true)
 
     try {
-      const payload = buildPayload('create', sale)
+      const isSplitedSale = splitItems.length > 0
+      const payload = buildPayload('create', isSplitedSale ? buildSplitSale(sale, splitItems) : sale)
 
       if (payload.IsVatSale) {
         const documentResult = await convertVatSaleAndGetPaymentDocument(payload, value.ttnFile)
-        const url = documentResult.pdfUrl || documentResult.excelUrl
 
-        if (url) {
-          window.open(url, '_blank', 'noopener,noreferrer')
-        }
+        onVatDocuments?.(documentResult)
+      } else if (isSplitedSale) {
+        const result = await createSale(payload)
+
+        notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
       } else {
-        await updateSaleFromData(payload, value.ttnFile)
+        const result = await updateSaleFromData(payload, value.ttnFile)
+
+        notifications.show({ color: 'green', message: result.message || t('Продаж створено') })
       }
 
-      notifications.show({ color: 'green', message: t('Продаж створено') })
-      onCreated?.(payload)
+      clearWizardSplitOrderItems()
+      onCreated?.()
       onClose?.()
     } catch {
       notifications.show({ color: 'red', message: t('Не вдалося завершити продаж') })
@@ -510,9 +544,10 @@ export function NewSaleReviewStep({
     setSaving(true)
 
     try {
-      await updateSaleFromData(buildPayload('save', sale), value.ttnFile)
-      notifications.show({ color: 'green', message: t('Збережено') })
-      onCreated?.(sale)
+      const result = await updateSaleFromData(buildPayload('save', sale), value.ttnFile)
+
+      notifications.show({ color: 'green', message: result.message || t('Збережено') })
+      onCreated?.()
 
       return true
     } catch {
@@ -680,6 +715,33 @@ export function NewSaleReviewStep({
       <WizardReviewConfirmModal opened={confirmOpened} onCancel={handleCancelClose} onConfirm={handleConfirmClose} />
     </Stack>
   )
+}
+
+function buildSplitSale(current: SalesUkraineSale, items: WizardSplitOrderItem[]): SalesUkraineSale {
+  return {
+    ClientAgreement: current.ClientAgreement,
+    CustomersOwnTtn: current.CustomersOwnTtn ?? null,
+    Deleted: false,
+    Id: 0,
+    NetUid: EMPTY_GUID,
+    Order: {
+      Deleted: false,
+      Id: 0,
+      NetUid: EMPTY_GUID,
+      OrderItems: items.map((item) => ({
+        Comment: item.Comment ?? '',
+        Deleted: false,
+        Id: 0,
+        NetUid: EMPTY_GUID,
+        Product: item.Product,
+        Qty: item.Qty,
+        TotalAmount: item.TotalAmount,
+        TotalAmountLocal: item.TotalAmountLocal,
+        User: item.User,
+      })),
+    },
+    TTN: current.TTN,
+  }
 }
 
 function applyRecipientSelection(

@@ -27,8 +27,10 @@ import {
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
-type ShiftDraftEntry = { bill: number | string; store: number | string }
+type ShiftDraftEntry = { bill: number | string; billTouched: boolean; store: number | string; storeTouched: boolean }
 type ShiftDraft = Record<string, ShiftDraftEntry>
+
+const EMPTY_DRAFT_ENTRY: ShiftDraftEntry = { bill: '', billTouched: false, store: '', storeTouched: false }
 type SaleEditState = {
   draft: ShiftDraft
   error: string | null
@@ -176,7 +178,6 @@ function SaleEditContent({
   }, [initialSale.NetUid, t])
 
   const orderItems = getOrderItems(sale)
-  const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || 'EUR'
   const isNew = isNewSale(sale)
 
   function updateEntry(key: string, patch: Partial<ShiftDraftEntry>) {
@@ -185,17 +186,18 @@ function SaleEditContent({
 
   function allToBill() {
     dispatch({ draft: buildBulkDraft(orderItems, 'bill'), type: 'draftReplaced' })
+    void submitShift(buildBulkShiftPayload(sale, 'bill'))
   }
 
   function allToStore() {
     dispatch({ draft: buildBulkDraft(orderItems, 'store'), type: 'draftReplaced' })
+    void submitShift(buildBulkShiftPayload(sale, 'store'))
   }
 
-  async function doShift() {
+  async function submitShift(payload: SalesUkraineSale) {
     dispatch({ type: 'savingStarted' })
 
     try {
-      const payload = buildShiftPayload(sale, draft, { allowBillShift: !isNew })
       await shiftOrderItemsCurrent(payload)
       notifications.show({ color: 'green', message: t('Зсув виконано') })
       onSaved()
@@ -204,6 +206,10 @@ function SaleEditContent({
     } finally {
       dispatch({ type: 'savingFinished' })
     }
+  }
+
+  function doShift() {
+    return submitShift(buildShiftPayload(sale, draft))
   }
 
   if (isLoading) {
@@ -231,18 +237,25 @@ function SaleEditContent({
   }
 
   return (
-    <Stack gap="md">
+    <Stack
+      gap="md"
+      onKeyUp={(event) => {
+        if (event.key === 'Enter' && !isSaving) {
+          void doShift()
+        }
+      }}
+    >
       <Group justify="space-between" wrap="wrap">
         <Badge color="blue" variant="light">
           {t('Товарів')}: {orderItems.length}
         </Badge>
         <Group gap="xs">
           {!isNew && (
-            <Button leftSection={<IconReceipt size={16} />} variant="light" onClick={allToBill}>
+            <Button disabled={isSaving} leftSection={<IconReceipt size={16} />} variant="light" onClick={allToBill}>
               {t('Все в рахунок')}
             </Button>
           )}
-          <Button leftSection={<IconBuildingWarehouse size={16} />} variant="light" onClick={allToStore}>
+          <Button disabled={isSaving} leftSection={<IconBuildingWarehouse size={16} />} variant="light" onClick={allToStore}>
             {t('Все на склад')}
           </Button>
         </Group>
@@ -274,19 +287,17 @@ function SaleEditContent({
             {orderItems.map((item, index) => {
               const key = itemKey(item, index)
               const qty = getNumber(item.Qty) ?? 0
-              const entry = draft[key] || { bill: '', store: '' }
-              const billNum = toNumber(entry.bill)
-              const storeNum = toNumber(entry.store)
+              const entry = draft[key] || EMPTY_DRAFT_ENTRY
+              const billNum = entry.billTouched ? toNumber(entry.bill) : getExistingShiftQty(item, OrderItemShiftStatusType.Bill)
+              const storeNum = entry.storeTouched ? toNumber(entry.store) : getExistingShiftQty(item, OrderItemShiftStatusType.Store)
 
               return (
                 <Table.Tr key={key}>
                   <Table.Td>{displayValue(getOrderItemProductCode(item))}</Table.Td>
                   <Table.Td>{displayValue(item.Product?.MainOriginalNumber)}</Table.Td>
                   <Table.Td>{displayValue(getOrderItemProductName(item))}</Table.Td>
-                  <Table.Td ta="right">
-                    {amountFormatter.format(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount) ?? 0)}
-                  </Table.Td>
-                  <Table.Td>{currencyCode}</Table.Td>
+                  <Table.Td ta="right">{amountFormatter.format(getNumber(item.TotalAmount) ?? 0)}</Table.Td>
+                  <Table.Td>EUR</Table.Td>
                   <Table.Td ta="right">{displayValue(qty)}</Table.Td>
                   {!isNew && (
                     <Table.Td>
@@ -299,7 +310,7 @@ function SaleEditContent({
                         min={0}
                         size="xs"
                         value={entry.bill}
-                        onChange={(value) => updateEntry(key, { bill: value })}
+                        onChange={(value) => updateEntry(key, { bill: value, billTouched: true })}
                       />
                     </Table.Td>
                   )}
@@ -313,7 +324,7 @@ function SaleEditContent({
                       min={0}
                       size="xs"
                       value={entry.store}
-                      onChange={(value) => updateEntry(key, { store: value })}
+                      onChange={(value) => updateEntry(key, { store: value, storeTouched: true })}
                     />
                   </Table.Td>
                   <Table.Td>{formatDateTime(item.Created)}</Table.Td>
@@ -337,27 +348,35 @@ function SaleEditContent({
   )
 }
 
-function buildShiftPayload(
-  sale: SalesUkraineSale,
-  draft: ShiftDraft,
-  { allowBillShift = true }: { allowBillShift?: boolean } = {},
-): SalesUkraineSale {
+function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkraineSale {
   const orderItems = getOrderItems(sale)
 
   const nextItems = orderItems.map((item, index) => {
     const key = itemKey(item, index)
-    const entry = draft[key] || { bill: '', store: '' }
-    const billQty = toNumber(entry.bill)
-    const storeQty = toNumber(entry.store)
+    const entry = draft[key] || EMPTY_DRAFT_ENTRY
     const existing = Array.isArray(item.ShiftStatuses) ? item.ShiftStatuses : []
+    const existingBill = existing.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Bill)
+    const existingStore = existing.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Store)
     const nextStatuses: SalesUkraineOrderItemShiftStatus[] = []
 
-    if (allowBillShift && billQty > 0) {
-      nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Bill, billQty, item))
+    if (entry.billTouched) {
+      const billQty = toNumber(entry.bill)
+
+      if (billQty > 0) {
+        nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Bill, billQty, item))
+      }
+    } else if (existingBill) {
+      nextStatuses.push(existingBill)
     }
 
-    if (storeQty > 0) {
-      nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Store, storeQty, item))
+    if (entry.storeTouched) {
+      const storeQty = toNumber(entry.store)
+
+      if (storeQty > 0) {
+        nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Store, storeQty, item))
+      }
+    } else if (existingStore) {
+      nextStatuses.push(existingStore)
     }
 
     return { ...item, ShiftStatuses: nextStatuses }
@@ -370,6 +389,36 @@ function buildShiftPayload(
       OrderItems: nextItems,
     },
   }
+}
+
+function buildBulkShiftPayload(sale: SalesUkraineSale, target: 'bill' | 'store'): SalesUkraineSale {
+  const shiftStatus = target === 'bill' ? OrderItemShiftStatusType.Bill : OrderItemShiftStatusType.Store
+
+  return {
+    ...sale,
+    Order: {
+      ...sale.Order,
+      OrderItems: getOrderItems(sale).map((item) => ({
+        ...item,
+        ShiftStatuses: [
+          {
+            Id: 0,
+            NetUid: EMPTY_GUID,
+            Deleted: false,
+            ShiftStatus: shiftStatus as SalesUkraineOrderItemShiftStatus['ShiftStatus'],
+            Qty: getNumber(item.Qty) ?? 0,
+            OrderItemId: item.Id,
+          },
+        ],
+      })),
+    },
+  }
+}
+
+function getExistingShiftQty(item: SalesUkraineOrderItem, shiftStatus: number): number {
+  const statuses = Array.isArray(item.ShiftStatuses) ? item.ShiftStatuses : []
+
+  return getNumber(statuses.find((status) => status.ShiftStatus === shiftStatus)?.Qty) ?? 0
 }
 
 function buildShiftStatus(
@@ -398,14 +447,7 @@ function buildDraft(orderItems: SalesUkraineOrderItem[]): ShiftDraft {
   const draft: ShiftDraft = {}
 
   orderItems.forEach((item, index) => {
-    const statuses = Array.isArray(item.ShiftStatuses) ? item.ShiftStatuses : []
-    const bill = statuses.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Bill)?.Qty
-    const store = statuses.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Store)?.Qty
-
-    draft[itemKey(item, index)] = {
-      bill: typeof bill === 'number' ? bill : '',
-      store: typeof store === 'number' ? store : '',
-    }
+    draft[itemKey(item, index)] = { ...EMPTY_DRAFT_ENTRY }
   })
 
   return draft
@@ -418,7 +460,9 @@ function buildBulkDraft(orderItems: SalesUkraineOrderItem[], target: 'bill' | 's
     const qty = getNumber(item.Qty) ?? 0
     draft[itemKey(item, index)] = {
       bill: target === 'bill' ? qty || '' : '',
+      billTouched: true,
       store: target === 'store' ? qty || '' : '',
+      storeTouched: true,
     }
   })
 

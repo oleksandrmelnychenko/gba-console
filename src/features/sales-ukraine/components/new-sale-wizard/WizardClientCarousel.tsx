@@ -11,6 +11,7 @@ export function WizardClientCarousel({
   hideName,
   searchInputRef,
   searchValue,
+  selectedClientKey,
   onPickClient,
   onSearchChange,
 }: {
@@ -19,6 +20,7 @@ export function WizardClientCarousel({
   hideName: boolean
   searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
+  selectedClientKey: string
   onPickClient: (client: Client) => void
   onSearchChange: (value: string) => void
 }) {
@@ -29,7 +31,12 @@ export function WizardClientCarousel({
       <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0, overflow: 'hidden' }}>
         <Stack gap={2}>
           {carousel.dataTop.map((client, index) => (
-            <ClientViewerRow key={getClientKey(client, index)} client={client} onPick={onPickClient} />
+            <ClientViewerRow
+              key={getClientKey(client, index)}
+              client={client}
+              isSelected={isSelectedClient(client, selectedClientKey)}
+              onPick={onPickClient}
+            />
           ))}
         </Stack>
       </Box>
@@ -61,7 +68,12 @@ export function WizardClientCarousel({
       <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <Stack gap={2}>
           {carousel.dataBottom.map((client, index) => (
-            <ClientViewerRow key={getClientKey(client, index)} client={client} onPick={onPickClient} />
+            <ClientViewerRow
+              key={getClientKey(client, index)}
+              client={client}
+              isSelected={isSelectedClient(client, selectedClientKey)}
+              onPick={onPickClient}
+            />
           ))}
         </Stack>
       </Box>
@@ -69,7 +81,15 @@ export function WizardClientCarousel({
   )
 }
 
-function ClientViewerRow({ client, onPick }: { client: Client; onPick: (client: Client) => void }) {
+function ClientViewerRow({
+  client,
+  isSelected,
+  onPick,
+}: {
+  client: Client
+  isSelected: boolean
+  onPick: (client: Client) => void
+}) {
   const hasDebt = (client.ClientInDebts?.length ?? 0) > 0
   const nameColor = hasDebt ? 'var(--mantine-color-red-7)' : undefined
 
@@ -77,7 +97,12 @@ function ClientViewerRow({ client, onPick }: { client: Client; onPick: (client: 
     <UnstyledButton
       px={6}
       py={4}
-      style={{ borderRadius: 6, minWidth: 0, width: '100%' }}
+      style={{
+        background: isSelected ? 'var(--mantine-color-violet-light)' : undefined,
+        borderRadius: 6,
+        minWidth: 0,
+        width: '100%',
+      }}
       onClick={() => onPick(client)}
     >
       {client.IsTradePoint ? (
@@ -165,4 +190,8 @@ function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt
 
 function getClientKey(client: Client, index: number): string {
   return String(client.NetUid || client.Id || index)
+}
+
+function isSelectedClient(client: Client, selectedClientKey: string): boolean {
+  return Boolean(selectedClientKey) && String(client.NetUid || client.Id || '') === selectedClientKey
 }

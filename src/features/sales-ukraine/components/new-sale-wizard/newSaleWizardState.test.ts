@@ -2,58 +2,22 @@ import { describe, expect, it } from 'vitest'
 import {
   canAdvanceToProducts,
   canAdvanceToReview,
+  clearWizardSplitOrderItems,
   getCartItemCount,
-  getReviewError,
+  getWizardSplitOrderItems,
+  hasWizardSplitOrderItems,
   isSelfCheckout,
-  NEW_SALE_REVIEW_INITIAL,
+  setWizardSplitOrderItems,
+  subscribeWizardSplitOrderItems,
   SELF_CHECKOUT_CLASS,
 } from './newSaleWizardState'
 import type { SalesUkraineSale, SalesUkraineTransporter } from '../../types'
 
 describe('new sale wizard state guards', () => {
-  it('allows self-checkout review without carrier recipient details', () => {
-    const transporter = { CssClass: SELF_CHECKOUT_CLASS, Id: 7 } as SalesUkraineTransporter
-
-    expect(isSelfCheckout(transporter)).toBe(true)
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter })).toBeNull()
-  })
-
-  it('requires transporter and recipient for delivery review', () => {
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter: null })).toBe('Оберіть перевізника')
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, transporter: { Id: 2 } as SalesUkraineTransporter })).toBe('Оберіть отримувача')
-  })
-
-  it('requires mobile phone once carrier and recipient are chosen while address remains optional', () => {
-    const transporter = { Id: 2 } as SalesUkraineTransporter
-    const recipient = { Id: 5 }
-
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, recipient, transporter })).toBe('Вкажіть мобільний телефон отримувача')
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, recipient, transporter })).toBe('Вкажіть мобільний телефон отримувача')
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, mobilePhone: '380501112233', recipient, transporter })).toBeNull()
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, city: 'Київ', mobilePhone: '380501112233', recipient, transporter })).toBeNull()
-  })
-
-  it('allows a new free-form recipient with entered delivery address', () => {
-    const transporter = { Id: 2 } as SalesUkraineTransporter
-
-    expect(getReviewError({ ...NEW_SALE_REVIEW_INITIAL, isNewRecipient: true, transporter })).toBe('Вкажіть отримувача')
-    expect(getReviewError({
-      ...NEW_SALE_REVIEW_INITIAL,
-      isNewRecipient: true,
-      mobilePhone: '380501112233',
-      recipientName: 'Новий отримувач',
-      transporter,
-    })).toBeNull()
-  })
-
-  it('requires COD amount and own-TTN number when those options are enabled', () => {
-    const transporter = { Id: 2 } as SalesUkraineTransporter
-    const base = { ...NEW_SALE_REVIEW_INITIAL, address: { Id: 9 }, mobilePhone: '380501112233', recipient: { Id: 5 }, transporter }
-
-    expect(getReviewError({ ...base, codAmount: '', isCashOnDelivery: true })).toBe('Вкажіть суму накладеного платежу')
-    expect(getReviewError({ ...base, codAmount: 100, isCashOnDelivery: true })).toBeNull()
-    expect(getReviewError({ ...base, hasOwnTtn: true, ttnNumber: '' })).toBe('Вкажіть номер ТТН')
-    expect(getReviewError({ ...base, hasOwnTtn: true, ttnNumber: '204500112233' })).toBeNull()
+  it('detects self-checkout transporters by css class', () => {
+    expect(isSelfCheckout({ CssClass: SELF_CHECKOUT_CLASS, Id: 7 } as SalesUkraineTransporter)).toBe(true)
+    expect(isSelfCheckout({ CssClass: 'other', Id: 7 } as SalesUkraineTransporter)).toBe(false)
+    expect(isSelfCheckout(null)).toBe(false)
   })
 
   it('gates products and review by selected agreement and cart sale', () => {
@@ -66,5 +30,38 @@ describe('new sale wizard state guards', () => {
   it('counts cart items defensively', () => {
     expect(getCartItemCount(null)).toBe(0)
     expect(getCartItemCount({ Order: { OrderItems: [{ Id: 1 }, { Id: 2 }] } } as SalesUkraineSale)).toBe(2)
+  })
+})
+
+describe('wizard split order items store', () => {
+  it('stores, signals and clears split items', () => {
+    clearWizardSplitOrderItems()
+
+    let notifications = 0
+    const unsubscribe = subscribeWizardSplitOrderItems(() => {
+      notifications += 1
+    })
+
+    expect(hasWizardSplitOrderItems()).toBe(false)
+
+    const items = [{ Product: { NetUid: 'product-1' }, Qty: 2, TotalAmount: 10, TotalAmountEurToUah: 0, TotalAmountLocal: 400 }]
+
+    setWizardSplitOrderItems(items)
+
+    expect(getWizardSplitOrderItems()).toBe(items)
+    expect(hasWizardSplitOrderItems()).toBe(true)
+    expect(notifications).toBe(1)
+
+    clearWizardSplitOrderItems()
+
+    expect(getWizardSplitOrderItems()).toEqual([])
+    expect(hasWizardSplitOrderItems()).toBe(false)
+    expect(notifications).toBe(2)
+
+    clearWizardSplitOrderItems()
+
+    expect(notifications).toBe(2)
+
+    unsubscribe()
   })
 })

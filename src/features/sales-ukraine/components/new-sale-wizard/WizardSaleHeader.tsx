@@ -6,6 +6,8 @@ import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleClientDebtTotal } from '../../api/salesUkraineApi'
 import type { SaleClientDebtTotal, SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
 import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import { useWizardDebtRefreshVersion } from './newSaleWizardState'
+import { getWizardClientGroupedDebts } from './wizardClientStepApi'
 import {
   getWizardClientStructure,
   getWizardClientStructureDebtTotal,
@@ -50,8 +52,10 @@ function WizardSaleHeaderContent({
   withVatAccounting: boolean
 }) {
   const { t } = useI18n()
+  const debtRefreshVersion = useWizardDebtRefreshVersion()
   const [client, setClient] = useState<Client | null>(null)
   const [debtTotal, setDebtTotal] = useState<SaleClientDebtTotal | null>(null)
+  const [groupedDebts, setGroupedDebts] = useState<ClientInDebt[]>([])
   const [isStructureOpen, setStructureOpen] = useState(false)
   const [structureClients, setStructureClients] = useState<Client[]>([])
   const [structureDebtTotal, setStructureDebtTotal] = useState<WizardClientStructureDebtTotal | null>(null)
@@ -61,16 +65,14 @@ function WizardSaleHeaderContent({
 
     async function load(id: string) {
       try {
-        const [nextClient, nextDebt] = await Promise.all([getWizardHeaderClient(id), getSaleClientDebtTotal(id)])
+        const nextClient = await getWizardHeaderClient(id)
 
         if (!cancelled) {
           setClient(nextClient)
-          setDebtTotal(nextDebt)
         }
       } catch {
         if (!cancelled) {
           setClient(null)
-          setDebtTotal(null)
         }
       }
     }
@@ -81,6 +83,32 @@ function WizardSaleHeaderContent({
       cancelled = true
     }
   }, [clientNetId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadDebts(id: string) {
+      try {
+        const [nextDebt, nextGrouped] = await Promise.all([getSaleClientDebtTotal(id), getWizardClientGroupedDebts(id)])
+
+        if (!cancelled) {
+          setDebtTotal(nextDebt)
+          setGroupedDebts(nextGrouped)
+        }
+      } catch {
+        if (!cancelled) {
+          setDebtTotal(null)
+          setGroupedDebts([])
+        }
+      }
+    }
+
+    void loadDebts(clientNetId)
+
+    return () => {
+      cancelled = true
+    }
+  }, [clientNetId, debtRefreshVersion])
 
   async function toggleStructure() {
     const next = !isStructureOpen
@@ -130,10 +158,9 @@ function WizardSaleHeaderContent({
   }
 
   const clientAgreements = client.ClientAgreements ?? []
-  const clientInDebts = client.ClientInDebts ?? []
   const subClientCount = client.SubClients?.length ?? 0
   const currentBalance = Math.round(clientAgreements.reduce((sum, item) => sum + (item.CurrentAmount ?? 0), 0) * 100) / 100
-  const maxOverdueDays = clientInDebts.reduce((max, item) => Math.max(max, getDebtDays(item)), 0)
+  const maxOverdueDays = groupedDebts.reduce((max, item) => Math.max(max, getDebtDays(item)), 0)
   const subClients = structureClients.filter((item) => item.IsSubClient)
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
   const showStructureWarning = Boolean(
@@ -258,24 +285,24 @@ function WizardSaleHeaderContent({
       )}
 
       <Group gap="xs" wrap="wrap">
-        {(client.Id ?? 0) > 0 && clientInDebts.length === 0 && (
+        {(client.Id ?? 0) > 0 && groupedDebts.length === 0 && (
           <WizardHeaderBadge
             color="teal"
             items={[{ unit: 'EUR', value: amountFormatter.format(currentBalance) }]}
             label={t('Поточний баланс')}
           />
         )}
-        {clientInDebts.length > 0 && (
+        {groupedDebts.length > 0 && (
           <WizardHeaderBadge
             color="red"
-            items={clientInDebts.map((item) => ({
+            items={groupedDebts.map((item) => ({
               unit: item.Agreement?.Currency?.Code ?? '',
               value: String(Math.round(getDebtTotal(item) * 100) / 100),
             }))}
             label={t('Борг по договорам')}
           />
         )}
-        {clientInDebts.length > 0 && maxOverdueDays > 0 && (
+        {groupedDebts.length > 0 && maxOverdueDays > 0 && (
           <WizardHeaderBadge color="red" items={[{ unit: t('Днів'), value: String(maxOverdueDays) }]} label={t('прострочено')} />
         )}
         {debtTotal && ((debtTotal.TotalEuro ?? 0) > 0 || (debtTotal.TotalLocal ?? 0) > 0) && (

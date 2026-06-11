@@ -1,4 +1,7 @@
-import { apiRequest } from '../../../shared/api/apiClient'
+import { ApiError, apiRequest, apiUrl, getApiLanguage } from '../../../shared/api/apiClient'
+import { readSession } from '../../../shared/auth/session'
+import { getTimeZoneHeader } from '../../../shared/date/dateTime'
+import { translate } from '../../../shared/i18n/translate'
 import type {
   SaleClientDebtTotal,
   SaleConsignmentDocument,
@@ -116,13 +119,13 @@ export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<
   return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
 }
 
-export async function createSale(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {
-  const result = await apiRequest<unknown>('/sales/new', {
-    body: sale,
-    method: 'POST',
-  })
+export type SaleSubmitResult = {
+  message: string | null
+  sale: SalesUkraineSale | null
+}
 
-  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+export async function createSale(sale: SalesUkraineSale): Promise<SaleSubmitResult> {
+  return postSaleWithMessage('/sales/new', sale)
 }
 
 export async function updateOrderItem(orderItem: SalesUkraineOrderItem): Promise<void> {
@@ -241,24 +244,23 @@ export async function getSaleTransportersByType(netId: string): Promise<SalesUkr
   return normalizeArray(result) as SalesUkraineTransporter[]
 }
 
-export async function updateSaleFromData(sale: SalesUkraineSale, file: File | null): Promise<void> {
-  const formData = new FormData()
-  formData.append('sale', JSON.stringify(sale))
-
-  if (file) {
-    formData.append('file', file)
-  }
-
-  await apiRequest<unknown>('/sales/update/file', {
-    body: formData,
-    method: 'POST',
-  })
+export async function updateSaleFromData(sale: SalesUkraineSale, file: File | null): Promise<SaleSubmitResult> {
+  return postSaleWithMessage('/sales/update/file', buildSaleFormData(sale, file))
 }
 
 export async function convertVatSaleAndGetPaymentDocument(
   sale: SalesUkraineSale,
   file: File | null,
 ): Promise<SaleDocumentResult> {
+  const result = await apiRequest<unknown>('/sales/update/get/payment/document', {
+    body: buildSaleFormData(sale, file),
+    method: 'POST',
+  })
+
+  return extractDocumentResult(result)
+}
+
+function buildSaleFormData(sale: SalesUkraineSale, file: File | null): FormData {
   const formData = new FormData()
   formData.append('sale', JSON.stringify(sale))
 
@@ -266,12 +268,75 @@ export async function convertVatSaleAndGetPaymentDocument(
     formData.append('file', file)
   }
 
-  const result = await apiRequest<unknown>('/sales/update/get/payment/document', {
-    body: formData,
-    method: 'POST',
-  })
+  return formData
+}
 
-  return extractDocumentResult(result)
+async function postSaleWithMessage(path: string, body: FormData | SalesUkraineSale): Promise<SaleSubmitResult> {
+  const isForm = body instanceof FormData
+  const headers = new Headers(getTimeZoneHeader())
+  const csrfToken = readSession()?.csrfToken
+
+  if (csrfToken) {
+    headers.set('X-CSRF-Token', csrfToken)
+  }
+
+  if (!isForm) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  const response = await fetch(apiUrl(path, getApiLanguage()), {
+    body: isForm ? body : JSON.stringify(body),
+    credentials: 'include',
+    headers,
+    method: 'POST',
+  }).catch(() => null)
+
+  if (!response || response.status === 401) {
+    const fallback = await apiRequest<unknown>(path, { body, method: 'POST' })
+
+    return { message: null, sale: toSaleOrNull(fallback) }
+  }
+
+  const payload = await readResponsePayload(response)
+
+  if (!response.ok) {
+    throw new ApiError(
+      readEnvelopeMessage(payload) ?? translate('Не вдалося виконати запит'),
+      response.status,
+      payload,
+    )
+  }
+
+  const record = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null
+  const saleBody = record && 'Body' in record ? record.Body : payload
+
+  return { message: readEnvelopeMessage(payload), sale: toSaleOrNull(saleBody) }
+}
+
+async function readResponsePayload(response: Response): Promise<unknown> {
+  const text = await response.text()
+
+  if (!text) {
+    return null
+  }
+
+  return safeParse(text) ?? text
+}
+
+function readEnvelopeMessage(payload: unknown): string | null {
+  if (payload && typeof payload === 'object') {
+    const message = (payload as { Message?: unknown }).Message
+
+    if (typeof message === 'string' && message) {
+      return message
+    }
+  }
+
+  return null
+}
+
+function toSaleOrNull(value: unknown): SalesUkraineSale | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as SalesUkraineSale) : null
 }
 
 export async function shiftOrderItemsCurrent(sale: SalesUkraineSale): Promise<SalesUkraineSale | null> {

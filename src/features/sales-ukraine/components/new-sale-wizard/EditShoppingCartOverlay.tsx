@@ -3,13 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { roundMoney } from '../../saleMoney'
 import type { SalesUkraineOrderItem, SalesUkraineUser } from '../../types'
-import {
-  getOrderItemDiscount,
-  getOrderItemLocalPrice,
-  getOrderItemLocalTotal,
-  getWizardProductNumber,
-  type WizardSaleProduct,
-} from './wizardSaleProduct'
+import { getOrderItemDiscount, getWizardProductNumber, type WizardSaleProduct } from './wizardSaleProduct'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -35,14 +29,12 @@ export function EditShoppingCartOverlay({
   localCurrencyCode,
   selected,
   splitItems,
-  useEurToUah,
 }: {
   currentItems: SalesUkraineOrderItem[]
   isSplit: boolean
   localCurrencyCode: string
   selected: WizardCartSelection | null
   splitItems: WizardSplitOrderItem[]
-  useEurToUah: boolean
 }) {
   const { t } = useI18n()
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -57,10 +49,10 @@ export function EditShoppingCartOverlay({
   }, [selected])
 
   const currentRows = currentItems.map((item) => ({
-    amountLocal: getOrderItemLocalTotal(item, useEurToUah),
+    amountLocal: getWizardProductNumber(item.TotalAmountEurToUah) ?? 0,
     comment: item.Comment || '',
     discount: getOrderItemDiscount(item),
-    localPrice: getOrderItemLocalPrice(item, useEurToUah),
+    localPrice: getWizardProductNumber((item.Product as WizardSaleProduct | undefined)?.CurrentPriceEurToUah) ?? 0,
     name: item.Product?.NameUA || item.Product?.Name || '—',
     oneTimeDiscount: getWizardProductNumber(item.OneTimeDiscount) ?? 0,
     originalNumber: item.Product?.MainOriginalNumber || '',
@@ -72,11 +64,10 @@ export function EditShoppingCartOverlay({
   }))
 
   const splitRows = splitItems.map((item) => ({
-    amountLocal: useEurToUah ? item.TotalAmountEurToUah : item.TotalAmountLocal,
+    amountLocal: item.TotalAmountEurToUah,
     comment: item.Comment || '',
     discount: 0,
-    localPrice:
-      (useEurToUah ? getWizardProductNumber(item.Product.CurrentPriceEurToUah) : getWizardProductNumber(item.Product.CurrentLocalPrice)) ?? 0,
+    localPrice: getWizardProductNumber(item.Product.CurrentPriceEurToUah) ?? 0,
     name: item.Product.NameUA || item.Product.Name || '—',
     oneTimeDiscount: 0,
     originalNumber: item.Product.MainOriginalNumber || '',

@@ -856,9 +856,9 @@ export function SalesUkrainePage() {
       <NewSaleWizard
         opened={canCreateSale && isNewSaleOpen}
         onClose={() => setNewSaleOpen(false)}
-        onCreated={(sale) => {
+        onCreated={() => {
           setNewSaleOpen(false)
-          setEditorSale(sale)
+          reload()
         }}
       />
 

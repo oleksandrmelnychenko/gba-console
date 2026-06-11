@@ -1,4 +1,6 @@
+import { useSyncExternalStore } from 'react'
 import type { SalesUkraineClientAgreement, SalesUkraineSale, SalesUkraineTransporter } from '../../types'
+import type { WizardSplitOrderItem } from './EditShoppingCartOverlay'
 import type { WizardDeliveryRecipient, WizardDeliveryRecipientAddress } from './newSaleWizardApi'
 
 export const SELF_CHECKOUT_CLASS = 'self_checkout_item_class'
@@ -45,46 +47,6 @@ export function isSelfCheckout(transporter: SalesUkraineTransporter | null): boo
   return transporter?.CssClass === SELF_CHECKOUT_CLASS
 }
 
-export function getReviewError(value: NewSaleReviewValue): string | null {
-  if (!value.transporter) {
-    return 'Оберіть перевізника'
-  }
-
-  if (!isSelfCheckout(value.transporter)) {
-    if (value.isNewRecipient) {
-      if (!value.recipientName.trim()) {
-        return 'Вкажіть отримувача'
-      }
-    } else if (!value.recipient) {
-      return 'Оберіть отримувача'
-    }
-
-    if (!value.mobilePhone.trim()) {
-      return 'Вкажіть мобільний телефон отримувача'
-    }
-  }
-
-  if (value.isCashOnDelivery && !(parseReviewAmount(value.codAmount) > 0)) {
-    return 'Вкажіть суму накладеного платежу'
-  }
-
-  if (value.hasOwnTtn && !value.ttnNumber.trim()) {
-    return 'Вкажіть номер ТТН'
-  }
-
-  return null
-}
-
-export function hasDeliveryAddressDraft(value: NewSaleReviewValue): boolean {
-  return Boolean(value.addressValue.trim() || value.city.trim() || value.department.trim())
-}
-
-function parseReviewAmount(value: number | string): number {
-  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
-
-  return Number.isFinite(parsed) ? parsed : 0
-}
-
 export type NewSaleWizardStepIndex = 0 | 1 | 2
 
 export type NewSaleWizardState = {
@@ -111,4 +73,64 @@ export function canAdvanceToReview(state: NewSaleWizardState): boolean {
 
 export function getCartItemCount(sale: SalesUkraineSale | null): number {
   return Array.isArray(sale?.Order?.OrderItems) ? sale.Order.OrderItems.length : 0
+}
+
+let splitOrderItems: WizardSplitOrderItem[] = []
+
+const splitOrderItemsListeners = new Set<() => void>()
+
+export function getWizardSplitOrderItems(): WizardSplitOrderItem[] {
+  return splitOrderItems
+}
+
+export function hasWizardSplitOrderItems(): boolean {
+  return splitOrderItems.length > 0
+}
+
+export function setWizardSplitOrderItems(items: WizardSplitOrderItem[]): void {
+  splitOrderItems = items
+  splitOrderItemsListeners.forEach((listener) => listener())
+}
+
+export function clearWizardSplitOrderItems(): void {
+  if (splitOrderItems.length > 0) {
+    setWizardSplitOrderItems([])
+  }
+}
+
+export function subscribeWizardSplitOrderItems(listener: () => void): () => void {
+  splitOrderItemsListeners.add(listener)
+
+  return () => {
+    splitOrderItemsListeners.delete(listener)
+  }
+}
+
+export function useWizardSplitOrderItems(): WizardSplitOrderItem[] {
+  return useSyncExternalStore(subscribeWizardSplitOrderItems, getWizardSplitOrderItems)
+}
+
+let debtRefreshVersion = 0
+
+const debtRefreshListeners = new Set<() => void>()
+
+export function getWizardDebtRefreshVersion(): number {
+  return debtRefreshVersion
+}
+
+export function bumpWizardDebtRefresh(): void {
+  debtRefreshVersion += 1
+  debtRefreshListeners.forEach((listener) => listener())
+}
+
+export function subscribeWizardDebtRefresh(listener: () => void): () => void {
+  debtRefreshListeners.add(listener)
+
+  return () => {
+    debtRefreshListeners.delete(listener)
+  }
+}
+
+export function useWizardDebtRefreshVersion(): number {
+  return useSyncExternalStore(subscribeWizardDebtRefresh, getWizardDebtRefreshVersion)
 }

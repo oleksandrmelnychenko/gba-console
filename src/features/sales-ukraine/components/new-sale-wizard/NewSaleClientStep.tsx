@@ -19,7 +19,7 @@ import type { SaleDocumentResult, SalesUkraineClientAgreement, SalesUkraineSale 
 import { MergedSalesDrawer } from '../MergedSalesDrawer'
 import { SaleDetailsDrawer } from '../SaleDetailsDrawer'
 import { SaleEditDrawer } from '../SaleEditDrawer'
-import { SaleEditorDrawer } from '../SaleEditorDrawer'
+import { bumpWizardDebtRefresh } from './newSaleWizardState'
 import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
 import { WizardClientRegistry } from './WizardClientRegistry'
@@ -49,16 +49,16 @@ type WizardPrintState = {
 }
 
 export function NewSaleClientStep({
-  agreementNetId,
   clientNetId,
   onClientChange,
   onAgreementChange,
+  onOpenSale,
   onRequestClose,
 }: {
-  agreementNetId: string | null
   clientNetId: string | null
   onAgreementChange: (agreementNetId: string | null, agreement: SalesUkraineClientAgreement | null) => void
   onClientChange: (clientNetId: string | null) => void
+  onOpenSale: (sale: SalesUkraineSale) => void
   onRequestClose?: () => void
 }) {
   const { t } = useI18n()
@@ -81,7 +81,6 @@ export function NewSaleClientStep({
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
   const [isOrderedProductsOpen, setOrderedProductsOpen] = useState(false)
   const [editShiftSale, setEditShiftSale] = useState<SalesUkraineSale | null>(null)
-  const [editorSale, setEditorSale] = useState<SalesUkraineSale | null>(null)
   const [mergedSaleNetId, setMergedSaleNetId] = useState<string | null>(null)
   const [detailsSale, setDetailsSale] = useState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useState<SalesUkraineSale | null>(null)
@@ -103,7 +102,6 @@ export function NewSaleClientStep({
   const delayedRegisterTimerRef = useRef<number | null>(null)
   const realtimeTimerRef = useRef<number | null>(null)
   const bootstrappedRef = useRef(false)
-  const restoreAgreementNetIdRef = useRef<string | null>(null)
   const registerArgsRef = useRef<WizardSaleRegisterQuery>({
     clientNetId: '',
     from: dateFrom,
@@ -169,10 +167,7 @@ export function NewSaleClientStep({
         const list = await getWizardClientAgreements(client.NetUid)
         setAgreements(list)
 
-        const restoreNetId = restoreAgreementNetIdRef.current
-        restoreAgreementNetIdRef.current = null
-        const restored = restoreNetId ? list.find((item) => item.NetUid === restoreNetId) : undefined
-        const active = restored ?? list.find((item) => item.Agreement?.IsActive)
+        const active = list.find((item) => item.Agreement?.IsActive)
 
         if (active) {
           setSelectedAgreementKey(getWizardAgreementKey(active))
@@ -366,19 +361,6 @@ export function NewSaleClientStep({
   }
 
   function pickClient(client: Client) {
-    const ordered = [...carousel.dataTop, ...(carousel.selected ? [carousel.selected] : []), ...carousel.dataBottom]
-    const index = ordered.indexOf(client)
-
-    if (index < 0) {
-      return
-    }
-
-    setCarousel({
-      dataBottom: ordered.slice(index + 1),
-      dataTop: ordered.slice(0, index),
-      selected: client,
-      showDetails: true,
-    })
     confirmClient(client)
   }
 
@@ -550,44 +532,76 @@ export function NewSaleClientStep({
     if (sale.InputSaleMerges?.length) {
       setMergedSaleNetId(sale.NetUid ?? null)
     } else {
-      setEditorSale(sale)
+      onOpenSale(sale)
     }
   }
 
-  const openAudit = useCallback(
-    (sale: SalesUkraineSale) => {
-      setAuditSale(sale)
-      setAuditStatistic(null)
-      setAuditError(null)
+  function replaceRegistryRow(statistic: WizardSaleRegisterStatistic, autoExpand: boolean) {
+    const netId = statistic.Sale?.NetUid
 
-      if (!sale.NetUid) {
-        return
-      }
+    if (!netId) {
+      return
+    }
 
-      setAuditLoading(true)
-      const requestId = auditRequestRef.current + 1
-      auditRequestRef.current = requestId
+    setRegistryItems((current) => current.map((item) => (item.Sale?.NetUid === netId ? statistic : item)))
 
-      void (async () => {
-        try {
-          const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+    if (autoExpand && registryItems.some((item) => item.Sale?.NetUid === netId)) {
+      setExpandedKey(netId)
+    }
+  }
 
-          if (auditRequestRef.current === requestId) {
-            setAuditStatistic(statistic)
-          }
-        } catch (auditFetchError) {
-          if (auditRequestRef.current === requestId) {
-            setAuditError(auditFetchError instanceof Error ? auditFetchError.message : t('Не вдалося завантажити дані'))
-          }
-        } finally {
-          if (auditRequestRef.current === requestId) {
-            setAuditLoading(false)
+  async function refreshRegistryRow(sale: SalesUkraineSale, autoExpand: boolean) {
+    if (!sale.NetUid) {
+      return
+    }
+
+    const statistic = await getSaleStatisticBySaleId(sale.NetUid).catch(() => null)
+
+    if (statistic?.Sale) {
+      replaceRegistryRow(statistic as unknown as WizardSaleRegisterStatistic, autoExpand)
+    }
+  }
+
+  function openEditRow(sale: SalesUkraineSale) {
+    setEditShiftSale(sale)
+    void refreshRegistryRow(sale, false)
+  }
+
+  function openAudit(sale: SalesUkraineSale) {
+    setAuditSale(sale)
+    setAuditStatistic(null)
+    setAuditError(null)
+
+    if (!sale.NetUid) {
+      return
+    }
+
+    setAuditLoading(true)
+    const requestId = auditRequestRef.current + 1
+    auditRequestRef.current = requestId
+
+    void (async () => {
+      try {
+        const statistic = await getSaleStatisticBySaleId(sale.NetUid as string)
+
+        if (auditRequestRef.current === requestId) {
+          setAuditStatistic(statistic)
+
+          if (statistic?.Sale) {
+            replaceRegistryRow(statistic as unknown as WizardSaleRegisterStatistic, false)
           }
         }
-      })()
-    },
-    [t],
-  )
+      } catch (auditFetchError) {
+        if (auditRequestRef.current === requestId) {
+          setAuditError(auditFetchError instanceof Error ? auditFetchError.message : t('Не вдалося завантажити дані'))
+        }
+      } finally {
+        if (auditRequestRef.current === requestId) {
+          setAuditLoading(false)
+        }
+      }
+    })()
+  }
 
   function closeAudit() {
     auditRequestRef.current += 1
@@ -607,6 +621,7 @@ export function NewSaleClientStep({
     const requestId = printRequestRef.current + 1
     printRequestRef.current = requestId
     setPrintState({ document: null, isLoading: true })
+    void refreshRegistryRow(sale, true)
 
     try {
       const document = await getSaleActProtocolEditDocument(netId)
@@ -630,6 +645,7 @@ export function NewSaleClientStep({
   function handleShiftSaved() {
     setEditShiftSale(null)
     setExpandedKey(null)
+    bumpWizardDebtRefresh()
 
     if (selectedClient) {
       confirmClient(selectedClient)
@@ -679,7 +695,6 @@ export function NewSaleClientStep({
     }
 
     bootstrappedRef.current = true
-    restoreAgreementNetIdRef.current = agreementNetId
     let cancelled = false
 
     async function restore(netId: string) {
@@ -718,7 +733,7 @@ export function NewSaleClientStep({
     return () => {
       cancelled = true
     }
-  }, [agreementNetId, clientNetId, confirmClient])
+  }, [clientNetId, confirmClient])
 
   useEffect(
     () => () => {
@@ -757,6 +772,7 @@ export function NewSaleClientStep({
             hideName={Boolean(selectedClient && (selectedClient.Id ?? 0) > 0)}
             searchInputRef={searchInputRef}
             searchValue={query}
+            selectedClientKey={selectedClient ? String(selectedClient.NetUid || selectedClient.Id || '') : ''}
             onPickClient={pickClient}
             onSearchChange={handleSearchChange}
           />
@@ -786,7 +802,7 @@ export function NewSaleClientStep({
                 onChangeSaleSearch={handleSaleSearchChange}
                 onChangeStatus={handleStatusChange}
                 onDeliveryRow={setDetailsSale}
-                onEditRow={setEditShiftSale}
+                onEditRow={openEditRow}
                 onOpenOrderedProducts={() => setOrderedProductsOpen(true)}
                 onOpenRow={openRow}
                 onPrintRow={(sale) => void printRow(sale)}
@@ -825,14 +841,6 @@ export function NewSaleClientStep({
         onClose={() => setDetailsSale(null)}
         onSaved={() => {
           setDetailsSale(null)
-          void fetchRegister()
-        }}
-      />
-
-      <SaleEditorDrawer
-        sale={editorSale}
-        onClose={() => {
-          setEditorSale(null)
           void fetchRegister()
         }}
       />

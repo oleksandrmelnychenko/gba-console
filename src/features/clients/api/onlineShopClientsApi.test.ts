@@ -98,7 +98,7 @@ describe('online-shop clients API query contracts', () => {
       query: {
         number: '123',
         from: '2026-05-01',
-        to: '2026-05-27',
+        to: '2026-05-27T23:59:59',
         isAccepted: false,
       },
     })

@@ -87,13 +87,26 @@ export function WizardReviewCombobox<T>({
           }}
           onClick={() => combobox.openDropdown()}
           onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              event.stopPropagation()
+              setSearch(null)
+              combobox.closeDropdown()
+
+              return
+            }
+
             if (event.key !== 'Enter') {
               return
             }
 
+            event.stopPropagation()
+
             if (combobox.dropdownOpened && combobox.getSelectedOptionIndex() !== -1) {
               return
             }
+
+            event.preventDefault()
 
             if (search !== null && search !== selectedLabel) {
               commit(search)

@@ -16,6 +16,8 @@ export type ProductPickerItem = {
 export type ProductPickerMeta = {
   available?: number
   price?: number
+  reSaleAvailable?: number
+  reSalePrice?: number
 }
 
 const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2 })
@@ -220,6 +222,18 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                     )}
                     {meta.price != null && (
                       <Text size="xs">{metaNumberFormatter.format(meta.price)}</Text>
+                    )}
+                  </Group>
+                )}
+                {meta && (meta.reSaleAvailable != null || meta.reSalePrice != null) && (
+                  <Group gap={8} mt={2} wrap="nowrap">
+                    {meta.reSaleAvailable != null && (
+                      <Text c={meta.reSaleAvailable > 0 ? 'teal' : 'red'} fw={600} size="xs">
+                        {t('Перепродаж')}: {metaNumberFormatter.format(meta.reSaleAvailable)}
+                      </Text>
+                    )}
+                    {meta.reSalePrice != null && (
+                      <Text size="xs">{metaNumberFormatter.format(meta.reSalePrice)}</Text>
                     )}
                   </Group>
                 )}

@@ -34,11 +34,13 @@ import {
   type WizardProductReservation,
   type WizardTotalProductAvailabilities,
 } from './newSaleWizardApi'
+import { getWizardSplitOrderItems, setWizardSplitOrderItems } from './newSaleWizardState'
 import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
 import {
+  getPreviousProductKeyboardState,
   getWizardKeyboardState,
   setWizardKeyboardState,
   useWizardKeyboard,
@@ -51,6 +53,7 @@ import {
   getComponentCarouselEntries,
   getWizardProductNumber,
   getWizardSellableQty,
+  type WizardCarouselEntry,
   type WizardSaleProduct,
 } from './wizardSaleProduct'
 import { WizardShoppingCartGrid } from './WizardShoppingCartGrid'
@@ -137,7 +140,7 @@ export function NewSaleProductsStep({
   const [analogueIndex, setAnalogueIndex] = useState<number | null>(null)
   const [componentParent, setComponentParent] = useState<WizardSaleProduct | null>(null)
   const [componentIndex, setComponentIndex] = useState<number | null>(null)
-  const [detail, setDetail] = useState<{ chipIndex: number | null; rowIndex: number | null } | null>(null)
+  const [detail, setDetail] = useState<{ chipIndex: number | null; rowIndex: number | null; rowsOpen?: boolean } | null>(null)
   const [totalAvailabilities, setTotalAvailabilities] = useState<WizardTotalProductAvailabilities | null>(null)
   const [nearestOrder, setNearestOrder] = useState<WizardNearestSupplyOrder | null>(null)
   const [reservationRows, setReservationRows] = useState<WizardProductReservation[]>([])
@@ -148,6 +151,7 @@ export function NewSaleProductsStep({
   const [futureProduct, setFutureProduct] = useState<WizardSaleProduct | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false)
+  const [removeRowItem, setRemoveRowItem] = useState<SalesUkraineOrderItem | null>(null)
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
   const [descriptionDraft, setDescriptionDraft] = useState('')
@@ -156,6 +160,7 @@ export function NewSaleProductsStep({
   const [refreshTick, setRefreshTick] = useState(0)
 
   const busyRef = useRef(false)
+  const forceSearchRef = useRef(false)
   const virtualLoadingRef = useRef(false)
   const virtualExhaustedRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -174,13 +179,14 @@ export function NewSaleProductsStep({
 
   const orderItems = getOrderItemsNewestFirst(sale)
   const isVatSale = Boolean(sale?.IsVatSale)
+  const isSaleLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
   const useEurToUah = isNonVatEurSale(sale)
   const localCurrencyCode = getSaleLocalCurrencyCode(sale)
   const totalVat = getWizardProductNumber(sale?.Order?.TotalVat) ?? 0
   const productPricing = productPricingState.agreementNetId === agreementNetId ? productPricingState.values : EMPTY_PRODUCT_PRICING
   const reservations = reservationsState.agreementNetId === agreementNetId ? reservationsState.values : EMPTY_RESERVATIONS
 
-  const componentEntries = getComponentCarouselEntries(componentParent)
+  const componentEntries = sortComponentCarouselEntries(getComponentCarouselEntries(componentParent), isVatSale)
   const activeProduct = active?.product ?? null
   const mainProduct = results[mainIndex] ?? null
   const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
@@ -247,6 +253,13 @@ export function NewSaleProductsStep({
     const value = query.trim()
 
     if (value.length < 4 || !agreementNetId) {
+      return
+    }
+
+    const forced = forceSearchRef.current
+    forceSearchRef.current = false
+
+    if (!forced && getWizardKeyboardState(1) !== 'ProductSearch') {
       return
     }
 
@@ -339,7 +352,7 @@ export function NewSaleProductsStep({
           if (analogues) {
             const filtered = analogues
               .filter((item) => (item.ProductAvailabilities?.length ?? 0) > 0)
-              .sort((a, b) => (getWizardSellableQty(b, isVatSale) ?? 0) - (getWizardSellableQty(a, isVatSale) ?? 0))
+              .sort((a, b) => getAvailabilitySortKey(b, isVatSale) - getAvailabilitySortKey(a, isVatSale))
             setAnalogueState({ items: filtered, parentNetUid: netUid })
           } else {
             setAnalogueState({ items: [], parentNetUid: null })
@@ -405,15 +418,19 @@ export function NewSaleProductsStep({
     (product: WizardSaleProduct) => {
       const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
       const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
-      const available = getWizardSellableQty(product, isVatSale)
+      const available = isVatSale
+        ? getWizardProductNumber(product.AvailableQtyUkVAT) ?? undefined
+        : getWizardProductNumber(product.AvailableQtyUk) ?? undefined
       const price =
         pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
+      const reSaleAvailable = isVatSale ? undefined : getWizardProductNumber(product.AvailableQtyUkReSale) ?? undefined
+      const reSalePrice = isVatSale ? undefined : getWizardProductNumber(product.CurrentPriceReSale) ?? undefined
 
-      if (available == null && price == null) {
+      if (available == null && price == null && reSaleAvailable == null) {
         return undefined
       }
 
-      return { available, price }
+      return { available, price, reSaleAvailable, reSalePrice }
     },
     [productPricing, reservations, isVatSale],
   )
@@ -456,7 +473,7 @@ export function NewSaleProductsStep({
     focusMainProduct(product)
 
     if (options?.keepDetail) {
-      setDetail({ chipIndex: null, rowIndex: null })
+      setDetail((previous) => ({ chipIndex: previous?.chipIndex ?? null, rowIndex: null }))
     } else {
       resetDetail()
     }
@@ -477,7 +494,7 @@ export function NewSaleProductsStep({
     setActive({ product, source: 'analogue' })
 
     if (options?.keepDetail) {
-      setDetail({ chipIndex: null, rowIndex: null })
+      setDetail((previous) => ({ chipIndex: previous?.chipIndex ?? null, rowIndex: null }))
     } else {
       resetDetail()
     }
@@ -494,7 +511,7 @@ export function NewSaleProductsStep({
     setActive({ product: entry.product, source: 'component' })
 
     if (options?.keepDetail) {
-      setDetail({ chipIndex: null, rowIndex: null })
+      setDetail((previous) => ({ chipIndex: previous?.chipIndex ?? null, rowIndex: null }))
     } else {
       resetDetail()
     }
@@ -532,6 +549,13 @@ export function NewSaleProductsStep({
   function handleQueryChange(value: string) {
     setQuery(value)
 
+    if (getWizardKeyboardState(1) !== 'ProductSearch') {
+      setResults([])
+      setSearching(false)
+
+      return
+    }
+
     if (value.trim().length < 4) {
       setResults([])
       setSearching(false)
@@ -554,6 +578,7 @@ export function NewSaleProductsStep({
     clearActiveProductData()
 
     if (query.trim().length >= 4) {
+      forceSearchRef.current = true
       setSearching(true)
     }
   }
@@ -616,20 +641,17 @@ export function NewSaleProductsStep({
   }
 
   function resetSearchAfterAdd(product: WizardSaleProduct | undefined) {
-    const hasFollowUps = Boolean(
-      product &&
-        (product.HasAnalogue ||
-          product.HasComponent ||
-          (product.ComponentProducts?.length ?? 0) > 0 ||
-          (product.BaseSetProducts?.length ?? 0) > 0),
-    )
+    const state = getWizardKeyboardState(1)
 
-    if (!hasFollowUps) {
-      setQuery('')
-      setResults([])
-      setActive(null)
-      resetDetail()
-      keyboard.setState('ProductSearch')
+    if (state === 'ProductSearch' || state === 'ProductSelection') {
+      const hasFollowUps = Boolean(product && (product.HasAnalogue || product.HasComponent))
+
+      if (!hasFollowUps) {
+        setQuery('')
+        setActive(null)
+        resetDetail()
+        keyboard.setState('ProductSearch')
+      }
     }
 
     focusSearchInput()
@@ -669,15 +691,13 @@ export function NewSaleProductsStep({
           const product = modal.item.Product as WizardSaleProduct | undefined
 
           if (product) {
-            setEditCart((previous) =>
-              previous
-                ? { ...previous, splitItems: addToSplitItems(previous.splitItems, product, qty, comment || modal.item.Comment, user as unknown as SalesUkraineUser) }
-                : previous,
-            )
+            const splitItems = addToSplitItems(editCart.splitItems, product, qty, comment || modal.item.Comment, user as unknown as SalesUkraineUser)
+            setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
+            setWizardSplitOrderItems(splitItems)
           }
 
           if (rest > 0) {
-            await updateOrderItem({ ...modal.item, Comment: comment, Qty: rest })
+            await updateOrderItem({ ...modal.item, Qty: rest })
           } else if (modal.item.NetUid) {
             await deleteOrderItem(modal.item.NetUid)
           }
@@ -709,17 +729,15 @@ export function NewSaleProductsStep({
           })
         }
 
-        setEditCart((previous) => {
-          if (!previous) {
-            return previous
-          }
-
-          const splitItems = previous.splitItems
+        if (editCart) {
+          const splitItems = editCart.splitItems
             .map((item) => (item.Product.NetUid === modal.item.Product.NetUid ? rebuildSplitItem(item, rest) : item))
             .filter((item) => item.Qty > 0)
 
-          return { ...previous, splitItems }
-        })
+          setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
+          setWizardSplitOrderItems(splitItems)
+        }
+
         await onCartChanged()
       }
 
@@ -733,6 +751,7 @@ export function NewSaleProductsStep({
 
   function cancelQtyModal() {
     setQtyModal(null)
+    keyboard.consumeNextEscape()
     focusSearchInput()
   }
 
@@ -757,13 +776,18 @@ export function NewSaleProductsStep({
   }
 
   async function onEditOrderItem(item: SalesUkraineOrderItem) {
-    const isLifecycleNew = getSaleLifecycleTypeKey(sale?.BaseLifeCycleStatus?.SaleLifeCycleType) === '0'
-    const approved = (sale?.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
+    if (!isSaleLifecycleNew) {
+      if (sale?.IsPrinted) {
+        const approved = (sale.HistoryInvoiceEdit ?? []).some((entry) => Boolean((entry as { ApproveUpdate?: boolean }).ApproveUpdate))
 
-    if (!sale || !(isLifecycleNew || (sale.IsPrinted && approved))) {
-      notifications.show({ color: 'red', message: t('Зміни заборонені') })
+        if (!approved) {
+          notifications.show({ color: 'red', message: t('Зміни заборонені') })
 
-      return
+          return
+        }
+      } else {
+        return
+      }
     }
 
     if (!item.Product?.NetUid || !agreementNetId) {
@@ -807,53 +831,28 @@ export function NewSaleProductsStep({
       return
     }
 
-    setEditCart({ isSplit: false, selected: { index: 0, list: 'current' }, splitItems: [] })
+    setEditCart({ isSplit: false, selected: { index: 0, list: 'current' }, splitItems: getWizardSplitOrderItems() })
     resetDetail()
     keyboard.setState('EditShoppingCart')
   }
 
-  async function exitEditCart() {
-    const cart = editCart
-
-    if (!cart) {
+  function exitEditCart() {
+    if (!editCart) {
       return
     }
 
-    if (cart.splitItems.length > 0 && agreementNetId && sale?.NetUid) {
-      if (!beginBusy()) {
-        return
-      }
-
-      try {
-        for (const item of cart.splitItems) {
-          const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
-
-          if (existing) {
-            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
-          } else {
-            await addOrderItem(agreementNetId, sale.NetUid, {
-              Comment: item.Comment,
-              Deleted: false,
-              Id: 0,
-              NetUid: EMPTY_GUID,
-              Product: item.Product,
-              Qty: item.Qty,
-            })
-          }
-        }
-
-        await onCartChanged()
-        clearProductPricingCache()
-      } catch {
-        notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
-      } finally {
-        endBusy()
-      }
-    }
-
     setEditCart(null)
-    keyboard.setState('ProductSearch')
-    focusSearchInput()
+
+    const previousState = getPreviousProductKeyboardState()
+
+    if (previousState === 'ProductSearch' || previousState === 'ProductSelection') {
+      setQuery('')
+      resetDetail()
+      keyboard.setState('ProductSearch')
+      focusSearchInput()
+    } else {
+      keyboard.restorePreviousProductState()
+    }
   }
 
   async function editSelectedCartRow() {
@@ -903,20 +902,15 @@ export function NewSaleProductsStep({
           const product = item.Product as WizardSaleProduct | undefined
 
           if (cart.isSplit && product) {
-            setEditCart((previous) =>
-              previous
-                ? {
-                    ...previous,
-                    splitItems: addToSplitItems(
-                      previous.splitItems,
-                      product,
-                      getWizardProductNumber(item.Qty) ?? 0,
-                      item.Comment,
-                      user as unknown as SalesUkraineUser,
-                    ),
-                  }
-                : previous,
+            const splitItems = addToSplitItems(
+              cart.splitItems,
+              product,
+              getWizardProductNumber(item.Qty) ?? 0,
+              item.Comment,
+              user as unknown as SalesUkraineUser,
             )
+            setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
+            setWizardSplitOrderItems(splitItems)
           }
 
           if (item.NetUid) {
@@ -947,15 +941,17 @@ export function NewSaleProductsStep({
             })
           }
 
+          const splitItems = cart.splitItems.filter((_, index) => index !== selected.index)
           setEditCart((previous) =>
             previous
               ? {
                   ...previous,
-                  selected: previous.splitItems.length > 1 ? { index: Math.max(0, selected.index - 1), list: 'split' } : null,
-                  splitItems: previous.splitItems.filter((_, index) => index !== selected.index),
+                  selected: splitItems.length > 0 ? { index: Math.max(0, selected.index - 1), list: 'split' } : null,
+                  splitItems,
                 }
               : previous,
           )
+          setWizardSplitOrderItems(splitItems)
           await onCartChanged()
         }
       }
@@ -995,7 +991,13 @@ export function NewSaleProductsStep({
       const selected = previous.selected
       const currentIndex = selected ? flat.findIndex((entry) => entry.list === selected.list && entry.index === selected.index) : -1
       const nextIndex =
-        currentIndex === -1 ? (direction === 1 ? 0 : flat.length - 1) : (currentIndex + direction + flat.length) % flat.length
+        currentIndex === -1
+          ? direction === 1
+            ? 0
+            : flat.length - 1
+          : direction === 1 && currentIndex === flat.length - 1 && previous.isSplit && previous.splitItems.length > 0
+            ? items.length
+            : (currentIndex + direction + flat.length) % flat.length
 
       return { ...previous, selected: flat[nextIndex] ?? null }
     })
@@ -1128,13 +1130,15 @@ export function NewSaleProductsStep({
     if (product.HasAnalogue && analogueState.items.length > 0 && analogueState.parentNetUid === product.NetUid) {
       resetDetail()
       keyboard.setState('AnalogueSelection')
+      focusAnalogue(0)
 
       return
     }
 
-    if (componentEntries.entries.length > 0) {
+    if (product.HasComponent || componentEntries.entries.length > 0) {
       resetDetail()
       keyboard.setState('ComponentSelection')
+      focusComponent(0)
     }
   }
 
@@ -1429,19 +1433,13 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlEnter':
-        if (focusedAnalogue) {
-          setDetail({ chipIndex: null, rowIndex: null })
-          keyboard.setState('AnalogueFullDetail')
-        }
+        setDetail({ chipIndex: null, rowIndex: null })
+        keyboard.setState('AnalogueFullDetail')
 
         return true
       case 'CtrlI':
-        openImage(focusedAnalogue)
-
         return true
       case 'CtrlB':
-        openInterest(focusedAnalogue)
-
         return true
       case 'Escape':
         escapeFromAnalogues()
@@ -1458,7 +1456,7 @@ export function NewSaleProductsStep({
 
   function handleAnalogueFullDetailKeys(event: WizardKeyEvent): boolean {
     const { hotkey } = event
-    const rows = detail?.chipIndex === 4 ? getReservationDetailRows() : []
+    const rows = detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []
 
     switch (hotkey) {
       case 'ArrowLeft':
@@ -1490,7 +1488,15 @@ export function NewSaleProductsStep({
         }
 
         return true
+      case 'Ctrl':
+        if (detail?.chipIndex === 4 && getReservationDetailRows().length > 0) {
+          setDetail((previous) => (previous ? { ...previous, rowsOpen: true } : previous))
+        }
+
+        return true
       case 'CtrlEnter':
+        return true
+      case 'Space':
         return true
       case 'CtrlI':
         openImage(focusedAnalogue)
@@ -1507,6 +1513,10 @@ export function NewSaleProductsStep({
           resetDetail()
           keyboard.setState('AnalogueSelection')
         }
+
+        return true
+      case 'F2':
+        openEditCart()
 
         return true
       default:
@@ -1555,12 +1565,8 @@ export function NewSaleProductsStep({
 
         return true
       case 'CtrlI':
-        openImage(focusedComponent)
-
         return true
       case 'CtrlB':
-        openInterest(focusedComponent)
-
         return true
       case 'Escape':
         resetDetail()
@@ -1583,7 +1589,7 @@ export function NewSaleProductsStep({
 
   function handleComponentFullDetailKeys(event: WizardKeyEvent): boolean {
     const { hotkey } = event
-    const rows = detail?.chipIndex === 4 ? getReservationDetailRows() : []
+    const rows = detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []
     const entries = componentEntries.entries
 
     switch (hotkey) {
@@ -1615,7 +1621,25 @@ export function NewSaleProductsStep({
         }
 
         return true
+      case 'Ctrl':
+        if (detail?.chipIndex === 4 && getReservationDetailRows().length > 0) {
+          setDetail((previous) => (previous ? { ...previous, rowsOpen: true } : previous))
+        }
+
+        return true
       case 'CtrlEnter':
+        return true
+      case 'Space':
+        if (
+          focusedComponent?.HasAnalogue &&
+          analogueState.parentNetUid === focusedComponent.NetUid &&
+          analogueState.items.length > 0
+        ) {
+          resetDetail()
+          keyboard.setState('AnalogueSelection')
+          focusAnalogue(0)
+        }
+
         return true
       case 'CtrlI':
         openImage(focusedComponent)
@@ -1632,6 +1656,10 @@ export function NewSaleProductsStep({
           resetDetail()
           keyboard.setState('ComponentSelection')
         }
+
+        return true
+      case 'F2':
+        openEditCart()
 
         return true
       default:
@@ -1666,7 +1694,7 @@ export function NewSaleProductsStep({
 
         return true
       case 'Escape':
-        void exitEditCart()
+        exitEditCart()
 
         return true
       case 'CtrlEnter':
@@ -1689,11 +1717,42 @@ export function NewSaleProductsStep({
       return true
     }
 
+    if (hotkey === 'F2') {
+      if (kbState === 'ViewImage') {
+        closeImage()
+      } else {
+        closeInterest()
+      }
+
+      openEditCart()
+
+      return true
+    }
+
     return hotkey === 'ArrowDown' || hotkey === 'ArrowUp' || hotkey === 'ArrowLeft' || hotkey === 'ArrowRight' || hotkey === 'Space' || hotkey === 'Enter' || hotkey === 'CtrlEnter'
   }
 
+  function handleEditDescriptionKeys(event: WizardKeyEvent): boolean {
+    const { hotkey } = event
+
+    if (hotkey === 'Enter') {
+      void prepareAddToCart(activeProduct)
+
+      return true
+    }
+
+    if (hotkey === 'F2') {
+      void toggleDescriptionEdit()
+      openEditCart()
+
+      return true
+    }
+
+    return false
+  }
+
   useWizardKeyHandler((event) => {
-    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || closeConfirmOpen) {
+    if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || closeConfirmOpen) {
       return false
     }
 
@@ -1715,7 +1774,7 @@ export function NewSaleProductsStep({
       case 'EditShoppingCart':
         return handleEditCartKeys(event)
       case 'EditProductDescription':
-        return false
+        return handleEditDescriptionKeys(event)
       case 'ViewImage':
       case 'Interest':
         return handleModalStateKeys(event)
@@ -1881,7 +1940,7 @@ export function NewSaleProductsStep({
                 isVatSale={isVatSale}
                 pricing={detailPricingFor(focusedAnalogue)}
                 product={focusedAnalogue}
-                rows={detail?.chipIndex === 4 ? getReservationDetailRows() : []}
+                rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
                 selectedChipIndex={detail?.chipIndex ?? null}
                 selectedRowIndex={detail?.rowIndex ?? null}
                 showRowDetails
@@ -1937,7 +1996,7 @@ export function NewSaleProductsStep({
                 isVatSale={isVatSale}
                 pricing={detailPricingFor(focusedComponent)}
                 product={focusedComponent}
-                rows={detail?.chipIndex === 4 ? getReservationDetailRows() : []}
+                rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
                 selectedChipIndex={detail?.chipIndex ?? null}
                 selectedRowIndex={detail?.rowIndex ?? null}
                 showRowDetails
@@ -1957,7 +2016,7 @@ export function NewSaleProductsStep({
             items={orderItems}
             localCurrencyCode={localCurrencyCode}
             useEurToUah={useEurToUah}
-            onRemove={(item) => void removeItem(item)}
+            onRemove={isSaleLifecycleNew ? (item) => setRemoveRowItem(item) : undefined}
             onRowClick={(item) => void onEditOrderItem(item)}
           />
           {isVatSale && orderItems.length > 0 && (
@@ -1980,7 +2039,6 @@ export function NewSaleProductsStep({
           localCurrencyCode={localCurrencyCode}
           selected={editCart.selected}
           splitItems={editCart.splitItems}
-          useEurToUah={useEurToUah}
         />
       )}
 
@@ -2002,7 +2060,10 @@ export function NewSaleProductsStep({
         regionCode={shiftRow?.RegionCode ?? ''}
         sourceName={shiftRow?.Name ?? ''}
         onApply={(qty) => void applyShift(qty)}
-        onCancel={() => setShiftRow(null)}
+        onCancel={() => {
+          setShiftRow(null)
+          focusSearchInput()
+        }}
       />
 
       <ProductImageViewModal imageUrl={imageUrl} onClose={closeImage} />
@@ -2016,10 +2077,29 @@ export function NewSaleProductsStep({
       />
 
       <WizardConfirmModal
+        busy={busy}
+        message={t('Видалити позицію з рахунку?')}
+        opened={Boolean(removeRowItem)}
+        onCancel={() => {
+          setRemoveRowItem(null)
+          focusSearchInput()
+        }}
+        onConfirm={() => {
+          const item = removeRowItem
+          setRemoveRowItem(null)
+
+          if (item) {
+            void removeItem(item)
+          }
+        }}
+      />
+
+      <WizardConfirmModal
         message={t('Закрити вікно?')}
         opened={closeConfirmOpen}
         onCancel={() => {
           setCloseConfirmOpen(false)
+          keyboard.consumeNextEscape()
           focusSearchInput()
         }}
         onConfirm={() => {
@@ -2044,9 +2124,13 @@ export function NewSaleProductsStep({
       <FutureReservationModal
         clientNetId={clientNetId}
         product={futureProduct}
-        onClose={() => setFutureProduct(null)}
+        onClose={() => {
+          setFutureProduct(null)
+          focusSearchInput()
+        }}
         onReserved={() => {
           setFutureProduct(null)
+          focusSearchInput()
           void onCartChanged()
         }}
       />
@@ -2179,4 +2263,25 @@ function resolveSaleNetId(payload: unknown): string | undefined {
 
 function getReservationPrice(reservation?: WizardProductReservation): number | undefined {
   return reservation?.Price ?? reservation?.PricePerItem
+}
+
+function getAvailabilitySortKey(product: WizardSaleProduct, isVatSale: boolean): number {
+  return (isVatSale ? getWizardProductNumber(product.AvailableQtyUkVAT) : getWizardProductNumber(product.AvailableQtyUk)) ?? 0
+}
+
+function sortComponentCarouselEntries(
+  source: { entries: WizardCarouselEntry[]; isBaseSet: boolean },
+  isVatSale: boolean,
+): { entries: WizardCarouselEntry[]; isBaseSet: boolean } {
+  if (source.entries.length <= 1) {
+    return source
+  }
+
+  const byAvailabilityAsc = (a: WizardCarouselEntry, b: WizardCarouselEntry) =>
+    getAvailabilitySortKey(a.product, isVatSale) - getAvailabilitySortKey(b.product, isVatSale)
+  const items = [...source.entries]
+  const top = items.splice(0, Math.ceil(items.length / 2)).sort(byAvailabilityAsc)
+  const bottom = items.sort(byAvailabilityAsc)
+
+  return { ...source, entries: [...top, ...bottom] }
 }

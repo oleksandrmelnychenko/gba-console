@@ -1,33 +1,20 @@
 import { Box, Button, Group, Modal, Text, Tooltip, UnstyledButton } from '@mantine/core'
 import { IconBox, IconTruckDelivery, IconUser } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import {
-  convertVatSaleAndGetPaymentDocument,
-  createSale,
-  getCurrentSaleCart,
-  getSaleById,
-  updateSaleFromData,
-} from '../../api/salesUkraineApi'
-import type { SalesUkraineSale } from '../../types'
+import { getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
 import { NewSaleReviewStep } from './NewSaleReviewStep'
 import {
-  newDeliveryRecipient,
-  newDeliveryRecipientAddress,
-  type WizardDeliveryRecipient,
-  type WizardDeliveryRecipientAddress,
-} from './newSaleWizardApi'
-import {
+  bumpWizardDebtRefresh,
   canAdvanceToProducts,
   canAdvanceToReview,
+  clearWizardSplitOrderItems,
   getCartItemCount,
-  getReviewError,
-  hasDeliveryAddressDraft,
-  isSelfCheckout,
   NEW_SALE_REVIEW_INITIAL,
   NEW_SALE_WIZARD_INITIAL,
   type NewSaleReviewValue,
@@ -40,6 +27,7 @@ import {
   WIZARD_STEP_TITLES,
   type WizardStepIndex,
 } from './wizardKeyboard'
+import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
 import { WizardSaleHeader } from './WizardSaleHeader'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
@@ -50,38 +38,43 @@ export function NewSaleWizard({
   onCreated,
 }: {
   onClose: () => void
-  onCreated: (sale: SalesUkraineSale) => void
+  onCreated: () => void
   opened: boolean
 }) {
   const { t } = useI18n()
+  const [vatDocuments, setVatDocuments] = useState<SaleDocumentResult | null>(null)
 
   return (
-    <Modal
-      opened={opened}
-      title={t('Нова продажа')}
-      withCloseButton
-      closeOnEscape={false}
-      size="100%"
-      padding="lg"
-      overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
-      transitionProps={{ transition: 'pop', duration: 200 }}
-      styles={{
-        inner: { padding: 8 },
-        content: {
-          width: '100%',
-          maxWidth: '100%',
-          height: 'calc(100dvh - 16px)',
-          maxHeight: 'calc(100dvh - 16px)',
-          borderRadius: 14,
-          display: 'flex',
-          flexDirection: 'column',
-        },
-        body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-      }}
-      onClose={onClose}
-    >
-      {opened && <NewSaleWizardContent onClose={onClose} onCreated={onCreated} />}
-    </Modal>
+    <>
+      <Modal
+        opened={opened}
+        title={t('Нова продажа')}
+        withCloseButton
+        closeOnEscape={false}
+        size="100%"
+        padding="lg"
+        overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
+        transitionProps={{ transition: 'pop', duration: 200 }}
+        styles={{
+          inner: { padding: 8 },
+          content: {
+            width: '100%',
+            maxWidth: '100%',
+            height: 'calc(100dvh - 16px)',
+            maxHeight: 'calc(100dvh - 16px)',
+            borderRadius: 14,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+          body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+        }}
+        onClose={onClose}
+      >
+        {opened && <NewSaleWizardContent onClose={onClose} onCreated={onCreated} onVatDocuments={setVatDocuments} />}
+      </Modal>
+
+      <WizardDownloadDocumentsModal result={vatDocuments} onClose={() => setVatDocuments(null)} />
+    </>
   )
 }
 
@@ -91,28 +84,56 @@ const WIZARD_STEPS: { icon: typeof IconUser; index: WizardStepIndex }[] = [
   { icon: IconTruckDelivery, index: 2 },
 ]
 
-function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onCreated: (sale: SalesUkraineSale) => void }) {
+function NewSaleWizardContent({
+  onClose,
+  onCreated,
+  onVatDocuments,
+}: {
+  onClose: () => void
+  onCreated: () => void
+  onVatDocuments: (result: SaleDocumentResult) => void
+}) {
   const { t } = useI18n()
   const [active, setActive] = useState(0)
   const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
   const keyboard = useWizardKeyboardSnapshot()
+  const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
+
+  const registerReviewSubmit = useCallback((submit: (() => Promise<void>) | null) => {
+    reviewSubmitRef.current = submit
+  }, [])
+
+  useEffect(() => {
+    clearWizardSplitOrderItems()
+  }, [])
 
   useEffect(() => {
     initializeWizardKeyboard(active as WizardStepIndex)
   }, [active])
 
   async function reloadCart() {
+    bumpWizardDebtRefresh()
     const netId = state.sale?.NetUid
 
-    if (!netId) {
+    if (netId) {
+      const next = await getSaleById(netId)
+
+      if (next) {
+        setState((current) => ({ ...current, sale: next }))
+      }
+
       return
     }
 
-    const next = await getSaleById(netId)
+    if (!state.agreementNetId) {
+      return
+    }
 
-    if (next) {
+    const next = await getCurrentSaleCart(state.agreementNetId)
+
+    if (next?.NetUid) {
       setState((current) => ({ ...current, sale: next }))
     }
   }
@@ -125,25 +146,50 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     setBusy(true)
 
     try {
-      let cart = await getCurrentSaleCart(state.agreementNetId)
+      const cart = await getCurrentSaleCart(state.agreementNetId)
 
-      if (!cart?.NetUid) {
-        cart = await createSale({ ClientAgreement: state.agreement ?? undefined })
-      }
-
-      if (!cart?.NetUid) {
-        notifications.show({ color: 'red', message: t('Не вдалося створити кошик') })
-
-        return
-      }
-
-      setState((current) => ({ ...current, sale: cart }))
+      setState((current) => ({ ...current, sale: cart?.NetUid ? cart : null }))
+      bumpWizardDebtRefresh()
       setActive(1)
-    } catch {
-      notifications.show({ color: 'red', message: t('Не вдалося створити кошик') })
+    } catch (loadError) {
+      notifications.show({
+        color: 'red',
+        message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
+      })
     } finally {
       setBusy(false)
     }
+  }
+
+  async function openRegistrySale(sale: SalesUkraineSale) {
+    const agreement = sale.ClientAgreement ?? null
+
+    setBusy(true)
+
+    try {
+      const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
+
+      setState((current) => ({
+        ...current,
+        agreement: agreement ?? current.agreement,
+        agreementNetId: agreement?.NetUid ?? current.agreementNetId,
+        sale: fresh ?? sale,
+      }))
+      bumpWizardDebtRefresh()
+      setActive(1)
+    } catch (loadError) {
+      notifications.show({
+        color: 'red',
+        message: loadError instanceof Error ? t(loadError.message) : t('Не вдалося виконати запит'),
+      })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function goToClients() {
+    setState((current) => ({ ...current, sale: null }))
+    setActive(0)
   }
 
   function goToReview() {
@@ -158,90 +204,29 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     } else if (active === 1) {
       goToReview()
     } else {
-      await finalize()
-    }
-  }
+      const submit = reviewSubmitRef.current
 
-  async function finalize() {
-    if (!state.sale) {
-      return
-    }
-
-    const reviewError = getReviewError(review)
-
-    if (reviewError) {
-      notifications.show({ color: 'orange', message: t(reviewError) })
-
-      return
-    }
-
-    setBusy(true)
-
-    try {
-      const selfCheckout = isSelfCheckout(review.transporter)
-      const payload: SalesUkraineSale = {
-        ...state.sale,
-        Comment: review.comment || state.sale.Comment,
-        Transporter: review.transporter ?? state.sale.Transporter,
-        TransporterId: review.transporter?.Id ?? state.sale.TransporterId,
+      if (!submit) {
+        return
       }
 
-      if (!selfCheckout) {
-        const recipient = await resolveDeliveryRecipient(review, state)
-        const address = await resolveDeliveryAddress(review, recipient)
+      setBusy(true)
 
-        payload.DeliveryRecipient = recipient
-          ? ({ ...recipient, MobilePhone: review.mobilePhone || recipient.MobilePhone } as SalesUkraineSale['DeliveryRecipient'])
-          : recipient
-        payload.DeliveryRecipientAddress = address
-          ? ({
-              ...address,
-              City: review.city || address.City,
-              Department: review.department || address.Department,
-              Value: review.addressValue || address.Value,
-            } as SalesUkraineSale['DeliveryRecipientAddress'])
-          : address
-        payload.DeliveryRecipientAddressId = address?.Id ?? state.sale.DeliveryRecipientAddressId
-        payload.IsCashOnDelivery = review.isCashOnDelivery
-        payload.CashOnDeliveryAmount = review.isCashOnDelivery ? toAmount(review.codAmount) : state.sale.CashOnDeliveryAmount
-        payload.TTN = review.hasOwnTtn ? review.ttnNumber || state.sale.TTN : state.sale.TTN
-        payload.CustomersOwnTtn =
-          review.hasOwnTtn && review.ttnNumber ? { Number: review.ttnNumber } : state.sale.CustomersOwnTtn
+      try {
+        await submit()
+      } finally {
+        setBusy(false)
       }
-
-      payload.BaseLifeCycleStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SaleLifeCycleType: 1 }
-      payload.BaseSalePaymentStatus = { Deleted: false, Id: 0, NetUid: EMPTY_GUID, SalePaymentStatusType: 0 }
-      payload.IsPrintedPaymentInvoice = true
-
-      const file = !selfCheckout && review.hasOwnTtn ? review.ttnFile : null
-
-      if (payload.IsVatSale) {
-        const document = await convertVatSaleAndGetPaymentDocument(payload, file)
-        const url = document.pdfUrl || document.excelUrl
-
-        if (url) {
-          window.open(url, '_blank', 'noopener,noreferrer')
-        }
-      } else {
-        await updateSaleFromData(payload, file)
-      }
-
-      notifications.show({ color: 'green', message: t('Продаж створено') })
-      onCreated(state.sale)
-      onClose()
-    } catch (finalizeError) {
-      notifications.show({
-        color: 'red',
-        message: finalizeError instanceof Error ? t(finalizeError.message) : t('Не вдалося завершити продаж'),
-      })
-    } finally {
-      setBusy(false)
     }
   }
 
   function onStepClick(index: number) {
     if (index < active) {
-      setActive(index)
+      if (index === 0) {
+        goToClients()
+      } else {
+        setActive(index)
+      }
 
       return
     }
@@ -258,6 +243,12 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
     (active === 0 && !canAdvanceToProducts(state)) ||
     (active === 1 && getCartItemCount(state.sale) === 0)
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
+  const productsCart: SalesUkraineSale =
+    state.sale ?? {
+      ClientAgreement: state.agreement ?? undefined,
+      IsVatSale: Boolean(state.agreement?.Agreement?.WithVATAccounting),
+      NetUid: EMPTY_GUID,
+    }
 
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
     if (event.altKey) {
@@ -266,7 +257,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
         event.stopPropagation()
 
         if (!busy) {
-          setActive(0)
+          goToClients()
         }
       } else if (event.code === 'Digit2') {
         event.preventDefault()
@@ -332,10 +323,10 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
       <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
         {active === 0 && (
           <NewSaleClientStep
-            agreementNetId={state.agreementNetId}
             clientNetId={state.clientNetId}
             onAgreementChange={(agreementNetId, agreement) => setState((current) => ({ ...current, agreement, agreementNetId }))}
             onClientChange={(clientNetId) => setState((current) => ({ ...current, clientNetId }))}
+            onOpenSale={(sale) => void openRegistrySale(sale)}
             onRequestClose={onClose}
           />
         )}
@@ -343,7 +334,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
           <NewSaleProductsStep
             agreementNetId={state.agreementNetId}
             clientNetId={state.clientNetId}
-            sale={state.sale}
+            sale={productsCart}
             onCartChanged={reloadCart}
             onRequestClose={onClose}
           />
@@ -356,6 +347,8 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
             onClose={onClose}
             onCreated={onCreated}
+            onRegisterSubmit={registerReviewSubmit}
+            onVatDocuments={onVatDocuments}
           />
         )}
       </Box>
@@ -419,7 +412,7 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
             color="gray"
             disabled={busy}
             variant="light"
-            onClick={active === 0 ? onClose : () => setActive((index) => Math.max(0, index - 1))}
+            onClick={active === 0 ? onClose : active === 1 ? goToClients : () => setActive(1)}
           >
             {active === 0 ? t('Скасувати') : t('Назад')}
           </Button>
@@ -432,66 +425,3 @@ function NewSaleWizardContent({ onClose, onCreated }: { onClose: () => void; onC
   )
 }
 
-async function resolveDeliveryRecipient(
-  review: NewSaleReviewValue,
-  state: NewSaleWizardState,
-): Promise<WizardDeliveryRecipient | SalesUkraineSale['DeliveryRecipient'] | null> {
-  if (!review.isNewRecipient) {
-    return review.recipient ?? state.sale?.DeliveryRecipient ?? null
-  }
-
-  const clientId = state.agreement?.Client?.Id ?? state.sale?.ClientAgreement?.Client?.Id
-
-  if (!clientId) {
-    throw new Error('Не вдалося визначити клієнта для отримувача')
-  }
-
-  const recipient = await newDeliveryRecipient({
-    ClientId: clientId,
-    FullName: review.recipientName.trim(),
-    MobilePhone: review.mobilePhone.trim(),
-  })
-
-  if (!recipient?.Id) {
-    throw new Error('Не вдалося створити отримувача')
-  }
-
-  return recipient
-}
-
-async function resolveDeliveryAddress(
-  review: NewSaleReviewValue,
-  recipient: WizardDeliveryRecipient | SalesUkraineSale['DeliveryRecipient'] | null,
-): Promise<WizardDeliveryRecipientAddress | SalesUkraineSale['DeliveryRecipientAddress'] | null> {
-  if (!review.isNewAddress && review.address) {
-    return review.address
-  }
-
-  if (!hasDeliveryAddressDraft(review)) {
-    return null
-  }
-
-  if (!recipient?.Id) {
-    throw new Error('Не вдалося визначити отримувача для адреси')
-  }
-
-  const address = await newDeliveryRecipientAddress({
-    City: review.city.trim(),
-    DeliveryRecipient: recipient as WizardDeliveryRecipient,
-    DeliveryRecipientId: recipient.Id,
-    Department: review.department.trim(),
-    Value: review.addressValue.trim(),
-  })
-
-  if (!address?.Id) {
-    throw new Error('Не вдалося створити адресу доставки')
-  }
-
-  return address
-}
-
-function toAmount(value: number | string): number | undefined {
-  const parsed = typeof value === 'number' ? value : Number(String(value).replace(',', '.'))
-
-  return Number.isFinite(parsed) ? parsed : undefined
-}
