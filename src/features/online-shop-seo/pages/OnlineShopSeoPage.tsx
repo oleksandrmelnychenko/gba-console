@@ -28,6 +28,7 @@ import {
   IconCreditCard,
   IconDeviceFloppy,
   IconFileText,
+  IconHash,
   IconInfoCircle,
   IconLink,
   IconPencil,
@@ -104,20 +105,7 @@ import {
 import './online-shop-seo-page.css'
 
 type SeoTab = 'pages' | 'info-payment' | 'contacts' | 'shop-clients' | 'bank-cards' | 'warehouses' | 'shop-data'
-type SeoShopDataSearchField =
-  | 'account'
-  | 'agreement'
-  | 'all'
-  | 'bank'
-  | 'currency'
-  | 'email'
-  | 'locale'
-  | 'name'
-  | 'number'
-  | 'organization'
-  | 'phone'
-  | 'priority'
-  | 'status'
+type SeoShopDataSearchTarget = 'bank-cards' | 'clients' | 'storages'
 type PaymentCardBrand = 'mastercard' | 'unknown' | 'visa'
 
 type SeoRosterColumn<TData> = {
@@ -148,21 +136,17 @@ const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
   { value: 'warehouses', label: 'Склади' },
 ]
 
-const SEO_SHOP_DATA_SEARCH_OPTIONS: Array<{ value: SeoShopDataSearchField; label: TranslationKey }> = [
-  { value: 'all', label: 'Усі поля' },
-  { value: 'name', label: 'Назва' },
-  { value: 'phone', label: 'Телефон' },
-  { value: 'email', label: 'E-mail' },
-  { value: 'number', label: 'Номер' },
-  { value: 'agreement', label: 'Договір' },
-  { value: 'account', label: 'Рахунок' },
-  { value: 'bank', label: 'Банк' },
-  { value: 'organization', label: 'Організація' },
-  { value: 'currency', label: 'Валюта' },
-  { value: 'locale', label: 'Мова' },
-  { value: 'priority', label: 'Пріоритет' },
-  { value: 'status', label: 'Статус' },
+const SEO_SHOP_DATA_SEARCH_TARGET_OPTIONS: Array<{ value: SeoShopDataSearchTarget; label: TranslationKey }> = [
+  { value: 'clients', label: 'Пошук по інтернет клієнтах' },
+  { value: 'bank-cards', label: 'Пошук по банківських картах' },
+  { value: 'storages', label: 'Пошук по складах' },
 ]
+
+const SEO_SHOP_DATA_SEARCH_PLACEHOLDERS: Record<SeoShopDataSearchTarget, TranslationKey> = {
+  'bank-cards': 'Рахунок, назва, банк або організація',
+  clients: 'Клієнт, договір, номер або статус',
+  storages: 'Склад, організація, пріоритет або статус',
+}
 
 const DEFAULT_SEO_TAB: SeoTab = 'info-payment'
 const SEO_TAB_VALUES = new Set<SeoTab>(SEO_TABS.map((tab) => tab.value))
@@ -247,7 +231,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const [allStorageSearchValue, setAllStorageSearchValue] = useValueState('')
   const [shopDataSearchDraft, setShopDataSearchDraft] = useValueState('')
   const [shopDataSearchValue, setShopDataSearchValue] = useValueState('')
-  const [shopDataSearchField, setShopDataSearchField] = useValueState<SeoShopDataSearchField>('all')
+  const [shopDataSearchTarget, setShopDataSearchTarget] = useValueState<SeoShopDataSearchTarget>('clients')
   const [editingGeneralLocale, setEditingGeneralLocale] = useValueState<string | null>(null)
   const [onlineShopClients, setOnlineShopClients] = useValueState<OnlineShopClient[]>([])
   const [paymentRegisters, setPaymentRegisters] = useValueState<OnlineShopPaymentRegister[]>([])
@@ -302,16 +286,16 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     [allStorageSearchValue, allStorages, ecommerceStorages],
   )
   const shopDataClients = useMemo(
-    () => filterOnlineShopClientsByField(onlineShopClients, shopDataSearchValue, shopDataSearchField),
-    [onlineShopClients, shopDataSearchField, shopDataSearchValue],
+    () => (shopDataSearchTarget === 'clients' ? filterOnlineShopClients(onlineShopClients, shopDataSearchValue) : onlineShopClients),
+    [onlineShopClients, shopDataSearchTarget, shopDataSearchValue],
   )
   const shopDataCards = useMemo(
-    () => filterPaymentRegistersByField(paymentRegisters, shopDataSearchValue, shopDataSearchField),
-    [paymentRegisters, shopDataSearchField, shopDataSearchValue],
+    () => (shopDataSearchTarget === 'bank-cards' ? filterPaymentRegisters(paymentRegisters, shopDataSearchValue) : paymentRegisters),
+    [paymentRegisters, shopDataSearchTarget, shopDataSearchValue],
   )
   const shopDataStorages = useMemo(
-    () => filterStoragesByField(ecommerceStorages, shopDataSearchValue, shopDataSearchField),
-    [ecommerceStorages, shopDataSearchField, shopDataSearchValue],
+    () => (shopDataSearchTarget === 'storages' ? filterStorages(ecommerceStorages, shopDataSearchValue) : ecommerceStorages),
+    [ecommerceStorages, shopDataSearchTarget, shopDataSearchValue],
   )
   const openPageEditor = useCallback((row: SeoPageRow) => {
     setSelectedPageRow(row)
@@ -692,41 +676,24 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
   const ecommerceStorageColumns = useMemo<SeoRosterColumn<OnlineShopStorage>[]>(
     () => [
       {
+        id: 'storage',
+        header: 'Склад',
+        width: 420,
+        minWidth: 320,
+        accessor: (storage) => storage.Name,
+        cell: (storage) => <SeoTableStorageCell storage={storage} />,
+      },
+      {
         id: 'priority',
         header: 'Пріоритет',
         width: 112,
         minWidth: 100,
         accessor: (storage) => Number(storage.RetailPriority || 0),
-        cell: (storage) => <SeoTableTag tone="accent">{displayValue(storage.RetailPriority)}</SeoTableTag>,
-      },
-      {
-        id: 'storage',
-        header: 'Склад',
-        width: 280,
-        minWidth: 220,
-        accessor: (storage) => storage.Name,
         cell: (storage) => (
-          <SeoTablePrimaryCell
-            icon={<IconBuildingWarehouse size={15} />}
-            title={displayValue(storage.Name)}
-          />
+          <SeoTableRoleLikeCell icon={<IconHash size={14} />} tone="url">
+            {displayValue(storage.RetailPriority)}
+          </SeoTableRoleLikeCell>
         ),
-      },
-      {
-        id: 'organization',
-        header: 'Організація',
-        width: 280,
-        minWidth: 220,
-        accessor: (storage) => getOrganizationName(storage.Organization),
-        cell: (storage) => <SeoTableMutedCell>{displayValue(getOrganizationName(storage.Organization))}</SeoTableMutedCell>,
-      },
-      {
-        id: 'locale',
-        header: 'Мова',
-        width: 96,
-        minWidth: 84,
-        accessor: (storage) => storage.Locale,
-        cell: (storage) => <SeoTableLocaleTag>{displayValue(storage.Locale)}</SeoTableLocaleTag>,
       },
       {
         id: 'status',
@@ -780,6 +747,26 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
 
   const allStorageColumns: SeoRosterColumn<OnlineShopStorage>[] = [
       {
+        id: 'storage',
+        header: 'Склад',
+        width: 420,
+        minWidth: 320,
+        accessor: (storage) => storage.Name,
+        cell: (storage) => <SeoTableStorageCell storage={storage} />,
+      },
+      {
+        id: 'priority',
+        header: 'Пріоритет',
+        width: 112,
+        minWidth: 100,
+        accessor: (storage) => Number(storage.RetailPriority || 0),
+        cell: (storage) => (
+          <SeoTableRoleLikeCell icon={<IconHash size={14} />} tone="url">
+            {displayValue(storage.RetailPriority)}
+          </SeoTableRoleLikeCell>
+        ),
+      },
+      {
         id: 'status',
         header: 'Статус',
         width: 126,
@@ -792,43 +779,6 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
             inactiveLabel="Не активний"
           />
         ),
-      },
-      {
-        id: 'storage',
-        header: 'Склад',
-        width: 280,
-        minWidth: 220,
-        accessor: (storage) => storage.Name,
-        cell: (storage) => (
-          <SeoTablePrimaryCell
-            icon={<IconBuildingWarehouse size={15} />}
-            title={displayValue(storage.Name)}
-          />
-        ),
-      },
-      {
-        id: 'organization',
-        header: 'Організація',
-        width: 280,
-        minWidth: 220,
-        accessor: (storage) => getOrganizationName(storage.Organization),
-        cell: (storage) => <SeoTableMutedCell>{displayValue(getOrganizationName(storage.Organization))}</SeoTableMutedCell>,
-      },
-      {
-        id: 'locale',
-        header: 'Мова',
-        width: 96,
-        minWidth: 84,
-        accessor: (storage) => storage.Locale,
-        cell: (storage) => <SeoTableLocaleTag>{displayValue(storage.Locale)}</SeoTableLocaleTag>,
-      },
-      {
-        id: 'priority',
-        header: 'Пріоритет',
-        width: 112,
-        minWidth: 100,
-        accessor: (storage) => Number(storage.RetailPriority || 0),
-        cell: (storage) => <SeoTableTag tone="accent">{displayValue(storage.RetailPriority)}</SeoTableTag>,
       },
       {
         id: 'actions',
@@ -1399,7 +1349,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchField, shopDataStorages,
+    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, allStorageSearchValue,
     cardSearchValue, clientSearchValue, contactSearchValue, pageSearchValue, storageSearchValue,
     changeAllStorageSearch, changeCardSearch, changeClientSearch, changeContactSearch, changePageSearch,
@@ -1410,7 +1360,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     openContactEditor, openGeneralLocaleEditor, openPageEditor, reload, resetAllStorageSearch, resetCardSearch, resetClientSearch,
     resetShopDataSearch,
     resetContactSearch, resetPageSearch, resetStorageSearch, setActiveTab, setContactField, setFormError,
-    setShopDataSearchField,
+    setShopDataSearchTarget,
     setPageField, setPriorityValue, setRemoveContactTarget, setRemoveStorageTarget,
     setStorageDrawerOpen,
   }
@@ -1451,7 +1401,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     isClientsLoading, isContactEditorOpen, isImageUploading, isLoading, isPageEditorOpen, isSaving,
     isStorageDrawerOpen, isStoragesLoading, pageColumns, pageFormValues, pageRows, pageSearchDraft,
     paymentRegisterColumns, priorityStorageTarget, priorityValue, removeContactTarget,
-    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchField, shopDataStorages,
+    shopDataCards, shopDataClients, shopDataSearchDraft, shopDataSearchTarget, shopDataStorages,
     removeStorageTarget, settings, storageSearchDraft, closeContactEditor, closeGeneralLocaleEditor, closePageEditor,
     closePriorityEditor, handleAddStorage, handleContactImageChange, handleRemoveContact, handleRemoveStorage,
     handleSaveContact, handleSaveContactInfo, handleSavePage, handleSavePayment, handleSaveStoragePriority,
@@ -1462,7 +1412,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetShopDataSearch,
     resetStorageSearch, setActiveTab, setContactField, setFormError, setPageField, setPriorityValue,
     setRemoveContactTarget, setRemoveStorageTarget, setStorageDrawerOpen,
-    setShopDataSearchField,
+    setShopDataSearchTarget,
   } = model
   const commandSearch = getSeoCommandSearchConfig(activeTab, {
     cardSearchDraft,
@@ -1481,9 +1431,9 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
     resetPageSearch,
     resetShopDataSearch,
     resetStorageSearch,
-    setShopDataSearchField,
+    setShopDataSearchTarget,
     shopDataSearchDraft,
-    shopDataSearchField,
+    shopDataSearchTarget,
     storageSearchDraft,
   })
   const isActiveTabRefreshing = getSeoTabLoadingState(activeTab, {
@@ -1555,7 +1505,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       rightSectionWidth={24}
                       value={commandSearch.filterValue}
                       variant="unstyled"
-                      onChange={(value) => commandSearch.onFilterChange?.(value || 'all')}
+                      onChange={(value) => commandSearch.onFilterChange?.(value || commandSearch.filterValue || '')}
                     />
                     <span className="seo-page-command-combo-divider" aria-hidden />
                     <TextInput
@@ -1775,20 +1725,42 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
             {activeTab === 'shop-data' && (
               <Box pt="md">
                 <div className="seo-shop-data-grid">
-                  <SeoShopDataSection
-                    count={shopDataClients.length}
-                    hideCount
-                    title={t('Інтернет клієнти')}
-                  >
-                    <SeoShopClientList
-                      clients={shopDataClients}
-                      emptyText={t('Клієнтів не знайдено')}
-                      isLoading={isClientsLoading}
-                      loadingText={t('Завантаження клієнтів')}
-                      maxHeight="380px"
-                      onToggleClient={handleToggleOnlineShopClient}
-                    />
-                  </SeoShopDataSection>
+                  <div className="seo-shop-data-column">
+                    <SeoShopDataSection
+                      className="is-clients"
+                      count={shopDataClients.length}
+                      hideCount
+                      title={t('Інтернет клієнти')}
+                    >
+                      <SeoShopClientList
+                        clients={shopDataClients}
+                        emptyText={t('Клієнтів не знайдено')}
+                        isLoading={isClientsLoading}
+                        loadingText={t('Завантаження клієнтів')}
+                        maxHeight="380px"
+                        onToggleClient={handleToggleOnlineShopClient}
+                      />
+                    </SeoShopDataSection>
+
+                    <SeoShopDataSection
+                      className="is-storages"
+                      count={shopDataStorages.length}
+                      hideCount
+                      title={t('Склади')}
+                    >
+                      <SeoRosterTable
+                        columns={ecommerceStorageColumns}
+                        columnsTemplate="minmax(360px, 1fr) 118px 100px 82px"
+                        data={shopDataStorages}
+                        emptyText={t('Активних складів не знайдено')}
+                        getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
+                        isLoading={isStoragesLoading}
+                        loadingText={t('Завантаження складів')}
+                        maxHeight="360px"
+                        minWidth={660}
+                      />
+                    </SeoShopDataSection>
+                  </div>
 
                   <SeoShopDataSection
                     count={shopDataCards.length}
@@ -1803,25 +1775,6 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                       loadingText={t('Завантаження карток')}
                       maxHeight="380px"
                       onSelectCard={handleSelectPaymentRegister}
-                    />
-                  </SeoShopDataSection>
-
-                  <SeoShopDataSection
-                    className="is-wide"
-                    count={shopDataStorages.length}
-                    hideCount
-                    title={t('Склади')}
-                  >
-                    <SeoRosterTable
-                      columns={ecommerceStorageColumns}
-                      columnsTemplate="100px minmax(250px, 1fr) minmax(260px, 1fr) 88px 118px 82px"
-                      data={shopDataStorages}
-                      emptyText={t('Активних складів не знайдено')}
-                      getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
-                      isLoading={isStoragesLoading}
-                      loadingText={t('Завантаження складів')}
-                      maxHeight="360px"
-                      minWidth={898}
                     />
                   </SeoShopDataSection>
                 </div>
@@ -1871,14 +1824,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Stack gap="md">
                 <SeoRosterTable
                   columns={ecommerceStorageColumns}
-                  columnsTemplate="100px minmax(250px, 1fr) minmax(260px, 1fr) 88px 118px 82px"
+                  columnsTemplate="minmax(360px, 1fr) 118px 100px 82px"
                   data={activeStorages}
                   emptyText={t('Активних складів не знайдено')}
                   getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
                   isLoading={isStoragesLoading}
                   loadingText={t('Завантаження складів')}
                   maxHeight="calc(100vh - 340px)"
-                  minWidth={898}
+                  minWidth={660}
                 />
               </Stack>
               </Box>
@@ -2191,14 +2144,14 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
 
           <SeoRosterTable
             columns={allStorageColumns}
-            columnsTemplate="118px minmax(250px, 1fr) minmax(260px, 1fr) 88px 100px 64px"
+            columnsTemplate="minmax(360px, 1fr) 118px 100px 64px"
             data={availableStorages}
             emptyText={t('Складів не знайдено')}
             getRowId={(storage, index) => String(storage.NetUid || storage.Id || index)}
             isLoading={isStoragesLoading}
             loadingText={t('Завантаження складів')}
             maxHeight="calc(100vh - 220px)"
-            minWidth={880}
+            minWidth={642}
             onRowClick={(storage) => void handleAddStorage(storage)}
           />
         </Stack>
@@ -2588,6 +2541,16 @@ function SeoTableDateCell({ value }: { value?: Date | string }) {
   )
 }
 
+function SeoTableStorageCell({ storage }: { storage: OnlineShopStorage }) {
+  return (
+    <SeoTablePrimaryCell
+      icon={<IconBuildingWarehouse size={15} />}
+      subtitle={displayValue(getCompactOrganizationName(storage.Organization))}
+      title={displayValue(storage.Name)}
+    />
+  )
+}
+
 function SeoTableMutedCell({
   children,
   tone = 'default',
@@ -2737,9 +2700,9 @@ type SeoCommandSearchState = {
   resetPageSearch: () => void
   resetShopDataSearch: () => void
   resetStorageSearch: () => void
-  setShopDataSearchField: (value: SeoShopDataSearchField) => void
+  setShopDataSearchTarget: (value: SeoShopDataSearchTarget) => void
   shopDataSearchDraft: string
-  shopDataSearchField: SeoShopDataSearchField
+  shopDataSearchTarget: SeoShopDataSearchTarget
   storageSearchDraft: string
 }
 
@@ -2816,13 +2779,13 @@ function getSeoCommandSearchConfig(
     case 'shop-data':
       return {
         filterLabel: 'Шукати по',
-        filterOptions: SEO_SHOP_DATA_SEARCH_OPTIONS,
-        filterValue: state.shopDataSearchField,
+        filterOptions: SEO_SHOP_DATA_SEARCH_TARGET_OPTIONS,
+        filterValue: state.shopDataSearchTarget,
         label: 'Пошук',
-        placeholder: 'Клієнт, рахунок, склад або статус',
+        placeholder: SEO_SHOP_DATA_SEARCH_PLACEHOLDERS[state.shopDataSearchTarget],
         value: state.shopDataSearchDraft,
         onChange: state.changeShopDataSearch,
-        onFilterChange: (value) => state.setShopDataSearchField(value as SeoShopDataSearchField),
+        onFilterChange: (value) => state.setShopDataSearchTarget(value as SeoShopDataSearchTarget),
         onReset: state.resetShopDataSearch,
       }
     case 'info-payment':
@@ -2941,6 +2904,8 @@ function filterOnlineShopClients(clients: OnlineShopClient[], searchValue: strin
   return clients.filter((client) =>
     [
       getClientDisplayName(client),
+      getOnlineShopClientAgreementName(client),
+      getOnlineShopClientAgreementOrganizationName(client),
       getClientPhone(client),
       client.ClientNumber,
       client.EmailAddress,
@@ -2950,20 +2915,6 @@ function filterOnlineShopClients(clients: OnlineShopClient[], searchValue: strin
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
   )
-}
-
-function filterOnlineShopClientsByField(
-  clients: OnlineShopClient[],
-  searchValue: string,
-  field: SeoShopDataSearchField,
-) {
-  const normalizedSearch = searchValue.trim().toLowerCase()
-
-  if (!normalizedSearch) {
-    return clients
-  }
-
-  return clients.filter((client) => hasSearchMatch(getClientSearchValues(client, field), normalizedSearch))
 }
 
 function filterPaymentRegisters(registers: OnlineShopPaymentRegister[], searchValue: string) {
@@ -2989,20 +2940,6 @@ function filterPaymentRegisters(registers: OnlineShopPaymentRegister[], searchVa
   )
 }
 
-function filterPaymentRegistersByField(
-  registers: OnlineShopPaymentRegister[],
-  searchValue: string,
-  field: SeoShopDataSearchField,
-) {
-  const normalizedSearch = searchValue.trim().toLowerCase()
-
-  if (!normalizedSearch) {
-    return registers
-  }
-
-  return registers.filter((register) => hasSearchMatch(getCardSearchValues(register, field), normalizedSearch))
-}
-
 function filterStorages(storages: OnlineShopStorage[], searchValue: string) {
   const normalizedSearch = searchValue.trim().toLowerCase()
 
@@ -3013,7 +2950,6 @@ function filterStorages(storages: OnlineShopStorage[], searchValue: string) {
   return storages.filter((storage) =>
     [
       storage.Name,
-      storage.Locale,
       storage.RetailPriority,
       getOrganizationName(storage.Organization),
       storage.NetUid,
@@ -3022,113 +2958,6 @@ function filterStorages(storages: OnlineShopStorage[], searchValue: string) {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
   )
-}
-
-function filterStoragesByField(storages: OnlineShopStorage[], searchValue: string, field: SeoShopDataSearchField) {
-  const normalizedSearch = searchValue.trim().toLowerCase()
-
-  if (!normalizedSearch) {
-    return storages
-  }
-
-  return storages.filter((storage) => hasSearchMatch(getStorageSearchValues(storage, field), normalizedSearch))
-}
-
-function hasSearchMatch(values: unknown[], normalizedSearch: string) {
-  return values
-    .filter((value) => value !== null && value !== undefined && value !== '')
-    .some((value) => String(value).toLowerCase().includes(normalizedSearch))
-}
-
-function getClientSearchValues(client: OnlineShopClient, field: SeoShopDataSearchField): unknown[] {
-  const statusValues = [
-    client.IsForRetail ? translate('активний') : translate('не активний'),
-    client.IsActive ? translate('активний') : translate('не активний'),
-  ]
-
-  switch (field) {
-    case 'name':
-      return [getClientDisplayName(client)]
-    case 'phone':
-      return [getClientPhone(client)]
-    case 'email':
-      return [client.EmailAddress]
-    case 'number':
-      return [client.ClientNumber]
-    case 'agreement':
-      return [getOnlineShopClientAgreementName(client), getOnlineShopClientAgreementOrganizationName(client)]
-    case 'status':
-      return statusValues
-    case 'all':
-      return [
-        getClientDisplayName(client),
-        getOnlineShopClientAgreementName(client),
-        getOnlineShopClientAgreementOrganizationName(client),
-        getClientPhone(client),
-        client.ClientNumber,
-        client.EmailAddress,
-        client.NetUid,
-        ...statusValues,
-      ]
-    default:
-      return []
-  }
-}
-
-function getCardSearchValues(register: OnlineShopPaymentRegister, field: SeoShopDataSearchField): unknown[] {
-  const statusValues = [
-    register.IsSelected ? translate('активна') : translate('не активна'),
-    register.IsActive ? translate('активна') : translate('не активна'),
-  ]
-
-  switch (field) {
-    case 'account':
-      return [register.AccountNumber, register.IBAN]
-    case 'name':
-      return [register.Name]
-    case 'bank':
-      return [register.BankName]
-    case 'organization':
-      return [getOrganizationName(register.Organization)]
-    case 'currency':
-      return [getPaymentRegisterCurrency(register)]
-    case 'status':
-      return statusValues
-    case 'all':
-      return [
-        register.AccountNumber,
-        register.IBAN,
-        getPaymentRegisterCurrency(register),
-        register.Name,
-        register.BankName,
-        getOrganizationName(register.Organization),
-        register.NetUid,
-        ...statusValues,
-      ]
-    default:
-      return []
-  }
-}
-
-function getStorageSearchValues(storage: OnlineShopStorage, field: SeoShopDataSearchField): unknown[] {
-  const statusValues = [storage.ForEcommerce ? translate('активний') : translate('не активний')]
-
-  switch (field) {
-    case 'name':
-      return [storage.Name]
-    case 'organization':
-      return [getOrganizationName(storage.Organization)]
-    case 'locale':
-      return [storage.Locale]
-    case 'priority':
-      return [storage.RetailPriority]
-    case 'status':
-      return statusValues
-    case 'all':
-      return [storage.Name, storage.Locale, storage.RetailPriority, getOrganizationName(storage.Organization), storage.NetUid, ...statusValues]
-    default:
-      return []
-  }
 }
 
 function getClientDisplayName(client: OnlineShopClient) {
@@ -3201,7 +3030,7 @@ function getOrganizationName(organization?: OnlineShopPaymentRegister['Organizat
   return organization?.FullName || organization?.Name || organization?.Abbreviation || ''
 }
 
-function getCompactOrganizationName(organization?: OnlineShopPaymentRegister['Organization']) {
+function getCompactOrganizationName(organization?: OnlineShopPaymentRegister['Organization'] | OnlineShopStorage['Organization']) {
   return organization?.Abbreviation || organization?.Name || organization?.FullName || ''
 }
 
