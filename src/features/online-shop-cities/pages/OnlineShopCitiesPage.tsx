@@ -1,12 +1,11 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Group,
+  ScrollArea,
   SimpleGrid,
   Stack,
   Text,
@@ -17,33 +16,39 @@ import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconArchive,
   IconDeviceFloppy,
+  IconHome,
+  IconMapPin,
   IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconTrash,
+  IconWorld,
 } from '@tabler/icons-react'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getOnlineShopCities, saveOnlineShopCity } from '../api/onlineShopCitiesApi'
 import type { OnlineShopCity } from '../types'
+import './online-shop-cities-page.css'
 
-const ONLINE_SHOP_CITIES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['nameUa'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
+const CITY_FILTER_ALL = 'all'
+const CITY_FILTER_ACTIVE = 'active'
+const CITY_FILTER_ARCHIVED = 'archived'
+const CITY_FILTER_LOCAL = 'local'
+const CITY_FILTER_GLOBAL = 'global'
+
+type CityFilter =
+  | typeof CITY_FILTER_ACTIVE
+  | typeof CITY_FILTER_ALL
+  | typeof CITY_FILTER_ARCHIVED
+  | typeof CITY_FILTER_GLOBAL
+  | typeof CITY_FILTER_LOCAL
 
 type CityFormValues = {
   IsLocalPayment: boolean
@@ -70,6 +75,7 @@ export function OnlineShopCitiesPage() {
   const [cities, setCities] = useValueState<OnlineShopCity[]>([])
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue, setSearchValue] = useValueState('')
+  const [cityFilter, setCityFilter] = useValueState<CityFilter>(CITY_FILTER_ALL)
   const [formValues, setFormValues] = useValueState<CityFormValues>(EMPTY_FORM_VALUES)
   const [editingCity, setEditingCity] = useValueState<OnlineShopCity | null>(null)
   const [archiveTarget, setArchiveTarget] = useValueState<OnlineShopCity | null>(null)
@@ -79,10 +85,39 @@ export function OnlineShopCitiesPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isEditorOpen, setEditorOpen] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
-  const { density, toggleDensity } = useDataTableDensity('online-shop-cities', 'normal')
   const visibleCities = useMemo(
-    () => filterCities(cities, searchValue),
-    [cities, searchValue],
+    () => filterCities(cities, searchValue).filter((city) => matchCityFilter(city, cityFilter)),
+    [cities, cityFilter, searchValue],
+  )
+  const cityNavigationItems = useMemo<CityNavigationItem[]>(
+    () => [
+      {
+        count: cities.length,
+        label: t('Всі міста'),
+        value: CITY_FILTER_ALL,
+      },
+      {
+        count: cities.filter((city) => !city.Deleted).length,
+        label: t('Активні'),
+        value: CITY_FILTER_ACTIVE,
+      },
+      {
+        count: cities.filter((city) => city.Deleted === true).length,
+        label: t('Архів'),
+        value: CITY_FILTER_ARCHIVED,
+      },
+      {
+        count: cities.filter((city) => city.IsLocalPayment === true).length,
+        label: t('Локальна оплата'),
+        value: CITY_FILTER_LOCAL,
+      },
+      {
+        count: cities.filter((city) => city.IsLocalPayment !== true).length,
+        label: t('Загальна оплата'),
+        value: CITY_FILTER_GLOBAL,
+      },
+    ],
+    [cities, t],
   )
   const openEditor = useCallback((city?: OnlineShopCity) => {
     setEditingCity(city || null)
@@ -95,16 +130,7 @@ export function OnlineShopCitiesPage() {
     setEditorOpen(false)
     setFormError(null)
   }, [setArchiveTarget, setEditorOpen, setFormError])
-  const columns = useOnlineShopCityColumns(openEditor, requestArchive)
-  const toolbarLeft = useMemo(
-    () =>
-      searchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {searchValue}
-        </Text>
-      ) : null,
-    [searchValue, t],
-  )
+  const hasActiveFilters = Boolean(searchValue.trim()) || cityFilter !== CITY_FILTER_ALL
 
   useEffect(() => {
     let cancelled = false
@@ -146,6 +172,7 @@ export function OnlineShopCitiesPage() {
   function resetSearch() {
     setSearchDraft('')
     setSearchValue('')
+    setCityFilter(CITY_FILTER_ALL)
   }
 
   function closeEditor() {
@@ -225,7 +252,7 @@ export function OnlineShopCitiesPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="online-shop-cities-page" gap="md">
       <PageHeaderActions>
         <Button
           color={CREATE_ACTION_COLOR}
@@ -238,19 +265,20 @@ export function OnlineShopCitiesPage() {
         </Button>
       </PageHeaderActions>
 
-      <OnlineShopCitiesTableCard
-        columns={columns}
-        density={density}
+      <OnlineShopCitiesRegistry
+        cityFilter={cityFilter}
+        cityNavigationItems={cityNavigationItems}
         error={error}
+        hasActiveFilters={hasActiveFilters}
         isLoading={isLoading}
         searchDraft={searchDraft}
-        toolbarLeft={toolbarLeft}
         visibleCities={visibleCities}
+        onCityFilterChange={setCityFilter}
         onOpenEditor={openEditor}
+        onRequestArchive={requestArchive}
         onReload={reload}
         onResetSearch={resetSearch}
         onSearchChange={updateSearch}
-        onToggleDensity={toggleDensity}
       />
 
       <CityEditorModal
@@ -275,104 +303,256 @@ export function OnlineShopCitiesPage() {
   )
 }
 
-type OnlineShopCitiesTableCardProps = {
-  columns: DataTableColumn<OnlineShopCity>[]
-  density: DataTableDensity
+type CityNavigationItem = {
+  count: number
+  label: string
+  value: CityFilter
+}
+
+type OnlineShopCitiesRegistryProps = {
+  cityFilter: CityFilter
+  cityNavigationItems: CityNavigationItem[]
   error: string | null
+  hasActiveFilters: boolean
   isLoading: boolean
   searchDraft: string
-  toolbarLeft: ReactNode
   visibleCities: OnlineShopCity[]
+  onCityFilterChange: (filter: CityFilter) => void
   onOpenEditor: (city?: OnlineShopCity) => void
+  onRequestArchive: (city: OnlineShopCity) => void
   onReload: () => void
   onResetSearch: () => void
   onSearchChange: (value: string) => void
-  onToggleDensity: () => void
 }
 
-function OnlineShopCitiesTableCard({
-  columns,
-  density,
+function OnlineShopCitiesRegistry({
+  cityFilter,
+  cityNavigationItems,
   error,
+  hasActiveFilters,
   isLoading,
   searchDraft,
-  toolbarLeft,
   visibleCities,
+  onCityFilterChange,
   onOpenEditor,
+  onRequestArchive,
   onReload,
   onResetSearch,
   onSearchChange,
-  onToggleDensity,
-}: OnlineShopCitiesTableCardProps) {
+}: OnlineShopCitiesRegistryProps) {
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="start" justify="flex-end" gap="sm">
+    <Box className="online-shop-cities-shell">
+      <div className="online-shop-cities-command-bar">
+        <TextInput
+          className="online-shop-cities-search-input"
+          leftSection={<IconSearch size={15} />}
+          label={t('Пошук міста')}
+          placeholder={t('Назва UA, RU або UID')}
+          value={searchDraft}
+          onChange={(event) => onSearchChange(event.currentTarget.value)}
+        />
+
+        <div className="online-shop-cities-toolbar-actions">
+          <Tooltip label={t('Очистити')}>
+            <ActionIcon
+              aria-label={t('Очистити')}
+              color="gray"
+              disabled={!hasActiveFilters}
+              size={34}
+              type="button"
+              variant="light"
+              onClick={onResetSearch}
+            >
+              <IconRestore size={17} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label={t('Оновити')}>
             <ActionIcon
               aria-label={t('Оновити')}
               color="gray"
               loading={isLoading}
-              size={36}
+              size={34}
+              type="button"
               variant="light"
               onClick={onReload}
             >
-              <IconRefresh size={18} />
+              <IconRefresh size={17} />
             </ActionIcon>
           </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={36} />
-        </Group>
+        </div>
+      </div>
 
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Назва міста')}
-            value={searchDraft}
-            onChange={(event) => onSearchChange(event.currentTarget.value)}
-            style={{ flex: '1 1 auto', minWidth: 160 }}
-          />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon
-              aria-label={t('Скинути')}
-              color="gray"
-              size={36}
-              style={{ flex: '0 0 auto' }}
-              type="button"
-              variant="light"
-              onClick={onResetSearch}
-            >
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
-        {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
+      <div className="online-shop-cities-layout">
+        <aside className="online-shop-cities-rail" aria-label={t('Міста')}>
+          <div className="online-shop-cities-rail-header">
+            <span>{t('Навігація міст')}</span>
+          </div>
 
-        <DataTable
-          columns={columns}
-          data={visibleCities}
-          defaultLayout={ONLINE_SHOP_CITIES_TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Міст не знайдено')}
-          getRowId={(city, index) => String(city.NetUid || city.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="online-shop-cities-table-1"
-          loadingText={t('Завантаження міст')}
-          maxHeight="calc(100vh - 310px)"
-          minWidth={1180}
-          tableId="online-shop-cities"
-          toolbarLeft={toolbarLeft}
-          onRowClick={onOpenEditor}
-        />
-      </Stack>
-    </Card>
+          <div className="online-shop-cities-filter-list">
+            {cityNavigationItems.map((item) => (
+              <button
+                key={item.value}
+                className={`online-shop-cities-filter-option${cityFilter === item.value ? ' is-active' : ''}`}
+                type="button"
+                onClick={() => onCityFilterChange(item.value)}
+              >
+                <span className="online-shop-cities-filter-name">{item.label}</span>
+                <span className="online-shop-cities-filter-count">{item.count}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <section className="online-shop-cities-roster">
+          <div className="online-shop-cities-roster-table">
+            <div className="online-shop-cities-roster-head">
+              <span>{t('Місто')}</span>
+              <span>{t('Оплата')}</span>
+              <span>{t('Стан')}</span>
+              <span>{t('Оновлено')}</span>
+              <span />
+              <span />
+            </div>
+
+            <ScrollArea.Autosize mah="calc(100vh - 372px)" type="auto">
+              <div className="online-shop-cities-roster-body">
+                {isLoading ? (
+                  <div className="online-shop-cities-empty-state">
+                    {t('Завантаження міст')}
+                  </div>
+                ) : visibleCities.length > 0 ? (
+                  visibleCities.map((city, index) => (
+                    <CityRosterRow
+                      key={String(city.NetUid || city.Id || index)}
+                      city={city}
+                      onOpenEditor={onOpenEditor}
+                      onRequestArchive={onRequestArchive}
+                    />
+                  ))
+                ) : (
+                  <div className="online-shop-cities-empty-state">
+                    {hasActiveFilters
+                      ? t('Міст за цими фільтрами не знайдено')
+                      : t('Міст не знайдено')}
+                  </div>
+                )}
+              </div>
+            </ScrollArea.Autosize>
+          </div>
+        </section>
+      </div>
+    </Box>
+  )
+}
+
+function CityRosterRow({
+  city,
+  onOpenEditor,
+  onRequestArchive,
+}: {
+  city: OnlineShopCity
+  onOpenEditor: (city: OnlineShopCity) => void
+  onRequestArchive: (city: OnlineShopCity) => void
+}) {
+  const { t } = useI18n()
+  const dateParts = formatDateParts(city.Updated)
+  const isArchived = city.Deleted === true
+  const isLocalPayment = city.IsLocalPayment === true
+
+  function openCity() {
+    onOpenEditor(city)
+  }
+
+  return (
+    <div
+      className={`online-shop-cities-row${isArchived ? ' is-archived' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={openCity}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          openCity()
+        }
+      }}
+    >
+      <div className="online-shop-cities-name-cell">
+        <span className="online-shop-cities-city-icon" aria-hidden="true">
+          <IconMapPin size={15} />
+        </span>
+        <div className="online-shop-cities-name-copy">
+          <Text className="online-shop-cities-name-primary">
+            {displayValue(city.NameUa)}
+          </Text>
+          <Text className="online-shop-cities-name-secondary">
+            {displayValue(city.NameRu)}
+          </Text>
+        </div>
+      </div>
+
+      <div className={`online-shop-cities-payment-cell${isLocalPayment ? ' is-local' : ' is-global'}`}>
+        <span className="online-shop-cities-payment-marker" aria-hidden="true">
+          {isLocalPayment ? <IconHome size={13} /> : <IconWorld size={13} />}
+        </span>
+        <strong>
+          {isLocalPayment ? t('Локальна') : t('Загальна')}
+        </strong>
+      </div>
+
+      <span className={`online-shop-cities-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
+        {isArchived ? t('Архів') : t('Активне')}
+      </span>
+
+      <div className="online-shop-cities-date-cell">
+        <Text className="online-shop-cities-date-primary">
+          {dateParts.date}
+        </Text>
+        <Text className="online-shop-cities-date-secondary">
+          {dateParts.time}
+        </Text>
+      </div>
+
+      <Tooltip label={t('Редагувати')}>
+        <ActionIcon
+          aria-label={t('Редагувати')}
+          className="online-shop-cities-row-action"
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpenEditor(city)
+          }}
+        >
+          <IconPencil size={15} />
+        </ActionIcon>
+      </Tooltip>
+
+      <Tooltip label={t('Архівувати')}>
+        <ActionIcon
+          aria-label={t('Архівувати')}
+          className="online-shop-cities-row-action"
+          color="gray"
+          disabled={!city.Id || isArchived}
+          size="sm"
+          variant="subtle"
+          onClick={(event) => {
+            event.stopPropagation()
+            onRequestArchive(city)
+          }}
+        >
+          <IconArchive size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </div>
   )
 }
 
@@ -503,106 +683,6 @@ function cityToFormValues(city?: OnlineShopCity): CityFormValues {
   }
 }
 
-function useOnlineShopCityColumns(
-  openEditor: (city: OnlineShopCity) => void,
-  requestArchive: (city: OnlineShopCity) => void,
-): DataTableColumn<OnlineShopCity>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<OnlineShopCity>[]>(
-    () => [
-      {
-        id: 'nameUa',
-        header: 'Назва [UA]',
-        width: 260,
-        minWidth: 200,
-        accessor: (city) => city.NameUa,
-        cell: (city) => (
-          <Text fw={600}>{displayValue(city.NameUa)}</Text>
-        ),
-      },
-      {
-        id: 'nameRu',
-        header: 'Назва [RU]',
-        width: 260,
-        minWidth: 200,
-        accessor: (city) => city.NameRu,
-        cell: (city) => displayValue(city.NameRu),
-      },
-      {
-        id: 'payment',
-        header: 'Оплата',
-        width: 160,
-        minWidth: 132,
-        accessor: (city) => (city.IsLocalPayment ? t('Локальна') : t('Загальна')),
-        cell: (city) => (
-          <Badge color={city.IsLocalPayment ? 'green' : 'gray'} variant="light">
-            {city.IsLocalPayment ? t('Локальна') : t('Загальна')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'status',
-        header: 'Статус',
-        width: 120,
-        minWidth: 104,
-        accessor: (city) => (city.Deleted ? t('Архів') : t('Активне')),
-        cell: (city) => (
-          <Badge color={city.Deleted ? 'gray' : 'violet'} variant="light">
-            {city.Deleted ? t('Архів') : t('Активне')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'updated',
-        header: 'Оновлено',
-        width: 170,
-        minWidth: 140,
-        accessor: (city) => formatDateTime(city.Updated),
-        cell: (city) => displayValue(formatDateTime(city.Updated)),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 94,
-        minWidth: 94,
-        maxWidth: 94,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (city) => (
-          <Group gap={4} justify="center" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                variant="subtle"
-                onClick={() => openEditor(city)}
-              >
-                <IconPencil size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Архівувати')}>
-              <ActionIcon
-                aria-label={t('Архівувати')}
-                color="red"
-                disabled={!city.Id || city.Deleted === true}
-                variant="subtle"
-                onClick={() => requestArchive(city)}
-              >
-                <IconTrash size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ),
-      },
-    ],
-    [openEditor, requestArchive, t],
-  )
-}
-
 function buildCityPayload(city: OnlineShopCity | null, values: CityFormValues): OnlineShopCity {
   return {
     ...(city || {}),
@@ -638,6 +718,26 @@ function filterCities(cities: OnlineShopCity[], searchValue: string): OnlineShop
   )
 }
 
+function matchCityFilter(city: OnlineShopCity, filter: CityFilter): boolean {
+  if (filter === CITY_FILTER_ALL) {
+    return true
+  }
+
+  if (filter === CITY_FILTER_ACTIVE) {
+    return city.Deleted !== true
+  }
+
+  if (filter === CITY_FILTER_ARCHIVED) {
+    return city.Deleted === true
+  }
+
+  if (filter === CITY_FILTER_LOCAL) {
+    return city.IsLocalPayment === true
+  }
+
+  return city.IsLocalPayment !== true
+}
+
 function getCityName(city: OnlineShopCity): string {
   return city.NameUa?.trim() || city.NameRu?.trim() || translate('Без назви')
 }
@@ -667,4 +767,19 @@ function formatDateTime(value?: Date | string): string {
   }
 
   return dateTimeFormatter.format(new Date(time))
+}
+
+function formatDateParts(value?: Date | string) {
+  const formatted = formatDateTime(value)
+
+  if (!formatted) {
+    return { date: '-', time: '' }
+  }
+
+  const [date, time] = formatted.split(',').map((part) => part.trim())
+
+  return {
+    date: date || '-',
+    time: time || '',
+  }
 }
