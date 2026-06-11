@@ -32,6 +32,7 @@ import {
   IconInfoCircle,
   IconLink,
   IconPencil,
+  IconPhone,
   IconPhoto,
   IconPlus,
   IconRefresh,
@@ -425,7 +426,11 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 180,
         minWidth: 150,
         accessor: (contact) => contact.Phone,
-        cell: (contact) => <SeoTableTextCell primary={displayValue(contact.Phone)} />,
+        cell: (contact) => (
+          <SeoTableRoleLikeCell icon={<IconPhone size={14} />}>
+            {displayValue(contact.Phone)}
+          </SeoTableRoleLikeCell>
+        ),
       },
       {
         id: 'email',
@@ -433,7 +438,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 240,
         minWidth: 190,
         accessor: (contact) => contact.Email,
-        cell: (contact) => <SeoTableMutedCell>{displayValue(contact.Email)}</SeoTableMutedCell>,
+        cell: (contact) => <SeoTableMutedCell tone="strong">{displayValue(contact.Email)}</SeoTableMutedCell>,
       },
       {
         id: 'updated',
@@ -2563,7 +2568,7 @@ function SeoTableMutedCell({
   tone = 'default',
 }: {
   children: ReactNode
-  tone?: 'date' | 'default' | 'url'
+  tone?: 'date' | 'default' | 'strong' | 'url'
 }) {
   return <span className={`seo-table-muted-cell is-${tone}`}>{children}</span>
 }
