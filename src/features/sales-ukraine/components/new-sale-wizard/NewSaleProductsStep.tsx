@@ -121,11 +121,13 @@ export function NewSaleProductsStep({
   agreementNetId,
   clientNetId,
   sale,
+  onBusyChange,
   onCartChanged,
   onRequestClose,
 }: {
   agreementNetId: string | null
   clientNetId: string | null
+  onBusyChange?: (busy: boolean) => void
   onCartChanged: () => void | Promise<void>
   onRequestClose?: () => void
   sale: SalesUkraineSale | null
@@ -200,6 +202,14 @@ export function NewSaleProductsStep({
   const focusedAnalogue = analogueIndex !== null ? analogueState.items[analogueIndex] ?? null : null
   const focusedComponent = componentIndex !== null ? componentEntries.entries[componentIndex]?.product ?? null : null
   const kbState = isProductKeyboardState(keyboard.state) ? keyboard.state : 'ProductSearch'
+
+  useEffect(() => {
+    onBusyChange?.(busy)
+
+    return () => {
+      onBusyChange?.(false)
+    }
+  }, [busy, onBusyChange])
 
   useEffect(() => {
     setWizardKeyboardState('ProductSearch')

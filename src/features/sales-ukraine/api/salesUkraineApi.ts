@@ -198,11 +198,19 @@ export async function getRetailPaymentStatusBySaleId(saleId: number): Promise<Sa
   return result && typeof result === 'object' ? (result as SalesUkraineRetailPaymentStatus) : null
 }
 
-export async function switchSale(saleNetId: string, clientAgreementNetId: string): Promise<void> {
-  await apiRequest<unknown>('/sales/switch', {
+export async function switchSale(saleNetId: string, clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
+  const result = await apiRequest<unknown>('/sales/switch', {
     method: 'PATCH',
     query: { clientAgreementNetId, saleNetId },
   })
+
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    return null
+  }
+
+  const sale = (result as { Sale?: unknown }).Sale
+
+  return sale && typeof sale === 'object' && !Array.isArray(sale) ? (sale as SalesUkraineSale) : (result as SalesUkraineSale)
 }
 
 export async function getMergedSales(saleNetId: string): Promise<SalesUkraineSale | null> {

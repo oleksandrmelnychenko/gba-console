@@ -116,6 +116,8 @@ function NewSaleWizardContent({
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
   const [reviewBusy, setReviewBusy] = useState(false)
+  const [productsBusy, setProductsBusy] = useState(false)
+  const [reassignOpen, setReassignOpen] = useState(false)
   const shellBusy = busy || reviewBusy
   const keyboard = useWizardKeyboardSnapshot()
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
@@ -150,6 +152,10 @@ function NewSaleWizardContent({
 
       if (next) {
         setState((current) => {
+          if (current.sale?.NetUid !== netId) {
+            return current
+          }
+
           const merged = getWizardMergedSale()
 
           return {
@@ -162,14 +168,16 @@ function NewSaleWizardContent({
       return
     }
 
-    if (!state.agreementNetId) {
+    const agreementNetId = state.agreementNetId
+
+    if (!agreementNetId) {
       return
     }
 
-    const next = await getCurrentSaleCart(state.agreementNetId)
+    const next = await getCurrentSaleCart(agreementNetId)
 
     if (next?.NetUid) {
-      setState((current) => ({ ...current, sale: next }))
+      setState((current) => (current.agreementNetId === agreementNetId ? { ...current, sale: next } : current))
     }
   }
 
@@ -365,6 +373,10 @@ function NewSaleWizardContent({
     }
 
   function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (reassignOpen) {
+      return
+    }
+
     if (event.altKey) {
       if (event.code === 'Digit1') {
         event.preventDefault()
@@ -428,10 +440,19 @@ function NewSaleWizardContent({
     >
       <WizardSaleHeader
         clientNetId={state.clientNetId}
+        reassignDisabled={shellBusy || productsBusy}
         sale={state.sale}
         withVatAccounting={Boolean(
           state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
         )}
+        onReassignOpenChange={setReassignOpen}
+        onSaleReassigned={(movedSale) => {
+          clearWizardSplitOrderItems()
+          clearWizardMergedSale()
+          setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+          bumpWizardDebtRefresh()
+          setActive(0)
+        }}
       />
 
       <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
@@ -462,6 +483,7 @@ function NewSaleWizardContent({
             agreementNetId={state.agreementNetId}
             clientNetId={state.clientNetId}
             sale={productsCart}
+            onBusyChange={setProductsBusy}
             onCartChanged={reloadCart}
             onRequestClose={onClose}
           />

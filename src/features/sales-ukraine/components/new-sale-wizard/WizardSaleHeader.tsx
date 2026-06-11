@@ -1,13 +1,17 @@
 import { ActionIcon, Box, Group, Paper, Popover, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertTriangle, IconCopy, IconFileDescription, IconHelpCircle, IconSitemap, IconX } from '@tabler/icons-react'
+import { IconAlertTriangle, IconArrowsExchange, IconCopy, IconFileDescription, IconSitemap, IconX } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getSaleClientDebtTotal } from '../../api/salesUkraineApi'
 import type { SaleClientDebtTotal, SalesUkraineOrderItem, SalesUkraineSale } from '../../types'
-import type { Client, ClientAgreement, ClientInDebt } from '../../../clients/types'
+import type { Client, ClientInDebt } from '../../../clients/types'
 import { useWizardDebtRefreshVersion } from './newSaleWizardState'
 import { getWizardClientGroupedDebts } from './wizardClientStepApi'
+import { getWizardClientDebtDays, getWizardClientDebtTotal } from './wizardClientStepModel'
+import { WizardAgreementItem } from './WizardAgreementItem'
+import { WizardReassignSaleModal } from './WizardReassignSaleModal'
+import { canReassignWizardSale } from './wizardReassignSaleModel'
 import {
   getWizardClientStructure,
   getWizardClientStructureDebtTotal,
@@ -28,28 +32,50 @@ const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
 
 export function WizardSaleHeader({
   clientNetId,
+  reassignDisabled,
   sale,
   withVatAccounting,
+  onReassignOpenChange,
+  onSaleReassigned,
 }: {
   clientNetId: string | null
+  reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
+  onReassignOpenChange?: (opened: boolean) => void
+  onSaleReassigned?: (movedSale: SalesUkraineSale | null) => void
 }) {
   if (!clientNetId) {
     return null
   }
 
-  return <WizardSaleHeaderContent key={clientNetId} clientNetId={clientNetId} sale={sale} withVatAccounting={withVatAccounting} />
+  return (
+    <WizardSaleHeaderContent
+      key={clientNetId}
+      clientNetId={clientNetId}
+      reassignDisabled={reassignDisabled}
+      sale={sale}
+      withVatAccounting={withVatAccounting}
+      onReassignOpenChange={onReassignOpenChange}
+      onSaleReassigned={onSaleReassigned}
+    />
+  )
 }
 
 function WizardSaleHeaderContent({
   clientNetId,
+  reassignDisabled,
   sale,
   withVatAccounting,
+  onReassignOpenChange,
+  onSaleReassigned,
 }: {
   clientNetId: string
+  reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
+  onReassignOpenChange?: (opened: boolean) => void
+  onSaleReassigned?: (movedSale: SalesUkraineSale | null) => void
 }) {
   const { t } = useI18n()
   const debtRefreshVersion = useWizardDebtRefreshVersion()
@@ -57,6 +83,7 @@ function WizardSaleHeaderContent({
   const [debtTotal, setDebtTotal] = useState<SaleClientDebtTotal | null>(null)
   const [groupedDebts, setGroupedDebts] = useState<ClientInDebt[]>([])
   const [isStructureOpen, setStructureOpen] = useState(false)
+  const [isReassignOpen, setReassignOpen] = useState(false)
   const [structureClients, setStructureClients] = useState<Client[]>([])
   const [structureDebtTotal, setStructureDebtTotal] = useState<WizardClientStructureDebtTotal | null>(null)
 
@@ -110,6 +137,17 @@ function WizardSaleHeaderContent({
     }
   }, [clientNetId, debtRefreshVersion])
 
+  useEffect(() => {
+    return () => {
+      onReassignOpenChange?.(false)
+    }
+  }, [onReassignOpenChange])
+
+  function setReassignOpened(next: boolean) {
+    setReassignOpen(next)
+    onReassignOpenChange?.(next)
+  }
+
   async function toggleStructure() {
     const next = !isStructureOpen
 
@@ -160,7 +198,7 @@ function WizardSaleHeaderContent({
   const clientAgreements = client.ClientAgreements ?? []
   const subClientCount = client.SubClients?.length ?? 0
   const currentBalance = Math.round(clientAgreements.reduce((sum, item) => sum + (item.CurrentAmount ?? 0), 0) * 100) / 100
-  const maxOverdueDays = groupedDebts.reduce((max, item) => Math.max(max, getDebtDays(item)), 0)
+  const maxOverdueDays = groupedDebts.reduce((max, item) => Math.max(max, getWizardClientDebtDays(item)), 0)
   const subClients = structureClients.filter((item) => item.IsSubClient)
   const tradePoints = structureClients.filter((item) => item.IsTradePoint)
   const showStructureWarning = Boolean(
@@ -284,6 +322,21 @@ function WizardSaleHeaderContent({
         </Popover>
       )}
 
+      {onSaleReassigned && canReassignWizardSale(client, sale) && (
+        <Tooltip label={t('Переміщення продажі')} position="bottom">
+          <ActionIcon
+            aria-label={t('Переміщення продажі')}
+            color="gray"
+            disabled={reassignDisabled}
+            size="lg"
+            variant="subtle"
+            onClick={() => setReassignOpened(true)}
+          >
+            <IconArrowsExchange size={20} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+
       <Group gap="xs" wrap="wrap">
         {(client.Id ?? 0) > 0 && groupedDebts.length === 0 && (
           <WizardHeaderBadge
@@ -297,7 +350,7 @@ function WizardSaleHeaderContent({
             color="red"
             items={groupedDebts.map((item) => ({
               unit: item.Agreement?.Currency?.Code ?? '',
-              value: String(Math.round(getDebtTotal(item) * 100) / 100),
+              value: String(Math.round(getWizardClientDebtTotal(item) * 100) / 100),
             }))}
             label={t('Борг по договорам')}
           />
@@ -331,6 +384,19 @@ function WizardSaleHeaderContent({
           </Text>
         )}
       </Group>
+
+      {onSaleReassigned && sale && (
+        <WizardReassignSaleModal
+          client={client}
+          opened={isReassignOpen}
+          sale={sale}
+          onClose={() => setReassignOpened(false)}
+          onReassigned={(movedSale) => {
+            setReassignOpened(false)
+            onSaleReassigned(movedSale)
+          }}
+        />
+      )}
     </Group>
   )
 }
@@ -384,69 +450,6 @@ function WizardStructureClientItem({ client }: { client: Client }) {
   )
 }
 
-function WizardAgreementItem({ clientAgreement }: { clientAgreement: ClientAgreement }) {
-  const agreement = clientAgreement.Agreement
-
-  if (!agreement) {
-    return null
-  }
-
-  const debts = agreement.ClientInDebts ?? []
-  const overdueLimitDays = agreement.NumberDaysDebt ?? 0
-  const overdueTotal =
-    Math.round(
-      debts
-        .filter((item) => getDebtDays(item) - overdueLimitDays > 0)
-        .reduce((sum, item) => sum + getDebtTotal(item), 0) * 100,
-    ) / 100
-  const daysOwed = debts.reduce((max, item) => Math.max(max, getDebtDays(item)), 0)
-  const accountBalance = clientAgreement.AccountBalance ?? 0
-  const isOverdue =
-    overdueTotal > 0 ||
-    (agreement.AmountDebt != null && Math.abs(accountBalance) > agreement.AmountDebt) ||
-    daysOwed > overdueLimitDays
-
-  return (
-    <Paper p="xs" radius="sm" style={isOverdue ? { borderColor: 'var(--mantine-color-red-5)' } : undefined} withBorder>
-      {agreement.Organization?.Name && (
-        <Text c="dimmed" size="xs">
-          {agreement.Organization.Name}
-        </Text>
-      )}
-      <Group gap="sm" justify="space-between" wrap="nowrap">
-        <Text fw={600} size="sm" style={{ minWidth: 0 }} truncate>
-          {agreement.Name}{' '}
-          <Text span c="dimmed" size="xs">
-            {agreement.Currency?.Code}
-          </Text>
-        </Text>
-        <Group gap="sm" wrap="nowrap">
-          {agreement.IsControlAmountDebt && (
-            <Text c={overdueTotal > 0 ? 'red' : 'dimmed'} size="xs" style={{ whiteSpace: 'nowrap' }}>
-              {overdueTotal}/{accountBalance}
-            </Text>
-          )}
-          {agreement.IsControlNumberDaysDebt && (
-            <Text c={daysOwed > overdueLimitDays ? 'red' : 'dimmed'} size="xs" style={{ whiteSpace: 'nowrap' }}>
-              {Math.max(0, daysOwed - overdueLimitDays)}/{overdueLimitDays}
-            </Text>
-          )}
-        </Group>
-      </Group>
-      {clientAgreement.OriginalClientName && (
-        <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
-          <Group gap={4} wrap="nowrap">
-            <IconHelpCircle size={12} style={{ color: 'var(--mantine-color-gray-6)', flexShrink: 0 }} />
-            <Text c="dimmed" size="xs" truncate>
-              {clientAgreement.OriginalClientName}
-            </Text>
-          </Group>
-        </Tooltip>
-      )}
-    </Paper>
-  )
-}
-
 function getSaleLifeCycleStatusName(sale: SalesUkraineSale): string {
   const type = Number(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
 
@@ -461,16 +464,4 @@ function getOrderItemPrice(item: SalesUkraineOrderItem): number | string {
   }
 
   return item.PricePerItem ?? ''
-}
-
-function getDebtTotal(debt: ClientInDebt): number {
-  const value = (debt.Debt as { Total?: number } | undefined)?.Total
-
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
-}
-
-function getDebtDays(debt: ClientInDebt): number {
-  const value = (debt.Debt as { Days?: number } | undefined)?.Days
-
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
