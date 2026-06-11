@@ -417,20 +417,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         width: 260,
         minWidth: 220,
         accessor: getSeoContactDisplayName,
-        cell: (contact) => {
-          const contactName = getSeoContactDisplayName(contact)
-
-          return (
-            <SeoTablePrimaryCell
-              avatar={(
-                <Avatar className="seo-table-avatar" name={contactName || undefined} radius="xl" src={contact.ImgUrl || undefined}>
-                  {getContactInitials(contact)}
-                </Avatar>
-              )}
-              title={displayValue(contactName)}
-            />
-          )
-        },
+        cell: (contact) => <SeoTableContactProfileCell contact={contact} />,
       },
       {
         id: 'phone',
@@ -2523,6 +2510,22 @@ function SeoTablePrimaryCell({
   )
 }
 
+function SeoTableContactProfileCell({ contact }: { contact: SeoContact }) {
+  const contactName = getSeoContactDisplayName(contact)
+
+  return (
+    <div className="seo-table-contact-profile-cell">
+      <Avatar className="seo-table-avatar" name={contactName || undefined} radius="xl" src={contact.ImgUrl || undefined}>
+        {getContactInitials(contact)}
+      </Avatar>
+      <span className="seo-table-contact-profile-copy">
+        <Text className="seo-table-contact-last-name">{displayValue(contact.LastName || contactName)}</Text>
+        <Text className="seo-table-contact-first-name">{getSeoContactGivenName(contact)}</Text>
+      </span>
+    </div>
+  )
+}
+
 function SeoTableTextCell({ primary }: { primary: ReactNode }) {
   return (
     <span className="seo-table-text-cell">
@@ -2854,6 +2857,15 @@ function getContactInitials(contact: SeoContact) {
     .map((part) => part[0])
     .join('')
     .toUpperCase()
+}
+
+function getSeoContactGivenName(contact: SeoContact) {
+  const givenName = [contact.FirstName, contact.MiddleName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  return displayValue(givenName)
 }
 
 function getClientInitials(client: OnlineShopClient) {
