@@ -90,7 +90,17 @@ export async function getSaleById(netId: string): Promise<SalesUkraineSale | nul
     query: { netId },
   })
 
-  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+  if (!result || typeof result !== 'object' || Array.isArray(result)) {
+    return null
+  }
+
+  const sale = (result as { Sale?: unknown }).Sale
+
+  if (sale && typeof sale === 'object' && !Array.isArray(sale)) {
+    return sale as SalesUkraineSale
+  }
+
+  return result as SalesUkraineSale
 }
 
 export async function getShiftedSaleById(netId: string): Promise<SalesUkraineSale | null> {
@@ -289,9 +299,9 @@ async function postSaleWithMessage(path: string, body: FormData | SalesUkraineSa
     credentials: 'include',
     headers,
     method: 'POST',
-  }).catch(() => null)
+  })
 
-  if (!response || response.status === 401) {
+  if (response.status === 401) {
     const fallback = await apiRequest<unknown>(path, { body, method: 'POST' })
 
     return { message: null, sale: toSaleOrNull(fallback) }

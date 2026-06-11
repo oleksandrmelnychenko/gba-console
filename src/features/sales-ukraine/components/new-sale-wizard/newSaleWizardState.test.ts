@@ -4,6 +4,7 @@ import {
   canAdvanceToReview,
   clearWizardSplitOrderItems,
   getCartItemCount,
+  getWizardSplitAgreementNetId,
   getWizardSplitOrderItems,
   hasWizardSplitOrderItems,
   isSelfCheckout,
@@ -46,15 +47,17 @@ describe('wizard split order items store', () => {
 
     const items = [{ Product: { NetUid: 'product-1' }, Qty: 2, TotalAmount: 10, TotalAmountEurToUah: 0, TotalAmountLocal: 400 }]
 
-    setWizardSplitOrderItems(items)
+    setWizardSplitOrderItems(items, 'agreement-1')
 
     expect(getWizardSplitOrderItems()).toBe(items)
+    expect(getWizardSplitAgreementNetId()).toBe('agreement-1')
     expect(hasWizardSplitOrderItems()).toBe(true)
     expect(notifications).toBe(1)
 
     clearWizardSplitOrderItems()
 
     expect(getWizardSplitOrderItems()).toEqual([])
+    expect(getWizardSplitAgreementNetId()).toBe(null)
     expect(hasWizardSplitOrderItems()).toBe(false)
     expect(notifications).toBe(2)
 

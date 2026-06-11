@@ -34,7 +34,12 @@ import {
   type WizardProductReservation,
   type WizardTotalProductAvailabilities,
 } from './newSaleWizardApi'
-import { getWizardSplitOrderItems, setWizardSplitOrderItems } from './newSaleWizardState'
+import {
+  clearWizardSplitOrderItems,
+  getWizardSplitAgreementNetId,
+  getWizardSplitOrderItems,
+  setWizardSplitOrderItems,
+} from './newSaleWizardState'
 import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } from './ProductFullDetailPanel'
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
@@ -290,10 +295,6 @@ export function NewSaleProductsStep({
           setResults(next)
           setMainIndex(0)
           clearActiveProductData()
-
-          if (getWizardKeyboardState(1) !== 'ProductSearch') {
-            setWizardKeyboardState('ProductSearch')
-          }
         }
       } catch {
         if (!cancelled) {
@@ -424,15 +425,18 @@ export function NewSaleProductsStep({
       const price =
         pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
       const reSaleAvailable = isVatSale ? undefined : getWizardProductNumber(product.AvailableQtyUkReSale) ?? undefined
-      const reSalePrice = isVatSale ? undefined : getWizardProductNumber(product.CurrentPriceReSale) ?? undefined
+      const reSalePrice = isVatSale
+        ? undefined
+        : getWizardProductNumber(useEurToUah ? product.CurrentPriceReSaleEurToUah : product.CurrentPriceReSale) ?? undefined
+      const reSaleCurrency = reSalePrice == null ? undefined : useEurToUah ? 'UAH' : 'EUR'
 
       if (available == null && price == null && reSaleAvailable == null) {
         return undefined
       }
 
-      return { available, price, reSaleAvailable, reSalePrice }
+      return { available, price, reSaleAvailable, reSaleCurrency, reSalePrice }
     },
-    [productPricing, reservations, isVatSale],
+    [productPricing, reservations, isVatSale, useEurToUah],
   )
 
   function beginBusy(): boolean {
@@ -547,14 +551,11 @@ export function NewSaleProductsStep({
   }
 
   function handleQueryChange(value: string) {
-    setQuery(value)
-
     if (getWizardKeyboardState(1) !== 'ProductSearch') {
-      setResults([])
-      setSearching(false)
-
       return
     }
+
+    setQuery(value)
 
     if (value.trim().length < 4) {
       setResults([])
@@ -691,9 +692,16 @@ export function NewSaleProductsStep({
           const product = modal.item.Product as WizardSaleProduct | undefined
 
           if (product) {
-            const splitItems = addToSplitItems(editCart.splitItems, product, qty, comment || modal.item.Comment, user as unknown as SalesUkraineUser)
+            const splitItems = addToSplitItems(
+              editCart.splitItems,
+              product,
+              qty,
+              comment || modal.item.Comment,
+              user as unknown as SalesUkraineUser,
+              agreementNetId,
+            )
             setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
-            setWizardSplitOrderItems(splitItems)
+            setWizardSplitOrderItems(splitItems, agreementNetId)
           }
 
           if (rest > 0) {
@@ -735,7 +743,7 @@ export function NewSaleProductsStep({
             .filter((item) => item.Qty > 0)
 
           setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
-          setWizardSplitOrderItems(splitItems)
+          setWizardSplitOrderItems(splitItems, agreementNetId)
         }
 
         await onCartChanged()
@@ -831,16 +839,51 @@ export function NewSaleProductsStep({
       return
     }
 
-    setEditCart({ isSplit: false, selected: { index: 0, list: 'current' }, splitItems: getWizardSplitOrderItems() })
-    resetDetail()
+    const splitItems = getWizardSplitOrderItems()
+    setEditCart({ isSplit: splitItems.length > 0, selected: { index: 0, list: 'current' }, splitItems })
     keyboard.setState('EditShoppingCart')
   }
 
-  function exitEditCart() {
-    if (!editCart) {
+  async function exitEditCart() {
+    const cart = editCart
+
+    if (!cart) {
       return
     }
 
+    if (cart.splitItems.length > 0 && agreementNetId && sale?.NetUid) {
+      if (!beginBusy()) {
+        return
+      }
+
+      try {
+        for (const item of cart.splitItems) {
+          const existing = orderItems.find((existingItem) => existingItem.Product?.NetUid === item.Product.NetUid)
+
+          if (existing) {
+            await updateOrderItem({ ...existing, Qty: (getWizardProductNumber(existing.Qty) ?? 0) + item.Qty })
+          } else {
+            await addOrderItem(agreementNetId, sale.NetUid, {
+              Comment: item.Comment,
+              Deleted: false,
+              Id: 0,
+              NetUid: EMPTY_GUID,
+              Product: item.Product,
+              Qty: item.Qty,
+            })
+          }
+        }
+
+        await onCartChanged()
+        clearProductPricingCache()
+      } catch {
+        notifications.show({ color: 'red', message: t('Не вдалося оновити кількість') })
+      } finally {
+        endBusy()
+      }
+    }
+
+    clearWizardSplitOrderItems()
     setEditCart(null)
 
     const previousState = getPreviousProductKeyboardState()
@@ -908,9 +951,10 @@ export function NewSaleProductsStep({
               getWizardProductNumber(item.Qty) ?? 0,
               item.Comment,
               user as unknown as SalesUkraineUser,
+              agreementNetId,
             )
             setEditCart((previous) => (previous ? { ...previous, splitItems } : previous))
-            setWizardSplitOrderItems(splitItems)
+            setWizardSplitOrderItems(splitItems, agreementNetId)
           }
 
           if (item.NetUid) {
@@ -951,7 +995,7 @@ export function NewSaleProductsStep({
                 }
               : previous,
           )
-          setWizardSplitOrderItems(splitItems)
+          setWizardSplitOrderItems(splitItems, agreementNetId)
           await onCartChanged()
         }
       }
@@ -1036,7 +1080,7 @@ export function NewSaleProductsStep({
     }
 
     try {
-      const saleToNetId = sale?.NetUid || agreementNetId || ''
+      const saleToNetId = sale?.NetUid && sale.NetUid !== EMPTY_GUID ? sale.NetUid : agreementNetId || ''
       await shiftOrderItemFromSale(row.NetId, saleToNetId, { ...row.OrderItem, Qty: qty })
       await onCartChanged()
       clearProductPricingCache()
@@ -1694,7 +1738,7 @@ export function NewSaleProductsStep({
 
         return true
       case 'Escape':
-        exitEditCart()
+        void exitEditCart()
 
         return true
       case 'CtrlEnter':
@@ -2170,18 +2214,20 @@ function addToSplitItems(
   qty: number,
   comment: string | undefined,
   user: SalesUkraineUser | undefined,
+  agreementNetId: string | null,
 ): WizardSplitOrderItem[] {
-  const existingIndex = items.findIndex((item) => item.Product.NetUid === product.NetUid)
+  const base = items.length > 0 && getWizardSplitAgreementNetId() === agreementNetId ? items : []
+  const existingIndex = base.findIndex((item) => item.Product.NetUid === product.NetUid)
 
   if (existingIndex >= 0) {
-    const existing = items[existingIndex] as WizardSplitOrderItem
-    const next = [...items]
+    const existing = base[existingIndex] as WizardSplitOrderItem
+    const next = [...base]
     next[existingIndex] = rebuildSplitItem(existing, existing.Qty + qty)
 
     return next
   }
 
-  return [...items, buildSplitItem(product, qty, comment, user)]
+  return [...base, buildSplitItem(product, qty, comment, user)]
 }
 
 function buildSplitItem(

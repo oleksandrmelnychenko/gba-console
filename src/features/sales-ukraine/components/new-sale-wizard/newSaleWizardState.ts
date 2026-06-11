@@ -76,6 +76,7 @@ export function getCartItemCount(sale: SalesUkraineSale | null): number {
 }
 
 let splitOrderItems: WizardSplitOrderItem[] = []
+let splitAgreementNetId: string | null = null
 
 const splitOrderItemsListeners = new Set<() => void>()
 
@@ -83,18 +84,23 @@ export function getWizardSplitOrderItems(): WizardSplitOrderItem[] {
   return splitOrderItems
 }
 
+export function getWizardSplitAgreementNetId(): string | null {
+  return splitAgreementNetId
+}
+
 export function hasWizardSplitOrderItems(): boolean {
   return splitOrderItems.length > 0
 }
 
-export function setWizardSplitOrderItems(items: WizardSplitOrderItem[]): void {
+export function setWizardSplitOrderItems(items: WizardSplitOrderItem[], agreementNetId: string | null): void {
   splitOrderItems = items
+  splitAgreementNetId = items.length > 0 ? agreementNetId : null
   splitOrderItemsListeners.forEach((listener) => listener())
 }
 
 export function clearWizardSplitOrderItems(): void {
   if (splitOrderItems.length > 0) {
-    setWizardSplitOrderItems([])
+    setWizardSplitOrderItems([], null)
   }
 }
 

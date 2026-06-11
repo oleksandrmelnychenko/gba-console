@@ -39,6 +39,7 @@ export function NewSaleReviewStep({
   clientNetId,
   sale,
   value,
+  onBusyChange,
   onChange,
   onClose,
   onCreated,
@@ -46,6 +47,7 @@ export function NewSaleReviewStep({
   onVatDocuments,
 }: {
   clientNetId: string | null
+  onBusyChange?: (busy: boolean) => void
   onChange: (patch: Partial<NewSaleReviewValue>) => void
   onClose?: () => void
   onCreated?: () => void
@@ -92,6 +94,14 @@ export function NewSaleReviewStep({
       onRegisterSubmit(null)
     }
   }, [onRegisterSubmit])
+
+  useEffect(() => {
+    onBusyChange?.(submitting || saving)
+
+    return () => {
+      onBusyChange?.(false)
+    }
+  }, [onBusyChange, saving, submitting])
 
   useWizardKeyboard(2)
 

@@ -17,6 +17,7 @@ export type ProductPickerMeta = {
   available?: number
   price?: number
   reSaleAvailable?: number
+  reSaleCurrency?: string
   reSalePrice?: number
 }
 
@@ -233,7 +234,10 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                       </Text>
                     )}
                     {meta.reSalePrice != null && (
-                      <Text size="xs">{metaNumberFormatter.format(meta.reSalePrice)}</Text>
+                      <Text size="xs">
+                        {metaNumberFormatter.format(meta.reSalePrice)}
+                        {meta.reSaleCurrency ? ` ${meta.reSaleCurrency}` : ''}
+                      </Text>
                     )}
                   </Group>
                 )}

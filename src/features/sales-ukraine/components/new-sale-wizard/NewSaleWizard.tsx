@@ -43,6 +43,7 @@ export function NewSaleWizard({
 }) {
   const { t } = useI18n()
   const [vatDocuments, setVatDocuments] = useState<SaleDocumentResult | null>(null)
+  const [contentBusy, setContentBusy] = useState(false)
 
   return (
     <>
@@ -68,9 +69,20 @@ export function NewSaleWizard({
           },
           body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
         }}
-        onClose={onClose}
+        onClose={() => {
+          if (!contentBusy) {
+            onClose()
+          }
+        }}
       >
-        {opened && <NewSaleWizardContent onClose={onClose} onCreated={onCreated} onVatDocuments={setVatDocuments} />}
+        {opened && (
+          <NewSaleWizardContent
+            onBusyChange={setContentBusy}
+            onClose={onClose}
+            onCreated={onCreated}
+            onVatDocuments={setVatDocuments}
+          />
+        )}
       </Modal>
 
       <WizardDownloadDocumentsModal result={vatDocuments} onClose={() => setVatDocuments(null)} />
@@ -85,10 +97,12 @@ const WIZARD_STEPS: { icon: typeof IconUser; index: WizardStepIndex }[] = [
 ]
 
 function NewSaleWizardContent({
+  onBusyChange,
   onClose,
   onCreated,
   onVatDocuments,
 }: {
+  onBusyChange: (busy: boolean) => void
   onClose: () => void
   onCreated: () => void
   onVatDocuments: (result: SaleDocumentResult) => void
@@ -98,6 +112,8 @@ function NewSaleWizardContent({
   const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
+  const [reviewBusy, setReviewBusy] = useState(false)
+  const shellBusy = busy || reviewBusy
   const keyboard = useWizardKeyboardSnapshot()
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
 
@@ -108,6 +124,14 @@ function NewSaleWizardContent({
   useEffect(() => {
     clearWizardSplitOrderItems()
   }, [])
+
+  useEffect(() => {
+    onBusyChange(shellBusy)
+
+    return () => {
+      onBusyChange(false)
+    }
+  }, [onBusyChange, shellBusy])
 
   useEffect(() => {
     initializeWizardKeyboard(active as WizardStepIndex)
@@ -169,6 +193,8 @@ function NewSaleWizardContent({
     try {
       const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
 
+      clearWizardSplitOrderItems()
+      setReview(NEW_SALE_REVIEW_INITIAL)
       setState((current) => ({
         ...current,
         agreement: agreement ?? current.agreement,
@@ -188,6 +214,8 @@ function NewSaleWizardContent({
   }
 
   function goToClients() {
+    clearWizardSplitOrderItems()
+    setReview(NEW_SALE_REVIEW_INITIAL)
     setState((current) => ({ ...current, sale: null }))
     setActive(0)
   }
@@ -221,6 +249,10 @@ function NewSaleWizardContent({
   }
 
   function onStepClick(index: number) {
+    if (shellBusy) {
+      return
+    }
+
     if (index < active) {
       if (index === 0) {
         goToClients()
@@ -239,7 +271,7 @@ function NewSaleWizardContent({
   }
 
   const nextDisabled =
-    busy ||
+    shellBusy ||
     (active === 0 && !canAdvanceToProducts(state)) ||
     (active === 1 && getCartItemCount(state.sale) === 0)
   const nextLabel = active === 2 ? t('Створити продаж') : t('Далі')
@@ -256,21 +288,21 @@ function NewSaleWizardContent({
         event.preventDefault()
         event.stopPropagation()
 
-        if (!busy) {
+        if (!shellBusy) {
           goToClients()
         }
       } else if (event.code === 'Digit2') {
         event.preventDefault()
         event.stopPropagation()
 
-        if (!busy && canAdvanceToProducts(state)) {
+        if (!shellBusy && canAdvanceToProducts(state)) {
           void goToProducts()
         }
       } else if (event.code === 'Digit3') {
         event.preventDefault()
         event.stopPropagation()
 
-        if (!busy && canAdvanceToProducts(state)) {
+        if (!shellBusy && canAdvanceToProducts(state)) {
           if (canAdvanceToReview(state)) {
             goToReview()
           } else {
@@ -324,8 +356,16 @@ function NewSaleWizardContent({
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
-            onAgreementChange={(agreementNetId, agreement) => setState((current) => ({ ...current, agreement, agreementNetId }))}
-            onClientChange={(clientNetId) => setState((current) => ({ ...current, clientNetId }))}
+            onAgreementChange={(agreementNetId, agreement) => {
+              clearWizardSplitOrderItems()
+              setReview(NEW_SALE_REVIEW_INITIAL)
+              setState((current) => ({ ...current, agreement, agreementNetId }))
+            }}
+            onClientChange={(clientNetId) => {
+              clearWizardSplitOrderItems()
+              setReview(NEW_SALE_REVIEW_INITIAL)
+              setState((current) => ({ ...current, clientNetId }))
+            }}
             onOpenSale={(sale) => void openRegistrySale(sale)}
             onRequestClose={onClose}
           />
@@ -344,6 +384,7 @@ function NewSaleWizardContent({
             clientNetId={state.clientNetId}
             sale={state.sale}
             value={review}
+            onBusyChange={setReviewBusy}
             onChange={(patch) => setReview((current) => ({ ...current, ...patch }))}
             onClose={onClose}
             onCreated={onCreated}
@@ -410,7 +451,7 @@ function NewSaleWizardContent({
         <Group gap="xs" justify="flex-end" style={{ flex: 1 }} wrap="nowrap">
           <Button
             color="gray"
-            disabled={busy}
+            disabled={shellBusy}
             variant="light"
             onClick={active === 0 ? onClose : active === 1 ? goToClients : () => setActive(1)}
           >
