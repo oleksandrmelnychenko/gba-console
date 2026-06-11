@@ -832,11 +832,18 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                   const isActive = getEntityKey(selectedRegion) === key
 
                   return (
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       className={`client-resources-region-row${isActive ? ' is-active' : ''}`}
                       key={key}
                       onClick={() => setSelectedRegionId(key)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          setSelectedRegionId(key)
+                        }
+                      }}
                     >
                       <span>
                         <Text fw={600}>{displayValue(region.Name)}</Text>
@@ -896,7 +903,7 @@ function RegionsPanelView({ model }: { model: ReturnType<typeof useRegionsPanelM
                           </Tooltip>
                         </PermissionGate>
                       </Group>
-                    </button>
+                    </div>
                   )
                 })}
               </Stack>

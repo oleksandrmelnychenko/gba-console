@@ -1,6 +1,7 @@
 import { ActionIcon, Box, Card, Group, Loader, ScrollArea, Text, Tooltip } from '@mantine/core'
 import { IconInfoCircle, IconStar } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 
 export type ProductPickerItem = {
@@ -21,48 +22,72 @@ const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigi
 
 export function ProductPickerCarousel<T extends ProductPickerItem>({
   products,
+  active,
   disabled = false,
+  focusedIndex,
   isLoading,
   emptyText,
+  keyboardNavigation = true,
+  getItemColor,
   getMeta,
+  renderItemExtra,
+  onFocusedChange,
   onPick,
   onOpenCard,
   onProductInterest,
 }: {
+  active?: boolean
   disabled?: boolean
   emptyText?: string
+  focusedIndex?: number | null
+  getItemColor?: (product: T) => string | undefined
   getMeta?: (product: T) => ProductPickerMeta | undefined
   isLoading?: boolean
+  keyboardNavigation?: boolean
+  onFocusedChange?: (index: number) => void
   onOpenCard?: (productNetId: string) => void
   onPick: (product: T) => void
   onProductInterest?: (product: T) => void
   products: T[]
+  renderItemExtra?: (product: T) => ReactNode
 }) {
   const { t } = useI18n()
-  const [focused, setFocused] = useState(0)
+  const [internalFocused, setInternalFocused] = useState(0)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cardRefs = useRef<Array<HTMLDivElement | null>>([])
 
-  const safeFocused = products.length === 0 ? 0 : Math.min(focused, products.length - 1)
+  const isControlled = focusedIndex !== undefined
+  const rawFocused = isControlled ? focusedIndex ?? -1 : internalFocused
+  const safeFocused = products.length === 0 ? -1 : rawFocused < 0 ? (isControlled ? -1 : 0) : Math.min(rawFocused, products.length - 1)
 
   useEffect(() => {
-    cardRefs.current[safeFocused]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    if (safeFocused >= 0) {
+      cardRefs.current[safeFocused]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    }
   }, [safeFocused])
 
+  function changeFocus(index: number) {
+    if (!isControlled) {
+      setInternalFocused(index)
+    }
+
+    onFocusedChange?.(index)
+  }
+
   function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
-    if (disabled || products.length === 0 || isNestedInteractiveEvent(event)) {
+    if (!keyboardNavigation || disabled || products.length === 0 || isNestedInteractiveEvent(event)) {
       return
     }
 
     if (event.key === 'ArrowRight') {
       event.preventDefault()
-      setFocused((index) => Math.min(products.length - 1, index + 1))
+      changeFocus(Math.min(products.length - 1, Math.max(0, safeFocused) + 1))
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault()
-      setFocused((index) => Math.max(0, index - 1))
+      changeFocus(Math.max(0, Math.max(0, safeFocused) - 1))
     } else if (event.key === 'Enter') {
       event.preventDefault()
-      const product = products[safeFocused]
+      const product = safeFocused >= 0 ? products[safeFocused] : undefined
 
       if (product) {
         onPick(product)
@@ -102,6 +127,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
             const code = product.VendorCode || product.Articul || '—'
             const name = product.NameUA || product.Name || ''
             const meta = getMeta?.(product)
+            const itemColor = getItemColor?.(product)
 
             return (
               <Card
@@ -116,7 +142,11 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                 padding="xs"
                 radius="md"
                 style={{
-                  borderColor: isActive ? 'var(--mantine-color-violet-6)' : undefined,
+                  borderColor: isActive
+                    ? active === false
+                      ? 'var(--mantine-color-gray-5)'
+                      : 'var(--mantine-color-violet-6)'
+                    : undefined,
                   cursor: 'pointer',
                   flex: '0 0 200px',
                   minWidth: 200,
@@ -126,12 +156,12 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                     return
                   }
 
-                  setFocused(index)
+                  changeFocus(index)
                   onPick(product)
                 }}
               >
                 <Group justify="space-between" gap={4} wrap="nowrap">
-                  <Text fw={700} size="sm" lineClamp={1}>
+                  <Text c={itemColor} fw={700} size="sm" lineClamp={1}>
                     {code}
                   </Text>
                   {product.NetUid && (onProductInterest || onOpenCard) && (
@@ -193,6 +223,7 @@ export function ProductPickerCarousel<T extends ProductPickerItem>({
                     )}
                   </Group>
                 )}
+                {renderItemExtra?.(product)}
               </Card>
             )
           })}

@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../../shared/api/apiClient'
-import type { SalesUkraineProduct, SalesUkraineSale } from '../../types'
+import type { SalesUkraineOrderItem, SalesUkraineProduct, SalesUkraineSale } from '../../types'
+import type { WizardSaleProduct } from './wizardSaleProduct'
 
 export type WizardDeliveryRecipientAddress = {
   Id?: number
@@ -20,6 +21,15 @@ export type WizardDeliveryRecipient = {
   DeliveryRecipientAddresses?: WizardDeliveryRecipientAddress[]
 }
 
+export type WizardReservationOrderItem = {
+  Id?: number
+  NetUid?: string
+  Qty?: number
+  Order?: { Sales?: { NetUid?: string; SaleNumber?: { Value?: string } | null }[] } | null
+  Product?: SalesUkraineProduct | null
+  User?: { LastName?: string } | null
+}
+
 export type WizardProductReservation = {
   ProductNetUid?: string
   ProductId?: number
@@ -29,6 +39,35 @@ export type WizardProductReservation = {
   Price?: number
   PricePerItem?: number
   VAT?: number
+  Qty?: number
+  RegionCode?: string
+  OrderItem?: WizardReservationOrderItem | null
+}
+
+export type WizardAvailabilityRow = {
+  Amount?: number
+  Name?: string
+  NetId?: string
+  OrderItem?: WizardReservationOrderItem | null
+  RegionCode?: string
+}
+
+export type WizardTotalProductAvailabilities = {
+  AvailabilityInvoiceModel?: WizardAvailabilityRow[]
+  InAccounts?: WizardAvailabilityRow[]
+  InStoragePl?: WizardAvailabilityRow[]
+  InStorageUkrNotVat?: WizardAvailabilityRow[]
+  InStorageUkrVat?: WizardAvailabilityRow[]
+  OnWayToPl?: WizardAvailabilityRow[]
+  OnWayToUkr?: WizardAvailabilityRow[]
+  TotalAvailabilities?: Record<string, number>
+}
+
+export type WizardProductAvailabilityBuckets = {
+  AvailableQtyPl?: number
+  AvailableQtyUk?: number
+  AvailableQtyUkReSale?: number
+  AvailableQtyUkVAT?: number
 }
 
 export type WizardCalculatedProductPricing = {
@@ -124,22 +163,73 @@ function asNumber(result: unknown): number | null {
 
 // --- Product search (agreement + VAT aware, carries availability buckets) ---
 
+export type WizardProductSearchOptions = {
+  limit?: number
+  mode?: string
+  offset?: number
+  sortMode?: string
+}
+
 export async function searchSaleProductsWithAvailability(
   value: string,
   clientAgreementNetId: string,
-): Promise<SalesUkraineProduct[]> {
+  options?: WizardProductSearchOptions,
+): Promise<WizardSaleProduct[]> {
   const result = await apiRequest<unknown>('/products/search/advanced', {
     query: {
-      limit: 20,
-      mode: '0',
+      limit: options?.limit ?? 20,
+      mode: options?.mode ?? '0',
       netId: clientAgreementNetId,
-      offset: 0,
-      sortMode: '2',
+      offset: options?.offset ?? 0,
+      sortMode: options?.sortMode ?? '2',
       value: value.trim(),
     },
   })
 
-  return asArray<SalesUkraineProduct>(result)
+  return asArray<WizardSaleProduct>(result)
+}
+
+export async function getProductAnalogues(productNetId: string, clientAgreementNetId: string): Promise<WizardSaleProduct[]> {
+  const result = await apiRequest<unknown>('/products/get/analogues', {
+    query: { clientAgreementNetId, productNetId },
+  })
+
+  return asArray<WizardSaleProduct>(result)
+}
+
+export async function getAllProductAvailabilities(
+  productNetId: string,
+  clientAgreementNetId: string,
+  saleNetId: string,
+): Promise<WizardTotalProductAvailabilities | null> {
+  const result = await apiRequest<unknown>('/products/availabilities/all', {
+    query: { clientAgreementNetId, netId: productNetId, saleNetId },
+  })
+
+  return result && typeof result === 'object' && !Array.isArray(result) ? (result as WizardTotalProductAvailabilities) : null
+}
+
+export async function getProductAvailabilityBuckets(
+  productNetId: string,
+  clientAgreementNetId: string,
+): Promise<WizardProductAvailabilityBuckets | null> {
+  const result = await apiRequest<unknown>('/products/all/availabilities/product', {
+    query: { clientAgreementNetId, netId: productNetId },
+  })
+
+  return result && typeof result === 'object' && !Array.isArray(result) ? (result as WizardProductAvailabilityBuckets) : null
+}
+
+export async function shiftOrderItemFromSale(
+  saleFromNetId: string,
+  saleToNetId: string,
+  orderItem: SalesUkraineOrderItem | WizardReservationOrderItem,
+): Promise<void> {
+  await apiRequest<unknown>('/orders/items/shift/specific', {
+    body: orderItem,
+    method: 'POST',
+    query: { saleFromNetId, saleToNetId },
+  })
 }
 
 // --- Delivery recipients ---------------------------------------------------
@@ -231,6 +321,7 @@ export type WizardNearestSupplyOrder = {
   NetUid?: string
   OrderArrivedDate?: string
   Number?: string
+  Qty?: number
 }
 
 export type WizardFutureReservation = {

@@ -90,7 +90,8 @@ function FutureReservationForm({
   }, [product.NetUid])
 
   const numericCount = typeof count === 'number' ? count : Number(String(count).replace(',', '.'))
-  const isValid = Number.isFinite(numericCount) && numericCount > 0
+  const maxCount = typeof order?.Qty === 'number' && Number.isFinite(order.Qty) ? order.Qty : null
+  const isValid = Number.isFinite(numericCount) && numericCount > 0 && (maxCount === null || numericCount <= maxCount)
   const supplyOrderNetId = order?.NetUID || order?.NetUid
   const canReserve = Boolean(clientNetId && product.NetUid && supplyOrderNetId && isValid)
 
@@ -127,7 +128,19 @@ function FutureReservationForm({
   }
 
   return (
-    <Stack gap="md">
+    <Stack
+      gap="md"
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          event.stopPropagation()
+
+          if (canReserve && !isSaving) {
+            void reserve()
+          }
+        }
+      }}
+    >
       <Text fw={600} size="sm">
         {product.VendorCode || product.Articul} · {product.NameUA || product.Name}
       </Text>
@@ -136,6 +149,7 @@ function FutureReservationForm({
         <Alert color="blue" icon={<IconCalendarClock size={18} />} variant="light">
           {t('Найближча поставка')}: {order?.Number ? `${order.Number} · ` : ''}
           {order?.OrderArrivedDate ? formatLocalDate(new Date(order.OrderArrivedDate)) : t('дата невідома')}
+          {maxCount !== null ? ` · ${maxCount} ${t('штук')}` : ''}
         </Alert>
       ) : !clientNetId ? (
         <Alert color="orange" variant="light">
@@ -151,7 +165,9 @@ function FutureReservationForm({
         allowNegative={false}
         decimalScale={2}
         disabled={!supplyOrderNetId}
+        error={supplyOrderNetId && !isValid ? t('Невірна кількість') : undefined}
         label={t('Кількість')}
+        max={maxCount ?? undefined}
         min={0}
         value={count}
         onChange={setCount}
