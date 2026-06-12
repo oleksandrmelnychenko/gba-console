@@ -6,6 +6,7 @@
 }
 
 .sales-ukraine-card {
+  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -19,10 +20,468 @@
   overflow: hidden;
 }
 
+.sales-filter-bar {
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 34%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  padding: 9px 10px 10px;
+}
+
+.sales-filter-row {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(170px, 240px) 176px minmax(126px, 148px) minmax(126px, 148px) minmax(170px, 208px) minmax(190px, 232px) 154px auto;
+}
+
+.sales-filter-search,
+.sales-filter-control,
+.sales-filter-period-wrap,
+.sales-filter-period {
+  min-width: 0;
+}
+
+.sales-filter-period-wrap {
+  display: grid;
+  gap: 3px;
+}
+
+.sales-filter-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.sales-filter-period {
+  align-self: end;
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  height: 36px;
+  padding-left: 10px;
+  padding-right: 8px;
+  width: 100%;
+}
+
+.sales-filter-period:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.sales-filter-period .mantine-Button-inner {
+  width: 100%;
+}
+
+.sales-filter-period .mantine-Button-label {
+  min-width: 0;
+}
+
+.sales-filter-period-value {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-filter-period-menu {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 12px;
+  box-shadow: 0 18px 44px rgba(20, 28, 38, 0.14);
+  padding: 0;
+}
+
+.sales-filter-period-panel {
+  background:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.88), transparent 54px),
+    var(--mantine-color-white);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.sales-filter-period-range {
+  align-items: end;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr);
+  padding: 10px 14px 10px 10px;
+}
+
+.sales-filter-period-field {
+  min-width: 0;
+}
+
+.sales-filter-period-separator {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  display: block;
+  height: 1px;
+  margin-bottom: 17px;
+  width: 16px;
+}
+
+.sales-filter-period-presets {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.sales-filter-period-presets .mantine-Button-root {
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 650;
+  min-height: 26px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.sales-filter-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.sales-filter-toolbar {
+  min-width: 0;
+}
+
+.sales-filter-toolbar > .mantine-Group-root {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  gap: 2px;
+  padding: 2px;
+}
+
+.sales-filter-dropdown {
+  --combobox-padding: 0px;
+  --combobox-option-padding: 7px 10px;
+  background:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.92), transparent 42px),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(20, 28, 38, 0.13);
+  max-width: calc(100vw - 28px);
+  min-width: var(--popover-anchor-width);
+  overflow-x: auto;
+  padding: 10px !important;
+  scrollbar-width: thin;
+  width: max-content !important;
+}
+
+.sales-filter-dropdown-compact {
+  max-width: var(--popover-anchor-width);
+  overflow-x: hidden;
+  width: var(--popover-anchor-width) !important;
+}
+
+.sales-filter-dropdown .mantine-ScrollArea-root,
+.sales-filter-dropdown .mantine-ScrollArea-viewport,
+.sales-filter-dropdown .mantine-ScrollArea-content,
+.sales-filter-dropdown-options {
+  min-width: 100%;
+  width: 100% !important;
+}
+
+.sales-filter-dropdown [data-combobox-option],
+.sales-filter-dropdown-option {
+  border-radius: 7px;
+  box-sizing: border-box;
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  max-width: none;
+  min-height: 30px;
+  min-width: 100%;
+  overflow: visible;
+  padding: 7px 10px !important;
+  text-overflow: clip;
+  transition:
+    background-color 120ms var(--tx-ease-smooth),
+    color 120ms var(--tx-ease-smooth);
+  white-space: nowrap;
+  width: 100%;
+}
+
+.sales-filter-dropdown [data-combobox-option]:hover,
+.sales-filter-dropdown [data-combobox-option][data-combobox-selected],
+.sales-filter-dropdown [data-combobox-option][aria-selected='true'],
+.sales-filter-dropdown-option:hover,
+.sales-filter-dropdown-option[data-combobox-selected],
+.sales-filter-dropdown-option[aria-selected='true'] {
+  background: #fff4eb;
+  color: var(--mantine-color-gray-9);
+}
+
+.sales-filter-dropdown-option * {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.sales-filter-organisation-picker {
+  display: grid;
+  gap: 3px;
+}
+
+.sales-filter-organisation-input {
+  min-width: 0;
+  position: relative;
+}
+
+.sales-filter-organisation-trigger {
+  align-items: center;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  cursor: pointer;
+  display: flex;
+  font-family: inherit;
+  font-size: 12.5px;
+  height: 36px;
+  justify-content: space-between;
+  line-height: 1.2;
+  min-width: 0;
+  padding: 0 30px 0 11px;
+  position: relative;
+  text-align: left;
+  transition:
+    border-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth);
+  width: 100%;
+}
+
+.sales-filter-organisation-trigger:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.sales-filter-organisation-trigger:focus-visible {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+  outline: 0;
+}
+
+.sales-filter-organisation-trigger.has-value {
+  color: var(--mantine-color-gray-8);
+  padding-right: 58px;
+}
+
+.sales-filter-organisation-trigger span {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-filter-organisation-trigger svg {
+  flex: 0 0 auto;
+  margin-left: 0;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.sales-filter-organisation-clear {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--mantine-color-gray-5);
+  cursor: pointer;
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 29px;
+  top: 7px;
+  transition:
+    background-color 120ms var(--tx-ease-smooth),
+    color 120ms var(--tx-ease-smooth);
+  width: 22px;
+  z-index: 1;
+}
+
+.sales-filter-organisation-clear:hover {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-8);
+}
+
+.sales-filter-organisation-menu {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  box-shadow: 0 16px 36px rgba(20, 28, 38, 0.13);
+  padding: 10px;
+}
+
+.sales-filter-organisation-search {
+  margin-bottom: 8px;
+}
+
+.sales-filter-organisation-search .mantine-Input-input {
+  border-radius: 8px;
+  border-color: var(--mantine-color-gray-2);
+  min-height: 32px;
+}
+
+.sales-filter-organisation-search .mantine-Input-input:focus,
+.sales-filter-organisation-search .mantine-Input-input:focus-within {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+}
+
+.sales-filter-organisation-options {
+  display: grid;
+  gap: 3px;
+  max-height: 236px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.sales-filter-organisation-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
+  display: grid;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 4px;
+  grid-template-columns: 10px minmax(0, 1fr);
+  min-height: 30px;
+  padding: 7px 10px 7px 4px;
+  text-align: left;
+  transition:
+    background-color 120ms var(--tx-ease-smooth),
+    color 120ms var(--tx-ease-smooth);
+  width: 100%;
+}
+
+.sales-filter-organisation-option:hover,
+.sales-filter-organisation-option.is-selected {
+  background: #fff4eb;
+  color: var(--mantine-color-gray-9);
+}
+
+.sales-filter-organisation-check {
+  align-items: center;
+  color: #e8782e;
+  display: inline-flex;
+  height: 10px;
+  justify-content: center;
+  width: 10px;
+}
+
+.sales-filter-organisation-option-label {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-filter-organisation-empty {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.sales-filter-bar .mantine-InputWrapper-label,
+.sales-filter-period-menu .mantine-InputWrapper-label,
+.sales-filter-ecommerce .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.sales-filter-bar .mantine-Input-input,
+.sales-filter-period-menu .mantine-Input-input,
+.sales-filter-ecommerce {
+  background: var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-height: 36px;
+  transition:
+    border-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth);
+}
+
+.sales-filter-bar .mantine-Input-input,
+.sales-filter-period-menu .mantine-Input-input {
+  font-size: 12.5px;
+}
+
+.sales-filter-bar .mantine-Input-input:hover,
+.sales-filter-period-menu .mantine-Input-input:hover,
+.sales-filter-ecommerce:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.sales-filter-bar .mantine-Input-input:focus,
+.sales-filter-bar .mantine-Input-input:focus-within,
+.sales-filter-period-menu .mantine-Input-input:focus,
+.sales-filter-period-menu .mantine-Input-input:focus-within {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+}
+
+.sales-filter-ecommerce {
+  align-items: center;
+  display: flex;
+  min-width: 154px;
+  padding: 0 11px;
+}
+
+.sales-filter-ecommerce .mantine-Checkbox-body {
+  align-items: center;
+}
+
+.sales-filter-ecommerce .mantine-Checkbox-label {
+  color: var(--mantine-color-gray-7);
+  font-weight: 600;
+  padding-left: 7px;
+}
+
+.sales-filter-reset {
+  flex: 0 0 auto;
+}
+
+.sales-grid-alert {
+  margin: 12px 12px 0;
+}
+
 .sales-grid {
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 0;
   flex: 1 1 auto;
   min-height: 0;
   overflow-x: hidden;
@@ -30,6 +489,47 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
+
+@media (max-width: 1320px) {
+  .sales-filter-row {
+    grid-template-columns: minmax(170px, 240px) 176px repeat(3, minmax(142px, 1fr)) auto;
+  }
+
+  .sales-filter-client {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 980px) {
+  .sales-filter-actions {
+    justify-content: space-between;
+  }
+
+  .sales-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sales-filter-client {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .sales-filter-row,
+  .sales-filter-period-range {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sales-filter-period-separator {
+    display: none;
+  }
+
+  .sales-filter-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 
 .sales-grid-row {
   display: grid;

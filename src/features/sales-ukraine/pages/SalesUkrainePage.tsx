@@ -9,7 +9,7 @@ import {
   Group,
   Loader,
   Menu,
-  MultiSelect,
+  Popover,
   Select,
   Stack,
   Text,
@@ -22,6 +22,7 @@ import {
   IconAlertTriangle,
   IconArrowsLeftRight,
   IconBrandEdge,
+  IconCheck,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
@@ -42,6 +43,7 @@ import {
   IconSearch,
   IconTag,
   IconTruckDelivery,
+  IconX,
 } from '@tabler/icons-react'
 import {
   Fragment,
@@ -170,6 +172,20 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const SALES_FILTER_COMBOBOX_PROPS = {
+  classNames: {
+    dropdown: 'sales-filter-dropdown',
+    option: 'sales-filter-dropdown-option',
+    options: 'sales-filter-dropdown-options',
+  },
+  position: 'bottom-start' as const,
+  width: 'max-content',
+}
+
+const SALES_FILTER_SCROLL_AREA_PROPS = {
+  offsetScrollbars: false as const,
+}
+
 export function SalesUkrainePage() {
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
@@ -206,6 +222,7 @@ export function SalesUkrainePage() {
   const [organizations, setOrganizations] = useValueState<SalesUkraineOrganizationOption[]>([])
   const [clientQuery, setClientQuery] = useValueState('')
   const [clientOptions, setClientOptions] = useValueState<SalesUkraineClientOption[]>([])
+  const [organisationQuery, setOrganisationQuery] = useState('')
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
   const [discountTarget, setDiscountTarget] = useValueState<{
@@ -583,19 +600,52 @@ export function SalesUkrainePage() {
       }, []),
     [organizations],
   )
+  const organisationSummary = useMemo(() => {
+    if (filterDraft.organisationIds.length === 0) {
+      return t('Усі')
+    }
+
+    if (filterDraft.organisationIds.length > 1) {
+      return `${t('Обрано')} ${filterDraft.organisationIds.length}`
+    }
+
+    return organizationOptions.find((option) => option.value === filterDraft.organisationIds[0])?.label || t('Обрано')
+  }, [filterDraft.organisationIds, organizationOptions, t])
+  const filteredOrganizationOptions = useMemo(() => {
+    const query = organisationQuery.trim().toLowerCase()
+
+    return query ? organizationOptions.filter((option) => option.label.toLowerCase().includes(query)) : organizationOptions
+  }, [organisationQuery, organizationOptions])
 
   const clientSelectData = useMemo(
     () => clientOptions.map((client) => ({ label: getClientOptionLabel(client), value: String(client.Id ?? client.NetUid ?? '') })),
     [clientOptions],
   )
+  const dateRangeLabel = useMemo(() => {
+    if (filterDraft.from && filterDraft.to) {
+      return `${formatDateRangeFilterValue(filterDraft.from)} - ${formatDateRangeFilterValue(filterDraft.to)}`
+    }
+
+    if (filterDraft.from) {
+      return `${t('З')} ${formatDateRangeFilterValue(filterDraft.from)}`
+    }
+
+    if (filterDraft.to) {
+      return `${t('По')} ${formatDateRangeFilterValue(filterDraft.to)}`
+    }
+
+    return t('Період')
+  }, [filterDraft.from, filterDraft.to, t])
 
   const toolbarRight = useMemo(
     () => (
       <Group gap={4} wrap="nowrap">
         <Select
           aria-label={t('Кількість рядків')}
+          comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
           data={PAGE_SIZE_OPTIONS}
           disabled={isLoading}
+          scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
           size="xs"
           value={String(pageSize)}
           w={72}
@@ -647,100 +697,216 @@ export function SalesUkrainePage() {
         </PageHeaderActions>
       )}
 
-      <Card className="sales-ukraine-card" withBorder radius="md" padding="md">
-        <Stack className="sales-ukraine-content" gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
-            <TextInput
-              label={t('З')}
-              size="sm"
-              max={filterDraft.to || undefined}
-              type="date"
-              value={filterDraft.from}
-              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-            />
-            <TextInput
-              label={t('По')}
-              size="sm"
-              min={filterDraft.from || undefined}
-              type="date"
-              value={filterDraft.to}
-              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-            />
-            <Select
-              allowDeselect={false}
-              data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-              label={t('Статус')}
-              size="sm"
-              value={filterDraft.status}
-              w={180}
-              onChange={(value) => applyFilters({ ...filterDraft, status: (value as SalesUkraineStatusFilter | null) || 'all' })}
-            />
-            <Select
-              allowDeselect={false}
-              data={[
-                { value: 'All', label: t('Усі менеджери') },
-                { value: 'Self', label: t('Тільки мої') },
-              ]}
-              label={t('Менеджер')}
-              size="sm"
-              value={filterDraft.onlyMine ? 'Self' : 'All'}
-              w={150}
-              onChange={(value) =>
-                applyFilters({ ...filterDraft, onlyMine: ((value as SalesUkraineUserFilter | null) || 'All') === 'Self' })
-              }
-            />
-            <MultiSelect
-              clearable
-              searchable
-              data={organizationOptions}
-              label={t('Організація')}
-              size="sm"
-              placeholder={filterDraft.organisationIds.length ? undefined : t('Усі')}
-              value={filterDraft.organisationIds}
-              w={230}
-              onChange={(value) => applyFilters({ ...filterDraft, organisationIds: value })}
-            />
-            <Select
-              clearable
-              searchable
-              data={clientSelectData}
-              label={t('Клієнт')}
-              size="sm"
-              nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
-              placeholder={t('Пошук клієнта')}
-              searchValue={clientQuery}
-              value={filterDraft.clientId || null}
-              w={240}
-              onChange={(value) => applyFilters({ ...filterDraft, clientId: value || '' })}
-              onSearchChange={setClientQuery}
-            />
-            <Checkbox
-              checked={filterDraft.forEcommerce}
-              label={t('Інтернет-магазин')}
-              size="sm"
-              mb={8}
-              onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
-            />
-            <TextInput
-              flex={1}
-              label={t('Пошук')}
-              size="sm"
-              leftSection={<IconSearch size={16} />}
-              miw={140}
-              placeholder={t('Товар або номер продажу')}
-              value={filterDraft.value}
-              onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size="sm" aria-label={t('Скинути')} onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Box style={{ marginLeft: 'auto' }}>{toolbarRight}</Box>
-          </Group>
+      <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
+        <Stack className="sales-ukraine-content" gap={0}>
+          <div className="sales-filter-bar">
+            <div className="sales-filter-row">
+              <TextInput
+                className="sales-filter-search"
+                label={t('Пошук')}
+                leftSection={<IconSearch size={16} />}
+                placeholder={t('Товар або номер продажу')}
+                size="sm"
+                value={filterDraft.value}
+                onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
+              />
+              <div className="sales-filter-period-wrap">
+                <span className="sales-filter-label">{t('Період')}</span>
+                <Popover position="bottom-start" shadow="md" width={340} withinPortal>
+                  <Popover.Target>
+                    <Button
+                      className="sales-filter-period"
+                      color="gray"
+                      justify="space-between"
+                      rightSection={<IconChevronDown size={14} />}
+                      size="sm"
+                      variant="default"
+                    >
+                      <span className="sales-filter-period-value">{dateRangeLabel}</span>
+                  </Button>
+                </Popover.Target>
+                <Popover.Dropdown className="sales-filter-period-menu">
+                  <div className="sales-filter-period-panel">
+                    <div className="sales-filter-period-range">
+                      <TextInput
+                        className="sales-filter-period-field"
+                        label={t('З')}
+                        max={filterDraft.to || undefined}
+                        size="sm"
+                        type="date"
+                        value={filterDraft.from}
+                        onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+                      />
+                      <span className="sales-filter-period-separator" aria-hidden="true" />
+                      <TextInput
+                        className="sales-filter-period-field"
+                        label={t('По')}
+                        min={filterDraft.from || undefined}
+                        size="sm"
+                        type="date"
+                        value={filterDraft.to}
+                        onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+                      />
+                    </div>
+                    <div className="sales-filter-period-presets">
+                      <Button
+                        color="gray"
+                        size="xs"
+                        variant="subtle"
+                        onClick={() => applyFilters({ ...filterDraft, from: today, to: today })}
+                      >
+                        {t('Сьогодні')}
+                      </Button>
+                      <Button
+                        color="gray"
+                        size="xs"
+                        variant="subtle"
+                        onClick={() => applyFilters({ ...filterDraft, from: '', to: '' })}
+                      >
+                        {t('Очистити')}
+                      </Button>
+                    </div>
+                  </div>
+                </Popover.Dropdown>
+                </Popover>
+              </div>
+              <Select
+                allowDeselect={false}
+                className="sales-filter-control"
+                comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
+                data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                label={t('Статус')}
+                scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
+                size="sm"
+                value={filterDraft.status}
+                onChange={(value) => applyFilters({ ...filterDraft, status: (value as SalesUkraineStatusFilter | null) || 'all' })}
+              />
+              <Select
+                allowDeselect={false}
+                className="sales-filter-control"
+                comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
+                data={[
+                  { value: 'All', label: t('Усі менеджери') },
+                  { value: 'Self', label: t('Тільки мої') },
+                ]}
+                label={t('Менеджер')}
+                scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
+                size="sm"
+                value={filterDraft.onlyMine ? 'Self' : 'All'}
+                onChange={(value) =>
+                  applyFilters({ ...filterDraft, onlyMine: ((value as SalesUkraineUserFilter | null) || 'All') === 'Self' })
+                }
+              />
+              <div className="sales-filter-control sales-filter-organisation-picker">
+                <span className="sales-filter-label">{t('Організація')}</span>
+                <div className="sales-filter-organisation-input">
+                  <Popover position="bottom-start" shadow="md" width={320} withinPortal>
+                    <Popover.Target>
+                      <button
+                        className={`sales-filter-organisation-trigger${filterDraft.organisationIds.length ? ' has-value' : ''}`}
+                        type="button"
+                      >
+                        <span title={organisationSummary}>{organisationSummary}</span>
+                        <IconChevronDown size={14} />
+                      </button>
+                    </Popover.Target>
+                    <Popover.Dropdown className="sales-filter-organisation-menu">
+                      <TextInput
+                        className="sales-filter-organisation-search"
+                        leftSection={<IconSearch size={14} />}
+                        placeholder={t('Пошук')}
+                        size="xs"
+                        value={organisationQuery}
+                        onChange={(event) => setOrganisationQuery(event.currentTarget.value)}
+                      />
+                      <div className="sales-filter-organisation-options">
+                        {filteredOrganizationOptions.map((option) => {
+                          const checked = filterDraft.organisationIds.includes(option.value)
+
+                          return (
+                            <button
+                              key={option.value}
+                              className={`sales-filter-organisation-option${checked ? ' is-selected' : ''}`}
+                              type="button"
+                              onClick={() =>
+                                applyFilters({
+                                  ...filterDraft,
+                                  organisationIds: checked
+                                    ? filterDraft.organisationIds.filter((id) => id !== option.value)
+                                    : [...filterDraft.organisationIds, option.value],
+                                })
+                              }
+                            >
+                              <span className="sales-filter-organisation-check" aria-hidden="true">
+                                {checked && <IconCheck size={13} />}
+                              </span>
+                              <span className="sales-filter-organisation-option-label" title={option.label}>
+                                {option.label}
+                              </span>
+                            </button>
+                          )
+                        })}
+                        {filteredOrganizationOptions.length === 0 && (
+                          <div className="sales-filter-organisation-empty">{t('Нічого не знайдено')}</div>
+                        )}
+                      </div>
+                    </Popover.Dropdown>
+                  </Popover>
+                  {filterDraft.organisationIds.length > 0 && (
+                    <button
+                      aria-label={t('Очистити')}
+                      className="sales-filter-organisation-clear"
+                      type="button"
+                      onClick={() => applyFilters({ ...filterDraft, organisationIds: [] })}
+                    >
+                      <IconX size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <Select
+                className="sales-filter-control sales-filter-client"
+                clearable
+                comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
+                data={clientSelectData}
+                label={t('Клієнт')}
+                nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
+                placeholder={t('Пошук клієнта')}
+                scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
+                searchable
+                searchValue={clientQuery}
+                size="sm"
+                value={filterDraft.clientId || null}
+                onChange={(value) => applyFilters({ ...filterDraft, clientId: value || '' })}
+                onSearchChange={setClientQuery}
+              />
+              <Checkbox
+                checked={filterDraft.forEcommerce}
+                className="sales-filter-ecommerce"
+                label={t('Інтернет-магазин')}
+                size="sm"
+                onChange={(event) => applyFilters({ ...filterDraft, forEcommerce: event.currentTarget.checked })}
+              />
+              <div className="sales-filter-actions">
+                <Tooltip label={t('Скинути')}>
+                  <ActionIcon
+                    aria-label={t('Скинути')}
+                    className="sales-filter-reset"
+                    color="gray"
+                    size={34}
+                    variant="light"
+                    onClick={resetFilters}
+                  >
+                    <IconRestore size={17} />
+                  </ActionIcon>
+                </Tooltip>
+                <Box className="sales-filter-toolbar">{toolbarRight}</Box>
+              </div>
+            </div>
+          </div>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="sales-grid-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>
           )}
@@ -1673,6 +1839,16 @@ function formatDate(value: Date | null): string {
 
 function formatTime(value: Date | null): string {
   return value ? value.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }) : ''
+}
+
+function formatDateRangeFilterValue(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+
+  if (!match) {
+    return value
+  }
+
+  return `${match[3]}.${match[2]}.${match[1].slice(2)}`
 }
 
 function formatAmount(value: number | null): string {
