@@ -1,4 +1,4 @@
-import { Anchor, Box, Group, Stack, Text } from '@mantine/core'
+import { Anchor, Box, Text } from '@mantine/core'
 import { IconBox } from '@tabler/icons-react'
 import { useState } from 'react'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -29,10 +29,13 @@ export function SaleExpandContent({
   const canEditDiscount = isDiscountEditableSaleLifecycle(sale.BaseLifeCycleStatus?.SaleLifeCycleType)
   const isVatSale = Boolean(sale.IsVatSale)
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
+  const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
+  const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
+  const isLocalBaseCurrency = localCurrencyCode === BASE_CURRENCY_CODE
 
   if (!orderItems.length) {
     return (
-      <Box className="sale-expand-content" px="md" py="sm">
+      <Box className="sale-expand-content is-empty">
         <Text size="sm" c="dimmed">
           {t('Товарів не знайдено')}
         </Text>
@@ -42,12 +45,35 @@ export function SaleExpandContent({
 
   return (
     <>
-      <Stack className="sale-expand-content" gap={0} px="md" py="sm">
+      <div
+        className="sale-expand-content"
+        data-quantity-before-local={isLocalBaseCurrency ? 'true' : 'false'}
+        data-vat={isVatSale ? 'true' : 'false'}
+      >
+        <div className="sale-expand-content-head">
+          <span>{t('Товар')}</span>
+          {isLocalBaseCurrency ? (
+            <>
+              <span>{t('К-сть')}</span>
+              <span>{localCurrencyCode || t('Сума')}</span>
+              <span>{secondCode}</span>
+            </>
+          ) : (
+            <>
+              <span>{localCurrencyCode || t('Сума')}</span>
+              <span>{t('К-сть')}</span>
+              <span>{secondCode}</span>
+            </>
+          )}
+          {isVatSale && <span>{t('ПДВ')}</span>}
+          <span>{t('Знижки')}</span>
+        </div>
         {orderItems.map((orderItem, index) => (
           <SaleExpandContentItem
             key={String(orderItem.NetUid || orderItem.Id || index)}
             canEditDiscount={canEditDiscount}
             isVatSale={isVatSale}
+            isLocalBaseCurrency={isLocalBaseCurrency}
             hasUniformDiscount={hasUniformDiscount}
             localCurrencyCode={localCurrencyCode}
             orderItem={orderItem}
@@ -55,7 +81,7 @@ export function SaleExpandContent({
             onOpenProductCard={setProductCardNetId}
           />
         ))}
-      </Stack>
+      </div>
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </>
   )
@@ -64,6 +90,7 @@ export function SaleExpandContent({
 function SaleExpandContentItem({
   canEditDiscount,
   hasUniformDiscount,
+  isLocalBaseCurrency,
   isVatSale,
   localCurrencyCode,
   onOpenProductCard,
@@ -72,6 +99,7 @@ function SaleExpandContentItem({
 }: {
   canEditDiscount: boolean
   hasUniformDiscount: boolean
+  isLocalBaseCurrency: boolean
   isVatSale: boolean
   localCurrencyCode: string
   onOpenProductCard: (productNetId: string) => void
@@ -96,7 +124,8 @@ function SaleExpandContentItem({
 
   const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
   const secondAmount = useEurToUah ? getNumber(orderItem.TotalAmountEurToUah) : getNumber(orderItem.TotalAmount)
-  const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
+  const localAmountText = formatAmount(getNumber(orderItem.TotalAmountLocal))
+  const secondAmountText = formatAmount(secondAmount)
   const overLordQty = getNumber(orderItem.OverLordQty)
   const qty = getNumber(orderItem.Qty)
   const qtyText = overLordQty ? `${displayValue(qty)} / ${overLordQty}` : displayValue(qty)
@@ -105,86 +134,98 @@ function SaleExpandContentItem({
   const discountUpdater = getResponsible(orderItem.DiscountUpdatedBy)
 
   return (
-    <Group
-      align="center"
-      className="sale-expand-content-item"
-      gap="sm"
-      justify="space-between"
-      px="xs"
-      py={1}
-      style={hasQtyOverflow ? { backgroundColor: 'var(--mantine-color-red-1)', borderRadius: 6 } : undefined}
-      wrap="nowrap"
-    >
-      <Group gap={8} wrap="nowrap" align="flex-start" style={{ minWidth: 0, flex: 1 }}>
-        <IconBox size={15} stroke={1.7} style={{ color: 'var(--mantine-color-gray-5)', flexShrink: 0, marginTop: 2 }} />
-        <Box style={{ minWidth: 0 }}>
-          <Group gap={6} wrap="wrap">
+    <div className={`sale-expand-content-item${hasQtyOverflow ? ' is-qty-warning' : ''}`}>
+      <div className="sale-expand-product-cell">
+        <span className="sale-expand-product-icon" aria-hidden="true">
+          <IconBox size={14} stroke={1.7} />
+        </span>
+        <div className="sale-expand-product-copy">
+          <div className="sale-expand-product-main">
             {openProductCard ? (
               <>
-                <Anchor c={CREATE_ACTION_COLOR} component="button" fw={600} size="sm" type="button" onClick={openProductCard}>
+                <Anchor
+                  className="sale-expand-product-code"
+                  c={CREATE_ACTION_COLOR}
+                  component="button"
+                  title={displayValue(getOrderItemProductCode(orderItem))}
+                  type="button"
+                  onClick={openProductCard}
+                >
                   {displayValue(getOrderItemProductCode(orderItem))}
                 </Anchor>
-                <Anchor c="black" component="button" size="sm" type="button" onClick={openProductCard}>
+                <Anchor
+                  className="sale-expand-product-name"
+                  c="dark.9"
+                  component="button"
+                  title={displayValue(getOrderItemProductName(orderItem))}
+                  type="button"
+                  onClick={openProductCard}
+                >
                   {displayValue(getOrderItemProductName(orderItem))}
                 </Anchor>
               </>
             ) : (
               <>
-                <Text c={CREATE_ACTION_COLOR} fw={600} size="sm">
+                <span className="sale-expand-product-code" title={displayValue(getOrderItemProductCode(orderItem))}>
                   {displayValue(getOrderItemProductCode(orderItem))}
-                </Text>
-                <Text c="black" size="sm">
+                </span>
+                <span className="sale-expand-product-name" title={displayValue(getOrderItemProductName(orderItem))}>
                   {displayValue(getOrderItemProductName(orderItem))}
-                </Text>
+                </span>
               </>
             )}
+          </div>
+          <div className="sale-expand-product-meta">
             {orderItem.Product?.MainOriginalNumber && (
-              <Text c="dimmed" size="sm">
-                {orderItem.Product.MainOriginalNumber}
-              </Text>
+              <span title={orderItem.Product.MainOriginalNumber}>{orderItem.Product.MainOriginalNumber}</span>
             )}
-          </Group>
-          <Group gap={10} wrap="wrap">
             {created && (
-              <Text c="dimmed" size="xs">
+              <span>
                 {t('Від')} {created}
-              </Text>
+              </span>
             )}
-            {responsible && (
-              <Text c="dimmed" size="xs">
-                {responsible}
-              </Text>
-            )}
+            {responsible && <span title={responsible}>{responsible}</span>}
             {specificationCode && (
-              <Text c="black" size="xs">
+              <span className="is-strong">
                 {t('Митний код')}: {specificationCode}
-              </Text>
+              </span>
             )}
-          </Group>
+          </div>
           {comment && (
-            <Text c="dimmed" fs="italic" size="xs">
+            <div className="sale-expand-product-comment" title={comment}>
               {comment}
-            </Text>
+            </div>
           )}
-        </Box>
-      </Group>
+        </div>
+      </div>
 
-      <Group align="center" gap="md" wrap="nowrap">
-        <ValueBlock label={localCurrencyCode || t('Сума')} value={formatAmount(getNumber(orderItem.TotalAmountLocal))} />
-        <ValueBlock label={secondCode} value={formatAmount(secondAmount)} />
-        {isVatSale && <ValueBlock label={t('ПДВ')} value={formatAmount(getNumber(orderItem.TotalVat))} />}
-        <ValueBlock label={t('Count')} value={qtyText} />
-        <ValueBlock label={t('Базова знижка')} value={formatPercent(baseDiscount)} />
+      {isLocalBaseCurrency ? (
+        <>
+          <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
+          <ValueBlock value={localAmountText} />
+          <ValueBlock value={secondAmountText} />
+        </>
+      ) : (
+        <>
+          <ValueBlock value={localAmountText} />
+          <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
+          <ValueBlock value={secondAmountText} />
+        </>
+      )}
+      {isVatSale && <ValueBlock value={formatAmount(getNumber(orderItem.TotalVat))} />}
 
-        <Box style={{ minWidth: 72, textAlign: 'right' }}>
-          <Text size="xs" c="dimmed" tt="uppercase">
-            {t('Разова знижка')}
-          </Text>
+      <div className="sale-expand-discount-cell">
+        <div className="sale-expand-discount-line">
+          <span>{t('База')}</span>
+          <strong>{formatPercent(baseDiscount)}</strong>
+        </div>
+        <div className="sale-expand-discount-line">
+          <span>{t('Разова')}</span>
           {!hasUniformDiscount && canEditDiscount ? (
             <Anchor
-              c="gray.8"
+              className="sale-expand-discount-action"
+              c="dark.8"
               component="button"
-              fw={hasOneTimeDiscount ? 600 : 400}
               type="button"
               onClick={(event) => {
                 event.stopPropagation()
@@ -194,27 +235,37 @@ function SaleExpandContentItem({
               {hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : t('Знижка')}
             </Anchor>
           ) : (
-            <Text>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : '—'}</Text>
+            <strong>{hasOneTimeDiscount ? formatPercent(oneTimeDiscount) : '—'}</strong>
           )}
-          {hasOneTimeDiscount && discountUpdater && (
-            <Text c="dimmed" size="xs">
-              {discountUpdater}
-            </Text>
-          )}
-        </Box>
-      </Group>
-    </Group>
+        </div>
+        {hasOneTimeDiscount && discountUpdater && (
+          <div className="sale-expand-discount-user" title={discountUpdater}>
+            {discountUpdater}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
-function ValueBlock({ label, value }: { label: string; value: string }) {
+function ValueBlock({
+  isQuantityAccent = false,
+  isWarning = false,
+  value,
+}: {
+  isQuantityAccent?: boolean
+  isWarning?: boolean
+  value: string
+}) {
   return (
-    <Box style={{ minWidth: 96, textAlign: 'right' }}>
-      <Text size="xs" c="dimmed" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={600}>{value}</Text>
-    </Box>
+    <div className={`sale-expand-value-cell${isQuantityAccent ? ' is-quantity-accent' : ''}${isWarning ? ' is-warning' : ''}`}>
+      {isQuantityAccent && (
+        <span className="sale-expand-quantity-marker" aria-hidden="true">
+          #
+        </span>
+      )}
+      <strong>{value}</strong>
+    </div>
   )
 }
 

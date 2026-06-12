@@ -1009,7 +1009,7 @@ function SaleGridRow({
           {canExpand && (
             <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
               <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
-                {isExpanded ? <IconChevronDown size={15} /> : <IconPlus size={15} />}
+                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
               </ActionIcon>
             </Tooltip>
           )}
