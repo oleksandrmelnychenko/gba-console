@@ -31,8 +31,6 @@ export function SaleExpandContent({
   const hasUniformDiscount = hasUniformOrderItemDiscount(orderItems)
   const useEurToUah = !isVatSale && localCurrencyCode === BASE_CURRENCY_CODE
   const secondCode = useEurToUah ? 'UAH' : BASE_CURRENCY_CODE
-  const isLocalBaseCurrency = localCurrencyCode === BASE_CURRENCY_CODE
-
   if (!orderItems.length) {
     return (
       <Box className="sale-expand-content is-empty">
@@ -47,24 +45,13 @@ export function SaleExpandContent({
     <>
       <div
         className="sale-expand-content"
-        data-quantity-before-local={isLocalBaseCurrency ? 'true' : 'false'}
         data-vat={isVatSale ? 'true' : 'false'}
       >
         <div className="sale-expand-content-head">
           <span>{t('Товар')}</span>
-          {isLocalBaseCurrency ? (
-            <>
-              <span>{t('К-сть')}</span>
-              <span>{localCurrencyCode || t('Сума')}</span>
-              <span>{secondCode}</span>
-            </>
-          ) : (
-            <>
-              <span>{localCurrencyCode || t('Сума')}</span>
-              <span>{t('К-сть')}</span>
-              <span>{secondCode}</span>
-            </>
-          )}
+          <span>{t('К-сть')}</span>
+          <span>{localCurrencyCode || t('Сума')}</span>
+          <span>{secondCode}</span>
           {isVatSale && <span>{t('ПДВ')}</span>}
           <span>{t('Знижки')}</span>
         </div>
@@ -73,7 +60,6 @@ export function SaleExpandContent({
             key={String(orderItem.NetUid || orderItem.Id || index)}
             canEditDiscount={canEditDiscount}
             isVatSale={isVatSale}
-            isLocalBaseCurrency={isLocalBaseCurrency}
             hasUniformDiscount={hasUniformDiscount}
             localCurrencyCode={localCurrencyCode}
             orderItem={orderItem}
@@ -90,7 +76,6 @@ export function SaleExpandContent({
 function SaleExpandContentItem({
   canEditDiscount,
   hasUniformDiscount,
-  isLocalBaseCurrency,
   isVatSale,
   localCurrencyCode,
   onOpenProductCard,
@@ -99,7 +84,6 @@ function SaleExpandContentItem({
 }: {
   canEditDiscount: boolean
   hasUniformDiscount: boolean
-  isLocalBaseCurrency: boolean
   isVatSale: boolean
   localCurrencyCode: string
   onOpenProductCard: (productNetId: string) => void
@@ -199,19 +183,9 @@ function SaleExpandContentItem({
         </div>
       </div>
 
-      {isLocalBaseCurrency ? (
-        <>
-          <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
-          <ValueBlock value={localAmountText} />
-          <ValueBlock value={secondAmountText} />
-        </>
-      ) : (
-        <>
-          <ValueBlock value={localAmountText} />
-          <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
-          <ValueBlock value={secondAmountText} />
-        </>
-      )}
+      <ValueBlock isQuantityAccent isWarning={hasQtyOverflow} value={qtyText} />
+      <ValueBlock value={localAmountText} />
+      <ValueBlock value={secondAmountText} />
       {isVatSale && <ValueBlock value={formatAmount(getNumber(orderItem.TotalVat))} />}
 
       <div className="sale-expand-discount-cell">
