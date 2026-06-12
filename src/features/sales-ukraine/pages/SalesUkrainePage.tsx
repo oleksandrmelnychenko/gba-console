@@ -638,7 +638,7 @@ export function SalesUkrainePage() {
   )
 
   return (
-    <Stack gap="lg">
+    <Stack className="sales-ukraine-page" gap="lg">
       {canCreateSale && (
         <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewSaleOpen(true)}>
@@ -647,8 +647,8 @@ export function SalesUkrainePage() {
         </PageHeaderActions>
       )}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <Card className="sales-ukraine-card" withBorder radius="md" padding="md">
+        <Stack className="sales-ukraine-content" gap="md">
           <Group align="end" gap="sm" wrap="wrap">
             <TextInput
               label={t('З')}
@@ -745,7 +745,7 @@ export function SalesUkrainePage() {
             </Alert>
           )}
 
-          <div className="sales-grid" style={{ maxHeight: 'calc(100vh - 320px)' }}>
+          <div className="sales-grid">
             {isLoading ? (
               <div className="sales-grid-state">
                 <Group justify="center" gap="xs">

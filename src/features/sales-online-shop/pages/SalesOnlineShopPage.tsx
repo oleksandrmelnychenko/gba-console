@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   Menu,
   Pagination,
@@ -24,16 +23,29 @@ import {
   IconBrandEdge,
   IconDots,
   IconExternalLink,
+  IconFileInvoice,
   IconEye,
   IconHistory,
   IconInfoCircle,
   IconLockOpen,
   IconReceipt,
+  IconReceipt2,
   IconRefresh,
   IconRestore,
   IconSearch,
+  IconTag,
+  IconTruckDelivery,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { translate } from '../../../shared/i18n/translate'
@@ -44,6 +56,7 @@ import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } fr
 import { UserRoleType } from '../../../shared/auth/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import '../../sales-ukraine/pages/sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
 import { unlockSale, updateSale } from '../../sales-ukraine/api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../../sales-ukraine/components/ConsignmentNoteSettingsDrawer'
@@ -70,6 +83,20 @@ function asUkraineSale(sale: SalesOnlineShopSale): SalesUkraineSale {
   return sale as unknown as SalesUkraineSale
 }
 
+type SalesOnlineShopSaleWithDelivery = SalesOnlineShopSale & {
+  CustomersOwnTtn?: { Number?: string } | null
+  DeliveryRecipient?: { FullName?: string; MobilePhone?: string } | null
+  DeliveryRecipientAddress?: { City?: string; Department?: string; Value?: string } | null
+}
+
+type SalesOnlineShopClientWithRoot = NonNullable<SalesOnlineShopSale['ClientAgreement']>['Client'] & {
+  RootClient?: {
+    FirstName?: string
+    FullName?: string
+    LastName?: string
+  }
+}
+
 type ConfirmState = {
   color?: string
   confirmLabel: string
@@ -93,13 +120,6 @@ const SALES_ONLINE_SHOP_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['date', 'number', 'client'],
     right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const SALES_ONLINE_SHOP_ITEMS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['product'],
   },
   density: 'normal',
 } satisfies DataTableDefaultLayout
@@ -571,6 +591,10 @@ export function SalesOnlineShopPage() {
       </Card>
 
       <AppDrawer
+        classNames={{
+          body: 'sale-detail-drawer-body',
+          content: 'sale-detail-drawer-content',
+        }}
         opened={Boolean(selectedSale)}
         position="right"
         size="min(820px, 100vw)"
@@ -951,140 +975,280 @@ function useSalesOnlineShopColumns({
 function SaleDetail({ sale }: { sale: SalesOnlineShopSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
-  const itemColumns = useMemo<DataTableColumn<SalesOnlineShopOrderItem>[]>(
-    () => [
-      {
-        id: 'product',
-        header: 'Товар',
-        accessor: (item) => getOrderItemProductName(item),
-        minWidth: 240,
-      },
-      {
-        id: 'code',
-        header: 'Код',
-        accessor: (item) => getOrderItemProductCode(item),
-        width: 120,
-      },
-      {
-        id: 'qty',
-        header: 'К-сть',
-        accessor: (item) => getNumber(item.Qty),
-        align: 'right',
-        cell: (item) => displayValue(getNumber(item.Qty)),
-        width: 110,
-      },
-      {
-        id: 'price',
-        header: 'Ціна',
-        accessor: (item) => getNumber(item.PricePerItem),
-        align: 'right',
-        cell: (item) => formatAmount(getNumber(item.PricePerItem)),
-        width: 120,
-      },
-      {
-        id: 'amount',
-        header: 'Сума',
-        accessor: (item) => getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount),
-        align: 'right',
-        cell: (item) => formatAmount(getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)),
-        width: 130,
-      },
-    ],
-    [],
-  )
+  const date = getSaleDate(sale)
+  const paymentTone = getPaymentStatusTone(sale)
+  const primaryAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
+  const secondaryAmount = getSecondaryAmount(sale)
+  const vatAmount = getNumber(sale.Order?.TotalVat)
+  const currencyCode = getSaleCurrencyCode(sale)
+  const secondaryCurrencyCode = getSecondaryAmountCode(sale)
+  const deliverySale = sale as SalesOnlineShopSaleWithDelivery
+  const retailClientLine = getRetailClientLine(sale)
+  const clientRows: Array<[string, unknown]> = [
+    [t('Клієнт'), getSaleClientName(sale)],
+    [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
+    [t('Організація'), sale.ClientAgreement?.Agreement?.Organization?.Name],
+    [t('Телефон'), sale.ClientAgreement?.Client?.MobileNumber || sale.ClientAgreement?.Client?.PhoneNumber],
+  ]
+
+  if (retailClientLine) {
+    clientRows.splice(1, 0, [t('Retail-клієнт'), retailClientLine])
+  }
 
   return (
-    <Stack gap="md">
-      <Group gap="xs">
+    <div className="sale-detail-sheet">
+      <section className="sale-detail-hero">
+        <div className="sale-detail-hero-copy">
+          <div className="sale-detail-kicker">
+            <SaleSourceIcon sale={sale} />
+            <span>{displayValue(sale.SaleNumber?.Value)}</span>
+            {date && (
+              <>
+                <span className="sale-detail-dot" />
+                <span>
+                  {formatDate(date)} {formatTime(date)}
+                </span>
+              </>
+            )}
+          </div>
+          <OverflowTooltipText className="sale-detail-title">
+            {displayValue(getSaleClientDisplayName(sale))}
+          </OverflowTooltipText>
+          <OverflowTooltipText className="sale-detail-subtitle">
+            {displayValue(sale.ClientAgreement?.Agreement?.Name)}
+          </OverflowTooltipText>
+        </div>
+
+        <div className={`sale-detail-total${isUnpaidSale(sale) ? ' is-unpaid' : ''}`}>
+          <span className="sale-detail-total-label">{t('Сума')}</span>
+          <strong>{formatAmount(primaryAmount)}</strong>
+          <span>{displayValue(currencyCode)}</span>
+        </div>
+      </section>
+
+      <div className="sale-detail-status-strip">
         <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} variant="light">
           {getSaleStatusLabel(sale)}
         </Badge>
-        {sale.IsFullPayment && (
-          <Badge color="green" variant="light">
-            {t('Повна оплата')}
-          </Badge>
-        )}
-        {sale.IsVatSale && (
-          <Badge color="violet" variant="light">
-            ПДВ
-          </Badge>
-        )}
-        {sale.IsLocked && (
-          <Badge color="red" variant="light">
-            {t('Заблоковано')}
-          </Badge>
-        )}
-        {sale.MisplacedSaleId && (
-          <Badge color="red" leftSection={<IconInfoCircle size={12} />} variant="light">
-            {t('Часткова продажа')}
-          </Badge>
-        )}
-      </Group>
+        <span className={`sale-detail-payment-pill is-${paymentTone}`}>
+          {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
+        </span>
+        {sale.IsFullPayment && <span className="sale-detail-soft-pill is-success">{t('Повна оплата')}</span>}
+        {sale.IsVatSale && <span className="sale-detail-soft-pill is-info">{t('ПДВ')}</span>}
+        {sale.IsLocked && <span className="sale-detail-soft-pill is-danger">{t('Заблоковано')}</span>}
+        {sale.MisplacedSaleId && <span className="sale-detail-soft-pill is-danger">{t('Часткова продажа')}</span>}
+        {sale.IsPrinted && <span className="sale-detail-soft-pill">{t('Друковано')}</span>}
+      </div>
 
-      <DetailRows
-        rows={[
-          [t('Клієнт'), getSaleClientName(sale)],
-          [t('Retail-клієнт'), getRetailClientLine(sale)],
-          [t('Менеджер'), getSaleUserName(sale)],
-          [t('Договір'), sale.ClientAgreement?.Agreement?.Name],
-          [t('Організація'), sale.ClientAgreement?.Agreement?.Organization?.Name],
-          [t('Перевізник'), sale.Transporter?.Name || sale.Transporter?.Title],
-          [t('Оплата'), getPaymentStatusLabel(sale)],
-          [t('Сума'), `${formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))} ${getSaleCurrencyCode(sale)}`],
-        ]}
-      />
+      <div className="sale-detail-metrics">
+        <SaleDetailMetric label={t('Позиції')} value={displayValue(orderItems.length)} />
+        <SaleDetailMetric label={t('ПДВ')} value={formatAmount(vatAmount)} />
+        <SaleDetailMetric label={displayValue(secondaryCurrencyCode)} value={formatAmount(secondaryAmount)} />
+        <SaleDetailMetric label={t('Менеджер')} value={displayValue(getSaleUserName(sale))} />
+      </div>
+
+      <div className="sale-detail-sections">
+        <SaleDetailSection
+          icon={<IconReceipt2 size={15} />}
+          title={t('Продаж')}
+          rows={[
+            [t('Номер'), sale.SaleNumber?.Value],
+            [t('Дата'), date ? `${formatDate(date)} ${formatTime(date)}` : ''],
+            [t('Статус'), getSaleStatusLabel(sale)],
+            [t('Оплата'), getPaymentStatusLabel(sale)],
+          ]}
+        />
+        <SaleDetailSection
+          icon={<IconTag size={15} />}
+          title={t('Клієнт і договір')}
+          rows={clientRows}
+        />
+        <SaleDetailSection
+          icon={<IconTruckDelivery size={15} />}
+          title={t('Доставка')}
+          rows={[
+            [t('Перевізник'), getSaleTransporterName(sale)],
+            [t('Отримувач'), deliverySale.DeliveryRecipient?.FullName],
+            [t('Телефон'), deliverySale.DeliveryRecipient?.MobilePhone],
+            [t('Адреса'), getSaleDeliveryAddress(sale)],
+            [t('ТТН'), deliverySale.CustomersOwnTtn?.Number || sale.TTN],
+          ]}
+        />
+      </div>
 
       {sale.Comment && (
-        <>
-          <Divider />
-          <Box>
-            <Text size="xs" c="dimmed" tt="uppercase">
-              {t('Коментар')}
-            </Text>
-            <Text size="sm">{sale.Comment}</Text>
-          </Box>
-        </>
+        <section className="sale-detail-comment">
+          <span>{t('Коментар')}</span>
+          <p>{sale.Comment}</p>
+        </section>
       )}
 
-      <Divider />
+      <section className="sale-detail-products">
+        <div className="sale-detail-section-header">
+          <div>
+            <Text className="sale-detail-section-title">{t('Товари')}</Text>
+            <Text className="sale-detail-section-subtitle">
+              {orderItems.length} {t('позицій')}
+            </Text>
+          </div>
+        </div>
 
-      <Stack gap="xs">
-        <Group justify="space-between">
-          <Text fw={600}>{t('Товари')}</Text>
-          <Badge color="gray" variant="light">
-            {orderItems.length}
-          </Badge>
-        </Group>
-        <DataTable
-          columns={itemColumns}
-          data={orderItems}
-          defaultLayout={SALES_ONLINE_SHOP_ITEMS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Товарів не знайдено')}
-          getRowId={(item, index) => String(item.NetUid || item.Id || index)}
-          layoutVersion="sales-online-shop-items-table-1"
-          maxHeight="45vh"
-          minWidth={720}
-          tableId="sales-online-shop-items"
-        />
-      </Stack>
-    </Stack>
+        <div className="sale-detail-products-table">
+          <div className="sale-detail-products-head">
+            <span>{t('Товар')}</span>
+            <span>{t('К-сть')}</span>
+            <span>{t('Ціна')}</span>
+            <span>{t('Сума')}</span>
+          </div>
+          <div className="sale-detail-products-body">
+            {orderItems.length > 0 ? (
+              orderItems.map((item, index) => (
+                <SaleDetailProductRow
+                  key={String(item.NetUid || item.Id || index)}
+                  item={item}
+                  currencyCode={currencyCode}
+                />
+              ))
+            ) : (
+              <div className="sale-detail-products-empty">{t('Товарів не знайдено')}</div>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }
 
-function DetailRows({ rows }: { rows: Array<[string, unknown]> }) {
+function SaleDetailMetric({ label, value }: { label: string; value: string }) {
   return (
-    <Stack gap={6}>
-      {rows.map(([label, value]) => (
-        <Group key={label} justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
-          <Text size="sm" c="dimmed">
-            {label}
-          </Text>
-          <Text size="sm" ta="right">
-            {displayValue(value)}
-          </Text>
-        </Group>
-      ))}
-    </Stack>
+    <div className="sale-detail-metric">
+      <span>{label}</span>
+      <OverflowTooltipText strong>{value}</OverflowTooltipText>
+    </div>
+  )
+}
+
+function OverflowTooltipText({
+  children,
+  className,
+  strong = false,
+}: {
+  children: string
+  className?: string
+  strong?: boolean
+}) {
+  const textRef = useRef<HTMLElement | null>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  const updateOverflow = useCallback(() => {
+    const element = textRef.current
+
+    setIsOverflowing(Boolean(element && element.scrollWidth > element.clientWidth + 1))
+  }, [])
+
+  const setTextRef = useCallback((node: HTMLElement | null) => {
+    textRef.current = node
+  }, [])
+
+  useLayoutEffect(() => {
+    updateOverflow()
+
+    const element = textRef.current
+
+    if (!element) {
+      return undefined
+    }
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateOverflow)
+
+    observer?.observe(element)
+    window.addEventListener('resize', updateOverflow)
+
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', updateOverflow)
+    }
+  }, [children, updateOverflow])
+
+  const node = strong ? (
+    <strong ref={setTextRef} className={className}>
+      {children}
+    </strong>
+  ) : (
+    <span ref={setTextRef} className={className}>
+      {children}
+    </span>
+  )
+
+  return (
+    <Tooltip disabled={!isOverflowing || children.trim().length === 0} label={children} openDelay={350} withArrow>
+      {node}
+    </Tooltip>
+  )
+}
+
+function SaleDetailSection({
+  icon,
+  rows,
+  title,
+}: {
+  icon: ReactNode
+  rows: Array<[string, unknown]>
+  title: string
+}) {
+  return (
+    <section className="sale-detail-info-section">
+      <div className="sale-detail-section-header">
+        <span className="sale-detail-section-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <div>
+          <Text className="sale-detail-section-title">{title}</Text>
+        </div>
+      </div>
+
+      <div className="sale-detail-rows">
+        {rows.map(([label, value]) => (
+          <div key={label} className="sale-detail-row">
+            <span>{label}</span>
+            <OverflowTooltipText strong>{displayValue(value)}</OverflowTooltipText>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SaleDetailProductRow({
+  currencyCode,
+  item,
+}: {
+  currencyCode: string
+  item: SalesOnlineShopOrderItem
+}) {
+  const amount = getNumber(item.TotalAmountLocal) ?? getNumber(item.TotalAmount)
+
+  return (
+    <div className="sale-detail-product-row">
+      <div className="sale-detail-product-name">
+        <span className="sale-detail-product-icon" aria-hidden="true">
+          <IconTag size={14} />
+        </span>
+        <div className="sale-detail-product-copy">
+          <OverflowTooltipText className="sale-detail-product-title">
+            {displayValue(getOrderItemProductName(item))}
+          </OverflowTooltipText>
+          <OverflowTooltipText className="sale-detail-product-subtitle">
+            {displayValue(getOrderItemProductCode(item))}
+          </OverflowTooltipText>
+        </div>
+      </div>
+      <span className="sale-detail-product-value">{displayValue(getNumber(item.Qty))}</span>
+      <span className="sale-detail-product-value">{formatAmount(getNumber(item.PricePerItem))}</span>
+      <span className="sale-detail-product-amount">
+        {formatAmount(amount)} <small>{displayValue(currencyCode)}</small>
+      </span>
+    </div>
   )
 }
 
@@ -1109,6 +1273,16 @@ function getSaleClientName(sale: SalesOnlineShopSale): string {
     || client?.MobileNumber?.trim()
     || ''
   )
+}
+
+function getSaleClientDisplayName(sale: SalesOnlineShopSale): string {
+  const baseName = getSaleClientName(sale)
+  const root = (sale.ClientAgreement?.Client as SalesOnlineShopClientWithRoot | undefined)?.RootClient
+  const rootName =
+    root?.FullName?.trim()
+    || [root?.LastName, root?.FirstName].filter(Boolean).join(' ').trim()
+
+  return [rootName, baseName].filter(Boolean).join(' / ') || baseName
 }
 
 function getRetailClientLine(sale: SalesOnlineShopSale): string {
@@ -1184,6 +1358,22 @@ function getPaymentStatusColor(sale: SalesOnlineShopSale): string | undefined {
   }
 }
 
+function getPaymentStatusTone(sale: SalesOnlineShopSale): string {
+  switch (getStatusTypeKey(sale.BaseSalePaymentStatus?.SalePaymentStatusType)) {
+    case '0':
+      return 'danger'
+    case '1':
+    case '2':
+      return 'success'
+    case '3':
+      return 'warning'
+    case '4':
+      return 'info'
+    default:
+      return 'neutral'
+  }
+}
+
 function getRetailPaymentSuffix(sale: SalesOnlineShopSale): string {
   if (!sale.RetailClient) {
     return ''
@@ -1194,6 +1384,18 @@ function getRetailPaymentSuffix(sale: SalesOnlineShopSale): string {
 
 function getSaleCurrencyCode(sale: SalesOnlineShopSale): string {
   return sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+}
+
+function isNonVatEurAgreement(sale: SalesOnlineShopSale): boolean {
+  return !sale.ClientAgreement?.Agreement?.WithVATAccounting && getSaleCurrencyCode(sale) === 'EUR'
+}
+
+function getSecondaryAmount(sale: SalesOnlineShopSale): number | null {
+  return isNonVatEurAgreement(sale) ? getNumber(sale.TotalAmountEurToUah) : getNumber(sale.TotalAmount)
+}
+
+function getSecondaryAmountCode(sale: SalesOnlineShopSale): string {
+  return isNonVatEurAgreement(sale) ? 'UAH' : 'EUR'
 }
 
 function isNewOrPackagingStatus(sale: SalesOnlineShopSale): boolean {
@@ -1220,6 +1422,40 @@ function getOrderItemProductName(item: SalesOnlineShopOrderItem): string {
 
 function getOrderItemProductCode(item: SalesOnlineShopOrderItem): string {
   return item.Product?.VendorCode || item.Product?.Articul || item.Product?.MainOriginalNumber || ''
+}
+
+function getSaleTransporterName(sale: SalesOnlineShopSale): string {
+  return sale.Transporter?.Name || sale.Transporter?.Title || ''
+}
+
+function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {
+  const address = (sale as SalesOnlineShopSaleWithDelivery).DeliveryRecipientAddress
+
+  return [address?.City, address?.Department, address?.Value].filter(Boolean).join(', ')
+}
+
+function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {
+  const { t } = useI18n()
+  const source = sale.Order?.OrderSource
+  const lifecycleStatusKey = getSaleStatusKey(sale)
+  const isInvoiceStage = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+
+  const indicator =
+    source === 0
+      ? { icon: <IconBrandEdge size={14} />, label: t('Інтернет-магазин') }
+      : source === 2
+        ? { icon: <IconTag size={14} />, label: t('Оферта') }
+        : isInvoiceStage
+          ? { icon: <IconFileInvoice size={14} />, label: t('Накладна') }
+          : { icon: <IconReceipt2 size={14} />, label: t('Рахунок') }
+
+  return (
+    <Tooltip label={indicator.label}>
+      <Box c="gray.6" style={{ display: 'inline-flex' }}>
+        {indicator.icon}
+      </Box>
+    </Tooltip>
+  )
 }
 
 function lifecycleStatusFromNumber(status: number): string {
