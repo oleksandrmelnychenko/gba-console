@@ -3,6 +3,7 @@ import type {
   AccountableExpenseRow,
   AccountableExpenseUnderReportStatus,
   ConsumablesOrder,
+  ConsumablesOrderItem,
   NamedEntity,
   OutcomePaymentOrder,
   OutcomePaymentOrderConsumablesOrder,
@@ -18,7 +19,7 @@ export function buildExpenseRows(orders: ConsumablesOrder[]): AccountableExpense
     const items = order.ConsumablesOrderItems || []
 
     items.forEach((item, itemIndex) => {
-      const amount = item.TotalPriceWithVAT
+      const amount = getItemTotalPriceWithVat(item)
 
       rows.push({
         advanceNumber: outcomeSummary.advanceNumber,
@@ -152,6 +153,18 @@ function getConsumablesOrderPaidAmount(order: ConsumablesOrder): number | undefi
   return typeof order.TotalPaidAmount === 'number' && Number.isFinite(order.TotalPaidAmount)
     ? order.TotalPaidAmount
     : undefined
+}
+
+function getItemTotalPriceWithVat(item: ConsumablesOrderItem): number | undefined {
+  if (typeof item.TotalPriceWithVAT === 'number' && Math.abs(item.TotalPriceWithVAT) > MONEY_EPSILON) {
+    return item.TotalPriceWithVAT
+  }
+
+  const totalPrice = typeof item.TotalPrice === 'number' ? item.TotalPrice : 0
+  const vat = typeof item.VAT === 'number' ? item.VAT : 0
+  const totalPriceWithVat = totalPrice + vat
+
+  return Math.abs(totalPriceWithVat) > MONEY_EPSILON ? totalPriceWithVat : item.TotalPriceWithVAT
 }
 
 function getPaymentStatus(order: ConsumablesOrder, paidAmount: number | undefined): AccountableExpensePaymentStatus {
