@@ -2,101 +2,104 @@ import {
   ActionIcon,
   Alert,
   Avatar,
-  Badge,
   Box,
   Button,
+  FileInput,
   Group,
+  ScrollArea,
   Select,
   Stack,
   Text,
+  TextInput,
   ThemeIcon,
   Tooltip,
 } from '@mantine/core'
-import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArchive,
+  IconDeviceFloppy,
+  IconHash,
+  IconPencil,
   IconPhoto,
+  IconPlus,
   IconRefresh,
+  IconRestore,
+  IconSearch,
   IconTruckDelivery,
+  IconUpload,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { type ReactNode, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   archiveTransporter,
+  createTransporter,
   getTransportersByType,
   getTransporterTypes,
+  updateTransporter,
 } from '../api/transportersApi'
 import type { Transporter, TransporterType } from '../types'
 import './transporters-page.css'
 
-const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['status', 'icon', 'name'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
 const archiveDisabledCssClass = 'self_checkout_item_class'
+const hiddenTransporterTypeNames = new Set(['Перевізники Польща', 'Перевізники TF', 'Покупці ПЛ'])
 
 type TransporterStatusFilter = 'active' | 'all' | 'archived'
 
-const TRANSPORTER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
+type TransporterEditorState =
+  | { mode: 'create' }
+  | { mode: 'edit'; transporter: Transporter }
+
+type TransporterFormValues = {
+  CssClass: string
+  ImageFile: File | null
+  ImageUrl: string
+  Name: string
+  Priority: string
+}
 
 export function TransportersPage() {
   const { t } = useI18n()
   const [transporterTypes, setTransporterTypes] = useValueState<TransporterType[]>([])
   const [selectedTypeNetId, setSelectedTypeNetId] = useValueState<string | null>(null)
   const [transporters, setTransporters] = useValueState<Transporter[]>([])
+  const [search, setSearch] = useValueState('')
   const [statusFilter, setStatusFilter] = useValueState<TransporterStatusFilter>('active')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoadingTypes, setLoadingTypes] = useValueState(true)
   const [isLoadingTransporters, setLoadingTransporters] = useValueState(false)
   const [isArchiving, setArchiving] = useValueState(false)
+  const [isSaving, setSaving] = useValueState(false)
   const [archiveTarget, setArchiveTarget] = useValueState<Transporter | null>(null)
+  const [editor, setEditor] = useValueState<TransporterEditorState | null>(null)
+  const [formError, setFormError] = useValueState<string | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const usableTransporterTypes = useMemo(
-    () => transporterTypes.filter((transporterType) => Boolean(transporterType.NetUid)),
+    () => transporterTypes.filter((transporterType) => Boolean(transporterType.NetUid) && isVisibleTransporterType(transporterType)),
     [transporterTypes],
   )
   const selectedTransporterType = useMemo(
-    () => transporterTypes.find((transporterType) => transporterType.NetUid === selectedTypeNetId) || null,
-    [selectedTypeNetId, transporterTypes],
+    () => usableTransporterTypes.find((transporterType) => transporterType.NetUid === selectedTypeNetId) || null,
+    [selectedTypeNetId, usableTransporterTypes],
   )
   const visibleTransporters = useMemo(
     () =>
       transporters.filter((transporter) => {
         if (statusFilter === 'all') {
-          return true
+          return matchesTransporterSearch(transporter, search, selectedTransporterType)
         }
 
-        return statusFilter === 'archived' ? transporter.Deleted === true : transporter.Deleted !== true
+        const matchesStatus = statusFilter === 'archived' ? transporter.Deleted === true : transporter.Deleted !== true
+
+        return matchesStatus && matchesTransporterSearch(transporter, search, selectedTransporterType)
       }),
-    [statusFilter, transporters],
+    [search, selectedTransporterType, statusFilter, transporters],
   )
-  const columns = useTransporterColumns(selectedTransporterType, setArchiveTarget)
-  const tableToolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {selectedTransporterType ? `${t('тип')}: ${getTransporterTypeName(selectedTransporterType)}` : ''}
-      </Text>
-    ),
-    [selectedTransporterType, t],
-  )
+  const isBusy = isLoadingTypes || isLoadingTransporters
 
   useEffect(() => {
     let cancelled = false
@@ -107,18 +110,21 @@ export function TransportersPage() {
 
       try {
         const nextTransporterTypes = await getTransporterTypes()
+        const nextUsableTransporterTypes = nextTransporterTypes.filter(
+          (transporterType) => Boolean(transporterType.NetUid) && isVisibleTransporterType(transporterType),
+        )
 
         if (!cancelled) {
           setTransporterTypes(nextTransporterTypes)
           setSelectedTypeNetId((currentTypeNetId) => {
             if (
               currentTypeNetId &&
-              nextTransporterTypes.some((transporterType) => transporterType.NetUid === currentTypeNetId)
+              nextUsableTransporterTypes.some((transporterType) => transporterType.NetUid === currentTypeNetId)
             ) {
               return currentTypeNetId
             }
 
-            return nextTransporterTypes.find((transporterType) => transporterType.NetUid)?.NetUid || null
+            return nextUsableTransporterTypes[0]?.NetUid || null
           })
         }
       } catch (loadError) {
@@ -212,87 +218,219 @@ export function TransportersPage() {
     }
   }
 
+  function openCreateTransporter() {
+    setFormError(null)
+    setEditor({ mode: 'create' })
+  }
+
+  function openEditTransporter(transporter: Transporter) {
+    setFormError(null)
+    setEditor({ mode: 'edit', transporter })
+  }
+
+  async function handleSaveTransporter(values: TransporterFormValues) {
+    const validationError = validateTransporterForm(values)
+
+    if (validationError) {
+      setFormError(validationError)
+      return
+    }
+
+    if (!selectedTransporterType?.Id) {
+      setFormError(t('Оберіть тип перевізника'))
+      return
+    }
+
+    setSaving(true)
+    setFormError(null)
+
+    try {
+      const payload = buildTransporterPayload(
+        editor?.mode === 'edit' ? editor.transporter : undefined,
+        values,
+        selectedTransporterType,
+      )
+
+      if (editor?.mode === 'edit') {
+        await updateTransporter(payload)
+      } else {
+        await createTransporter(payload)
+      }
+
+      notifications.show({
+        color: 'green',
+        message: editor?.mode === 'edit' ? t('Перевізника оновлено') : t('Перевізника створено'),
+      })
+      setEditor(null)
+      reload()
+    } catch (saveError) {
+      setFormError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти перевізника'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <Stack className="transporters-page" gap={6}>
+    <Stack className="transporters-page" gap={0}>
       <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoadingTypes || isLoadingTransporters}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Button
+          className="transporters-create-action"
+          color={CREATE_ACTION_COLOR}
+          disabled={!selectedTransporterType}
+          leftSection={<IconPlus size={16} />}
+          size="sm"
+          onClick={openCreateTransporter}
+        >
+          {t('Створити')}
+        </Button>
       </PageHeaderActions>
 
-      <Group justify="space-between" gap="sm" wrap="nowrap" align="center">
-        {usableTransporterTypes.length > 0 ? (
-          <div className="pill-tabs">
-            {usableTransporterTypes.map((transporterType) => {
-              const value = transporterType.NetUid || ''
-              return (
-                <button
-                  key={transporterType.NetUid}
-                  type="button"
-                  className={`pill-tab${selectedTypeNetId === value ? ' is-active' : ''}`}
-                  aria-pressed={selectedTypeNetId === value}
-                  onClick={() => setSelectedTypeNetId(value)}
-                >
-                  {getTransporterTypeName(transporterType)}
-                </button>
-              )
-            })}
+      <Box className="transporters-shell">
+        <div className="transporters-command-bar">
+          <div className="transporters-command-search">
+            <TextInput
+              className="transporters-search-input"
+              label={t('Пошук')}
+              leftSection={<IconSearch size={15} />}
+              placeholder={t('Пошук перевізника')}
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+            />
+            <Select
+              className="transporters-status-filter"
+              data={[
+                { value: 'active', label: t('Активні') },
+                { value: 'all', label: t('Усі') },
+                { value: 'archived', label: t('Архів') },
+              ]}
+              label={t('Статус')}
+              size="xs"
+              value={statusFilter}
+              onChange={(value) => setStatusFilter((value as TransporterStatusFilter | null) || 'active')}
+            />
           </div>
-        ) : isLoadingTypes ? (
-          <Text c="dimmed" size="sm">
-            {t('Завантаження типів перевізників')}
-          </Text>
-        ) : (
-          <Text c="dimmed" size="sm">
-            {t('Типів перевізників не знайдено')}
-          </Text>
+
+          <div className="transporters-toolbar-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!search}
+                size={34}
+                type="button"
+                variant="light"
+                onClick={() => setSearch('')}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isBusy}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
+
+        {error && (
+          <Alert className="transporters-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
         )}
-        <Select
-          aria-label={t('Фільтр статусу')}
-          data={[
-            { value: 'active', label: t('Активні') },
-            { value: 'all', label: t('Усі') },
-            { value: 'archived', label: t('Архів') },
-          ]}
-          size="xs"
-          value={statusFilter}
-          w={112}
-          onChange={(value) => setStatusFilter((value as TransporterStatusFilter | null) || 'active')}
-        />
-      </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        <div className="transporters-workspace">
+          <aside className="transporters-type-rail" aria-label={t('Типи перевізників')}>
+            <div className="transporters-rail-header">
+              <span>{t('Навігація типів')}</span>
+            </div>
 
-      <div className="transporters-page__table">
-        <DataTable
-          columns={columns}
-          data={visibleTransporters}
-          defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
-          emptyText={isLoadingTypes ? t('Завантаження типів перевізників') : selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
-          getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
-          isLoading={isLoadingTypes || isLoadingTransporters}
-          layoutVersion="transporters-table-1"
-          loadingText={t('Завантаження перевізників')}
-          height="100%"
-          minWidth={1000}
-          showLayoutControls={false}
-          tableId="transporters"
-          toolbarLeft={tableToolbarLeft}
-        />
-      </div>
+          {isLoadingTypes ? (
+            <div className="transporters-empty-state">{t('Завантаження типів перевізників')}</div>
+          ) : usableTransporterTypes.length > 0 ? (
+            <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
+              <div className="transporters-type-list">
+                {usableTransporterTypes.map((transporterType) => {
+                  const value = transporterType.NetUid || ''
+                  const isActive = selectedTypeNetId === value
+                  const count = getTransporterTypeCount(transporterType, selectedTypeNetId, transporters)
+
+                  return (
+                    <button
+                      key={value}
+                      className={`transporters-type-option${isActive ? ' is-active' : ''}`}
+                      type="button"
+                      onClick={() => setSelectedTypeNetId(value)}
+                    >
+                      <span className="transporters-type-option-name">{getTransporterTypeName(transporterType)}</span>
+                      <span className="transporters-type-option-count">{count ?? '-'}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </ScrollArea.Autosize>
+          ) : (
+            <div className="transporters-empty-state">{t('Типів перевізників не знайдено')}</div>
+          )}
+          </aside>
+
+          <section className="transporters-roster">
+          <div className="transporters-list">
+            <div className="transporters-list-head">
+              <span>{t('Перевізник')}</span>
+              <span>{t('Параметри')}</span>
+              <span>{t('Зображення')}</span>
+              <span>{t('Статус')}</span>
+              <span />
+            </div>
+
+            <ScrollArea.Autosize mah="calc(100vh - 288px)" type="auto">
+              <div className="transporters-list-body">
+                {isBusy ? (
+                  <div className="transporters-empty-state">{t('Завантаження перевізників')}</div>
+                ) : !selectedTypeNetId ? (
+                  <div className="transporters-empty-state">{t('Оберіть тип перевізника')}</div>
+                ) : visibleTransporters.length > 0 ? (
+                  visibleTransporters.map((transporter, index) => (
+                    <TransporterListRow
+                      key={String(transporter.NetUid || transporter.Id || index)}
+                      selectedTransporterType={selectedTransporterType}
+                      transporter={transporter}
+                      onArchive={setArchiveTarget}
+                      onEdit={openEditTransporter}
+                    />
+                  ))
+                ) : (
+                  <div className="transporters-empty-state">{t('Перевізників не знайдено')}</div>
+                )}
+              </div>
+            </ScrollArea.Autosize>
+          </div>
+          </section>
+        </div>
+      </Box>
+
+      <TransporterEditorModal
+        key={editor ? `transporter-${editor.mode}-${editor.mode === 'edit' ? editor.transporter.NetUid || editor.transporter.Id : 'new'}` : 'transporter-closed'}
+        error={formError}
+        isSaving={isSaving}
+        opened={Boolean(editor)}
+        title={editor?.mode === 'edit' ? t('Редагувати перевізника') : t('Новий перевізник')}
+        transporter={editor?.mode === 'edit' ? editor.transporter : undefined}
+        onClose={() => {
+          if (!isSaving) {
+            setEditor(null)
+            setFormError(null)
+          }
+        }}
+        onSave={handleSaveTransporter}
+      />
 
       <AppModal
         centered
@@ -320,124 +458,225 @@ export function TransportersPage() {
   )
 }
 
+function TransporterListRow({
+  selectedTransporterType,
+  transporter,
+  onArchive,
+  onEdit,
+}: {
+  selectedTransporterType: TransporterType | null
+  transporter: Transporter
+  onArchive: (transporter: Transporter) => void
+  onEdit: (transporter: Transporter) => void
+}) {
+  const typeName = displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)
+
+  return (
+    <div
+      className={`transporters-list-row${transporter.Deleted ? ' is-archived' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onEdit(transporter)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onEdit(transporter)
+        }
+      }}
+    >
+      <div className="transporters-profile-cell">
+        <TransporterIcon transporter={transporter} />
+        <div className="transporters-profile-copy">
+          <Tooltip label={getTransporterName(transporter)} openDelay={350} withArrow>
+            <Text className="transporters-profile-name">{getTransporterName(transporter)}</Text>
+          </Tooltip>
+          <Text className="transporters-profile-type">{typeName}</Text>
+        </div>
+      </div>
+
+      <div className="transporters-config-cell">
+        <TransporterSetting icon={<IconHash size={14} />} label={translate('Пріоритет')} value={displayValue(transporter.Priority)} />
+      </div>
+
+      <TransporterImagePreview transporter={transporter} />
+      <TransporterStatusTag transporter={transporter} />
+
+      <div className="transporters-row-actions" onClick={(event) => event.stopPropagation()}>
+        <Tooltip label={translate('Редагувати')}>
+          <ActionIcon
+            aria-label={translate('Редагувати')}
+            className="transporters-row-action"
+            color="gray"
+            size="sm"
+            variant="subtle"
+            onClick={() => onEdit(transporter)}
+          >
+            <IconPencil size={15} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={getArchiveTooltip(transporter)}>
+          <ActionIcon
+            aria-label={translate('Архівувати')}
+            className="transporters-row-action"
+            color="red"
+            disabled={!canArchiveTransporter(transporter)}
+            size="sm"
+            variant="subtle"
+            onClick={() => onArchive(transporter)}
+          >
+            <IconArchive size={15} />
+          </ActionIcon>
+        </Tooltip>
+      </div>
+    </div>
+  )
+}
+
+function TransporterEditorModal({
+  error,
+  isSaving,
+  opened,
+  title,
+  transporter,
+  onClose,
+  onSave,
+}: {
+  error: string | null
+  isSaving: boolean
+  opened: boolean
+  title: string
+  transporter?: Transporter
+  onClose: () => void
+  onSave: (values: TransporterFormValues) => void
+}) {
+  const [values, setValues] = useValueState<TransporterFormValues>(() => transporterToFormValues(transporter))
+
+  function setField<K extends keyof TransporterFormValues>(key: K, value: TransporterFormValues[K]) {
+    setValues((currentValues) => ({
+      ...currentValues,
+      [key]: value,
+    }))
+  }
+
+  return (
+    <AppModal centered opened={opened} title={title} onClose={onClose}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          onSave(values)
+        }}
+      >
+        <Stack gap="md">
+          {error ? (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          ) : null}
+          <TextInput
+            autoFocus
+            label={translate('Назва')}
+            required
+            value={values.Name}
+            onChange={(event) => setField('Name', event.currentTarget.value)}
+          />
+          <TextInput
+            label={translate('Пріоритет')}
+            type="number"
+            value={values.Priority}
+            onChange={(event) => setField('Priority', event.currentTarget.value)}
+          />
+          <TextInput
+            label={translate('CSS клас')}
+            value={values.CssClass}
+            onChange={(event) => setField('CssClass', event.currentTarget.value)}
+          />
+          <TextInput
+            label={translate('URL зображення')}
+            value={values.ImageUrl}
+            onChange={(event) => setField('ImageUrl', event.currentTarget.value)}
+          />
+          <FileInput
+            accept="image/*"
+            clearable
+            label={translate('Зображення')}
+            leftSection={<IconUpload size={16} />}
+            value={values.ImageFile}
+            onChange={(file) => setField('ImageFile', file)}
+          />
+          <Group justify="flex-end">
+            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+              {translate('Скасувати')}
+            </Button>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              {translate('Зберегти')}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </AppModal>
+  )
+}
+
 function TransporterIcon({ transporter }: { transporter: Transporter }) {
   if (transporter.ImageUrl) {
     return (
-      <Avatar radius="sm" size={34} src={transporter.ImageUrl}>
+      <Avatar className="transporters-avatar" radius="md" size={36} src={transporter.ImageUrl}>
         <IconPhoto size={18} />
       </Avatar>
     )
   }
 
   return (
-    <ThemeIcon color="gray" radius="sm" size={34} variant="light">
+    <ThemeIcon className="transporters-avatar transporters-avatar-fallback" color="gray" radius="md" size={36} variant="light">
       <IconTruckDelivery size={18} />
     </ThemeIcon>
   )
 }
 
-function useTransporterColumns(
-  selectedTransporterType: TransporterType | null,
-  setArchiveTarget: (transporter: Transporter) => void,
-): DataTableColumn<Transporter>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<Transporter>[]>(
-    () => [
-      {
-        id: 'status',
-        header: 'Статус',
-        width: 116,
-        minWidth: 104,
-        accessor: (transporter) => (transporter.Deleted ? t('Архів') : t('Активний')),
-        cell: (transporter) => (
-          <Badge color={transporter.Deleted ? 'gray' : 'green'} variant="light">
-            {transporter.Deleted ? t('Архів') : t('Активний')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'icon',
-        header: 'Іконка',
-        width: 86,
-        minWidth: 78,
-        align: 'center',
-        accessor: (transporter) => transporter.ImageUrl || transporter.CssClass,
-        cell: (transporter) => <TransporterIcon transporter={transporter} />,
-      },
-      {
-        id: 'name',
-        header: 'Назва',
-        width: 260,
-        minWidth: 220,
-        accessor: getTransporterName,
-        cell: (transporter) => <TransporterTableValue fw={600} value={getTransporterName(transporter)} />,
-      },
-      {
-        id: 'type',
-        header: 'Тип',
-        width: 180,
-        minWidth: 140,
-        accessor: (transporter) => transporter.TransporterType?.Name || selectedTransporterType?.Name,
-        cell: (transporter) =>
-          <TransporterTableValue value={displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)} />,
-      },
-      {
-        id: 'cssClass',
-        header: 'CSS клас',
-        width: 220,
-        minWidth: 160,
-        accessor: (transporter) => transporter.CssClass,
-        cell: (transporter) => <TransporterTableValue value={displayValue(transporter.CssClass)} />,
-      },
-      {
-        id: 'priority',
-        header: 'Пріоритет',
-        width: 120,
-        minWidth: 104,
-        align: 'right',
-        accessor: (transporter) => transporter.Priority,
-        cell: (transporter) => <TransporterTableValue value={displayValue(transporter.Priority)} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (transporter) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={getArchiveTooltip(transporter)}>
-              <ActionIcon
-                aria-label={t('Архівувати')}
-                color="red"
-                disabled={!canArchiveTransporter(transporter)}
-                variant="subtle"
-                onClick={() => setArchiveTarget(transporter)}
-              >
-                <IconArchive size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Box>
-        ),
-      },
-    ],
-    [selectedTransporterType?.Name, setArchiveTarget, t],
+function TransporterSetting({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <Tooltip label={`${label}: ${value}`} openDelay={350} withArrow>
+      <span className="transporters-setting">
+        <span className="transporters-setting-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <span className="transporters-setting-copy">
+          <span>{label}</span>
+          <strong>{value}</strong>
+        </span>
+      </span>
+    </Tooltip>
   )
 }
 
-function TransporterTableValue({ fw, value }: { fw?: number; value: string }) {
+function TransporterImagePreview({ transporter }: { transporter: Transporter }) {
+  const imageUrl = transporter.ImageUrl?.trim()
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={TRANSPORTER_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
+    <Tooltip label={imageUrl || translate('Зображення не вказано')} openDelay={350} withArrow>
+      <span className={`transporters-image-preview${imageUrl ? ' is-filled' : ''}`}>
+        {imageUrl ? <img alt={getTransporterName(transporter)} src={imageUrl} /> : <IconPhoto size={14} />}
+        {!imageUrl ? <span>{translate('Немає')}</span> : null}
+      </span>
     </Tooltip>
+  )
+}
+
+function TransporterStatusTag({ transporter }: { transporter: Transporter }) {
+  const isArchived = transporter.Deleted === true
+
+  return (
+    <span className={`transporters-status-tag${isArchived ? ' is-archived' : ' is-active'}`}>
+      {isArchived ? translate('Архів') : translate('Активний')}
+    </span>
   )
 }
 
@@ -449,6 +688,42 @@ function getTransporterTypeName(transporterType: TransporterType): string {
   return transporterType.Name?.trim() || translate('Без назви')
 }
 
+function isVisibleTransporterType(transporterType: TransporterType): boolean {
+  return !hiddenTransporterTypeNames.has(getTransporterTypeName(transporterType))
+}
+
+function getTransporterTypeCount(
+  transporterType: TransporterType,
+  selectedTypeNetId: string | null,
+  selectedTransporters: Transporter[],
+): number | null {
+  if (transporterType.NetUid === selectedTypeNetId) {
+    return selectedTransporters.length
+  }
+
+  return Array.isArray(transporterType.Transporters) ? transporterType.Transporters.length : null
+}
+
+function matchesTransporterSearch(
+  transporter: Transporter,
+  search: string,
+  selectedTransporterType: TransporterType | null,
+): boolean {
+  const query = search.trim().toLowerCase()
+
+  if (!query) {
+    return true
+  }
+
+  return [
+    transporter.Name,
+    transporter.ImageUrl,
+    transporter.Priority,
+    transporter.TransporterType?.Name,
+    selectedTransporterType?.Name,
+  ].some((value) => String(value ?? '').toLowerCase().includes(query))
+}
+
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? String(value) : '-'
@@ -456,6 +731,53 @@ function displayValue(value?: number | string | null): string {
 
   const normalized = value?.trim()
   return normalized || '-'
+}
+
+function transporterToFormValues(transporter?: Transporter): TransporterFormValues {
+  return {
+    CssClass: transporter?.CssClass || '',
+    ImageFile: null,
+    ImageUrl: transporter?.ImageUrl || '',
+    Name: transporter?.Name || '',
+    Priority: typeof transporter?.Priority === 'number' ? String(transporter.Priority) : '',
+  }
+}
+
+function validateTransporterForm(values: TransporterFormValues): string | null {
+  if (!values.Name.trim()) {
+    return translate('Вкажіть назву перевізника')
+  }
+
+  if (values.Priority.trim() && !Number.isFinite(Number(values.Priority))) {
+    return translate('Вкажіть коректний пріоритет')
+  }
+
+  return null
+}
+
+function buildTransporterPayload(
+  transporter: Transporter | undefined,
+  values: TransporterFormValues,
+  transporterType: TransporterType,
+): FormData {
+  const nextTransporter: Transporter = {
+    ...(transporter || {}),
+    CssClass: values.CssClass.trim(),
+    ImageUrl: values.ImageUrl.trim(),
+    Name: values.Name.trim(),
+    Priority: values.Priority.trim() ? Number(values.Priority) : undefined,
+    TransporterType: transporterType,
+    TransporterTypeId: transporterType.Id,
+  }
+  const formData = new FormData()
+
+  formData.append('entity', JSON.stringify(nextTransporter))
+
+  if (values.ImageFile) {
+    formData.append('image', values.ImageFile)
+  }
+
+  return formData
 }
 
 function canArchiveTransporter(transporter: Transporter): boolean {

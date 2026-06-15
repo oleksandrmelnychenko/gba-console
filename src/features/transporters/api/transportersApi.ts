@@ -17,6 +17,24 @@ export async function getTransportersByType(transporterTypeNetId: string): Promi
   return normalizeTransporters(result)
 }
 
+export async function createTransporter(transporter: FormData): Promise<Transporter | null> {
+  const result = await apiRequest<unknown>('/transporters/new', {
+    method: 'POST',
+    body: transporter,
+  })
+
+  return normalizeTransporter(result)
+}
+
+export async function updateTransporter(transporter: FormData): Promise<Transporter | null> {
+  const result = await apiRequest<unknown>('/transporters/update', {
+    method: 'POST',
+    body: transporter,
+  })
+
+  return normalizeTransporter(result)
+}
+
 export async function archiveTransporter(netId: string): Promise<void> {
   await apiRequest<unknown>('/transporters/delete', {
     query: {
@@ -35,6 +53,18 @@ function normalizeTransporterTypes(result: unknown): TransporterType[] {
   }
 
   return []
+}
+
+function normalizeTransporter(result: unknown): Transporter | null {
+  if (!result || typeof result !== 'object') {
+    return null
+  }
+
+  if ('Item' in result && result.Item && typeof result.Item === 'object') {
+    return result.Item as Transporter
+  }
+
+  return result as Transporter
 }
 
 function normalizeTransporters(result: unknown): Transporter[] {
