@@ -178,7 +178,7 @@ export async function searchSaleProductsWithAvailability(
   const result = await apiRequest<unknown>('/products/search/advanced', {
     query: {
       limit: options?.limit ?? 20,
-      mode: options?.mode ?? '0',
+      mode: options?.mode ?? '5',
       netId: clientAgreementNetId,
       offset: options?.offset ?? 0,
       sortMode: options?.sortMode ?? '2',

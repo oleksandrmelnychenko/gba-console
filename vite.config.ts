@@ -1,6 +1,14 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const apiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io'
+
+function configureForwardedHeaders(proxy: any) {
+  proxy.on('proxyReq', (proxyReq: any) => {
+    proxyReq.setHeader('X-Forwarded-Proto', 'http')
+  })
+}
+
 function stripSignalRPureAnnotations() {
   return {
     name: 'strip-signalr-pure-annotations',
@@ -60,18 +68,33 @@ export default defineConfig({
       '^/api/v1/[^/]+/history': {
         target: process.env.VITE_DEV_HISTORY_PROXY_TARGET || 'https://gba-analytics-dev.85.17.167.167.nip.io',
         changeOrigin: true,
+        xfwd: true,
         secure: false,
       },
       '/api': {
-        target: process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io',
+        target: apiProxyTarget,
+        changeOrigin: true,
+        xfwd: true,
+        secure: false,
+        configure: configureForwardedHeaders,
+      },
+      '/hubs': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        xfwd: true,
+        secure: false,
+        ws: true,
+        configure: configureForwardedHeaders,
+      },
+      '/Data': {
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
       },
-      '/hubs': {
-        target: process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io',
+      '/Images': {
+        target: apiProxyTarget,
         changeOrigin: true,
         secure: false,
-        ws: true,
       },
     },
   },

@@ -10,6 +10,7 @@ import {
   getSubClients,
   newDeliveryRecipient,
   newDeliveryRecipientAddress,
+  searchSaleProductsWithAvailability,
   updateSaleDeliveryRecipient,
   updateSaleDeliveryRecipientAddress,
 } from './newSaleWizardApi'
@@ -34,6 +35,23 @@ describe('new sale wizard pricing API contracts', () => {
       query: {
         clientAgreementNetId: 'agreement-1',
         productNetId: 'product-1',
+      },
+    })
+  })
+
+  it('requests advanced product search with client agreement and default modes', async () => {
+    apiRequestMock.mockResolvedValueOnce([])
+
+    await expect(searchSaleProductsWithAvailability(' sem94 ', 'agreement-1')).resolves.toEqual([])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/products/search/advanced', {
+      query: {
+        limit: 20,
+        mode: '5',
+        netId: 'agreement-1',
+        offset: 0,
+        sortMode: '2',
+        value: 'sem94',
       },
     })
   })

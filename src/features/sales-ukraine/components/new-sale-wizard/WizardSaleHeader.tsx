@@ -21,6 +21,9 @@ import {
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
+// Keeps the client header a stable height so the panel below does not jump when switching clients.
+const WIZARD_HEADER_MIN_HEIGHT = 52
+
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
   0: 'Рахунок',
   1: 'Накладна',
@@ -192,7 +195,8 @@ function WizardSaleHeaderContent({
   }
 
   if (!client) {
-    return null
+    // Reserve the header height while a client loads so the panel below does not jump.
+    return <Box mb="sm" mih={WIZARD_HEADER_MIN_HEIGHT} pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }} />
   }
 
   const clientAgreements = client.ClientAgreements ?? []
@@ -210,6 +214,7 @@ function WizardSaleHeaderContent({
       align="center"
       gap="sm"
       mb="sm"
+      mih={WIZARD_HEADER_MIN_HEIGHT}
       pb="xs"
       wrap="wrap"
       style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}

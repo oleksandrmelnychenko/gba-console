@@ -50,7 +50,9 @@ type WizardPrintState = {
 
 export function NewSaleClientStep({
   clientNetId,
+  initialClient,
   onClientChange,
+  onClientResolved,
   onAgreementChange,
   onOpenSale,
   onCreateMergedMainClientSale,
@@ -59,8 +61,10 @@ export function NewSaleClientStep({
   onRequestClose,
 }: {
   clientNetId: string | null
+  initialClient?: Client | null
   onAgreementChange: (agreementNetId: string | null, agreement: SalesUkraineClientAgreement | null) => void
   onClientChange: (clientNetId: string | null) => void
+  onClientResolved?: (client: Client | null) => void
   onCreateMergedMainClientSale?: (unionSale: SalesUkraineSale) => void
   onEditMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
   onInvoiceMergedSale?: (sale: SalesUkraineSale, unionSale: SalesUkraineSale | null) => void
@@ -173,7 +177,9 @@ export function NewSaleClientStep({
         const list = await getWizardClientAgreements(client.NetUid)
         setAgreements(list)
 
-        const active = list.find((item) => item.Agreement?.IsActive)
+        // Prefer the active agreement, otherwise fall back to the first one so a selected
+        // client always has an agreement and can advance to the products step (Alt+2).
+        const active = list.find((item) => item.Agreement?.IsActive) ?? list[0]
 
         if (active) {
           setSelectedAgreementKey(getWizardAgreementKey(active))
@@ -196,7 +202,13 @@ export function NewSaleClientStep({
         return
       }
 
+      // A client is now selected, so the one-time bootstrap is done. This prevents the
+      // bootstrap effect (which rebuilds the carousel from a single client) from firing
+      // when confirmClient updates clientNetId — that would wipe the found-clients list.
+      bootstrappedRef.current = true
+
       setSelectedClient(client)
+      onClientResolved?.(client)
       setRegistryItems([])
       setExpandedKey(null)
       setKeyboardState('ClientSelection')
@@ -214,11 +226,26 @@ export function NewSaleClientStep({
         void fetchRegister()
       }, 800)
     },
-    [fetchRegister, loadAgreements, loadGroupedDebts, onClientChange, setKeyboardState],
+    [fetchRegister, loadAgreements, loadGroupedDebts, onClientChange, onClientResolved, setKeyboardState],
   )
+
+  // Keep the latest confirmClient and preserved client reachable without making them
+  // bootstrap-effect dependencies: their identity is unstable (inline parent callbacks),
+  // and a parent re-render during the async restore would otherwise cancel the in-flight bootstrap.
+  const confirmClientRef = useRef(confirmClient)
+  const initialClientRef = useRef(initialClient)
+
+  useEffect(() => {
+    confirmClientRef.current = confirmClient
+  }, [confirmClient])
+
+  useEffect(() => {
+    initialClientRef.current = initialClient
+  }, [initialClient])
 
   function unselectClient() {
     setSelectedClient(null)
+    onClientResolved?.(null)
     setGroupedDebts([])
     setAgreements([])
     setSelectedAgreementKey('')
@@ -231,8 +258,10 @@ export function NewSaleClientStep({
   function handleSearchChange(value: string) {
     setQuery(value)
 
+    // Typing in the search field always means the user wants to look up a new client,
+    // even right after one was selected — switch back into search mode and run the query.
     if (keyboardState !== 'ClientSearch') {
-      return
+      setKeyboardState('ClientSearch')
     }
 
     unselectClient()
@@ -306,7 +335,9 @@ export function NewSaleClientStep({
       void runVirtualLoad()
     }
 
-    unselectClient()
+    // Auto-load the scrolled-to client (registry, agreements, debts) and mark it selected
+    // so the user can advance to the products step without an extra confirm.
+    confirmClient(item)
   }
 
   function selectFromBottom() {
@@ -322,7 +353,10 @@ export function NewSaleClientStep({
       carousel.selected && (carousel.selected.Id ?? 0) > 0 ? [...carousel.dataTop, carousel.selected] : carousel.dataTop
 
     setCarousel({ dataBottom: carousel.dataBottom.slice(1), dataTop, selected: item, showDetails: true })
-    unselectClient()
+
+    // Auto-load the scrolled-to client (registry, agreements, debts) and mark it selected
+    // so the user can advance to the products step without an extra confirm.
+    confirmClient(item)
   }
 
   async function runVirtualLoad() {
@@ -367,7 +401,28 @@ export function NewSaleClientStep({
   }
 
   function pickClient(client: Client) {
+    // Re-center the carousel on the picked client so the highlighted center card always
+    // matches the selected client (otherwise clicking a row desyncs it from the arrows).
+    setCarousel((current) => {
+      const all = [...current.dataTop, ...(current.selected ? [current.selected] : []), ...current.dataBottom]
+      const key = String(client.NetUid || client.Id || '')
+      const index = all.findIndex((item) => String(item.NetUid || item.Id || '') === key)
+
+      if (index < 0) {
+        return { ...current, selected: client, showDetails: true }
+      }
+
+      return {
+        dataBottom: all.slice(index + 1),
+        dataTop: all.slice(0, index),
+        selected: client,
+        showDetails: true,
+      }
+    })
     confirmClient(client)
+    // The clicked row unmounts after re-centering, so restore focus to the (hidden) search
+    // input — otherwise focus falls back to the body and arrow-key navigation stops working.
+    focusSearchInput()
   }
 
   function selectAgreement(agreement: ClientAgreement) {
@@ -411,13 +466,60 @@ export function NewSaleClientStep({
     window.requestAnimationFrame(() => searchInputRef.current?.focus())
   }
 
+  // Up/Down must always drive the client carousel on this step — even after a click moves
+  // focus off the search input. A capture-phase document listener gives them top priority,
+  // independent of which element is focused (skipped while one of this step's overlays is open).
+  const arrowNavRef = useRef<(event: KeyboardEvent) => void>(() => {})
+
+  useEffect(() => {
+    arrowNavRef.current = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        return
+      }
+
+      if (
+        editShiftSale ||
+        auditSale ||
+        detailsSale ||
+        mergedSale ||
+        isOrderedProductsOpen ||
+        printState ||
+        isExitConfirmOpen
+      ) {
+        return
+      }
+
+      if (!carousel.dataTop.length && !carousel.dataBottom.length) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (event.key === 'ArrowUp') {
+        selectFromTop()
+      } else {
+        selectFromBottom()
+      }
+
+      if (keyboardState === 'ClientSearch') {
+        setKeyboardState('ClientSelection')
+      }
+    }
+  })
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => arrowNavRef.current(event)
+    document.addEventListener('keydown', listener, true)
+
+    return () => document.removeEventListener('keydown', listener, true)
+  }, [])
+
   useWizardKeyHandler((event: WizardKeyEvent) => {
     switch (event.hotkey) {
       case 'ArrowUp': {
-        if (keyboardState === 'ClientAgreementSelection') {
-          return false
-        }
-
+        // Up/Down always navigate clients — even while selecting an agreement (Left/Right),
+        // so agreement navigation doesn't disable client navigation.
         if (!carousel.dataTop.length && !carousel.dataBottom.length) {
           return false
         }
@@ -431,10 +533,6 @@ export function NewSaleClientStep({
         return true
       }
       case 'ArrowDown': {
-        if (keyboardState === 'ClientAgreementSelection') {
-          return false
-        }
-
         if (!carousel.dataTop.length && !carousel.dataBottom.length) {
           return false
         }
@@ -521,13 +619,17 @@ export function NewSaleClientStep({
   }
 
   function handleDateFromChange(value: string) {
-    setDateFrom(value)
-    void fetchRegister({ from: value })
+    // Clearing the native date picker should fall back to 7 days ago, not an empty range.
+    const nextValue = value || formatLocalDate(getDateDaysAgo(7))
+    setDateFrom(nextValue)
+    void fetchRegister({ from: nextValue })
   }
 
   function handleDateToChange(value: string) {
-    setDateTo(value)
-    void fetchRegister({ to: value })
+    // Clearing the native date picker should fall back to today, not an empty range.
+    const nextValue = value || formatLocalDate(new Date())
+    setDateTo(nextValue)
+    void fetchRegister({ to: nextValue })
   }
 
   function toggleExpand(key: string) {
@@ -724,6 +826,19 @@ export function NewSaleClientStep({
     }
 
     bootstrappedRef.current = true
+
+    // Restore instantly from the client preserved by the parent across step switches.
+    const preserved = initialClientRef.current
+
+    if (preserved && preserved.NetUid === clientNetId && (preserved.Id ?? 0) > 0) {
+      const { bottom, top } = buildWizardClientStacks(preserved)
+
+      setCarousel({ dataBottom: bottom, dataTop: top, selected: preserved, showDetails: true })
+      confirmClientRef.current(preserved)
+
+      return
+    }
+
     let cancelled = false
 
     async function restore(netId: string) {
@@ -754,7 +869,7 @@ export function NewSaleClientStep({
       const { bottom, top } = buildWizardClientStacks(client)
 
       setCarousel({ dataBottom: bottom, dataTop: top, selected: client, showDetails: true })
-      confirmClient(client)
+      confirmClientRef.current(client)
     }
 
     void restore(clientNetId)
@@ -762,7 +877,7 @@ export function NewSaleClientStep({
     return () => {
       cancelled = true
     }
-  }, [clientNetId, confirmClient])
+  }, [clientNetId])
 
   useEffect(
     () => () => {
@@ -798,8 +913,9 @@ export function NewSaleClientStep({
           <WizardClientCarousel
             carousel={carousel}
             hasDebt={Boolean(selectedClient) && groupedDebts.length > 0}
-            hideName={Boolean(selectedClient && (selectedClient.Id ?? 0) > 0)}
+            hideName={false}
             searchInputRef={searchInputRef}
+            searchMode={keyboardState === 'ClientSearch'}
             searchValue={query}
             selectedClientKey={selectedClient ? String(selectedClient.NetUid || selectedClient.Id || '') : ''}
             onPickClient={pickClient}

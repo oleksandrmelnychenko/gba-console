@@ -3,6 +3,7 @@ import { apiRequest } from '../../../shared/api/apiClient'
 import {
   getSaleActForEditingHistoryDocument,
   getSaleActProtocolEditDocument,
+  getSaleById,
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
@@ -93,6 +94,22 @@ describe('sales Ukraine document request contracts', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/get/shifted', { query: { netId: 'sale-net-id' } })
+  })
+
+  it('loads sale by id from the sale statistic envelope', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Sale: {
+        NetUid: 'sale-net-id',
+        Order: { OrderItems: [{ NetUid: 'order-item-1' }] },
+      },
+    })
+
+    await expect(getSaleById('sale-net-id')).resolves.toEqual({
+      NetUid: 'sale-net-id',
+      Order: { OrderItems: [{ NetUid: 'order-item-1' }] },
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/get', { query: { netId: 'sale-net-id' } })
   })
 
   it('posts edit-shift payload to the current shift endpoint', async () => {

@@ -10,6 +10,7 @@ export function WizardClientCarousel({
   hasDebt,
   hideName,
   searchInputRef,
+  searchMode,
   searchValue,
   selectedClientKey,
   onPickClient,
@@ -19,12 +20,14 @@ export function WizardClientCarousel({
   hasDebt: boolean
   hideName: boolean
   searchInputRef: RefObject<HTMLInputElement | null>
+  searchMode: boolean
   searchValue: string
   selectedClientKey: string
   onPickClient: (client: Client) => void
   onSearchChange: (value: string) => void
 }) {
   const { t } = useI18n()
+  const showInput = searchMode || !carousel.selected
 
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -41,7 +44,9 @@ export function WizardClientCarousel({
         </Stack>
       </Box>
 
-      <Box py={6} style={{ flexShrink: 0 }}>
+      <Box py={6} style={{ flexShrink: 0, position: 'relative' }}>
+        {/* Keep the input mounted even while hidden so it retains keyboard focus —
+            otherwise arrow-key navigation stops working in selection mode. */}
         <input
           ref={searchInputRef}
           autoFocus
@@ -54,13 +59,13 @@ export function WizardClientCarousel({
             outline: 'none',
             padding: '6px 4px',
             width: '100%',
+            ...(showInput ? {} : { height: 0, opacity: 0, padding: 0, pointerEvents: 'none', position: 'absolute' }),
           }}
           type="text"
           value={searchValue}
           onChange={(event) => onSearchChange(event.currentTarget.value)}
         />
-
-        {carousel.showDetails && carousel.selected && (
+        {!showInput && carousel.selected && (
           <ClientMiniCard client={carousel.selected} hasDebt={hasDebt} hideName={hideName} />
         )}
       </Box>
@@ -154,15 +159,17 @@ function ClientViewerRow({
 function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt: boolean; hideName: boolean }) {
   const isDebt = hasDebt || (client.ClientInDebts?.length ?? 0) > 0
   const color = isDebt ? 'red.7' : 'violet.7'
+  const borderColor = isDebt ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-violet-5)'
 
   return (
     <Box
-      mt={6}
-      px={6}
-      py={4}
+      px={8}
+      py={6}
       style={{
         background: 'var(--mantine-color-violet-light)',
-        borderRadius: 6,
+        border: `2px solid ${borderColor}`,
+        borderRadius: 8,
+        boxShadow: '0 2px 10px rgba(20, 28, 38, 0.08)',
         minWidth: 0,
       }}
     >

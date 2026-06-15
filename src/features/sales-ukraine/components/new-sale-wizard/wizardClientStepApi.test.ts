@@ -38,9 +38,10 @@ describe('wizard client step API contracts', () => {
     expect(filter.Limit).toBe(10)
     expect(filter.Offset).toBe(20)
 
-    const innerFilter = JSON.parse(filter.Filter) as { FilterItem: { SQL: string }; Value: string }
+    const innerFilter = JSON.parse(filter.Filter) as { FilterItem: { SQL: string; Type?: number }; Value: string }
     expect(innerFilter.Value).toBe('конкорд')
     expect(innerFilter.FilterItem.SQL).toBe('RegionCode.Value/Client.FullName')
+    expect(innerFilter.FilterItem.Type).toBeUndefined()
   })
 
   it('requests the sales register with legacy query params', async () => {

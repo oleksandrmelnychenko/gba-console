@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getCurrentSaleCart, getSaleById } from '../../api/salesUkraineApi'
+import type { Client } from '../../../clients/types'
 import type { SaleDocumentResult, SalesUkraineSale } from '../../types'
 import { NewSaleClientStep } from './NewSaleClientStep'
 import { NewSaleProductsStep } from './NewSaleProductsStep'
@@ -113,6 +114,8 @@ function NewSaleWizardContent({
   const { t } = useI18n()
   const [active, setActive] = useState(0)
   const [state, setState] = useState<NewSaleWizardState>(NEW_SALE_WIZARD_INITIAL)
+  // Preserved across step switches so the client step can restore instantly on remount.
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [review, setReview] = useState<NewSaleReviewValue>(NEW_SALE_REVIEW_INITIAL)
   const [busy, setBusy] = useState(false)
   const [reviewBusy, setReviewBusy] = useState(false)
@@ -377,36 +380,9 @@ function NewSaleWizardContent({
       return
     }
 
+    // Alt+1/2/3 step navigation is handled globally on the document so it works
+    // regardless of which element (or none) currently holds focus.
     if (event.altKey) {
-      if (event.code === 'Digit1') {
-        event.preventDefault()
-        event.stopPropagation()
-
-        if (!shellBusy) {
-          goToClients()
-        }
-      } else if (event.code === 'Digit2') {
-        event.preventDefault()
-        event.stopPropagation()
-
-        if (!shellBusy && canAdvanceToProducts(state)) {
-          void goToProducts()
-        }
-      } else if (event.code === 'Digit3') {
-        event.preventDefault()
-        event.stopPropagation()
-
-        if (!shellBusy && canAdvanceToProducts(state)) {
-          if (canAdvanceToReview(state)) {
-            goToReview()
-          } else {
-            notifications.show({ color: 'red', message: t('Потрібно створити рахунок, або вибрати рахунок') })
-          }
-        }
-      } else {
-        event.stopPropagation()
-      }
-
       return
     }
 
@@ -430,6 +406,49 @@ function NewSaleWizardContent({
       void handleNext()
     }
   }
+
+  // Keep the latest shortcut handler in a ref so the document listener (registered once)
+  // always runs against fresh state without re-binding on every render.
+  const altNavigationRef = useRef<(event: KeyboardEvent) => void>(() => {})
+
+  useEffect(() => {
+    altNavigationRef.current = (event: KeyboardEvent) => {
+      if (reassignOpen || !event.altKey) {
+        return
+      }
+
+      if (event.code === 'Digit1') {
+        event.preventDefault()
+
+        if (!shellBusy) {
+          goToClients()
+        }
+      } else if (event.code === 'Digit2') {
+        event.preventDefault()
+
+        if (!shellBusy && canAdvanceToProducts(state)) {
+          void goToProducts()
+        }
+      } else if (event.code === 'Digit3') {
+        event.preventDefault()
+
+        if (!shellBusy && canAdvanceToProducts(state)) {
+          if (canAdvanceToReview(state)) {
+            goToReview()
+          } else {
+            notifications.show({ color: 'red', message: t('Потрібно створити рахунок, або вибрати рахунок') })
+          }
+        }
+      }
+    }
+  })
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => altNavigationRef.current(event)
+    document.addEventListener('keydown', listener)
+
+    return () => document.removeEventListener('keydown', listener)
+  }, [])
 
   return (
     <Box
@@ -459,6 +478,8 @@ function NewSaleWizardContent({
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
+            initialClient={selectedClient}
+            onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {
               clearWizardSplitOrderItems()
               clearWizardMergedSale()

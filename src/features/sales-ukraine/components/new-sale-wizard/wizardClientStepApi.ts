@@ -44,7 +44,6 @@ export async function searchWizardClients(value: string, limit = 20, offset = 0)
             Name: '',
             SQL: 'RegionCode.Value/Client.FullName',
             Description: '',
-            Type: 0,
             FilterOperationItem: {
               Name: '',
               SQL: 'Contains',

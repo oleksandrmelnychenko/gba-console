@@ -76,7 +76,6 @@ import {
   getSaleById,
   getSalesUkraine,
   getSalesUkraineOrganizations,
-  searchSalesUkraineClients,
   unlockSale,
   updateSale,
 } from '../api/salesUkraineApi'
@@ -89,13 +88,13 @@ import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleExpandContent } from '../components/SaleExpandContent'
 import { SaleDocumentsMenu } from '../components/SaleDocumentsMenu'
+import { SalesClientSearch } from '../components/SalesClientSearch'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
   SALES_UKRAINE_UNLOCK_PERMISSION,
   SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION,
 } from '../permissions'
 import type {
-  SalesUkraineClientOption,
   SalesUkraineFilters,
   SalesUkraineOrderItem,
   SalesUkraineOrganizationOption,
@@ -220,8 +219,6 @@ export function SalesUkrainePage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [organizations, setOrganizations] = useValueState<SalesUkraineOrganizationOption[]>([])
-  const [clientQuery, setClientQuery] = useValueState('')
-  const [clientOptions, setClientOptions] = useValueState<SalesUkraineClientOption[]>([])
   const [organisationQuery, setOrganisationQuery] = useState('')
   const [confirmState, setConfirmState] = useValueState<ConfirmState | null>(null)
   const [isConfirming, setConfirming] = useValueState(false)
@@ -455,34 +452,6 @@ export function SalesUkrainePage() {
   }, [setOrganizations])
 
   useEffect(() => {
-    const query = clientQuery.trim()
-
-    if (query.length < 2) {
-      return
-    }
-
-    let cancelled = false
-    const handle = setTimeout(async () => {
-      try {
-        const next = await searchSalesUkraineClients(query)
-
-        if (!cancelled) {
-          setClientOptions(next)
-        }
-      } catch {
-        if (!cancelled) {
-          setClientOptions([])
-        }
-      }
-    }, 300)
-
-    return () => {
-      cancelled = true
-      clearTimeout(handle)
-    }
-  }, [clientQuery, setClientOptions])
-
-  useEffect(() => {
     let cancelled = false
 
     async function loadSales() {
@@ -533,7 +502,6 @@ export function SalesUkrainePage() {
     setPage(1)
     setFilterDraft(initialDraft)
     setActiveDraft(initialDraft)
-    setClientQuery('')
   }
 
   function requestUnlock(sale: SalesUkraineSale) {
@@ -617,10 +585,6 @@ export function SalesUkrainePage() {
     return query ? organizationOptions.filter((option) => option.label.toLowerCase().includes(query)) : organizationOptions
   }, [organisationQuery, organizationOptions])
 
-  const clientSelectData = useMemo(
-    () => clientOptions.map((client) => ({ label: getClientOptionLabel(client), value: String(client.Id ?? client.NetUid ?? '') })),
-    [clientOptions],
-  )
   const dateRangeLabel = useMemo(() => {
     if (filterDraft.from && filterDraft.to) {
       return `${formatDateRangeFilterValue(filterDraft.from)} - ${formatDateRangeFilterValue(filterDraft.to)}`
@@ -864,21 +828,12 @@ export function SalesUkrainePage() {
                   )}
                 </div>
               </div>
-              <Select
+              <SalesClientSearch
                 className="sales-filter-control sales-filter-client"
-                clearable
-                comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
-                data={clientSelectData}
                 label={t('Клієнт')}
-                nothingFoundMessage={clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')}
                 placeholder={t('Пошук клієнта')}
-                scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
-                searchable
-                searchValue={clientQuery}
-                size="sm"
-                value={filterDraft.clientId || null}
-                onChange={(value) => applyFilters({ ...filterDraft, clientId: value || '' })}
-                onSearchChange={setClientQuery}
+                value={filterDraft.clientId}
+                onChange={(clientId) => applyFilters({ ...filterDraft, clientId })}
               />
               <Checkbox
                 checked={filterDraft.forEcommerce}
@@ -1147,7 +1102,15 @@ function SaleGridRow({
       tabIndex={0}
       aria-label={t('Відкрити продаж')}
       onClick={(event) => {
-        if (!(event.target as HTMLElement).closest('[data-row-stop]')) {
+        const target = event.target as HTMLElement
+
+        // Ignore clicks coming from portaled content (menus, modals) that React bubbles
+        // through the component tree even though they live outside the row in the DOM.
+        if (!event.currentTarget.contains(target)) {
+          return
+        }
+
+        if (!target.closest('[data-row-stop]')) {
           openSale()
         }
       }}
@@ -1676,15 +1639,6 @@ function getSaleClientDisplayName(sale: SalesUkraineSale): string {
   const rootName = root.FullName?.trim() || [root.LastName, root.FirstName].filter(Boolean).join(' ').trim()
 
   return rootName ? `${rootName} (${baseName})` : baseName
-}
-
-function getClientOptionLabel(client: SalesUkraineClientOption): string {
-  return (
-    client.FullName?.trim()
-    || [client.LastName, client.FirstName, client.MiddleName].filter(Boolean).join(' ').trim()
-    || client.Name?.trim()
-    || ''
-  )
 }
 
 function getSaleUserName(sale: SalesUkraineSale): string {

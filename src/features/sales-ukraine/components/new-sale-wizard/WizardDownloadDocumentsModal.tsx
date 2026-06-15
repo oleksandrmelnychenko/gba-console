@@ -1,10 +1,10 @@
-import { Anchor, Button, Divider, Group, Stack, Text } from '@mantine/core'
-import { IconFileExcel, IconFileTypePdf } from '@tabler/icons-react'
+import { Button, Group, Stack, Text } from '@mantine/core'
 import { UserRoleType } from '../../../../shared/auth/types'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useAuth } from '../../../auth/useAuth'
 import type { SaleDocumentResult } from '../../types'
+import { SaleDocumentDownloads } from '../SaleDocumentDownloads'
 
 const INVOICE_DOCUMENT_ROLES: ReadonlyArray<UserRoleType> = [
   UserRoleType.GBA,
@@ -47,32 +47,15 @@ export function WizardDownloadDocumentsModal({
   return (
     <AppModal centered opened={Boolean(result)} size="sm" title={t('Документи')} onClose={onClose}>
       <Stack gap="sm">
-        {documents.map((document, index) => (
-          <Stack key={`${document.label}-${index}`} gap="xs">
-            {index > 0 && <Divider />}
-            <Text fw={600} size="sm">
-              {document.label}
-            </Text>
-            {document.excelUrl && (
-              <Anchor href={document.excelUrl} rel="noopener noreferrer" target="_blank">
-                <Group gap="xs">
-                  <IconFileExcel size={18} />
-                  <Text>Excel</Text>
-                </Group>
-              </Anchor>
-            )}
-            {document.pdfUrl && (
-              <Anchor href={document.pdfUrl} rel="noopener noreferrer" target="_blank">
-                <Group gap="xs">
-                  <IconFileTypePdf size={18} />
-                  <Text>Pdf</Text>
-                </Group>
-              </Anchor>
-            )}
-          </Stack>
-        ))}
-        <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>
+        {documents.length === 0 ? (
+          <Text c="dimmed" size="sm">
+            {t('Документи недоступні')}
+          </Text>
+        ) : (
+          <SaleDocumentDownloads documents={documents} />
+        )}
+        <Group justify="flex-end" mt="xs">
+          <Button color="violet" variant="subtle" onClick={onClose}>
             {t('Закрити')}
           </Button>
         </Group>

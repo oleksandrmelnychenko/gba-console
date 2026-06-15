@@ -1,12 +1,13 @@
-import { ActionIcon, Anchor, Button, Divider, Group, Menu, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Group, Menu, Stack, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFileExcel, IconFileText, IconFileTypePdf } from '@tabler/icons-react'
+import { IconFileText } from '@tabler/icons-react'
 import { useMemo } from 'react'
 import { useAuth } from '../../auth/useAuth'
 import { UserRoleType } from '../../../shared/auth/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { SaleDocumentDownloads } from './SaleDocumentDownloads'
 import {
   getSaleActForEditingHistoryDocument,
   getSaleActProtocolEditDocument,
@@ -102,41 +103,14 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
         centered
         opened={Boolean(resultState)}
         size="sm"
-        title={resultState?.label || t('Документи')}
+        title={t('Документи')}
         onClose={() => setResultState(null)}
       >
         {resultState && (
           <Stack gap="sm">
-            {resultState.documents.map((document, index) => (
-              <Stack key={`${document.label}-${index}`} gap="xs">
-                {resultState.documents.length > 1 && (
-                  <>
-                    {index > 0 && <Divider />}
-                    <Text fw={600} size="sm">
-                      {document.label}
-                    </Text>
-                  </>
-                )}
-                {document.pdfUrl && (
-                  <Anchor href={document.pdfUrl} target="_blank" rel="noopener noreferrer">
-                    <Group gap="xs">
-                      <IconFileTypePdf size={18} />
-                      <Text>{t('Відкрити PDF')}</Text>
-                    </Group>
-                  </Anchor>
-                )}
-                {document.excelUrl && (
-                  <Anchor href={document.excelUrl} target="_blank" rel="noopener noreferrer">
-                    <Group gap="xs">
-                      <IconFileExcel size={18} />
-                      <Text>{t('Відкрити Excel')}</Text>
-                    </Group>
-                  </Anchor>
-                )}
-              </Stack>
-            ))}
-            <Group justify="flex-end">
-              <Button variant="subtle" onClick={() => setResultState(null)}>
+            <SaleDocumentDownloads documents={resultState.documents} />
+            <Group justify="flex-end" mt="xs">
+              <Button color="violet" variant="subtle" onClick={() => setResultState(null)}>
                 {t('Закрити')}
               </Button>
             </Group>

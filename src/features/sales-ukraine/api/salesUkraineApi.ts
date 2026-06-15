@@ -108,17 +108,7 @@ export async function getShiftedSaleById(netId: string): Promise<SalesUkraineSal
     query: { netId },
   })
 
-  if (!result || typeof result !== 'object' || Array.isArray(result)) {
-    return null
-  }
-
-  const sale = (result as { Sale?: unknown }).Sale
-
-  if (sale && typeof sale === 'object' && !Array.isArray(sale)) {
-    return sale as SalesUkraineSale
-  }
-
-  return result as SalesUkraineSale
+  return normalizeSale(result)
 }
 
 export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
@@ -126,7 +116,7 @@ export async function getCurrentSaleCart(clientAgreementNetId: string): Promise<
     query: { netId: clientAgreementNetId },
   })
 
-  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+  return normalizeSale(result)
 }
 
 export type SaleSubmitResult = {
@@ -218,7 +208,7 @@ export async function getMergedSales(saleNetId: string): Promise<SalesUkraineSal
     query: { netId: saleNetId },
   })
 
-  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+  return normalizeSale(result)
 }
 
 export async function getCurrentUnmergedSale(clientAgreementNetId: string): Promise<SalesUkraineSale | null> {
@@ -226,7 +216,7 @@ export async function getCurrentUnmergedSale(clientAgreementNetId: string): Prom
     query: { netId: clientAgreementNetId },
   })
 
-  return result && typeof result === 'object' ? (result as SalesUkraineSale) : null
+  return normalizeSale(result)
 }
 
 export async function updateMergedSale(sale: SalesUkraineSale): Promise<void> {
@@ -507,6 +497,10 @@ function toSecureUrl(url: string | null): string | null {
     return null
   }
 
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url)) {
+    return url
+  }
+
   return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
 }
 
@@ -540,6 +534,23 @@ function normalizeArray(result: unknown): unknown[] {
   }
 
   return []
+}
+
+function normalizeSale(result: unknown): SalesUkraineSale | null {
+  const parsed = typeof result === 'string' ? safeParse(result) : result
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return null
+  }
+
+  const record = parsed as Record<string, unknown>
+  const sale = record.Sale
+
+  if (sale && typeof sale === 'object' && !Array.isArray(sale)) {
+    return sale as SalesUkraineSale
+  }
+
+  return record as SalesUkraineSale
 }
 
 function safeParse(value: string): unknown {

@@ -136,7 +136,7 @@ export function NewSaleProductsStep({
   const { hasPermission, user } = useAuth()
   const keyboard = useWizardKeyboard(1)
 
-  const [searchMode, setSearchMode] = useState('4')
+  const [searchMode, setSearchMode] = useState('5')
   const [sortMode, setSortMode] = useState('2')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<WizardSaleProduct[]>([])
