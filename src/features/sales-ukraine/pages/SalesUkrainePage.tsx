@@ -922,43 +922,55 @@ export function SalesUkrainePage() {
             ) : sales.length === 0 ? (
               <div className="sales-grid-state">{t('Продажів не знайдено')}</div>
             ) : (
-              sales.map((sale, index) => {
-                const key = String(sale.NetUid || sale.Id || index)
-                const canExpand = getOrderItemCount(sale) > 0
-                const isExpanded = expandedKeys.has(key)
+              <>
+                <div className="sales-grid-head">
+                  <span>{t('Продаж / клієнт')}</span>
+                  <span>{t('Сума')}</span>
+                  <span>{t('Дод. сума')}</span>
+                  <span>{t('ПДВ')}</span>
+                  <span>{t('Поз.')}</span>
+                  <span>{t('Знижка')}</span>
+                  <span>{t('Документи')}</span>
+                  <span>{t('Статус')}</span>
+                </div>
+                {sales.map((sale, index) => {
+                  const key = String(sale.NetUid || sale.Id || index)
+                  const canExpand = getOrderItemCount(sale) > 0
+                  const isExpanded = expandedKeys.has(key)
 
-                return (
-                  <Fragment key={key}>
-                    <SaleGridRow
-                      sale={sale}
-                      canEditSale={canEditSale}
-                      canUnlock={canUnlock}
-                      canWillNotShip={canWillNotShip}
-                      isAdmin={isAdmin}
-                      canExpand={canExpand}
-                      isExpanded={isExpanded}
-                      onToggleExpand={() => toggleExpand(key)}
-                      onOpenSale={setSelectedSale}
-                      onOpenEditor={setEditorSale}
-                      onOpenEditShift={setEditShiftSale}
-                      onOpenDetails={setDetailsSale}
-                      onOpenConsignment={setConsignmentSale}
-                      onOpenAudit={openAudit}
-                      onUnlock={requestUnlock}
-                      onWillNotShip={requestWillNotShip}
-                      onOpenDiscount={(target) => setDiscountTarget({ sale: target })}
-                    />
-                    {isExpanded && (
-                      <div className="sales-grid-expand">
-                        <SaleExpandContent
-                          sale={sale}
-                          onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
-                        />
-                      </div>
-                    )}
-                  </Fragment>
-                )
-              })
+                  return (
+                    <Fragment key={key}>
+                      <SaleGridRow
+                        sale={sale}
+                        canEditSale={canEditSale}
+                        canUnlock={canUnlock}
+                        canWillNotShip={canWillNotShip}
+                        isAdmin={isAdmin}
+                        canExpand={canExpand}
+                        isExpanded={isExpanded}
+                        onToggleExpand={() => toggleExpand(key)}
+                        onOpenSale={setSelectedSale}
+                        onOpenEditor={setEditorSale}
+                        onOpenEditShift={setEditShiftSale}
+                        onOpenDetails={setDetailsSale}
+                        onOpenConsignment={setConsignmentSale}
+                        onOpenAudit={openAudit}
+                        onUnlock={requestUnlock}
+                        onWillNotShip={requestWillNotShip}
+                        onOpenDiscount={(target) => setDiscountTarget({ sale: target })}
+                      />
+                      {isExpanded && (
+                        <div className="sales-grid-expand">
+                          <SaleExpandContent
+                            sale={sale}
+                            onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
+                          />
+                        </div>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </>
             )}
           </div>
         </Stack>
@@ -1152,7 +1164,7 @@ function SaleGridRow({
               </ActionIcon>
             </Tooltip>
           )}
-          {showBang && (
+          {showBang ? (
             <Tooltip label={t('Замовлення не буде відвантажено')}>
               {bangClickable ? (
                 <button
@@ -1171,6 +1183,8 @@ function SaleGridRow({
                 </span>
               )}
             </Tooltip>
+          ) : (
+            <span className="sg-bang sg-bang-placeholder" aria-hidden="true" />
           )}
           {canExpand && (
             <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>

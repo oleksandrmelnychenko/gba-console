@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   Group,
+  Loader,
   Menu,
   Pagination,
   Select,
@@ -21,13 +22,19 @@ import {
   IconAlertCircle,
   IconAlertTriangle,
   IconBrandEdge,
+  IconChevronDown,
+  IconChevronRight,
   IconDots,
   IconExternalLink,
   IconFileInvoice,
   IconEye,
   IconHistory,
   IconInfoCircle,
+  IconLock,
   IconLockOpen,
+  IconPencil,
+  IconPercentage,
+  IconPrinter,
   IconReceipt,
   IconReceipt2,
   IconRefresh,
@@ -37,6 +44,7 @@ import {
   IconTruckDelivery,
 } from '@tabler/icons-react'
 import {
+  Fragment,
   type ReactNode,
   useCallback,
   useEffect,
@@ -54,8 +62,7 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { AppModal } from '../../../shared/ui/AppModal'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import '../../sales-ukraine/pages/sales-grid.css'
 import '../../sales-ukraine/pages/sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
 import { unlockSale, updateSale } from '../../sales-ukraine/api/salesUkraineApi'
@@ -64,6 +71,7 @@ import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDra
 import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountModal'
 import { SaleDocumentsMenu } from '../../sales-ukraine/components/SaleDocumentsMenu'
 import { SaleEditorDrawer } from '../../sales-ukraine/components/SaleEditorDrawer'
+import { SaleExpandContent } from '../../sales-ukraine/components/SaleExpandContent'
 import {
   SALES_UKRAINE_EDIT_PERMISSION,
   SALES_UKRAINE_UNLOCK_PERMISSION,
@@ -115,14 +123,6 @@ type FilterDraft = {
 
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 const DEFAULT_PAGE_SIZE = 20
-
-const SALES_ONLINE_SHOP_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['date', 'number', 'client'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 const STATUS_OPTIONS: Array<{ label: string; value: SalesOnlineShopStatusFilter }> = [
   { value: 'all', label: 'Усі' },
@@ -193,6 +193,7 @@ export function SalesOnlineShopPage() {
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
   const [sales, setSales] = useValueState<SalesOnlineShopSale[]>([])
+  const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [selectedSale, setSelectedSale] = useValueState<SalesOnlineShopSale | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -225,6 +226,23 @@ export function SalesOnlineShopPage() {
       value: activeDraft.value,
     }),
     [activeDraft, offset, pageSize],
+  )
+
+  const toggleExpand = useCallback(
+    (key: string) => {
+      setExpandedKeys((current) => {
+        const next = new Set(current)
+
+        if (next.has(key)) {
+          next.delete(key)
+        } else {
+          next.add(key)
+        }
+
+        return next
+      })
+    },
+    [setExpandedKeys],
   )
 
   const openAudit = useCallback(
@@ -313,21 +331,6 @@ export function SalesOnlineShopPage() {
     [setConfirmState, t],
   )
 
-  const columns = useSalesOnlineShopColumns({
-    canEditSale,
-    canUnlock,
-    canWillNotShip,
-    isAdmin,
-    onOpenAudit: openAudit,
-    onOpenConsignment: setConsignmentSale,
-    onOpenDetails: setDetailsSale,
-    onOpenDiscount: setDiscountSale,
-    onOpenEditor: setEditorSale,
-    onOpenSale: setSelectedSale,
-    onUnlock: requestUnlock,
-    onWillNotShip: requestWillNotShip,
-  })
-
   async function runConfirm() {
     if (!confirmState) {
       return
@@ -399,15 +402,6 @@ export function SalesOnlineShopPage() {
 
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
-
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {activeDraft.onlyMine ? t('тільки мої') : ''}
-      </Text>
-    ),
-    [activeDraft.onlyMine, t],
-  )
 
   const toolbarRight = useMemo(
     () => (
@@ -497,11 +491,21 @@ export function SalesOnlineShopPage() {
   }
 
   return (
-    <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack className="sales-ukraine-page" gap="lg">
+      <Card className="sales-ukraine-card" withBorder radius="md" padding={0}>
+        <Stack className="sales-ukraine-content" gap={0}>
+          <div className="sales-filter-bar">
+            <div className="sales-filter-row sales-online-filter-row">
+              <TextInput
+                className="sales-filter-search"
+                label={t('Пошук')}
+                leftSection={<IconSearch size={16} />}
+                placeholder={t('Товар або номер продажу')}
+                value={filterDraft.value}
+                onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
+              />
             <TextInput
+              className="sales-filter-control"
               label={t('З')}
               max={filterDraft.to || undefined}
               type="date"
@@ -509,6 +513,7 @@ export function SalesOnlineShopPage() {
               onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
             />
             <TextInput
+              className="sales-filter-control"
               label={t('По')}
               min={filterDraft.from || undefined}
               type="date"
@@ -517,10 +522,10 @@ export function SalesOnlineShopPage() {
             />
             <Select
               allowDeselect={false}
+              className="sales-filter-control"
               data={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
               label={t('Статус')}
               value={filterDraft.status}
-              w={190}
               onChange={(value) =>
                 applyFilters({
                   ...filterDraft,
@@ -530,13 +535,13 @@ export function SalesOnlineShopPage() {
             />
             <Select
               allowDeselect={false}
+              className="sales-filter-control"
               data={[
                 { value: 'All', label: t('Усі менеджери') },
                 { value: 'Self', label: t('Тільки мої') },
               ]}
               label={t('Менеджер')}
               value={filterDraft.onlyMine ? 'Self' : 'All'}
-              w={150}
               onChange={(value) =>
                 applyFilters({
                   ...filterDraft,
@@ -544,46 +549,94 @@ export function SalesOnlineShopPage() {
                 })
               }
             />
-            <TextInput
-              flex={1}
-              label={t('Пошук')}
-              leftSection={<IconSearch size={16} />}
-              placeholder={t('Товар або номер продажу')}
-              value={filterDraft.value}
-              onChange={(event) => applyFilters({ ...filterDraft, value: event.currentTarget.value })}
-            />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
+              <div className="sales-filter-actions">
+                <Tooltip label={t('Скинути')}>
+                  <ActionIcon
+                    aria-label={t('Скинути')}
+                    className="sales-filter-reset"
+                    color="gray"
+                    size={34}
+                    variant="light"
+                    onClick={resetFilters}
+                  >
+                    <IconRestore size={17} />
+                  </ActionIcon>
+                </Tooltip>
+                <Box className="sales-filter-toolbar">{toolbarRight}</Box>
+              </div>
+            </div>
+          </div>
 
           {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            <Alert className="sales-grid-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>
           )}
 
-          <DataTable
-            columns={columns}
-            data={sales}
-            defaultLayout={SALES_ONLINE_SHOP_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Продажів не знайдено')}
-            getRowId={(sale, index) => String(sale.NetUid || sale.Id || index)}
-            isLoading={isLoading}
-            layoutVersion="sales-online-shop-table-1"
-            loadingText={t('Завантаження продажів')}
-            maxHeight="calc(100vh - 340px)"
-            minWidth={1670}
-            tableId="sales-online-shop"
-            toolbarLeft={toolbarLeft}
-            toolbarRight={toolbarRight}
-            onRowClick={setSelectedSale}
-          />
+          <div className="sales-grid">
+            {isLoading ? (
+              <div className="sales-grid-state">
+                <Group justify="center" gap="xs">
+                  <Loader size="sm" />
+                  {t('Завантаження продажів')}
+                </Group>
+              </div>
+            ) : sales.length === 0 ? (
+              <div className="sales-grid-state">{t('Продажів не знайдено')}</div>
+            ) : (
+              <>
+                <div className="sales-grid-head">
+                  <span>{t('Продаж / клієнт')}</span>
+                  <span>{t('Сума')}</span>
+                  <span>{t('Дод. сума')}</span>
+                  <span>{t('ПДВ')}</span>
+                  <span>{t('Поз.')}</span>
+                  <span>{t('Знижка')}</span>
+                  <span>{t('Документи')}</span>
+                  <span>{t('Статус')}</span>
+                </div>
+                {sales.map((sale, index) => {
+                  const key = String(sale.NetUid || sale.Id || index)
+                  const canExpand = getOrderItemCount(sale) > 0
+                  const isExpanded = expandedKeys.has(key)
+
+                  return (
+                    <Fragment key={key}>
+                      <SalesOnlineShopGridRow
+                        sale={sale}
+                        canEditSale={canEditSale}
+                        canUnlock={canUnlock}
+                        canWillNotShip={canWillNotShip}
+                        isAdmin={isAdmin}
+                        canExpand={canExpand}
+                        isExpanded={isExpanded}
+                        onToggleExpand={() => toggleExpand(key)}
+                        onOpenSale={setSelectedSale}
+                        onOpenEditor={setEditorSale}
+                        onOpenDetails={setDetailsSale}
+                        onOpenConsignment={setConsignmentSale}
+                        onOpenAudit={openAudit}
+                        onUnlock={requestUnlock}
+                        onWillNotShip={requestWillNotShip}
+                        onOpenDiscount={setDiscountSale}
+                      />
+                      {isExpanded && (
+                        <div className="sales-grid-expand">
+                          <SaleExpandContent
+                            sale={asUkraineSale(sale)}
+                            onOpenItemDiscount={(targetSale) => setDiscountSale(targetSale as unknown as SalesOnlineShopSale)}
+                          />
+                        </div>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </>
+            )}
+          </div>
 
           {totalPages > 1 && (
-            <Group justify="flex-end">
+            <Group className="sales-online-pagination" justify="flex-end">
               <Pagination total={totalPages} value={page} onChange={setPage} />
             </Group>
           )}
@@ -668,307 +721,299 @@ export function SalesOnlineShopPage() {
   )
 }
 
-function useSalesOnlineShopColumns({
-  canEditSale,
-  canUnlock,
-  canWillNotShip,
-  isAdmin,
-  onOpenAudit,
-  onOpenConsignment,
-  onOpenDetails,
-  onOpenDiscount,
-  onOpenEditor,
-  onOpenSale,
-  onUnlock,
-  onWillNotShip,
-}: {
+type SalesOnlineShopGridRowProps = {
+  sale: SalesOnlineShopSale
   canEditSale: boolean
   canUnlock: boolean
   canWillNotShip: boolean
   isAdmin: boolean
-  onOpenAudit: (sale: SalesOnlineShopSale) => void
-  onOpenConsignment: (sale: SalesOnlineShopSale) => void
-  onOpenDetails: (sale: SalesOnlineShopSale) => void
-  onOpenDiscount: (sale: SalesOnlineShopSale) => void
-  onOpenEditor: (sale: SalesOnlineShopSale) => void
+  canExpand: boolean
+  isExpanded: boolean
+  onToggleExpand: () => void
   onOpenSale: (sale: SalesOnlineShopSale) => void
+  onOpenEditor: (sale: SalesOnlineShopSale) => void
+  onOpenDetails: (sale: SalesOnlineShopSale) => void
+  onOpenConsignment: (sale: SalesOnlineShopSale) => void
+  onOpenAudit: (sale: SalesOnlineShopSale) => void
   onUnlock: (sale: SalesOnlineShopSale) => void
   onWillNotShip: (sale: SalesOnlineShopSale) => void
-}) {
+  onOpenDiscount: (sale: SalesOnlineShopSale) => void
+}
+
+function SalesOnlineShopGridRow({
+  sale,
+  canEditSale,
+  canUnlock,
+  canWillNotShip,
+  isAdmin,
+  canExpand,
+  isExpanded,
+  onToggleExpand,
+  onOpenSale,
+  onOpenEditor,
+  onOpenDetails,
+  onOpenConsignment,
+  onOpenAudit,
+  onUnlock,
+  onWillNotShip,
+  onOpenDiscount,
+}: SalesOnlineShopGridRowProps) {
   const { t } = useI18n()
+  const date = getSaleDate(sale)
+  const clientName = getSaleClientDisplayName(sale)
+  const retailClientLine = getRetailClientLine(sale)
+  const manager = getSaleUserName(sale)
+  const contract = sale.ClientAgreement?.Agreement?.Name
+  const transporter = getSaleTransporterName(sale)
+  const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
+  const vat = getNumber(sale.Order?.TotalVat)
+  const positions = getOrderItemCount(sale)
+  const paymentColor = getPaymentStatusColor(sale)
+  const lifecycleStatusKey = getSaleStatusKey(sale)
+  const isPackaging = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+  const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
+  const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
+  const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const showUnlock = canUnlock && Boolean(sale.IsLocked)
+  const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
+  const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
+  const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
+  const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  const openSale = () => onOpenSale(sale)
 
-  return useMemo<DataTableColumn<SalesOnlineShopSale>[]>(
-    () => [
-      {
-        id: 'date',
-        header: 'Дата',
-        width: 150,
-        minWidth: 132,
-        accessor: (sale) => getSaleTime(sale),
-        cell: (sale) => (
-          <>
-            <Text fw={600}>{displayValue(formatDate(getSaleDate(sale)))}</Text>
-            <Text size="xs" c="dimmed">
-              {displayValue(formatTime(getSaleDate(sale)))}
-            </Text>
-          </>
-        ),
-      },
-      {
-        id: 'number',
-        header: 'Номер',
-        width: 150,
-        minWidth: 132,
-        accessor: (sale) => sale.SaleNumber?.Value || sale.NetUid,
-        cell: (sale) => (
-          <Group gap={5} wrap="nowrap">
-            <Tooltip label={t('Інтернет-магазин')}>
-              <Box c="gray.6" style={{ display: 'inline-flex' }}>
-                <IconBrandEdge size={14} />
-              </Box>
+  return (
+    <div
+      className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}`}
+      role="button"
+      tabIndex={0}
+      aria-label={t('Відкрити продаж')}
+      onClick={(event) => {
+        if (!(event.target as HTMLElement).closest('[data-row-stop]')) {
+          openSale()
+        }
+      }}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+          event.preventDefault()
+          openSale()
+        }
+      }}
+    >
+      <div className="sg-client">
+        <div className="sg-client-actions" data-row-stop="true">
+          {showEdit && (
+            <Tooltip label={t('Відкрити продаж')}>
+              <ActionIcon aria-label={t('Відкрити продаж')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
+                <IconPencil size={15} />
+              </ActionIcon>
             </Tooltip>
-            <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
-          </Group>
-        ),
-      },
-      {
-        id: 'client',
-        header: 'Клієнт',
-        width: 310,
-        minWidth: 240,
-        accessor: getSaleClientName,
-        cell: (sale) => (
-          <>
-            <Text fw={600}>{displayValue(getSaleClientName(sale))}</Text>
-            <Group gap={4} wrap="nowrap">
-              <Text size="xs" c="dimmed">
-                {displayValue(getRetailClientLine(sale))}
-              </Text>
-              {sale.MisplacedSaleId && (
-                <Tooltip label={t('Часткова продажа')}>
-                  <Box c="red" style={{ display: 'inline-flex' }}>
-                    <IconInfoCircle size={14} />
-                  </Box>
-                </Tooltip>
+          )}
+          {showBang ? (
+            <Tooltip label={t('Замовлення не буде відвантажено')}>
+              {bangClickable ? (
+                <button
+                  className="sg-bang"
+                  data-clickable="true"
+                  type="button"
+                  aria-label={t('Замовлення не буде відвантажено')}
+                  style={{ opacity: 1 }}
+                  onClick={() => onWillNotShip(sale)}
+                >
+                  !
+                </button>
+              ) : (
+                <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
+                  !
+                </span>
               )}
-            </Group>
-          </>
-        ),
-      },
-      {
-        id: 'status',
-        header: 'Статус',
-        width: 154,
-        minWidth: 136,
-        accessor: getSaleStatusKey,
-        cell: (sale) => {
-          const statusKey = getSaleStatusKey(sale)
+            </Tooltip>
+          ) : (
+            <span className="sg-bang sg-bang-placeholder" aria-hidden="true" />
+          )}
+          {canExpand && (
+            <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
+              <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
+                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </div>
 
-          return (
-            <Badge color={STATUS_COLORS[statusKey] || 'gray'} variant="light">
-              {getSaleStatusLabel(sale)}
-            </Badge>
-          )
-        },
-      },
-      {
-        id: 'payment',
-        header: 'Оплата',
-        width: 128,
-        minWidth: 116,
-        accessor: getPaymentStatusLabel,
-        cell: (sale) => {
-          const color = getPaymentStatusColor(sale)
+        <div className="sg-client-body">
+          <div className="sg-client-name">
+            {sale.MisplacedSaleId && (
+              <Tooltip label={t('Часткова продажа')}>
+                <Box c="red" style={{ display: 'inline-flex' }}>
+                  <IconInfoCircle size={14} />
+                </Box>
+              </Tooltip>
+            )}
+            <Tooltip label={clientName} disabled={!clientName} multiline maw={360}>
+              <span className="sg-client-name-text">{displayValue(clientName)}</span>
+            </Tooltip>
+            {sale.IsVatSale && (
+              <Badge color="blue" size="xs" variant="light">
+                {t('ПДВ')}
+              </Badge>
+            )}
+            {sale.IsDevelopment && (
+              <Badge color="grape" size="xs" variant="light">
+                {t('Протокол')}
+              </Badge>
+            )}
+          </div>
 
-          return (
-            <Text c={color} fw={color ? 600 : undefined}>
-              {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
-            </Text>
-          )
-        },
-      },
-      {
-        id: 'responsible',
-        header: 'Менеджер',
-        width: 180,
-        minWidth: 150,
-        accessor: getSaleUserName,
-        cell: (sale) => displayValue(getSaleUserName(sale)),
-      },
-      {
-        id: 'amountLocal',
-        header: 'Сума',
-        width: 132,
-        minWidth: 116,
-        align: 'right',
-        accessor: (sale) => getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount),
-        cell: (sale) => (
-          <Text c={isUnpaidSale(sale) ? 'red' : undefined} fw={600}>
-            {formatAmount(getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount))}
-          </Text>
-        ),
-      },
-      {
-        id: 'currency',
-        header: 'Валюта',
-        width: 100,
-        minWidth: 88,
-        accessor: getSaleCurrencyCode,
-        cell: (sale) => displayValue(getSaleCurrencyCode(sale)),
-      },
-      {
-        id: 'discount',
-        header: 'Знижка',
-        width: 110,
-        minWidth: 96,
-        align: 'right',
-        accessor: (sale) => getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount),
-        cell: (sale) => {
-          const discount = getNumber(sale.Order?.OrderItems?.[0]?.OneTimeDiscount)
-          const text = discount ? `${amountFormatter.format(discount)} %` : '—'
+          <div className="sg-meta">
+            <SaleSourceIcon sale={sale} />
+            <span style={{ fontWeight: 600 }}>{displayValue(sale.SaleNumber?.Value)}</span>
+            {date && (
+              <>
+                <span className="sg-meta-sep">·</span>
+                <span>
+                  {formatDate(date)} {formatTime(date)}
+                </span>
+              </>
+            )}
+            {manager && (
+              <>
+                <span className="sg-meta-sep">·</span>
+                <span>{manager}</span>
+              </>
+            )}
+            {retailClientLine && (
+              <>
+                <span className="sg-meta-sep">·</span>
+                <span>{retailClientLine}</span>
+              </>
+            )}
+            {contract && (
+              <>
+                <span className="sg-meta-sep">:</span>
+                <span className="sg-meta-contract">{contract}</span>
+              </>
+            )}
+            {transporter && (
+              <>
+                <span className="sg-meta-sep">·</span>
+                <Anchor
+                  className="sg-meta-contract"
+                  component="button"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onOpenDetails(sale)
+                  }}
+                >
+                  {transporter}
+                </Anchor>
+              </>
+            )}
+            {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
+              <Tooltip label={t('Рахунок редаговано')}>
+                <IconPencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
+              </Tooltip>
+            )}
+            {sale.IsPrinted && (
+              <Tooltip label={t('Документи надруковано')}>
+                <IconPrinter size={12} style={{ color: 'var(--mantine-color-gray-5)' }} />
+              </Tooltip>
+            )}
+          </div>
+        </div>
+      </div>
 
-          if (!isNewOrPackagingStatus(sale)) {
-            return text
-          }
+      <div className={`sg-amt${isUnpaidSale(sale) ? ' is-unpaid' : ''}`}>
+        <span className="sg-amt-val">{formatAmount(localAmount)}</span>
+        <span className="sg-amt-unit">{displayValue(getSaleCurrencyCode(sale))}</span>
+      </div>
+      <div className="sg-amt">
+        <span className="sg-amt-val">{formatAmount(getSecondaryAmount(sale))}</span>
+        <span className="sg-amt-unit">{getSecondaryAmountCode(sale)}</span>
+      </div>
+      <div className="sg-amt">
+        <span className="sg-amt-val">{formatAmount(vat)}</span>
+        <span className="sg-amt-unit">{t('ПДВ')}</span>
+      </div>
 
-          return (
-            <Anchor
-              component="button"
-              fw={discount ? 600 : 400}
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenDiscount(sale)
-              }}
-            >
-              {discount ? text : t('Знижка')}
-            </Anchor>
-          )
-        },
-      },
-      {
-        id: 'positions',
-        header: 'Позиції',
-        width: 104,
-        minWidth: 96,
-        align: 'right',
-        accessor: getOrderItemCount,
-        cell: (sale) => displayValue(getOrderItemCount(sale)),
-      },
-      {
-        id: 'transporter',
-        header: 'Перевізник',
-        width: 170,
-        minWidth: 140,
-        accessor: (sale) => sale.Transporter?.Name || sale.Transporter?.Title,
-        cell: (sale) => {
-          const name = sale.Transporter?.Name || sale.Transporter?.Title
+      <div className="sg-positions">
+        {positions} {t('поз.')}
+      </div>
 
-          if (!sale.Transporter) {
-            return displayValue(name)
-          }
+      <div className="sg-slot" data-row-stop="true">
+        {discountEditable ? (
+          <Tooltip label={t('Знижка')}>
+            <ActionIcon aria-label={t('Знижка')} color="gray" size="sm" variant="subtle" onClick={() => onOpenDiscount(sale)}>
+              <IconPercentage size={15} />
+            </ActionIcon>
+          </Tooltip>
+        ) : sale.IsLocked ? (
+          <Tooltip label={t('Заблоковано')}>
+            <IconLock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
+          </Tooltip>
+        ) : null}
+      </div>
 
-          return (
-            <Anchor
-              component="button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenDetails(sale)
-              }}
-            >
-              {displayValue(name)}
-            </Anchor>
-          )
-        },
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 132,
-        minWidth: 132,
-        maxWidth: 132,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (sale) => {
-          const lifeCycleType = sale.BaseLifeCycleStatus?.SaleLifeCycleType
-          const isPackaging = lifeCycleType === 1 || lifeCycleType === 2
-          const hidePrintBlock = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking && !isAdmin
-          const showTtn = Boolean(sale.TransporterId) && isPackaging && !hidePrintBlock
-          const showWillNotShip = canWillNotShip && Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
-          const showUnlock = canUnlock && Boolean(sale.IsLocked)
-          const showEdit = canEditSale && (sale.InputSaleMerges?.length ?? 0) === 0
+      <div className="sg-doc-actions" data-row-stop="true">
+        <Tooltip label={t('Деталі')}>
+          <ActionIcon aria-label={t('Деталі')} color="gray" size="sm" variant="subtle" onClick={() => onOpenSale(sale)}>
+            <IconEye size={15} />
+          </ActionIcon>
+        </Tooltip>
+        {!hidePrintBlock && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
+        <Menu position="bottom-end" shadow="md" withinPortal>
+          <Menu.Target>
+            <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle">
+              <IconDots size={16} />
+            </ActionIcon>
+          </Menu.Target>
+          <Menu.Dropdown>
+            {showEdit && (
+              <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
+                {t('Відкрити продаж')}
+              </Menu.Item>
+            )}
+            <Menu.Item leftSection={<IconTruckDelivery size={16} />} onClick={() => onOpenDetails(sale)}>
+              {t('Дані доставки')}
+            </Menu.Item>
+            {showTtn && (
+              <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
+                {t('Друк ТТН')}
+              </Menu.Item>
+            )}
+            {showWillNotShip && (
+              <Menu.Item
+                color="orange"
+                disabled={!sale.ChangedToInvoice}
+                leftSection={<IconAlertTriangle size={16} />}
+                onClick={() => onWillNotShip(sale)}
+              >
+                {t('Не буде відвантажено')}
+              </Menu.Item>
+            )}
+            {showUnlock && (
+              <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
+                {t('Розблокувати')}
+              </Menu.Item>
+            )}
+            <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
+              {t('Історія редагувань')}
+            </Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
+      </div>
 
-          return (
-            <Box onClick={(event) => event.stopPropagation()}>
-              <Group gap={2} justify="center" wrap="nowrap">
-                <Tooltip label={t('Деталі')}>
-                  <ActionIcon aria-label={t('Деталі')} color="gray" variant="subtle" onClick={() => onOpenSale(sale)}>
-                    <IconEye size={18} />
-                  </ActionIcon>
-                </Tooltip>
-                {!hidePrintBlock && <SaleDocumentsMenu sale={asUkraineSale(sale)} />}
-                <Menu position="bottom-end" shadow="md" withinPortal>
-                  <Menu.Target>
-                    <ActionIcon aria-label={t('Дії')} color="gray" variant="subtle">
-                      <IconDots size={18} />
-                    </ActionIcon>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    {showEdit && (
-                      <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
-                        {t('Відкрити продаж')}
-                      </Menu.Item>
-                    )}
-                    {showTtn && (
-                      <Menu.Item leftSection={<IconReceipt size={16} />} onClick={() => onOpenConsignment(sale)}>
-                        {t('Друк ТТН')}
-                      </Menu.Item>
-                    )}
-                    {showWillNotShip && (
-                      <Menu.Item
-                        color="orange"
-                        disabled={!sale.ChangedToInvoice}
-                        leftSection={<IconAlertTriangle size={16} />}
-                        onClick={() => onWillNotShip(sale)}
-                      >
-                        {t('Не буде відвантажено')}
-                      </Menu.Item>
-                    )}
-                    {showUnlock && (
-                      <Menu.Item color="red" leftSection={<IconLockOpen size={16} />} onClick={() => onUnlock(sale)}>
-                        {t('Розблокувати')}
-                      </Menu.Item>
-                    )}
-                    <Menu.Item leftSection={<IconHistory size={16} />} onClick={() => onOpenAudit(sale)}>
-                      {t('Історія редагувань')}
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              </Group>
-            </Box>
-          )
-        },
-      },
-    ],
-    [
-      canEditSale,
-      canUnlock,
-      canWillNotShip,
-      isAdmin,
-      onOpenAudit,
-      onOpenConsignment,
-      onOpenDetails,
-      onOpenDiscount,
-      onOpenEditor,
-      onOpenSale,
-      onUnlock,
-      onWillNotShip,
-      t,
-    ],
+      <div className="sg-status">
+        <Badge color={STATUS_COLORS[getSaleStatusKey(sale)] || 'gray'} size="sm" variant="light">
+          {getSaleStatusLabel(sale)}
+        </Badge>
+        <span
+          className="sg-status-pay"
+          style={{ color: paymentColor ? `var(--mantine-color-${paymentColor}-6)` : undefined }}
+        >
+          {displayValue(`${getPaymentStatusLabel(sale)}${getRetailPaymentSuffix(sale)}`)}
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -1258,10 +1303,6 @@ function getTotalRows(sales: SalesOnlineShopSale[]): number {
 
 function getSaleDate(sale: SalesOnlineShopSale): Date | null {
   return parseDate(sale.ChangedToInvoice || sale.Updated || sale.Created || sale.FromDate)
-}
-
-function getSaleTime(sale: SalesOnlineShopSale): number {
-  return getSaleDate(sale)?.getTime() || 0
 }
 
 function getSaleClientName(sale: SalesOnlineShopSale): string {
