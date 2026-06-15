@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Anchor,
   Badge,
   Box,
   Button,
@@ -573,7 +572,7 @@ export function SalesOnlineShopPage() {
             </Alert>
           )}
 
-          <div className="sales-grid">
+          <div className="sales-grid sales-online-grid">
             {isLoading ? (
               <div className="sales-grid-state">
                 <Group justify="center" gap="xs">
@@ -592,6 +591,7 @@ export function SalesOnlineShopPage() {
                   <span>{t('ПДВ')}</span>
                   <span>{t('Поз.')}</span>
                   <span>{t('Знижка')}</span>
+                  <span>{t('Перевізник')}</span>
                   <span>{t('Документи')}</span>
                   <span>{t('Статус')}</span>
                 </div>
@@ -765,6 +765,7 @@ function SalesOnlineShopGridRow({
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
   const transporter = getSaleTransporterName(sale)
+  const transporterImageUrl = getTransporterImageUrl(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = getNumber(sale.Order?.TotalVat)
   const positions = getOrderItemCount(sale)
@@ -865,7 +866,7 @@ function SalesOnlineShopGridRow({
 
           <div className="sg-meta">
             <SaleSourceIcon sale={sale} />
-            <span style={{ fontWeight: 600 }}>{displayValue(sale.SaleNumber?.Value)}</span>
+            <span className="sg-meta-sale-number">{displayValue(sale.SaleNumber?.Value)}</span>
             {date && (
               <>
                 <span className="sg-meta-sep">·</span>
@@ -890,22 +891,6 @@ function SalesOnlineShopGridRow({
               <>
                 <span className="sg-meta-sep">:</span>
                 <span className="sg-meta-contract">{contract}</span>
-              </>
-            )}
-            {transporter && (
-              <>
-                <span className="sg-meta-sep">·</span>
-                <Anchor
-                  className="sg-meta-contract"
-                  component="button"
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenDetails(sale)
-                  }}
-                >
-                  {transporter}
-                </Anchor>
               </>
             )}
             {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
@@ -951,6 +936,27 @@ function SalesOnlineShopGridRow({
             <IconLock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
           </Tooltip>
         ) : null}
+      </div>
+
+      <div className="sg-transporter-cell" data-row-stop="true">
+        <Tooltip label={transporter || t('Перевізник')}>
+          <button
+            className="sg-transporter-button"
+            type="button"
+            aria-label={transporter || t('Перевізник')}
+            onClick={() => onOpenDetails(sale)}
+          >
+            {transporterImageUrl ? (
+              <span
+                className="sg-transporter-logo"
+                style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
+                aria-hidden="true"
+              />
+            ) : (
+              <IconTruckDelivery size={15} />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
@@ -1469,10 +1475,18 @@ function getSaleTransporterName(sale: SalesOnlineShopSale): string {
   return sale.Transporter?.Name || sale.Transporter?.Title || ''
 }
 
+function getTransporterImageUrl(sale: SalesOnlineShopSale): string {
+  return sale.Transporter?.ImageUrl?.trim() || ''
+}
+
 function getSaleDeliveryAddress(sale: SalesOnlineShopSale): string {
   const address = (sale as SalesOnlineShopSaleWithDelivery).DeliveryRecipientAddress
 
   return [address?.City, address?.Department, address?.Value].filter(Boolean).join(', ')
+}
+
+function toSecureUrl(url: string): string {
+  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
 }
 
 function SaleSourceIcon({ sale }: { sale: SalesOnlineShopSale }) {

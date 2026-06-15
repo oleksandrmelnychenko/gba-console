@@ -121,6 +121,8 @@ export type SalesOnlineShopOrder = SalesOnlineShopEntity & {
 }
 
 export type SalesOnlineShopTransporter = SalesOnlineShopEntity & {
+  CssClass?: string
+  ImageUrl?: string | null
   Name?: string
   Title?: string
 }

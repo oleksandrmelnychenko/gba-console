@@ -495,6 +495,7 @@
     96px
     74px
     34px
+    58px
     96px
     150px;
   display: flex;
@@ -510,6 +511,19 @@
   overscroll-behavior: contain;
   padding: 0 10px 12px;
   scrollbar-gutter: stable;
+}
+
+.sales-online-grid {
+  --sales-grid-columns:
+    minmax(360px, 1fr)
+    118px
+    104px
+    96px
+    74px
+    34px
+    58px
+    96px
+    150px;
 }
 
 @media (max-width: 1320px) {
@@ -590,7 +604,12 @@
   text-align: right;
 }
 
-.sales-grid-head span:nth-child(6) {
+.sales-grid-head span:nth-child(6),
+.sales-grid-head span:nth-child(7) {
+  text-align: center;
+}
+
+.sales-online-grid .sales-grid-head span:nth-child(7) {
   text-align: center;
 }
 
@@ -780,12 +799,18 @@
   color: var(--mantine-color-gray-4);
 }
 
+.sg-meta-sale-number {
+  color: var(--mantine-color-gray-8);
+  font-weight: 700;
+}
+
 .sg-meta-contract {
   flex: 0 1 auto !important;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #6f7c8a;
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
 }
 
 .sg-amt {
@@ -845,6 +870,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.sg-transporter-cell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.sg-transporter-button {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  cursor: pointer;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background-color 140ms var(--tx-ease-smooth),
+    border-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth);
+  width: 34px;
+}
+
+.sg-transporter-button:hover {
+  background: var(--mantine-color-white);
+  border-color: rgba(232, 120, 46, 0.38);
+  box-shadow: 0 4px 12px rgba(20, 28, 38, 0.08);
+}
+
+.sg-transporter-logo {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: block;
+  height: 18px;
+  width: 24px;
 }
 
 .sg-doc-actions {

@@ -930,6 +930,7 @@ export function SalesUkrainePage() {
                   <span>{t('ПДВ')}</span>
                   <span>{t('Поз.')}</span>
                   <span>{t('Знижка')}</span>
+                  <span>{t('Перевізник')}</span>
                   <span>{t('Документи')}</span>
                   <span>{t('Статус')}</span>
                 </div>
@@ -1117,6 +1118,8 @@ function SaleGridRow({
   const date = getSaleDate(sale)
   const manager = getSaleUserName(sale)
   const contract = sale.ClientAgreement?.Agreement?.Name
+  const transporter = getSaleTransporterName(sale)
+  const transporterImageUrl = getTransporterImageUrl(sale)
   const unpaid = isUnpaidSale(sale)
   const localAmount = getNumber(sale.TotalAmountLocal) ?? getNumber(sale.TotalAmount)
   const vat = getNumber(sale.Order?.TotalVat)
@@ -1220,7 +1223,7 @@ function SaleGridRow({
 
           <div className="sg-meta">
             <SaleSourceIcon sale={sale} />
-            <span style={{ fontWeight: 600 }}>{displayValue(sale.SaleNumber?.Value)}</span>
+            <span className="sg-meta-sale-number">{displayValue(sale.SaleNumber?.Value)}</span>
             {date && (
               <>
                 <span className="sg-meta-sep">·</span>
@@ -1284,6 +1287,27 @@ function SaleGridRow({
             <IconLock size={14} style={{ color: 'var(--mantine-color-gray-5)' }} />
           </Tooltip>
         ) : null}
+      </div>
+
+      <div className="sg-transporter-cell" data-row-stop="true">
+        <Tooltip label={transporter || t('Перевізник')}>
+          <button
+            className="sg-transporter-button"
+            type="button"
+            aria-label={transporter || t('Перевізник')}
+            onClick={() => onOpenDetails(sale)}
+          >
+            {transporterImageUrl ? (
+              <span
+                className="sg-transporter-logo"
+                style={{ backgroundImage: `url(${toSecureUrl(transporterImageUrl)})` }}
+                aria-hidden="true"
+              />
+            ) : (
+              <IconTruckDelivery size={15} />
+            )}
+          </button>
+        </Tooltip>
       </div>
 
       <div className="sg-doc-actions" data-row-stop="true">
@@ -1814,6 +1838,10 @@ function getSaleTransporterName(sale: SalesUkraineSale): string {
   )
 }
 
+function getTransporterImageUrl(sale: SalesUkraineSale): string {
+  return sale.Transporter?.ImageUrl?.trim() || sale.UpdateDataCarrier?.[0]?.Transporter?.ImageUrl?.trim() || ''
+}
+
 function getSaleDeliveryAddress(sale: SalesUkraineSale): string {
   const address = sale.DeliveryRecipientAddress
   const carrier = sale.UpdateDataCarrier?.[0]
@@ -1824,6 +1852,10 @@ function getSaleDeliveryAddress(sale: SalesUkraineSale): string {
     || [carrier?.City, carrier?.Department].filter(Boolean).join(', ')
     || ''
   )
+}
+
+function toSecureUrl(url: string): string {
+  return url.startsWith('http://') ? `https://${url.slice('http://'.length)}` : url
 }
 
 function parseDate(value: unknown): Date | null {
