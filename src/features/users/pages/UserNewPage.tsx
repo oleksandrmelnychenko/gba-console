@@ -8,8 +8,9 @@ import {
   Text,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconChevronLeft, IconDeviceFloppy } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -145,28 +146,19 @@ export function UserNewPage() {
       size="min(780px, 100vw)"
       aria-label={t('Новий користувач')}
       onClose={closeSheet}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          form="user-new-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Створити')}
+        </Button>
+      }
     >
       <Stack gap="md">
-        <Group justify="space-between" align="center">
-          <Button
-            color="gray"
-            leftSection={<IconChevronLeft size={16} />}
-            variant="light"
-            onClick={closeSheet}
-          >
-            {t('Скасувати')}
-          </Button>
-          <Button
-            color="violet"
-            form="user-new-form"
-            leftSection={<IconDeviceFloppy size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Створити')}
-          </Button>
-        </Group>
-
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}

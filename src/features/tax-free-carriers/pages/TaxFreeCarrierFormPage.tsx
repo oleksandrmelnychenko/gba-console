@@ -13,7 +13,6 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconArrowLeft,
   IconCar,
   IconDeviceFloppy,
   IconEdit,
@@ -24,6 +23,7 @@ import {
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -192,24 +192,21 @@ export function TaxFreeCarrierFormPage() {
       size="standard"
       title={isEditMode ? t('Редагування Перевізника') : t('Новий Перевізник')}
       onClose={handleCancel}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || !canSave}
+          form="tax-free-carrier-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      }
     >
-      <form onSubmit={handleSubmit}>
+      <form id="tax-free-carrier-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
-            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-              {t('Назад')}
-            </Button>
-            <Button
-              color="violet"
-              disabled={isLoading || !canSave}
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={isSaving}
-              type="submit"
-            >
-              {t('Зберегти')}
-            </Button>
-          </Group>
-
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

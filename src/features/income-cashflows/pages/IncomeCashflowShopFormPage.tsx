@@ -16,10 +16,11 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
 import { type FormEvent, useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -621,24 +622,21 @@ export function IncomeCashflowShopFormPage() {
       size="wide"
       title={t('Магазин')}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || isResolvingClient || isSaving}
+          form="income-cashflow-shop-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      }
     >
-      <form onSubmit={handleSubmit}>
+      <form id="income-cashflow-shop-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
-            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>
-              {t('Назад')}
-            </Button>
-            <Button
-              color="violet"
-              disabled={isLoading || isResolvingClient || isSaving}
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={isSaving}
-              type="submit"
-            >
-              {t('Зберегти')}
-            </Button>
-          </Group>
-
           <Text c="dimmed" size="sm">
             {selectedPaymentClient ? getEntityName(selectedPaymentClient) : t('Оплата retail-клієнта')}
           </Text>

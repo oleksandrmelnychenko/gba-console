@@ -16,10 +16,11 @@ import {
   Textarea,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -380,8 +381,20 @@ export function IncomeCashflowConversionFormPage() {
       size="standard"
       title={title}
       onClose={() => navigate(INCOME_CASHFLOWS_PATH)}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || isSaving}
+          form="income-cashflow-conversion-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      }
     >
-      <form onSubmit={handleSubmit}>
+      <form id="income-cashflow-conversion-form" onSubmit={handleSubmit}>
         <Stack gap="md">
           <Group justify="flex-end" gap="xs" wrap="wrap">
             <SegmentedControl
@@ -393,18 +406,6 @@ export function IncomeCashflowConversionFormPage() {
               value={String(registerType)}
               onChange={handleModeChanged}
             />
-            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={() => navigate(INCOME_CASHFLOWS_PATH)}>
-              {t('Назад')}
-            </Button>
-            <Button
-              color="violet"
-              disabled={isLoading || isSaving}
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={isSaving}
-              type="submit"
-            >
-              {t('Зберегти')}
-            </Button>
           </Group>
 
           <Group gap="xs">

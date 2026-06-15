@@ -7,8 +7,9 @@ import {
   Text,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconChevronLeft, IconDeviceFloppy } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -148,6 +149,17 @@ export function OrganizationClientNewPage() {
       size="min(760px, 100vw)"
       aria-label={t('Нова організація')}
       onClose={closeSheet}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          form="organization-client-new-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Створити')}
+        </Button>
+      }
     >
       <Stack gap="md">
         {error && (
@@ -179,26 +191,6 @@ export function OrganizationClientNewPage() {
             )}
           </Stack>
         </form>
-
-        <Group justify="space-between">
-          <Button
-            color="gray"
-            leftSection={<IconChevronLeft size={16} />}
-            variant="light"
-            onClick={closeSheet}
-          >
-            {t('Скасувати')}
-          </Button>
-          <Button
-            color="violet"
-            form="organization-client-new-form"
-            leftSection={<IconDeviceFloppy size={16} />}
-            loading={isSaving}
-            type="submit"
-          >
-            {t('Створити')}
-          </Button>
-        </Group>
       </Stack>
     </AppDrawer>
   )

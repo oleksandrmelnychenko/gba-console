@@ -519,6 +519,17 @@ export function SalesReturnClientPage() {
         size="min(1120px, 100vw)"
         title={t('Повернення від клієнта')}
         onClose={closeCreateDrawer}
+        footer={
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={!items.length}
+            form="sales-return-client-form"
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Створити повернення')}
+          </Button>
+        }
       >
         <Stack gap="md">
           <Group justify="flex-end" align="flex-start">
@@ -547,7 +558,7 @@ export function SalesReturnClientPage() {
           </Alert>
         ) : null}
 
-        <form onSubmit={handleSubmit}>
+        <form id="sales-return-client-form" onSubmit={handleSubmit}>
           <Stack gap="md">
             <SimpleGrid cols={{ base: 1, md: 2, lg: 4 }}>
               <Select
@@ -679,12 +690,6 @@ export function SalesReturnClientPage() {
               minWidth={940}
               tableId="sales-return-client-items"
             />
-
-            <Group justify="flex-end">
-              <Button disabled={!items.length} loading={isSaving} type="submit">
-                {t('Створити повернення')}
-              </Button>
-            </Group>
           </Stack>
         </form>
       </Stack>

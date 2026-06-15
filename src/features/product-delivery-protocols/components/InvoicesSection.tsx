@@ -26,6 +26,7 @@ import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import { getApprovedInvoices, getSupplyInvoiceWithSpendings } from '../api/protocolDetailApi'
@@ -489,6 +490,11 @@ function AssignInvoicesDrawer({
           onClose()
         }
       }}
+      footer={
+        <Button color={CREATE_ACTION_COLOR} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
+          {t('Зберегти')}
+        </Button>
+      }
     >
       <Stack gap="md">
         {error && (
@@ -496,11 +502,6 @@ function AssignInvoicesDrawer({
             {error}
           </Alert>
         )}
-        <Group justify="flex-end">
-          <Button color="violet" disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
         {isLoading ? (
           <Text c="dimmed" size="sm">
             {t('Завантаження')}

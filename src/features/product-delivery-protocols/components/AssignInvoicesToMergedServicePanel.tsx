@@ -1,9 +1,10 @@
-import { Alert, Button, Group, Stack, Text } from '@mantine/core'
+import { Alert, Button, Stack, Text } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getServiceApprovedInvoices } from '../api/protocolDetailApi'
 import type { MergedService, SupplyInvoice } from '../detailTypes'
 import {
@@ -116,6 +117,11 @@ export function AssignInvoicesToMergedServicePanel({
           onClose()
         }
       }}
+      footer={
+        <Button color={CREATE_ACTION_COLOR} disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
+          {t('Зберегти')}
+        </Button>
+      }
     >
       <Stack gap="md">
         {error && (
@@ -123,11 +129,6 @@ export function AssignInvoicesToMergedServicePanel({
             {error}
           </Alert>
         )}
-        <Group justify="flex-end">
-          <Button color="violet" disabled={isLoading || isSaving} loading={isSaving} onClick={handleAssign}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
         {isLoading ? (
           <Text c="dimmed" size="sm">
             {t('Завантаження')}

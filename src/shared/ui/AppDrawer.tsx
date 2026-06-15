@@ -1,4 +1,16 @@
 import { Drawer, type DrawerProps } from '@mantine/core'
+import type { ReactNode } from 'react'
+import './app-drawer.css'
+
+export type AppDrawerProps = DrawerProps & {
+  /**
+   * Optional action bar pinned to the bottom of the sheet. When provided, the
+   * body becomes a scrollable region and the footer always stays in view — the
+   * shared pattern for primary sheet actions (Cancel / Save / Delete). Pass a
+   * leading node and a trailing group; the footer lays them out space-between.
+   */
+  footer?: ReactNode
+}
 
 /**
  * Standard right-sheet width tiers. Every drawer in the app is snapped to one
@@ -79,7 +91,9 @@ function resolveSheetWidth(size: DrawerProps['size']): string {
  * inner padding across the whole app. Pass size as 'compact' | 'standard' |
  * 'wide' (legacy size values are normalized to the nearest tier).
  */
-export function AppDrawer({ position = 'right', size, children, ...props }: DrawerProps) {
+export function AppDrawer({ position = 'right', size, children, footer, ...props }: AppDrawerProps) {
+  const hasFooter = footer != null
+
   return (
     <Drawer
       {...props}
@@ -96,16 +110,28 @@ export function AppDrawer({ position = 'right', size, children, ...props }: Draw
           maxWidth: 'calc(100vw - 8px)',
           borderRadius: 14,
           overflow: 'hidden',
+          // A footer needs the content to be a flex column so the body can grow
+          // to full height and the footer stays pinned to the bottom.
+          ...(hasFooter ? { display: 'flex', flexDirection: 'column' } : {}),
         },
         // Tighten the header so the title sits close to the content (no tall
         // fixed header bar and no large bottom gap).
         header: { minHeight: 'auto', paddingBottom: 'var(--mantine-spacing-xs)' },
-        // Uniform breathing room on the sides/bottom, with a small top gap so
-        // content sits just under the title rather than far below it.
-        body: { padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
+        // With a footer, the body becomes a flex column that owns the scroll so
+        // the footer can stay pinned; otherwise keep the uniform inner padding.
+        body: hasFooter
+          ? { display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, padding: 0, overflow: 'hidden' }
+          : { padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
       }}
     >
-      {children}
+      {hasFooter ? (
+        <div className="app-sheet-body">
+          <div className="app-sheet-scroll">{children}</div>
+          <div className="app-sheet-footer">{footer}</div>
+        </div>
+      ) : (
+        children
+      )}
     </Drawer>
   )
 }

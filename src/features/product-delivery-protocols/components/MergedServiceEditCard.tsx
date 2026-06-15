@@ -20,6 +20,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { getResponsibleUsers, getSupplyOrganizations, getSupplyServiceConsumableProducts } from '../api/protocolDetailApi'
 import type {
@@ -320,6 +321,7 @@ export function MergedServiceEditCard({
           onClose()
         }
       }}
+      footer={<MergedServiceFormActions isSaving={isSaving} onSave={handleSave} />}
     >
       <Stack gap="sm">
         <MergedServiceAlerts loadError={loadError} validationError={validationError} />
@@ -373,8 +375,6 @@ export function MergedServiceEditCard({
           setTaskDocuments={setTaskDocuments}
           update={update}
         />
-
-        <MergedServiceFormActions isSaving={isSaving} onCancel={onClose} onSave={handleSave} />
       </Stack>
     </AppDrawer>
   )
@@ -927,24 +927,17 @@ function MergedServicePrimaryFields({
 
 function MergedServiceFormActions({
   isSaving,
-  onCancel,
   onSave,
 }: {
   isSaving: boolean
-  onCancel: () => void
   onSave: () => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Group justify="flex-end" gap="sm">
-      <Button color="gray" disabled={isSaving} variant="light" onClick={onCancel}>
-        {t('Скасувати')}
-      </Button>
-      <Button color="violet" disabled={isSaving} loading={isSaving} onClick={onSave}>
-        {t('Зберегти')}
-      </Button>
-    </Group>
+    <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={onSave}>
+      {t('Зберегти')}
+    </Button>
   )
 }
 

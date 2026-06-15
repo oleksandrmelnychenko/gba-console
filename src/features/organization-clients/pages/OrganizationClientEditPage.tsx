@@ -9,11 +9,11 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCheck,
-  IconChevronLeft,
   IconDeviceFloppy,
   IconTrash,
 } from '@tabler/icons-react'
@@ -244,19 +244,8 @@ export function OrganizationClientEditPage() {
       position="right"
       size="min(900px, 100vw)"
       onClose={closeSheet}
-    >
-    <Stack gap="lg">
-      <Group justify="space-between" align="start">
-        <div />
+      footer={
         <Group gap="xs">
-          <Button
-            color="gray"
-            leftSection={<IconChevronLeft size={16} />}
-            variant="light"
-            onClick={closeSheet}
-          >
-            {t('Скасувати')}
-          </Button>
           <Button
             color="red"
             disabled={!client}
@@ -268,7 +257,7 @@ export function OrganizationClientEditPage() {
             {t('Видалити')}
           </Button>
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={!client}
             form="organization-client-edit-form"
             leftSection={<IconDeviceFloppy size={16} />}
@@ -278,8 +267,9 @@ export function OrganizationClientEditPage() {
             {t('Зберегти')}
           </Button>
         </Group>
-      </Group>
-
+      }
+    >
+    <Stack gap="lg">
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}

@@ -1,8 +1,9 @@
-import { Alert, Button, Group, ScrollArea, SimpleGrid, Stack, TextInput } from '@mantine/core'
+import { Alert, Button, ScrollArea, SimpleGrid, Stack, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { TaxFreeCarrierPassport } from '../types'
 
 type PassportDraft = {
@@ -69,6 +70,11 @@ export function TaxFreeCarrierPassportDrawer({
       title={isEditMode ? t('Редагування Паспорту') : t('Новий Паспорт')}
       transitionProps={{ onEnter: resetDraft }}
       onClose={onClose}
+      footer={
+        <Button color={CREATE_ACTION_COLOR} onClick={handleSubmit}>
+          {t('Зберегти')}
+        </Button>
+      }
     >
       <ScrollArea h="calc(100vh - 120px)" type="auto">
         <Stack gap="md" pr="md">
@@ -137,14 +143,6 @@ export function TaxFreeCarrierPassportDrawer({
               onChange={(event) => updateDraft({ passportCloseDate: event.currentTarget.value })}
             />
           </SimpleGrid>
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="violet" onClick={handleSubmit}>
-              {t('Зберегти')}
-            </Button>
-          </Group>
         </Stack>
       </ScrollArea>
     </AppDrawer>

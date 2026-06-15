@@ -1,19 +1,12 @@
 import {
   PasswordInput,
-  SegmentedControl,
   Select,
   SimpleGrid,
   TextInput,
 } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { UserProfile, UserRole } from '../types'
-import {
-  getUserRegionName,
-  getUserRoleKey,
-  getUserRoleName,
-  USER_REGION_POLAND,
-  USER_REGION_UKRAINE,
-} from '../utils'
+import { getUserRoleKey, getUserRoleName } from '../utils'
 
 type UserFormProps = {
   confirmPassword?: string
@@ -119,15 +112,6 @@ export function UserForm({
         searchable
         value={selectedRoleKey || null}
         onChange={selectRole}
-      />
-      <SegmentedControl
-        data={[
-          { value: USER_REGION_UKRAINE, label: getUserRegionName(USER_REGION_UKRAINE) },
-          { value: USER_REGION_POLAND, label: getUserRegionName(USER_REGION_POLAND) },
-        ]}
-        disabled={disabled}
-        value={user.Region || USER_REGION_UKRAINE}
-        onChange={(value) => onFieldChange('Region', value)}
       />
       {includePassword && (
         <>

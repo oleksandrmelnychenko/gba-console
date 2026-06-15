@@ -17,6 +17,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   NewPaymentProtocolFormValues,
   ProtocolUser,
@@ -272,7 +273,17 @@ export function PaymentDeliveryProtocolsSection({
         </Stack>
       )}
 
-      <AppDrawer opened={isFormOpen} size="md" title={t('Створити платіжну задачу')} onClose={() => setFormOpen(false)}>
+      <AppDrawer
+        opened={isFormOpen}
+        size="md"
+        title={t('Створити платіжну задачу')}
+        onClose={() => setFormOpen(false)}
+        footer={
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
+            {t('Зберегти')}
+          </Button>
+        }
+      >
         <Stack gap="sm">
           {validationError && (
             <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
@@ -327,14 +338,6 @@ export function PaymentDeliveryProtocolsSection({
             onChange={(event) => setComment(event.currentTarget.value)}
           />
 
-          <Group justify="flex-end" gap="sm">
-            <Button color="gray" disabled={isSaving} variant="light" onClick={() => setFormOpen(false)}>
-              {t('Скасувати')}
-            </Button>
-            <Button color="violet" loading={isSaving} onClick={handleSubmit}>
-              {t('Зберегти')}
-            </Button>
-          </Group>
         </Stack>
       </AppDrawer>
 

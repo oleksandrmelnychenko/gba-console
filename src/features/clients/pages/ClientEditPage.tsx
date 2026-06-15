@@ -13,8 +13,9 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconChevronLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconCheck, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -591,16 +592,20 @@ export function ClientEditPage() {
       position="right"
       size="min(980px, 100vw)"
       onClose={closeSheet}
+      footer={
+        <ClientEditActions
+          canDelete={hasPermission(EDIT_CLIENT_DELETE_PERMISSION)}
+          client={client}
+          isDeleting={isDeleting}
+          isSaving={isSaving}
+          onDelete={() => setDeleteModalOpened(true)}
+        />
+      }
     >
     <Stack gap="lg">
       <ClientEditHeader
-        canDelete={hasPermission(EDIT_CLIENT_DELETE_PERMISSION)}
         canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
         client={client}
-        isDeleting={isDeleting}
-        isSaving={isSaving}
-        onClose={closeSheet}
-        onDelete={() => setDeleteModalOpened(true)}
         onTypeClick={() => setTypePanelOpened(true)}
       />
 
@@ -668,89 +673,93 @@ export function ClientEditPage() {
   )
 }
 
-function ClientEditHeader({
+function ClientEditActions({
   canDelete,
-  canEditType,
   client,
   isDeleting,
   isSaving,
-  onClose,
   onDelete,
-  onTypeClick,
 }: {
   canDelete: boolean
-  canEditType: boolean
   client: Client | null
   isDeleting: boolean
   isSaving: boolean
-  onClose: () => void
   onDelete: () => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group gap="xs">
+      {canDelete && (
+        <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
+          {t('Видалити')}
+        </Button>
+      )}
+      <Button
+        color={CREATE_ACTION_COLOR}
+        disabled={!client}
+        form="client-edit-form"
+        leftSection={<IconDeviceFloppy size={16} />}
+        loading={isSaving}
+        type="submit"
+      >
+        {t('Зберегти')}
+      </Button>
+    </Group>
+  )
+}
+
+function ClientEditHeader({
+  canEditType,
+  client,
+  onTypeClick,
+}: {
+  canEditType: boolean
+  client: Client | null
   onTypeClick: () => void
 }) {
   const { t } = useI18n()
   const regionCodeValue = client?.RegionCode?.Value
 
   return (
-    <Group justify="space-between" align="start">
-      <Stack gap="xs">
-        {client && (regionCodeValue || client.FullName) && (
-          <Group gap="xs">
-            {regionCodeValue && (
-              <Text fw={600} size="sm">
-                {regionCodeValue}
-              </Text>
-            )}
-            {client.FullName && (
-              <Text fw={600} size="sm">
-                {client.FullName}
-              </Text>
-            )}
-          </Group>
-        )}
+    <Stack gap="xs">
+      {client && (regionCodeValue || client.FullName) && (
         <Group gap="xs">
-          {client && (
-            <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
-              {client.IsActive === false ? t('Неактивний') : t('Активний')}
-            </Badge>
+          {regionCodeValue && (
+            <Text fw={600} size="sm">
+              {regionCodeValue}
+            </Text>
           )}
-          {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-            <Badge
-              color="violet"
-              variant="light"
-              style={canEditType ? { cursor: 'pointer' } : undefined}
-              onClick={canEditType ? onTypeClick : undefined}
-            >
-              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
-            </Badge>
-          )}
-          {client?.IsTemporaryClient && (
-            <Badge color="violet" variant="light">
-              {t('З інтернет-магазину')}
-            </Badge>
+          {client.FullName && (
+            <Text fw={600} size="sm">
+              {client.FullName}
+            </Text>
           )}
         </Group>
-      </Stack>
+      )}
       <Group gap="xs">
-        <Button color="gray" leftSection={<IconChevronLeft size={16} />} variant="light" onClick={onClose}>
-          {t('Скасувати')}
-        </Button>
-        {canDelete && (
-          <Button color="red" leftSection={<IconTrash size={16} />} loading={isDeleting} variant="light" onClick={onDelete}>
-            {t('Видалити')}
-          </Button>
+        {client && (
+          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
+            {client.IsActive === false ? t('Неактивний') : t('Активний')}
+          </Badge>
         )}
-        <Button
-          color="violet"
-          disabled={!client}
-          form="client-edit-form"
-          leftSection={<IconDeviceFloppy size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
+        {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+          <Badge
+            color="violet"
+            variant="light"
+            style={canEditType ? { cursor: 'pointer' } : undefined}
+            onClick={canEditType ? onTypeClick : undefined}
+          >
+            {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
+          </Badge>
+        )}
+        {client?.IsTemporaryClient && (
+          <Badge color="violet" variant="light">
+            {t('З інтернет-магазину')}
+          </Badge>
+        )}
       </Group>
-    </Group>
+    </Stack>
   )
 }
 

@@ -7,11 +7,12 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -207,45 +208,38 @@ export function PaymentExpenseArticleFormPage() {
       size="standard"
       title={isEditMode ? t('Редагування статті витрат') : t('Нова стаття витрат')}
       onClose={handleCancel}
-    >
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
+      footer={
+        <Group gap="xs">
+          {isEditMode && canDelete && (
             <Button
-              color="gray"
-              leftSection={<IconArrowLeft size={16} />}
+              color="red"
+              disabled={isLoading}
+              leftSection={<IconTrash size={16} />}
+              loading={isDeleting}
               type="button"
               variant="light"
-              onClick={handleCancel}
+              onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: true }))}
             >
-              {t('Назад')}
+              {t('Видалити')}
             </Button>
-            {isEditMode && canDelete && (
-              <Button
-                color="red"
-                disabled={isLoading}
-                leftSection={<IconTrash size={16} />}
-                loading={isDeleting}
-                type="button"
-                variant="light"
-                onClick={() => setFormState((current) => ({ ...current, deleteModalOpened: true }))}
-              >
-                {t('Видалити')}
-              </Button>
-            )}
-            {canSave && (
-              <Button
-                color="violet"
-                disabled={isLoading}
-                leftSection={<IconDeviceFloppy size={16} />}
-                loading={isSaving}
-                type="submit"
-              >
-                {t('Зберегти')}
-              </Button>
-            )}
-          </Group>
-
+          )}
+          {canSave && (
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isLoading}
+              form="payment-expense-article-form"
+              leftSection={<IconDeviceFloppy size={16} />}
+              loading={isSaving}
+              type="submit"
+            >
+              {t('Зберегти')}
+            </Button>
+          )}
+        </Group>
+      }
+    >
+      <form id="payment-expense-article-form" onSubmit={handleSubmit}>
+        <Stack gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
   DynamicProductPlacement,
   DynamicProductPlacementRow,
@@ -216,7 +217,19 @@ export function PlacementEditDrawer({
     : ''
 
   return (
-    <AppDrawer opened={opened} size="lg" title={t('Розміщення')} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="lg"
+      title={t('Розміщення')}
+      onClose={onClose}
+      footer={
+        draft ? null : (
+          <Button color={CREATE_ACTION_COLOR} onClick={handleApply}>
+            {t('Зберегти')}
+          </Button>
+        )
+      }
+    >
       <Stack gap="md">
         <Text fw={600}>{headerText}</Text>
         <Text c="dimmed" size="sm">
@@ -335,15 +348,6 @@ export function PlacementEditDrawer({
               <Button onClick={acceptDraft}>{t('Зберегти')}</Button>
             </Group>
           </Stack>
-        )}
-
-        {!draft && (
-          <Group justify="flex-end">
-            <Button color="gray" variant="light" onClick={onClose}>
-              {t('Скасувати')}
-            </Button>
-            <Button onClick={handleApply}>{t('Зберегти')}</Button>
-          </Group>
         )}
       </Stack>
     </AppDrawer>

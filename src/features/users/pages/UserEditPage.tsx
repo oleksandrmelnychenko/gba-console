@@ -12,11 +12,11 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCheck,
-  IconChevronLeft,
   IconDeviceFloppy,
   IconKey,
   IconTrash,
@@ -41,6 +41,7 @@ import {
   validatePasswordPair,
   validateUserProfile,
 } from '../utils'
+import './user-edit-page.css'
 
 type UserEditRouteState = {
   returnPath?: string
@@ -235,16 +236,16 @@ export function UserEditPage() {
       size="min(780px, 100vw)"
       aria-label={user ? getUserFullName(user) : t('Користувач')}
       onClose={closeSheet}
-    >
-      <Stack gap="md">
+      footer={
         <UserEditActions
           isDeleting={isDeleting}
           isSaving={isSaving}
           user={user}
-          onClose={closeSheet}
           onDelete={() => setDeleteModalOpened(true)}
         />
-
+      }
+    >
+      <Stack className="user-sheet" gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
@@ -285,49 +286,37 @@ function UserEditActions({
   isDeleting,
   isSaving,
   user,
-  onClose,
   onDelete,
 }: {
   isDeleting: boolean
   isSaving: boolean
   user: UserProfile | null
-  onClose: () => void
   onDelete: () => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Group justify="space-between" align="center">
+    <Group gap="xs">
       <Button
-        color="gray"
-        leftSection={<IconChevronLeft size={16} />}
+        color="red"
+        disabled={!user}
+        leftSection={<IconTrash size={16} />}
+        loading={isDeleting}
         variant="light"
-        onClick={onClose}
+        onClick={onDelete}
       >
-        {t('Скасувати')}
+        {t('Видалити')}
       </Button>
-      <Group gap="xs">
-        <Button
-          color="red"
-          disabled={!user}
-          leftSection={<IconTrash size={16} />}
-          loading={isDeleting}
-          variant="light"
-          onClick={onDelete}
-        >
-          {t('Видалити')}
-        </Button>
-        <Button
-          color="violet"
-          disabled={!user}
-          form="user-edit-form"
-          leftSection={<IconDeviceFloppy size={16} />}
-          loading={isSaving}
-          type="submit"
-        >
-          {t('Зберегти')}
-        </Button>
-      </Group>
+      <Button
+        color={CREATE_ACTION_COLOR}
+        disabled={!user}
+        form="user-edit-form"
+        leftSection={<IconDeviceFloppy size={16} />}
+        loading={isSaving}
+        type="submit"
+      >
+        {t('Зберегти')}
+      </Button>
     </Group>
   )
 }
@@ -404,14 +393,20 @@ function UserEditContent({
       {activeTab === 'profile' && (
         <Box pt="md">
           <form id="user-edit-form" onSubmit={onSubmit}>
-            <Card withBorder radius="md" padding="md">
-              <UserForm
-                disabled={status.isSaving || status.isDeleting}
-                roles={roles}
-                user={user}
-                onFieldChange={onFieldChange}
-              />
-            </Card>
+            <div className="user-sheet-card">
+              <div className="user-sheet-card-head">
+                <span className="user-sheet-card-dot" aria-hidden="true" />
+                {t('Профіль')}
+              </div>
+              <div className="user-sheet-card-body">
+                <UserForm
+                  disabled={status.isSaving || status.isDeleting}
+                  roles={roles}
+                  user={user}
+                  onFieldChange={onFieldChange}
+                />
+              </div>
+            </div>
           </form>
         </Box>
       )}
@@ -452,9 +447,14 @@ function UserPasswordPanel({
 
   return (
     <form onSubmit={onSubmit}>
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group grow align="end">
+      <div className="user-sheet-card">
+        <div className="user-sheet-card-head">
+          <span className="user-sheet-card-dot" aria-hidden="true" />
+          {t('Безпека')}
+        </div>
+        <div className="user-sheet-card-body">
+          <Stack gap="md">
+            <Group grow align="end">
             <PasswordInput
               disabled={!isPasswordChangeEnabled || isResettingPassword}
               label={t('Новий пароль')}
@@ -489,9 +489,10 @@ function UserPasswordPanel({
                 {t('Змінити пароль')}
               </Button>
             </Group>
-          )}
-        </Stack>
-      </Card>
+            )}
+          </Stack>
+        </div>
+      </div>
     </form>
   )
 }

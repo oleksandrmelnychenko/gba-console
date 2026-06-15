@@ -24,6 +24,7 @@ import {
 import { useEffect, useMemo, useReducer, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -422,8 +423,19 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
       size="wide"
       title={isToUkraineMode ? t('Нова поставка в Україну') : t('Нове замовлення Україна')}
       onClose={() => navigate('/orders/ukraine/all')}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          form="supply-ukraine-order-create-form"
+          leftSection={<IconUpload size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Створити')}
+        </Button>
+      }
     >
-      <form onSubmit={submitForm}>
+      <form id="supply-ukraine-order-create-form" onSubmit={submitForm}>
         <Stack gap="md">
           <Text c="dimmed" size="sm">
             {isToUkraineMode ? t('Створення поставки від постачальника') : t('Створення замовлення з файлу')}
@@ -467,15 +479,6 @@ function SupplyUkraineOrderFileCreatePage({ mode }: { mode: CreateMode }) {
               onParseFormChange={updateParseForm}
             />
           </SimpleGrid>
-
-          <Group justify="flex-end">
-            <Button disabled={isSaving} variant="subtle" onClick={() => navigate('/orders/ukraine/all')}>
-              {t('Скасувати')}
-            </Button>
-            <Button leftSection={<IconUpload size={16} />} loading={isSaving} type="submit">
-              {t('Створити')}
-            </Button>
-          </Group>
         </Stack>
       </form>
     </AppDrawer>

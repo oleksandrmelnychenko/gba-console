@@ -8,10 +8,11 @@ import {
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -220,37 +221,36 @@ export function CompanyCarFormPage() {
       size="standard"
       title={isEditMode ? t('Автомобіль компанії') : t('Завести нову машину компанії')}
       onClose={handleCancel}
-    >
-      <form onSubmit={handleSubmit}>
-        <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
-            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-              {t('Назад')}
-            </Button>
-            {isEditMode && (
-              <Button
-                color="red"
-                disabled={isLoading || !companyCar.NetUid}
-                leftSection={<IconTrash size={16} />}
-                loading={isDeleting}
-                type="button"
-                variant="light"
-                onClick={handleDelete}
-              >
-                {t('Видалити')}
-              </Button>
-            )}
+      footer={
+        <Group gap="xs">
+          {isEditMode && (
             <Button
-              color="violet"
-              disabled={isLoading || !canSave}
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={isSaving}
-              type="submit"
+              color="red"
+              disabled={isLoading || !companyCar.NetUid}
+              leftSection={<IconTrash size={16} />}
+              loading={isDeleting}
+              type="button"
+              variant="light"
+              onClick={handleDelete}
             >
-              {t('Зберегти')}
+              {t('Видалити')}
             </Button>
-          </Group>
-
+          )}
+          <Button
+            color={CREATE_ACTION_COLOR}
+            disabled={isLoading || !canSave}
+            form="company-car-form"
+            leftSection={<IconDeviceFloppy size={16} />}
+            loading={isSaving}
+            type="submit"
+          >
+            {t('Зберегти')}
+          </Button>
+        </Group>
+      }
+    >
+      <form id="company-car-form" onSubmit={handleSubmit}>
+        <Stack gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

@@ -18,6 +18,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getResponsibleUsers,
   getSupplyOrganizations,
@@ -292,6 +293,11 @@ export function NewMergedServiceForm({
           onClose()
         }
       }}
+      footer={
+        <Button color={CREATE_ACTION_COLOR} disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
+          {t('Зберегти')}
+        </Button>
+      }
     >
       <Stack gap="sm">
         {loadError && (
@@ -531,15 +537,6 @@ export function NewMergedServiceForm({
             />
           </Stack>
         )}
-
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button color="violet" disabled={isSaving} loading={isSaving} onClick={handleSubmit}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
 
         {productOptions.length === 0 && !loadError && (
           <Text c="dimmed" size="xs">

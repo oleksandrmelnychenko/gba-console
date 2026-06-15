@@ -15,6 +15,7 @@ import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getResponsibleUsers,
   getSupplyOrganizations,
@@ -205,7 +206,17 @@ export function NewMergedServiceForm({
   }
 
   return (
-    <AppDrawer opened={opened} size="lg" title={t('Додати')} onClose={onClose}>
+    <AppDrawer
+      opened={opened}
+      size="lg"
+      title={t('Додати')}
+      onClose={onClose}
+      footer={
+        <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={handleSubmit}>
+          {t('Зберегти')}
+        </Button>
+      }
+    >
       <Stack gap="sm">
         {loadError && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -359,14 +370,6 @@ export function NewMergedServiceForm({
           onChange={(event) => update('comment', event.currentTarget.value)}
         />
 
-        <Group justify="flex-end" gap="sm">
-          <Button color="gray" disabled={isSaving} variant="light" onClick={onClose}>
-            {t('Скасувати')}
-          </Button>
-          <Button color="violet" loading={isSaving} onClick={handleSubmit}>
-            {t('Зберегти')}
-          </Button>
-        </Group>
       </Stack>
     </AppDrawer>
   )

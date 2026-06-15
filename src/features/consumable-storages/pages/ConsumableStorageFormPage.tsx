@@ -1,17 +1,17 @@
 import {
   Alert,
   Button,
-  Group,
   Select,
   Stack,
   TextInput,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconArrowLeft, IconDeviceFloppy } from '@tabler/icons-react'
+import { IconAlertCircle, IconDeviceFloppy } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useReducer } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -240,24 +240,21 @@ export function ConsumableStorageFormPage() {
       size="standard"
       title={isEditMode ? t('Редагування складу') : t('Новий склад')}
       onClose={handleCancel}
+      footer={
+        <Button
+          color={CREATE_ACTION_COLOR}
+          disabled={isLoading || !canSave}
+          form="consumable-storage-form"
+          leftSection={<IconDeviceFloppy size={16} />}
+          loading={isSaving}
+          type="submit"
+        >
+          {t('Зберегти')}
+        </Button>
+      }
     >
-      <form onSubmit={handleSubmit}>
+      <form id="consumable-storage-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group justify="flex-end" gap="xs" wrap="wrap">
-            <Button color="gray" leftSection={<IconArrowLeft size={16} />} type="button" variant="light" onClick={handleCancel}>
-              {t('Назад')}
-            </Button>
-            <Button
-              color="violet"
-              disabled={isLoading || !canSave}
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={isSaving}
-              type="submit"
-            >
-              {t('Зберегти')}
-            </Button>
-          </Group>
-
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}

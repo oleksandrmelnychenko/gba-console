@@ -1,0 +1,40 @@
+/* Sheet layout used whenever an AppDrawer is given a `footer`. The body turns
+   into a flex column: a scrollable content region that grows, and a pinned
+   action footer that always sits at the bottom of the sheet — even when the
+   content is short. */
+.app-sheet-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-lg) var(--mantine-spacing-lg);
+}
+
+/* Shared right-sheet action bar. Same hairline + soft elevation + subtle brand
+   wash as the roster command bar, mirrored to read as a footer. Layout is
+   space-between, so pass a leading node (e.g. Cancel) and a trailing group
+   (e.g. Delete + Save). */
+.app-sheet-footer {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.05), transparent 42%),
+    var(--mantine-color-white);
+  border-top: 1px solid var(--mantine-color-gray-2);
+  box-shadow: 0 -8px 24px rgba(20, 28, 38, 0.05);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 12px var(--mantine-spacing-lg);
+}
+
+/* When a sheet only has trailing actions, keep them flush to the right. */
+.app-sheet-footer:has(> :only-child) {
+  justify-content: flex-end;
+}
