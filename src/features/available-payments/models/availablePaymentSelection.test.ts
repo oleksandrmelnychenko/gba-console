@@ -13,11 +13,12 @@ const t = (key: string) => key
 
 function buildModel(overrides: ModelOverride = {}): AvailablePaymentTaskModel {
   const id = overrides.id || 'model-1'
-  const task: SupplyPaymentTask = {
-    GrossPrice: 100,
-    IsAccounting: false,
-    NetUid: id,
-    TaskStatus: TaskStatusValue.NotDone,
+    const task: SupplyPaymentTask = {
+      GrossPrice: 100,
+      IsAccounting: false,
+      IsAvailableForPayment: true,
+      NetUid: id,
+      TaskStatus: TaskStatusValue.NotDone,
     ...overrides.task,
   }
 
@@ -64,6 +65,13 @@ describe('available payment selection validation', () => {
     expect(validateAvailablePaymentSelection([candidate], t)).toBe(
       'Цей тип платіжної задачі ще не підтримується для створення видаткового ордера',
     )
+  })
+
+  it('rejects candidates that are not moved to payment yet', () => {
+    const candidate = buildModel({ task: { IsAvailableForPayment: false } })
+
+    expect(getAvailablePaymentSelectionFailureReason([], candidate)).toBe('notAvailableForPayment')
+    expect(validateAvailablePaymentSelection([candidate], t)).toBe('Спочатку переведіть платіжну задачу в оплату')
   })
 
   it('rejects candidates from another organization', () => {

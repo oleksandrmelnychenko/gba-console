@@ -1872,6 +1872,7 @@ function PaymentTab({
   const { t } = useI18n()
   const isDone = model.task.TaskStatus === TaskStatusValue.Done
   const isUnsupported = Boolean(model.isUnsupported)
+  const isAvailableForPayment = model.task.IsAvailableForPayment !== false
 
   return (
     <Stack gap="md">
@@ -1900,13 +1901,18 @@ function PaymentTab({
           </Text>
         )}
         <Group gap="xs">
-          {!isDone && !isUnsupported && !model.task.IsAvailableForPayment && (
+          {!isDone && !isUnsupported && !isAvailableForPayment && (
             <Button color="green" disabled={isSaving} loading={isSaving} variant="light" onClick={onMoveToDone}>
               {t('Перевести в оплату')}
             </Button>
           )}
           {!isDone && (
-            <Button color="violet" disabled={isSaving || isUnsupported} leftSection={<IconCash size={16} />} onClick={onCreateOutcome}>
+            <Button
+              color="violet"
+              disabled={isSaving || isUnsupported || !isAvailableForPayment}
+              leftSection={<IconCash size={16} />}
+              onClick={onCreateOutcome}
+            >
               {t('Створити видатковий')}
             </Button>
           )}

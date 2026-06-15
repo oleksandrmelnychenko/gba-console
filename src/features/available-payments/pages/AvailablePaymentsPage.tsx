@@ -138,6 +138,23 @@ function useAvailablePaymentsPageModel() {
     groupsRef.current = groups
   }, [groups])
 
+  useEffect(() => {
+    setFilterDraft(initialFilters)
+    setActiveFilters(initialFilters)
+    setSelectedGroup(null)
+    setMarkedModels([])
+    setFilesByTaskId({})
+    setDocumentDeleteOverridesByTaskId({})
+  }, [
+    initialFilters,
+    setActiveFilters,
+    setDocumentDeleteOverridesByTaskId,
+    setFilesByTaskId,
+    setFilterDraft,
+    setMarkedModels,
+    setSelectedGroup,
+  ])
+
   const resetGroups = useCallback(() => {
     setGroups([])
     setPriceTotals([])
@@ -167,7 +184,6 @@ function useAvailablePaymentsPageModel() {
   useAvailablePaymentsLoader({
     activeFilters,
     filterError,
-    isOutcomePaymentTasksMode: isOutcomeMode,
     pageSize,
     reloadKey,
     resetGroups,
@@ -207,7 +223,7 @@ function useAvailablePaymentsPageModel() {
         from: toQueryDate(activeFilters.from),
         limit: pageSize,
         offset: requestOffset,
-        onlyAvailableForPayment: isOutcomeMode,
+        onlyAvailableForPayment: false,
         organizationNetId: activeFilters.organizationNetId || undefined,
         to: toQueryDate(activeFilters.to),
         typePaymentTask: activeFilters.type,
@@ -482,7 +498,6 @@ function useAvailablePaymentsOrganizationsLoader({
 function useAvailablePaymentsLoader({
   activeFilters,
   filterError,
-  isOutcomePaymentTasksMode,
   pageSize,
   reloadKey,
   resetGroups,
@@ -496,7 +511,6 @@ function useAvailablePaymentsLoader({
 }: {
   activeFilters: FilterDraft
   filterError: string | null
-  isOutcomePaymentTasksMode: boolean
   pageSize: number
   reloadKey: number
   resetGroups: () => void
@@ -527,7 +541,7 @@ function useAvailablePaymentsLoader({
           from: toQueryDate(activeFilters.from),
           limit: pageSize,
           offset: 0,
-          onlyAvailableForPayment: isOutcomePaymentTasksMode,
+          onlyAvailableForPayment: false,
           organizationNetId: activeFilters.organizationNetId || undefined,
           to: toQueryDate(activeFilters.to),
           typePaymentTask: activeFilters.type,
@@ -564,7 +578,6 @@ function useAvailablePaymentsLoader({
   }, [
     activeFilters,
     filterError,
-    isOutcomePaymentTasksMode,
     pageSize,
     reloadKey,
     resetGroups,

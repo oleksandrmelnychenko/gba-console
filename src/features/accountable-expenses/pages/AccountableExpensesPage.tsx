@@ -22,7 +22,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -58,9 +58,7 @@ const TABLE_DEFAULT_LAYOUT = {
   density: 'compact',
 } satisfies DataTableDefaultLayout
 
-const DEFAULT_LOOKBACK_DAYS = 7
-
-const FILTERS_STORAGE_KEY = 'accountable-expenses-filters'
+const FILTERS_STORAGE_KEY = 'accountable-expenses-filters-v2'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -90,7 +88,7 @@ export function AccountableExpensesPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
-  const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || shiftDate(-DEFAULT_LOOKBACK_DAYS))
+  const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || SYNC_DATA_RANGE_START)
   const [toDate, setToDate] = useValueState(() => readStoredFilters().to || formatLocalDate(new Date()))
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
@@ -560,16 +558,39 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               <Divider />
               <Stack gap="xs">
                 <Text fw={700}>{t('Усі прив’язки до авансових звітів')}</Text>
-                {outcomeOrders.map((item, index) => (
-                  <SimpleGrid key={getOutcomeOrderLinkKey(item, index)} cols={{ base: 1, sm: 2 }}>
-                    <DetailItem label={t('Авансовий звіт')} value={displayValue(item.OutcomePaymentOrder?.AdvanceNumber)} />
-                    <DetailItem label={t('Видатковий ордер')} value={displayValue(item.OutcomePaymentOrder?.Number || item.OutcomePaymentOrder?.CustomNumber)} />
-                    <DetailItem label={t('Дата')} value={formatDateTime(item.OutcomePaymentOrder?.FromDate)} />
-                    <DetailItem label={t('Сума')} value={formatMoney(item.OutcomePaymentOrder?.Amount)} />
-                    <DetailItem label={t('Валюта')} value={displayValue(item.OutcomePaymentOrder?.PaymentCurrencyRegister?.Currency?.Code || item.OutcomePaymentOrder?.PaymentCurrencyRegister?.Currency?.Name)} />
-                    <DetailItem label={t('Закрито')} value={item.OutcomePaymentOrder?.IsUnderReportDone ? t('Так') : t('Ні')} />
-                  </SimpleGrid>
-                ))}
+                {outcomeOrders.map((item, index) => {
+                  const itemOutcome = item.OutcomePaymentOrder
+                  const itemAdvanceReportLink = getAdvanceReportLink(itemOutcome)
+
+                  return (
+                    <Stack key={getOutcomeOrderLinkKey(item, index)} gap="xs">
+                      <Group justify="space-between" gap="sm">
+                        <Text fw={600} size="sm">
+                          {displayValue(itemOutcome?.AdvanceNumber)}
+                        </Text>
+                        {itemAdvanceReportLink && (
+                          <Button
+                            component={Link}
+                            leftSection={<IconExternalLink size={16} />}
+                            size="xs"
+                            to={itemAdvanceReportLink}
+                            variant="light"
+                          >
+                            {t('Відкрити авансовий звіт')}
+                          </Button>
+                        )}
+                      </Group>
+                      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                        <DetailItem label={t('Авансовий звіт')} value={displayValue(itemOutcome?.AdvanceNumber)} />
+                        <DetailItem label={t('Видатковий ордер')} value={displayValue(itemOutcome?.Number || itemOutcome?.CustomNumber)} />
+                        <DetailItem label={t('Дата')} value={formatDateTime(itemOutcome?.FromDate)} />
+                        <DetailItem label={t('Сума')} value={formatMoney(itemOutcome?.Amount)} />
+                        <DetailItem label={t('Валюта')} value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
+                        <DetailItem label={t('Закрито')} value={itemOutcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
+                      </SimpleGrid>
+                    </Stack>
+                  )
+                })}
               </Stack>
             </>
           )}
@@ -588,13 +609,6 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <Text size="sm">{value}</Text>
     </Stack>
   )
-}
-
-function shiftDate(days: number): string {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-
-  return formatLocalDate(date)
 }
 
 type StoredFilters = {

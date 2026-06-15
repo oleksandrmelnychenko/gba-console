@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   AccountableExpensesSearchParams,
   ConsumablesOrder,
@@ -9,8 +10,8 @@ import type {
 export async function getAccountableExpenses(params: AccountableExpensesSearchParams): Promise<ConsumablesOrder[]> {
   const result = await apiRequest<unknown>('/consumables/orders/all/services', {
     query: {
-      from: params.from,
-      to: params.to,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
       value: '',
     },
   })
@@ -24,8 +25,8 @@ export async function searchAccountableExpenses(
 ): Promise<ConsumablesOrder[]> {
   const result = await apiRequest<unknown>('/consumables/orders/all/services', {
     query: {
-      from: params.from,
-      to: params.to,
+      from: toDateTimeQuery(params.from, 'start'),
+      to: toDateTimeQuery(params.to, 'end'),
       value,
     },
   })

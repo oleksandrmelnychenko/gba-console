@@ -120,7 +120,7 @@ function useActProvidingServicesPageModel() {
   )
   const openSelectedRow = useCallback(
     (row: ActProvidingServiceRow) => {
-      if (!row.netId && !row.supplyOrderUkraineNetUid && !row.protocolNetId) {
+      if (!hasActProvidingServiceActionTarget(row)) {
         notifications.show({ color: 'red', message: t('Обрано невірний сервіс') })
         return
       }
@@ -568,7 +568,7 @@ function useActProvidingServiceColumns(
             <ActionIcon
               aria-label={t('Відкрити')}
               color="gray"
-              disabled={!row.netId}
+              disabled={!hasActProvidingServiceActionTarget(row)}
               size={30}
               variant="subtle"
               onClick={(event) => {
@@ -628,6 +628,10 @@ function displayValue(value?: string | number | null): string {
   }
 
   return value || '—'
+}
+
+function hasActProvidingServiceActionTarget(row: ActProvidingServiceRow): boolean {
+  return Boolean(row.netId || row.supplyOrderUkraineNetUid || row.protocolNetId)
 }
 
 function getFilterError(dateFrom: string, dateTo: string): string | null {
