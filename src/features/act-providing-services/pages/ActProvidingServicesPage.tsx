@@ -22,7 +22,7 @@ import {
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { formatLocalDate } from '../../../shared/date/dateTime'
+import { SYNC_DATA_RANGE_START, formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -38,7 +38,6 @@ import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel
 import './act-providing-services-page.css'
 
 const PAGE_SIZE = 20
-const DEFAULT_LOOKBACK_DAYS = 1
 const pageSizeOptions = ['20', '40', '60', '100']
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_ACT = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
@@ -645,12 +644,9 @@ function getFilterError(dateFrom: string, dateTo: string): string | null {
 
 function getDefaultFilters(): { from: string; to: string } {
   const to = new Date()
-  const from = new Date()
-
-  from.setDate(from.getDate() - DEFAULT_LOOKBACK_DAYS)
 
   return {
-    from: formatLocalDate(from),
+    from: SYNC_DATA_RANGE_START,
     to: formatLocalDate(to),
   }
 }
