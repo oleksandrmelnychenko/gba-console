@@ -74,6 +74,7 @@ import {
   ProductStoragesPage,
   ProductTransfersPage,
   ProductsPage,
+  PricingPage,
   NewResalePage,
   NewUkraineSaleReturnPage,
   ReportsSalePage,
@@ -313,6 +314,7 @@ const plannedConsoleRoutes: ConsoleRoute[] = [
   { path: '/sales/ukraine/all/returns/new', element: <SalesDashboardShell>{lazyRoute(<NewUkraineSaleReturnPage />)}</SalesDashboardShell> },
   { path: '/sales', element: lazyRoute(<BasketSupplyUkraineOrderPage />) },
   { path: '/service/organisations', element: lazyRoute(<OrganisationServicesPage />) },
+  { path: '/pricing', element: lazyRoute(<PricingPage />) },
 ]
 
 export const consoleRoutes: ConsoleRoute[] = [

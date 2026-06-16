@@ -57,6 +57,7 @@ export const ProductStoragesPage = lazy(() => import('../../features/product-sto
 export const ProductTransfersPage = lazy(() => import('../../features/product-transfers/pages/ProductTransfersPage').then((module) => ({ default: module.ProductTransfersPage })))
 export const ProductDetailPage = lazy(() => import('../../features/products/pages/ProductDetailPage').then((module) => ({ default: module.ProductDetailPage })))
 export const ProductsPage = lazy(() => import('../../features/products/pages/ProductsPage').then((module) => ({ default: module.ProductsPage })))
+export const PricingPage = lazy(() => import('../../features/pricing/pages/PricingPage').then((module) => ({ default: module.PricingPage })))
 export const NewResalePage = lazy(() => import('../../features/resales/pages/ResalesPage').then((module) => ({ default: module.NewResalePage })))
 export const ResalePage = lazy(() => import('../../features/resales/pages/ResalesPage').then((module) => ({ default: module.ResalePage })))
 export const ResalesPage = lazy(() => import('../../features/resales/pages/ResalesPage').then((module) => ({ default: module.ResalesPage })))
