@@ -5,18 +5,457 @@
 }
 
 .accountable-expenses-page__table {
+  display: flex;
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
 }
 
-.accountable-expenses-page__table .data-table {
+.accountable-expenses-command-bar {
+  --accountable-expenses-command-control-height: 36px;
+  --accountable-expenses-command-label-gap: 4px;
+  --accountable-expenses-command-label-height: 17px;
+
+  align-items: end;
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
+  height: 85px;
+  padding: 12px;
+}
+
+.accountable-expenses-period-filter {
+  min-height: 0;
+  min-width: 0;
+}
+
+.accountable-expenses-filter-label,
+.accountable-expenses-search-input .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  height: var(--accountable-expenses-command-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: var(--accountable-expenses-command-label-gap);
+}
+
+.accountable-expenses-period-fields {
+  align-items: center;
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+}
+
+.accountable-expenses-period-separator {
+  background: var(--mantine-color-gray-3);
+  height: 1px;
+  justify-self: center;
+  width: 10px;
+}
+
+.accountable-expenses-date-input,
+.accountable-expenses-search-input {
+  min-width: 0;
+}
+
+.accountable-expenses-search-input {
+  display: grid;
+  grid-template-rows: var(--accountable-expenses-command-label-height) var(--accountable-expenses-command-control-height);
+  min-height: calc(
+    var(--accountable-expenses-command-label-height) +
+    var(--accountable-expenses-command-label-gap) +
+    var(--accountable-expenses-command-control-height)
+  );
+  row-gap: var(--accountable-expenses-command-label-gap);
+}
+
+.accountable-expenses-search-input .mantine-InputWrapper-label {
+  margin-bottom: 0;
+}
+
+.accountable-expenses-date-input .mantine-Input-wrapper,
+.accountable-expenses-date-input .mantine-Input-input,
+.accountable-expenses-search-input .mantine-Input-wrapper,
+.accountable-expenses-search-input .mantine-TextInput-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: inherit;
+  height: var(--accountable-expenses-command-control-height);
+  line-height: 1.2;
+  min-height: var(--accountable-expenses-command-control-height);
+}
+
+.accountable-expenses-date-input .mantine-Input-wrapper,
+.accountable-expenses-date-input .mantine-Input-input {
+  font-size: 12.5px;
+  font-weight: 520;
+  letter-spacing: 0;
+}
+
+.accountable-expenses-search-input .mantine-Input-wrapper,
+.accountable-expenses-search-input .mantine-TextInput-input {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit,
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-fields-wrapper,
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-text,
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-month-field,
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-day-field,
+.accountable-expenses-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
+  color: inherit;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.accountable-expenses-command-actions {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.accountable-expenses-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 12px;
+}
+
+.accountable-expenses-list-head,
+.accountable-expenses-row {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns:
+    minmax(270px, 1.15fr)
+    minmax(270px, 1.08fr)
+    78px
+    108px
+    126px
+    minmax(178px, 0.72fr)
+    138px
+    104px;
+  min-width: 1280px;
+}
+
+.accountable-expenses-list-head {
+  color: var(--mantine-color-gray-5);
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0 24px 8px 10px;
+  text-transform: uppercase;
+}
+
+.accountable-expenses-sort-header {
+  all: unset;
+  align-items: center;
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 4px;
+  max-width: max-content;
+  min-width: 0;
+  padding: 2px 3px;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.accountable-expenses-sort-header:hover,
+.accountable-expenses-sort-header:focus-visible,
+.accountable-expenses-sort-header.is-active {
+  background: var(--mantine-color-orange-0);
+  color: var(--mantine-color-gray-8);
+}
+
+.accountable-expenses-sort-header svg {
+  color: #e8782e;
+  flex: 0 0 auto;
+  opacity: 0.58;
+}
+
+.accountable-expenses-sort-header.is-active svg {
+  opacity: 1;
+}
+
+.accountable-expenses-sort-header.is-right {
+  justify-self: end;
+}
+
+.accountable-expenses-list-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 1280px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 14px;
+}
+
+.accountable-expenses-row {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  cursor: pointer;
+  min-height: 66px;
+  outline: none;
+  padding: 8px 10px;
+  position: relative;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.accountable-expenses-row:last-child {
+  border-bottom: 0;
+}
+
+.accountable-expenses-row::before {
+  background: transparent;
+  border-radius: 999px;
+  bottom: 9px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 9px;
+  transition: background-color 140ms ease;
+  width: 3px;
+}
+
+.accountable-expenses-row:hover,
+.accountable-expenses-row:focus-visible {
+  background:
+    linear-gradient(90deg, rgba(255, 250, 245, 0.92), rgba(255, 250, 245, 0.44) 42%, transparent),
+    var(--mantine-color-white);
+  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
+  transform: translateX(3px);
+  z-index: 1;
+}
+
+.accountable-expenses-row:hover::before,
+.accountable-expenses-row:focus-visible::before {
+  background: #e8782e;
+}
+
+.accountable-expenses-document-cell {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.accountable-expenses-document-icon,
+.accountable-expenses-quantity-icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  justify-content: center;
+}
+
+.accountable-expenses-document-icon {
+  border-radius: 999px;
+  flex: 0 0 34px;
+  height: 34px;
+  width: 34px;
+}
+
+.accountable-expenses-document-copy,
+.accountable-expenses-product-copy {
+  display: block;
+  min-width: 0;
+}
+
+.accountable-expenses-document-title,
+.accountable-expenses-document-meta,
+.accountable-expenses-product-title,
+.accountable-expenses-product-code,
+.accountable-expenses-responsible-cell > span,
+.accountable-expenses-responsible-cell > small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expenses-document-title,
+.accountable-expenses-product-title {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 720;
+  line-height: 1.15;
+}
+
+.accountable-expenses-document-meta,
+.accountable-expenses-product-code {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.accountable-expenses-product-title-row {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.accountable-expenses-type-badge {
+  flex: 0 0 auto;
+  font-size: 9.5px;
+  height: 19px;
+  padding: 0 7px;
+}
+
+.accountable-expenses-quantity-cell {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  justify-self: end;
+  min-width: 0;
+}
+
+.accountable-expenses-quantity-icon {
+  border-radius: 7px;
+  flex: 0 0 25px;
+  font-size: 12px;
+  font-weight: 650;
+  height: 25px;
+  line-height: 1;
+  width: 25px;
+}
+
+.accountable-expenses-quantity-cell strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.accountable-expenses-money-cell {
+  align-items: flex-end;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  line-height: 1.1;
+  min-width: 0;
 }
 
-.accountable-expenses-page__table .data-table-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
+.accountable-expenses-money-cell strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expenses-money-cell small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 650;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.accountable-expenses-responsible-cell {
+  border-left: 1px dashed var(--mantine-color-gray-3);
+  display: block;
+  min-width: 0;
+  padding-left: 12px;
+}
+
+.accountable-expenses-responsible-cell > span {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 1.15;
+}
+
+.accountable-expenses-responsible-cell > small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.accountable-expenses-status-cell {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.accountable-expenses-status-cell .mantine-Badge-root {
+  font-size: 10px;
+  height: 22px;
+  padding: 0 8px;
+}
+
+.accountable-expenses-status-cell small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expenses-row-actions {
+  justify-self: end;
+}
+
+.accountable-expenses-row-actions .mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-5);
+}
+
+.accountable-expenses-list-state {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 12px;
+  justify-content: center;
+  min-height: 240px;
+}
+
+@media (max-width: 980px) {
+  .accountable-expenses-command-bar {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .accountable-expenses-command-actions {
+    justify-content: flex-start;
+  }
 }

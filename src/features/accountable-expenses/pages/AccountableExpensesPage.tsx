@@ -13,11 +13,15 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconChevronDown,
+  IconChevronUp,
   IconCreditCard,
   IconEye,
   IconExternalLink,
+  IconFileText,
   IconPencil,
   IconRefresh,
+  IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -26,10 +30,6 @@ import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dat
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   getAccountableExpenses,
   searchAccountableExpenses,
@@ -49,14 +49,7 @@ import type {
   ConsumablesOrder,
 } from '../types'
 import './accountable-expenses-page.css'
-
-const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['created', 'advanceNumber'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
+import '../../../shared/ui/console-table-page.css'
 
 const FILTERS_STORAGE_KEY = 'accountable-expenses-filters-v2'
 
@@ -74,26 +67,26 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-const ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
+type AccountableExpenseSortId = 'amount' | 'document' | 'price' | 'product' | 'qty' | 'responsible' | 'status'
+
+type AccountableExpenseSortState = {
+  direction: 'asc' | 'desc'
+  id: AccountableExpenseSortId
+} | null
 
 export function AccountableExpensesPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
+  const defaultToDate = useMemo(() => formatLocalDate(new Date()), [])
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
   const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || SYNC_DATA_RANGE_START)
-  const [toDate, setToDate] = useValueState(() => readStoredFilters().to || formatLocalDate(new Date()))
+  const [toDate, setToDate] = useValueState(() => readStoredFilters().to || defaultToDate)
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AccountableExpenseRow | null>(null)
+  const [sortState, setSortState] = useValueState<AccountableExpenseSortState>(null)
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
 
@@ -144,6 +137,7 @@ export function AccountableExpensesPage() {
   }, [fromDate, toDate])
 
   const rows = useMemo(() => buildExpenseRows(orders), [orders])
+  const sortedRows = useMemo(() => sortAccountableExpenseRows(rows, sortState), [rows, sortState])
   const openPayment = useCallback(
     (row: AccountableExpenseRow) => {
       const netId = row.order.NetUid || row.order.Id
@@ -178,89 +172,116 @@ export function AccountableExpensesPage() {
     },
     [location, navigate],
   )
-  const columns = useAccountableExpenseColumns({
-    onEdit: openOrderEdit,
-    onOpen: setSelectedRow,
-    onPay: openPayment,
-  })
-  const { density, toggleDensity } = useDataTableDensity('accountable-expenses', TABLE_DEFAULT_LAYOUT.density)
-  const toolbarLeft = useMemo(
-    () => (
-      <Text c="dimmed" size="xs">
-        {t('Документів')}: {orders.length}
-        {rows.length !== orders.length ? `, ${t('рядків')}: ${rows.length}` : ''}
-      </Text>
-    ),
-    [orders.length, rows.length, t],
+  const resetFilters = useCallback(
+    () => {
+      setFromDate(SYNC_DATA_RANGE_START)
+      setToDate(defaultToDate)
+      setSearchValue('')
+      setOrders([])
+    },
+    [defaultToDate, setFromDate, setOrders, setSearchValue, setToDate],
   )
+  const toggleSort = useCallback(
+    (id: AccountableExpenseSortId) => {
+      setSortState((current) => {
+        if (current?.id !== id) {
+          return { direction: 'asc', id }
+        }
+
+        return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+      })
+    },
+    [setSortState],
+  )
+  const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== SYNC_DATA_RANGE_START || toDate !== defaultToDate
 
   return (
-    <Stack className="accountable-expenses-page" gap={6}>
-      <Group justify="space-between" align="end" gap="sm">
-        <Group align="end" gap="sm">
+    <Stack className="accountable-expenses-page console-table-page" gap="md">
+      <div className="console-table-shell">
+        <div className="accountable-expenses-command-bar">
+          <div className="accountable-expenses-period-filter">
+            <span className="accountable-expenses-filter-label">{t('Період')}</span>
+            <div className="accountable-expenses-period-fields">
+              <TextInput
+                className="accountable-expenses-date-input"
+                aria-label={t('Від')}
+                type="date"
+                value={fromDate}
+                onChange={(event) => {
+                  setFromDate(event.currentTarget.value)
+                  setOrders([])
+                }}
+              />
+              <span className="accountable-expenses-period-separator" />
+              <TextInput
+                className="accountable-expenses-date-input"
+                aria-label={t('До')}
+                type="date"
+                value={toDate}
+                onChange={(event) => {
+                  setToDate(event.currentTarget.value)
+                  setOrders([])
+                }}
+              />
+            </div>
+          </div>
+
           <TextInput
-            label={t('Від')}
-            type="date"
-            value={fromDate}
-            onChange={(event) => setFromDate(event.currentTarget.value)}
-          />
-          <TextInput
-            label={t('До')}
-            type="date"
-            value={toDate}
-            onChange={(event) => setToDate(event.currentTarget.value)}
-          />
-          <TextInput
-            leftSection={<IconSearch size={16} />}
+            className="accountable-expenses-search-input"
+            leftSection={<IconSearch size={15} />}
             label={t('Пошук')}
             placeholder={t('Номер, товар, відповідальний')}
             value={searchValue}
-            w={320}
             onChange={(event) => {
               setSearchValue(event.currentTarget.value)
               setOrders([])
             }}
           />
-        </Group>
-        <Group align="end" gap="sm">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+          <div className="accountable-expenses-command-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!hasActiveFilters}
+                size={34}
+                variant="light"
+                onClick={resetFilters}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void loadOrders()}>
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-      {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError}
-        </Alert>
-      )}
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <div className="accountable-expenses-page__table">
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Підзвітних витрат не знайдено')}
-          getRowId={(row) => row.id}
-          isLoading={isLoading}
-          layoutVersion="accountable-expenses-1"
-          height="100%"
-          minWidth={1480}
-          showLayoutControls={false}
-          tableId="accountable-expenses"
-          toolbarLeft={toolbarLeft}
-          onRowClick={setSelectedRow}
-        />
+        {filterError && (
+          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
+
+        <div className="accountable-expenses-page__table console-table-body">
+          <AccountableExpensesList
+            isLoading={isLoading}
+            rows={sortedRows}
+            sortState={sortState}
+            onEdit={openOrderEdit}
+            onOpen={setSelectedRow}
+            onPay={openPayment}
+            onSort={toggleSort}
+          />
+        </div>
       </div>
 
       <ExpenseDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
@@ -268,213 +289,271 @@ export function AccountableExpensesPage() {
   )
 }
 
-function useAccountableExpenseColumns({
+function AccountableExpensesList({
+  isLoading,
+  rows,
+  sortState,
+  onEdit,
+  onOpen,
+  onPay,
+  onSort,
+}: {
+  isLoading: boolean
+  rows: AccountableExpenseRow[]
+  sortState: AccountableExpenseSortState
+  onEdit: (row: AccountableExpenseRow) => void
+  onOpen: (row: AccountableExpenseRow) => void
+  onPay: (row: AccountableExpenseRow) => void
+  onSort: (id: AccountableExpenseSortId) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="accountable-expenses-list">
+      <div className="accountable-expenses-list-head">
+        <AccountableExpenseSortHeader id="document" label={t('Документ / кому видано')} sortState={sortState} onSort={onSort} />
+        <AccountableExpenseSortHeader id="product" label={t('Товар / послуга')} sortState={sortState} onSort={onSort} />
+        <AccountableExpenseSortHeader id="qty" label={t('К-сть')} sortState={sortState} align="right" onSort={onSort} />
+        <AccountableExpenseSortHeader id="price" label={t('Ціна')} sortState={sortState} align="right" onSort={onSort} />
+        <AccountableExpenseSortHeader id="amount" label={t('Сума')} sortState={sortState} align="right" onSort={onSort} />
+        <AccountableExpenseSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
+        <AccountableExpenseSortHeader id="status" label={t('Статус')} sortState={sortState} onSort={onSort} />
+        <span aria-hidden />
+      </div>
+
+      <div className="accountable-expenses-list-body">
+        {isLoading ? (
+          <div className="accountable-expenses-list-state">{t('Завантаження підзвітних витрат')}</div>
+        ) : rows.length === 0 ? (
+          <div className="accountable-expenses-list-state">{t('Підзвітних витрат не знайдено')}</div>
+        ) : (
+          rows.map((row) => (
+            <AccountableExpenseListRow
+              key={row.id}
+              row={row}
+              onEdit={onEdit}
+              onOpen={onOpen}
+              onPay={onPay}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AccountableExpenseSortHeader({
+  align,
+  id,
+  label,
+  sortState,
+  onSort,
+}: {
+  align?: 'right'
+  id: AccountableExpenseSortId
+  label: string
+  sortState: AccountableExpenseSortState
+  onSort: (id: AccountableExpenseSortId) => void
+}) {
+  const isActive = sortState?.id === id
+
+  return (
+    <button
+      className={`accountable-expenses-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
+      type="button"
+      onClick={() => onSort(id)}
+    >
+      <span>{label}</span>
+      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
+    </button>
+  )
+}
+
+function AccountableExpenseListRow({
+  row,
   onEdit,
   onOpen,
   onPay,
 }: {
+  row: AccountableExpenseRow
   onEdit: (row: AccountableExpenseRow) => void
   onOpen: (row: AccountableExpenseRow) => void
   onPay: (row: AccountableExpenseRow) => void
-}): DataTableColumn<AccountableExpenseRow>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<AccountableExpenseRow>[]>(
-    () => [
-      {
-        id: 'created',
-        header: t('Створено'),
-        width: 145,
-        minWidth: 130,
-        accessor: (row) => row.created,
-        cell: (row) => <AccountableExpenseTableValue value={formatDateTime(row.created)} />,
-      },
-      {
-        id: 'advanceNumber',
-        header: t('Авансовий звіт'),
-        width: 175,
-        minWidth: 145,
-        accessor: (row) => row.advanceNumber,
-        cell: (row) => <AccountableExpenseTableValue fw={600} value={displayValue(row.advanceNumber)} />,
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        width: 150,
-        minWidth: 120,
-        accessor: (row) => row.organization,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.organization)} />,
-      },
-      {
-        id: 'payedTo',
-        header: t('Кому видано'),
-        width: 160,
-        minWidth: 130,
-        accessor: (row) => row.payedTo,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.payedTo)} />,
-      },
-      {
-        id: 'vendorCode',
-        header: t('Артикул'),
-        width: 110,
-        minWidth: 90,
-        accessor: (row) => row.vendorCode,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.vendorCode)} />,
-      },
-      {
-        id: 'product',
-        header: t('Назва'),
-        width: 210,
-        minWidth: 170,
-        accessor: (row) => row.productName,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.productName)} />,
-      },
-      {
-        id: 'type',
-        header: t('Тип'),
-        width: 105,
-        minWidth: 90,
-        accessor: (row) => row.item.IsService,
-        cell: (row) => (
-          <Badge color={row.item.IsService ? 'indigo' : 'gray'} variant="light">
-            {row.item.IsService ? t('Послуга') : t('Товар')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'qty',
-        header: t('Кількість'),
-        width: 105,
-        minWidth: 90,
-        align: 'right',
-        accessor: (row) => row.qty,
-        cell: (row) => <AccountableExpenseTableValue value={formatAmount(row.qty)} />,
-      },
-      {
-        id: 'price',
-        header: t('Ціна'),
-        width: 120,
-        minWidth: 100,
-        align: 'right',
-        accessor: (row) => row.pricePerItem,
-        cell: (row) => <AccountableExpenseTableValue value={formatMoney(row.pricePerItem)} />,
-      },
-      {
-        id: 'amount',
-        header: t('Сума'),
-        width: 120,
-        minWidth: 100,
-        align: 'right',
-        accessor: (row) => row.amount,
-        cell: (row) => <AccountableExpenseTableValue value={formatMoney(row.amount)} />,
-      },
-      {
-        id: 'currency',
-        header: t('Валюта'),
-        width: 90,
-        minWidth: 80,
-        accessor: (row) => row.currency,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.currency)} />,
-      },
-      {
-        id: 'responsible',
-        header: t('Відповідальний'),
-        width: 155,
-        minWidth: 120,
-        accessor: (row) => row.responsible,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.responsible)} />,
-      },
-      {
-        id: 'status',
-        header: t('Статус'),
-        width: 130,
-        minWidth: 110,
-        accessor: (row) => row.paymentStatus,
-        cell: (row) => (
-          <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
-            {formatPaymentStatus(row.paymentStatus, t)}
-          </Badge>
-        ),
-      },
-      {
-        id: 'comment',
-        header: t('Коментар'),
-        width: 220,
-        minWidth: 160,
-        accessor: (row) => row.comment,
-        cell: (row) => <AccountableExpenseTableValue value={displayValue(row.comment)} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 122,
-        minWidth: 116,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
-            {row.paymentStatus !== 'paid' && (
-              <Tooltip label={t('Оплатити')}>
-                <ActionIcon
-                  aria-label={t('Оплатити')}
-                  color="green"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onPay(row)
-                  }}
-                >
-                  <IconCreditCard size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            <Tooltip label={t('Відкрити накладну')}>
-              <ActionIcon
-                aria-label={t('Відкрити накладну')}
-                color="blue"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onEdit(row)
-                }}
-              >
-                <IconPencil size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(row)
-                }}
-              >
-                <IconEye size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ),
-      },
-    ],
-    [onEdit, onOpen, onPay, t],
+}) {
+  return (
+    <div
+      className="accountable-expenses-row"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(row)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen(row)
+        }
+      }}
+    >
+      <AccountableExpenseDocumentCell row={row} />
+      <AccountableExpenseProductCell row={row} />
+      <AccountableExpenseQuantityCell value={formatAmount(row.qty)} />
+      <AccountableExpenseMoneyCell value={formatMoney(row.pricePerItem)} />
+      <AccountableExpenseMoneyCell currency={displayValue(row.currency)} value={formatMoney(row.amount)} />
+      <AccountableExpenseResponsibleCell row={row} />
+      <AccountableExpenseStatusCell row={row} />
+      <AccountableExpenseActions row={row} onEdit={onEdit} onOpen={onOpen} onPay={onPay} />
+    </div>
   )
 }
 
-function AccountableExpenseTableValue({ fw, value }: { fw?: number; value: string }) {
+function AccountableExpenseDocumentCell({ row }: { row: AccountableExpenseRow }) {
+  const title = displayValue(row.advanceNumber || row.order.Number || row.order.OrganizationNumber)
+  const meta = compactStrings([formatDateTime(row.created), row.payedTo]).join(' · ')
+  const organization = row.organization?.trim()
+  const tooltip = compactStrings([title, meta, organization]).join('\n')
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={ACCOUNTABLE_EXPENSE_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="accountable-expenses-document-cell">
+        <span className="accountable-expenses-document-icon" aria-hidden>
+          <IconFileText size={15} />
+        </span>
+        <span className="accountable-expenses-document-copy">
+          <span className="accountable-expenses-document-title">{title}</span>
+          {meta ? <span className="accountable-expenses-document-meta">{meta}</span> : null}
+          {organization ? <span className="accountable-expenses-document-meta">{organization}</span> : null}
+        </span>
+      </span>
     </Tooltip>
+  )
+}
+
+function AccountableExpenseProductCell({ row }: { row: AccountableExpenseRow }) {
+  const { t } = useI18n()
+  const title = displayValue(row.productName)
+  const vendorCode = row.vendorCode?.trim()
+  const typeLabel = row.item.IsService ? t('Послуга') : t('Товар')
+  const tooltip = compactStrings([title, vendorCode, typeLabel]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="accountable-expenses-product-cell">
+        <span className="accountable-expenses-product-copy">
+          <span className="accountable-expenses-product-title-row">
+            <span className="accountable-expenses-product-title">{title}</span>
+            <Badge className="accountable-expenses-type-badge" color={row.item.IsService ? 'indigo' : 'gray'} variant="light">
+              {typeLabel}
+            </Badge>
+          </span>
+          {vendorCode ? <span className="accountable-expenses-product-code">{vendorCode}</span> : null}
+        </span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function AccountableExpenseQuantityCell({ value }: { value: string }) {
+  return (
+    <span className="accountable-expenses-quantity-cell">
+      <span className="accountable-expenses-quantity-icon" aria-hidden>
+        #
+      </span>
+      <strong>{value}</strong>
+    </span>
+  )
+}
+
+function AccountableExpenseMoneyCell({ currency, value }: { currency?: string; value: string }) {
+  const tooltip = compactStrings([value, currency]).join(' ')
+
+  return (
+    <Tooltip label={tooltip} openDelay={350} withArrow>
+      <span className="accountable-expenses-money-cell">
+        <strong>{value}</strong>
+        {currency ? <small>{currency}</small> : null}
+      </span>
+    </Tooltip>
+  )
+}
+
+function AccountableExpenseResponsibleCell({ row }: { row: AccountableExpenseRow }) {
+  const title = displayValue(row.responsible)
+  const comment = row.comment?.trim()
+  const tooltip = compactStrings([title, comment]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="accountable-expenses-responsible-cell">
+        <span>{title}</span>
+        {comment ? <small>{comment}</small> : null}
+      </span>
+    </Tooltip>
+  )
+}
+
+function AccountableExpenseStatusCell({ row }: { row: AccountableExpenseRow }) {
+  const { t } = useI18n()
+
+  return (
+    <span className="accountable-expenses-status-cell">
+      <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
+        {formatPaymentStatus(row.paymentStatus, t)}
+      </Badge>
+      <small>{t('Підзвіт')}: {formatUnderReportStatus(row.underReportStatus, t)}</small>
+    </span>
+  )
+}
+
+function AccountableExpenseActions({
+  row,
+  onEdit,
+  onOpen,
+  onPay,
+}: {
+  row: AccountableExpenseRow
+  onEdit: (row: AccountableExpenseRow) => void
+  onOpen: (row: AccountableExpenseRow) => void
+  onPay: (row: AccountableExpenseRow) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group className="accountable-expenses-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+      {row.paymentStatus !== 'paid' && (
+        <Tooltip label={t('Оплатити')}>
+          <ActionIcon
+            aria-label={t('Оплатити')}
+            color="green"
+            size="sm"
+            variant="subtle"
+            onClick={() => onPay(row)}
+          >
+            <IconCreditCard size={15} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+      <Tooltip label={t('Відкрити накладну')}>
+        <ActionIcon
+          aria-label={t('Відкрити накладну')}
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={() => onEdit(row)}
+        >
+          <IconPencil size={15} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Деталі')}>
+        <ActionIcon
+          aria-label={t('Деталі')}
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={() => onOpen(row)}
+        >
+          <IconEye size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
   )
 }
 
@@ -522,7 +601,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
 
           <Stack gap="xs">
             <Group justify="space-between" align="center" gap="sm">
-              <Text fw={700}>{t('Пов’язаний видатковий документ')}</Text>
+              <Text fw={700}>{t('Повʼязаний видатковий документ')}</Text>
               {advanceReportLink && (
                 <Button
                   component={Link}
@@ -548,7 +627,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
               </SimpleGrid>
             ) : (
               <Text c="dimmed" size="sm">
-                {t('Пов’язаний видатковий документ не завантажено')}
+                {t('Повʼязаний видатковий документ не завантажено')}
               </Text>
             )}
           </Stack>
@@ -557,7 +636,7 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
             <>
               <Divider />
               <Stack gap="xs">
-                <Text fw={700}>{t('Усі прив’язки до авансових звітів')}</Text>
+                <Text fw={700}>{t('Усі привʼязки до авансових звітів')}</Text>
                 {outcomeOrders.map((item, index) => {
                   const itemOutcome = item.OutcomePaymentOrder
                   const itemAdvanceReportLink = getAdvanceReportLink(itemOutcome)
@@ -654,6 +733,59 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
   }
 
   return null
+}
+
+function sortAccountableExpenseRows(
+  rows: AccountableExpenseRow[],
+  sortState: AccountableExpenseSortState,
+): AccountableExpenseRow[] {
+  if (!sortState) {
+    return rows
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...rows].sort(
+    (firstRow, secondRow) =>
+      compareAccountableExpenseSortValues(
+        getAccountableExpenseSortValue(firstRow, sortState.id),
+        getAccountableExpenseSortValue(secondRow, sortState.id),
+      ) * direction,
+  )
+}
+
+function getAccountableExpenseSortValue(row: AccountableExpenseRow, id: AccountableExpenseSortId): number | string {
+  switch (id) {
+    case 'amount':
+      return row.amount ?? Number.NEGATIVE_INFINITY
+    case 'document':
+      return compactStrings([row.advanceNumber, row.order.Number, row.created, row.payedTo, row.organization]).join(' ')
+    case 'price':
+      return row.pricePerItem ?? Number.NEGATIVE_INFINITY
+    case 'product':
+      return compactStrings([row.productName, row.vendorCode, row.item.IsService ? 'service' : 'product']).join(' ')
+    case 'qty':
+      return row.qty ?? Number.NEGATIVE_INFINITY
+    case 'responsible':
+      return compactStrings([row.responsible, row.comment]).join(' ')
+    case 'status':
+      return compactStrings([row.paymentStatus, row.underReportStatus]).join(' ')
+  }
+}
+
+function compareAccountableExpenseSortValues(firstValue: number | string, secondValue: number | string): number {
+  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
+    return firstValue - secondValue
+  }
+
+  return String(firstValue).localeCompare(String(secondValue), 'uk', {
+    numeric: true,
+    sensitivity: 'base',
+  })
+}
+
+function compactStrings(values: Array<string | null | undefined>): string[] {
+  return values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))
 }
 
 function formatDateTime(value?: string): string {
