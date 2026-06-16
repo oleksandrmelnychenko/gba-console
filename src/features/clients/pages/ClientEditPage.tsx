@@ -41,6 +41,7 @@ import { PricingPanel } from '../components/pricing/PricingPanel'
 import { applyPendingDiscountDraft } from '../components/pricing/pendingDiscountDraft'
 import type { DiscountsTreeDraft } from '../components/pricing/DiscountsTree'
 import { RecommendationsPanel } from '../components/recommendations/RecommendationsPanel'
+import { SolvencyPanel } from '../components/solvency/SolvencyPanel'
 import { SalesPanel } from '../components/sales/SalesPanel'
 import { ClientStructurePanel } from '../components/structure/ClientStructurePanel'
 import { type ClientFormErrors, validateClientForm } from '../components/form/validateClientForm'
@@ -1065,7 +1066,14 @@ function EditStepContent({
   }
 
   if (step === 'most-purchased-products') {
-    return <RecommendationsPanel client={client} productNetId={productNetId} />
+    return (
+      <Stack gap="lg">
+        <RecommendationsPanel client={client} productNetId={productNetId} />
+        <Card withBorder radius="md" padding="md">
+          <SolvencyPanel clientNetId={client.NetUid} />
+        </Card>
+      </Stack>
+    )
   }
 
   if (step !== 'general-information') {
