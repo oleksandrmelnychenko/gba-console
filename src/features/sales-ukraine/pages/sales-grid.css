@@ -21,10 +21,13 @@
 }
 
 .sales-filter-bar {
+  /* Soft warm glow anchored just off the top-left corner — reads as ambient
+     brand lighting rather than a hard left band. Uses an explicit 0-alpha
+     orange (not `transparent`) so the falloff stays clean, no muddy edge. */
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 34%),
+    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
     var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom: 1px solid var(--mantine-color-gray-3);
   padding: 9px 10px 10px;
 }
 
@@ -52,7 +55,7 @@
 }
 
 .sales-filter-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   display: block;
   font-size: 12px;
   font-weight: 400;
@@ -255,7 +258,7 @@
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   cursor: pointer;
   display: flex;
   font-family: inherit;
@@ -411,7 +414,7 @@
 }
 
 .sales-filter-organisation-empty {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 12px;
   padding: 8px 10px;
 }
@@ -419,7 +422,7 @@
 .sales-filter-bar .mantine-InputWrapper-label,
 .sales-filter-period-menu .mantine-InputWrapper-label,
 .sales-filter-ecommerce .mantine-Checkbox-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
@@ -441,6 +444,11 @@
 .sales-filter-bar .mantine-Input-input,
 .sales-filter-period-menu .mantine-Input-input {
   font-size: 12.5px;
+}
+
+.sales-filter-bar .mantine-Input-input::placeholder,
+.sales-filter-period-menu .mantine-Input-input::placeholder {
+  color: var(--mantine-color-gray-6);
 }
 
 .sales-filter-bar .mantine-Input-input:hover,
@@ -580,7 +588,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86)),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0;
@@ -807,10 +815,18 @@
 .sg-meta-contract {
   flex: 0 1 auto !important;
   min-width: 0;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--mantine-color-gray-8);
+  white-space: nowrap;
+  background: var(--mantine-color-violet-0);
+  border: 1px solid var(--mantine-color-violet-2);
+  border-radius: 999px;
+  color: var(--mantine-color-violet-7);
+  font-size: 10.5px;
   font-weight: 600;
+  line-height: 1;
+  padding: 3px 8px;
 }
 
 .sg-amt {
@@ -833,9 +849,10 @@
 .sg-amt-unit {
   display: block;
   font-size: 9.5px;
+  font-weight: 550;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
 }
 
 .sg-amt.is-unpaid .sg-amt-val,
@@ -977,7 +994,7 @@
     linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.84) 48%, transparent),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-1);
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.2;

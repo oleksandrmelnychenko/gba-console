@@ -79,7 +79,7 @@
 }
 
 .console-content-crumb {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   font-size: 12px;
   line-height: 1.2;
   white-space: nowrap;
@@ -96,7 +96,7 @@
 
 .console-content-crumb-sep {
   flex: 0 0 auto;
-  color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-gray-5);
   font-size: 13px;
   line-height: 1;
 }
@@ -198,7 +198,7 @@
 }
 
 .console-header-main {
-  --console-header-brand-width: 188px;
+  --console-header-brand-width: 240px;
   display: grid;
   grid-template-columns: var(--console-header-brand-width) minmax(0, 1fr) minmax(240px, auto);
   grid-template-rows: 62px 46px;
@@ -574,7 +574,7 @@
   justify-self: start;
   height: 42px;
   align-items: center;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   font-size: 13px;
   min-width: 0;
   padding-left: 8px;
@@ -583,7 +583,7 @@
 }
 
 .console-header-date svg {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   flex: 0 0 auto;
 }
 
@@ -1346,7 +1346,10 @@
 
 .console-subnav-items {
   position: relative;
-  overflow: visible;
+  /* Scroll the active module's items horizontally instead of bleeding into
+     the user panel (grid column 3) when they outgrow the available width. */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .console-subnav-item.is-active,

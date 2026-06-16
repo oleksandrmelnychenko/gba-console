@@ -1201,12 +1201,7 @@ function SaleGridRow({
                 <span>{manager}</span>
               </>
             )}
-            {contract && (
-              <>
-                <span className="sg-meta-sep">:</span>
-                <span className="sg-meta-contract">{contract}</span>
-              </>
-            )}
+            {contract && <span className="sg-meta-contract">{contract}</span>}
             {Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0 && (
               <Tooltip label={t('Рахунок редаговано')}>
                 <IconPencil size={12} style={{ color: 'var(--mantine-color-orange-6)' }} />
