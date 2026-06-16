@@ -246,14 +246,14 @@
   cursor: pointer;
   font: inherit;
   gap: 10px;
-  height: 44px;
+  height: 48px;
   text-align: left;
 }
 
 .console-brand-logo {
   display: block;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   object-fit: contain;
 }
 
@@ -271,14 +271,16 @@
 
 .console-header-top-nav {
   grid-row: 1;
-  align-self: end;
+  align-self: stretch;
+  display: flex;
+  align-items: stretch;
 }
 
 .console-header-bottom-nav {
   grid-row: 2;
   align-self: stretch;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
 }
 
 .console-header-top-nav > .console-subnav,
@@ -287,13 +289,17 @@
 }
 
 .console-header-top-nav > .console-subnav-mode-modules {
-  align-self: end;
+  align-self: stretch;
+  display: flex;
   background: transparent;
   border: 0;
   border-radius: 0;
+  width: 100%;
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-row {
+  align-items: stretch;
+  height: 100%;
   justify-content: safe center;
   padding: 0 8px;
 }
@@ -304,13 +310,13 @@
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-pill {
-  height: 34px;
+  height: 100%;
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items {
   align-self: stretch;
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   background: transparent; /* don't paint over the header's bottom border in the centre */
   border-top: 0; /* the row divider (::before) already draws this line */
   border-bottom-left-radius: 0;
@@ -319,7 +325,14 @@
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items .console-subnav-row {
+  align-items: stretch;
+  height: 100%;
+  padding: 0 12px;
   width: 100%;
+}
+
+.console-header-bottom-nav > .console-subnav-mode-items .console-subnav-pill {
+  height: 100%;
 }
 
 .console-header-title {
