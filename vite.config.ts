@@ -1,10 +1,11 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const apiProxyTarget = process.env.VITE_DEV_API_PROXY_TARGET || 'https://gba-api-dev.85.17.167.167.nip.io'
+type ProxyConfigure = NonNullable<ProxyOptions['configure']>
 
-function configureForwardedHeaders(proxy: any) {
-  proxy.on('proxyReq', (proxyReq: any) => {
+const configureForwardedHeaders: ProxyConfigure = (proxy) => {
+  proxy.on('proxyReq', (proxyReq) => {
     proxyReq.setHeader('X-Forwarded-Proto', 'http')
   })
 }

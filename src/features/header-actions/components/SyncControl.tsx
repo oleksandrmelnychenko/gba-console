@@ -26,7 +26,7 @@ import {
   toDateInputValue,
   toDateTimeInputValue,
 } from '../utils'
-import { allDailySyncTypes, defaultSelectedSyncTypes } from '../syncOptions'
+import { allDailySyncTypes, defaultSelectedSyncTypes, syncTypeOptions } from '../syncOptions'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DailySyncTypeChecklist } from './DailySyncTypeChecklist'
 import { SyncTypeChecklist } from './SyncTypeChecklist'
@@ -170,7 +170,7 @@ function syncReducer(state: SyncState, action: SyncAction): SyncState {
     case 'dailyTypesChanged':
       return {
         ...state,
-        selectedDailyTypes: action.types,
+        selectedDailyTypes: getKnownDailyTypes(action.types),
       }
     case 'dailyOrganisationChanged':
       return {
@@ -227,11 +227,12 @@ export function SyncControl() {
 
     let cancelled = false
     const range = getLastWeekRange()
+    const forAmg = getHistoryForAmg(state.activeTab, state.dailyForAmg)
 
     dispatch({ type: 'historyStarted' })
 
     getSyncHistory({
-      forAmg: state.activeTab === 'amg',
+      forAmg,
       from: range.from,
       to: range.to,
     })
@@ -249,14 +250,14 @@ export function SyncControl() {
     return () => {
       cancelled = true
     }
-  }, [state.activeTab, state.opened])
+  }, [state.activeTab, state.dailyForAmg, state.opened])
 
   async function runRemnantsSync(forAmg: boolean) {
     const types: string[] = []
 
-    for (const [key, isSelected] of Object.entries(state.selectedSyncTypes)) {
-      if (isSelected) {
-        types.push(key)
+    for (const option of syncTypeOptions) {
+      if (state.selectedSyncTypes[option.value]) {
+        types.push(option.value)
       }
     }
 
@@ -305,6 +306,8 @@ export function SyncControl() {
       }),
     )
   }
+
+  const isEveryDailyTypeSelected = state.selectedDailyTypes.length === allDailySyncTypes.length
 
   async function runSyncRequest(request: () => Promise<SyncRunResponse>) {
     dispatch({ type: 'syncStarted' })
@@ -360,7 +363,7 @@ export function SyncControl() {
             ))}
           </Group>
 
-            <Stack gap="md" className="sync-resizable">
+          <Stack gap="md" className="sync-resizable">
           <Box className="sync-panel">
             {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
               <Stack gap="md">
@@ -465,12 +468,12 @@ export function SyncControl() {
                     onClick={() =>
                       dispatch({
                         type: 'dailyTypesChanged',
-                        types: state.selectedDailyTypes.length ? state.selectedDailyTypes : allDailySyncTypes,
+                        types: isEveryDailyTypeSelected ? [] : allDailySyncTypes,
                       })
                     }
                     variant="light"
                   >
-                    {t('Вибрати всі')}
+                    {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
                   </Button>
                   <Button color="violet" loading={state.isSyncing} onClick={runDailySync}>
                     {t('Синхронізувати')}
@@ -506,11 +509,21 @@ export function SyncControl() {
               )}
             </ScrollArea>
           </Box>
-            </Stack>
+          </Stack>
         </Stack>
       </AppModal>
     </>
   )
+}
+
+function getHistoryForAmg(activeTab: SyncTab, dailyForAmg: string): boolean {
+  return activeTab === 'daily' ? dailyForAmg === 'true' : activeTab === 'amg'
+}
+
+function getKnownDailyTypes(types: string[]): string[] {
+  const selectedTypes = new Set(types)
+
+  return allDailySyncTypes.filter((type) => selectedTypes.has(type))
 }
 
 function appendSyncMessage(messages: string[], message: string): string[] {

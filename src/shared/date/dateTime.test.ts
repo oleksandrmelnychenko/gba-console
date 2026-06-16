@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateInputForQuery, SYNC_DATA_RANGE_START, toDateTimeQuery } from './dateTime'
+import { formatDateInputForQuery, SYNC_DATA_RANGE_START, toDateTimeQuery, toQueryString } from './dateTime'
 
 describe('SYNC_DATA_RANGE_START', () => {
   it('matches the current operational sync baseline', () => {
@@ -31,5 +31,11 @@ describe('toDateTimeQuery', () => {
 
   it('passes invalid date-only inputs through for server-side validation', () => {
     expect(toDateTimeQuery('2026-02-31', 'end')).toBe('2026-02-31')
+  })
+})
+
+describe('toQueryString', () => {
+  it('serializes arrays as repeated query keys for ASP.NET query binding', () => {
+    expect(toQueryString({ forAmg: true, types: ['0', '3', '4'] })).toBe('?forAmg=true&types=0&types=3&types=4')
   })
 })

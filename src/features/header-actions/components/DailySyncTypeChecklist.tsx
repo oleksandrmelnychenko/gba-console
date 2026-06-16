@@ -9,8 +9,9 @@ type DailySyncTypeChecklistProps = {
 
 export function DailySyncTypeChecklist({ selectedTypes, onChange }: DailySyncTypeChecklistProps) {
   const { t } = useI18n()
-  const isAllSelected = selectedTypes.length === allDailySyncTypes.length
-  const isIndeterminate = selectedTypes.length > 0 && !isAllSelected
+  const selectedTypeSet = new Set(selectedTypes)
+  const isAllSelected = allDailySyncTypes.every((type) => selectedTypeSet.has(type))
+  const isIndeterminate = allDailySyncTypes.some((type) => selectedTypeSet.has(type)) && !isAllSelected
 
   return (
     <div className="daily-sync-types">
@@ -18,7 +19,7 @@ export function DailySyncTypeChecklist({ selectedTypes, onChange }: DailySyncTyp
         checked={isAllSelected}
         indeterminate={isIndeterminate}
         label={t('Вибрати всі')}
-        onChange={(event) => onChange(event.currentTarget.checked ? allDailySyncTypes : [])}
+        onChange={(event) => onChange(event.currentTarget.checked ? [...allDailySyncTypes] : [])}
       />
       <Divider my={8} />
       <Checkbox.Group value={selectedTypes} onChange={onChange}>
