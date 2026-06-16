@@ -9,16 +9,30 @@ import type {
   SupplyOrganizationDocumentExport,
 } from '../types'
 
-export async function getSupplyOrganizations(): Promise<SupplyOrganization[]> {
-  const result = await apiRequest<unknown>('/supplies/organizations/all')
+export type SupplyOrganizationsListFilters = {
+  from?: string
+  to?: string
+}
+
+export async function getSupplyOrganizations(filters: SupplyOrganizationsListFilters = {}): Promise<SupplyOrganization[]> {
+  const hasFilters = Boolean(filters.from || filters.to)
+  const result = await apiRequest<unknown>(hasFilters ? '/supplies/organizations/all/search' : '/supplies/organizations/all', {
+    query: hasFilters ? { from: filters.from, to: filters.to, value: '' } : undefined,
+  })
 
   return normalizeSupplyOrganizations(result)
 }
 
-export async function searchSupplyOrganizations(value: string, organizationNetId = ''): Promise<SupplyOrganization[]> {
+export async function searchSupplyOrganizations(
+  value: string,
+  organizationNetId = '',
+  filters: SupplyOrganizationsListFilters = {},
+): Promise<SupplyOrganization[]> {
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
+      from: filters.from,
       organizationNetId,
+      to: filters.to,
       value,
     },
   })
@@ -63,9 +77,14 @@ export async function deleteSupplyOrganization(netId: string): Promise<void> {
   })
 }
 
-export async function exportSupplyOrganizations(value: string): Promise<SupplyOrganizationDocumentExport> {
+export async function exportSupplyOrganizations(
+  value: string,
+  filters: SupplyOrganizationsListFilters = {},
+): Promise<SupplyOrganizationDocumentExport> {
   const result = await apiRequest<unknown>('/supplies/organizations/document', {
     query: {
+      from: filters.from,
+      to: filters.to,
       value,
     },
   })

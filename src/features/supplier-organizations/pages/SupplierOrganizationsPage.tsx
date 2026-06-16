@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Anchor,
-  Badge,
   Button,
   Group,
   Stack,
@@ -12,12 +11,18 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconBuilding,
+  IconBuildingBank,
   IconCash,
+  IconChevronDown,
+  IconChevronUp,
   IconDownload,
+  IconDots,
   IconEye,
   IconFileTypePdf,
   IconPlus,
   IconRefresh,
+  IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -27,11 +32,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
@@ -40,16 +41,9 @@ import {
 } from '../api/supplierOrganizationsApi'
 import type { SupplyOrganization, SupplyOrganizationDocumentExport } from '../types'
 import './supplier-organizations-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
-
-const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['created', 'name'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -61,14 +55,12 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-const SUPPLIER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
+type SupplierOrganizationSortId = 'balance' | 'bank' | 'contact' | 'created' | 'identifiers' | 'name' | 'organization'
+
+type SupplierOrganizationSortState = {
+  direction: 'asc' | 'desc'
+  id: SupplierOrganizationSortId
+} | null
 
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
@@ -81,24 +73,37 @@ export function SupplierOrganizationsPage() {
 
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
   const [searchValue, setSearchValue] = useValueState(() => readStoredSearch())
+  const [dateFrom, setDateFrom] = useValueState('')
+  const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isExporting, setExporting] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SupplyOrganizationDocumentExport | null>(null)
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
-  const { density, toggleDensity } = useDataTableDensity('supplier-organizations', TABLE_DEFAULT_LAYOUT.density)
+  const [sortState, setSortState] = useValueState<SupplierOrganizationSortState>(null)
   const requestRef = useRef(0)
+  const filterError = getDateFilterError(dateFrom, dateTo)
+  const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
 
   useEffect(() => {
     const requestId = requestRef.current + 1
     requestRef.current = requestId
     const timeoutId = window.setTimeout(() => {
+      if (filterError) {
+        setLoading(false)
+        setError(null)
+        setOrganizations([])
+        return
+      }
+
       setLoading(true)
       setError(null)
 
       async function loadOrganizations() {
         try {
-          const nextOrganizations = searchValue ? await searchSupplyOrganizations(searchValue) : await getSupplyOrganizations()
+          const nextOrganizations = searchValue
+            ? await searchSupplyOrganizations(searchValue, '', dateFilters)
+            : await getSupplyOrganizations(dateFilters)
 
           if (requestRef.current === requestId) {
             setOrganizations(nextOrganizations)
@@ -119,16 +124,26 @@ export function SupplierOrganizationsPage() {
     }, 250)
 
     return () => window.clearTimeout(timeoutId)
-  }, [searchValue, setError, setLoading, setOrganizations, t])
+  }, [dateFilters, filterError, searchValue, setError, setLoading, setOrganizations, t])
 
   async function reloadOrganizations() {
     const requestId = requestRef.current + 1
     requestRef.current = requestId
+
+    if (filterError) {
+      setLoading(false)
+      setError(null)
+      setOrganizations([])
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      const nextOrganizations = searchValue ? await searchSupplyOrganizations(searchValue) : await getSupplyOrganizations()
+      const nextOrganizations = searchValue
+        ? await searchSupplyOrganizations(searchValue, '', dateFilters)
+        : await getSupplyOrganizations(dateFilters)
 
       if (requestRef.current === requestId) {
         setOrganizations(nextOrganizations)
@@ -153,7 +168,7 @@ export function SupplierOrganizationsPage() {
     setError(null)
 
     try {
-      const document = await exportSupplyOrganizations(searchValue)
+      const document = await exportSupplyOrganizations(searchValue, dateFilters)
       setDownloadDocument(document)
     } catch (exportError) {
       setError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ'))
@@ -173,22 +188,28 @@ export function SupplierOrganizationsPage() {
     }
   }
 
-  const columns = useSupplierOrganizationColumns({
-    onOpenActions: setSelectedOrganization,
-    onOpenCashFlow: (organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`),
-    onOpenEdit: (organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`),
-  })
-  const tableToolbarLeft = useMemo(
-    () => (
-      <Badge color="violet" variant="light">
-        {t('Постачальників')}: {organizations.length}
-      </Badge>
-    ),
-    [organizations.length, t],
-  )
+  function resetFilters() {
+    setSearchValue('')
+    setDateFrom('')
+    setDateTo('')
+    window.localStorage.removeItem(SEARCH_STORAGE_KEY)
+  }
+
+  const sortedOrganizations = useMemo(() => sortSupplierOrganizations(organizations, sortState), [organizations, sortState])
+  const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
+
+  function toggleSort(id: SupplierOrganizationSortId) {
+    setSortState((current) => {
+      if (current?.id !== id) {
+        return { direction: 'asc', id }
+      }
+
+      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+    })
+  }
 
   return (
-    <Stack className="supplier-organizations-page" gap={6}>
+    <Stack className="supplier-organizations-page console-table-page" gap="md">
       <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_AddBtn_PKEY">
         <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => openOrganizationSheet('/accounting/supplier-organizations/new')}>
@@ -197,61 +218,94 @@ export function SupplierOrganizationsPage() {
         </PageHeaderActions>
       </PermissionGate>
 
-      <Group justify="space-between" align="end" gap="sm">
-        <TextInput
-          leftSection={<IconSearch size={16} />}
-          placeholder={t('Назва, код, телефон або email')}
-          value={searchValue}
-          style={{ flex: '1 1 320px' }}
-          onChange={(event) => updateSearchValue(event.currentTarget.value)}
-        />
-        <Group gap="xs">
-          <Tooltip label={t('Друк')}>
-            <ActionIcon
-              aria-label={t('Друк')}
-              color="gray"
-              disabled={isExporting}
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={exportList}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganizations()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
+      <div className="console-table-shell">
+        <div className="supplier-organizations-command-bar">
+          <div className="supplier-organizations-period-filter">
+            <span className="supplier-organizations-filter-label">{t('Період')}</span>
+            <div className="supplier-organizations-period-fields">
+              <TextInput
+                className="supplier-organizations-date-input"
+                aria-label={t('Від')}
+                type="date"
+                value={dateFrom}
+                onChange={(event) => setDateFrom(event.currentTarget.value)}
+              />
+              <span className="supplier-organizations-period-separator" />
+              <TextInput
+                className="supplier-organizations-date-input"
+                aria-label={t('До')}
+                type="date"
+                value={dateTo}
+                onChange={(event) => setDateTo(event.currentTarget.value)}
+              />
+            </div>
+          </div>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+          <TextInput
+            className="supplier-organizations-search-input"
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук')}
+            placeholder={t('Назва, код, телефон або email')}
+            value={searchValue}
+            onChange={(event) => updateSearchValue(event.currentTarget.value)}
+          />
+          <div className="supplier-organizations-command-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!hasActiveFilters}
+                size={38}
+                variant="light"
+                onClick={resetFilters}
+              >
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Друк')}>
+              <ActionIcon
+                aria-label={t('Друк')}
+                color="gray"
+                disabled={isExporting}
+                loading={isExporting}
+                size={38}
+                variant="light"
+                onClick={exportList}
+              >
+                <IconDownload size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganizations()}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-      <div className="supplier-organizations-page__table">
-        <DataTable
-          columns={columns}
-          data={organizations}
-          defaultLayout={TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Постачальників послуг не знайдено')}
-          getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="supplier-organizations-1"
-          height="100%"
-          minWidth={1450}
-          showLayoutControls={false}
-          showDensityToggle={false}
-          density={density}
-          tableId="supplier-organizations"
-          toolbarLeft={tableToolbarLeft}
-          onRowClick={setSelectedOrganization}
-        />
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        {filterError && (
+          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
+
+        <div className="supplier-organizations-page__table console-table-body">
+          <SupplierOrganizationsList
+            isLoading={isLoading}
+            organizations={sortedOrganizations}
+            sortState={sortState}
+            onOpenActions={setSelectedOrganization}
+            onOpenCashFlow={(organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`)}
+            onOpenEdit={(organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`)}
+            onSort={toggleSort}
+          />
+        </div>
       </div>
 
       <SupplierOrganizationActionModal
@@ -272,187 +326,283 @@ export function SupplierOrganizationsPage() {
   )
 }
 
-function useSupplierOrganizationColumns({
+function SupplierOrganizationsList({
+  isLoading,
+  organizations,
+  sortState,
+  onOpenActions,
+  onOpenCashFlow,
+  onOpenEdit,
+  onSort,
+}: {
+  isLoading: boolean
+  organizations: SupplyOrganization[]
+  sortState: SupplierOrganizationSortState
+  onOpenActions: (organization: SupplyOrganization) => void
+  onOpenCashFlow: (organization: SupplyOrganization) => void
+  onOpenEdit: (organization: SupplyOrganization) => void
+  onSort: (id: SupplierOrganizationSortId) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="supplier-organizations-list">
+      <div className="supplier-organizations-list-head">
+        <SupplierOrganizationSortHeader id="name" label={t('Назва')} sortState={sortState} onSort={onSort} />
+        <SupplierOrganizationSortHeader id="identifiers" label={t('Коди')} sortState={sortState} onSort={onSort} />
+        <SupplierOrganizationSortHeader id="organization" label={t('Організація / договори')} sortState={sortState} onSort={onSort} />
+        <SupplierOrganizationSortHeader id="contact" label={t('Контакти')} sortState={sortState} onSort={onSort} />
+        <SupplierOrganizationSortHeader id="bank" label={t('Реквізити')} sortState={sortState} onSort={onSort} />
+        <SupplierOrganizationSortHeader id="balance" label={t('Баланс')} sortState={sortState} align="right" onSort={onSort} />
+        <SupplierOrganizationSortHeader id="created" label={t('Створено')} sortState={sortState} onSort={onSort} />
+        <span aria-hidden />
+      </div>
+
+      <div className="supplier-organizations-list-body">
+        {isLoading ? (
+          <div className="supplier-organizations-list-state">{t('Завантаження постачальників послуг')}</div>
+        ) : organizations.length === 0 ? (
+          <div className="supplier-organizations-list-state">{t('Постачальників послуг не знайдено')}</div>
+        ) : (
+          organizations.map((organization, index) => (
+            <SupplierOrganizationRow
+              key={String(organization.NetUid || organization.Id || index)}
+              organization={organization}
+              onOpenActions={onOpenActions}
+              onOpenCashFlow={onOpenCashFlow}
+              onOpenEdit={onOpenEdit}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SupplierOrganizationSortHeader({
+  align,
+  id,
+  label,
+  sortState,
+  onSort,
+}: {
+  align?: 'right'
+  id: SupplierOrganizationSortId
+  label: string
+  sortState: SupplierOrganizationSortState
+  onSort: (id: SupplierOrganizationSortId) => void
+}) {
+  const isActive = sortState?.id === id
+
+  return (
+    <button
+      className={`supplier-organizations-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
+      type="button"
+      onClick={() => onSort(id)}
+    >
+      <span>{label}</span>
+      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
+    </button>
+  )
+}
+
+function SupplierOrganizationRow({
+  organization,
   onOpenActions,
   onOpenCashFlow,
   onOpenEdit,
 }: {
+  organization: SupplyOrganization
   onOpenActions: (organization: SupplyOrganization) => void
   onOpenCashFlow: (organization: SupplyOrganization) => void
   onOpenEdit: (organization: SupplyOrganization) => void
-}): DataTableColumn<SupplyOrganization>[] {
+}) {
+  return (
+    <div
+      className="supplier-organizations-row"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenActions(organization)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpenActions(organization)
+        }
+      }}
+    >
+      <SupplierOrganizationNameCell organization={organization} />
+      <SupplierOrganizationIdentifiersCell organization={organization} />
+      <SupplierOrganizationAgreementCell organization={organization} />
+      <SupplierOrganizationContactCell organization={organization} />
+      <SupplierOrganizationBankCell organization={organization} />
+      <SupplierOrganizationBalanceCell organization={organization} />
+      <SupplierOrganizationDateCell value={formatDateTime(organization.Created)} />
+      <SupplierOrganizationActions organization={organization} onOpenActions={onOpenActions} onOpenCashFlow={onOpenCashFlow} onOpenEdit={onOpenEdit} />
+    </div>
+  )
+}
+
+function SupplierOrganizationNameCell({ organization }: { organization: SupplyOrganization }) {
+  const title = displayValue(organization.Name)
+  const subtitle = compactStrings([organization.ContactPersonName, getAgreementOrganizations(organization), organization.Address])[0] || '—'
+  const tooltip = compactStrings([title, subtitle, organization.Address]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="supplier-organizations-name-cell">
+        <span className="supplier-organizations-name-icon" aria-hidden>
+          <IconBuilding size={16} />
+        </span>
+        <span className="supplier-organizations-name-copy">
+          <span className="supplier-organizations-name-title">{title}</span>
+          <span className="supplier-organizations-name-subtitle">{subtitle}</span>
+        </span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationIdentifiersCell({ organization }: { organization: SupplyOrganization }) {
+  const { t } = useI18n()
+  const identifiers = [
+    { label: t('ІПН'), value: organization.TIN },
+    { label: t('ЄДРПОУ'), value: organization.USREOU },
+    { label: t('СВ'), value: organization.SROI },
+  ].filter((item) => item.value)
+
+  if (identifiers.length === 0 && !organization.IsNotResident) {
+    return <SupplierOrganizationMutedValue value="—" />
+  }
+
+  return (
+    <span className="supplier-organizations-tags-cell">
+      {identifiers.slice(0, 3).map((item) => (
+        <Tooltip key={item.label} label={`${item.label}: ${item.value}`} openDelay={350} withArrow>
+          <span className="supplier-organizations-id-tag">
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </span>
+        </Tooltip>
+      ))}
+      {organization.IsNotResident ? <span className="supplier-organizations-resident-tag">{t('Нерезидент')}</span> : null}
+    </span>
+  )
+}
+
+function SupplierOrganizationAgreementCell({ organization }: { organization: SupplyOrganization }) {
+  const organizations = displayValue(getAgreementOrganizations(organization))
+  const agreements = displayValue(getAgreementNames(organization))
+  const currencies = getAgreementCurrencies(organization)
+  const tooltip = compactStrings([organizations, agreements, currencies]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="supplier-organizations-two-line-cell is-separated">
+        <span>{organizations}</span>
+        <small>{compactStrings([agreements, currencies]).join(' · ') || '—'}</small>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationContactCell({ organization }: { organization: SupplyOrganization }) {
+  const primary = displayValue(organization.ContactPersonName || organization.PhoneNumber || organization.ContactPersonPhone)
+  const secondary = displayValue(organization.ContactPersonEmail || organization.EmailAddress || organization.ContactPersonPhone || organization.PhoneNumber)
+  const tooltip = compactStrings([primary, secondary, organization.ContactPersonComment]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="supplier-organizations-two-line-cell">
+        <span>{primary}</span>
+        <small>{secondary}</small>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationBankCell({ organization }: { organization: SupplyOrganization }) {
+  const primary = displayValue(organization.Bank || organization.Requisites || organization.BankAccount)
+  const secondary = displayValue(organization.BankAccount || organization.BankAccountEUR || organization.SwiftBic || organization.Swift)
+  const tooltip = compactStrings([primary, secondary, organization.Beneficiary, organization.BeneficiaryBank]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="supplier-organizations-bank-cell">
+        <span className="supplier-organizations-bank-icon" aria-hidden>
+          <IconBuildingBank size={14} />
+        </span>
+        <span className="supplier-organizations-two-line-cell">
+          <span>{primary}</span>
+          <small>{secondary}</small>
+        </span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationBalanceCell({ organization }: { organization: SupplyOrganization }) {
+  const amount = formatMoney(organization.TotalAgreementsCurrentEuroAmount)
+  const currency = getAgreementCurrencies(organization) || 'EUR'
+
+  return (
+    <span className="supplier-organizations-balance-cell">
+      <strong>{amount}</strong>
+      <small>{currency}</small>
+    </span>
+  )
+}
+
+function SupplierOrganizationDateCell({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className="supplier-organizations-date-cell">{value}</span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationMutedValue({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className="supplier-organizations-muted-value">{value}</span>
+    </Tooltip>
+  )
+}
+
+function SupplierOrganizationActions({
+  organization,
+  onOpenActions,
+  onOpenCashFlow,
+  onOpenEdit,
+}: {
+  organization: SupplyOrganization
+  onOpenActions: (organization: SupplyOrganization) => void
+  onOpenCashFlow: (organization: SupplyOrganization) => void
+  onOpenEdit: (organization: SupplyOrganization) => void
+}) {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<SupplyOrganization>[]>(
-    () => [
-      {
-        id: 'created',
-        header: t('Дата створення'),
-        width: 130,
-        minWidth: 116,
-        accessor: (organization) => organization.Created,
-        cell: (organization) => <SupplierTableValue value={formatDateTime(organization.Created)} />,
-      },
-      {
-        id: 'name',
-        header: t('Назва'),
-        width: 260,
-        minWidth: 220,
-        accessor: (organization) => organization.Name,
-        cell: (organization) => <SupplierTableValue fw={600} value={displayValue(organization.Name)} />,
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        width: 180,
-        minWidth: 150,
-        accessor: (organization) => getAgreementOrganizations(organization),
-        cell: (organization) => <SupplierTableValue value={displayValue(getAgreementOrganizations(organization))} />,
-      },
-      {
-        id: 'tin',
-        header: t('ІПН'),
-        width: 108,
-        minWidth: 92,
-        accessor: (organization) => organization.TIN,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.TIN)} />,
-      },
-      {
-        id: 'vat',
-        header: t('Номер свідоцтва'),
-        width: 116,
-        minWidth: 96,
-        accessor: (organization) => organization.SROI,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.SROI)} />,
-      },
-      {
-        id: 'usreou',
-        header: t('Код по ЄДРПОУ'),
-        width: 120,
-        minWidth: 102,
-        accessor: (organization) => organization.USREOU,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.USREOU)} />,
-      },
-      {
-        id: 'currency',
-        header: t('Валюта'),
-        width: 82,
-        minWidth: 72,
-        accessor: (organization) => getAgreementCurrencies(organization),
-        cell: (organization) => <SupplierTableValue value={displayValue(getAgreementCurrencies(organization))} />,
-      },
-      {
-        id: 'balance',
-        header: t('Баланс EUR'),
-        width: 116,
-        minWidth: 100,
-        align: 'right',
-        accessor: (organization) => organization.TotalAgreementsCurrentEuroAmount,
-        cell: (organization) => <SupplierTableValue value={formatMoney(organization.TotalAgreementsCurrentEuroAmount)} />,
-      },
-      {
-        id: 'contact',
-        header: t('Контактна особа'),
-        width: 150,
-        minWidth: 118,
-        accessor: (organization) => organization.ContactPersonName,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.ContactPersonName)} />,
-      },
-      {
-        id: 'phone',
-        header: t('Телефон'),
-        width: 136,
-        minWidth: 108,
-        accessor: (organization) => organization.PhoneNumber || organization.ContactPersonPhone,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.PhoneNumber || organization.ContactPersonPhone)} />,
-      },
-      {
-        id: 'address',
-        header: t('Адреса'),
-        width: 220,
-        minWidth: 150,
-        accessor: (organization) => organization.Address,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.Address)} />,
-      },
-      {
-        id: 'resident',
-        header: t('Не являється резидентом'),
-        width: 132,
-        minWidth: 112,
-        accessor: (organization) => organization.IsNotResident,
-        cell: (organization) => <SupplierTableValue value={organization.IsNotResident ? t('Так') : t('Ні')} />,
-      },
-      {
-        id: 'bankDetails',
-        header: t('Банківські реквізити'),
-        width: 170,
-        minWidth: 132,
-        accessor: (organization) => organization.Requisites || organization.Bank,
-        cell: (organization) => <SupplierTableValue value={displayValue(organization.Requisites || organization.Bank)} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 112,
-        minWidth: 100,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (organization) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
-              <Tooltip label={t('Взаєморозрахунки')}>
-                <ActionIcon
-                  aria-label={t('Взаєморозрахунки')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenCashFlow(organization)
-                  }}
-                >
-                  <IconCash size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-            <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
-              <Tooltip label={t('Перегляд')}>
-                <ActionIcon
-                  aria-label={t('Перегляд')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenEdit(organization)
-                  }}
-                >
-                  <IconEye size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </PermissionGate>
-            <Tooltip label={t('Дії')}>
-              <ActionIcon
-                aria-label={t('Дії')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpenActions(organization)
-                }}
-              >
-                <IconSearch size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ),
-      },
-    ],
-    [onOpenActions, onOpenCashFlow, onOpenEdit, t],
+  return (
+    <Group className="supplier-organizations-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_SettlementsBtn_PKEY">
+        <Tooltip label={t('Взаєморозрахунки')}>
+          <ActionIcon aria-label={t('Взаєморозрахунки')} color="gray" size="sm" variant="subtle" onClick={() => onOpenCashFlow(organization)}>
+            <IconCash size={15} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <PermissionGate permissionKey="SERVICE_Accounting_Supplier_Organizations_OverviewBtn_PKEY">
+        <Tooltip label={t('Перегляд')}>
+          <ActionIcon aria-label={t('Перегляд')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEdit(organization)}>
+            <IconEye size={15} />
+          </ActionIcon>
+        </Tooltip>
+      </PermissionGate>
+      <Tooltip label={t('Дії')}>
+        <ActionIcon aria-label={t('Дії')} color="gray" size="sm" variant="subtle" onClick={() => onOpenActions(organization)}>
+          <IconDots size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
   )
 }
 
@@ -500,16 +650,6 @@ function SupplierOrganizationActionModal({
   )
 }
 
-function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {
-  return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={SUPPLIER_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
-  )
-}
-
 function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocumentExport | null; onClose: () => void }) {
   const { t } = useI18n()
 
@@ -538,12 +678,87 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
   )
 }
 
+function sortSupplierOrganizations(
+  organizations: SupplyOrganization[],
+  sortState: SupplierOrganizationSortState,
+): SupplyOrganization[] {
+  if (!sortState) {
+    return organizations
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...organizations].sort(
+    (firstOrganization, secondOrganization) =>
+      compareSupplierSortValues(
+        getSupplierOrganizationSortValue(firstOrganization, sortState.id),
+        getSupplierOrganizationSortValue(secondOrganization, sortState.id),
+      ) * direction,
+  )
+}
+
+function getSupplierOrganizationSortValue(organization: SupplyOrganization, id: SupplierOrganizationSortId): number | string {
+  switch (id) {
+    case 'balance':
+      return organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY
+    case 'bank':
+      return compactStrings([organization.Bank, organization.Requisites, organization.BankAccount, organization.BankAccountEUR]).join(' ')
+    case 'contact':
+      return compactStrings([
+        organization.ContactPersonName,
+        organization.ContactPersonEmail,
+        organization.EmailAddress,
+        organization.PhoneNumber,
+        organization.ContactPersonPhone,
+      ]).join(' ')
+    case 'created':
+      return organization.Created || ''
+    case 'identifiers':
+      return compactStrings([organization.TIN, organization.USREOU, organization.SROI]).join(' ')
+    case 'name':
+      return organization.Name || ''
+    case 'organization':
+      return compactStrings([getAgreementOrganizations(organization), getAgreementNames(organization), getAgreementCurrencies(organization)]).join(' ')
+  }
+}
+
+function compareSupplierSortValues(firstValue: number | string, secondValue: number | string): number {
+  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
+    return firstValue - secondValue
+  }
+
+  return String(firstValue).localeCompare(String(secondValue), 'uk', {
+    numeric: true,
+    sensitivity: 'base',
+  })
+}
+
+function getDateFilterError(dateFrom: string, dateTo: string): string | null {
+  if (dateFrom && dateTo && dateFrom > dateTo) {
+    return 'Дата початку не може бути пізніше дати завершення'
+  }
+
+  return null
+}
+
 function getAgreementOrganizations(organization: SupplyOrganization): string {
-  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Organization?.Name || []).join(' ')
+  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Organization?.Name)).join(' · ')
+}
+
+function getAgreementNames(organization: SupplyOrganization): string {
+  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Name || agreement.Number)).join(' · ')
 }
 
 function getAgreementCurrencies(organization: SupplyOrganization): string {
-  return (organization.SupplyOrganizationAgreements || []).flatMap((agreement) => agreement.Currency?.Code || []).join(' ')
+  return uniqueStrings((organization.SupplyOrganizationAgreements || []).map((agreement) => agreement.Currency?.Code || agreement.Currency?.Name)).join(' · ')
+}
+
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return [...new Set(compactStrings(values))]
+}
+
+function compactStrings(values: Array<string | null | undefined>): string[] {
+  return values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))
 }
 
 function readStoredSearch(): string {
