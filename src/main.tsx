@@ -5,6 +5,7 @@ import { AppProviders } from './app/providers/AppProviders'
 import './index.css'
 import '@mantine/charts/styles.css'
 import './shared/transitions/transitions.css'
+import './shared/ui/filter-bar.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

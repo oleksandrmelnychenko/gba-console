@@ -189,9 +189,8 @@ export function SalesDebtorsPage() {
 
   return (
     <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="wrap">
+      <Card withBorder radius="md" padding={0} className="app-filter-card">
+        <Group align="end" gap="sm" wrap="wrap" className="app-filter-bar">
             <Select
               clearable
               searchable
@@ -310,7 +309,8 @@ export function SalesDebtorsPage() {
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size="sm" />
           </Group>
 
-          {error && (
+          <Stack gap="md" p="md">
+            {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>

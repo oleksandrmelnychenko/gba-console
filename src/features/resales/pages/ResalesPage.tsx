@@ -368,9 +368,8 @@ export function ResalesPage() {
         </Group>
       </Group>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card withBorder radius="md" padding={0} className="app-filter-card">
+        <Group align="end" gap="sm" wrap="nowrap" className="app-filter-bar">
             <TextInput
               label={t('Від')}
               type="date"
@@ -408,7 +407,8 @@ export function ResalesPage() {
             />
           </Group>
 
-          {(error || filterError) && (
+          <Stack gap="md" p="md">
+            {(error || filterError) && (
             <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {filterError || error}
             </Alert>

@@ -1,4 +1,4 @@
-import { Grid, Loader, Select, Stack, Text } from '@mantine/core'
+import { Card, Grid, Loader, Select, Stack, Text } from '@mantine/core'
 import { IconSearch } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -237,7 +237,9 @@ export function SalesPredictionPage() {
         {t('Прогноз продажів')}
       </Text>
 
-      <Grid gap="md">
+      <Card withBorder radius="md" padding={0} className="app-filter-card">
+        <div className="app-filter-bar">
+          <Grid gap="md">
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Select
             clearable
@@ -304,6 +306,8 @@ export function SalesPredictionPage() {
           />
         </Grid.Col>
       </Grid>
+        </div>
+      </Card>
 
       {!clientNetId && !productNetId && (
         <Text c="dimmed" size="sm">

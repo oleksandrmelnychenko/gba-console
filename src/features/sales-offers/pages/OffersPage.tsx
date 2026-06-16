@@ -1,4 +1,4 @@
-import { Alert, Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Card, Group, Loader, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { useEffect } from 'react'
@@ -163,14 +163,15 @@ export function OffersPage() {
   }
 
   return (
-    <Stack gap="md" p="md">
+    <Stack gap="md">
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setNewOpen(true)}>
           {t('Створити оферту')}
         </Button>
       </PageHeaderActions>
 
-      <Group align="flex-end" gap="sm">
+      <Card withBorder radius="md" padding={0} className="app-filter-card">
+        <Group align="flex-end" gap="sm" className="app-filter-bar">
         <TextInput
           label={t('Дата з')}
           type="date"
@@ -184,9 +185,10 @@ export function OffersPage() {
           onChange={(event) => { const nextValue = event.currentTarget.value; setDraft((current) => ({ ...current, to: nextValue })) }}
         />
         <Button onClick={reload}>{t('Застосувати')}</Button>
-      </Group>
+        </Group>
 
-      {error && (
+        <Stack gap="md" p="md">
+          {error && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
           {error}
         </Alert>
@@ -215,6 +217,8 @@ export function OffersPage() {
           ))}
         </Stack>
       )}
+        </Stack>
+      </Card>
 
       <OfferReasonDrawer
         offer={reasonOffer}

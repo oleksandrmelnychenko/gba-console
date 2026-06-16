@@ -1,0 +1,67 @@
+/* Shared filter-bar treatment.
+   Brings the Sales ("Продажі") filter aesthetic to any module's filter row:
+   a soft warm brand glow plus darkened, legible labels and placeholders.
+
+   Apply the `app-filter-bar` class to the element that wraps a page's filter
+   controls (a Mantine <Group>, <SimpleGrid>, or a plain <div>). It is
+   self-contained, so it reads correctly both standalone and nested in a <Card>. */
+/* The card that hosts a filter strip. Use padding={0} on the Mantine Card and
+   add this class so the flush strip's square corners are clipped to the card's
+   rounded corners (mirrors .sales-ukraine-card). */
+.app-filter-card {
+  overflow: hidden;
+}
+
+/* The filter row, rendered as a flush strip across the top of a padding-0 card
+   (mirrors .sales-filter-bar): warm corner glow + a bottom divider, no outer
+   border or radius. The body below the strip carries its own padding. */
+.app-filter-bar {
+  position: relative;
+  /* Warm glow anchored just off the top-left corner — matches .sales-filter-bar.
+     Explicit 0-alpha orange (not `transparent`) keeps the falloff clean. */
+  background:
+    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  padding: 10px 12px;
+}
+
+/* When the strip is the only/last thing in its card (no table below it, e.g. a
+   chart page), drop the divider so it doesn't double up with the card border. */
+.app-filter-bar:last-child {
+  border-bottom: 0;
+}
+
+/* Labels matched to the sales filter bar: smaller 12px caption, gray-7. */
+.app-filter-bar .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Compact inputs matched to the sales filter bar: 36px tall, 12.5px text,
+   softer 8px radius, light gray-2 border with an orange focus ring. */
+.app-filter-bar .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  min-height: 36px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.app-filter-bar .mantine-Input-input::placeholder {
+  color: var(--mantine-color-gray-6);
+}
+
+.app-filter-bar .mantine-Input-input:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.app-filter-bar .mantine-Input-input:focus,
+.app-filter-bar .mantine-Input-input:focus-within {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+}

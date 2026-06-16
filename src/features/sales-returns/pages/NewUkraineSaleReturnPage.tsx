@@ -5,6 +5,7 @@ import {
   Badge,
   Box,
   Button,
+  Card,
   Checkbox,
   Group,
   NumberInput,
@@ -573,7 +574,7 @@ export function NewUkraineSaleReturnPage() {
   }
 
   return (
-    <Box p="lg">
+    <Box>
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
           {t('Створити')}
@@ -586,7 +587,8 @@ export function NewUkraineSaleReturnPage() {
           </Alert>
         ) : null}
 
-        <SimpleGrid cols={{ base: 1, md: 5 }}>
+        <Card withBorder radius="md" padding={0} className="app-filter-card">
+          <SimpleGrid cols={{ base: 1, md: 5 }} className="app-filter-bar">
           <TextInput
             label={t('З дати')}
             type="date"
@@ -622,6 +624,7 @@ export function NewUkraineSaleReturnPage() {
           </Group>
         </SimpleGrid>
 
+        <Box p="md">
         <DataTable
           columns={returnsColumns}
           data={items}
@@ -649,6 +652,8 @@ export function NewUkraineSaleReturnPage() {
             </Group>
           }
         />
+        </Box>
+        </Card>
       </Stack>
 
       <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
