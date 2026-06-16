@@ -46,6 +46,7 @@ const EMPTY_LOOKUPS: ClientFormLookups = {
 }
 
 type LookupOptions = {
+  enabled?: boolean
   needsProviderLookups: boolean
   needsBuyerLookups: boolean
 }
@@ -55,9 +56,15 @@ export function useClientFormLookups(options: LookupOptions): UseClientFormLooku
   const [lookups, setLookups] = useValueState<ClientFormLookups>(EMPTY_LOOKUPS)
   const [isLoading, setLoading] = useValueState(true)
   const [error, setError] = useValueState<string | null>(null)
-  const { needsProviderLookups, needsBuyerLookups } = options
+  const { enabled = true, needsProviderLookups, needsBuyerLookups } = options
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      setError(null)
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadLookups() {
@@ -100,7 +107,7 @@ export function useClientFormLookups(options: LookupOptions): UseClientFormLooku
     return () => {
       cancelled = true
     }
-  }, [needsProviderLookups, needsBuyerLookups, setLookups, setLoading, setError, t])
+  }, [enabled, needsProviderLookups, needsBuyerLookups, setLookups, setLoading, setError, t])
 
   async function reloadRegions() {
     try {

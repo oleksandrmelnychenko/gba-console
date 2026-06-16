@@ -102,7 +102,7 @@ function getClientRole(client: Client | null): ClientFormRole {
   const type = client?.ClientInRole?.ClientType?.Type
   return {
     isProvider: type === CLIENT_TYPE_PROVIDER,
-    isBuyer: type !== CLIENT_TYPE_PROVIDER,
+    isBuyer: Boolean(client) && type !== CLIENT_TYPE_PROVIDER,
     isSubClient: Boolean(client?.IsSubClient || client?.IsTradePoint),
   }
 }
@@ -131,12 +131,14 @@ export function ClientEditPage() {
   const returnPath = routeState?.returnPath || (basePath === '/suppliers/edit' ? '/suppliers' : '/clients')
   const role = useMemo(() => getClientRole(client), [client])
   const {
+    isLoading: isLoadingLookups,
     lookups,
     error: lookupsError,
     reloadCountries,
     reloadIncoterms,
     reloadRegions,
   } = useClientFormLookups({
+    enabled: Boolean(client),
     needsProviderLookups: role.isProvider,
     needsBuyerLookups: role.isBuyer,
   })
@@ -184,6 +186,8 @@ export function ClientEditPage() {
   const steps = useMemo(() => buildEditSteps(client, hasPermission), [client, hasPermission])
   const activeStep = steps.find((item) => item.value === step)
   const firstStep = steps[0]
+  const selectedStepValue = step || firstStep?.value || ''
+  const isBodyLoading = isLoading || (isLoadingLookups && isLookupBackedEditStep(selectedStepValue))
 
   if (!netid) {
     return <Navigate to="/clients" replace />
@@ -623,7 +627,7 @@ export function ClientEditPage() {
         client={client}
         errors={formErrors}
         firstStep={firstStep}
-        isLoading={isLoading}
+        isLoading={isBodyLoading}
         isLoadingRegionCode={isLoadingRegionCode}
         isUploadingDocuments={isUploadingDocuments}
         lookups={lookups}
@@ -832,6 +836,7 @@ function ClientEditBody({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const { t } = useI18n()
+  const selectedStepValue = selectedStep || firstStep?.value || ''
 
   if (isLoading) {
     return (
@@ -910,7 +915,7 @@ function ClientEditBody({
                 setField={setField}
                 setIbanNumber={setIbanNumber}
                 setIbanNumberCurrency={setIbanNumberCurrency}
-                step={selectedStep || firstStep?.value || ''}
+                step={selectedStepValue}
                 onAddDocuments={onAddDocuments}
                 onClientChange={onClientChange}
                 onCreateCountry={onCreateCountry}
@@ -1113,6 +1118,10 @@ function EditStepContent({
 
 function getClientType(client: Client | null): number | undefined {
   return client?.ClientInRole?.ClientType?.Type
+}
+
+function isLookupBackedEditStep(step: string): boolean {
+  return step === 'general-information' || step === 'bank-details'
 }
 
 function getClientDisplayName(client: Client): string {

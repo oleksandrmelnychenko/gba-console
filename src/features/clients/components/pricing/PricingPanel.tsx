@@ -55,6 +55,7 @@ export type PricingPanelProps = {
 }
 
 const AGREEMENT_DEFAULT_NAME = 'Default'
+const EMPTY_PRODUCT_GROUP_DISCOUNTS: ProductGroupDiscount[] = []
 
 function getAgreementName(agreement: Agreement, defaultName: string): string {
   return agreement.Name === AGREEMENT_DEFAULT_NAME ? defaultName : agreement.Name || ''
@@ -499,7 +500,7 @@ export function PricingPanel({
                 <DiscountsTree
                   clientAgreementNetId={highlightedAgreement.Agreement.NetUid}
                   disabled={disabled}
-                  productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts || []}
+                  productGroupDiscounts={highlightedAgreement.ProductGroupDiscounts ?? EMPTY_PRODUCT_GROUP_DISCOUNTS}
                   selectedAgreementName={selectedAgreementLabel}
                   onApplyChanges={handleApplyDiscounts}
                   onDraftChange={handleDiscountDraftChange}

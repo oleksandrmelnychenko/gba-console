@@ -20,6 +20,14 @@ type TokenResponse = {
   csrfToken?: string
 }
 
+type InFlightGetRequest = {
+  abortTimer: ReturnType<typeof setTimeout> | null
+  controller: AbortController
+  promise: Promise<unknown>
+  settled: boolean
+  subscribers: number
+}
+
 export type ApiErrorMessages = Partial<Record<number, string>> & {
   default?: string
   network?: string
@@ -67,8 +75,90 @@ export function unwrapApiResponse<T>(payload: unknown): T {
   return payload as T
 }
 
+const inFlightGetRequests = new Map<string, InFlightGetRequest>()
+const GET_DEDUPE_ABORT_DELAY_MS = 50
+
 export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  if (shouldDeduplicateGetRequest(options)) {
+    return deduplicatedGetRequest<T>(path, options)
+  }
+
   return sendApiRequest<T>(path, options, true)
+}
+
+function deduplicatedGetRequest<T>(path: string, options: ApiRequestOptions): Promise<T> {
+  const key = getGetRequestKey(path, options)
+  const callerSignal = options.signal
+
+  if (callerSignal?.aborted) {
+    return Promise.reject(createAbortError())
+  }
+
+  let request = inFlightGetRequests.get(key)
+
+  if (request?.controller.signal.aborted) {
+    inFlightGetRequests.delete(key)
+    request = undefined
+  }
+
+  if (!request) {
+    request = createInFlightGetRequest<T>(key, path, options)
+    inFlightGetRequests.set(key, request)
+  } else if (request.abortTimer) {
+    clearTimeout(request.abortTimer)
+    request.abortTimer = null
+  }
+
+  request.subscribers += 1
+
+  return withCallerSignal<T>(request.promise as Promise<T>, callerSignal, () => releaseGetRequest(request))
+}
+
+function createInFlightGetRequest<T>(key: string, path: string, options: ApiRequestOptions): InFlightGetRequest {
+  const controller = new AbortController()
+  const request: InFlightGetRequest = {
+    abortTimer: null,
+    controller,
+    promise: Promise.resolve(null),
+    settled: false,
+    subscribers: 0,
+  }
+
+  request.promise = sendApiRequest<T>(
+    path,
+    {
+      ...options,
+      signal: controller.signal,
+    },
+    true,
+  ).finally(() => {
+    request.settled = true
+
+    if (request.abortTimer) {
+      clearTimeout(request.abortTimer)
+      request.abortTimer = null
+    }
+
+    inFlightGetRequests.delete(key)
+  })
+
+  return request
+}
+
+function releaseGetRequest(request: InFlightGetRequest) {
+  request.subscribers = Math.max(0, request.subscribers - 1)
+
+  if (request.subscribers > 0 || request.settled || request.controller.signal.aborted || request.abortTimer) {
+    return
+  }
+
+  request.abortTimer = setTimeout(() => {
+    request.abortTimer = null
+
+    if (request.subscribers === 0 && !request.settled && !request.controller.signal.aborted) {
+      request.controller.abort()
+    }
+  }, GET_DEDUPE_ABORT_DELAY_MS)
 }
 
 async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allowRefresh: boolean): Promise<T> {
@@ -113,6 +203,65 @@ async function sendApiRequest<T>(path: string, options: ApiRequestOptions, allow
   }
 
   return unwrapApiResponse<T>(payload)
+}
+
+function shouldDeduplicateGetRequest(options: ApiRequestOptions): boolean {
+  const method = (options.method || 'GET').toUpperCase()
+
+  return method === 'GET' && typeof options.body === 'undefined'
+}
+
+function getGetRequestKey(path: string, options: ApiRequestOptions): string {
+  const authKey = options.auth === false ? 'anon' : 'auth'
+
+  return `${authKey}:${apiUrl(path, options.language || getApiLanguage(), options.query)}`
+}
+
+function withCallerSignal<T>(
+  promise: Promise<T>,
+  signal: AbortSignal | null | undefined,
+  release: () => void,
+): Promise<T> {
+  if (!signal) {
+    return promise.finally(release)
+  }
+
+  if (signal.aborted) {
+    release()
+    return Promise.reject(createAbortError())
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    let settled = false
+
+    const cleanup = () => {
+      if (settled) {
+        return
+      }
+
+      settled = true
+      signal.removeEventListener('abort', abort)
+      release()
+    }
+
+    const abort = () => {
+      cleanup()
+      reject(createAbortError())
+    }
+
+    signal.addEventListener('abort', abort, { once: true })
+
+    promise.then(
+      (value) => {
+        cleanup()
+        resolve(value)
+      },
+      (error: unknown) => {
+        cleanup()
+        reject(error)
+      },
+    )
+  })
 }
 
 let refreshPromise: Promise<AuthSession | null> | null = null
@@ -244,7 +393,18 @@ function isUnsafeMethod(method?: string): boolean {
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'AbortError'
+  return Boolean(error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
+}
+
+function createAbortError(): Error {
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException('The operation was aborted.', 'AbortError')
+  }
+
+  const error = new Error('The operation was aborted.')
+  error.name = 'AbortError'
+
+  return error
 }
 
 function getAbsoluteBaseUrl(baseUrl: string): string {
