@@ -366,10 +366,10 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
   const title = displayValue(titleValue)
   const createdDate = formatDateTime(row.created)
   const organizationDate = row.organizationFromDate ? formatDateTime(row.organizationFromDate) : ''
-  const invoiceLabel = invoice && !isSameDisplayValue(invoice, titleValue) ? `${t('Накладна')}: ${invoice}` : ''
-  const createdLabel = `${t('Створено')}: ${createdDate}`
-  const organizationDateLabel = organizationDate ? `${t('Вхід')}: ${organizationDate}` : ''
-  const tooltip = compactStrings([title, invoiceLabel, createdLabel, organizationDateLabel]).join('\n')
+  const invoiceTooltip = invoice ? `${t('Накладна')}: ${invoice}` : ''
+  const createdTooltip = `${t('Створено')}: ${createdDate}`
+  const organizationDateTooltip = organizationDate ? `${t('Вхід')}: ${organizationDate}` : ''
+  const tooltip = compactStrings([title, invoiceTooltip, createdTooltip, organizationDateTooltip]).join('\n')
 
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
@@ -379,9 +379,11 @@ function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
         </span>
         <span className="consumable-orders-document-copy">
           <span className="consumable-orders-document-title">{title}</span>
-          {invoiceLabel ? <span className="consumable-orders-document-meta">{invoiceLabel}</span> : null}
-          <span className="consumable-orders-document-meta">{createdLabel}</span>
-          {organizationDateLabel ? <span className="consumable-orders-document-meta">{organizationDateLabel}</span> : null}
+          <span className="consumable-orders-document-dates">
+            <span><small>{t('Ств.')}</small>{createdDate}</span>
+            {organizationDate ? <span><small>{t('Вх.')}</small>{organizationDate}</span> : null}
+          </span>
+          {invoice ? <span className="consumable-orders-document-invoice"><small>{t('Накл.')}</small>{invoice}</span> : null}
         </span>
       </span>
     </Tooltip>
@@ -427,15 +429,15 @@ function ConsumableOrderAmountCell({ row }: { row: ConsumableOrderRow }) {
   const totalWithVat = formatMoney(row.amount)
   const currency = displayValue(row.currency)
   const totalWithVatLabel = `${t('З ПДВ')}: ${totalWithVat}`
-  const totalWithoutVatLabel = isSameMoneyDisplay(row.amount, row.totalAmountWithoutVat) ? '' : `${t('Без ПДВ')}: ${totalWithoutVat}`
+  const totalWithoutVatLabel = `${t('Без ПДВ')}: ${totalWithoutVat}`
   const tooltip = compactStrings([totalWithVatLabel, currency, totalWithoutVatLabel]).join('\n')
 
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="consumable-orders-amount-cell">
         <strong>{totalWithVat}</strong>
-        <small>{currency}</small>
-        {totalWithoutVatLabel ? <span>{totalWithoutVatLabel}</span> : null}
+        <span><small>{t('без ПДВ')}</small>{totalWithoutVat}</span>
+        <em>{currency}</em>
       </span>
     </Tooltip>
   )
@@ -730,24 +732,6 @@ function compactStrings(values: Array<string | number | null | undefined>): stri
   return values
     .map((value) => (typeof value === 'number' ? String(value) : value?.trim()))
     .filter((value): value is string => Boolean(value && value !== 'вЂ”'))
-}
-
-function isSameDisplayValue(left?: string | number | null, right?: string | number | null): boolean {
-  const normalizedLeft = normalizeDisplayValue(left)
-  const normalizedRight = normalizeDisplayValue(right)
-
-  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight)
-}
-
-function normalizeDisplayValue(value?: string | number | null): string {
-  return String(value ?? '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-}
-
-function isSameMoneyDisplay(left?: number, right?: number): boolean {
-  return formatMoney(left) === formatMoney(right)
 }
 
 function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {

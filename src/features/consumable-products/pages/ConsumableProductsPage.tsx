@@ -3,7 +3,6 @@ import {
   Alert,
   Autocomplete,
   Button,
-  Card,
   Checkbox,
   Group,
   Stack,
@@ -17,18 +16,19 @@ import {
   IconEdit,
   IconPlus,
   IconRefresh,
+  IconRestore,
   IconSearch,
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import {
   createConsumableProduct,
   createConsumableProductCategory,
@@ -47,6 +47,8 @@ import type {
   ConsumableProductDraft,
   MeasureUnit,
 } from '../types'
+import '../../online-shop-seo/pages/online-shop-seo-page.css'
+import './consumable-products-page.css'
 
 const PRODUCT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -54,7 +56,7 @@ const PRODUCT_TABLE_DEFAULT_LAYOUT = {
     right: ['actions'],
   },
   density: 'compact',
-} satisfies DataTableDefaultLayout
+}
 
 type CategoryEditor =
   | { mode: 'create'; category?: undefined }
@@ -68,11 +70,18 @@ type DeleteTarget =
   | { category: ConsumableProductCategory; kind: 'category' }
   | { category: ConsumableProductCategory; kind: 'product'; product: ConsumableProduct }
 
+type ConsumableProductSortId = 'measureUnit' | 'name' | 'vendorCode'
+type ConsumableProductSortState = {
+  direction: 'asc' | 'desc'
+  id: ConsumableProductSortId
+} | null
+
 export function ConsumableProductsPage() {
   const { t } = useI18n()
   const [categories, setCategories] = useValueState<ConsumableProductCategory[]>([])
   const [searchValue, setSearchValue] = useValueState('')
   const [hasSearchInput, setHasSearchInput] = useValueState(false)
+  const [selectedCategoryKey, setSelectedCategoryKey] = useValueState<string | null>(null)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
@@ -80,6 +89,26 @@ export function ConsumableProductsPage() {
   const [productEditor, setProductEditor] = useValueState<ProductEditor | null>(null)
   const [deleteTarget, setDeleteTarget] = useValueState<DeleteTarget | null>(null)
   const requestRef = useRef(0)
+  const selectedCategory = useMemo(
+    () => categories.find((category) => getCategoryKey(category) === selectedCategoryKey) || categories[0] || null,
+    [categories, selectedCategoryKey],
+  )
+
+  useEffect(() => {
+    const nextCategoryKey = categories[0] ? getCategoryKey(categories[0]) : null
+
+    if (!nextCategoryKey) {
+      if (selectedCategoryKey !== null) {
+        setSelectedCategoryKey(null)
+      }
+
+      return
+    }
+
+    if (!selectedCategoryKey || !categories.some((category) => getCategoryKey(category) === selectedCategoryKey)) {
+      setSelectedCategoryKey(nextCategoryKey)
+    }
+  }, [categories, selectedCategoryKey, setSelectedCategoryKey])
 
   useEffect(() => {
     const requestId = requestRef.current + 1
@@ -254,13 +283,8 @@ export function ConsumableProductsPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="consumable-products-page seo-page" gap="md">
       <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
         <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_AddBtn_PKEY">
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCategoryEditor({ mode: 'create' })}>
             {t('Додати категорію')}
@@ -268,46 +292,108 @@ export function ConsumableProductsPage() {
         </PermissionGate>
       </PageHeaderActions>
 
-      <Group justify="space-between" align="end" gap="sm">
-        <TextInput
-          leftSection={<IconSearch size={16} />}
-          label={t('Пошук')}
-          placeholder={t('Категорія або товар')}
-          value={searchValue}
-          style={{ flex: '1 1 320px' }}
-          onChange={(event) => {
-            setHasSearchInput(true)
-            setSearchValue(event.currentTarget.value)
-            setCategories([])
-          }}
-        />
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      <Stack gap="md">
-        {categories.map((category) => (
-          <ConsumableCategoryPanel
-            key={category.NetUid || category.Id || category.Name}
-            category={category}
-            onAddProduct={() => setProductEditor({ category, mode: 'create' })}
-            onDeleteCategory={() => setDeleteTarget({ category, kind: 'category' })}
-            onDeleteProduct={(product) => setDeleteTarget({ category, kind: 'product', product })}
-            onEditCategory={() => setCategoryEditor({ category, mode: 'edit' })}
-            onEditProduct={(product) => setProductEditor({ category, mode: 'edit', product })}
+      <div className="seo-page-shell">
+        <div className="seo-page-command-bar">
+          <TextInput
+            className="seo-page-search-input"
+            leftSection={<IconSearch size={15} />}
+            label={t('Пошук')}
+            placeholder={t('Категорія або товар')}
+            value={searchValue}
+            onChange={(event) => {
+              setHasSearchInput(true)
+              setSearchValue(event.currentTarget.value)
+              setCategories([])
+              setSelectedCategoryKey(null)
+            }}
           />
-        ))}
+          <div className="seo-page-toolbar-actions">
+            <Tooltip label={t('РЎРєРёРЅСѓС‚Рё')}>
+              <ActionIcon
+                aria-label={t('РЎРєРёРЅСѓС‚Рё')}
+                color="gray"
+                disabled={!searchValue}
+                size={34}
+                type="button"
+                variant="light"
+                onClick={() => {
+                  setHasSearchInput(false)
+                  setSearchValue('')
+                  setSelectedCategoryKey(null)
+                }}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadCategories()}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-        {!isLoading && categories.length === 0 && (
-          <Card withBorder radius="md" padding="lg">
-            <Text c="dimmed">{t('Побутових товарів не знайдено')}</Text>
-          </Card>
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
         )}
-      </Stack>
+
+        <div className="seo-page-workspace consumable-products-workspace">
+            <aside className="seo-page-rail">
+              <div className="consumable-products-sidebar__header">
+                <span className="consumable-products-sidebar__label">{t('Категорії')}</span>
+                <span className="consumable-products-sidebar__count">{categories.length}</span>
+              </div>
+              <div className="seo-page-nav">
+                {categories.map((category) => {
+                  const categoryKey = getCategoryKey(category)
+                  const productsCount = category.ConsumableProducts?.length || 0
+
+                  return (
+                    <button
+                      key={categoryKey}
+                      className={`seo-page-nav-item consumable-products-nav-item${selectedCategory && getCategoryKey(selectedCategory) === categoryKey ? ' is-active' : ''}`}
+                      type="button"
+                      onClick={() => setSelectedCategoryKey(categoryKey)}
+                    >
+                      <span className="consumable-products-category-button__marker">
+                        {createConsoleTableMarker(category.Name)}
+                      </span>
+                      <span className="consumable-products-category-button__copy">
+                        <span className="consumable-products-category-button__name">{displayValue(category.Name)}</span>
+                        <span className="consumable-products-category-button__meta">
+                          {category.IsSupplyServiceCategory ? t('Послуги') : t('Категорія')}
+                        </span>
+                      </span>
+                      <span className="consumable-products-category-button__count">{productsCount}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </aside>
+
+            <section className="seo-page-panel">
+              {selectedCategory ? (
+                <ConsumableCategoryPanel
+                  key={getCategoryKey(selectedCategory)}
+                  category={selectedCategory}
+                  onAddProduct={() => setProductEditor({ category: selectedCategory, mode: 'create' })}
+                  onDeleteCategory={() => setDeleteTarget({ category: selectedCategory, kind: 'category' })}
+                  onDeleteProduct={(product) => setDeleteTarget({ category: selectedCategory, kind: 'product', product })}
+                  onEditCategory={() => setCategoryEditor({ category: selectedCategory, mode: 'edit' })}
+                  onEditProduct={(product) => setProductEditor({ category: selectedCategory, mode: 'edit', product })}
+                />
+              ) : isLoading ? (
+                <div className="consumable-products-empty-state">{t('Завантаження побутових товарів')}</div>
+              ) : (
+              <div className="consumable-products-empty-state">
+                {t('Побутових товарів не знайдено')}
+              </div>
+              )}
+            </section>
+        </div>
+      </div>
 
       <CategoryEditorModal
         editor={categoryEditor}
@@ -349,20 +435,36 @@ function ConsumableCategoryPanel({
   onEditProduct: (product: ConsumableProduct) => void
 }) {
   const { t } = useI18n()
-  const products = category.ConsumableProducts || []
+  const products = useMemo(() => category.ConsumableProducts || [], [category.ConsumableProducts])
+  const [sortState, setSortState] = useValueState<ConsumableProductSortState>(null)
+  const sortedProducts = useMemo(() => sortConsumableProducts(products, sortState), [products, sortState])
   const columns = useConsumableProductColumns(onEditProduct, onDeleteProduct)
 
+  function toggleSort(id: ConsumableProductSortId) {
+    setSortState((current) => {
+      if (current?.id !== id) {
+        return { direction: 'asc', id }
+      }
+
+      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+    })
+  }
+
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group justify="space-between" align="flex-start" gap="sm">
-          <Stack gap={4}>
-            <Text fw={700}>{displayValue(category.Name)}</Text>
-            <Text c="dimmed" size="sm">
-              {t('Товарів')}: {products.length}
-            </Text>
-          </Stack>
-          <Group gap="xs">
+    <section className="consumable-category-panel">
+      <div className="consumable-category-panel__header">
+        <div className="consumable-category-panel__title">
+          <div className="consumable-category-panel__heading">
+            <Text className="consumable-category-panel__name">{displayValue(category.Name)}</Text>
+            {category.IsSupplyServiceCategory ? (
+              <span className="consumable-category-panel__badge">{t('Послуги')}</span>
+            ) : null}
+          </div>
+          <Text className="consumable-category-panel__meta">
+            {t('Товарів')}: {products.length}
+          </Text>
+        </div>
+        <Group className="consumable-category-panel__actions" gap="xs">
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
               <Button leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
                 {t('Товар')}
@@ -381,22 +483,101 @@ function ConsumableCategoryPanel({
               </Tooltip>
             </PermissionGate>
           </Group>
-        </Group>
+      </div>
 
-        <DataTable
+      <div className="consumable-category-panel__table">
+        <ConsumableProductsRoster
           columns={columns}
-          data={products}
+          data={sortedProducts}
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
           layoutVersion="consumable-products-category-products-1"
-          maxHeight={360}
+          maxHeight="calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 220px)"
           minWidth={640}
+          sortState={sortState}
           showLayoutControls={false}
           tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
+          onSort={toggleSort}
         />
-      </Stack>
-    </Card>
+      </div>
+    </section>
+  )
+}
+
+function ConsumableProductsRoster({
+  columns,
+  data,
+  emptyText,
+  getRowId,
+  maxHeight,
+  minWidth = 720,
+  sortState,
+  onSort,
+}: {
+  columns: DataTableColumn<ConsumableProduct>[]
+  data: ConsumableProduct[]
+  defaultLayout?: unknown
+  emptyText?: ReactNode
+  getRowId?: (product: ConsumableProduct, index: number) => string
+  layoutVersion?: string
+  maxHeight?: number | string
+  minWidth?: number
+  showLayoutControls?: boolean
+  sortState?: ConsumableProductSortState
+  tableId?: string
+  onSort?: (id: ConsumableProductSortId) => void
+}) {
+  const tableStyle = {
+    '--seo-roster-columns': 'minmax(280px, 1.1fr) minmax(160px, 0.52fr) minmax(150px, 0.44fr) 76px',
+    '--seo-roster-min-width': `${minWidth}px`,
+    maxHeight,
+  } as CSSProperties
+
+  return (
+    <div className="seo-roster-table consumable-products-roster" style={tableStyle}>
+      <div className="seo-roster-head">
+        {columns.map((column) =>
+          isConsumableProductSortId(column.id) ? (
+            <button
+              className={`seo-roster-head-cell consumable-products-roster-sort${sortState?.id === column.id ? ' is-active' : ''}`}
+              key={column.id}
+              type="button"
+              onClick={() => onSort?.(column.id as ConsumableProductSortId)}
+            >
+              {column.header}
+              {sortState?.id === column.id ? (
+                <span className="consumable-products-roster-sort__direction">
+                  {sortState.direction === 'asc' ? '↑' : '↓'}
+                </span>
+              ) : null}
+            </button>
+          ) : (
+            <span className={`seo-roster-head-cell is-${column.id}`} key={column.id}>
+              {column.header}
+            </span>
+          ),
+        )}
+      </div>
+
+      <div className="seo-roster-body">
+        {data.length === 0 ? (
+          <div className="seo-roster-empty">{emptyText}</div>
+        ) : (
+          data.map((product, index) => (
+            <div className="seo-roster-row-frame" key={getRowId?.(product, index) || getProductKey(product)}>
+              <div className="seo-roster-row is-hoverable consumable-product-row">
+                {columns.map((column) => (
+                  <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
+                    {column.cell ? column.cell(product) : displayValue(column.accessor?.(product) as string | number | null)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -414,7 +595,7 @@ function useConsumableProductColumns(
         width: 300,
         minWidth: 220,
         accessor: (product) => product.Name,
-        cell: (product) => <Text fw={600}>{displayValue(product.Name)}</Text>,
+        cell: (product) => <ConsumableProductNameCell product={product} />,
       },
       {
         id: 'vendorCode',
@@ -422,7 +603,7 @@ function useConsumableProductColumns(
         width: 160,
         minWidth: 120,
         accessor: (product) => product.VendorCode,
-        cell: (product) => displayValue(product.VendorCode),
+        cell: (product) => <ConsumableProductCodeCell value={displayValue(product.VendorCode)} />,
       },
       {
         id: 'measureUnit',
@@ -430,7 +611,7 @@ function useConsumableProductColumns(
         width: 170,
         minWidth: 140,
         accessor: (product) => product.MeasureUnit?.Name,
-        cell: (product) => displayValue(product.MeasureUnit?.Name),
+        cell: (product) => <ConsumableProductUnitCell value={displayValue(product.MeasureUnit?.Name)} />,
       },
       {
         id: 'actions',
@@ -463,6 +644,42 @@ function useConsumableProductColumns(
       },
     ],
     [onDeleteProduct, onEditProduct, t],
+  )
+}
+
+function ConsumableProductCodeCell({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className="seo-table-role-like-cell consumable-product-code">
+        <span className="seo-table-role-like-icon">#</span>
+        <span className="seo-table-muted-cell is-default">{value}</span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableProductNameCell({ product }: { product: ConsumableProduct }) {
+  const title = displayValue(product.Name)
+
+  return (
+    <Tooltip label={title} openDelay={350} withArrow>
+      <span className="seo-table-primary-cell">
+        <span className="seo-table-primary-icon" aria-hidden>
+          {createConsoleTableMarker(product.Name)}
+        </span>
+        <span className="seo-table-primary-copy">
+          <span className="seo-table-primary-title">{title}</span>
+        </span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableProductUnitCell({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className="seo-table-tag is-neutral consumable-product-unit">{value}</span>
+    </Tooltip>
   )
 }
 
@@ -675,6 +892,44 @@ function ProductEditorForm({
       </Group>
     </Stack>
   )
+}
+
+function isConsumableProductSortId(id: string): id is ConsumableProductSortId {
+  return id === 'name' || id === 'vendorCode' || id === 'measureUnit'
+}
+
+function sortConsumableProducts(
+  products: ConsumableProduct[],
+  sortState: ConsumableProductSortState,
+): ConsumableProduct[] {
+  if (!sortState) {
+    return products
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...products].sort(
+    (firstProduct, secondProduct) =>
+      getConsumableProductSortValue(firstProduct, sortState.id).localeCompare(
+        getConsumableProductSortValue(secondProduct, sortState.id),
+        'uk',
+        {
+          numeric: true,
+          sensitivity: 'base',
+        },
+      ) * direction,
+  )
+}
+
+function getConsumableProductSortValue(product: ConsumableProduct, id: ConsumableProductSortId): string {
+  switch (id) {
+    case 'measureUnit':
+      return product.MeasureUnit?.Name || ''
+    case 'name':
+      return product.Name || ''
+    case 'vendorCode':
+      return product.VendorCode || ''
+  }
 }
 
 function getCategoryEditorKey(editor: CategoryEditor): string {

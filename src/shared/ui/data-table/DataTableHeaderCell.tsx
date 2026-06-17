@@ -89,7 +89,7 @@ export function DataTableHeaderCell<TData>({
           className="data-table-header-button"
           data-reorderable={canReorder ? 'true' : undefined}
           data-sortable={canSort ? 'true' : undefined}
-          title={canReorder ? labels.dragColumn : undefined}
+          title={canSort ? sortLabel : canReorder ? labels.dragColumn : undefined}
           onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
         >
           <span className="data-table-header-label">

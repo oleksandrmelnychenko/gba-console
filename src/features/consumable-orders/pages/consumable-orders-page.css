@@ -151,7 +151,7 @@
 }
 
 .consumable-orders-list-head {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   flex: 0 0 auto;
   font-size: 10.5px;
   font-weight: 500;
@@ -282,6 +282,9 @@
 
 .consumable-orders-document-title,
 .consumable-orders-document-meta,
+.consumable-orders-document-dates,
+.consumable-orders-document-dates > span,
+.consumable-orders-document-invoice,
 .consumable-orders-two-line-cell > span,
 .consumable-orders-two-line-cell > small,
 .consumable-orders-responsible-cell > span,
@@ -302,11 +305,47 @@
 
 .consumable-orders-document-meta,
 .consumable-orders-two-line-cell > small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.2;
   margin-top: 3px;
+}
+
+.consumable-orders-document-dates {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  min-width: 0;
+}
+
+.consumable-orders-document-dates > span,
+.consumable-orders-document-invoice {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 1 auto;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--mantine-color-gray-6);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.consumable-orders-document-invoice {
+  margin-top: 3px;
+}
+
+.consumable-orders-document-dates small,
+.consumable-orders-document-invoice small {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .consumable-orders-two-line-cell > span {
@@ -335,23 +374,39 @@
   white-space: nowrap;
 }
 
-.consumable-orders-amount-cell small {
-  color: var(--mantine-color-gray-5);
-  font-size: 10px;
-  font-weight: 650;
-  margin-top: 3px;
-  text-transform: uppercase;
-}
-
-.consumable-orders-amount-cell span {
-  color: var(--mantine-color-gray-5);
-  font-size: 10.5px;
-  font-weight: 600;
-  margin-top: 3px;
+.consumable-orders-amount-cell > span {
+  align-items: baseline;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 620;
+  line-height: 1.15;
+  margin-top: 4px;
   max-width: 100%;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.consumable-orders-amount-cell > span small {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.consumable-orders-amount-cell em {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 10px;
+  font-weight: 650;
+  font-style: normal;
+  margin-top: 3px;
+  text-transform: uppercase;
 }
 
 .consumable-orders-responsible-cell {
@@ -369,7 +424,7 @@
 }
 
 .consumable-orders-responsible-cell > small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 10.5px;
   font-weight: 600;
   line-height: 1.2;
@@ -391,7 +446,7 @@
 }
 
 .consumable-orders-status-cell small {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-6);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.1;

@@ -2,8 +2,6 @@ import {
   ActionIcon,
   Alert,
   Button,
-  Card,
-  Group,
   Stack,
   Text,
   TextInput,
@@ -18,9 +16,12 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { ConsoleTableEntityCell } from '../../../shared/ui/console-table-cells'
+import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentExpenseArticles, searchPaymentExpenseArticles } from '../api/paymentExpenseArticlesApi'
 import type { PaymentExpenseArticle } from '../types'
+import '../../../shared/ui/console-table-page.css'
 
 const PERMISSION_CREATE_EXPENSE_ARTICLE = 'Accounting_Payment_Expense_Articles_ADDBtn_PKEY'
 
@@ -74,7 +75,13 @@ export function PaymentExpenseArticlesPage() {
         header: t('Назва'),
         minWidth: 260,
         accessor: (article) => article.OperationName,
-        cell: (article) => <Text fw={600}>{displayValue(article.OperationName)}</Text>,
+        cell: (article) => (
+          <ConsoleTableEntityCell
+            marker={createConsoleTableMarker(article.OperationName)}
+            title={displayValue(article.OperationName)}
+            subtitle={displayValue(article.NetUid)}
+          />
+        ),
       },
       {
         id: 'netUid',
@@ -143,25 +150,8 @@ export function PaymentExpenseArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
-  const toolbarLeft = useMemo(
-    () => {
-      const searchIcon = <IconSearch size={16} />
-
-      return (
-        <TextInput
-          leftSection={searchIcon}
-          placeholder={t('Пошук')}
-          value={searchValue}
-          w={{ base: '100%', sm: 360 }}
-          onChange={(event) => setSearchValue(event.currentTarget.value)}
-        />
-      )
-    },
-    [searchValue, setSearchValue, t],
-  )
-
   return (
-    <Stack gap="md">
+    <Stack className="payment-expense-articles-page console-table-page" gap="md">
       {canCreate && (
         <PageHeaderActions>
           <Button
@@ -181,46 +171,33 @@ export function PaymentExpenseArticlesPage() {
           </Button>
         </PageHeaderActions>
       )}
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Статті витрат')}
-              </Text>
-            </div>
+      <div className="console-table-shell">
+        <div className="console-table-command-bar is-search-only">
+          <TextInput
+            className="console-table-search-input"
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук')}
+            placeholder={t('Назва або NetUid')}
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.currentTarget.value)}
+          />
+          <div className="console-table-actions">
+            <span className="console-table-summary">{t('Статей')}: {articles.length}</span>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={reload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-            <Group gap="xs">
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              {canCreate && (
-                <Button
-                  color="violet"
-                  leftSection={<IconPlus size={16} />}
-                  onClick={() =>
-                    navigate('/accounting/payment-expense-articles/new', {
-                      state: {
-                        backgroundLocation: location,
-                        returnPath: `${location.pathname}${location.search}`,
-                      },
-                    })
-                  }
-                >
-                  {t('Нова стаття')}
-                </Button>
-              )}
-            </Group>
-          </Group>
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
+        <div className="payment-expense-articles-page__table console-table-body">
           <DataTable
             columns={columns}
             data={articles}
@@ -229,12 +206,12 @@ export function PaymentExpenseArticlesPage() {
             getRowId={(article) => String(article.NetUid || article.Id || article.OperationName)}
             isLoading={isTableBusy}
             layoutVersion="payment-expense-articles-1"
+            height="100%"
             tableId="payment-expense-articles"
-            toolbarLeft={toolbarLeft}
             onRowClick={openArticle}
           />
-        </Stack>
-      </Card>
+        </div>
+      </div>
     </Stack>
   )
 }
