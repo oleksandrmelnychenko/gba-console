@@ -9,6 +9,7 @@ import type {
 } from '../advanceReportTypes'
 
 const LOCAL_NET_UID_PREFIX = 'local-'
+const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
 export async function getAdvanceReportOrder(netId: string): Promise<AdvanceReportOrder | null> {
   const result = await apiRequest<unknown>(`/payments/orders/outcome/get?netId=${encodeURIComponent(netId)}`)
@@ -89,10 +90,18 @@ export async function searchAdvanceReportSupplyOrganizations(
   value: string,
   organizationNetId?: string,
 ): Promise<SupplyOrganization[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
+      limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
+      offset: 0,
       organizationNetId: organizationNetId || '',
-      value,
+      value: searchValue,
     },
   })
 

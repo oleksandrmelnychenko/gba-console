@@ -33,6 +33,7 @@ import type {
 } from '../types'
 
 const TARGET_ORGANIZATION_CULTURE_PREFIX = 'uk'
+const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
 
 export async function getSupplyUkraineOrders(
   params: SupplyUkraineOrdersSearchParams,
@@ -354,8 +355,18 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
 }
 
 export async function searchSupplyOrderServiceOrganizations(value: string): Promise<SupplyServiceOrganization[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
-    query: { value },
+    query: {
+      limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
+      offset: 0,
+      value: searchValue,
+    },
   })
 
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyServiceOrganization[]

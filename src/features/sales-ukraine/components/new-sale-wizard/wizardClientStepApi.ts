@@ -34,6 +34,12 @@ export async function searchWizardClients(
   offset = 0,
   signal?: AbortSignal,
 ): Promise<Client[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: JSON.stringify({
@@ -44,7 +50,7 @@ export async function searchWizardClients(
         TypeRoleFilter: '',
         SortDescriptors: [],
         Filter: JSON.stringify({
-          Value: value.trim(),
+          Value: searchValue,
           FilterItem: {
             Name: '',
             SQL: 'RegionCode.Value/Client.FullName',

@@ -11,6 +11,8 @@ import type {
 } from '../detailTypes'
 import type { ProtocolUser, SupplyTransportationType } from '../types'
 
+const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
+
 function normalizeProtocol(result: unknown): ProtocolDetail | null {
   if (result && typeof result === 'object') {
     return result as ProtocolDetail
@@ -194,8 +196,18 @@ export async function removeMergedService(serviceNetId: string): Promise<Protoco
 }
 
 export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
-    query: { value },
+    query: {
+      limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
+      offset: 0,
+      value: searchValue,
+    },
   })
 
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyOrganization[]

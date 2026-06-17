@@ -108,9 +108,15 @@ export async function getSalesForReturn(params: SalesForReturnSearchParams): Pro
 }
 
 export async function searchSalesReturnClients(value: string, signal?: AbortSignal): Promise<SalesReturnClient[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      filter: buildClientSearchFilter(value),
+      filter: buildClientSearchFilter(searchValue),
     },
     ...(signal ? { signal } : {}),
   })

@@ -86,13 +86,19 @@ export async function searchReportClients(
   params: ReportSearchParams,
   signal?: AbortSignal,
 ): Promise<ReportEntity[]> {
+  const searchValue = params.value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: buildServerSearchFilter({
         table: 'Client',
         limit: params.limit,
         offset: params.offset,
-        value: params.value.trim(),
+        value: searchValue,
         filterEntityType: 0,
         filterSql: CLIENT_FILTER_SQL,
       }),
@@ -121,13 +127,19 @@ export async function getReportClientAgreements(netId: string): Promise<ReportEn
 }
 
 export async function searchReportUsers(params: ReportSearchParams): Promise<ReportEntity[]> {
+  const searchValue = params.value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: buildServerSearchFilter({
         table: 'User',
         limit: params.limit,
         offset: params.offset,
-        value: params.value.trim(),
+        value: searchValue,
         filterEntityType: 1,
         filterSql: USER_FILTER_SQL,
       }),

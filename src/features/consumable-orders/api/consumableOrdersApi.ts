@@ -17,6 +17,8 @@ import type {
   User,
 } from '../types'
 
+const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
+
 export async function getConsumableOrders(params: ConsumableOrdersSearchParams): Promise<ConsumablesOrder[]> {
   const result = await apiRequest<unknown>('/consumables/orders/all', {
     query: {
@@ -88,9 +90,17 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
 }
 
 export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
-      value,
+      limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
+      offset: 0,
+      value: searchValue,
     },
   })
 

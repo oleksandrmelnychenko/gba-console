@@ -55,9 +55,15 @@ export async function searchClientProductMovementClients(
   offset = 0,
   signal?: AbortSignal,
 ): Promise<ClientProductMovementClientOption[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      filter: buildClientSearchFilter(value, offset),
+      filter: buildClientSearchFilter(searchValue, offset),
     },
     signal,
   })

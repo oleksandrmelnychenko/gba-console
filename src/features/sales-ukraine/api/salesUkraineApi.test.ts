@@ -11,6 +11,7 @@ import {
   getSaleShipmentListDocument,
   getSaleShipmentListHistoryDocument,
   getShiftedSaleById,
+  searchSalesUkraineClients,
   shiftOrderItemsCurrent,
 } from './salesUkraineApi'
 
@@ -110,6 +111,12 @@ describe('sales Ukraine document request contracts', () => {
     })
 
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/get', { query: { netId: 'sale-net-id' } })
+  })
+
+  it('does not call the client search endpoint for blank client search values', async () => {
+    await expect(searchSalesUkraineClients('   ')).resolves.toEqual([])
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
   it('posts edit-shift payload to the current shift endpoint', async () => {

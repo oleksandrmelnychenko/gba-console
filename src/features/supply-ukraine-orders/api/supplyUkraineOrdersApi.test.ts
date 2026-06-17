@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   deleteSupplyProformDocument,
+  searchSupplyOrderServiceOrganizations,
   uploadDirectSupplyOrderFromFile,
   uploadSupplyOrderProformDocuments,
   uploadSupplyOrderUkraineFromSupplierFile,
@@ -138,6 +139,26 @@ describe('supplyUkraineOrdersApi', () => {
       method: 'DELETE',
       query: { netId: 'document-1' },
     })
+  })
+
+  it('searches service organizations with a bounded trimmed lookup query', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'organization-1' }])
+
+    await expect(searchSupplyOrderServiceOrganizations('  broker  ')).resolves.toEqual([{ NetUid: 'organization-1' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+      query: {
+        limit: 20,
+        offset: 0,
+        value: 'broker',
+      },
+    })
+  })
+
+  it('does not search service organizations for blank lookup values', async () => {
+    await expect(searchSupplyOrderServiceOrganizations('   ')).resolves.toEqual([])
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 })
 

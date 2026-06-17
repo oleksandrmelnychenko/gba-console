@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { calculateAdvanceReportOrder, updateAdvanceReportOrder } from './advanceReportApi'
+import {
+  calculateAdvanceReportOrder,
+  searchAdvanceReportSupplyOrganizations,
+  updateAdvanceReportOrder,
+} from './advanceReportApi'
 import type { AdvanceReportOrder } from '../advanceReportTypes'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -103,6 +107,29 @@ describe('advanceReportApi', () => {
     expect(payload.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder?.ConsumablesOrderItems?.[0]?.NetUid)
       .toBeUndefined()
     expect(payload.CompanyCarFuelings?.[0]?.NetUid).toBeUndefined()
+  })
+
+  it('searches supply organizations with bounded trimmed lookup params', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-1' }])
+
+    await expect(searchAdvanceReportSupplyOrganizations('  service  ', 'organization-1')).resolves.toEqual([
+      { NetUid: 'supplier-1', SupplyOrganizationAgreements: [] },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+      query: {
+        limit: 20,
+        offset: 0,
+        organizationNetId: 'organization-1',
+        value: 'service',
+      },
+    })
+  })
+
+  it('does not search supply organizations for blank lookup values', async () => {
+    await expect(searchAdvanceReportSupplyOrganizations('   ', 'organization-1')).resolves.toEqual([])
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
   })
 })
 

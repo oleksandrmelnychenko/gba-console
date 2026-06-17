@@ -8,6 +8,8 @@ import type {
   SupplyOrganization,
 } from '../types'
 
+const SUPPLY_ORGANIZATION_LOOKUP_LIMIT = 20
+
 function normalizeOrder(result: unknown): SupplyOrderUkraine | null {
   if (!result || typeof result !== 'object') {
     return null
@@ -97,8 +99,18 @@ export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
 }
 
 export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
-    query: { value },
+    query: {
+      limit: SUPPLY_ORGANIZATION_LOOKUP_LIMIT,
+      offset: 0,
+      value: searchValue,
+    },
   })
 
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyOrganization[]

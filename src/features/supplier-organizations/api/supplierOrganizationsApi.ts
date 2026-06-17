@@ -41,6 +41,8 @@ export async function searchSupplyOrganizations(
   organizationNetId = '',
   params: SupplyOrganizationsListParams = {},
 ): Promise<SupplyOrganization[]> {
+  const searchValue = value.trim()
+
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
       from: params.from,
@@ -48,7 +50,7 @@ export async function searchSupplyOrganizations(
       offset: params.offset,
       organizationNetId,
       to: params.to,
-      value,
+      value: searchValue,
     },
   })
 

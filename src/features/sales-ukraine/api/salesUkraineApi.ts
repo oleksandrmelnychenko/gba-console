@@ -52,6 +52,12 @@ export async function searchSalesUkraineClients(
   value: string,
   signal?: AbortSignal,
 ): Promise<SalesUkraineClientOption[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: JSON.stringify({
@@ -62,7 +68,7 @@ export async function searchSalesUkraineClients(
         TypeRoleFilter: '',
         SortDescriptors: [],
         Filter: JSON.stringify({
-          Value: value.trim(),
+          Value: searchValue,
           FilterItem: {
             Name: '',
             SQL: 'RegionCode.Value/Client.FullName',

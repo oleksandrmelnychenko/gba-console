@@ -29,6 +29,10 @@ export async function getProductRemainSuppliers(
   params: ProductRemainSupplierSearchParams,
   signal?: AbortSignal,
 ): Promise<ProductRemainSupplier[]> {
+  if (!params.value.trim()) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: buildSupplierSearchFilter(params),

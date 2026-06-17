@@ -44,6 +44,12 @@ describe('wizard client step API contracts', () => {
     expect(innerFilter.FilterItem.Type).toBeUndefined()
   })
 
+  it('does not call the client search endpoint for blank wizard search values', async () => {
+    await expect(searchWizardClients('   ', 10, 0)).resolves.toEqual([])
+
+    expect(apiRequestMock).not.toHaveBeenCalled()
+  })
+
   it('requests the sales register with legacy query params', async () => {
     apiRequestMock.mockResolvedValueOnce([])
 

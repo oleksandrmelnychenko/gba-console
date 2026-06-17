@@ -115,9 +115,15 @@ export async function searchIncomeCashflowCounterparties(
   type: IncomeCounterpartySearchType,
   signal?: AbortSignal,
 ): Promise<Client[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      filter: JSON.stringify(buildCounterpartySearchQuery(value, type)),
+      filter: JSON.stringify(buildCounterpartySearchQuery(searchValue, type)),
     },
     signal,
   })
@@ -129,11 +135,17 @@ export async function searchIncomeCashflowClientPayers(
   value: string,
   signal?: AbortSignal,
 ): Promise<Client[]> {
+  const searchValue = value.trim()
+
+  if (!searchValue) {
+    return []
+  }
+
   const result = await apiRequest<unknown>('/clients/payers/search/all', {
     query: {
       limit: 20,
       offset: 0,
-      value,
+      value: searchValue,
     },
     signal,
   })
