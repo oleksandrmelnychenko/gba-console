@@ -69,7 +69,12 @@ export function SupplierOrganizationsPage() {
   const location = useLocation()
 
   function openOrganizationSheet(path: string) {
-    navigate(path, { state: { backgroundLocation: location } })
+    navigate(path, {
+      state: {
+        backgroundLocation: location,
+        returnPath: `${location.pathname}${location.search}`,
+      },
+    })
   }
 
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
@@ -447,7 +452,7 @@ function SupplierOrganizationRow({
       <SupplierOrganizationContactCell organization={organization} />
       <SupplierOrganizationBankCell organization={organization} />
       <SupplierOrganizationBalanceCell organization={organization} />
-      <SupplierOrganizationDateCell value={formatDateTime(organization.Created)} />
+      <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />
       <SupplierOrganizationActions organization={organization} onOpenActions={onOpenActions} onOpenCashFlow={onOpenCashFlow} onOpenEdit={onOpenEdit} />
     </div>
   )
@@ -481,7 +486,7 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
     { label: t('СВ'), value: organization.SROI },
   ].filter((item) => item.value)
 
-  if (identifiers.length === 0 && !organization.IsNotResident) {
+  if (identifiers.length === 0) {
     return <SupplierOrganizationMutedValue value="—" />
   }
 
@@ -495,7 +500,6 @@ function SupplierOrganizationIdentifiersCell({ organization }: { organization: S
           </span>
         </Tooltip>
       ))}
-      {organization.IsNotResident ? <span className="supplier-organizations-resident-tag">{t('Нерезидент')}</span> : null}
     </span>
   )
 }
@@ -563,10 +567,16 @@ function SupplierOrganizationBalanceCell({ organization }: { organization: Suppl
   )
 }
 
-function SupplierOrganizationDateCell({ value }: { value: string }) {
+function SupplierOrganizationDateCell({ organization, value }: { organization: SupplyOrganization; value: string }) {
+  const { t } = useI18n()
+  const residency = organization.IsNotResident ? t('Нерезидент') : null
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="supplier-organizations-date-cell">{value}</span>
+    <Tooltip label={residency ? `${value}\n${residency}` : value} multiline={Boolean(residency)} openDelay={350} withArrow>
+      <span className="supplier-organizations-date-cell">
+        <span>{value}</span>
+        {residency ? <small className="is-foreign">{residency}</small> : null}
+      </span>
     </Tooltip>
   )
 }

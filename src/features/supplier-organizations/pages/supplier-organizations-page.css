@@ -298,7 +298,8 @@
 .supplier-organizations-two-line-cell > span,
 .supplier-organizations-two-line-cell > small,
 .supplier-organizations-muted-value,
-.supplier-organizations-date-cell {
+.supplier-organizations-date-cell > span,
+.supplier-organizations-date-cell > small {
   display: block;
   min-width: 0;
   overflow: hidden;
@@ -335,6 +336,11 @@
   padding-left: 12px;
 }
 
+.supplier-organizations-date-cell {
+  display: block;
+  min-width: 0;
+}
+
 .supplier-organizations-tags-cell {
   align-items: center;
   display: flex;
@@ -343,8 +349,7 @@
   overflow: hidden;
 }
 
-.supplier-organizations-id-tag,
-.supplier-organizations-resident-tag {
+.supplier-organizations-id-tag {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
@@ -375,13 +380,6 @@
   font-weight: 680;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.supplier-organizations-resident-tag {
-  background: var(--mantine-color-orange-0);
-  border: 1px solid rgba(232, 120, 46, 0.22);
-  color: #d95f16;
-  font-weight: 700;
 }
 
 .supplier-organizations-bank-cell .supplier-organizations-two-line-cell {
@@ -415,11 +413,23 @@
 }
 
 .supplier-organizations-muted-value,
-.supplier-organizations-date-cell {
+.supplier-organizations-date-cell > span {
   color: var(--mantine-color-gray-6);
   font-size: 12px;
   font-weight: 560;
   line-height: 1.2;
+}
+
+.supplier-organizations-date-cell > small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.15;
+  margin-top: 3px;
+}
+
+.supplier-organizations-date-cell > small.is-foreign {
+  color: #d95f16;
 }
 
 .supplier-organizations-row-actions {

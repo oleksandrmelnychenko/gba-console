@@ -30,7 +30,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -76,10 +76,20 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const DRAWER_TRANSITION_MS = 220
+
+type SupplierOrganizationRouteState = {
+  backgroundLocation?: unknown
+  returnPath?: string
+}
+
 export function SupplierOrganizationEditPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams()
+  const routeState = location.state as SupplierOrganizationRouteState | null
+  const returnPath = routeState?.returnPath || '/accounting/supplier-organizations'
   const isNew = !id
   const [organization, setOrganization] = useValueState<SupplyOrganization>(() => createEmptySupplyOrganization())
   const [organizationRevision, setOrganizationRevision] = useValueState(0)
@@ -91,7 +101,14 @@ export function SupplierOrganizationEditPage() {
   const [isSaving, setSaving] = useValueState(false)
   const [isDeleting, setDeleting] = useValueState(false)
   const [deleteOpened, setDeleteOpened] = useValueState(false)
+  const [drawerOpened, setDrawerOpened] = useValueState(false)
   const requestRef = useRef(0)
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => setDrawerOpened(true))
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [setDrawerOpened])
 
   useEffect(() => {
     const requestId = requestRef.current + 1
@@ -199,7 +216,7 @@ export function SupplierOrganizationEditPage() {
         setOrganizationRevision((current) => current + 1)
 
         if (isNew && savedOrganization.NetUid) {
-          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true })
+          navigate(`/accounting/supplier-organizations/edit/${savedOrganization.NetUid}`, { replace: true, state: routeState })
         }
       }
     } catch (saveError) {
@@ -222,7 +239,7 @@ export function SupplierOrganizationEditPage() {
     try {
       await deleteSupplyOrganization(organization.NetUid)
       notifications.show({ color: 'green', message: t('Постачальника послуг видалено') })
-      navigate('/accounting/supplier-organizations')
+      navigate(returnPath, { replace: true })
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : t('Не вдалося видалити постачальника послуг'))
     } finally {
@@ -234,12 +251,24 @@ export function SupplierOrganizationEditPage() {
   const tabsDisabled = !organization.Id
   const organizationFormKey = `${organization.NetUid || organization.Id || 'new'}-${organizationRevision}`
 
+  function closeDrawer() {
+    setDrawerOpened(false)
+    window.setTimeout(() => navigate(returnPath, { replace: true }), DRAWER_TRANSITION_MS)
+  }
+
   return (
-    <Stack gap="md">
+    <AppDrawer
+      opened={drawerOpened}
+      position="right"
+      size="wide"
+      transitionProps={{ duration: DRAWER_TRANSITION_MS }}
+      onClose={closeDrawer}
+    >
+      <Stack gap="md">
       <Group justify="space-between" align="center" gap="sm">
         <Group gap="xs">
           <Tooltip label={t('Назад')}>
-            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={() => navigate('/accounting/supplier-organizations')}>
+            <ActionIcon aria-label={t('Назад')} color="gray" size={38} variant="light" onClick={closeDrawer}>
               <IconArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
@@ -295,16 +324,18 @@ export function SupplierOrganizationEditPage() {
         </Tabs.Panel>
 
         <Tabs.Panel value="agreements" pt="md">
-          <AgreementsPanel
-            currencies={currencies}
-            isLoading={isLoading}
-            isSaving={isSaving}
-            organization={organization}
-            ownerOrganizations={ownerOrganizations}
-            onError={setError}
-            onReload={reloadOrganization}
-            setSaving={setSaving}
-          />
+          {activeTab === 'agreements' ? (
+            <AgreementsPanel
+              currencies={currencies}
+              isLoading={isLoading}
+              isSaving={isSaving}
+              organization={organization}
+              ownerOrganizations={ownerOrganizations}
+              onError={setError}
+              onReload={reloadOrganization}
+              setSaving={setSaving}
+            />
+          ) : null}
         </Tabs.Panel>
 
         <Tabs.Panel value="bank" pt="md">
@@ -323,7 +354,8 @@ export function SupplierOrganizationEditPage() {
         onClose={() => setDeleteOpened(false)}
         onConfirm={confirmDelete}
       />
-    </Stack>
+      </Stack>
+    </AppDrawer>
   )
 }
 
