@@ -5,6 +5,7 @@ import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
+import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadPaceStatus, HeadTeam, HeadTeamRow } from '../types'
 
 const POLL_INTERVAL_MS = 60_000
@@ -178,6 +179,8 @@ export function HeadDashboardPage() {
               value={`${formatRate(team.totals.close_rate)} / ${formatRate(team.totals.conversion_rate)}`}
             />
           </SimpleGrid>
+
+          <HeadDashboardChartsPanel reloadKey={reloadKey} rows={rows} />
 
           {isLoading && rows.length === 0 ? (
             <Group justify="center" py="xl">

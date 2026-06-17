@@ -178,3 +178,49 @@ export type HeadTeam = {
   team: HeadTeamRow[]
   totals: HeadTeamTotals
 }
+
+export type CockpitTaskTypeMix = {
+  type: string
+  count: number
+}
+
+export type CockpitUrgencyMix = {
+  urgency: CockpitUrgency
+  count: number
+}
+
+export type CockpitDebtAging = {
+  bucket: string
+  amount_eur: number
+  count: number
+}
+
+export type CockpitCompletedVsOpen = {
+  status: string
+  count: number
+}
+
+export type CockpitDashboard = {
+  manager_id: number
+  as_of?: string | null
+  task_type_mix: CockpitTaskTypeMix[]
+  urgency_mix: CockpitUrgencyMix[]
+  value_at_risk_eur: number
+  debt_aging: CockpitDebtAging[]
+  completed_vs_open: CockpitCompletedVsOpen[]
+}
+
+export type HeadDashboardTeam = {
+  manager_id: number
+  open_tasks: number
+  critical: number
+  value_at_risk_eur: number
+}
+
+export type HeadDashboard = {
+  is_head: boolean
+  as_of?: string | null
+  teams: HeadDashboardTeam[]
+  escalated_count: number
+  total_value_at_risk_eur: number
+}

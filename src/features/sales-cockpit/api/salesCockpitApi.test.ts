@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getEscalated, getHeadTeam, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
+import { addTaskNote, getCockpitCount, getCockpitInbox, getCockpitTarget, getDashboard, getEscalated, getHeadDashboard, getHeadTeam, regenerateCockpit, setTaskStatus } from './salesCockpitApi'
 import type { CockpitTask } from '../types'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -336,6 +336,92 @@ describe('salesCockpitApi', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/escalated', {
       query: {
         limit: undefined,
+      },
+    })
+  })
+
+  it('loads the manager dashboard and normalizes the chart mixes', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      manager_id: 7,
+      as_of: '2026-06-08',
+      task_type_mix: [{ type: 'debt_followup', count: 3 }, null, { type: 12, count: 1 }],
+      urgency_mix: [{ urgency: 'critical', count: 2 }, { urgency: 'bogus', count: 9 }],
+      value_at_risk_eur: 4200.5,
+      debt_aging: [{ bucket: '0-30', amount_eur: 1000, count: 2 }, 'noise'],
+      completed_vs_open: [{ status: 'open', count: 4 }, { status: 'done', count: 1 }],
+    })
+
+    await expect(getDashboard('2026-06-08')).resolves.toEqual({
+      manager_id: 7,
+      as_of: '2026-06-08',
+      task_type_mix: [{ type: 'debt_followup', count: 3 }],
+      urgency_mix: [{ urgency: 'critical', count: 2 }],
+      value_at_risk_eur: 4200.5,
+      debt_aging: [{ bucket: '0-30', amount_eur: 1000, count: 2 }],
+      completed_vs_open: [{ status: 'open', count: 4 }, { status: 'done', count: 1 }],
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard', {
+      query: {
+        asOfDate: '2026-06-08',
+      },
+    })
+  })
+
+  it('defaults the manager dashboard to an empty shape on a non-object response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getDashboard()).resolves.toEqual({
+      manager_id: 0,
+      as_of: null,
+      task_type_mix: [],
+      urgency_mix: [],
+      value_at_risk_eur: 0,
+      debt_aging: [],
+      completed_vs_open: [],
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/dashboard', {
+      query: {
+        asOfDate: undefined,
+      },
+    })
+  })
+
+  it('loads the head dashboard and normalizes the team rows', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      is_head: true,
+      as_of: '2026-06-08',
+      teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200 }, null],
+      escalated_count: 2,
+      total_value_at_risk_eur: 9800.25,
+    })
+
+    await expect(getHeadDashboard('2026-06-08')).resolves.toEqual({
+      is_head: true,
+      as_of: '2026-06-08',
+      teams: [{ manager_id: 7, open_tasks: 4, critical: 1, value_at_risk_eur: 1200 }],
+      escalated_count: 2,
+      total_value_at_risk_eur: 9800.25,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard', {
+      query: {
+        asOfDate: '2026-06-08',
+      },
+    })
+  })
+
+  it('defaults the head dashboard to a non-head empty shape on a non-object response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getHeadDashboard()).resolves.toEqual({
+      is_head: false,
+      as_of: null,
+      teams: [],
+      escalated_count: 0,
+      total_value_at_risk_eur: 0,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/sales/cockpit/head/dashboard', {
+      query: {
+        asOfDate: undefined,
       },
     })
   })

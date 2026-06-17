@@ -60,6 +60,7 @@ import {
 import { BasketSupplyUploadModal } from '../components/BasketSupplyUploadModal'
 import { DocumentTargetControls } from '../components/DocumentTargetControls'
 import { PreviewCartItemsModal } from '../components/PreviewCartItemsModal'
+import { ProcureDashboardTab } from '../components/ProcureDashboardTab'
 import type {
   BasketOrderItem,
   BasketSale,
@@ -168,6 +169,7 @@ export function BasketSupplyUkraineOrderPage() {
             { value: 'sales', label: t('Фактура') },
             { value: 'cart', label: t('Переміщення на Україну') },
             { value: 'recommendations', label: t('Рекомендації') },
+            { value: 'dashboard', label: t('Дашборд') },
           ].map((tab) => (
             <button
               key={tab.value}
@@ -185,6 +187,7 @@ export function BasketSupplyUkraineOrderPage() {
           {activeTab === 'cart' && <BasketCartWorkflow />}
           {activeTab === 'sales' && <SalesWorkflowTab />}
           {activeTab === 'recommendations' && <RecommendationsTab />}
+          {activeTab === 'dashboard' && <ProcureDashboardTab />}
         </div>
       </div>
     </Stack>
@@ -2138,6 +2141,10 @@ function getActiveTab(pathname: string): BasketSupplyWorkflowTab {
     return 'recommendations'
   }
 
+  if (pathname.endsWith('/dashboard')) {
+    return 'dashboard'
+  }
+
   return 'cart'
 }
 
@@ -2148,6 +2155,10 @@ function getTabPath(tab: BasketSupplyWorkflowTab) {
 
   if (tab === 'recommendations') {
     return '/basket-supply-ukraine-order/recommendations'
+  }
+
+  if (tab === 'dashboard') {
+    return '/basket-supply-ukraine-order/dashboard'
   }
 
   return '/basket-supply-ukraine-order'

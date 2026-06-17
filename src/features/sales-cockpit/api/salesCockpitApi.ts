@@ -1,7 +1,10 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  CockpitCompletedVsOpen,
   CockpitCount,
   CockpitCountByUrgency,
+  CockpitDashboard,
+  CockpitDebtAging,
   CockpitInbox,
   CockpitInboxParams,
   CockpitNoteBody,
@@ -9,8 +12,13 @@ import type {
   CockpitTarget,
   CockpitTargetMetric,
   CockpitTask,
+  CockpitTaskTypeMix,
+  CockpitUrgency,
+  CockpitUrgencyMix,
   EscalatedResponse,
   EscalatedTask,
+  HeadDashboard,
+  HeadDashboardTeam,
   HeadPaceStatus,
   HeadRowTarget,
   HeadRowTasks,
@@ -21,6 +29,7 @@ import type {
 } from '../types'
 
 const PACE_STATUSES: HeadPaceStatus[] = ['ahead', 'on', 'behind', 'no_target']
+const URGENCY_LEVELS: CockpitUrgency[] = ['critical', 'high', 'normal', 'low']
 
 export async function getCockpitInbox(params: CockpitInboxParams = {}): Promise<CockpitInbox> {
   const result = await apiRequest<unknown>('/sales/cockpit/inbox', {
@@ -71,6 +80,26 @@ export async function getHeadTeam(asOfDate?: string): Promise<HeadTeam> {
   })
 
   return normalizeHeadTeam(result)
+}
+
+export async function getDashboard(asOfDate?: string): Promise<CockpitDashboard> {
+  const result = await apiRequest<unknown>('/sales/cockpit/dashboard', {
+    query: {
+      asOfDate,
+    },
+  })
+
+  return normalizeDashboard(result)
+}
+
+export async function getHeadDashboard(asOfDate?: string): Promise<HeadDashboard> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/dashboard', {
+    query: {
+      asOfDate,
+    },
+  })
+
+  return normalizeHeadDashboard(result)
 }
 
 export async function getCockpitTarget(asOfDate?: string): Promise<CockpitTarget> {
@@ -276,6 +305,134 @@ function normalizeEscalated(result: unknown): EscalatedResponse {
     is_head: payload.is_head === true,
     count: typeof payload.count === 'number' ? payload.count : tasks.length,
     tasks,
+  }
+}
+
+function normalizeDashboard(result: unknown): CockpitDashboard {
+  const payload = result && typeof result === 'object' ? (result as Partial<CockpitDashboard>) : {}
+
+  return {
+    manager_id: typeof payload.manager_id === 'number' ? payload.manager_id : 0,
+    as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
+    task_type_mix: Array.isArray(payload.task_type_mix)
+      ? payload.task_type_mix.reduce<CockpitTaskTypeMix[]>((acc, value) => {
+          const row = normalizeTaskTypeMix(value)
+          if (row) acc.push(row)
+          return acc
+        }, [])
+      : [],
+    urgency_mix: Array.isArray(payload.urgency_mix)
+      ? payload.urgency_mix.reduce<CockpitUrgencyMix[]>((acc, value) => {
+          const row = normalizeUrgencyMix(value)
+          if (row) acc.push(row)
+          return acc
+        }, [])
+      : [],
+    value_at_risk_eur: toNumber(payload.value_at_risk_eur),
+    debt_aging: Array.isArray(payload.debt_aging)
+      ? payload.debt_aging.reduce<CockpitDebtAging[]>((acc, value) => {
+          const row = normalizeDebtAging(value)
+          if (row) acc.push(row)
+          return acc
+        }, [])
+      : [],
+    completed_vs_open: Array.isArray(payload.completed_vs_open)
+      ? payload.completed_vs_open.reduce<CockpitCompletedVsOpen[]>((acc, value) => {
+          const row = normalizeCompletedVsOpen(value)
+          if (row) acc.push(row)
+          return acc
+        }, [])
+      : [],
+  }
+}
+
+function normalizeTaskTypeMix(value: unknown): CockpitTaskTypeMix | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<CockpitTaskTypeMix>
+
+  if (typeof row.type !== 'string') {
+    return null
+  }
+
+  return { type: row.type, count: toNumber(row.count) }
+}
+
+function normalizeUrgencyMix(value: unknown): CockpitUrgencyMix | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<CockpitUrgencyMix>
+
+  if (!URGENCY_LEVELS.includes(row.urgency as CockpitUrgency)) {
+    return null
+  }
+
+  return { urgency: row.urgency as CockpitUrgency, count: toNumber(row.count) }
+}
+
+function normalizeDebtAging(value: unknown): CockpitDebtAging | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<CockpitDebtAging>
+
+  if (typeof row.bucket !== 'string') {
+    return null
+  }
+
+  return { bucket: row.bucket, amount_eur: toNumber(row.amount_eur), count: toNumber(row.count) }
+}
+
+function normalizeCompletedVsOpen(value: unknown): CockpitCompletedVsOpen | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<CockpitCompletedVsOpen>
+
+  if (typeof row.status !== 'string') {
+    return null
+  }
+
+  return { status: row.status, count: toNumber(row.count) }
+}
+
+function normalizeHeadDashboard(result: unknown): HeadDashboard {
+  const payload = result && typeof result === 'object' ? (result as Partial<HeadDashboard>) : {}
+  const teams = Array.isArray(payload.teams)
+    ? payload.teams.reduce<HeadDashboardTeam[]>((acc, value) => {
+        const row = normalizeHeadDashboardTeam(value)
+        if (row) acc.push(row)
+        return acc
+      }, [])
+    : []
+
+  return {
+    is_head: payload.is_head === true,
+    as_of: typeof payload.as_of === 'string' ? payload.as_of : null,
+    teams,
+    escalated_count: toNumber(payload.escalated_count),
+    total_value_at_risk_eur: toNumber(payload.total_value_at_risk_eur),
+  }
+}
+
+function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<HeadDashboardTeam>
+
+  return {
+    manager_id: typeof row.manager_id === 'number' ? row.manager_id : 0,
+    open_tasks: toNumber(row.open_tasks),
+    critical: toNumber(row.critical),
+    value_at_risk_eur: toNumber(row.value_at_risk_eur),
   }
 }
 

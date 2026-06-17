@@ -11,6 +11,7 @@ import {
   regenerateCockpit,
   setTaskStatus,
 } from '../api/salesCockpitApi'
+import { CockpitDashboardPanel } from '../components/CockpitDashboardPanel'
 import { DoneModal } from '../components/DoneModal'
 import { NoteModal } from '../components/NoteModal'
 import { SnoozeModal } from '../components/SnoozeModal'
@@ -273,6 +274,8 @@ export function SalesCockpitPage() {
       </Card>
 
       {target && <TargetCard target={target} />}
+
+      <CockpitDashboardPanel reloadKey={reloadKey} />
 
       {isLoading ? (
         <Group justify="center" py="xl">
