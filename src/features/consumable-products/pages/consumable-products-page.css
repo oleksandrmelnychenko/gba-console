@@ -43,7 +43,6 @@
   text-transform: uppercase;
 }
 
-.consumable-products-sidebar__count,
 .consumable-products-category-button__count {
   align-items: center;
   background: var(--mantine-color-white);
@@ -162,21 +161,6 @@
   margin-top: 3px;
 }
 
-.consumable-category-panel__badge {
-  align-items: center;
-  background: rgba(232, 120, 46, 0.08);
-  border: 1px solid rgba(232, 120, 46, 0.18);
-  border-radius: 999px;
-  color: #d95f16;
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 700;
-  height: 22px;
-  line-height: 1;
-  padding: 0 8px;
-}
-
 .consumable-category-panel__actions {
   align-items: center;
   flex: 0 0 auto;
@@ -227,15 +211,35 @@
 }
 
 .consumable-product-row .seo-table-primary-icon {
-  border-radius: 8px;
+  border-radius: 999px;
+}
+
+.consumable-products-roster .seo-roster-cell.is-name .seo-table-primary-title {
+  font-weight: 720;
 }
 
 .consumable-product-code {
   max-width: 100%;
 }
 
+.consumable-product-code .seo-table-role-like-icon {
+  border-radius: 6px;
+  font-size: 10px;
+  height: 20px;
+  width: 20px;
+}
+
 .consumable-product-unit {
   justify-self: start;
+}
+
+.consumable-product-row-actions .mantine-ActionIcon-root {
+  color: var(--mantine-color-gray-5);
+}
+
+.consumable-product-row-actions .mantine-ActionIcon-root:hover {
+  background: var(--mantine-color-orange-0);
+  color: var(--mantine-color-orange-8);
 }
 
 .consumable-products-empty-state {

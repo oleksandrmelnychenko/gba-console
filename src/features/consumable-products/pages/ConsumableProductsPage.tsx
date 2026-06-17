@@ -13,7 +13,9 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconEdit,
+  IconBarcode,
+  IconBox,
+  IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
@@ -343,7 +345,6 @@ export function ConsumableProductsPage() {
             <aside className="seo-page-rail">
               <div className="consumable-products-sidebar__header">
                 <span className="consumable-products-sidebar__label">{t('Категорії')}</span>
-                <span className="consumable-products-sidebar__count">{categories.length}</span>
               </div>
               <div className="seo-page-nav">
                 {categories.map((category) => {
@@ -456,9 +457,6 @@ function ConsumableCategoryPanel({
         <div className="consumable-category-panel__title">
           <div className="consumable-category-panel__heading">
             <Text className="consumable-category-panel__name">{displayValue(category.Name)}</Text>
-            {category.IsSupplyServiceCategory ? (
-              <span className="consumable-category-panel__badge">{t('Послуги')}</span>
-            ) : null}
           </div>
           <Text className="consumable-category-panel__meta">
             {t('Товарів')}: {products.length}
@@ -473,7 +471,7 @@ function ConsumableCategoryPanel({
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_edit_categoryBtn_PKEY">
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon aria-label={t('Редагувати категорію')} color="gray" variant="light" onClick={onEditCategory}>
-                  <IconEdit size={16} />
+                  <IconPencil size={16} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Видалити')}>
@@ -529,7 +527,7 @@ function ConsumableProductsRoster({
   onSort?: (id: ConsumableProductSortId) => void
 }) {
   const tableStyle = {
-    '--seo-roster-columns': 'minmax(280px, 1.1fr) minmax(160px, 0.52fr) minmax(150px, 0.44fr) 76px',
+    '--seo-roster-columns': 'minmax(340px, 1fr) minmax(98px, 0.24fr) minmax(98px, 0.22fr) 76px',
     '--seo-roster-min-width': `${minWidth}px`,
     maxHeight,
   } as CSSProperties
@@ -600,16 +598,16 @@ function useConsumableProductColumns(
       {
         id: 'vendorCode',
         header: t('Артикул'),
-        width: 160,
-        minWidth: 120,
+        width: 100,
+        minWidth: 92,
         accessor: (product) => product.VendorCode,
         cell: (product) => <ConsumableProductCodeCell value={displayValue(product.VendorCode)} />,
       },
       {
         id: 'measureUnit',
         header: t('Одиниця виміру'),
-        width: 170,
-        minWidth: 140,
+        width: 100,
+        minWidth: 92,
         accessor: (product) => product.MeasureUnit?.Name,
         cell: (product) => <ConsumableProductUnitCell value={displayValue(product.MeasureUnit?.Name)} />,
       },
@@ -624,18 +622,18 @@ function useConsumableProductColumns(
         enablePinning: false,
         enableReorder: false,
         cell: (product) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
+          <Group className="consumable-product-row-actions" gap={4} justify="flex-end" wrap="nowrap">
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_editBtn_PKEY">
               <Tooltip label={t('Редагувати')}>
                 <ActionIcon aria-label={t('Редагувати товар')} color="gray" size="sm" variant="subtle" onClick={() => onEditProduct(product)}>
-                  <IconEdit size={16} />
+                  <IconPencil size={15} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_removeBtn_PKEY">
               <Tooltip label={t('Видалити')}>
-                <ActionIcon aria-label={t('Видалити товар')} color="red" size="sm" variant="subtle" onClick={() => onDeleteProduct(product)}>
-                  <IconTrash size={16} />
+                <ActionIcon aria-label={t('Видалити товар')} color="gray" size="sm" variant="subtle" onClick={() => onDeleteProduct(product)}>
+                  <IconTrash size={15} />
                 </ActionIcon>
               </Tooltip>
             </PermissionGate>
@@ -651,7 +649,9 @@ function ConsumableProductCodeCell({ value }: { value: string }) {
   return (
     <Tooltip label={value} openDelay={350} withArrow>
       <span className="seo-table-role-like-cell consumable-product-code">
-        <span className="seo-table-role-like-icon">#</span>
+        <span className="seo-table-role-like-icon" aria-hidden>
+          <IconBarcode size={12} />
+        </span>
         <span className="seo-table-muted-cell is-default">{value}</span>
       </span>
     </Tooltip>
@@ -665,7 +665,7 @@ function ConsumableProductNameCell({ product }: { product: ConsumableProduct }) 
     <Tooltip label={title} openDelay={350} withArrow>
       <span className="seo-table-primary-cell">
         <span className="seo-table-primary-icon" aria-hidden>
-          {createConsoleTableMarker(product.Name)}
+          <IconBox size={15} />
         </span>
         <span className="seo-table-primary-copy">
           <span className="seo-table-primary-title">{title}</span>
