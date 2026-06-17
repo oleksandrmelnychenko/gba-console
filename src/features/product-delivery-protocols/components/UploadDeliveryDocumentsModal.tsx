@@ -28,8 +28,10 @@ type UploadDeliveryDocumentsModalProps = {
   opened: boolean
   selectedSupplyOrganizationAgreementNetId?: string | null
   selectedSupplyOrganizationNetId?: string | null
+  supplyOrganizationSearchValue?: string
   supplyOrganizations?: SupplyOrganization[]
   onAddFiles: (files: File[]) => void
+  onSearchSupplyOrganizations?: (value: string) => void
   onChangeSupplyOrganization?: (netUid: string | null) => void
   onChangeSupplyOrganizationAgreement?: (netUid: string | null) => void
   onChangeDateCustomDeclaration: (value: string) => void
@@ -51,8 +53,10 @@ export function UploadDeliveryDocumentsModal({
   opened,
   selectedSupplyOrganizationAgreementNetId,
   selectedSupplyOrganizationNetId,
+  supplyOrganizationSearchValue,
   supplyOrganizations = EMPTY_SUPPLY_ORGANIZATIONS,
   onAddFiles,
+  onSearchSupplyOrganizations,
   onChangeSupplyOrganization,
   onChangeSupplyOrganizationAgreement,
   onChangeDateCustomDeclaration,
@@ -110,11 +114,14 @@ export function UploadDeliveryDocumentsModal({
               data={organizationOptions}
               disabled={isSaving}
               label={t('Постачальник послуг')}
+              nothingFoundMessage={t('Нічого не знайдено')}
               searchable
+              searchValue={supplyOrganizationSearchValue}
               value={selectedSupplyOrganizationNetId || null}
               onChange={(value) => {
                 onChangeSupplyOrganization?.(value)
               }}
+              onSearchChange={onSearchSupplyOrganizations}
             />
             <Select
               clearable

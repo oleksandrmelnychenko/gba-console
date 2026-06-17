@@ -14,6 +14,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
@@ -22,7 +23,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
-import { getResponsibleUsers, getSupplyOrganizations, getSupplyServiceConsumableProducts } from '../api/protocolDetailApi'
+import { getResponsibleUsers, getSupplyServiceConsumableProducts, searchSupplyOrganizations } from '../api/protocolDetailApi'
 import type {
   ActProvidingService,
   ConsumableProduct,
@@ -36,6 +37,8 @@ import type {
 import { toMergedServiceDateTimeInput } from '../mergedServiceDateInput'
 import type { ProtocolUser } from '../types'
 import { responsibleName } from './protocolDetailHelpers'
+
+const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 export type MergedServiceEditFiles = {
   accountDocuments: File[]
@@ -139,9 +142,14 @@ export function MergedServiceEditCard({
   const [deletedAccountDocuments, setDeletedAccountDocuments] = useValueState<Record<string, boolean>>({})
   const [deletedTaskDocuments, setDeletedTaskDocuments] = useValueState<Record<string, boolean>>({})
   const [deletedAccountingTaskDocuments, setDeletedAccountingTaskDocuments] = useValueState<Record<string, boolean>>({})
+  const [organizationSearch, setOrganizationSearch] = useValueState('')
+  const [debouncedOrganizationSearch] = useDebouncedValue(
+    organizationSearch,
+    SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  )
   const [validationError, setValidationError] = useValueState<string | null>(null)
   const [prevOpened, setPrevOpened] = useValueState(opened)
-  const { loadError, organizations, products, users } = useMergedServiceLookups(opened, t)
+  const { loadError, organizations, products, users } = useMergedServiceLookups(opened, t, debouncedOrganizationSearch)
 
   if (opened !== prevOpened) {
     setPrevOpened(opened)
@@ -158,6 +166,7 @@ export function MergedServiceEditCard({
       setDeletedAccountDocuments({})
       setDeletedTaskDocuments({})
       setDeletedAccountingTaskDocuments({})
+      setOrganizationSearch('')
       setValidationError(null)
     }
   }
@@ -330,6 +339,7 @@ export function MergedServiceEditCard({
           agreementOptions={agreementOptions}
           draft={draft}
           isSaving={isSaving}
+          organizationSearch={organizationSearch}
           organizationOptions={organizationOptions}
           productOptions={productOptions}
           userOptions={userOptions}
@@ -337,6 +347,7 @@ export function MergedServiceEditCard({
           selectOrganization={selectOrganization}
           selectProduct={selectProduct}
           selectUser={selectUser}
+          setOrganizationSearch={setOrganizationSearch}
           update={update}
         />
 
@@ -380,7 +391,7 @@ export function MergedServiceEditCard({
   )
 }
 
-function useMergedServiceLookups(opened: boolean, t: (value: string) => string) {
+function useMergedServiceLookups(opened: boolean, t: (value: string) => string, organizationSearch: string) {
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
   const [products, setProducts] = useValueState<ConsumableProduct[]>([])
   const [users, setUsers] = useValueState<ProtocolUser[]>([])
@@ -397,14 +408,12 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string) 
       setLoadError(null)
 
       try {
-        const [nextOrganizations, nextProducts, nextUsers] = await Promise.all([
-          getSupplyOrganizations(),
+        const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
           getResponsibleUsers(),
         ])
 
         if (!cancelled) {
-          setOrganizations(nextOrganizations)
           setProducts(nextProducts)
           setUsers(nextUsers)
         }
@@ -420,7 +429,42 @@ function useMergedServiceLookups(opened: boolean, t: (value: string) => string) 
     return () => {
       cancelled = true
     }
-  }, [opened, setLoadError, setOrganizations, setProducts, setUsers, t])
+  }, [opened, setLoadError, setProducts, setUsers, t])
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    const value = organizationSearch.trim()
+
+    if (!value) {
+      setOrganizations([])
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOrganizations() {
+      try {
+        const nextOrganizations = await searchSupplyOrganizations(value)
+
+        if (!cancelled) {
+          setOrganizations(nextOrganizations)
+        }
+      } catch {
+        if (!cancelled) {
+          setOrganizations([])
+        }
+      }
+    }
+
+    void loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [opened, organizationSearch, setOrganizations])
 
   return { loadError, organizations, products, users }
 }
@@ -755,6 +799,7 @@ function MergedServicePrimaryFields({
   agreementOptions,
   draft,
   isSaving,
+  organizationSearch,
   organizationOptions,
   productOptions,
   userOptions,
@@ -762,17 +807,20 @@ function MergedServicePrimaryFields({
   selectOrganization,
   selectProduct,
   selectUser,
+  setOrganizationSearch,
   update,
 }: {
   agreementOptions: SelectOption[]
   draft: EditDraft
   isSaving: boolean
+  organizationSearch: string
   organizationOptions: SelectOption[]
   productOptions: SelectOption[]
   selectAgreement: (netUid: string | null) => void
   selectOrganization: (netUid: string | null) => void
   selectProduct: (netUid: string | null) => void
   selectUser: (key: UserDraftKey, netUid: string | null) => void
+  setOrganizationSearch: (value: string) => void
   update: DraftUpdate
   userOptions: SelectOption[]
 }) {
@@ -784,9 +832,15 @@ function MergedServicePrimaryFields({
         data={organizationOptions}
         disabled={isSaving}
         label={t('Постачальник послуг')}
+        nothingFoundMessage={t('Нічого не знайдено')}
         searchable
+        searchValue={organizationSearch}
         value={draft.supplyOrganization?.NetUid || null}
-        onChange={selectOrganization}
+        onChange={(value) => {
+          selectOrganization(value)
+          setOrganizationSearch('')
+        }}
+        onSearchChange={setOrganizationSearch}
       />
       <Select
         data={agreementOptions}

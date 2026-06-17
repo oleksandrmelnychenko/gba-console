@@ -87,12 +87,6 @@ export async function searchConsumableStorages(value: string): Promise<Consumabl
   return readArrayPayload(result, ['Items', 'ConsumablesStorages', 'Storages', 'Data']) as ConsumablesStorage[]
 }
 
-export async function getSupplyOrganizations(): Promise<SupplyOrganization[]> {
-  const result = await apiRequest<unknown>('/supplies/organizations/all')
-
-  return normalizeSupplyOrganizations(result)
-}
-
 export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {

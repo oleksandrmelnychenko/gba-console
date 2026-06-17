@@ -15,6 +15,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -34,7 +35,7 @@ import {
   IconRoute,
   IconTrash,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -53,9 +54,9 @@ import {
   getDirectSupplyUkraineOrders,
   getSupplyOrderCurrencies,
   getSupplyOrderServiceConsumableProducts,
-  getSupplyOrderServiceOrganizations,
   getSupplyUkraineOrders,
   printSupplyOrdersDocument,
+  searchSupplyOrderServiceOrganizations,
   updateSupplyOrderUkraineDeliveryExpense,
 } from '../api/supplyUkraineOrdersApi'
 import type {
@@ -78,6 +79,7 @@ import './supply-ukraine-orders.css'
 const FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -1454,6 +1456,7 @@ type OfficialCostsAction =
   | { error: string; type: 'loadFailure' }
   | { patch: Partial<OfficialCostsForm>; type: 'patchForm' }
   | { error: string | null; type: 'setError' }
+  | { organizations: SupplyServiceOrganization[]; type: 'setOrganizations' }
   | { isSaving: boolean; type: 'setSaving' }
 
 function createInitialOfficialCostsState(expense: ProductDeliveryExpense | null): OfficialCostsState {
@@ -1485,6 +1488,8 @@ function officialCostsReducer(state: OfficialCostsState, action: OfficialCostsAc
       return { ...state, form: { ...state.form, ...action.patch } }
     case 'setError':
       return { ...state, error: action.error }
+    case 'setOrganizations':
+      return { ...state, organizations: action.organizations }
     case 'setSaving':
       return { ...state, isSaving: action.isSaving }
   }
@@ -1503,22 +1508,30 @@ function OfficialCostsModal({
   const expense = row.order?.DeliveryExpenses?.[0] || null
   const [state, dispatch] = useReducer(officialCostsReducer, expense, createInitialOfficialCostsState)
   const { error, form, isLoading, isSaving, organizations, products } = state
+  const [organizationSearch, setOrganizationSearch] = useState('')
+  const [debouncedOrganizationSearch] = useDebouncedValue(
+    organizationSearch,
+    SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  )
+  const organizationsRef = useRef(organizations)
+
+  useEffect(() => {
+    organizationsRef.current = organizations
+  }, [organizations])
 
   useEffect(() => {
     let cancelled = false
 
     async function loadDictionaries() {
       dispatch({ type: 'loadStart' })
+      setOrganizationSearch('')
 
       try {
-        const [nextOrganizations, nextProducts] = await Promise.all([
-          getSupplyOrderServiceOrganizations(),
-          getSupplyOrderServiceConsumableProducts(''),
-        ])
+        const nextProducts = await getSupplyOrderServiceConsumableProducts('')
 
         if (!cancelled) {
           dispatch({
-            organizations: addSelectedOrganization(nextOrganizations, expense?.SupplyOrganization || null),
+            organizations: addSelectedOrganization([], expense?.SupplyOrganization || null),
             products: addSelectedProduct(nextProducts, expense?.ConsumableProduct || null),
             type: 'loadSuccess',
           })
@@ -1539,6 +1552,46 @@ function OfficialCostsModal({
       cancelled = true
     }
   }, [expense, t])
+
+  useEffect(() => {
+    const value = debouncedOrganizationSearch.trim()
+
+    if (!value) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOrganizations() {
+      const selectedOrganization =
+        organizationsRef.current.find((organization) => getEntityKey(organization) === form.serviceOrganizationKey) ||
+        (getEntityKey(expense?.SupplyOrganization) === form.serviceOrganizationKey ? expense?.SupplyOrganization || null : null)
+
+      try {
+        const nextOrganizations = await searchSupplyOrderServiceOrganizations(value)
+
+        if (!cancelled) {
+          dispatch({
+            organizations: addSelectedOrganization(nextOrganizations, selectedOrganization),
+            type: 'setOrganizations',
+          })
+        }
+      } catch (searchError) {
+        if (!cancelled) {
+          dispatch({
+            error: searchError instanceof Error ? searchError.message : t('Не вдалося завантажити постачальників послуг'),
+            type: 'setError',
+          })
+        }
+      }
+    }
+
+    void loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedOrganizationSearch, expense?.SupplyOrganization, form.serviceOrganizationKey, t])
 
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityKey(organization) === form.serviceOrganizationKey) || null,
@@ -1643,9 +1696,15 @@ function OfficialCostsModal({
             data={organizationOptions}
             disabled={isLoading || isSaving}
             label={t('Постачальник послуг')}
+            nothingFoundMessage={t('Нічого не знайдено')}
             searchable
+            searchValue={organizationSearch}
             value={form.serviceOrganizationKey || null}
-            onChange={changeOrganization}
+            onChange={(value) => {
+              changeOrganization(value)
+              setOrganizationSearch('')
+            }}
+            onSearchChange={setOrganizationSearch}
           />
           <Select
             data={agreementOptions}

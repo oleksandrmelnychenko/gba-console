@@ -10,6 +10,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -27,7 +28,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
-import { getSupplyOrganizations } from '../api/protocolDetailApi'
+import { searchSupplyOrganizations } from '../api/protocolDetailApi'
 import {
   addDeliveryDocumentsToInvoice,
   addOrUpdateProductSpecification,
@@ -71,6 +72,7 @@ const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS =
 const PERMISSION_DOWNLOAD_SPECIFICATION = 'ProductDeliveryProtocols_specifications_download_exel_PKEY'
 const PERMISSION_OPEN_SPECIFICATION_CODE = 'ProductDeliveryProtocols_specifications_customs_codes_infoBtn_PKEY'
 const PERMISSION_SAVE_SPECIFICATION_CODE = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
+const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 const SPECIFICATION_CURRENCY_OPTIONS = [
   { label: 'EUR', value: CURRENCY_EUR },
   { label: 'UAH', value: CURRENCY_UAH },
@@ -164,6 +166,11 @@ function useSpecificationModel(netId: string | undefined) {
   const [documentOrganizations, setDocumentOrganizations] = useValueState<SupplyOrganization[]>([])
   const [documentOrganizationNetId, setDocumentOrganizationNetId] = useValueState<string | null>(null)
   const [documentAgreementNetId, setDocumentAgreementNetId] = useValueState<string | null>(null)
+  const [documentOrganizationSearch, setDocumentOrganizationSearch] = useValueState('')
+  const [debouncedDocumentOrganizationSearch] = useDebouncedValue(
+    documentOrganizationSearch,
+    SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  )
 
   const [isMergeOpen, setMergeOpen] = useValueState(false)
   const [isMerging, setMerging] = useValueState(false)
@@ -317,7 +324,8 @@ function useSpecificationModel(netId: string | undefined) {
   const selectedInvoice =
     protocol?.SupplyInvoices?.find((invoice) => invoice.NetUid === selectedInvoiceNetId) || null
   const selectedDocumentOrganization =
-    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) || null
+    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) ||
+    (selectedInvoice?.SupplyOrganization?.NetUid === documentOrganizationNetId ? selectedInvoice.SupplyOrganization : null)
   const selectedDocumentAgreement =
     selectedDocumentOrganization?.SupplyOrganizationAgreements?.find(
       (agreement) => agreement.NetUid === documentAgreementNetId,
@@ -325,17 +333,52 @@ function useSpecificationModel(netId: string | undefined) {
   const isActionBusy =
     isUploading || isSavingDocuments || isMerging || isDownloading || isSavingSpecification
 
-  async function loadDocumentOrganizations() {
-    try {
-      const organizations = await getSupplyOrganizations()
-      setDocumentOrganizations(organizations)
-    } catch (lookupError) {
-      notifications.show({
-        color: 'red',
-        message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
-      })
+  useEffect(() => {
+    if (!isDocumentsOpen) {
+      return
     }
-  }
+
+    const value = debouncedDocumentOrganizationSearch.trim()
+    const currentOrganization =
+      selectedInvoice?.SupplyOrganization?.NetUid === documentOrganizationNetId ? selectedInvoice.SupplyOrganization : null
+
+    if (!value) {
+      setDocumentOrganizations(includeSupplyOrganization([], currentOrganization))
+      return
+    }
+
+    let cancelled = false
+
+    async function loadDocumentOrganizations() {
+      try {
+        const organizations = await searchSupplyOrganizations(value)
+
+        if (!cancelled) {
+          setDocumentOrganizations(includeSupplyOrganization(organizations, currentOrganization))
+        }
+      } catch (lookupError) {
+        if (!cancelled) {
+          notifications.show({
+            color: 'red',
+            message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
+          })
+        }
+      }
+    }
+
+    void loadDocumentOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    debouncedDocumentOrganizationSearch,
+    documentOrganizationNetId,
+    isDocumentsOpen,
+    selectedInvoice,
+    setDocumentOrganizations,
+    t,
+  ])
 
   function selectDocumentOrganization(netUid: string | null) {
     if (isSavingDocuments) {
@@ -482,14 +525,12 @@ function useSpecificationModel(netId: string | undefined) {
       })),
     )
     setNewDocuments([])
+    setDocumentOrganizations(includeSupplyOrganization([], selectedInvoice.SupplyOrganization || null))
     setDocumentOrganizationNetId(selectedInvoice.SupplyOrganization?.NetUid || null)
     setDocumentAgreementNetId(selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
+    setDocumentOrganizationSearch('')
     setDocumentsOpen(true)
     setDocumentsCloseConfirmOpen(false)
-
-    if (documentOrganizations.length === 0) {
-      void loadDocumentOrganizations()
-    }
   }
 
   function hasDeliveryDocumentDraftChanges(): boolean {
@@ -816,14 +857,14 @@ function useSpecificationModel(netId: string | undefined) {
 
   return {
     addDocumentFiles, confirmMerge, currencyIsEur, dateCustomDeclaration, documentAgreementNetId,
-    documentOrganizationNetId, documentOrganizations, downloadDocument, downloadError, editingSpecificationItem,
+    documentOrganizationNetId, documentOrganizationSearch, documentOrganizations, downloadDocument, downloadError, editingSpecificationItem,
     error, existingDocuments, isActionBusy, isDocumentsCloseConfirmOpen, isDocumentsOpen, isDownloadOpen, isDownloading, isLoading,
     isMergeOpen, isMerging, isPackingListLoading, isSavingDocuments, isSavingSpecification, isUploading,
     isUploadOpen, newDocuments, numberCustomDeclaration, openDocuments, openDownload, openMerge,
     openSpecificationEditor, packingList, packingListError, protocol, removeExistingDocument,
     removeNewDocument, requestCloseDocuments, cancelCloseDocuments, closeDocumentsDraft,
     saveDocuments, selectDocumentOrganization, selectInvoice, selectPackList, selectedInvoice, selectedInvoiceNetId,
-    selectedMergeNetIds, selectedPackListNetId, setCurrencyIsEur, setDateCustomDeclaration, setDocumentsOpen,
+    selectedMergeNetIds, selectedPackListNetId, setCurrencyIsEur, setDateCustomDeclaration, setDocumentOrganizationSearch, setDocumentsOpen,
     setDocumentAgreementNetId, setDownloadOpen, setEditingSpecificationItem, setMergeOpen, setNumberCustomDeclaration, setUploadOpen,
     setUploadResult, setWithManagementServices, saveSpecification, submitUpload, toggleMergeInvoice, uploadResult,
     withManagementServices,
@@ -1121,6 +1162,7 @@ function ProductDeliveryProtocolSpecificationModals({
         opened={model.isDocumentsOpen}
         selectedSupplyOrganizationAgreementNetId={model.documentAgreementNetId}
         selectedSupplyOrganizationNetId={model.documentOrganizationNetId}
+        supplyOrganizationSearchValue={model.documentOrganizationSearch}
         supplyOrganizations={model.documentOrganizations}
         onAddFiles={model.addDocumentFiles}
         onChangeDateCustomDeclaration={model.setDateCustomDeclaration}
@@ -1130,6 +1172,7 @@ function ProductDeliveryProtocolSpecificationModals({
         onClose={model.requestCloseDocuments}
         onRemoveExistingDocument={model.removeExistingDocument}
         onRemoveNewDocument={model.removeNewDocument}
+        onSearchSupplyOrganizations={model.setDocumentOrganizationSearch}
         onSave={model.saveDocuments}
       />
 
@@ -1195,6 +1238,20 @@ function ProductDeliveryProtocolSpecificationModals({
 
 function getInvoiceCustomDeclarationDate(invoice: SpecificationSupplyInvoice): string {
   return invoice.DateCustomDeclaration ? formatLocalDate(new Date(invoice.DateCustomDeclaration)) : ''
+}
+
+function includeSupplyOrganization(
+  organizations: SupplyOrganization[],
+  selectedOrganization: SupplyOrganization | null,
+): SupplyOrganization[] {
+  if (
+    !selectedOrganization ||
+    organizations.some((organization) => organization.NetUid === selectedOrganization.NetUid)
+  ) {
+    return organizations
+  }
+
+  return [selectedOrganization, ...organizations]
 }
 
 function isValidDateInputValue(value: string): boolean {

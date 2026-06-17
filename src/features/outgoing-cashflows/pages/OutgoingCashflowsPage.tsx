@@ -50,7 +50,7 @@ import type {
   PaymentRegister,
 } from '../types'
 
-const PAGE_SIZE = 100
+const PAGE_SIZE = 40
 const SEARCH_DEBOUNCE_MS = 350
 const MAX_ORGANIZATION_QUERY_FILTER_IDS = 1800
 
@@ -203,8 +203,13 @@ function useOutgoingCashflowsPageModel(): OutgoingCashflowsPageModel {
 
       if (requestRef.current === requestId) {
         setCashflows((current) => mergeCashflowResponses(current, nextCashflows, append))
-        const nextTotalQty = nextCashflows.TotalRowsQty || offset + nextCashflows.Collection.length
-        setHasMore(nextCashflows.Collection.length === PAGE_SIZE && offset + nextCashflows.Collection.length < nextTotalQty)
+        const loadedQty = offset + nextCashflows.Collection.length
+        const responseTotalRowsQty = nextCashflows.TotalRowsQty
+        const nextTotalQty =
+          typeof responseTotalRowsQty === 'number' && Number.isFinite(responseTotalRowsQty)
+            ? responseTotalRowsQty
+            : null
+        setHasMore(nextCashflows.Collection.length === PAGE_SIZE && (nextTotalQty === null || loadedQty < nextTotalQty))
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {

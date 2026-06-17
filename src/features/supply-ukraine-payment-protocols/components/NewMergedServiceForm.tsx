@@ -10,6 +10,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -18,8 +19,8 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getResponsibleUsers,
-  getSupplyOrganizations,
   getSupplyServiceConsumableProducts,
+  searchSupplyOrganizations,
 } from '../api/paymentProtocolsApi'
 import type {
   ConsumableProduct,
@@ -34,6 +35,8 @@ type SelectOption = {
   label: string
   value: string
 }
+
+const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 function createInitialValues(): NewMergedServiceFormValues {
   return {
@@ -77,6 +80,11 @@ export function NewMergedServiceForm({
   const { t } = useI18n()
   const [values, setValues] = useValueState<NewMergedServiceFormValues>(createInitialValues)
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
+  const [organizationSearch, setOrganizationSearch] = useValueState('')
+  const [debouncedOrganizationSearch] = useDebouncedValue(
+    organizationSearch,
+    SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  )
   const [products, setProducts] = useValueState<ConsumableProduct[]>([])
   const [users, setUsers] = useValueState<ProtocolUser[]>([])
   const [loadError, setLoadError] = useValueState<string | null>(null)
@@ -88,6 +96,8 @@ export function NewMergedServiceForm({
 
     if (opened) {
       setValues(createInitialValues())
+      setOrganizations([])
+      setOrganizationSearch('')
       setValidationError(null)
     }
   }
@@ -103,14 +113,12 @@ export function NewMergedServiceForm({
       setLoadError(null)
 
       try {
-        const [nextOrganizations, nextProducts, nextUsers] = await Promise.all([
-          getSupplyOrganizations(),
+        const [nextProducts, nextUsers] = await Promise.all([
           getSupplyServiceConsumableProducts(''),
           getResponsibleUsers(),
         ])
 
         if (!cancelled) {
-          setOrganizations(nextOrganizations)
           setProducts(nextProducts)
           setUsers(nextUsers)
         }
@@ -126,7 +134,42 @@ export function NewMergedServiceForm({
     return () => {
       cancelled = true
     }
-  }, [opened, setLoadError, setOrganizations, setProducts, setUsers, t])
+  }, [opened, setLoadError, setProducts, setUsers, t])
+
+  useEffect(() => {
+    if (!opened) {
+      return
+    }
+
+    const value = debouncedOrganizationSearch.trim()
+
+    if (!value) {
+      setOrganizations([])
+      return
+    }
+
+    let cancelled = false
+
+    async function loadOrganizations() {
+      try {
+        const nextOrganizations = await searchSupplyOrganizations(value)
+
+        if (!cancelled) {
+          setOrganizations(nextOrganizations)
+        }
+      } catch {
+        if (!cancelled) {
+          setOrganizations([])
+        }
+      }
+    }
+
+    void loadOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedOrganizationSearch, opened, setOrganizations])
 
   const organizationOptions = useMemo(
     () => toSupplyOrganizationOptions(organizations),
@@ -232,9 +275,15 @@ export function NewMergedServiceForm({
         <Select
           data={organizationOptions}
           label={t('Постачальник послуг')}
+          nothingFoundMessage={t('Нічого не знайдено')}
           searchable
+          searchValue={organizationSearch}
           value={values.supplyOrganization?.NetUid || null}
-          onChange={selectOrganization}
+          onChange={(value) => {
+            selectOrganization(value)
+            setOrganizationSearch('')
+          }}
+          onSearchChange={setOrganizationSearch}
         />
         <Select
           data={agreementOptions}

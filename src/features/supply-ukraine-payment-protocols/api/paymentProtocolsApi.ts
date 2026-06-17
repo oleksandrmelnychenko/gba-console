@@ -96,8 +96,10 @@ export async function getResponsibleUsers(): Promise<ProtocolUser[]> {
   return readArrayPayload(result, ['Items', 'Users', 'Profiles', 'Data']) as ProtocolUser[]
 }
 
-export async function getSupplyOrganizations(): Promise<SupplyOrganization[]> {
-  const result = await apiRequest<unknown>('/supplies/organizations/all')
+export async function searchSupplyOrganizations(value: string): Promise<SupplyOrganization[]> {
+  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+    query: { value },
+  })
 
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyOrganization[]
 }

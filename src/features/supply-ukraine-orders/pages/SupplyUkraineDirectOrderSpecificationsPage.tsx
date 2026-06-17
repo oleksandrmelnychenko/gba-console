@@ -11,6 +11,7 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core'
+import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -55,7 +56,7 @@ import {
   addDeliveryDocumentsToDirectSupplyInvoice,
   getDirectSupplyOrderById,
   getSupplyInvoiceItems,
-  getSupplyOrderServiceOrganizations,
+  searchSupplyOrderServiceOrganizations,
 } from '../api/supplyUkraineOrdersApi'
 import type {
   DirectSupplyOrder,
@@ -70,6 +71,7 @@ const PERMISSION_EDIT_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_
 const PERMISSION_SAVE_SPECIFICATION = 'SPECIFICATION_CODES_ordersUkraineAllEdit_SaveModalBtn_PKEY'
 const PERMISSION_UPLOAD_DELIVERY_DOCUMENTS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingShippingDocuments_PKEY'
 const PERMISSION_UPLOAD_SPECIFICATIONS = 'SPECIFICATION_CODES_ordersUkraineAllEdit_DownloadingSpecificationDocuments_PKEY'
+const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 export function SupplyUkraineDirectOrderSpecificationsPage() {
   const model = useSupplyUkraineDirectOrderSpecificationsPageModel()
@@ -109,6 +111,11 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const [documentOrganizations, setDocumentOrganizations] = useState<SupplyServiceOrganization[]>([])
   const [documentOrganizationNetId, setDocumentOrganizationNetId] = useState<string | null>(null)
   const [documentAgreementNetId, setDocumentAgreementNetId] = useState<string | null>(null)
+  const [documentOrganizationSearch, setDocumentOrganizationSearch] = useState('')
+  const [debouncedDocumentOrganizationSearch] = useDebouncedValue(
+    documentOrganizationSearch,
+    SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS,
+  )
 
   const [isDownloadOpen, setDownloadOpen] = useState(false)
   const [isDownloading, setDownloading] = useState(false)
@@ -131,7 +138,8 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
   const isActionBusy = isUploading || isSavingDocuments || isDownloading || isSavingSpecification || isInvoiceLoading
   const filteredPackingList = filterPackingListByVendorCode(packingList, vendorCodeFilter)
   const selectedDocumentOrganization =
-    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) || null
+    documentOrganizations.find((organization) => organization.NetUid === documentOrganizationNetId) ||
+    (selectedInvoice?.SupplyOrganization?.NetUid === documentOrganizationNetId ? selectedInvoice.SupplyOrganization : null)
   const selectedDocumentAgreement =
     selectedDocumentOrganization?.SupplyOrganizationAgreements?.find(
       (agreement) => agreement.NetUid === documentAgreementNetId,
@@ -303,17 +311,44 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setSelectedPackListNetId(packList.NetUid || null)
   }
 
-  async function loadDocumentOrganizations() {
-    try {
-      const organizations = await getSupplyOrderServiceOrganizations()
-      setDocumentOrganizations(organizations)
-    } catch (lookupError) {
-      notifications.show({
-        color: 'red',
-        message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
-      })
+  useEffect(() => {
+    if (!isDocumentsOpen) {
+      return
     }
-  }
+
+    const value = debouncedDocumentOrganizationSearch.trim()
+
+    if (!value) {
+      return
+    }
+
+    const currentOrganization =
+      selectedInvoice?.SupplyOrganization?.NetUid === documentOrganizationNetId ? selectedInvoice.SupplyOrganization : null
+    let cancelled = false
+
+    async function loadDocumentOrganizations() {
+      try {
+        const organizations = await searchSupplyOrderServiceOrganizations(value)
+
+        if (!cancelled) {
+          setDocumentOrganizations(includeSupplyOrganization(organizations, currentOrganization))
+        }
+      } catch (lookupError) {
+        if (!cancelled) {
+          notifications.show({
+            color: 'red',
+            message: lookupError instanceof Error ? lookupError.message : t('Не вдалося завантажити постачальників послуг'),
+          })
+        }
+      }
+    }
+
+    void loadDocumentOrganizations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedDocumentOrganizationSearch, documentOrganizationNetId, isDocumentsOpen, selectedInvoice, t])
 
   function selectDocumentOrganization(netUid: string | null) {
     if (isSavingDocuments) {
@@ -387,14 +422,12 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
       })),
     )
     setNewDocuments([])
+    setDocumentOrganizations(includeSupplyOrganization([], selectedInvoice.SupplyOrganization || null))
     setDocumentOrganizationNetId(selectedInvoice.SupplyOrganization?.NetUid || null)
     setDocumentAgreementNetId(selectedInvoice.SupplyOrganizationAgreement?.NetUid || null)
+    setDocumentOrganizationSearch('')
     setDocumentsOpen(true)
     setDocumentsCloseConfirmOpen(false)
-
-    if (documentOrganizations.length === 0) {
-      void loadDocumentOrganizations()
-    }
   }
 
   function hasDeliveryDocumentDraftChanges(): boolean {
@@ -642,6 +675,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     dateCustomDeclaration,
     documentAgreementNetId,
     documentOrganizationNetId,
+    documentOrganizationSearch,
     documentOrganizations,
     downloadDocument,
     downloadError,
@@ -685,6 +719,7 @@ function useSupplyUkraineDirectOrderSpecificationsPageModel() {
     setCurrencyIsEur,
     setDateCustomDeclaration,
     setDocumentAgreementNetId,
+    setDocumentOrganizationSearch,
     setDocumentsCloseConfirmOpen,
     setDownloadOpen,
     setEditingSpecificationItem,
@@ -956,6 +991,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
         opened={model.isDocumentsOpen}
         selectedSupplyOrganizationAgreementNetId={model.documentAgreementNetId}
         selectedSupplyOrganizationNetId={model.documentOrganizationNetId}
+        supplyOrganizationSearchValue={model.documentOrganizationSearch}
         supplyOrganizations={model.documentOrganizations}
         onAddFiles={model.addDocumentFiles}
         onChangeDateCustomDeclaration={model.setDateCustomDeclaration}
@@ -965,6 +1001,7 @@ function DirectOrderSpecificationsModals({ model }: { model: DirectOrderSpecific
         onClose={model.requestCloseDocuments}
         onRemoveExistingDocument={model.removeExistingDocument}
         onRemoveNewDocument={model.removeNewDocument}
+        onSearchSupplyOrganizations={model.setDocumentOrganizationSearch}
         onSave={model.saveDocuments}
       />
       <AppModal
@@ -1031,6 +1068,20 @@ function isValidDateInputValue(value: string): boolean {
   const date = new Date(`${value}T00:00:00`)
 
   return !Number.isNaN(date.getTime()) && formatLocalDate(date) === value
+}
+
+function includeSupplyOrganization(
+  organizations: SupplyServiceOrganization[],
+  selectedOrganization: SupplyServiceOrganization | null,
+): SupplyServiceOrganization[] {
+  if (
+    !selectedOrganization ||
+    organizations.some((organization) => organization.NetUid === selectedOrganization.NetUid)
+  ) {
+    return organizations
+  }
+
+  return [selectedOrganization, ...organizations]
 }
 
 function filterPackingListByVendorCode(

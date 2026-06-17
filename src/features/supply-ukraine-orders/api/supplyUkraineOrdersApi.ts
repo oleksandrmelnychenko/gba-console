@@ -353,8 +353,10 @@ export async function getSupplyOrderSuppliers(): Promise<Client[]> {
   }))
 }
 
-export async function getSupplyOrderServiceOrganizations(): Promise<SupplyServiceOrganization[]> {
-  const result = await apiRequest<unknown>('/supplies/organizations/all')
+export async function searchSupplyOrderServiceOrganizations(value: string): Promise<SupplyServiceOrganization[]> {
+  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+    query: { value },
+  })
 
   return readArrayPayload(result, ['Items', 'SupplyOrganizations', 'Organizations', 'Data']) as SupplyServiceOrganization[]
 }
