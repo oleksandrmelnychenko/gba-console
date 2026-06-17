@@ -26,7 +26,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -44,6 +44,7 @@ import './supplier-organizations-page.css'
 import '../../../shared/ui/console-table-page.css'
 
 const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
+const SUPPLIER_ORGANIZATIONS_PAGE_SIZE = 40
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -77,6 +78,8 @@ export function SupplierOrganizationsPage() {
   const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
+  const [isLoadingMore, setLoadingMore] = useValueState(false)
+  const [hasMore, setHasMore] = useValueState(false)
   const [isExporting, setExporting] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SupplyOrganizationDocumentExport | null>(null)
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
@@ -85,78 +88,76 @@ export function SupplierOrganizationsPage() {
   const filterError = getDateFilterError(dateFrom, dateTo)
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
 
-  useEffect(() => {
-    const requestId = requestRef.current + 1
-    requestRef.current = requestId
-    const timeoutId = window.setTimeout(() => {
-      if (filterError) {
-        setLoading(false)
-        setError(null)
-        setOrganizations([])
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-
-      async function loadOrganizations() {
-        try {
-          const nextOrganizations = searchValue
-            ? await searchSupplyOrganizations(searchValue, '', dateFilters)
-            : await getSupplyOrganizations(dateFilters)
-
-          if (requestRef.current === requestId) {
-            setOrganizations(nextOrganizations)
-          }
-        } catch (loadError) {
-          if (requestRef.current === requestId) {
-            setOrganizations([])
-            setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити постачальників послуг'))
-          }
-        } finally {
-          if (requestRef.current === requestId) {
-            setLoading(false)
-          }
-        }
-      }
-
-      void loadOrganizations()
-    }, 250)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [dateFilters, filterError, searchValue, setError, setLoading, setOrganizations, t])
-
-  async function reloadOrganizations() {
+  const loadOrganizationsPage = useCallback(async (offset = 0, append = false) => {
     const requestId = requestRef.current + 1
     requestRef.current = requestId
 
     if (filterError) {
       setLoading(false)
+      setLoadingMore(false)
       setError(null)
       setOrganizations([])
+      setHasMore(false)
       return
     }
 
-    setLoading(true)
+    if (append) {
+      setLoadingMore(true)
+    } else {
+      setLoading(true)
+    }
+
     setError(null)
 
     try {
-      const nextOrganizations = searchValue
-        ? await searchSupplyOrganizations(searchValue, '', dateFilters)
-        : await getSupplyOrganizations(dateFilters)
+      const trimmedSearchValue = searchValue.trim()
+      const paginationParams = {
+        ...dateFilters,
+        limit: SUPPLIER_ORGANIZATIONS_PAGE_SIZE,
+        offset,
+      }
+      const nextOrganizations = trimmedSearchValue
+        ? await searchSupplyOrganizations(trimmedSearchValue, '', paginationParams)
+        : await getSupplyOrganizations(paginationParams)
 
       if (requestRef.current === requestId) {
-        setOrganizations(nextOrganizations)
+        setOrganizations((currentOrganizations) => (append ? [...currentOrganizations, ...nextOrganizations] : nextOrganizations))
+        setHasMore(nextOrganizations.length === SUPPLIER_ORGANIZATIONS_PAGE_SIZE)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося оновити постачальників послуг'))
+        if (!append) {
+          setOrganizations([])
+        }
+
+        setHasMore(false)
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити постачальників послуг'))
       }
     } finally {
       if (requestRef.current === requestId) {
-        setLoading(false)
+        if (append) {
+          setLoadingMore(false)
+        } else {
+          setLoading(false)
+        }
       }
     }
+  }, [dateFilters, filterError, searchValue, setError, setHasMore, setLoading, setLoadingMore, setOrganizations, t])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadOrganizationsPage()
+    }, 250)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadOrganizationsPage])
+
+  async function reloadOrganizations() {
+    await loadOrganizationsPage()
+  }
+
+  async function loadMoreOrganizations() {
+    await loadOrganizationsPage(organizations.length, true)
   }
 
   async function exportList() {
@@ -180,6 +181,7 @@ export function SupplierOrganizationsPage() {
   function updateSearchValue(value: string) {
     setSearchValue(value)
     setOrganizations([])
+    setHasMore(false)
 
     if (value) {
       window.localStorage.setItem(SEARCH_STORAGE_KEY, value)
@@ -192,6 +194,7 @@ export function SupplierOrganizationsPage() {
     setSearchValue('')
     setDateFrom('')
     setDateTo('')
+    setHasMore(false)
     window.localStorage.removeItem(SEARCH_STORAGE_KEY)
   }
 
@@ -305,6 +308,14 @@ export function SupplierOrganizationsPage() {
             onOpenEdit={(organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`)}
             onSort={toggleSort}
           />
+
+          {hasMore && (
+            <Group justify="center">
+              <Button color="gray" loading={isLoadingMore} variant="light" onClick={() => void loadMoreOrganizations()}>
+                {t('Завантажити ще')}
+              </Button>
+            </Group>
+          )}
         </div>
       </div>
 
@@ -688,7 +699,7 @@ function sortSupplierOrganizations(
 
   const direction = sortState.direction === 'asc' ? 1 : -1
 
-  return [...organizations].sort(
+  return organizations.toSorted(
     (firstOrganization, secondOrganization) =>
       compareSupplierSortValues(
         getSupplierOrganizationSortValue(firstOrganization, sortState.id),

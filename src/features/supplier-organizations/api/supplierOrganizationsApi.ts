@@ -14,10 +14,23 @@ export type SupplyOrganizationsListFilters = {
   to?: string
 }
 
-export async function getSupplyOrganizations(filters: SupplyOrganizationsListFilters = {}): Promise<SupplyOrganization[]> {
-  const hasFilters = Boolean(filters.from || filters.to)
-  const result = await apiRequest<unknown>(hasFilters ? '/supplies/organizations/all/search' : '/supplies/organizations/all', {
-    query: hasFilters ? { from: filters.from, to: filters.to, value: '' } : undefined,
+export type SupplyOrganizationsListParams = SupplyOrganizationsListFilters & {
+  limit?: number
+  offset?: number
+}
+
+export async function getSupplyOrganizations(params: SupplyOrganizationsListParams = {}): Promise<SupplyOrganization[]> {
+  const hasQuery = Boolean(params.from || params.to || typeof params.limit === 'number' || typeof params.offset === 'number')
+  const result = await apiRequest<unknown>(hasQuery ? '/supplies/organizations/all/search' : '/supplies/organizations/all', {
+    query: hasQuery
+      ? {
+          from: params.from,
+          limit: params.limit,
+          offset: params.offset,
+          to: params.to,
+          value: '',
+        }
+      : undefined,
   })
 
   return normalizeSupplyOrganizations(result)
@@ -26,13 +39,15 @@ export async function getSupplyOrganizations(filters: SupplyOrganizationsListFil
 export async function searchSupplyOrganizations(
   value: string,
   organizationNetId = '',
-  filters: SupplyOrganizationsListFilters = {},
+  params: SupplyOrganizationsListParams = {},
 ): Promise<SupplyOrganization[]> {
   const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
     query: {
-      from: filters.from,
+      from: params.from,
+      limit: params.limit,
+      offset: params.offset,
       organizationNetId,
-      to: filters.to,
+      to: params.to,
       value,
     },
   })
