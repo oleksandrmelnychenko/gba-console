@@ -4,6 +4,7 @@ import {
   Anchor,
   Button,
   Group,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -13,8 +14,10 @@ import {
   IconAlertCircle,
   IconBuilding,
   IconBuildingBank,
+  IconChevronLeft,
   IconCash,
   IconChevronDown,
+  IconChevronRight,
   IconChevronUp,
   IconDownload,
   IconDots,
@@ -45,6 +48,7 @@ import '../../../shared/ui/console-table-page.css'
 
 const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
 const SUPPLIER_ORGANIZATIONS_PAGE_SIZE = 40
+const pageSizeOptions = ['20', '40', '60', '100']
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -83,71 +87,59 @@ export function SupplierOrganizationsPage() {
   const [dateTo, setDateTo] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const [hasMore, setHasMore] = useValueState(false)
   const [isExporting, setExporting] = useValueState(false)
   const [downloadDocument, setDownloadDocument] = useValueState<SupplyOrganizationDocumentExport | null>(null)
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(SUPPLIER_ORGANIZATIONS_PAGE_SIZE)
   const [sortState, setSortState] = useValueState<SupplierOrganizationSortState>(null)
   const requestRef = useRef(0)
   const filterError = getDateFilterError(dateFrom, dateTo)
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
 
-  const loadOrganizationsPage = useCallback(async (offset = 0, append = false) => {
+  const loadOrganizationsPage = useCallback(async () => {
     const requestId = requestRef.current + 1
     requestRef.current = requestId
 
     if (filterError) {
       setLoading(false)
-      setLoadingMore(false)
       setError(null)
       setOrganizations([])
       setHasMore(false)
       return
     }
 
-    if (append) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
-
+    setLoading(true)
     setError(null)
 
     try {
       const trimmedSearchValue = searchValue.trim()
       const paginationParams = {
         ...dateFilters,
-        limit: SUPPLIER_ORGANIZATIONS_PAGE_SIZE,
-        offset,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
       }
       const nextOrganizations = trimmedSearchValue
         ? await searchSupplyOrganizations(trimmedSearchValue, '', paginationParams)
         : await getSupplyOrganizations(paginationParams)
 
       if (requestRef.current === requestId) {
-        setOrganizations((currentOrganizations) => (append ? [...currentOrganizations, ...nextOrganizations] : nextOrganizations))
-        setHasMore(nextOrganizations.length === SUPPLIER_ORGANIZATIONS_PAGE_SIZE)
+        setOrganizations(nextOrganizations)
+        setHasMore(nextOrganizations.length === pageSize)
       }
     } catch (loadError) {
       if (requestRef.current === requestId) {
-        if (!append) {
-          setOrganizations([])
-        }
-
+        setOrganizations([])
         setHasMore(false)
         setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити постачальників послуг'))
       }
     } finally {
       if (requestRef.current === requestId) {
-        if (append) {
-          setLoadingMore(false)
-        } else {
-          setLoading(false)
-        }
+        setLoading(false)
       }
     }
-  }, [dateFilters, filterError, searchValue, setError, setHasMore, setLoading, setLoadingMore, setOrganizations, t])
+  }, [dateFilters, filterError, page, pageSize, searchValue, setError, setHasMore, setLoading, setOrganizations, t])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -159,10 +151,6 @@ export function SupplierOrganizationsPage() {
 
   async function reloadOrganizations() {
     await loadOrganizationsPage()
-  }
-
-  async function loadMoreOrganizations() {
-    await loadOrganizationsPage(organizations.length, true)
   }
 
   async function exportList() {
@@ -185,6 +173,7 @@ export function SupplierOrganizationsPage() {
 
   function updateSearchValue(value: string) {
     setSearchValue(value)
+    setPage(1)
     setOrganizations([])
     setHasMore(false)
 
@@ -199,12 +188,27 @@ export function SupplierOrganizationsPage() {
     setSearchValue('')
     setDateFrom('')
     setDateTo('')
+    setPage(1)
     setHasMore(false)
     window.localStorage.removeItem(SEARCH_STORAGE_KEY)
   }
 
+  function updateDateFrom(value: string) {
+    setDateFrom(value)
+    setPage(1)
+    setHasMore(false)
+  }
+
+  function updateDateTo(value: string) {
+    setDateTo(value)
+    setPage(1)
+    setHasMore(false)
+  }
+
   const sortedOrganizations = useMemo(() => sortSupplierOrganizations(organizations, sortState), [organizations, sortState])
   const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
+  const canMoveBackward = page > 1
+  const canMoveForward = hasMore
 
   function toggleSort(id: SupplierOrganizationSortId) {
     setSortState((current) => {
@@ -236,7 +240,7 @@ export function SupplierOrganizationsPage() {
                 aria-label={t('Від')}
                 type="date"
                 value={dateFrom}
-                onChange={(event) => setDateFrom(event.currentTarget.value)}
+                onChange={(event) => updateDateFrom(event.currentTarget.value)}
               />
               <span className="supplier-organizations-period-separator" />
               <TextInput
@@ -244,7 +248,7 @@ export function SupplierOrganizationsPage() {
                 aria-label={t('До')}
                 type="date"
                 value={dateTo}
-                onChange={(event) => setDateTo(event.currentTarget.value)}
+                onChange={(event) => updateDateTo(event.currentTarget.value)}
               />
             </div>
           </div>
@@ -288,6 +292,37 @@ export function SupplierOrganizationsPage() {
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>
+            <Select
+              aria-label={t('Розмір сторінки')}
+              className="supplier-organizations-page-size"
+              data={pageSizeOptions}
+              value={String(pageSize)}
+              onChange={(value) => {
+                setPage(1)
+                setPageSize(Number(value || SUPPLIER_ORGANIZATIONS_PAGE_SIZE))
+              }}
+            />
+            <ActionIcon
+              aria-label={t('Попередня сторінка')}
+              color="gray"
+              disabled={!canMoveBackward || isLoading}
+              size={38}
+              variant="light"
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+            >
+              <IconChevronLeft size={18} />
+            </ActionIcon>
+            <span className="supplier-organizations-current-page">{page}</span>
+            <ActionIcon
+              aria-label={t('Наступна сторінка')}
+              color="gray"
+              disabled={!canMoveForward || isLoading}
+              size={38}
+              variant="light"
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+            >
+              <IconChevronRight size={18} />
+            </ActionIcon>
           </div>
         </div>
 
@@ -314,13 +349,6 @@ export function SupplierOrganizationsPage() {
             onSort={toggleSort}
           />
 
-          {hasMore && (
-            <Group justify="center">
-              <Button color="gray" loading={isLoadingMore} variant="light" onClick={() => void loadMoreOrganizations()}>
-                {t('Завантажити ще')}
-              </Button>
-            </Group>
-          )}
         </div>
       </div>
 
