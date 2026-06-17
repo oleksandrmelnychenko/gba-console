@@ -422,17 +422,20 @@ function ConsumableOrderStorageCell({ row }: { row: ConsumableOrderRow }) {
 }
 
 function ConsumableOrderAmountCell({ row }: { row: ConsumableOrderRow }) {
+  const { t } = useI18n()
   const totalWithoutVat = formatMoney(row.totalAmountWithoutVat)
   const totalWithVat = formatMoney(row.amount)
   const currency = displayValue(row.currency)
-  const tooltip = compactStrings([totalWithVat, currency, totalWithoutVat]).join(' ')
+  const totalWithVatLabel = `${t('З ПДВ')}: ${totalWithVat}`
+  const totalWithoutVatLabel = isSameMoneyDisplay(row.amount, row.totalAmountWithoutVat) ? '' : `${t('Без ПДВ')}: ${totalWithoutVat}`
+  const tooltip = compactStrings([totalWithVatLabel, currency, totalWithoutVatLabel]).join('\n')
 
   return (
-    <Tooltip label={tooltip} openDelay={350} withArrow>
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="consumable-orders-amount-cell">
         <strong>{totalWithVat}</strong>
         <small>{currency}</small>
-        <span>{totalWithoutVat}</span>
+        {totalWithoutVatLabel ? <span>{totalWithoutVatLabel}</span> : null}
       </span>
     </Tooltip>
   )
@@ -741,6 +744,10 @@ function normalizeDisplayValue(value?: string | number | null): string {
     .trim()
     .replace(/\s+/g, ' ')
     .toLowerCase()
+}
+
+function isSameMoneyDisplay(left?: number, right?: number): boolean {
+  return formatMoney(left) === formatMoney(right)
 }
 
 function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {
