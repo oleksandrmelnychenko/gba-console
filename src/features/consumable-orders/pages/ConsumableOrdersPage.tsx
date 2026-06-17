@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Button,
+  Badge,
   Divider,
   Group,
   SimpleGrid,
@@ -11,17 +12,25 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconCreditCard, IconEye, IconPencil, IconPlus, IconRefresh, IconSearch } from '@tabler/icons-react'
+import {
+  IconAlertCircle,
+  IconChevronDown,
+  IconChevronUp,
+  IconCreditCard,
+  IconEye,
+  IconFileText,
+  IconPencil,
+  IconPlus,
+  IconRefresh,
+  IconRestore,
+  IconSearch,
+} from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, type Location, type NavigateFunction } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
-import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getConsumableOrders,
@@ -35,17 +44,10 @@ import type {
   OutcomePaymentOrderConsumablesOrder,
 } from '../types'
 import './consumable-orders-page.css'
+import '../../../shared/ui/console-table-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
 const DEFAULT_LOOKBACK_DAYS = 7
-
-const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['created', 'number'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -61,14 +63,12 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-const CONSUMABLE_ORDER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
+type ConsumableOrderSortId = 'amount' | 'document' | 'responsible' | 'serviceOrganization' | 'status' | 'storage'
+
+type ConsumableOrderSortState = {
+  direction: 'asc' | 'desc'
+  id: ConsumableOrderSortId
+} | null
 
 export function ConsumableOrdersPage() {
   const { t } = useI18n()
@@ -81,6 +81,7 @@ export function ConsumableOrdersPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<ConsumableOrderRow | null>(null)
+  const [sortState, setSortState] = useValueState<ConsumableOrderSortState>(null)
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
@@ -126,69 +127,112 @@ export function ConsumableOrdersPage() {
   }, [loadOrders])
 
   const rows = useMemo(() => buildConsumableOrderRows(orders), [orders])
-  const columns = useConsumableOrderColumns({
-    onOpen: setSelectedRow,
-    onPay: (row) => navigateToPay(navigate, row, location),
-    onView: (row) => navigateToEdit(navigate, row, location),
-  })
+  const sortedRows = useMemo(() => sortConsumableOrderRows(rows, sortState), [rows, sortState])
   const isTableBusy = isLoading || isSearchSettling
-  const { density, toggleDensity } = useDataTableDensity('consumable-orders', TABLE_DEFAULT_LAYOUT.density)
+  const defaultFromDate = shiftDate(-DEFAULT_LOOKBACK_DAYS)
+  const defaultToDate = formatLocalDate(new Date())
+  const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
+
+  function resetFilters() {
+    setFromDate(defaultFromDate)
+    setToDate(defaultToDate)
+    setSearchValue('')
+    setOrders([])
+  }
+
+  function toggleSort(id: ConsumableOrderSortId) {
+    setSortState((current) => {
+      if (current?.id !== id) {
+        return { direction: 'asc', id }
+      }
+
+      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+    })
+  }
 
   return (
-    <Stack className="consumable-orders-page" gap={6}>
+    <Stack className="consumable-orders-page console-table-page" gap="md">
       <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => navigate('/accounting/consumable-orders/new', { state: { backgroundLocation: location, returnPath: '/accounting/consumable-orders' } })}>
           {t('Додати')}
         </Button>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
       </PageHeaderActions>
 
-      <Group align="end" gap="sm" wrap="nowrap">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
+      <div className="console-table-shell">
+        <div className="consumable-orders-command-bar">
+          <div className="consumable-orders-period-filter">
+            <span className="consumable-orders-filter-label">{t('Період')}</span>
+            <div className="consumable-orders-period-fields">
+              <TextInput
+                className="consumable-orders-date-input"
+                aria-label={t('Від')}
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.currentTarget.value)}
+              />
+              <span className="consumable-orders-period-separator" />
+              <TextInput
+                className="consumable-orders-date-input"
+                aria-label={t('До')}
+                type="date"
+                value={toDate}
+                onChange={(event) => setToDate(event.currentTarget.value)}
+              />
+            </div>
+          </div>
+
           <TextInput
+            className="consumable-orders-search-input"
             leftSection={<IconSearch size={16} />}
             label={t('Пошук')}
             placeholder={t('Номер, постачальник, склад або коментар')}
             value={searchValue}
-            style={{ flex: '1 1 auto' }}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-      </Group>
+          <div className="consumable-orders-command-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!hasActiveFilters}
+                size={38}
+                variant="light"
+                onClick={resetFilters}
+              >
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        </div>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError}
-        </Alert>
-      )}
+        {filterError && (
+          <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
 
-      <div className="consumable-orders-page__table">
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Прибуткових накладних не знайдено')}
-          getRowId={(row) => row.id}
-          isLoading={isTableBusy}
-          layoutVersion="consumable-orders-1"
-          height="100%"
-          minWidth={1540}
-          showLayoutControls={false}
-          tableId="consumable-orders"
-          onRowClick={setSelectedRow}
-        />
+        <div className="consumable-orders-page__table console-table-body">
+          <ConsumableOrdersList
+            isLoading={isTableBusy}
+            rows={sortedRows}
+            sortState={sortState}
+            onOpen={setSelectedRow}
+            onPay={(row) => navigateToPay(navigate, row, location)}
+            onSort={toggleSort}
+            onView={(row) => navigateToEdit(navigate, row, location)}
+          />
+        </div>
       </div>
 
       <ConsumableOrderDetailDrawer
@@ -201,190 +245,281 @@ export function ConsumableOrdersPage() {
   )
 }
 
-function useConsumableOrderColumns({
+function ConsumableOrdersList({
+  isLoading,
+  rows,
+  sortState,
+  onOpen,
+  onPay,
+  onSort,
+  onView,
+}: {
+  isLoading: boolean
+  rows: ConsumableOrderRow[]
+  sortState: ConsumableOrderSortState
+  onOpen: (row: ConsumableOrderRow) => void
+  onPay: (row: ConsumableOrderRow) => void
+  onSort: (id: ConsumableOrderSortId) => void
+  onView: (row: ConsumableOrderRow) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="consumable-orders-list">
+      <div className="consumable-orders-list-head">
+        <ConsumableOrderSortHeader id="document" label={t('Документ / дата')} sortState={sortState} onSort={onSort} />
+        <ConsumableOrderSortHeader id="serviceOrganization" label={t('Постачальник / організація')} sortState={sortState} onSort={onSort} />
+        <ConsumableOrderSortHeader id="storage" label={t('Склад')} sortState={sortState} onSort={onSort} />
+        <ConsumableOrderSortHeader id="amount" label={t('Сума')} sortState={sortState} align="right" onSort={onSort} />
+        <ConsumableOrderSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
+        <ConsumableOrderSortHeader id="status" label={t('Статус')} sortState={sortState} onSort={onSort} />
+        <span aria-hidden />
+      </div>
+
+      <div className="consumable-orders-list-body">
+        {isLoading ? (
+          <div className="consumable-orders-list-state">{t('Завантаження прибуткових накладних')}</div>
+        ) : rows.length === 0 ? (
+          <div className="consumable-orders-list-state">{t('Прибуткових накладних не знайдено')}</div>
+        ) : (
+          rows.map((row) => (
+            <ConsumableOrderListRow
+              key={row.id}
+              row={row}
+              onOpen={onOpen}
+              onPay={onPay}
+              onView={onView}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ConsumableOrderSortHeader({
+  align,
+  id,
+  label,
+  sortState,
+  onSort,
+}: {
+  align?: 'right'
+  id: ConsumableOrderSortId
+  label: string
+  sortState: ConsumableOrderSortState
+  onSort: (id: ConsumableOrderSortId) => void
+}) {
+  const isActive = sortState?.id === id
+
+  return (
+    <button
+      className={`consumable-orders-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
+      type="button"
+      onClick={() => onSort(id)}
+    >
+      <span>{label}</span>
+      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
+    </button>
+  )
+}
+
+function ConsumableOrderListRow({
+  row,
   onOpen,
   onPay,
   onView,
 }: {
+  row: ConsumableOrderRow
   onOpen: (row: ConsumableOrderRow) => void
   onPay: (row: ConsumableOrderRow) => void
   onView: (row: ConsumableOrderRow) => void
-}): DataTableColumn<ConsumableOrderRow>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<ConsumableOrderRow>[]>(
-    () => [
-      {
-        id: 'created',
-        header: t('Створено'),
-        width: 145,
-        minWidth: 130,
-        accessor: (row) => row.created,
-        cell: (row) => <ConsumableOrderTableValue value={formatDateTime(row.created)} />,
-      },
-      {
-        id: 'number',
-        header: t('Номер'),
-        width: 145,
-        minWidth: 120,
-        accessor: (row) => row.order.Number,
-        cell: (row) => <ConsumableOrderTableValue fw={600} value={displayValue(row.order.Number)} />,
-      },
-      {
-        id: 'organizationFromDate',
-        header: t('Дата входу'),
-        width: 145,
-        minWidth: 130,
-        accessor: (row) => row.organizationFromDate,
-        cell: (row) => <ConsumableOrderTableValue value={formatDateTime(row.organizationFromDate)} />,
-      },
-      {
-        id: 'organizationNumber',
-        header: t('Номер накладної'),
-        width: 150,
-        minWidth: 120,
-        accessor: (row) => row.organizationNumber,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.organizationNumber)} />,
-      },
-      {
-        id: 'serviceOrganization',
-        header: t('Постачальник послуг'),
-        width: 220,
-        minWidth: 170,
-        accessor: (row) => row.serviceOrganization,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.serviceOrganization)} />,
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        width: 170,
-        minWidth: 130,
-        accessor: (row) => row.organization,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.organization)} />,
-      },
-      {
-        id: 'totalAmountWithoutVat',
-        header: t('Сума'),
-        width: 120,
-        minWidth: 100,
-        align: 'right',
-        accessor: (row) => row.totalAmountWithoutVat,
-        cell: (row) => <ConsumableOrderTableValue value={formatMoney(row.totalAmountWithoutVat)} />,
-      },
-      {
-        id: 'amount',
-        header: t('Разом з ПДВ'),
-        width: 130,
-        minWidth: 110,
-        align: 'right',
-        accessor: (row) => row.amount,
-        cell: (row) => <ConsumableOrderTableValue value={formatMoney(row.amount)} />,
-      },
-      {
-        id: 'currency',
-        header: t('Валюта'),
-        width: 90,
-        minWidth: 80,
-        accessor: (row) => row.currency,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.currency)} />,
-      },
-      {
-        id: 'storage',
-        header: t('Склад'),
-        width: 150,
-        minWidth: 120,
-        accessor: (row) => row.storage,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.storage)} />,
-      },
-      {
-        id: 'responsible',
-        header: t('Відповідальний'),
-        width: 165,
-        minWidth: 130,
-        accessor: (row) => row.responsible,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.responsible)} />,
-      },
-      {
-        id: 'comment',
-        header: t('Коментар'),
-        width: 240,
-        minWidth: 170,
-        accessor: (row) => row.comment,
-        cell: (row) => <ConsumableOrderTableValue value={displayValue(row.comment)} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 112,
-        minWidth: 104,
-        align: 'right',
-        enableSorting: false,
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        cell: (row) => (
-          <Group gap={4} justify="flex-end" wrap="nowrap">
-            <Tooltip label={t('Деталі')}>
-              <ActionIcon
-                aria-label={t('Деталі')}
-                color="gray"
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onOpen(row)
-                }}
-              >
-                <IconEye size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color={CREATE_ACTION_COLOR}
-                size="sm"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onView(row)
-                }}
-              >
-                <IconPencil size={16} />
-              </ActionIcon>
-            </Tooltip>
-            {!row.isPayed && (
-              <Tooltip label={t('Оплатити')}>
-                <ActionIcon
-                  aria-label={t('Оплатити')}
-                  color="green"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onPay(row)
-                  }}
-                >
-                  <IconCreditCard size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        ),
-      },
-    ],
-    [onOpen, onPay, onView, t],
+}) {
+  return (
+    <div
+      className="consumable-orders-row"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(row)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen(row)
+        }
+      }}
+    >
+      <ConsumableOrderDocumentCell row={row} />
+      <ConsumableOrderSupplierCell row={row} />
+      <ConsumableOrderStorageCell row={row} />
+      <ConsumableOrderAmountCell row={row} />
+      <ConsumableOrderResponsibleCell row={row} />
+      <ConsumableOrderStatusCell row={row} />
+      <ConsumableOrderActions row={row} onOpen={onOpen} onPay={onPay} onView={onView} />
+    </div>
   )
 }
 
-function ConsumableOrderTableValue({ fw, value }: { fw?: number; value: string }) {
+function ConsumableOrderDocumentCell({ row }: { row: ConsumableOrderRow }) {
+  const { t } = useI18n()
+  const invoice = row.organizationNumber?.trim()
+  const titleValue = row.order.Number || invoice
+  const title = displayValue(titleValue)
+  const createdDate = formatDateTime(row.created)
+  const organizationDate = row.organizationFromDate ? formatDateTime(row.organizationFromDate) : ''
+  const invoiceLabel = invoice && !isSameDisplayValue(invoice, titleValue) ? `${t('Накладна')}: ${invoice}` : ''
+  const createdLabel = `${t('Створено')}: ${createdDate}`
+  const organizationDateLabel = organizationDate ? `${t('Вхід')}: ${organizationDate}` : ''
+  const tooltip = compactStrings([title, invoiceLabel, createdLabel, organizationDateLabel]).join('\n')
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={CONSUMABLE_ORDER_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="consumable-orders-document-cell">
+        <span className="consumable-orders-document-icon" aria-hidden>
+          <IconFileText size={15} />
+        </span>
+        <span className="consumable-orders-document-copy">
+          <span className="consumable-orders-document-title">{title}</span>
+          {invoiceLabel ? <span className="consumable-orders-document-meta">{invoiceLabel}</span> : null}
+          <span className="consumable-orders-document-meta">{createdLabel}</span>
+          {organizationDateLabel ? <span className="consumable-orders-document-meta">{organizationDateLabel}</span> : null}
+        </span>
+      </span>
     </Tooltip>
   )
 }
+
+function ConsumableOrderSupplierCell({ row }: { row: ConsumableOrderRow }) {
+  const title = displayValue(row.serviceOrganization)
+  const organization = row.organization?.trim()
+  const agreement = getOrderAgreementName(row)
+  const tooltip = compactStrings([title, organization, agreement]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="consumable-orders-two-line-cell">
+        <span>{title}</span>
+        {organization ? <small>{organization}</small> : null}
+        {agreement ? <small>{agreement}</small> : null}
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableOrderStorageCell({ row }: { row: ConsumableOrderRow }) {
+  const { t } = useI18n()
+  const title = displayValue(row.storage)
+  const meta = t('{{count}} позицій').replace('{{count}}', formatAmount(row.itemCount))
+  const tooltip = compactStrings([title, meta]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="consumable-orders-two-line-cell">
+        <span>{title}</span>
+        <small>{meta}</small>
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableOrderAmountCell({ row }: { row: ConsumableOrderRow }) {
+  const totalWithoutVat = formatMoney(row.totalAmountWithoutVat)
+  const totalWithVat = formatMoney(row.amount)
+  const currency = displayValue(row.currency)
+  const tooltip = compactStrings([totalWithVat, currency, totalWithoutVat]).join(' ')
+
+  return (
+    <Tooltip label={tooltip} openDelay={350} withArrow>
+      <span className="consumable-orders-amount-cell">
+        <strong>{totalWithVat}</strong>
+        <small>{currency}</small>
+        <span>{totalWithoutVat}</span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableOrderResponsibleCell({ row }: { row: ConsumableOrderRow }) {
+  const title = displayValue(row.responsible)
+  const comment = row.comment?.trim()
+  const tooltip = compactStrings([title, comment]).join('\n')
+
+  return (
+    <Tooltip label={tooltip} multiline openDelay={350} withArrow>
+      <span className="consumable-orders-responsible-cell">
+        <span>{title}</span>
+        {comment ? <small>{comment}</small> : null}
+      </span>
+    </Tooltip>
+  )
+}
+
+function ConsumableOrderStatusCell({ row }: { row: ConsumableOrderRow }) {
+  const { t } = useI18n()
+
+  return (
+    <span className="consumable-orders-status-cell">
+      <Badge color={row.isPayed ? 'green' : 'orange'} variant="light">
+        {row.isPayed ? t('Оплачено') : t('Не оплачено')}
+      </Badge>
+      <small>{row.isDone ? t('Закрито') : t('В роботі')}</small>
+    </span>
+  )
+}
+
+function ConsumableOrderActions({
+  row,
+  onOpen,
+  onPay,
+  onView,
+}: {
+  row: ConsumableOrderRow
+  onOpen: (row: ConsumableOrderRow) => void
+  onPay: (row: ConsumableOrderRow) => void
+  onView: (row: ConsumableOrderRow) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Group className="consumable-orders-row-actions" gap={4} justify="flex-end" wrap="nowrap" onClick={(event) => event.stopPropagation()}>
+      {!row.isPayed && (
+        <Tooltip label={t('Оплатити')}>
+          <ActionIcon
+            aria-label={t('Оплатити')}
+            color="green"
+            size="sm"
+            variant="subtle"
+            onClick={() => onPay(row)}
+          >
+            <IconCreditCard size={15} />
+          </ActionIcon>
+        </Tooltip>
+      )}
+      <Tooltip label={t('Редагувати')}>
+        <ActionIcon
+          aria-label={t('Редагувати')}
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          variant="subtle"
+          onClick={() => onView(row)}
+        >
+          <IconPencil size={15} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Деталі')}>
+        <ActionIcon
+          aria-label={t('Деталі')}
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={() => onOpen(row)}
+        >
+          <IconEye size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  )
+}
+
 
 function ConsumableOrderDetailDrawer({
   row,
@@ -544,6 +679,68 @@ function buildConsumableOrderRows(orders: ConsumablesOrder[]): ConsumableOrderRo
     storage: getEntityName(order.ConsumablesStorage),
     totalAmountWithoutVat: order.TotalAmountWithoutVAT,
   }))
+}
+
+function sortConsumableOrderRows(rows: ConsumableOrderRow[], sortState: ConsumableOrderSortState): ConsumableOrderRow[] {
+  if (!sortState) {
+    return rows
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...rows].sort((left, right) => compareConsumableOrderSortValues(
+    getConsumableOrderSortValue(left, sortState.id),
+    getConsumableOrderSortValue(right, sortState.id),
+  ) * direction)
+}
+
+function getConsumableOrderSortValue(row: ConsumableOrderRow, id: ConsumableOrderSortId): number | string {
+  switch (id) {
+    case 'amount':
+      return row.amount ?? row.totalAmountWithoutVat ?? 0
+    case 'document':
+      return compactStrings([row.order.Number, row.created, row.organizationNumber, row.organizationFromDate]).join(' ')
+    case 'responsible':
+      return compactStrings([row.responsible, row.comment]).join(' ')
+    case 'serviceOrganization':
+      return compactStrings([row.serviceOrganization, row.organization, getOrderAgreementName(row)]).join(' ')
+    case 'status':
+      return `${row.isPayed ? 1 : 0}-${row.isDone ? 1 : 0}`
+    case 'storage':
+      return compactStrings([row.storage, row.itemCount]).join(' ')
+  }
+}
+
+function compareConsumableOrderSortValues(left: number | string, right: number | string): number {
+  if (typeof left === 'number' && typeof right === 'number') {
+    return left - right
+  }
+
+  return String(left).localeCompare(String(right), 'uk', { numeric: true, sensitivity: 'base' })
+}
+
+function getOrderAgreementName(row: ConsumableOrderRow): string {
+  return displayValue(row.order.SupplyOrganizationAgreement?.Name || row.order.SupplyOrganizationAgreement?.Number)
+}
+
+function compactStrings(values: Array<string | number | null | undefined>): string[] {
+  return values
+    .map((value) => (typeof value === 'number' ? String(value) : value?.trim()))
+    .filter((value): value is string => Boolean(value && value !== 'вЂ”'))
+}
+
+function isSameDisplayValue(left?: string | number | null, right?: string | number | null): boolean {
+  const normalizedLeft = normalizeDisplayValue(left)
+  const normalizedRight = normalizeDisplayValue(right)
+
+  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight)
+}
+
+function normalizeDisplayValue(value?: string | number | null): string {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
 }
 
 function navigateToEdit(navigate: NavigateFunction, row: ConsumableOrderRow, backgroundLocation: Location) {
