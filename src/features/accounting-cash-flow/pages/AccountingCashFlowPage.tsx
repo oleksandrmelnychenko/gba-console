@@ -492,10 +492,9 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <form onSubmit={submitFilters}>
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card withBorder radius="md" padding={0} className="app-filter-card">
+        <form onSubmit={submitFilters}>
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row app-filter-bar">
               <TextInput
                 label={t('З')}
                 type="date"
@@ -527,7 +526,8 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             </Group>
           </form>
 
-          {filterError && (
+          <Stack gap="md" p="md">
+            {filterError && (
             <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
               {filterError}
             </Alert>

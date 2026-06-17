@@ -21,7 +21,7 @@
 .console-table-command-bar {
   align-items: end;
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
+    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
@@ -35,7 +35,7 @@
 }
 
 .console-table-command-bar .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
@@ -114,7 +114,7 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   font-size: 10.5px;
   font-weight: 500;
   line-height: 1.2;
