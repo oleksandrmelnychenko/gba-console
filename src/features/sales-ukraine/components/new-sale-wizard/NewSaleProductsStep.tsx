@@ -1,6 +1,6 @@
-import { Box, Group, Loader, Select, Stack, Text, TextInput } from '@mantine/core'
+import { Box, Group, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconBox, IconSearch, IconSettings } from '@tabler/icons-react'
+import { IconBox, IconSettings } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../../auth/useAuth'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -9,7 +9,6 @@ import { updateProduct } from '../../../products/api/productsApi'
 import type { Product } from '../../../products/types'
 import { getRelatedProductRowColor } from '../../../products/utils'
 import { ProductCardModal } from '../../../products/components/ProductCardModal'
-import { ProductPickerCarousel } from '../../../products/components/ProductPickerCarousel'
 import { ProductInterestModal } from '../../../sales-preorders'
 import { addOrderItem, deleteOrderItem, updateOrderItem } from '../../api/salesUkraineApi'
 import { getSaleLocalCurrencyCode, isNonVatEurSale, roundMoney } from '../../saleMoney'
@@ -47,10 +46,14 @@ import { ProductFullDetailPanel, type WizardDetailChip, type WizardDetailRow } f
 import { ProductImageViewModal } from './ProductImageViewModal'
 import { ShiftOrderItemModal } from './ShiftOrderItemModal'
 import { WizardConfirmModal } from './WizardConfirmModal'
+import { WizardProductCarousel } from './WizardProductCarousel'
+import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import {
   getPreviousProductKeyboardState,
   getWizardKeyboardState,
+  isEditableTarget,
   setWizardKeyboardState,
+  toWizardHotkey,
   useWizardKeyboard,
   useWizardKeyHandler,
   WIZARD_PRODUCT_KEYBOARD_STATES,
@@ -174,6 +177,8 @@ export function NewSaleProductsStep({
   const virtualLoadingRef = useRef(false)
   const virtualExhaustedRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const handleProductKeyRef = useRef<(event: WizardKeyEvent) => boolean>(() => false)
   const cartNetIdRef = useRef<string | undefined>(undefined)
   const onCartChangedRef = useRef(onCartChanged)
   const pricingCacheGenerationRef = useRef(0)
@@ -1832,7 +1837,7 @@ export function NewSaleProductsStep({
     return false
   }
 
-  useWizardKeyHandler((event) => {
+  function handleProductKey(event: WizardKeyEvent): boolean {
     if (qtyModal || shiftRow || futureProduct || removeConfirmOpen || removeRowItem || closeConfirmOpen) {
       return false
     }
@@ -1862,7 +1867,43 @@ export function NewSaleProductsStep({
       default:
         return false
     }
+  }
+
+  // Primary path: the wizard root onKeyDown dispatches here while focus is inside the step.
+  useWizardKeyHandler(handleProductKey)
+
+  // Max-priority fallback so adding via Enter/arrows and the Esc exit-confirm keep working
+  // even after a click moved focus onto a non-interactive area (<body>), where the root
+  // onKeyDown can no longer fire. Skips when focus is inside the step (root path handles it)
+  // or on a real control (let that control handle its own keys) to avoid double dispatch.
+  useEffect(() => {
+    handleProductKeyRef.current = handleProductKey
   })
+
+  useEffect(() => {
+    const listener = (event: KeyboardEvent) => {
+      const target = event.target
+
+      if (containerRef.current?.contains(target as Node) || isInteractiveTarget(target)) {
+        return
+      }
+
+      const hotkey = toWizardHotkey(event)
+
+      if (!hotkey) {
+        return
+      }
+
+      if (handleProductKeyRef.current({ hotkey, inEditable: isEditableTarget(target), nativeEvent: event })) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    document.addEventListener('keydown', listener, true)
+
+    return () => document.removeEventListener('keydown', listener, true)
+  }, [])
 
   const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
   const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
@@ -1901,217 +1942,229 @@ export function NewSaleProductsStep({
   }
 
   return (
-    <Box style={{ position: 'relative' }}>
-      <Stack gap="md">
-        <Group align="flex-end" gap="sm" wrap="wrap">
-          <Select
-            allowDeselect={false}
-            data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-            label={t('Місце вводу для пошуку')}
-            value={searchMode}
-            w={230}
-            onChange={(value) => handleSearchSettingsChange(value, null)}
-          />
-          <Select
-            allowDeselect={false}
-            data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
-            label={t('Сортувати За')}
-            value={sortMode}
-            w={180}
-            onChange={(value) => handleSearchSettingsChange(null, value)}
-          />
-        </Group>
-
-        <TextInput
-          ref={searchInputRef}
-          autoFocus
-          label={t('Пошук по товару')}
-          leftSection={<IconSearch size={16} />}
-          placeholder={t('Пошук товару')}
-          rightSection={isSearching ? <Loader size="xs" /> : null}
-          value={query}
-          onChange={(event) => handleQueryChange(event.currentTarget.value)}
-        />
-
-        <ProductPickerCarousel
-          active={mainStatesActive}
-          disabled={busy || !agreementNetId || !sale?.NetUid}
-          emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
-          focusedIndex={active ? mainIndex : -1}
-          getItemColor={(product) => getRelatedProductRowColor(product)}
-          getMeta={getProductMeta}
-          isLoading={isSearching}
-          keyboardNavigation={false}
-          products={results}
-          onFocusedChange={(index) => {
-            focusMain(index)
-
-            if (kbState === 'ProductSearch') {
-              keyboard.setState('ProductSelection')
-            }
+    <Box ref={containerRef} style={{ position: 'relative' }}>
+      <Group align="stretch" gap="md" wrap="nowrap" style={{ height: 'calc(100dvh - 330px)', minHeight: 440 }}>
+        {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
+        <Box
+          style={{
+            borderRight: '1px solid var(--mantine-color-gray-3)',
+            display: 'flex',
+            flexDirection: 'column',
+            flexShrink: 0,
+            paddingRight: 12,
+            width: 320,
           }}
-          onOpenCard={setProductCardNetId}
-          onPick={(product) => void prepareAddToCart(product)}
-          onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
-        />
-
-        {kbState === 'FullDetail' && mainProduct && (
-          <ProductFullDetailPanel
-            canEditDescription={canEditMainDescription}
-            chips={getMainChips()}
-            descriptionDraft={descriptionDraft}
-            isEditingDescription={editingDescription && active?.source === 'main'}
-            isVatSale={isVatSale}
-            nearestSupplyOrder={nearestOrder}
-            pricing={detailPricingFor(mainProduct)}
-            product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
-            rows={
-              detail?.chipIndex != null
-                ? getMainChipRows(detail.chipIndex).map((row) => ({
-                    amount: getWizardProductNumber(row.Amount) ?? 0,
-                    analyst: row.OrderItem?.User?.LastName ?? '',
-                    name: row.Name ?? '',
-                    regionCode: row.RegionCode ?? '',
-                  }))
-                : []
-            }
-            selectedChipIndex={detail?.chipIndex ?? null}
-            selectedRowIndex={detail?.rowIndex ?? null}
-            showRowDetails={detail?.chipIndex === 0}
-            onDescriptionDraftChange={setDescriptionDraft}
-            onToggleDescription={() => void toggleDescriptionEdit()}
-          />
-        )}
-
-        {analogueState.items.length > 0 && (
-          <Stack gap={4}>
-            <Group gap={8}>
-              <Text fw={600} size="sm">
-                {t('Аналоги')}
-              </Text>
-              <Text c="dimmed" size="sm">
-                {analogueState.items.length} {t('штук')}
-              </Text>
-            </Group>
-            <ProductPickerCarousel
-              active={analogueStatesActive}
-              disabled={busy || !agreementNetId || !sale?.NetUid}
-              focusedIndex={analogueIndex ?? -1}
-              getItemColor={(product) => getRelatedProductRowColor(product)}
-              keyboardNavigation={false}
-              products={analogueState.items}
-              renderItemExtra={(product) => renderPriceExtra(product)}
-              onFocusedChange={(index) => {
-                focusAnalogue(index)
-
-                if (!analogueStatesActive) {
-                  keyboard.setState('AnalogueSelection')
-                }
-              }}
-              onOpenCard={setProductCardNetId}
-              onPick={(product) => void prepareAddToCart(product)}
-              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
+        >
+          <Stack gap="xs" mb="xs">
+            <Select
+              allowDeselect={false}
+              data={SEARCH_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+              label={t('Місце вводу для пошуку')}
+              value={searchMode}
+              onChange={(value) => handleSearchSettingsChange(value, null)}
             />
-            {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
-              <ProductFullDetailPanel
-                canEditDescription
-                chips={getReservationChips(focusedAnalogue)}
-                descriptionDraft={descriptionDraft}
-                isEditingDescription={editingDescription && active?.source === 'analogue'}
-                isVatSale={isVatSale}
-                pricing={detailPricingFor(focusedAnalogue)}
-                product={focusedAnalogue}
-                rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
-                selectedChipIndex={detail?.chipIndex ?? null}
-                selectedRowIndex={detail?.rowIndex ?? null}
-                showRowDetails
-                onDescriptionDraftChange={setDescriptionDraft}
-                onToggleDescription={() => void toggleDescriptionEdit()}
-              />
-            )}
+            <Select
+              allowDeselect={false}
+              data={SORT_MODE_OPTIONS.map((option) => ({ label: t(option.label), value: option.value }))}
+              label={t('Сортувати За')}
+              value={sortMode}
+              onChange={(value) => handleSearchSettingsChange(null, value)}
+            />
           </Stack>
-        )}
 
-        {componentEntries.entries.length > 0 && (
-          <Stack gap={4}>
-            {!componentEntries.isBaseSet && (
-              <Group gap={8}>
-                <Text fw={600} size="sm">
-                  {t('Комплектуючі')}
-                </Text>
-                <Text c="dimmed" size="sm">
-                  {componentEntries.entries.length} {t('штук')}
-                </Text>
-              </Group>
-            )}
-            <ProductPickerCarousel
-              active={componentStatesActive}
-              disabled={busy || !agreementNetId || !sale?.NetUid}
-              focusedIndex={componentIndex ?? -1}
+          <Box style={{ flex: 1, minHeight: 0 }}>
+            <WizardProductCarousel
+              active={mainStatesActive}
+              emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
+              focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
-              keyboardNavigation={false}
-              products={componentEntries.entries.map((entry) => entry.product)}
-              renderItemExtra={(product) => (
-                <Group gap={6} mt={2} wrap="nowrap">
-                  {componentEntries.isBaseSet ? <IconBox size={14} /> : <IconSettings size={14} />}
-                  {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
+              getMeta={getProductMeta}
+              hasFocus={active?.source === 'main'}
+              isLoading={isSearching}
+              products={results}
+              searchInputRef={searchInputRef}
+              searchMode={kbState === 'ProductSearch'}
+              searchValue={query}
+              onOpenCard={setProductCardNetId}
+              onPick={(index) => {
+                focusMain(index)
+
+                if (kbState === 'ProductSearch') {
+                  keyboard.setState('ProductSelection')
+                }
+
+                // Clicking a row (a plain div) blurs the search input → keyboard events stop
+                // bubbling to the wizard root, so Enter could no longer add to the cart. Restore it.
+                focusSearchInput()
+              }}
+              onSearchChange={handleQueryChange}
+            />
+          </Box>
+        </Box>
+
+        {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
+        <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
+          <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <Stack gap="md">
+              {kbState === 'FullDetail' && mainProduct && (
+                <ProductFullDetailPanel
+                  canEditDescription={canEditMainDescription}
+                  chips={getMainChips()}
+                  descriptionDraft={descriptionDraft}
+                  isEditingDescription={editingDescription && active?.source === 'main'}
+                  isVatSale={isVatSale}
+                  nearestSupplyOrder={nearestOrder}
+                  pricing={detailPricingFor(mainProduct)}
+                  product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
+                  rows={
+                    detail?.chipIndex != null
+                      ? getMainChipRows(detail.chipIndex).map((row) => ({
+                          amount: getWizardProductNumber(row.Amount) ?? 0,
+                          analyst: row.OrderItem?.User?.LastName ?? '',
+                          name: row.Name ?? '',
+                          regionCode: row.RegionCode ?? '',
+                        }))
+                      : []
+                  }
+                  selectedChipIndex={detail?.chipIndex ?? null}
+                  selectedRowIndex={detail?.rowIndex ?? null}
+                  showRowDetails={detail?.chipIndex === 0}
+                  onDescriptionDraftChange={setDescriptionDraft}
+                  onToggleDescription={() => void toggleDescriptionEdit()}
+                />
+              )}
+
+              {analogueState.items.length > 0 && (
+                <Stack gap={4}>
+                  <Group gap={8}>
+                    <Text fw={600} size="sm">
+                      {t('Аналоги')}
+                    </Text>
+                    <Text c="dimmed" size="sm">
+                      {analogueState.items.length} {t('штук')}
+                    </Text>
+                  </Group>
+                  <WizardRelatedProductRows
+                    active={analogueStatesActive}
+                    focusedIndex={analogueIndex ?? -1}
+                    getItemColor={(product) => getRelatedProductRowColor(product)}
+                    products={analogueState.items}
+                    renderExtra={(product) => renderPriceExtra(product)}
+                    onOpenCard={setProductCardNetId}
+                    onPick={(index) => {
+                      focusAnalogue(index)
+
+                      if (!analogueStatesActive) {
+                        keyboard.setState('AnalogueSelection')
+                      }
+
+                      focusSearchInput()
+                    }}
+                  />
+                  {kbState === 'AnalogueFullDetail' && focusedAnalogue && (
+                    <ProductFullDetailPanel
+                      canEditDescription
+                      chips={getReservationChips(focusedAnalogue)}
+                      descriptionDraft={descriptionDraft}
+                      isEditingDescription={editingDescription && active?.source === 'analogue'}
+                      isVatSale={isVatSale}
+                      pricing={detailPricingFor(focusedAnalogue)}
+                      product={focusedAnalogue}
+                      rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
+                      selectedChipIndex={detail?.chipIndex ?? null}
+                      selectedRowIndex={detail?.rowIndex ?? null}
+                      showRowDetails
+                      onDescriptionDraftChange={setDescriptionDraft}
+                      onToggleDescription={() => void toggleDescriptionEdit()}
+                    />
+                  )}
+                </Stack>
+              )}
+
+              {componentEntries.entries.length > 0 && (
+                <Stack gap={4}>
+                  {!componentEntries.isBaseSet && (
+                    <Group gap={8}>
+                      <Text fw={600} size="sm">
+                        {t('Комплектуючі')}
+                      </Text>
+                      <Text c="dimmed" size="sm">
+                        {componentEntries.entries.length} {t('штук')}
+                      </Text>
+                    </Group>
+                  )}
+                  <WizardRelatedProductRows
+                    active={componentStatesActive}
+                    focusedIndex={componentIndex ?? -1}
+                    getItemColor={(product) => getRelatedProductRowColor(product)}
+                    products={componentEntries.entries.map((entry) => entry.product)}
+                    renderExtra={(product) => (
+                      <Group gap={6} wrap="nowrap">
+                        {componentEntries.isBaseSet ? <IconBox size={14} /> : <IconSettings size={14} />}
+                        {renderPriceExtra(product, product.NetUid ? setQtyByNetUid.get(product.NetUid) : undefined)}
+                      </Group>
+                    )}
+                    onOpenCard={setProductCardNetId}
+                    onPick={(index) => {
+                      focusComponent(index)
+
+                      if (!componentStatesActive) {
+                        keyboard.setState('ComponentSelection')
+                      }
+
+                      focusSearchInput()
+                    }}
+                  />
+                  {kbState === 'ComponentFullDetail' && focusedComponent && (
+                    <ProductFullDetailPanel
+                      canEditDescription
+                      chips={getReservationChips(focusedComponent)}
+                      descriptionDraft={descriptionDraft}
+                      isEditingDescription={editingDescription && active?.source === 'component'}
+                      isVatSale={isVatSale}
+                      pricing={detailPricingFor(focusedComponent)}
+                      product={focusedComponent}
+                      rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
+                      selectedChipIndex={detail?.chipIndex ?? null}
+                      selectedRowIndex={detail?.rowIndex ?? null}
+                      showRowDetails
+                      onDescriptionDraftChange={setDescriptionDraft}
+                      onToggleDescription={() => void toggleDescriptionEdit()}
+                    />
+                  )}
+                </Stack>
+              )}
+            </Stack>
+          </Box>
+
+          {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
+          <Box style={{ flexShrink: 0, paddingTop: 12 }}>
+            <Stack gap={4}>
+              <Text fw={600} size="sm">
+                {t('Кошик')}
+              </Text>
+              <WizardShoppingCartGrid
+                busy={busy}
+                items={orderItems}
+                localCurrencyCode={localCurrencyCode}
+                useEurToUah={useEurToUah}
+                onRemove={isSaleLifecycleNew ? (item) => setRemoveRowItem(item) : undefined}
+                onRowClick={(item) => void onEditOrderItem(item)}
+              />
+              {isVatSale && orderItems.length > 0 && (
+                <Group justify="flex-end">
+                  <Text size="sm">
+                    {t('ПДВ')}:{' '}
+                    <Text fw={600} span>
+                      {amountFormatter.format(roundMoney(totalVat))}
+                    </Text>
+                  </Text>
                 </Group>
               )}
-              onFocusedChange={(index) => {
-                focusComponent(index)
-
-                if (!componentStatesActive) {
-                  keyboard.setState('ComponentSelection')
-                }
-              }}
-              onOpenCard={setProductCardNetId}
-              onPick={(product) => void prepareAddToCart(product)}
-              onProductInterest={agreementNetId ? (product) => openInterest(product) : undefined}
-            />
-            {kbState === 'ComponentFullDetail' && focusedComponent && (
-              <ProductFullDetailPanel
-                canEditDescription
-                chips={getReservationChips(focusedComponent)}
-                descriptionDraft={descriptionDraft}
-                isEditingDescription={editingDescription && active?.source === 'component'}
-                isVatSale={isVatSale}
-                pricing={detailPricingFor(focusedComponent)}
-                product={focusedComponent}
-                rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
-                selectedChipIndex={detail?.chipIndex ?? null}
-                selectedRowIndex={detail?.rowIndex ?? null}
-                showRowDetails
-                onDescriptionDraftChange={setDescriptionDraft}
-                onToggleDescription={() => void toggleDescriptionEdit()}
-              />
-            )}
-          </Stack>
-        )}
-
-        <Stack gap={4}>
-          <Text fw={600} size="sm">
-            {t('Кошик')}
-          </Text>
-          <WizardShoppingCartGrid
-            busy={busy}
-            items={orderItems}
-            localCurrencyCode={localCurrencyCode}
-            useEurToUah={useEurToUah}
-            onRemove={isSaleLifecycleNew ? (item) => setRemoveRowItem(item) : undefined}
-            onRowClick={(item) => void onEditOrderItem(item)}
-          />
-          {isVatSale && orderItems.length > 0 && (
-            <Group justify="flex-end">
-              <Text size="sm">
-                {t('ПДВ')}:{' '}
-                <Text fw={600} span>
-                  {amountFormatter.format(roundMoney(totalVat))}
-                </Text>
-              </Text>
-            </Group>
-          )}
-        </Stack>
-      </Stack>
+            </Stack>
+          </Box>
+        </Box>
+      </Group>
 
       {editCart && (
         <EditShoppingCartOverlay
@@ -2221,6 +2274,14 @@ export function NewSaleProductsStep({
 
 function isProductKeyboardState(state: string): state is WizardProductKeyboardState {
   return (WIZARD_PRODUCT_KEYBOARD_STATES as readonly string[]).includes(state)
+}
+
+// True when focus sits on a real control (button / link / input / etc.) so the focus-independent
+// fallback listener can leave that control's own keyboard handling alone. Note: NOT [tabindex] —
+// Mantine's modal wrapper is a tabindex=-1 focus-trap div, not a real control, and focus often
+// lands there after navigating to this step; treating it as interactive would swallow Escape.
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest('a, button, input, select, textarea, [role="button"]'))
 }
 
 function getOrderItemsNewestFirst(sale: SalesUkraineSale | null): SalesUkraineOrderItem[] {

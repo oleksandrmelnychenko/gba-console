@@ -21,8 +21,10 @@ import {
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 
-// Keeps the client header a stable height so the panel below does not jump when switching clients.
-const WIZARD_HEADER_MIN_HEIGHT = 52
+// Reserved on every render (even with no client / while loading) so the panel keeps a constant
+// height and the content below never jumps when a client appears or changes. Sized to hug a row
+// of debt badges so the overdue blocks sit flush by height.
+const WIZARD_HEADER_MIN_HEIGHT = 46
 
 const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
   0: 'Рахунок',
@@ -49,7 +51,7 @@ export function WizardSaleHeader({
   onSaleReassigned?: (movedSale: SalesUkraineSale | null) => void
 }) {
   if (!clientNetId) {
-    return null
+    return <WizardHeaderPlaceholder />
   }
 
   return (
@@ -195,8 +197,7 @@ function WizardSaleHeaderContent({
   }
 
   if (!client) {
-    // Reserve the header height while a client loads so the panel below does not jump.
-    return <Box mb="sm" mih={WIZARD_HEADER_MIN_HEIGHT} pb="xs" style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }} />
+    return <WizardHeaderPlaceholder />
   }
 
   const clientAgreements = client.ClientAgreements ?? []
@@ -213,9 +214,9 @@ function WizardSaleHeaderContent({
     <Group
       align="center"
       gap="sm"
-      mb="sm"
+      mb={8}
       mih={WIZARD_HEADER_MIN_HEIGHT}
-      pb="xs"
+      pb={4}
       wrap="wrap"
       style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
     >
@@ -406,6 +407,12 @@ function WizardSaleHeaderContent({
   )
 }
 
+// Empty header strip that reserves the exact filled-header height (with the same bottom border)
+// so the layout below stays put whether or not a client is selected/loaded.
+function WizardHeaderPlaceholder() {
+  return <Box mb={8} mih={WIZARD_HEADER_MIN_HEIGHT} pb={4} style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }} />
+}
+
 function WizardHeaderBadge({
   color,
   items,
@@ -416,7 +423,7 @@ function WizardHeaderBadge({
   label: string
 }) {
   return (
-    <Paper px="sm" py={4} radius="md" withBorder>
+    <Paper px="sm" py={2} radius="md" withBorder>
       <Text c="dimmed" size="xs">
         {label}
       </Text>

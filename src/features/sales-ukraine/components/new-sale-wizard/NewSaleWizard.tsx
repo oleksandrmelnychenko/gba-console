@@ -1,5 +1,5 @@
-import { Box, Button, Group, Modal, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconBox, IconTruckDelivery, IconUser } from '@tabler/icons-react'
+import { ActionIcon, Box, Button, Group, Modal, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { IconBox, IconTruckDelivery, IconUser, IconX } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
@@ -45,7 +45,6 @@ export function NewSaleWizard({
   onCreated: () => void
   opened: boolean
 }) {
-  const { t } = useI18n()
   const [vatDocuments, setVatDocuments] = useState<SaleDocumentResult | null>(null)
   const [contentBusy, setContentBusy] = useState(false)
 
@@ -53,8 +52,7 @@ export function NewSaleWizard({
     <>
       <Modal
         opened={opened}
-        title={t('Нова продажа')}
-        withCloseButton
+        withCloseButton={false}
         closeOnEscape={false}
         size="100%"
         padding="lg"
@@ -457,22 +455,31 @@ function NewSaleWizardContent({
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       onKeyDown={handleRootKeyDown}
     >
-      <WizardSaleHeader
-        clientNetId={state.clientNetId}
-        reassignDisabled={shellBusy || productsBusy}
-        sale={state.sale}
-        withVatAccounting={Boolean(
-          state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
-        )}
-        onReassignOpenChange={setReassignOpen}
-        onSaleReassigned={(movedSale) => {
-          clearWizardSplitOrderItems()
-          clearWizardMergedSale()
-          setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
-          bumpWizardDebtRefresh()
-          setActive(0)
-        }}
-      />
+      <Group align="flex-start" gap="xs" wrap="nowrap">
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <WizardSaleHeader
+            clientNetId={state.clientNetId}
+            reassignDisabled={shellBusy || productsBusy}
+            sale={state.sale}
+            withVatAccounting={Boolean(
+              state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
+            )}
+            onReassignOpenChange={setReassignOpen}
+            onSaleReassigned={(movedSale) => {
+              clearWizardSplitOrderItems()
+              clearWizardMergedSale()
+              setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+              bumpWizardDebtRefresh()
+              setActive(0)
+            }}
+          />
+        </Box>
+        <Tooltip label={t('Закрити')} position="left">
+          <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={onClose}>
+            <IconX size={20} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
         {active === 0 && (

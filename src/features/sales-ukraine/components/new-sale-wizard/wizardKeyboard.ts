@@ -236,7 +236,7 @@ export type WizardHotkey =
 export type WizardKeyEvent = {
   hotkey: WizardHotkey
   inEditable: boolean
-  nativeEvent: ReactKeyboardEvent<HTMLElement>
+  nativeEvent: ReactKeyboardEvent<HTMLElement> | KeyboardEvent
 }
 
 export type WizardKeyHandler = (event: WizardKeyEvent) => boolean | void
@@ -261,7 +261,7 @@ export function useWizardKeyHandler(handler: WizardKeyHandler): void {
   useEffect(() => registerWizardKeyHandler((event) => handlerRef.current(event)), [])
 }
 
-export function toWizardHotkey(event: ReactKeyboardEvent<HTMLElement>): WizardHotkey | null {
+export function toWizardHotkey(event: ReactKeyboardEvent<HTMLElement> | KeyboardEvent): WizardHotkey | null {
   if (event.ctrlKey) {
     if (event.key === 'Control') {
       return 'Ctrl'

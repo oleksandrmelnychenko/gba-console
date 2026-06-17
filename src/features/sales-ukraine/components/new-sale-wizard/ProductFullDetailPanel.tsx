@@ -1,5 +1,5 @@
 import { ActionIcon, Badge, Box, Group, Image, Paper, ScrollArea, Stack, Text, TextInput } from '@mantine/core'
-import { IconCheck, IconPencil } from '@tabler/icons-react'
+import { IconArrowRight, IconCheck, IconPencil } from '@tabler/icons-react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getRelatedProductRowColor } from '../../../products/utils'
@@ -59,13 +59,10 @@ export function ProductFullDetailPanel({
   const displayQty = getWizardDisplayQty(product, isVatSale)
 
   return (
-    <Paper p="sm" radius="md" withBorder>
+    <Paper p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-4)' }} withBorder>
       <Stack gap="sm">
+        {/* Availability columns spanning the full width (count on top, label below) + image on the right */}
         <Group align="flex-start" gap="md" wrap="nowrap">
-          {mainImage?.ImageUrl && (
-            <Image alt={product.VendorCode || ''} fit="contain" h={110} radius="sm" src={mainImage.ImageUrl} w={110} />
-          )}
-
           <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
             {nearestSupplyOrder && (
               <Paper bg="var(--mantine-color-blue-light)" p={6} radius="sm">
@@ -88,27 +85,35 @@ export function ProductFullDetailPanel({
               </Paper>
             )}
 
-            <Group gap={6} wrap="wrap">
+            <Box
+              style={{
+                border: '1px solid var(--mantine-color-gray-3)',
+                borderRadius: 'var(--mantine-radius-sm)',
+                display: 'flex',
+                overflow: 'hidden',
+              }}
+            >
               {chips.map((chip, index) => (
-                <Paper
+                <Box
                   key={chip.key}
-                  p={6}
-                  radius="sm"
                   style={{
-                    borderColor: index === selectedChipIndex ? 'var(--mantine-color-violet-6)' : undefined,
-                    minWidth: 96,
+                    background: index === selectedChipIndex ? 'var(--mantine-color-violet-light)' : undefined,
+                    borderLeft: index === 0 ? undefined : '1px solid var(--mantine-color-gray-3)',
+                    flex: 1,
+                    minWidth: 0,
+                    padding: '6px 4px',
+                    textAlign: 'center',
                   }}
-                  withBorder
                 >
-                  <Text fw={700} size="sm" ta="center">
+                  <Text fw={700} size="md">
                     {qtyFormatter.format(chip.count)}
                   </Text>
-                  <Text c="dimmed" size="xs" ta="center">
+                  <Text c="dimmed" tt="uppercase" style={{ fontSize: 10, lineHeight: 1.2 }}>
                     {chip.name}
                   </Text>
-                </Paper>
+                </Box>
               ))}
-            </Group>
+            </Box>
 
             {selectedChipIndex !== null && rows.length > 0 && (
               <ScrollArea.Autosize mah={150} type="auto">
@@ -154,8 +159,13 @@ export function ProductFullDetailPanel({
               </ScrollArea.Autosize>
             )}
           </Stack>
+
+          {mainImage?.ImageUrl && (
+            <Image alt={product.VendorCode || ''} fit="contain" h={96} radius="sm" src={mainImage.ImageUrl} w={120} />
+          )}
         </Group>
 
+        {/* Description (editable) */}
         <Group align="flex-start" gap="xs" wrap="nowrap">
           <Box style={{ flex: 1, minWidth: 0 }}>
             {isEditingDescription ? (
@@ -184,11 +194,12 @@ export function ProductFullDetailPanel({
           )}
         </Group>
 
+        {/* Product name + available qty */}
         <Group gap="md" justify="space-between" wrap="nowrap">
-          <Text c={titleColor} fw={600} size="sm" style={{ minWidth: 0 }} truncate>
+          <Text c={titleColor} fw={700} size="sm" style={{ minWidth: 0 }} truncate>
             {product.VendorCode} {product.NameUA || product.Name}
           </Text>
-          <Group gap={4} wrap="nowrap">
+          <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
             <Text fw={700} size="sm">
               {qtyFormatter.format(displayQty)}
             </Text>
@@ -200,9 +211,10 @@ export function ProductFullDetailPanel({
           </Group>
         </Group>
 
-        <Group gap="md" wrap="wrap">
+        {/* Top / original number / size */}
+        <Group gap="sm" wrap="wrap">
           {product.Top && (
-            <Badge color="gray" variant="light">
+            <Badge color="gray" radius="sm" variant="light">
               {product.Top}
             </Badge>
           )}
@@ -218,19 +230,22 @@ export function ProductFullDetailPanel({
           )}
         </Group>
 
+        {/* Pricing line: base → discount% → discounted price, then retail */}
         {pricing && (
-          <Group gap="lg" wrap="wrap">
-            {pricing.Pricing?.Name && (
-              <Text fw={600} size="sm">
-                {pricing.Pricing.Name}
-              </Text>
-            )}
-            <Group gap="xs" wrap="nowrap">
+          <Group gap="lg" justify="space-between" wrap="wrap">
+            <Group gap={6} wrap="nowrap">
+              {pricing.Pricing?.Name && (
+                <Text c={titleColor} fw={700} size="sm">
+                  {pricing.Pricing.Name}
+                </Text>
+              )}
               <Text size="sm">{priceFormatter.format(pricing.PriceEUR ?? 0)}</Text>
+              <IconArrowRight size={13} style={{ color: 'var(--mantine-color-dimmed)' }} />
               <Text c="dimmed" size="sm">
                 {pricing.DiscountRate ?? 0}%
               </Text>
-              <Text fw={600} size="sm">
+              <IconArrowRight size={13} style={{ color: 'var(--mantine-color-dimmed)' }} />
+              <Text fw={700} size="sm">
                 {priceFormatter.format(pricing.DiscountPriceEUR ?? 0)}
               </Text>
             </Group>

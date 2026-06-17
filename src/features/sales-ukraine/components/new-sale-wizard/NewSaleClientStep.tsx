@@ -48,6 +48,10 @@ type WizardPrintState = {
   isLoading: boolean
 }
 
+// Minimum characters before the client search hits the server. 1–2 characters match almost
+// everything and just hammer the (slow) client search, so wait until the query is meaningful.
+const WIZARD_CLIENT_SEARCH_MIN_LENGTH = 3
+
 export function NewSaleClientStep({
   clientNetId,
   initialClient,
@@ -282,6 +286,16 @@ export function NewSaleClientStep({
       window.clearTimeout(searchTimerRef.current)
     }
 
+    // Hold off until the user has typed enough characters. Below the threshold, clear any
+    // stale results and bump the request id so an already in-flight query can't repaint them.
+    if (value.trim().length < WIZARD_CLIENT_SEARCH_MIN_LENGTH) {
+      searchRequestRef.current += 1
+      loadedCountRef.current = 0
+      setCarousel(WIZARD_CLIENT_CAROUSEL_INITIAL)
+
+      return
+    }
+
     searchTimerRef.current = window.setTimeout(() => {
       searchTimerRef.current = null
       void runSearch(value)
@@ -497,14 +511,21 @@ export function NewSaleClientStep({
     window.requestAnimationFrame(() => searchInputRef.current?.focus())
   }
 
-  // Up/Down must always drive the client carousel on this step — even after a click moves
-  // focus off the search input. A capture-phase document listener gives them top priority,
-  // independent of which element is focused (skipped while one of this step's overlays is open).
+  // Up/Down (carousel) and Escape (back / reveal search) must always work on this step —
+  // even after a click or a step switch moved focus off the search input. A capture-phase
+  // document listener gives them top priority, independent of which element is focused
+  // (skipped while one of this step's overlays is open so those handle the key themselves).
+  // Escape lived only on the wizard's onKeyDown before, so it silently died whenever focus
+  // was outside the wizard (e.g. right after returning from another step).
   const arrowNavRef = useRef<(event: KeyboardEvent) => void>(() => {})
 
   useEffect(() => {
     arrowNavRef.current = (event: KeyboardEvent) => {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+      const isArrow = event.key === 'ArrowUp' || event.key === 'ArrowDown'
+      const isAgreementArrow = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
+      const isEscape = event.key === 'Escape'
+
+      if (!isArrow && !isAgreementArrow && !isEscape) {
         return
       }
 
@@ -517,6 +538,44 @@ export function NewSaleClientStep({
         printState ||
         isExitConfirmOpen
       ) {
+        return
+      }
+
+      if (isEscape) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        if (keyboardState === 'ClientSelection') {
+          setCarousel((current) => ({ ...current, showDetails: false }))
+          setKeyboardState('ClientSearch')
+          setQuery('')
+          focusSearchInput()
+        } else if (keyboardState === 'ClientAgreementSelection') {
+          setKeyboardState('ClientSelection')
+        } else {
+          setExitConfirmOpen(true)
+        }
+
+        return
+      }
+
+      if (isAgreementArrow) {
+        // Left/Right switch agreements — focus-independent, like Up/Down above, so it keeps
+        // working after returning from another step or clicking off the search input.
+        if (keyboardState !== 'ClientSelection' && keyboardState !== 'ClientAgreementSelection') {
+          return
+        }
+
+        event.preventDefault()
+        event.stopPropagation()
+        setKeyboardState('ClientAgreementSelection')
+
+        if (event.key === 'ArrowRight') {
+          selectNextAgreement()
+        } else {
+          selectPreviousAgreement()
+        }
+
         return
       }
 
@@ -852,6 +911,14 @@ export function NewSaleClientStep({
   useRealtimeEvent(realtimeEvents.saleUpdated, scheduleRealtimeRegister)
 
   useEffect(() => {
+    // Returning to this step with a client already chosen must restore ClientSelection so the
+    // Left/Right agreement switch works again. Done before the one-shot guard below so it also
+    // re-applies under React StrictMode's mount double-invoke (which would otherwise leave the
+    // keyboard on ClientSearch after the unmount cleanup). A fresh entry has no client → search.
+    if (clientNetId) {
+      setWizardKeyboardState('ClientSelection')
+    }
+
     if (bootstrappedRef.current || !clientNetId) {
       return
     }
