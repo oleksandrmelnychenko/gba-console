@@ -969,9 +969,10 @@ function ReassignSaleForm({
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchSalesUkraineClients(value)
+        const next = await searchSalesUkraineClients(value, controller.signal)
 
         if (!cancelled) {
           setClients(next)
@@ -985,6 +986,7 @@ function ReassignSaleForm({
 
     return () => {
       cancelled = true
+      controller.abort()
       clearTimeout(handle)
     }
   }, [query])

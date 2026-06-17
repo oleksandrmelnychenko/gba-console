@@ -161,9 +161,10 @@ export function ClientProductMovementPage() {
     const query = clientQuery.trim()
 
     let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchClientProductMovementClients(query, clientOffset)
+        const next = await searchClientProductMovementClients(query, clientOffset, controller.signal)
 
         if (!cancelled) {
           setClientOptions((current) =>
@@ -184,6 +185,7 @@ export function ClientProductMovementPage() {
 
     return () => {
       cancelled = true
+      controller.abort()
       clearTimeout(handle)
     }
   }, [clientOffset, clientQuery, setClientHasMore, setClientOptions])

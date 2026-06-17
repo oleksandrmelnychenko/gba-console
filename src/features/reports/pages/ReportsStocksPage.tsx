@@ -578,6 +578,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
     }
 
     let cancelled = false
+    const controller = new AbortController()
 
     async function loadOptions() {
       setLoading(true)
@@ -586,7 +587,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
         const nextOptions =
           lookupMode === 'dependent'
             ? await getReportClientAgreements(dependentClientNetId)
-            : await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to)
+            : await loadSelectionLookupOptions(selection.SelectedField.Type, normalizedSearch, from, to, controller.signal)
 
         if (!cancelled) {
           setOptions(nextOptions)
@@ -606,6 +607,7 @@ function SelectionValuePicker({ from, label, selection, selections, to, onChange
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [
     dependentClientNetId,
@@ -952,6 +954,7 @@ async function loadSelectionLookupOptions(
   value: string,
   from: string,
   to: string,
+  signal?: AbortSignal,
 ): Promise<ReportEntity[]> {
   switch (fieldType) {
     case REPORT_FILTER_FIELD_TYPES.organization:
@@ -970,7 +973,7 @@ async function loadSelectionLookupOptions(
     case REPORT_FILTER_FIELD_TYPES.productArticle:
       return searchReportProducts({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
     case REPORT_FILTER_FIELD_TYPES.customerName:
-      return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value })
+      return searchReportClients({ limit: LOOKUP_SEARCH_LIMIT, offset: 0, value }, signal)
     case REPORT_FILTER_FIELD_TYPES.customerManager:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerInput:
     case REPORT_FILTER_FIELD_TYPES.saleDocumentManagerPosted:

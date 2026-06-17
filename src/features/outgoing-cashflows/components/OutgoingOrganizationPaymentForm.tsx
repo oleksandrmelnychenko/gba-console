@@ -189,18 +189,22 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
 
   useEffect(() => {
     const value = form.counterpartySearch.trim()
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setSupplyOrganizations([])
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Supplier)
+      void searchIncomeCashflowCounterparties(value, IncomeCounterpartySearchType.Supplier, controller.signal)
         .then((items) => setSupplyOrganizations(items as SupplyOrganization[]))
         .catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
   }, [form.counterpartySearch, setSupplyOrganizations])
 
   useEffect(() => {

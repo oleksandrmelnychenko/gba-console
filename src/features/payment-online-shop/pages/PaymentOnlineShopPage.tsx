@@ -60,7 +60,7 @@ function usePaymentOnlineShopModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [editError, setEditError] = useValueState<string | null>(null)
-  const [isLoading, setLoading] = useValueState(true)
+  const [isLoading, setLoading] = useValueState(false)
   const [isCreating, setCreating] = useValueState(false)
   const [isSaving, setSaving] = useValueState(false)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
@@ -191,6 +191,16 @@ function usePaymentShopLoader({
   useEffect(() => {
     let cancelled = false
 
+    if (!hasPaymentShopFilters(activeFilters)) {
+      setItems([])
+      setError(null)
+      setLoading(false)
+
+      return () => {
+        cancelled = true
+      }
+    }
+
     async function loadItems() {
       setLoading(true)
       setError(null)
@@ -219,6 +229,15 @@ function usePaymentShopLoader({
       cancelled = true
     }
   }, [activeFilters, reloadKey, setError, setItems, setLoading, t])
+}
+
+function hasPaymentShopFilters(filters: PaymentShopFilters) {
+  return Boolean(
+    filters.saleDateFrom
+      || filters.saleDateTo
+      || filters.saleNumber.trim()
+      || filters.phoneNumber.trim(),
+  )
 }
 
 export function PaymentOnlineShopPage() {

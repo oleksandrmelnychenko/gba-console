@@ -184,16 +184,20 @@ export function OutgoingClientReturnForm({ onCancel, onCreated }: OutgoingClient
 
   useEffect(() => {
     const value = form.payerSearch.trim()
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setPayerClients([])
         return
       }
 
-      void searchIncomeCashflowClientPayers(value).then(setPayerClients).catch(() => undefined)
+      void searchIncomeCashflowClientPayers(value, controller.signal).then(setPayerClients).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
   }, [form.payerSearch, setPayerClients])
 
   useEffect(() => {

@@ -82,7 +82,10 @@ export async function searchReportProducts(params: ReportSearchParams): Promise<
   }))
 }
 
-export async function searchReportClients(params: ReportSearchParams): Promise<ReportEntity[]> {
+export async function searchReportClients(
+  params: ReportSearchParams,
+  signal?: AbortSignal,
+): Promise<ReportEntity[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: buildServerSearchFilter({
@@ -94,6 +97,7 @@ export async function searchReportClients(params: ReportSearchParams): Promise<R
         filterSql: CLIENT_FILTER_SQL,
       }),
     },
+    signal,
   })
 
   return normalizeCollection(result, ['Items', 'Clients', 'Data'])

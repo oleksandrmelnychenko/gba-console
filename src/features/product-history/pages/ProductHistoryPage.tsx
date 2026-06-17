@@ -161,19 +161,23 @@ function useProductHistoryPageModel() {
     }
 
     let cancelled = false
+    const controller = new AbortController()
 
     async function loadHistory() {
       setLoading(true)
       setError(null)
 
       try {
-        const response = await getProductHistory({
-          limit: pageSize,
-          offset,
-          storageIds: selectedStorageIdNumbers,
-          to: toEndOfDayIso(dateTo),
-          value: searchValue,
-        })
+        const response = await getProductHistory(
+          {
+            limit: pageSize,
+            offset,
+            storageIds: selectedStorageIdNumbers,
+            to: toEndOfDayIso(dateTo),
+            value: searchValue,
+          },
+          controller.signal,
+        )
 
         if (!cancelled) {
           setHistoryItems(response.Items)
@@ -196,6 +200,7 @@ function useProductHistoryPageModel() {
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [
     dateTo,

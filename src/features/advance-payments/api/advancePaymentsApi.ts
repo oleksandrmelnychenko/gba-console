@@ -6,6 +6,8 @@ export async function getAdvancePayments(params: AdvancePaymentsSearchParams): P
   const result = await apiRequest<unknown>('/payments/advance/all', {
     query: {
       from: toDateTimeQuery(params.from, 'start'),
+      limit: params.limit,
+      offset: params.offset,
       to: toDateTimeQuery(params.to, 'end'),
     },
   })

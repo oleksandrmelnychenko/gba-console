@@ -255,16 +255,20 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
 
   useEffect(() => {
     const value = form.counterpartySearch.trim()
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setCounterparties([])
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, form.searchType).then(setCounterparties).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal).then(setCounterparties).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
   }, [form.counterpartySearch, form.searchType, setCounterparties])
 
   useEffect(() => {

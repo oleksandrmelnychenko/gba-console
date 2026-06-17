@@ -32,5 +32,7 @@ export type AdvancePayment = EntityFields & {
 
 export type AdvancePaymentsSearchParams = {
   from: string
+  limit: number
+  offset: number
   to: string
 }

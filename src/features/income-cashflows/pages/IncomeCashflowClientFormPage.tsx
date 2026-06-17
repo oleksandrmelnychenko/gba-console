@@ -275,16 +275,20 @@ export function IncomeCashflowClientFormPage() {
 
   useEffect(() => {
     const value = form.counterpartySearch.trim()
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setCounterparties([])
         return
       }
 
-      void searchIncomeCashflowCounterparties(value, form.searchType).then(setCounterparties).catch(() => undefined)
+      void searchIncomeCashflowCounterparties(value, form.searchType, controller.signal).then(setCounterparties).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
   }, [form.counterpartySearch, form.searchType, setCounterparties])
 
   useEffect(() => {
@@ -293,16 +297,20 @@ export function IncomeCashflowClientFormPage() {
     }
 
     const value = form.payerSearch.trim()
+    const controller = new AbortController()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
         setPayerClients([])
         return
       }
 
-      void searchIncomeCashflowClientPayers(value).then(setPayerClients).catch(() => undefined)
+      void searchIncomeCashflowClientPayers(value, controller.signal).then(setPayerClients).catch(() => undefined)
     }, SEARCH_DEBOUNCE_MS)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timeoutId)
+    }
   }, [form.payerSearch, operationType, setPayerClients])
 
   useEffect(() => {

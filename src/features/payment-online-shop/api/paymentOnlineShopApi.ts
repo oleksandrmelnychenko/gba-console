@@ -14,6 +14,8 @@ export async function getPaymentShopItems(filters: PaymentShopFilters): Promise<
       saleDateTo: formatDateInputForQuery(filters.saleDateTo),
       saleNumber: filters.saleNumber,
       phoneNumber: filters.phoneNumber,
+      limit: 100,
+      offset: 0,
     },
   })
 

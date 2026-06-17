@@ -113,23 +113,29 @@ export async function createIncomeCashflowPaymentMovement(operationName: string)
 export async function searchIncomeCashflowCounterparties(
   value: string,
   type: IncomeCounterpartySearchType,
+  signal?: AbortSignal,
 ): Promise<Client[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: JSON.stringify(buildCounterpartySearchQuery(value, type)),
     },
+    signal,
   })
 
   return readArrayPayload(result, ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection']) as Client[]
 }
 
-export async function searchIncomeCashflowClientPayers(value: string): Promise<Client[]> {
+export async function searchIncomeCashflowClientPayers(
+  value: string,
+  signal?: AbortSignal,
+): Promise<Client[]> {
   const result = await apiRequest<unknown>('/clients/payers/search/all', {
     query: {
       limit: 20,
       offset: 0,
       value,
     },
+    signal,
   })
 
   return readArrayPayload(result, ['Items', 'Clients', 'Data', 'Collection']) as Client[]

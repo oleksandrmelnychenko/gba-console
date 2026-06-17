@@ -1,5 +1,5 @@
 import { CloseButton, Combobox, InputBase, ScrollArea, useCombobox } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { searchSalesUkraineClients } from '../api/salesUkraineApi'
 import type { SalesUkraineClientOption } from '../types'
@@ -37,30 +37,34 @@ export function SalesClientSearch({
   const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() })
   const [search, setSearch] = useState('')
   const [options, setOptions] = useState<SalesUkraineClientOption[]>([])
-  const [selectedLabel, setSelectedLabel] = useState('')
-  const [previousValue, setPreviousValue] = useState(value)
+  const selectedLabelRef = useRef('')
+  const valueRef = useRef(value)
 
-  // Reset the input when the selection is cleared from the outside (e.g. the filters reset).
-  if (value !== previousValue) {
-    setPreviousValue(value)
+  useEffect(() => {
+    const previousValue = valueRef.current
+    valueRef.current = value
 
-    if (!value) {
-      setSearch('')
-      setSelectedLabel('')
+    if (previousValue && !value) {
+      selectedLabelRef.current = ''
+
+      const handle = window.setTimeout(() => setSearch(''), 0)
+
+      return () => window.clearTimeout(handle)
     }
-  }
+  }, [value])
 
   useEffect(() => {
     const query = search.trim()
 
-    if (query.length < MIN_QUERY_LENGTH || query === selectedLabel) {
+    if (query.length < MIN_QUERY_LENGTH || query === selectedLabelRef.current) {
       return
     }
 
     let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchSalesUkraineClients(query)
+        const next = await searchSalesUkraineClients(query, controller.signal)
 
         if (!cancelled) {
           setOptions(next)
@@ -74,14 +78,15 @@ export function SalesClientSearch({
 
     return () => {
       cancelled = true
+      controller.abort()
       clearTimeout(handle)
     }
-  }, [search, selectedLabel])
+  }, [search])
 
   function clearSelection() {
     setSearch('')
     setOptions([])
-    setSelectedLabel('')
+    selectedLabelRef.current = ''
     onChange('')
   }
 
@@ -104,7 +109,7 @@ export function SalesClientSearch({
         const client = options.find((item) => getClientOptionValue(item) === optionValue)
         const optionLabel = client ? getClientOptionLabel(client) : ''
 
-        setSelectedLabel(optionLabel)
+        selectedLabelRef.current = optionLabel
         setSearch(optionLabel)
         onChange(optionValue)
         combobox.closeDropdown()
@@ -132,7 +137,7 @@ export function SalesClientSearch({
           value={search}
           onBlur={() => combobox.closeDropdown()}
           onChange={(event) => {
-            setSelectedLabel('')
+            selectedLabelRef.current = ''
             setSearch(event.currentTarget.value)
             combobox.openDropdown()
             combobox.updateSelectedOptionIndex()

@@ -14,15 +14,19 @@ export async function getProductHistoryStorages(): Promise<ProductHistoryStorage
   return normalizeStorages(result)
 }
 
-export async function getProductHistory(params: ProductHistorySearchParams): Promise<ProductHistoryResponse> {
+export async function getProductHistory(
+  params: ProductHistorySearchParams,
+  signal?: AbortSignal,
+): Promise<ProductHistoryResponse> {
   const result = await apiRequest<unknown>('/history/order/item/get', {
     query: {
       limit: params.limit,
       offset: params.offset,
-      storageId: params.storageIds,
+      storageIds: serializeStorageIds(params.storageIds),
       to: params.to,
       value: params.value?.trim() || '',
     },
+    signal,
   })
 
   return normalizeHistoryResponse(result)
@@ -35,7 +39,7 @@ export async function exportProductHistory(
     query: {
       limit: params.limit,
       offset: params.offset,
-      storageId: params.storageIds,
+      storageIds: serializeStorageIds(params.storageIds),
       to: params.to,
       value: params.value?.trim() || '',
     },
@@ -64,6 +68,10 @@ function normalizeStorages(result: unknown): ProductHistoryStorage[] {
   }
 
   return []
+}
+
+function serializeStorageIds(storageIds: number[]): string {
+  return storageIds.filter((storageId) => Number.isFinite(storageId) && storageId > 0).join(',')
 }
 
 function normalizeHistoryResponse(result: unknown): ProductHistoryResponse {

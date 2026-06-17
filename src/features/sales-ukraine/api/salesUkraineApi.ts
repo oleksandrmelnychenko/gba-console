@@ -48,7 +48,10 @@ export async function getSalesUkraineOrganizations(): Promise<SalesUkraineOrgani
   return normalizeArray(result) as SalesUkraineOrganizationOption[]
 }
 
-export async function searchSalesUkraineClients(value: string): Promise<SalesUkraineClientOption[]> {
+export async function searchSalesUkraineClients(
+  value: string,
+  signal?: AbortSignal,
+): Promise<SalesUkraineClientOption[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: JSON.stringify({
@@ -73,6 +76,7 @@ export async function searchSalesUkraineClients(value: string): Promise<SalesUkr
         }),
       }),
     },
+    signal,
   })
 
   return normalizeArray(result) as SalesUkraineClientOption[]

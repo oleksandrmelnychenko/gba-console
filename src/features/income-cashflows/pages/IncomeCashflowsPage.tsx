@@ -1337,6 +1337,7 @@ function ReassignIncomeClientModal({
     }
 
     let cancelled = false
+    const controller = new AbortController()
 
     const loadCounterparties = async () => {
       const value = debouncedSearch.trim()
@@ -1348,7 +1349,7 @@ function ReassignIncomeClientModal({
         return
       }
 
-      const result = await searchIncomeCashflowClientPayers(value).catch((searchError) => {
+      const result = await searchIncomeCashflowClientPayers(value, controller.signal).catch((searchError) => {
         if (!cancelled) {
           setError(searchError instanceof Error ? searchError.message : 'Не вдалося завантажити клієнтів')
         }
@@ -1364,6 +1365,7 @@ function ReassignIncomeClientModal({
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [debouncedSearch, opened, setClients, setError])
 

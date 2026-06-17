@@ -103,6 +103,8 @@ export function NewSaleClientStep({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchTimerRef = useRef<number | null>(null)
   const searchRequestRef = useRef(0)
+  const searchAbortRef = useRef<AbortController | null>(null)
+  const virtualSearchAbortRef = useRef<AbortController | null>(null)
   const isVirtualLoadingRef = useRef(false)
   const loadedCountRef = useRef(0)
   const registryRequestRef = useRef(0)
@@ -119,6 +121,14 @@ export function NewSaleClientStep({
     type: statusFilter,
     value: saleSearch,
   })
+
+  useEffect(
+    () => () => {
+      searchAbortRef.current?.abort()
+      virtualSearchAbortRef.current?.abort()
+    },
+    [],
+  )
 
   useEffect(() => {
     registerArgsRef.current = {
@@ -279,19 +289,28 @@ export function NewSaleClientStep({
   async function runSearch(value: string) {
     const requestId = searchRequestRef.current + 1
     searchRequestRef.current = requestId
+    searchAbortRef.current?.abort()
+    const controller = new AbortController()
+    searchAbortRef.current = controller
 
     try {
-      const data = await searchWizardClients(value, 20, 0)
+      const data = await searchWizardClients(value, 20, 0, controller.signal)
 
-      if (searchRequestRef.current !== requestId) {
+      if (searchRequestRef.current === requestId && !controller.signal.aborted) {
+        loadedCountRef.current = data.length
+        applySearchResults(data)
+      }
+    } catch {
+      if (controller.signal.aborted) {
         return
       }
 
-      loadedCountRef.current = data.length
-      applySearchResults(data)
-    } catch {
       if (searchRequestRef.current === requestId) {
         setCarousel(WIZARD_CLIENT_CAROUSEL_INITIAL)
+      }
+    } finally {
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null
       }
     }
   }
@@ -365,9 +384,12 @@ export function NewSaleClientStep({
     }
 
     isVirtualLoadingRef.current = true
+    virtualSearchAbortRef.current?.abort()
+    const controller = new AbortController()
+    virtualSearchAbortRef.current = controller
 
     try {
-      const data = await searchWizardClients(query, 10, loadedCountRef.current)
+      const data = await searchWizardClients(query, 10, loadedCountRef.current, controller.signal)
 
       if (!data.length) {
         loadedCountRef.current = 0
@@ -378,8 +400,15 @@ export function NewSaleClientStep({
       loadedCountRef.current += data.length
       setCarousel((current) => ({ ...current, dataBottom: [...current.dataBottom, ...data] }))
     } catch {
+      if (controller.signal.aborted) {
+        return
+      }
+
       loadedCountRef.current = 0
     } finally {
+      if (virtualSearchAbortRef.current === controller) {
+        virtualSearchAbortRef.current = null
+      }
       isVirtualLoadingRef.current = false
     }
   }

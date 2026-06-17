@@ -53,11 +53,13 @@ export async function getClientProductMovementOrganizations(): Promise<ClientPro
 export async function searchClientProductMovementClients(
   value: string,
   offset = 0,
+  signal?: AbortSignal,
 ): Promise<ClientProductMovementClientOption[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: buildClientSearchFilter(value, offset),
     },
+    signal,
   })
 
   return normalizeArray(result) as ClientProductMovementClientOption[]

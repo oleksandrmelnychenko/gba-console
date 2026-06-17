@@ -28,7 +28,12 @@ export type WizardSaleRegisterQuery = {
   value: string
 }
 
-export async function searchWizardClients(value: string, limit = 20, offset = 0): Promise<Client[]> {
+export async function searchWizardClients(
+  value: string,
+  limit = 20,
+  offset = 0,
+  signal?: AbortSignal,
+): Promise<Client[]> {
   const result = await apiRequest<unknown>('/search/by/query', {
     query: {
       filter: JSON.stringify({
@@ -52,6 +57,7 @@ export async function searchWizardClients(value: string, limit = 20, offset = 0)
         }),
       }),
     },
+    signal,
   })
 
   return Array.isArray(result) ? (result as Client[]) : []
