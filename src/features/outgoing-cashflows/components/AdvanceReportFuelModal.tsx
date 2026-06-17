@@ -17,7 +17,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { searchCompanyCars } from '../../company-cars/api/companyCarsApi'
-import { getSupplyOrganizations, searchPaymentCostMovements } from '../../consumable-orders/api/consumableOrdersApi'
+import { searchPaymentCostMovements } from '../../consumable-orders/api/consumableOrdersApi'
 import {
   calculateAdvanceReportCompanyCarFueling,
   searchAdvanceReportSupplyOrganizations,
@@ -154,35 +154,13 @@ export function AdvanceReportFuelModal({
       return undefined
     }
 
-    let cancelled = false
-
     resetModalState()
-
-    async function loadSuppliers() {
-      try {
-        const nextSuppliers = await getSupplyOrganizations()
-
-        if (!cancelled) {
-          setSuppliers(nextSuppliers)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити постачальників'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadSuppliers()
+    setLoading(false)
 
     return () => {
       invalidatePendingRequests()
-      cancelled = true
     }
-  }, [invalidatePendingRequests, opened, resetModalState, setError, setLoading, setSuppliers, t])
+  }, [invalidatePendingRequests, opened, resetModalState, setLoading])
 
   useEffect(() => {
     if (!opened) {

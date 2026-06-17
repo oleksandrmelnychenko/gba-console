@@ -26,7 +26,7 @@ import {
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dateTime'
+import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
@@ -51,7 +51,8 @@ import type {
 import './accountable-expenses-page.css'
 import '../../../shared/ui/console-table-page.css'
 
-const FILTERS_STORAGE_KEY = 'accountable-expenses-filters-v2'
+const FILTERS_STORAGE_KEY = 'accountable-expenses-filters-v3'
+const DEFAULT_LOOKBACK_DAYS = 30
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -79,8 +80,9 @@ export function AccountableExpensesPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const defaultToDate = useMemo(() => formatLocalDate(new Date()), [])
+  const defaultFromDate = useMemo(() => shiftDate(-DEFAULT_LOOKBACK_DAYS), [])
   const [orders, setOrders] = useValueState<ConsumablesOrder[]>([])
-  const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || SYNC_DATA_RANGE_START)
+  const [fromDate, setFromDate] = useValueState(() => readStoredFilters().from || defaultFromDate)
   const [toDate, setToDate] = useValueState(() => readStoredFilters().to || defaultToDate)
   const [searchValue, setSearchValue] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
@@ -174,12 +176,12 @@ export function AccountableExpensesPage() {
   )
   const resetFilters = useCallback(
     () => {
-      setFromDate(SYNC_DATA_RANGE_START)
+      setFromDate(defaultFromDate)
       setToDate(defaultToDate)
       setSearchValue('')
       setOrders([])
     },
-    [defaultToDate, setFromDate, setOrders, setSearchValue, setToDate],
+    [defaultFromDate, defaultToDate, setFromDate, setOrders, setSearchValue, setToDate],
   )
   const toggleSort = useCallback(
     (id: AccountableExpenseSortId) => {
@@ -193,7 +195,7 @@ export function AccountableExpensesPage() {
     },
     [setSortState],
   )
-  const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== SYNC_DATA_RANGE_START || toDate !== defaultToDate
+  const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
 
   return (
     <Stack className="accountable-expenses-page console-table-page" gap="md">
@@ -745,7 +747,7 @@ function sortAccountableExpenseRows(
 
   const direction = sortState.direction === 'asc' ? 1 : -1
 
-  return [...rows].sort(
+  return rows.toSorted(
     (firstRow, secondRow) =>
       compareAccountableExpenseSortValues(
         getAccountableExpenseSortValue(firstRow, sortState.id),
@@ -816,4 +818,11 @@ function displayValue(value?: string | number | null): string {
   }
 
   return value || '—'
+}
+
+function shiftDate(days: number): string {
+  const date = new Date()
+  date.setDate(date.getDate() + days)
+
+  return formatLocalDate(date)
 }

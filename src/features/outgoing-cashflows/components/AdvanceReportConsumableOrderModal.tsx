@@ -41,7 +41,6 @@ import type {
   SupplyOrganizationAgreement,
 } from '../advanceReportTypes'
 import {
-  getSupplyOrganizations,
   searchConsumableProductCategories,
   searchConsumableProductsByVendorCode,
   searchConsumableStorages,
@@ -211,42 +210,17 @@ export function AdvanceReportConsumableOrderModal({
       return undefined
     }
 
-    let cancelled = false
-
     resetModalState()
-
-    async function loadSuppliers() {
-      try {
-        const nextSuppliers = await getSupplyOrganizations()
-
-        if (!cancelled) {
-          setSuppliers(nextSuppliers)
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити постачальників'))
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      }
-    }
-
-    void loadSuppliers()
+    setLoading(false)
 
     return () => {
       invalidatePendingRequests()
-      cancelled = true
     }
   }, [
     invalidatePendingRequests,
     opened,
     resetModalState,
-    setError,
     setLoading,
-    setSuppliers,
-    t,
   ])
 
   useEffect(() => {

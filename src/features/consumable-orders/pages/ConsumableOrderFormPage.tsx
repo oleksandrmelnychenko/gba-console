@@ -45,7 +45,6 @@ import {
   createConsumableOrder,
   getConsumableOrder,
   getFinanceDirectorUsers,
-  getSupplyOrganizations,
   searchConsumableProductCategories,
   searchConsumableProductsByVendorCode,
   searchConsumableStorages,
@@ -175,9 +174,8 @@ export function ConsumableOrderFormPage() {
       setError(null)
 
       try {
-        const [nextUsers, nextSuppliers, nextOrder] = await Promise.all([
+        const [nextUsers, nextOrder] = await Promise.all([
           getFinanceDirectorUsers(),
-          getSupplyOrganizations(),
           id ? getConsumableOrder(id) : Promise.resolve(null),
         ])
 
@@ -188,10 +186,9 @@ export function ConsumableOrderFormPage() {
         const initialOrder = nextOrder || createEmptyOrder()
         const currentSupplier = normalizeSupplyOrganization(initialOrder.ConsumableProductOrganization)
         const currentAgreement = initialOrder.SupplyOrganizationAgreement || null
-        const nextSuppliersWithCurrentAgreement = includeSupplierAgreement(nextSuppliers, currentSupplier, currentAgreement)
+        const nextSuppliersWithCurrentAgreement = includeSupplierAgreement([], currentSupplier, currentAgreement)
         const initialSupplier =
           (currentSupplier && nextSuppliersWithCurrentAgreement.find((supplier) => getEntityValue(supplier) === getEntityValue(currentSupplier))) ||
-          nextSuppliersWithCurrentAgreement[0] ||
           null
         const initialAgreement = currentAgreement || initialSupplier?.SupplyOrganizationAgreements?.[0] || null
         const initialStorage = initialOrder.ConsumablesStorage || null

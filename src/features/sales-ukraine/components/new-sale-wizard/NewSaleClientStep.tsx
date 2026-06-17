@@ -108,10 +108,10 @@ export function NewSaleClientStep({
   const isVirtualLoadingRef = useRef(false)
   const loadedCountRef = useRef(0)
   const registryRequestRef = useRef(0)
+  const registryInFlightKeyRef = useRef<string | null>(null)
   const auditRequestRef = useRef(0)
   const printRequestRef = useRef(0)
   const saleSearchTimerRef = useRef<number | null>(null)
-  const delayedRegisterTimerRef = useRef<number | null>(null)
   const realtimeTimerRef = useRef<number | null>(null)
   const bootstrappedRef = useRef(false)
   const registerArgsRef = useRef<WizardSaleRegisterQuery>({
@@ -147,8 +147,15 @@ export function NewSaleClientStep({
       return
     }
 
+    const requestKey = getRegisterRequestKey(args)
+
+    if (registryInFlightKeyRef.current === requestKey) {
+      return
+    }
+
     const requestId = registryRequestRef.current + 1
     registryRequestRef.current = requestId
+    registryInFlightKeyRef.current = requestKey
     setRegistryLoading(true)
 
     try {
@@ -164,6 +171,10 @@ export function NewSaleClientStep({
     } finally {
       if (registryRequestRef.current === requestId) {
         setRegistryLoading(false)
+      }
+
+      if (registryInFlightKeyRef.current === requestKey) {
+        registryInFlightKeyRef.current = null
       }
     }
   }, [])
@@ -226,15 +237,6 @@ export function NewSaleClientStep({
       void loadGroupedDebts(client)
       void loadAgreements(client)
       void fetchRegister({ clientNetId: client.NetUid || '' })
-
-      if (delayedRegisterTimerRef.current !== null) {
-        window.clearTimeout(delayedRegisterTimerRef.current)
-      }
-
-      delayedRegisterTimerRef.current = window.setTimeout(() => {
-        delayedRegisterTimerRef.current = null
-        void fetchRegister()
-      }, 800)
     },
     [fetchRegister, loadAgreements, loadGroupedDebts, onClientChange, onClientResolved, setKeyboardState],
   )
@@ -910,7 +912,7 @@ export function NewSaleClientStep({
 
   useEffect(
     () => () => {
-      const timers = [searchTimerRef, saleSearchTimerRef, delayedRegisterTimerRef, realtimeTimerRef]
+      const timers = [searchTimerRef, saleSearchTimerRef, realtimeTimerRef]
 
       timers.forEach((timer) => {
         if (timer.current !== null) {
@@ -1117,4 +1119,8 @@ function getDateDaysAgo(days: number): Date {
   date.setDate(date.getDate() - days)
 
   return date
+}
+
+function getRegisterRequestKey(query: WizardSaleRegisterQuery): string {
+  return [query.clientNetId, query.from, query.to, query.type, query.value.trim()].join('|')
 }
