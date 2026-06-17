@@ -58,7 +58,7 @@ export function MarginWaterfall({
               dataKey="value"
               fill={CHART_LABEL_COLOR}
               fontSize={11}
-              formatter={(value: number) => format(value)}
+              formatter={(value) => (typeof value === 'number' ? format(value) : '')}
               position="top"
             />
             {rows.map((row) => (
