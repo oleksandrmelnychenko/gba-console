@@ -1,7 +1,9 @@
-import { Alert, Badge, Group, Loader, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Divider, Group, Loader, Stack, Text } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { MarginWaterfall, RangeBandChart } from '../../../shared/ui/charts'
+import type { RangeBandMarker } from '../../../shared/ui/charts'
 import { getPriceRecommendation } from '../api/pricingApi'
 import type { PriceConfidence, PriceRecommendation } from '../pricingTypes'
 
@@ -138,7 +140,6 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
     !nearlyEqual(recommendation.baseline_price, recommendation.recommended_price)
 
   const band = recommendation.discount_band
-  const peer = recommendation.peer_band
 
   return (
     <Stack gap="sm">
@@ -187,13 +188,98 @@ function PriceHintCard({ recommendation }: { recommendation: PriceRecommendation
         </Text>
       )}
 
-      {peer.n > 0 && (peer.p25 !== null || peer.p75 !== null) && (
-        <Text c="dimmed" size="xs">
-          {t('ринок')}: {formatMoney(peer.p25, currency)}–{formatMoney(peer.p75, currency)} ({peer.n})
-        </Text>
+      <PricePositioningCharts currency={currency} recommendation={recommendation} />
+    </Stack>
+  )
+}
+
+function PricePositioningCharts({
+  currency,
+  recommendation,
+}: {
+  currency: string
+  recommendation: PriceRecommendation
+}) {
+  const { t } = useI18n()
+
+  const peer = recommendation.peer_band
+  const hasPeerBand = peer.n > 0 && (isFiniteValue(peer.p25) || isFiniteValue(peer.p75))
+  const thinSample = peer.n > 0 && peer.n < 4
+
+  const markers: RangeBandMarker[] = [
+    { value: recommendation.price_floor, label: t('мін.'), color: 'gray.6' },
+    { value: recommendation.recommended_price, label: t('реком.'), color: 'violet.7', dashed: false },
+    { value: recommendation.baseline_price, label: t('база'), color: 'orange.6' },
+  ]
+
+  const hasAnyMarker = markers.some((marker) => isFiniteValue(marker.value))
+  const showRangeBand = hasPeerBand || hasAnyMarker
+
+  const waterfallSteps = [
+    { key: 'cost', label: t('собівартість'), value: recommendation.unit_cost_eur, color: 'gray.5' },
+    { key: 'floor', label: t('мін. ціна'), value: recommendation.price_floor, color: 'blue.5' },
+    { key: 'recommended', label: t('рекомендована'), value: recommendation.recommended_price, color: 'violet.6' },
+    { key: 'baseline', label: t('базова'), value: recommendation.baseline_price, color: 'orange.5' },
+  ]
+  const showWaterfall = waterfallSteps.filter((step) => isFiniteValue(step.value)).length >= 2
+
+  if (!showRangeBand && !showWaterfall) {
+    return null
+  }
+
+  const formatEur = (value: number) => formatMoney(value, currency)
+
+  return (
+    <Stack gap="sm">
+      <Divider />
+      {showRangeBand && (
+        <Stack gap={4}>
+          <Group gap="xs" justify="space-between">
+            <Text fw={600} size="sm">
+              {t('Позиція на ринку')}
+            </Text>
+            {peer.n > 0 && (
+              <Text c="dimmed" size="xs">
+                {t('вибірка')}: {peer.n}
+              </Text>
+            )}
+          </Group>
+          <RangeBandChart
+            bandLabel={hasPeerBand ? t('ринок p25–p75') : undefined}
+            emptyLabel={t('недостатньо даних ринку')}
+            formatValue={formatEur}
+            high={hasPeerBand ? peer.p75 : null}
+            low={hasPeerBand ? peer.p25 : null}
+            markers={markers}
+            medianLabel={t('медіана')}
+            median={hasPeerBand ? peer.p50 : null}
+          />
+          {thinSample && (
+            <Text c="dimmed" size="xs">
+              {t('мала вибірка — орієнтовно')}
+            </Text>
+          )}
+        </Stack>
+      )}
+
+      {showWaterfall && (
+        <Stack gap={4}>
+          <Text fw={600} size="sm">
+            {t('Від собівартості до ціни')}
+          </Text>
+          <MarginWaterfall
+            emptyLabel={t('недостатньо даних')}
+            formatValue={formatEur}
+            steps={waterfallSteps}
+          />
+        </Stack>
       )}
     </Stack>
   )
+}
+
+function isFiniteValue(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function nearlyEqual(a: number, b: number): boolean {
