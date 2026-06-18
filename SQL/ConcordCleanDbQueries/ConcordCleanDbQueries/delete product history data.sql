@@ -1,0 +1,5 @@
+USE ConcordDb_Data
+
+DELETE FROM ProductAvailabilityDataHistory
+DELETE FROM ProductPlacementDataHistory
+DELETE FROM StockStateStorage 

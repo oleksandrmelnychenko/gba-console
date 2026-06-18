@@ -1,0 +1,27 @@
+
+--DELETE FROM CurrencyTraderExchangeRate
+--DELETE FROM CurrencyTrader
+DELETE FROM PaymentMovementOperation
+DELETE FROM PaymentCostMovementOperation
+DELETE FROM PaymentRegisterCurrencyExchange
+DELETE FROM PaymentRegisterTransfer
+DELETE FROM IncomePaymentOrderSale
+DELETE FROM OutcomePaymentOrderConsumablesOrder
+DELETE FROM DepreciatedConsumableOrderItem
+DELETE FROM DepreciatedConsumableOrder
+DELETE FROM ConsumablesOrderItem
+DELETE FROM ConsumablesOrder
+DELETE FROM CompanyCarFueling
+DELETE FROM CompanyCarRoadListDriver
+DELETE FROM CompanyCarRoadList
+DELETE FROM AssignedPaymentOrder
+DELETE FROM IncomePaymentOrder
+DELETE FROM OutcomePaymentOrderSupplyPaymentTask
+DELETE FROM OutcomePaymentOrder
+DELETE FROM AdvancePayment
+DELETE FROM PaymentMovement
+DELETE FROM PaymentMovementTranslation
+--DELETE FROM PaymentCurrencyRegister
+--DELETE FROM PaymentRegister
+
+
