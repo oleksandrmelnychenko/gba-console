@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Group,
   NumberInput,
@@ -22,13 +21,18 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCheck,
+  IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconChevronUp,
+  IconReceiptRefund,
+  IconShoppingCart,
   IconDownload,
   IconEye,
   IconFileTypePdf,
   IconPlus,
   IconRefresh,
+  IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -39,6 +43,8 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import '../../../shared/ui/console-table-page.css'
+import './new-ukraine-sale-return-page.css'
 import {
   cancelSaleReturn,
   createSaleReturn,
@@ -77,14 +83,6 @@ import {
 const PAGE_SIZE = 20
 const pageSizeOptions = ['20', '40', '60', '100']
 
-const RETURNS_TABLE_LAYOUT = {
-  columnPinning: {
-    left: ['date', 'number'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
 const SALE_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
     left: ['select', 'saleNumber', 'vendorCode'],
@@ -119,6 +117,12 @@ type ItemEditorState = {
   draft?: ReturnOrderItemDraft
   row: SaleItemRow
 }
+
+type ReturnsSortId = 'agreement' | 'client' | 'date' | 'number' | 'organization' | 'responsible' | 'sales' | 'storage' | 'total'
+type ReturnsSortState = {
+  direction: 'asc' | 'desc'
+  id: ReturnsSortId
+} | null
 
 export function NewUkraineSaleReturnPage() {
   const { t } = useI18n()
@@ -168,8 +172,10 @@ export function NewUkraineSaleReturnPage() {
   const [editorError, setEditorError] = useState<string | null>(null)
   const [isLoadingEditorStorages, setLoadingEditorStorages] = useState(false)
   const [productCardNetId, setProductCardNetId] = useState<string | null>(null)
+  const [returnsSortState, setReturnsSortState] = useState<ReturnsSortState>(null)
 
   const { items, isLoading } = listState
+  const sortedItems = useMemo(() => sortReturns(items, returnsSortState), [items, returnsSortState])
   const offset = (page - 1) * pageSize
   const canMoveBackward = page > 1
   const canMoveForward = items.length === pageSize
@@ -186,13 +192,6 @@ export function NewUkraineSaleReturnPage() {
   const clientOptions = useMemo(() => mergeSelectedClient(clients, selectedClient), [clients, selectedClient])
   const saleItemRows = useMemo(() => flattenSaleItemRows(salesState.sales), [salesState.sales])
   const statusOptions = useMemo(() => getStatusOptions(t), [t])
-  const returnsColumns = useReturnsColumns({
-    exportingNetId,
-    onCancel: setCancelCandidate,
-    onExport: handleExport,
-    onOpen: setSelectedReturn,
-    t,
-  })
   const saleItemColumns = useSaleItemColumns({
     drafts,
     onEdit: openEditor,
@@ -314,6 +313,16 @@ export function NewUkraineSaleReturnPage() {
   function updateListSearch(nextSearchValue: string) {
     setPage(1)
     setSearchDraft(nextSearchValue)
+  }
+
+  function toggleReturnsSort(id: ReturnsSortId) {
+    setReturnsSortState((current) => {
+      if (current?.id !== id) {
+        return { direction: 'asc', id }
+      }
+
+      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+    })
   }
 
   const loadSales = useCallback(async () => {
@@ -574,88 +583,116 @@ export function NewUkraineSaleReturnPage() {
   }
 
   return (
-    <Box>
+    <Box className="new-sale-return-page console-table-page">
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreateOpened(true)}>
           {t('Створити')}
         </Button>
       </PageHeaderActions>
-      <Stack gap="md">
+      <div className="console-table-shell new-sale-return-shell">
+        <div className="new-sale-return-command-bar">
+          <div className="new-sale-return-period-filter">
+            <span className="new-sale-return-filter-label">{t('Період')}</span>
+            <div className="new-sale-return-period-fields">
+              <TextInput
+                aria-label={t('З дати')}
+                className="new-sale-return-date-input"
+                type="date"
+                value={fromDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setFromDate(event.currentTarget.value)
+                }}
+              />
+              <span className="new-sale-return-period-separator" />
+              <TextInput
+                aria-label={t('По дату')}
+                className="new-sale-return-date-input"
+                type="date"
+                value={toDate}
+                onChange={(event) => {
+                  setPage(1)
+                  setToDate(event.currentTarget.value)
+                }}
+              />
+            </div>
+          </div>
+
+          <TextInput
+            className="new-sale-return-search-input"
+            label={t('Пошук')}
+            leftSection={<IconSearch size={15} />}
+            placeholder={t('Номер, клієнт, договір або продаж')}
+            value={searchDraft}
+            onChange={(event) => updateListSearch(event.currentTarget.value)}
+          />
+
+          <div className="new-sale-return-command-actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => setReloadKey((value) => value + 1)}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Select
+              aria-label={t('Рядків')}
+              className="new-sale-return-page-size"
+              data={pageSizeOptions.map((option) => ({ label: option, value: option }))}
+              value={String(pageSize)}
+              onChange={(value) => {
+                setPage(1)
+                setPageSize(Number(value || PAGE_SIZE))
+              }}
+            />
+            <ActionIcon
+              aria-label={t('Попередня')}
+              color="gray"
+              disabled={!canMoveBackward}
+              size={34}
+              variant="light"
+              onClick={() => setPage((value) => Math.max(1, value - 1))}
+            >
+              <IconChevronLeft size={17} />
+            </ActionIcon>
+            <span className="new-sale-return-current-page">{page}</span>
+            <ActionIcon
+              aria-label={t('Наступна')}
+              color="gray"
+              disabled={!canMoveForward}
+              size={34}
+              variant="light"
+              onClick={() => setPage((value) => value + 1)}
+            >
+              <IconChevronRight size={17} />
+            </ActionIcon>
+          </div>
+        </div>
+
         {listError ? (
-          <Alert color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={16} />} title={t('Помилка')}>
             {listError}
           </Alert>
         ) : null}
 
-        <Card withBorder radius="md" padding={0} className="app-filter-card">
-          <SimpleGrid cols={{ base: 1, md: 5 }} className="app-filter-bar">
-          <TextInput
-            label={t('З дати')}
-            type="date"
-            value={fromDate}
-            onChange={(event) => {
-              setPage(1)
-              setFromDate(event.currentTarget.value)
-            }}
+        <div className="new-sale-return-page__table console-table-body">
+          <ReturnsList
+            exportingNetId={exportingNetId}
+            isLoading={isLoading}
+            rows={sortedItems}
+            sortState={returnsSortState}
+            onCancel={setCancelCandidate}
+            onExport={handleExport}
+            onOpen={setSelectedReturn}
+            onSort={toggleReturnsSort}
           />
-          <TextInput
-            label={t('По дату')}
-            type="date"
-            value={toDate}
-            onChange={(event) => {
-              setPage(1)
-              setToDate(event.currentTarget.value)
-            }}
-          />
-          <TextInput label={t('Пошук')} value={searchDraft} onChange={(event) => updateListSearch(event.currentTarget.value)} />
-          <Select
-            data={pageSizeOptions.map((option) => ({ label: option, value: option }))}
-            label={t('Рядків')}
-            onChange={(value) => {
-              setPage(1)
-              setPageSize(Number(value || PAGE_SIZE))
-            }}
-            value={String(pageSize)}
-          />
-          <Group align="flex-end">
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} onClick={() => setReloadKey((value) => value + 1)} variant="light">
-              <IconRefresh size={16} />
-            </ActionIcon>
-          </Group>
-        </SimpleGrid>
-
-        <Box p="md">
-        <DataTable
-          columns={returnsColumns}
-          data={items}
-          defaultLayout={RETURNS_TABLE_LAYOUT}
-          emptyText={t('Повернення не знайдено')}
-          getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-          isLoading={isLoading}
-          minWidth={1180}
-          onRowClick={setSelectedReturn}
-          rowClassName={(item) => (item.IsCanceled ? 'sales-return-canceled-row' : undefined)}
-          tableId="sales-returns-ukraine"
-          toolbarLeft={
-            <Text size="xs" c="dimmed">
-              {t('Сторінка')} {page}
-            </Text>
-          }
-          toolbarRight={
-            <Group gap="xs">
-              <ActionIcon aria-label={t('Попередня')} disabled={!canMoveBackward} onClick={() => setPage((value) => Math.max(1, value - 1))} variant="subtle">
-                <IconChevronLeft size={16} />
-              </ActionIcon>
-              <ActionIcon aria-label={t('Наступна')} disabled={!canMoveForward} onClick={() => setPage((value) => value + 1)} variant="subtle">
-                <IconChevronRight size={16} />
-              </ActionIcon>
-            </Group>
-          }
-        />
-        </Box>
-        </Card>
-      </Stack>
-
+        </div>
+      </div>
       <AppDrawer opened={Boolean(selectedReturn)} onClose={() => setSelectedReturn(null)} position="right" size="xl" title={t('Повернення')}>
         {selectedReturn ? (
           <ReturnDetails saleReturn={selectedReturn} columns={detailColumns} />
@@ -928,148 +965,372 @@ export function NewUkraineSaleReturnPage() {
   )
 }
 
-function useReturnsColumns({
+function ReturnsList({
   exportingNetId,
+  isLoading,
+  rows,
+  sortState,
   onCancel,
   onExport,
   onOpen,
-  t,
+  onSort,
 }: {
   exportingNetId: string | null
+  isLoading: boolean
+  rows: SalesReturn[]
+  sortState: ReturnsSortState
   onCancel: (saleReturn: SalesReturn) => void
   onExport: (saleReturn: SalesReturn) => void
   onOpen: (saleReturn: SalesReturn) => void
-  t: (value: string) => string
-}): DataTableColumn<SalesReturn>[] {
-  return useMemo(
-    () => [
-      {
-        id: 'date',
-        header: t('Дата'),
-        accessor: (saleReturn) => saleReturn.FromDate,
-        cell: (saleReturn) => formatDateTime(saleReturn.FromDate),
-        width: 160,
-      },
-      {
-        id: 'number',
-        header: t('Номер'),
-        accessor: (saleReturn) => saleReturn.Number,
-        cell: (saleReturn) => (
-          <Group gap="xs">
-            <Text fw={600}>{displayValue(saleReturn.Number)}</Text>
-            {saleReturn.IsCanceled ? <Badge color="red">{t('Скасовано')}</Badge> : null}
-          </Group>
-        ),
-        width: 190,
-      },
-      {
-        id: 'total',
-        header: t('Сума'),
-        accessor: (saleReturn) => saleReturn.TotalAmountLocal,
-        cell: (saleReturn) => formatMoney(saleReturn.TotalAmountLocal),
-        align: 'right',
-        width: 110,
-      },
-      {
-        id: 'currency',
-        header: t('Валюта'),
-        accessor: (saleReturn) => saleReturn.ClientAgreement?.Agreement?.Currency?.Code || saleReturn.Currency?.Code,
-        cell: (saleReturn) => displayValue(saleReturn.ClientAgreement?.Agreement?.Currency?.Code || saleReturn.Currency?.Code),
-        width: 100,
-      },
-      {
-        id: 'regionCode',
-        header: t('Код регіону'),
-        accessor: (saleReturn) => saleReturn.Client?.RegionCode?.Value,
-        cell: (saleReturn) => displayValue(saleReturn.Client?.RegionCode?.Value),
-        width: 120,
-      },
-      {
-        id: 'client',
-        header: t('Клієнт'),
-        accessor: (saleReturn) => saleReturn.Client?.FullName,
-        cell: (saleReturn) => displayValue(saleReturn.Client?.FullName || saleReturn.Client?.Name),
-        width: 240,
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        accessor: (saleReturn) => saleReturn.ClientAgreement?.Agreement?.Organization?.Name,
-        cell: (saleReturn) => displayValue(saleReturn.ClientAgreement?.Agreement?.Organization?.Name),
-        width: 180,
-      },
-      {
-        id: 'storage',
-        header: t('Склад'),
-        accessor: (saleReturn) => saleReturn.Storage?.Name,
-        cell: (saleReturn) => displayValue(saleReturn.Storage?.Name),
-        width: 160,
-      },
-      {
-        id: 'agreement',
-        header: t('Договір'),
-        accessor: (saleReturn) => saleReturn.ClientAgreement?.Agreement?.Name,
-        cell: (saleReturn) => displayValue(saleReturn.ClientAgreement?.Agreement?.Name),
-        width: 180,
-      },
-      {
-        id: 'sales',
-        header: t('Продажі'),
-        accessor: (saleReturn) => getSaleNumbers(saleReturn),
-        cell: (saleReturn) => displayValue(getSaleNumbers(saleReturn)),
-        width: 180,
-      },
-      {
-        id: 'responsible',
-        header: t('Відповідальний'),
-        accessor: (saleReturn) => saleReturn.CreatedBy?.LastName,
-        cell: (saleReturn) => displayValue(saleReturn.CreatedBy?.LastName || saleReturn.CreatedBy?.FullName),
-        width: 160,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: (saleReturn) => (
-          <Group gap="xs" wrap="nowrap">
-            <Tooltip label={t('Переглянути')}>
-              <ActionIcon aria-label={t('Переглянути')} onClick={() => onOpen(saleReturn)} variant="subtle">
-                <IconEye size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Експорт')}>
-              <ActionIcon
-                aria-label={t('Експорт')}
-                loading={exportingNetId === saleReturn.NetUid}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onExport(saleReturn)
-                }}
-                variant="subtle"
-              >
-                <IconDownload size={16} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Скасувати')}>
-              <ActionIcon
-                aria-label={t('Скасувати')}
-                color="red"
-                disabled={saleReturn.IsCanceled}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onCancel(saleReturn)
-                }}
-                variant="subtle"
-              >
-                <IconTrash size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ),
-        enableSorting: false,
-        width: 140,
-      },
-    ],
-    [exportingNetId, onCancel, onExport, onOpen, t],
+  onSort: (id: ReturnsSortId) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div className="new-sale-return-list">
+      <div className="new-sale-return-list-head">
+        <ReturnsSortHeader id="number" label={t('Повернення')} sortState={sortState} onSort={onSort} />
+        <ReturnsSortHeader id="client" label={t('Клієнт / договір')} sortState={sortState} onSort={onSort} />
+        <ReturnsSortHeader id="organization" label={t('Організація / склад')} sortState={sortState} onSort={onSort} />
+        <ReturnsSortHeader id="sales" label={t('Продажі')} sortState={sortState} onSort={onSort} />
+        <ReturnsSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
+        <ReturnsSortHeader id="total" label={t('Сума')} sortState={sortState} onSort={onSort} align="right" />
+        <span aria-hidden />
+      </div>
+
+      <div className="new-sale-return-list-body">
+        {isLoading ? (
+          <div className="new-sale-return-list-state">{t('Завантаження повернень')}</div>
+        ) : rows.length === 0 ? (
+          <div className="new-sale-return-list-state">{t('Повернення не знайдено')}</div>
+        ) : (
+          rows.map((saleReturn, index) => (
+            <ReturnRow
+              key={saleReturn.NetUid || String(saleReturn.Id || index)}
+              exportingNetId={exportingNetId}
+              saleReturn={saleReturn}
+              onCancel={onCancel}
+              onExport={onExport}
+              onOpen={onOpen}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ReturnsSortHeader({
+  align,
+  id,
+  label,
+  sortState,
+  onSort,
+}: {
+  align?: 'right'
+  id: ReturnsSortId
+  label: string
+  sortState: ReturnsSortState
+  onSort: (id: ReturnsSortId) => void
+}) {
+  const isActive = sortState?.id === id
+  const SortIcon = isActive && sortState.direction === 'desc' ? IconChevronDown : IconChevronUp
+
+  return (
+    <button
+      className={`new-sale-return-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
+      type="button"
+      onClick={() => onSort(id)}
+    >
+      <span>{label}</span>
+      <SortIcon size={12} />
+    </button>
+  )
+}
+
+function ReturnRow({
+  exportingNetId,
+  saleReturn,
+  onCancel,
+  onExport,
+  onOpen,
+}: {
+  exportingNetId: string | null
+  saleReturn: SalesReturn
+  onCancel: (saleReturn: SalesReturn) => void
+  onExport: (saleReturn: SalesReturn) => void
+  onOpen: (saleReturn: SalesReturn) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <div
+      className={`new-sale-return-row${saleReturn.IsCanceled ? ' is-canceled' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(saleReturn)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen(saleReturn)
+        }
+      }}
+    >
+      <ReturnDocumentCell saleReturn={saleReturn} />
+      <ReturnClientCell saleReturn={saleReturn} />
+      <ReturnOrganizationCell saleReturn={saleReturn} />
+      <ReturnSalesCell saleReturn={saleReturn} />
+      <ReturnResponsibleCell saleReturn={saleReturn} />
+      <ReturnAmountCell saleReturn={saleReturn} />
+
+      <div className="new-sale-return-actions-cell">
+        <Tooltip label={t('Переглянути')}>
+          <ActionIcon
+            aria-label={t('Переглянути')}
+            color="gray"
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onOpen(saleReturn)
+            }}
+          >
+            <IconEye size={15} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Експорт')}>
+          <ActionIcon
+            aria-label={t('Експорт')}
+            color="gray"
+            loading={exportingNetId === saleReturn.NetUid}
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onExport(saleReturn)
+            }}
+          >
+            <IconDownload size={15} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Скасувати')}>
+          <ActionIcon
+            aria-label={t('Скасувати')}
+            color="gray"
+            disabled={saleReturn.IsCanceled}
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.stopPropagation()
+              onCancel(saleReturn)
+            }}
+          >
+            <IconTrash size={15} />
+          </ActionIcon>
+        </Tooltip>
+      </div>
+    </div>
+  )
+}
+
+function ReturnDocumentCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const { t } = useI18n()
+  const number = displayValue(saleReturn.Number)
+  const date = formatDateTime(saleReturn.FromDate)
+
+  return (
+    <div className="new-sale-return-document-cell">
+      <span className="new-sale-return-document-marker" aria-hidden>
+        <IconReceiptRefund size={17} stroke={1.8} />
+      </span>
+      <span className="new-sale-return-document-copy">
+        <span className="new-sale-return-title-line">
+          <Tooltip label={number}>
+            <span className="new-sale-return-document-number">{number}</span>
+          </Tooltip>
+          {saleReturn.IsCanceled ? <span className="new-sale-return-canceled-tag">{t('Скасовано')}</span> : null}
+        </span>
+        <Tooltip label={date}>
+          <span className="new-sale-return-muted-line">{date}</span>
+        </Tooltip>
+      </span>
+    </div>
+  )
+}
+
+function ReturnClientCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const client = displayValue(saleReturn.Client?.FullName || saleReturn.Client?.Name)
+  const agreement = displayValue(saleReturn.ClientAgreement?.Agreement?.Name)
+  const region = displayValue(saleReturn.Client?.RegionCode?.Value)
+
+  return (
+    <div className="new-sale-return-client-cell">
+      <span className="new-sale-return-region-tag">{region}</span>
+      <span className="new-sale-return-two-line">
+        <Tooltip label={client}>
+          <span className="new-sale-return-main-line">{client}</span>
+        </Tooltip>
+        <Tooltip label={agreement}>
+          <span className="new-sale-return-muted-line">{agreement}</span>
+        </Tooltip>
+      </span>
+    </div>
+  )
+}
+
+function ReturnOrganizationCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const organization = displayValue(saleReturn.ClientAgreement?.Agreement?.Organization?.Name)
+  const storage = displayValue(saleReturn.Storage?.Name)
+
+  return <ReturnTwoLineValue primary={organization} secondary={storage} />
+}
+
+function ReturnSalesCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const sales = displayValue(getSaleNumbers(saleReturn))
+  const saleNumbers = sales === '—' ? [] : sales.split(/\s+/).filter(Boolean)
+
+  return (
+    <Tooltip label={sales}>
+      <span className="new-sale-return-sales-cell">
+        <span className="new-sale-return-sales-icon" aria-hidden>
+          <IconShoppingCart size={14} stroke={1.9} />
+        </span>
+        {saleNumbers.length ? (
+          <span className="new-sale-return-sales-pills">
+            {saleNumbers.map((number) => (
+              <span className="new-sale-return-sale-pill" key={number}>
+                {number}
+              </span>
+            ))}
+          </span>
+        ) : (
+          <span className="new-sale-return-muted-inline">—</span>
+        )}
+      </span>
+    </Tooltip>
+  )
+}
+
+function ReturnResponsibleCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const userName = getReturnUserName(saleReturn.CreatedBy)
+  const [lastName, givenName] = splitReturnProfileName(userName)
+
+  return (
+    <div className="new-sale-return-responsible-cell">
+      <span className="new-sale-return-avatar" aria-hidden>
+        {getReturnInitials(userName)}
+      </span>
+      <span className="new-sale-return-two-line">
+        <Tooltip label={userName}>
+          <span className="new-sale-return-main-line">{lastName}</span>
+        </Tooltip>
+        <Tooltip label={userName}>
+          <span className="new-sale-return-muted-line">{givenName}</span>
+        </Tooltip>
+      </span>
+    </div>
+  )
+}
+
+function ReturnAmountCell({ saleReturn }: { saleReturn: SalesReturn }) {
+  const currency = displayValue(saleReturn.ClientAgreement?.Agreement?.Currency?.Code || saleReturn.Currency?.Code)
+
+  return (
+    <span className="new-sale-return-amount-cell">
+      <strong>{formatMoney(saleReturn.TotalAmountLocal)}</strong>
+      <small>{currency}</small>
+    </span>
+  )
+}
+
+function ReturnTwoLineValue({ primary, secondary }: { primary: string; secondary: string }) {
+  return (
+    <span className="new-sale-return-two-line">
+      <Tooltip label={primary}>
+        <span className="new-sale-return-main-line">{primary}</span>
+      </Tooltip>
+      <Tooltip label={secondary}>
+        <span className="new-sale-return-muted-line">{secondary}</span>
+      </Tooltip>
+    </span>
+  )
+}
+
+function sortReturns(rows: SalesReturn[], sortState: ReturnsSortState): SalesReturn[] {
+  if (!sortState) {
+    return rows
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...rows].sort((first, second) => {
+    const firstValue = getReturnSortValue(first, sortState.id)
+    const secondValue = getReturnSortValue(second, sortState.id)
+
+    if (typeof firstValue === 'number' && typeof secondValue === 'number') {
+      return (firstValue - secondValue) * direction
+    }
+
+    return String(firstValue).localeCompare(String(secondValue), 'uk', { numeric: true, sensitivity: 'base' }) * direction
+  })
+}
+
+function getReturnSortValue(saleReturn: SalesReturn, id: ReturnsSortId): number | string {
+  switch (id) {
+    case 'agreement':
+      return saleReturn.ClientAgreement?.Agreement?.Name || ''
+    case 'client':
+      return saleReturn.Client?.FullName || saleReturn.Client?.Name || ''
+    case 'date': {
+      const date = saleReturn.FromDate ? new Date(saleReturn.FromDate).getTime() : 0
+
+      return Number.isNaN(date) ? 0 : date
+    }
+    case 'number':
+      return saleReturn.Number || ''
+    case 'organization':
+      return saleReturn.ClientAgreement?.Agreement?.Organization?.Name || ''
+    case 'responsible':
+      return getReturnUserName(saleReturn.CreatedBy)
+    case 'sales':
+      return getSaleNumbers(saleReturn)
+    case 'storage':
+      return saleReturn.Storage?.Name || ''
+    case 'total':
+      return readNumber(saleReturn.TotalAmountLocal) ?? 0
+    default:
+      return ''
+  }
+}
+
+function getReturnUserName(user?: SalesReturn['CreatedBy']): string {
+  return displayValue(user?.FullName || [user?.LastName, user?.Name].filter(Boolean).join(' '))
+}
+
+function splitReturnProfileName(value: string): [string, string] {
+  const normalized = value.trim()
+
+  if (!normalized || normalized === '—') {
+    return ['—', '—']
+  }
+
+  const [firstPart, ...rest] = normalized.split(/\s+/)
+
+  return [firstPart || normalized, rest.join(' ') || '—']
+}
+
+function getReturnInitials(value: string): string {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part && part !== '—')
+
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toLocaleUpperCase('uk') || '?'
   )
 }
 
