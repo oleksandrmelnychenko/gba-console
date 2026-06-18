@@ -31,6 +31,7 @@ export async function getClientById(netId: string): Promise<Client | null> {
   const result = await apiRequest<unknown>('/clients/get', {
     query: {
       netId,
+      includeDebts: false,
     },
   })
 
