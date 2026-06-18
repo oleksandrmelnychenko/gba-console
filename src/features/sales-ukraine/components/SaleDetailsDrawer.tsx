@@ -1,9 +1,9 @@
 import {
   Anchor,
   Badge,
+  Box,
   Button,
   Checkbox,
-  Divider,
   FileInput,
   Group,
   Image,
@@ -24,7 +24,6 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
-import { isSelfCheckout } from './new-sale-wizard/newSaleWizardState'
 
 export function SaleDetailsDrawer({
   sale,
@@ -42,7 +41,7 @@ export function SaleDetailsDrawer({
       opened={Boolean(sale)}
       position="right"
       size="min(1080px, 100vw)"
-      title={t('Дані доставки')}
+      title={t('Перевізник')}
       onClose={onClose}
     >
       {sale && <SaleDetailsContent key={sale.NetUid || sale.Id} sale={sale} onSaved={onSaved} />}
@@ -82,8 +81,6 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
   const isChangedRecipient = recipientName !== originalName || mobilePhone !== originalPhone
 
   const selectedTransporter = transporters.find((item) => getTransporterValue(item) === transporterId) || sale.Transporter
-  // Self-checkout (Самовивіз) has no delivery address/recipient — hide and skip those fields.
-  const selfCheckout = isSelfCheckout(selectedTransporter ?? null)
 
   // Live "current data" snapshot for the right-most history column (diffs against the last saved entry).
   const currentCarrier = {
@@ -99,6 +96,9 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     ShipmentDate: shipmentDate ? new Date(shipmentDate).toISOString() : sale.ShipmentDate,
     Transporter: selectedTransporter,
     TtnPDFPath: sale.CustomersOwnTtn?.TtnPDFPath,
+    // Responsible for the "Актуальні дані" column comes from the sale's UpdateUser (legacy parity),
+    // not the carrier snapshot — otherwise the cell is empty and shows as a spurious change.
+    User: sale.UpdateUser,
   } as SalesUkraineUpdateDataCarrier
 
   async function enterEdit() {
@@ -156,23 +156,21 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     payload.IsCashOnDelivery = isCashOnDelivery
     payload.CashOnDeliveryAmount = isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0
     payload.HasDocuments = hasDocuments
-    if (!selfCheckout) {
-      payload.DeliveryRecipient = {
-        ...(sale.DeliveryRecipient || {}),
-        FullName: recipientName,
-        MobilePhone: mobilePhone,
-        ...(isChangedRecipient ? { Id: 0 } : {}),
-      }
-      payload.DeliveryRecipientAddress = {
-        ...(sale.DeliveryRecipientAddress || {}),
-        City: city,
-        Department: department,
-        ...(isChangedAddress ? { Id: 0 } : {}),
-      }
+    payload.DeliveryRecipient = {
+      ...(sale.DeliveryRecipient || {}),
+      FullName: recipientName,
+      MobilePhone: mobilePhone,
+      ...(isChangedRecipient ? { Id: 0 } : {}),
+    }
+    payload.DeliveryRecipientAddress = {
+      ...(sale.DeliveryRecipientAddress || {}),
+      City: city,
+      Department: department,
+      ...(isChangedAddress ? { Id: 0 } : {}),
+    }
 
-      if (isChangedAddress) {
-        payload.DeliveryRecipientAddressId = 0
-      }
+    if (isChangedAddress) {
+      payload.DeliveryRecipientAddressId = 0
     }
 
     if (showShipmentDate && shipmentDate) {
@@ -203,28 +201,11 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Group gap="xs">
-          <Text fw={600}>{displayValue(sale.SaleNumber?.Value)}</Text>
-          <Text size="sm" c="dimmed">
-            {displayValue(sale.ClientAgreement?.Client?.FullName)}
-          </Text>
-        </Group>
-        {!sale.IsSent && !isEditMode && (
-          <Button leftSection={<IconPencil size={16} />} variant="light" onClick={enterEdit}>
-            {t('Редагувати')}
-          </Button>
-        )}
-        {sale.IsSent && (
-          <Badge color="teal" variant="light">
-            {t('Продаж проведено')}
-          </Badge>
-        )}
-      </Group>
-
-      <Divider />
-
-      {isEditMode ? (
+      {/* Single panel like the legacy: data/form on the left (client info sits under the transporter,
+          edit button at the bottom), the change history table on the right. */}
+      <Box style={{ alignItems: 'flex-start', display: 'flex', flexWrap: 'wrap', gap: 'var(--mantine-spacing-xl)' }}>
+        <Box style={{ flex: '0 0 360px', maxWidth: '100%', minWidth: 0 }}>
+          {isEditMode ? (
         <Stack gap="sm">
           <Select
             clearable
@@ -235,6 +216,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             value={transporterId || null}
             onChange={(value) => setTransporterId(value || '')}
           />
+          <ClientInfo sale={sale} />
           {showShipmentDate && (
             <TextInput
               label={t('Дата відгрузки')}
@@ -246,40 +228,36 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           {sale.IsPrinted && (
             <TextInput label={t('Номер декларації')} value={ttn} onChange={(event) => setTtn(event.currentTarget.value)} />
           )}
-          {!selfCheckout && (
-            <>
-              {isChangedAddress && (
-                <Text c="orange" size="xs">
-                  {t('При редагуванні буде створено нову адресу одержувача')}
-                </Text>
-              )}
-              <Group grow>
-                <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
-                <TextInput
-                  label={t('Відділення')}
-                  value={department}
-                  onChange={(event) => setDepartment(event.currentTarget.value)}
-                />
-              </Group>
-              {isChangedRecipient && (
-                <Text c="orange" size="xs">
-                  {t('При редагуванні буде створено нового одержувача')}
-                </Text>
-              )}
-              <Group grow>
-                <TextInput
-                  label={t('Отримувач товару')}
-                  value={recipientName}
-                  onChange={(event) => setRecipientName(event.currentTarget.value)}
-                />
-                <TextInput
-                  label={t('Мобільний телефон')}
-                  value={mobilePhone}
-                  onChange={(event) => setMobilePhone(event.currentTarget.value)}
-                />
-              </Group>
-            </>
+          {isChangedAddress && (
+            <Text c="orange" size="xs">
+              {t('При редагуванні буде створено нову адресу одержувача')}
+            </Text>
           )}
+          <Group grow>
+            <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
+            <TextInput
+              label={t('Відділення')}
+              value={department}
+              onChange={(event) => setDepartment(event.currentTarget.value)}
+            />
+          </Group>
+          {isChangedRecipient && (
+            <Text c="orange" size="xs">
+              {t('При редагуванні буде створено нового одержувача')}
+            </Text>
+          )}
+          <Group grow>
+            <TextInput
+              label={t('Отримувач товару')}
+              value={recipientName}
+              onChange={(event) => setRecipientName(event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('Мобільний телефон')}
+              value={mobilePhone}
+              onChange={(event) => setMobilePhone(event.currentTarget.value)}
+            />
+          </Group>
           <Textarea
             autosize
             label={t('Коментар')}
@@ -336,13 +314,28 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
             </Button>
           </Group>
         </Stack>
-      ) : (
-        <DetailsView sale={sale} />
-      )}
+          ) : (
+            <DetailsView sale={sale} />
+          )}
 
-      <Divider />
+          {/* Edit button at the bottom of the left column, under "Завантажити ТТН" (legacy order). */}
+          {!sale.IsSent && !isEditMode && (
+            <Button leftSection={<IconPencil size={16} />} mt="md" variant="light" onClick={enterEdit}>
+              {t('Редагувати')}
+            </Button>
+          )}
+          {sale.IsSent && (
+            <Badge color="teal" mt="md" variant="light">
+              {t('Продаж проведено')}
+            </Badge>
+          )}
+        </Box>
 
-      <CarrierHistory current={currentCarrier} entries={Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []} />
+        {/* RIGHT: change history table beside the data, as in the legacy panel. */}
+        <Box style={{ flex: '1 1 520px', minWidth: 0 }}>
+          <CarrierHistory current={currentCarrier} entries={Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []} />
+        </Box>
+      </Box>
     </Stack>
   )
 }
@@ -351,7 +344,6 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
   const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
-  const selfCheckout = isSelfCheckout(sale.Transporter ?? null)
 
   // Highlight fields that differ from the last recorded change (sd_error in the legacy panel).
   const entries = Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []
@@ -366,22 +358,15 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
           {displayValue(sale.Transporter?.Name || sale.Transporter?.Title)}
         </Text>
       </Group>
-      {!selfCheckout && (
-        <>
-          <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
-          <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-        </>
-      )}
+      <ClientInfo sale={sale} />
+      <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
+      <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
       {showShipmentDate && (
         <Row changed={changed(formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} value={formatDate(sale.ShipmentDate)} />
       )}
       {sale.IsPrinted && <Row label={t('Номер декларації')} value={sale.TTN} />}
-      {!selfCheckout && (
-        <>
-          <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
-          <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} value={sale.DeliveryRecipient?.MobilePhone} />
-        </>
-      )}
+      <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
+      <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} value={sale.DeliveryRecipient?.MobilePhone} />
       <Row changed={changed(sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
       <Row changed={changed(Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')} value={sale.IsCashOnDelivery ? t('Так') : t('Ні')} />
       {sale.IsCashOnDelivery && (
@@ -417,19 +402,26 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
     { entry: current, header: t('Актуальні дані'), isCurrent: true },
   ]
 
-  const rows: Array<{ label: string; render: (entry: SalesUkraineUpdateDataCarrier) => string }> = [
-    { label: t('Перевізник'), render: (entry) => entry.Transporter?.Name || '' },
-    { label: t('Місто'), render: (entry) => entry.City || '' },
-    { label: t('Відділення'), render: (entry) => entry.Department || '' },
+  // `render` builds the displayed text; `compare` (text fields) returns the RAW value so the diff
+  // can tell null/undefined apart from an empty string — mirroring the legacy loose `!=`, where a
+  // null → '' transition (e.g. a recipient cleared) is flagged even though both cells look blank.
+  const rows: Array<{
+    compare?: (entry: SalesUkraineUpdateDataCarrier) => unknown
+    label: string
+    render: (entry: SalesUkraineUpdateDataCarrier) => string
+  }> = [
+    { compare: (entry) => entry.Transporter?.Name ?? null, label: t('Перевізник'), render: (entry) => entry.Transporter?.Name || '' },
+    { compare: (entry) => entry.City ?? null, label: t('Місто'), render: (entry) => entry.City || '' },
+    { compare: (entry) => entry.Department ?? null, label: t('Відділення'), render: (entry) => entry.Department || '' },
     { label: t('Дата відгрузки'), render: (entry) => formatDate(entry.ShipmentDate) },
-    { label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
-    { label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
-    { label: t('Коментар'), render: (entry) => entry.Comment || '' },
+    { compare: (entry) => entry.FullName ?? null, label: t('Отримувач товару'), render: (entry) => entry.FullName || '' },
+    { compare: (entry) => entry.MobilePhone ?? null, label: t('Мобільний телефон'), render: (entry) => entry.MobilePhone || '' },
+    { compare: (entry) => entry.Comment ?? null, label: t('Коментар'), render: (entry) => entry.Comment || '' },
     { label: t('Наложений платіж'), render: (entry) => (entry.IsCashOnDelivery ? t('Так') : t('Ні')) },
     { label: t('Сума накладеного платежу'), render: (entry) => formatNumber(entry.CashOnDeliveryAmount) },
     { label: t('Є документи'), render: (entry) => (entry.HasDocument ? t('Так') : t('Ні')) },
-    { label: t('Власне ТТН'), render: (entry) => entry.Number || '' },
-    { label: t('Відповідальний'), render: (entry) => getUserName(entry) },
+    { compare: (entry) => entry.Number ?? null, label: t('Власне ТТН'), render: (entry) => entry.Number || '' },
+    { compare: (entry) => getUserName(entry) || null, label: t('Відповідальний'), render: (entry) => getUserName(entry) },
   ]
 
   return (
@@ -456,15 +448,19 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
                 <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.label}</Table.Td>
                 {columns.map((col, index) => {
                   const value = row.render(col.entry)
-                  const previous = index > 0 ? row.render(columns[index - 1].entry) : value
-                  const isChanged = index > 0 && value !== previous
+                  const compareFn = row.compare ?? row.render
+                  const currentRaw = compareFn(col.entry)
+                  const previousRaw = index > 0 ? compareFn(columns[index - 1].entry) : currentRaw
+                  const isChanged = index > 0 && historyValueChanged(currentRaw, previousRaw)
 
                   return (
                     <Table.Td
                       key={`${row.label}-${index}`}
                       style={{
                         whiteSpace: 'nowrap',
-                        color: isChanged ? 'var(--mantine-color-orange-7)' : undefined,
+                        // Highlight a changed value with a filled pink cell (like the legacy history
+                        // grid) so the column where the change happened is immediately obvious.
+                        backgroundColor: isChanged ? 'var(--mantine-color-red-2)' : undefined,
                         fontWeight: col.isCurrent ? 600 : undefined,
                       }}
                     >
@@ -495,6 +491,37 @@ function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataC
   )
 }
 
+// Compact label/value pair for the client info block — left-aligned (not stretched) so the value
+// sits right next to its label rather than across the full drawer width.
+function HeaderRow({ label, value }: { label: string; value: unknown }) {
+  return (
+    <Group align="flex-start" gap="sm" wrap="nowrap">
+      <Text c="dimmed" size="sm" style={{ flexShrink: 0, width: 130 }}>
+        {label}
+      </Text>
+      <Text fw={500} size="sm">
+        {displayValue(value)}
+      </Text>
+    </Group>
+  )
+}
+
+// Client code / name / invoice number + date — shown under the transporter in both view and edit.
+function ClientInfo({ sale }: { sale: SalesUkraineSale }) {
+  const { t } = useI18n()
+
+  return (
+    <Stack gap={6}>
+      <HeaderRow label={t('Код клієнта')} value={sale.ClientAgreement?.Client?.RegionCode?.Value} />
+      <HeaderRow label={t('Назва клієнта')} value={sale.ClientAgreement?.Client?.FullName} />
+      <HeaderRow
+        label={t('Номер накладної та дата')}
+        value={`${sale.SaleNumber?.Value ?? ''} ${formatDate(sale.Created)}`.trim()}
+      />
+    </Stack>
+  )
+}
+
 function Row({ changed, label, value }: { changed?: boolean; label: string; value: unknown }) {
   return (
     <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
@@ -514,6 +541,15 @@ function normalizeCompare(value: unknown): string {
   }
 
   return String(value).trim()
+}
+
+// History-cell diff matching the legacy loose `!=`: null and undefined are equivalent to each
+// other, but distinct from '' / 0 / false — so clearing a field (value → null/'') counts as a
+// change even when both columns render blank.
+function historyValueChanged(value: unknown, previous: unknown): boolean {
+  const normalize = (input: unknown) => (input == null ? null : input)
+
+  return normalize(value) !== normalize(previous)
 }
 
 function getTransporterValue(transporter?: SalesUkraineTransporter | null): string {

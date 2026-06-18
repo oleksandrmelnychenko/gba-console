@@ -1094,12 +1094,13 @@ function SaleGridRow({
   const showBang = Boolean(sale.IsVatSale) && !sale.IsAcceptedToPacking
   const bangClickable = Boolean(sale.ChangedToInvoice) && canWillNotShip
   const discountEditable = isNewOrPackagingStatus(sale) && positions > 0
+  const isEdited = Array.isArray(sale.HistoryInvoiceEdit) && sale.HistoryInvoiceEdit.length > 0
 
   const openSale = () => onOpenSale(sale)
 
   return (
     <div
-      className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}`}
+      className={`sales-grid-row${isExpanded ? ' is-expanded' : ''}${isEdited ? ' is-edited' : ''}`}
       role="button"
       tabIndex={0}
       aria-label={t('Відкрити продаж')}

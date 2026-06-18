@@ -693,6 +693,15 @@
   opacity: 1;
 }
 
+/* Edited sale (has invoice-edit history): a persistent left accent stripe — the new-design take on
+   the legacy blue "this sale was changed" bar. Stays blue even on hover/expand. */
+.sales-grid-row.is-edited::before {
+  background: var(--mantine-color-blue-5);
+  opacity: 1;
+  transform: scaleY(1);
+  width: 3px;
+}
+
 .sg-client {
   display: flex;
   gap: 8px;

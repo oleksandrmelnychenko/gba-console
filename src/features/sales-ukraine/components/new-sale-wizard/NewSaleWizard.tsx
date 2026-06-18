@@ -31,6 +31,7 @@ import {
   WIZARD_STEP_TITLES,
   type WizardStepIndex,
 } from './wizardKeyboard'
+import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
 import { WizardSaleHeader } from './WizardSaleHeader'
 
@@ -56,6 +57,7 @@ export function NewSaleWizard({
         opened={opened}
         withCloseButton={false}
         closeOnEscape={false}
+        closeOnClickOutside={false}
         size="100%"
         padding="lg"
         overlayProps={{ backgroundOpacity: 0.25, blur: 2 }}
@@ -124,7 +126,21 @@ function NewSaleWizardContent({
   const [reviewBusy, setReviewBusy] = useState(false)
   const [productsBusy, setProductsBusy] = useState(false)
   const [reassignOpen, setReassignOpen] = useState(false)
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const shellBusy = busy || reviewBusy
+
+  // Clicking the close (X) icon or the step-0 "Скасувати" button now asks for confirmation,
+  // mirroring the Esc behaviour inside the steps, instead of discarding the sale immediately.
+  function requestExit() {
+    if (!shellBusy) {
+      setExitConfirmOpen(true)
+    }
+  }
+
+  function confirmExit() {
+    setExitConfirmOpen(false)
+    onClose()
+  }
   const keyboard = useWizardKeyboardSnapshot()
   const reviewSubmitRef = useRef<(() => Promise<void>) | null>(null)
 
@@ -430,7 +446,7 @@ function NewSaleWizardContent({
 
   useEffect(() => {
     altNavigationRef.current = (event: KeyboardEvent) => {
-      if (reassignOpen || !event.altKey) {
+      if (reassignOpen || exitConfirmOpen || !event.altKey) {
         return
       }
 
@@ -494,7 +510,7 @@ function NewSaleWizardContent({
           />
         </Box>
         <Tooltip label={t('Закрити')} position="left">
-          <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={onClose}>
+          <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
             <IconX size={20} />
           </ActionIcon>
         </Tooltip>
@@ -610,7 +626,7 @@ function NewSaleWizardContent({
             color="gray"
             disabled={shellBusy}
             variant="light"
-            onClick={active === 0 ? onClose : active === 1 ? goToClients : () => setActive(1)}
+            onClick={active === 0 ? requestExit : active === 1 ? goToClients : () => setActive(1)}
           >
             {active === 0 ? t('Скасувати') : t('Назад')}
           </Button>
@@ -619,6 +635,13 @@ function NewSaleWizardContent({
           </Button>
         </Group>
       </Box>
+
+      <WizardConfirmModal
+        message={t('Закрити вікно?')}
+        opened={exitConfirmOpen}
+        onCancel={() => setExitConfirmOpen(false)}
+        onConfirm={confirmExit}
+      />
     </Box>
   )
 }

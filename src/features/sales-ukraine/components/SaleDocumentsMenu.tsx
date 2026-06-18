@@ -10,7 +10,6 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { SaleDocumentDownloads } from './SaleDocumentDownloads'
 import {
   getSaleActForEditingHistoryDocument,
-  getSaleActProtocolEditDocument,
   getSaleInvoiceDocument,
   getSaleInvoiceHistoryDocument,
   getSalePaymentDocument,
@@ -20,11 +19,19 @@ import {
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SaleDocumentResult, SalesUkraineSale } from '../types'
 
+type DocumentPart = {
+  fetch: () => Promise<SaleDocumentResult>
+  label: string
+}
+
 type DocumentAction = {
   bundlesInvoice?: boolean
-  fetch: () => Promise<SaleDocumentResult>
+  // A single document, or several documents bundled into one menu entry (fetched together,
+  // client-side — no server change). `parts` takes precedence over `fetch`.
+  fetch?: () => Promise<SaleDocumentResult>
   key: string
   label: string
+  parts?: DocumentPart[]
 }
 
 type DocumentFile = {
@@ -62,8 +69,28 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
     notifications.show({ id: notificationId, autoClose: false, loading: true, message: t('Формування документа') })
 
     try {
-      const result = await action.fetch()
-      const documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
+      let documents: DocumentFile[]
+
+      if (action.parts) {
+        // Bundled entry: fetch every part in parallel and merge their files under one title.
+        const settled = await Promise.all(
+          action.parts.map((part) =>
+            part
+              .fetch()
+              .then((result) => ({ label: part.label, result }))
+              .catch(() => null),
+          ),
+        )
+
+        documents = settled
+          .filter((entry): entry is { label: string; result: SaleDocumentResult } => entry !== null)
+          .flatMap((entry) => buildDocumentFiles({ key: action.key, label: entry.label }, entry.result, isAbleToInvoiceDocument, t))
+      } else if (action.fetch) {
+        const result = await action.fetch()
+        documents = buildDocumentFiles(action, result, isAbleToInvoiceDocument, t)
+      } else {
+        documents = []
+      }
 
       if (documents.length) {
         notifications.update({ id: notificationId, autoClose: 1500, color: 'green', loading: false, message: t('Документ готовий') })
@@ -134,16 +161,33 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
   const isVat = Boolean(sale.IsVatSale)
   const withVatAccounting = Boolean(sale.ClientAgreement?.Agreement?.WithVATAccounting)
   const history = Array.isArray(sale.HistoryInvoiceEdit) ? sale.HistoryInvoiceEdit : []
+  const hasHistory = history.length > 0
   const actions: DocumentAction[] = []
 
   if (hasTransporter && isPackaging) {
-    actions.push({ fetch: () => getSaleInvoiceDocument(netId), key: 'invoice', label: t('Видаткова накладна') })
+    if (hasHistory) {
+      // Revision 1 = the base invoice (+ shipment for VAT). Bundle the pair into one "first edit"
+      // entry; clicking it produces both documents together.
+      const parts: DocumentPart[] = [{ fetch: () => getSaleInvoiceDocument(netId), label: t('Видаткова накладна') }]
 
-    if (isVat) {
-      actions.push({ fetch: () => getSaleShipmentListDocument(netId), key: 'shipment', label: t('Лист на пакування') })
+      if (isVat) {
+        parts.push({ fetch: () => getSaleShipmentListDocument(netId), label: t('Лист на пакування') })
+      }
+
+      actions.push({ key: 'first-revision', label: t('Перша правка документів'), parts })
+    } else {
+      // No edits yet — just the current invoice (+ shipment for VAT), unnumbered.
+      actions.push({ fetch: () => getSaleInvoiceDocument(netId), key: 'invoice', label: t('Видаткова накладна') })
+
+      if (isVat) {
+        actions.push({ fetch: () => getSaleShipmentListDocument(netId), key: 'shipment', label: t('Лист на пакування') })
+      }
     }
   }
 
+  // HistoryInvoiceEdit holds the edit revisions; the LAST entry is the current state. Legacy numbers
+  // mapped revisions starting at 2 and shows the last one unnumbered (the current document) — there
+  // is NO separate "current act" document, the last mapped act IS the current one.
   history.forEach((item, index) => {
     const historyNetId = item.NetUid
 
@@ -151,30 +195,26 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
       return
     }
 
+    const isLast = index === history.length - 1
+    const revision = index + 2
+
     actions.push({
       fetch: () => getSaleInvoiceHistoryDocument(netId, historyNetId),
       key: `invoice-history-${index}`,
-      label: `${t('Видаткова накладна')} (${t('правка')} ${index + 1})`,
+      label: isLast ? `${t('Видаткова накладна')} (${t('поточна')})` : `${t('Видаткова накладна')} (${t('правка')} ${revision})`,
     })
     actions.push({
       fetch: () => getSaleActForEditingHistoryDocument(netId, historyNetId),
       key: `act-history-${index}`,
-      label: `${t('Акт редагування')} ${index + 1}`,
+      label: isLast ? `${t('Акт редагування')} (${t('поточний')})` : `${t('Акт редагування')} ${revision}`,
     })
 
-    if (index === history.length - 1) {
-      actions.push({
-        fetch: () => getSaleActProtocolEditDocument(netId),
-        key: 'act-protocol-edit-current',
-        label: t('Акт редагування (поточний)'),
-      })
-    }
-
-    if (index === history.length - 1 && isVat) {
+    // Shipment list revision: only the current (last) entry, VAT only, unnumbered (legacy item_B).
+    if (isLast && isVat) {
       actions.push({
         fetch: () => getSaleShipmentListHistoryDocument(netId, historyNetId),
         key: `shipment-history-${index}`,
-        label: `${t('Лист на пакування')} (${t('правка')} ${index + 1})`,
+        label: `${t('Лист на пакування')} (${t('поточна')})`,
       })
     }
   })

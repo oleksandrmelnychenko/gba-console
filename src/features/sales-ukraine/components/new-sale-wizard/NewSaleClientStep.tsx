@@ -923,7 +923,11 @@ export function NewSaleClientStep({
       return
     }
 
-    bootstrappedRef.current = true
+    // Do NOT mark bootstrapped here. The server-restore path below is async and gets cancelled by
+    // this effect's cleanup under React StrictMode's mount double-invoke; setting the flag now would
+    // make the second run skip and leave the client unloaded — exactly what happens when opening a
+    // sale for editing (step 2 first, no preserved client). confirmClient sets the flag once a
+    // client is actually resolved, which still guards against the carousel-wiping re-entry.
 
     // Restore instantly from the client preserved by the parent across step switches.
     const preserved = initialClientRef.current
