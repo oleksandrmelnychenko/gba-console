@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  CockpitDraftItem,
   FeedbackInput,
   ProcurementCharts,
   ProcurementChartsQuery,
@@ -88,6 +89,23 @@ export async function recordFeedback(input: FeedbackInput, signal?: AbortSignal)
   const result = await apiRequest<unknown>('/procurement/feedback', {
     method: 'POST',
     body: buildFeedbackBody(input),
+    ...(signal ? { signal } : {}),
+  })
+
+  return unwrap(result)
+}
+
+export async function createCockpitDraftOrder(
+  supplierId: number,
+  items: CockpitDraftItem[],
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const result = await apiRequest<unknown>('/supplies/ukraine/order/new/cockpit/draft', {
+    method: 'POST',
+    body: {
+      supplierId,
+      items: items.map((item) => ({ productId: item.productId, qty: item.qty })),
+    },
     ...(signal ? { signal } : {}),
   })
 

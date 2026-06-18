@@ -144,6 +144,11 @@ export type ProductTermsInput = {
   unit_cost_override?: number | null
 }
 
+export type CockpitDraftItem = {
+  productId: number
+  qty: number
+}
+
 export type FeedbackAction = 'accept' | 'edit' | 'dismiss'
 
 export type FeedbackInput = {

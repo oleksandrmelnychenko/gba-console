@@ -15,6 +15,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -29,18 +30,26 @@ import {
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
+  createCockpitDraftOrder,
   getProducerPlan,
   getProducerProfile,
   recordFeedback,
   upsertProducerProfile,
   upsertProductTerms,
 } from '../api/procurementApi'
-import type { FeedbackAction, ProcurementUrgency, ProducerPlan, ReorderSuggestion } from '../procurementTypes'
+import type {
+  CockpitDraftItem,
+  FeedbackAction,
+  ProcurementUrgency,
+  ProducerPlan,
+  ReorderSuggestion,
+} from '../procurementTypes'
 
 type TermsSaveStatus = 'idle' | 'saving' | 'saved'
 
@@ -145,6 +154,8 @@ export function BuyerCockpitTab() {
   const [feedbackPending, setFeedbackPending] = useState<Record<number, boolean>>({})
   const [editStatus, setEditStatus] = useState<Record<number, EditFeedbackStatus>>({})
   const lastEditedQty = useRef<Record<number, number>>({})
+  const [isConfirmOpen, { open: openConfirm, close: closeConfirm }] = useDisclosure(false)
+  const [isCreatingOrder, setCreatingOrder] = useState(false)
   const { plan, error, isLoading } = state
 
   useEffect(() => {
@@ -293,6 +304,24 @@ export function BuyerCockpitTab() {
         return sum + qty * unitCost
       }, 0),
     [sortedItems, draftQty],
+  )
+
+  const orderableItems = useMemo(
+    () =>
+      sortedItems.filter((item) => {
+        if (feedbackDecision[item.product_id] === 'dismissed') {
+          return false
+        }
+
+        return getDraftQty(draftQty, item) > 0
+      }),
+    [sortedItems, draftQty, feedbackDecision],
+  )
+
+  const orderableCost = useMemo(
+    () =>
+      orderableItems.reduce((sum, item) => sum + getDraftQty(draftQty, item) * lineUnitCost(item), 0),
+    [orderableItems, draftQty],
   )
 
   function updateDraftQty(productId: number, value: number | '') {
@@ -477,6 +506,50 @@ export function BuyerCockpitTab() {
       })
     } finally {
       setProfileSaving(false)
+    }
+  }
+
+  async function submitCockpitDraftOrder() {
+    if (selectedProducerId === null || isCreatingOrder) {
+      return
+    }
+
+    const producerId = Number(selectedProducerId)
+
+    if (!Number.isFinite(producerId)) {
+      return
+    }
+
+    const items: CockpitDraftItem[] = orderableItems.map((item) => ({
+      productId: item.product_id,
+      qty: getDraftQty(draftQty, item),
+    }))
+
+    if (items.length === 0) {
+      return
+    }
+
+    setCreatingOrder(true)
+
+    try {
+      const created = await createCockpitDraftOrder(producerId, items)
+      const orderNumber = readOrderNumber(created)
+
+      notifications.show({
+        color: 'green',
+        message: orderNumber
+          ? `${t('Чернетку замовлення створено')} № ${orderNumber}`
+          : t('Чернетку замовлення створено'),
+      })
+      closeConfirm()
+      reload()
+    } catch (createError) {
+      notifications.show({
+        color: 'red',
+        message: createError instanceof Error ? createError.message : t('Не вдалося створити чернетку'),
+      })
+    } finally {
+      setCreatingOrder(false)
     }
   }
 
@@ -859,9 +932,13 @@ export function BuyerCockpitTab() {
             />
 
             <Group justify="flex-end">
-              <Tooltip label={t('незабаром')}>
-                <Button disabled>{t('Створити замовлення постачальнику')}</Button>
-              </Tooltip>
+              <Button
+                disabled={orderableItems.length === 0}
+                loading={isCreatingOrder}
+                onClick={openConfirm}
+              >
+                {t('Створити замовлення постачальнику')}
+              </Button>
             </Group>
 
             {hasItems && (
@@ -873,6 +950,40 @@ export function BuyerCockpitTab() {
           </Stack>
         </Card>
       )}
+
+      <AppModal
+        centered
+        opened={isConfirmOpen}
+        size="sm"
+        title={t('Створити чернетку замовлення?')}
+        onClose={() => {
+          if (!isCreatingOrder) {
+            closeConfirm()
+          }
+        }}
+      >
+        <Stack gap="md">
+          <Stack gap={4}>
+            <Text size="sm">{plan?.producer_name || `#${plan?.producer_id ?? ''}`}</Text>
+            <Text c="dimmed" size="sm">
+              {countFormatter.format(orderableItems.length)} {t('позицій')} · €{eurFormatter.format(orderableCost)}
+            </Text>
+          </Stack>
+          <Group justify="flex-end" gap="sm">
+            <Button color="gray" disabled={isCreatingOrder} variant="light" onClick={closeConfirm}>
+              {t('Скасувати')}
+            </Button>
+            <Button
+              data-autofocus
+              disabled={orderableItems.length === 0}
+              loading={isCreatingOrder}
+              onClick={() => void submitCockpitDraftOrder()}
+            >
+              {t('Створити')}
+            </Button>
+          </Group>
+        </Stack>
+      </AppModal>
     </Stack>
   )
 }
@@ -1099,4 +1210,22 @@ function quadrantLabel(item: ReorderSuggestion): string {
   const label = `${abc}${xyz}`
 
   return label
+}
+
+function readOrderNumber(order: unknown): string {
+  if (!order || typeof order !== 'object') {
+    return ''
+  }
+
+  const value = (order as Record<string, unknown>).Number
+
+  if (typeof value === 'string' && value !== '') {
+    return value
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value)
+  }
+
+  return ''
 }

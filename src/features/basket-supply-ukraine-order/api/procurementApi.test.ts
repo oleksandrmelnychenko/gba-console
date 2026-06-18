@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  createCockpitDraftOrder,
   getProducerPlan,
   getProducerProfile,
   getProductTerms,
@@ -498,6 +499,56 @@ describe('recordFeedback', () => {
     apiRequestMock.mockResolvedValueOnce(null)
 
     await expect(recordFeedback({ producer_id: 42, product_id: 100, action: 'accept' })).resolves.toBeNull()
+  })
+})
+
+describe('createCockpitDraftOrder', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('posts the supplier id and items and unwraps the created draft', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 555, Number: 'SO-2026-1' } })
+
+    const created = await createCockpitDraftOrder(42, [
+      { productId: 100, qty: 30 },
+      { productId: 101, qty: 5 },
+    ])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/new/cockpit/draft', {
+      method: 'POST',
+      body: {
+        supplierId: 42,
+        items: [
+          { productId: 100, qty: 30 },
+          { productId: 101, qty: 5 },
+        ],
+      },
+    })
+    expect(created).toEqual({ Id: 555, Number: 'SO-2026-1' })
+  })
+
+  it('forwards the abort signal and posts an empty items array when none are given', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { Id: 1 } })
+    const controller = new AbortController()
+
+    await createCockpitDraftOrder(42, [], controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/ukraine/order/new/cockpit/draft', {
+      method: 'POST',
+      body: { supplierId: 42, items: [] },
+      signal: controller.signal,
+    })
+  })
+
+  it('tolerates a malformed response by returning it unwrapped', async () => {
+    apiRequestMock.mockResolvedValueOnce('noise')
+
+    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBe('noise')
+
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBeNull()
   })
 })
 
