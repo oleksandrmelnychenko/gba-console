@@ -1,0 +1,457 @@
+.sales-debtors-page {
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sales-debtors-page__table {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sales-debtors-command-bar {
+  --sales-debtors-control-height: 36px;
+  --sales-debtors-label-gap: 4px;
+  --sales-debtors-label-height: 17px;
+
+  align-items: end;
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 34%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(170px, 220px)
+    minmax(190px, 250px)
+    minmax(126px, 150px)
+    minmax(104px, 118px)
+    minmax(126px, 142px)
+    minmax(250px, 1fr);
+  min-height: 85px;
+  padding: 12px;
+}
+
+.sales-debtors-filter,
+.sales-debtors-page-size {
+  min-width: 0;
+}
+
+.sales-debtors-filter .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  height: var(--sales-debtors-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: var(--sales-debtors-label-gap);
+}
+
+.sales-debtors-filter .mantine-Input-wrapper,
+.sales-debtors-filter .mantine-Input-input,
+.sales-debtors-page-size .mantine-Input-wrapper,
+.sales-debtors-page-size .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  height: var(--sales-debtors-control-height);
+  line-height: 1.2;
+  min-height: var(--sales-debtors-control-height);
+}
+
+.sales-debtors-command-actions {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.sales-debtors-page-size {
+  flex: 0 0 84px;
+  width: 84px;
+}
+
+.sales-debtors-current-page {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-8);
+  display: inline-flex;
+  flex: 0 0 34px;
+  font-size: 12px;
+  font-weight: 680;
+  height: 30px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 34px;
+}
+
+.sales-debtors-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  padding: 12px;
+}
+
+.sales-debtors-list-head,
+.sales-debtors-row {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns:
+    88px
+    minmax(280px, 1.15fr)
+    minmax(170px, 0.7fr)
+    132px
+    96px
+    132px
+    140px;
+  min-width: 1100px;
+}
+
+.sales-debtors-list-head {
+  color: var(--mantine-color-gray-5);
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0 24px 8px 10px;
+  text-transform: uppercase;
+}
+
+.sales-debtors-sort-header {
+  all: unset;
+  align-items: center;
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 4px;
+  max-width: max-content;
+  min-width: 0;
+  padding: 2px 3px;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.sales-debtors-sort-header:hover,
+.sales-debtors-sort-header:focus-visible,
+.sales-debtors-sort-header.is-active {
+  background: var(--mantine-color-orange-0);
+  color: var(--mantine-color-gray-8);
+}
+
+.sales-debtors-sort-header svg {
+  color: #e8782e;
+  flex: 0 0 auto;
+  opacity: 0.58;
+}
+
+.sales-debtors-sort-header.is-active svg {
+  opacity: 1;
+}
+
+.sales-debtors-sort-header.is-right {
+  justify-self: end;
+}
+
+.sales-debtors-sort-header.is-center {
+  justify-self: center;
+}
+
+.sales-debtors-list-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding-right: 14px;
+}
+
+.sales-debtors-row {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  border-radius: 8px;
+  min-height: 56px;
+  outline: none;
+  padding: 8px 10px;
+  position: relative;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.sales-debtors-list.is-normal .sales-debtors-row {
+  min-height: 64px;
+  padding-block: 10px;
+}
+
+.sales-debtors-row::before {
+  background: transparent;
+  border-radius: 999px;
+  bottom: 8px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 8px;
+  transition: background-color 140ms ease;
+  width: 3px;
+}
+
+.sales-debtors-row:hover,
+.sales-debtors-row:focus-visible {
+  background:
+    linear-gradient(90deg, rgba(255, 250, 245, 0.92), rgba(255, 250, 245, 0.44) 42%, transparent),
+    var(--mantine-color-white);
+  box-shadow: 0 9px 22px rgba(20, 28, 38, 0.06);
+  transform: translateX(3px);
+  z-index: 1;
+}
+
+.sales-debtors-row:hover::before,
+.sales-debtors-row:focus-visible::before {
+  background: #e8782e;
+}
+
+.sales-debtors-region-cell {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-8);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  height: 28px;
+  justify-content: center;
+  justify-self: start;
+  max-width: 76px;
+  min-width: 48px;
+  overflow: hidden;
+  padding: 0 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-debtors-client-cell {
+  min-width: 0;
+}
+
+.sales-debtors-client-marker {
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+}
+
+.sales-debtors-manager-cell {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sales-debtors-manager-avatar {
+  --avatar-fz: 11px;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  flex: 0 0 34px;
+  font-size: 9px;
+  font-weight: 750;
+  height: 34px;
+  padding: 3px;
+  width: 34px;
+}
+
+.sales-debtors-manager-avatar .mantine-Avatar-placeholder,
+.sales-debtors-manager-avatar > span {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.sales-debtors-manager-copy {
+  min-width: 0;
+}
+
+.sales-debtors-manager-last-name {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-debtors-manager-first-name {
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sales-debtors-amount-cell {
+  color: var(--mantine-color-gray-9);
+  display: grid;
+  justify-items: end;
+  line-height: 1.08;
+  min-width: 0;
+}
+
+.sales-debtors-amount-cell strong {
+  font-size: 12.5px;
+  font-weight: 720;
+  letter-spacing: 0;
+}
+
+.sales-debtors-amount-cell small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+.sales-debtors-amount-cell.is-danger strong,
+.sales-debtors-summary-item.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.sales-debtors-days-cell {
+  align-items: center;
+  color: var(--mantine-color-gray-9);
+  display: inline-flex;
+  gap: 8px;
+  justify-content: center;
+  justify-self: center;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sales-debtors-days-cell span {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 26px;
+  font-size: 11px;
+  font-weight: 700;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+
+.sales-debtors-days-cell strong {
+  font-size: 12.5px;
+  font-weight: 720;
+}
+
+.sales-debtors-days-cell.is-danger strong {
+  color: var(--mantine-color-red-6);
+}
+
+.sales-debtors-days-cell.is-warning span {
+  background: var(--mantine-color-orange-0);
+  border-color: #ffd8b8;
+  color: #e8782e;
+}
+
+.sales-debtors-list-state {
+  align-items: center;
+  color: var(--mantine-color-gray-5);
+  display: flex;
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 180px;
+  justify-content: center;
+}
+
+.sales-debtors-summary {
+  align-items: center;
+  border-top: 1px solid var(--mantine-color-gray-1);
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  justify-content: flex-end;
+  min-height: 48px;
+  overflow-x: auto;
+  padding: 8px 12px;
+}
+
+.sales-debtors-summary-item {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 7px;
+  height: 30px;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.sales-debtors-summary-item strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+@media (max-width: 1440px) {
+  .sales-debtors-command-bar {
+    grid-template-columns:
+      minmax(160px, 1fr)
+      minmax(190px, 1.1fr)
+      minmax(120px, 0.65fr)
+      minmax(104px, 0.55fr)
+      minmax(126px, 0.65fr);
+  }
+
+  .sales-debtors-command-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 980px) {
+  .sales-debtors-command-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sales-debtors-command-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .sales-debtors-command-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sales-debtors-command-actions {
+    overflow-x: auto;
+  }
+}
