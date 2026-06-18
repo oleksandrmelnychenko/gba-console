@@ -2,7 +2,7 @@ import { ActionIcon, Badge, Box, Group, Image, Paper, ScrollArea, Stack, Text, T
 import { IconArrowRight, IconCheck, IconPencil } from '@tabler/icons-react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
-import { getProductMainImage, getRelatedProductRowColor } from '../../../products/utils'
+import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
 import { getWizardDisplayQty, type WizardSaleProduct } from './wizardSaleProduct'
 
@@ -55,15 +55,17 @@ export function ProductFullDetailPanel({
 }) {
   const { t } = useI18n()
   const mainImage = getProductMainImage(product)
+  // The DB image (product.Image / ProductImages) often 404s on the local backend; fall back to the
+  // concord-shop image (what the legacy client always uses) so the photo still loads.
+  const shopImageUrl = getProductShopImageUrl(product)
   const titleColor = getRelatedProductRowColor(product)
   const displayQty = getWizardDisplayQty(product, isVatSale)
 
   return (
     <Paper p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-4)' }} withBorder>
-      <Stack gap="sm">
-        {/* Availability columns spanning the full width (count on top, label below) + image on the right */}
-        <Group align="flex-start" gap="md" wrap="nowrap">
-          <Stack gap="xs" style={{ flex: 1, minWidth: 0 }}>
+      <Group align="flex-start" gap="md" wrap="nowrap">
+        {/* LEFT: availability columns + description + name + size + pricing; large image on the right */}
+        <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
             {nearestSupplyOrder && (
               <Paper bg="var(--mantine-color-blue-light)" p={6} radius="sm">
                 <Group gap="md" wrap="nowrap">
@@ -158,13 +160,6 @@ export function ProductFullDetailPanel({
                 </Stack>
               </ScrollArea.Autosize>
             )}
-          </Stack>
-
-          {mainImage?.ImageUrl && (
-            <Image alt={product.VendorCode || ''} fit="contain" h={96} radius="sm" src={mainImage.ImageUrl} w={120} />
-          )}
-        </Group>
-
         {/* Description (editable) */}
         <Group align="flex-start" gap="xs" wrap="nowrap">
           <Box style={{ flex: 1, minWidth: 0 }}>
@@ -260,7 +255,22 @@ export function ProductFullDetailPanel({
             </Group>
           </Group>
         )}
-      </Stack>
+        </Stack>
+
+        {/* RIGHT: large product image spanning the card height (legacy layout) */}
+        {mainImage?.ImageUrl && (
+          <Image
+            alt={product.VendorCode || ''}
+            fallbackSrc={shopImageUrl || undefined}
+            fit="contain"
+            h={170}
+            radius="sm"
+            src={mainImage.ImageUrl}
+            style={{ alignSelf: 'flex-start', flexShrink: 0 }}
+            w={190}
+          />
+        )}
+      </Group>
     </Paper>
   )
 }

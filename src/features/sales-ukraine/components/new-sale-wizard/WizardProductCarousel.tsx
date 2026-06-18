@@ -1,7 +1,7 @@
 import { ActionIcon, Box, Group, Loader, Stack, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconInfoCircle } from '@tabler/icons-react'
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ProductPickerMeta } from '../../../products/components/ProductPickerCarousel'
 import type { WizardSaleProduct } from './wizardSaleProduct'
@@ -14,6 +14,7 @@ const metaNumberFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigi
 export function WizardProductCarousel({
   products,
   active,
+  detailSlot,
   emptyText,
   focusedIndex,
   hasFocus,
@@ -28,6 +29,7 @@ export function WizardProductCarousel({
   onSearchChange,
 }: {
   active: boolean
+  detailSlot?: ReactNode
   emptyText?: string
   focusedIndex: number
   getItemColor?: (product: WizardSaleProduct) => string | undefined
@@ -50,7 +52,7 @@ export function WizardProductCarousel({
   const showInput = searchMode || !focused
 
   return (
-    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, position: 'relative' }}>
       <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'flex-end', minHeight: 0, overflow: 'hidden' }}>
         <Stack gap={2}>
           {topProducts.map((product, index) => (
@@ -87,7 +89,7 @@ export function WizardProductCarousel({
           value={searchValue}
           onChange={(event) => onSearchChange(event.currentTarget.value)}
         />
-        {!showInput && focused && (
+        {!showInput && focused && !detailSlot && (
           <ProductMiniCard
             active={active}
             color={getItemColor?.(focused)}
@@ -122,6 +124,25 @@ export function WizardProductCarousel({
           </Stack>
         )}
       </Box>
+
+      {focused && detailSlot && (
+        // Extended info replaces the compact card and floats out beyond the (narrow) column,
+        // vertically centered over the main area, instead of widening the column.
+        <Box
+          style={{
+            borderRadius: 'var(--mantine-radius-md)',
+            boxShadow: '0 10px 34px rgba(20, 28, 38, 0.22)',
+            left: 0,
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 'min(760px, calc(100vw - 380px))',
+            zIndex: 100,
+          }}
+        >
+          {detailSlot}
+        </Box>
+      )}
     </Box>
   )
 }

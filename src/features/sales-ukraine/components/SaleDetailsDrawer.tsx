@@ -24,6 +24,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { getSaleTransporterTypes, getSaleTransportersByType, updateSaleFromData } from '../api/salesUkraineApi'
 import { getSaleLifecycleStatusKey } from '../saleStatus'
 import type { SalesUkraineSale, SalesUkraineTransporter, SalesUkraineUpdateDataCarrier } from '../types'
+import { isSelfCheckout } from './new-sale-wizard/newSaleWizardState'
 
 export function SaleDetailsDrawer({
   sale,
@@ -81,6 +82,24 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
   const isChangedRecipient = recipientName !== originalName || mobilePhone !== originalPhone
 
   const selectedTransporter = transporters.find((item) => getTransporterValue(item) === transporterId) || sale.Transporter
+  // Self-checkout (Самовивіз) has no delivery address/recipient — hide and skip those fields.
+  const selfCheckout = isSelfCheckout(selectedTransporter ?? null)
+
+  // Live "current data" snapshot for the right-most history column (diffs against the last saved entry).
+  const currentCarrier = {
+    CashOnDeliveryAmount: isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0,
+    City: city,
+    Comment: comment,
+    Department: department,
+    FullName: recipientName,
+    HasDocument: hasDocuments,
+    IsCashOnDelivery: isCashOnDelivery,
+    MobilePhone: mobilePhone,
+    Number: hasOwnTtn ? ownTtnNumber : '',
+    ShipmentDate: shipmentDate ? new Date(shipmentDate).toISOString() : sale.ShipmentDate,
+    Transporter: selectedTransporter,
+    TtnPDFPath: sale.CustomersOwnTtn?.TtnPDFPath,
+  } as SalesUkraineUpdateDataCarrier
 
   async function enterEdit() {
     setEditMode(true)
@@ -137,21 +156,23 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
     payload.IsCashOnDelivery = isCashOnDelivery
     payload.CashOnDeliveryAmount = isCashOnDelivery ? Number(cashOnDeliveryAmount) || 0 : 0
     payload.HasDocuments = hasDocuments
-    payload.DeliveryRecipient = {
-      ...(sale.DeliveryRecipient || {}),
-      FullName: recipientName,
-      MobilePhone: mobilePhone,
-      ...(isChangedRecipient ? { Id: 0 } : {}),
-    }
-    payload.DeliveryRecipientAddress = {
-      ...(sale.DeliveryRecipientAddress || {}),
-      City: city,
-      Department: department,
-      ...(isChangedAddress ? { Id: 0 } : {}),
-    }
+    if (!selfCheckout) {
+      payload.DeliveryRecipient = {
+        ...(sale.DeliveryRecipient || {}),
+        FullName: recipientName,
+        MobilePhone: mobilePhone,
+        ...(isChangedRecipient ? { Id: 0 } : {}),
+      }
+      payload.DeliveryRecipientAddress = {
+        ...(sale.DeliveryRecipientAddress || {}),
+        City: city,
+        Department: department,
+        ...(isChangedAddress ? { Id: 0 } : {}),
+      }
 
-    if (isChangedAddress) {
-      payload.DeliveryRecipientAddressId = 0
+      if (isChangedAddress) {
+        payload.DeliveryRecipientAddressId = 0
+      }
     }
 
     if (showShipmentDate && shipmentDate) {
@@ -225,36 +246,40 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
           {sale.IsPrinted && (
             <TextInput label={t('Номер декларації')} value={ttn} onChange={(event) => setTtn(event.currentTarget.value)} />
           )}
-          {isChangedAddress && (
-            <Text c="orange" size="xs">
-              {t('При редагуванні буде створено нову адресу одержувача')}
-            </Text>
+          {!selfCheckout && (
+            <>
+              {isChangedAddress && (
+                <Text c="orange" size="xs">
+                  {t('При редагуванні буде створено нову адресу одержувача')}
+                </Text>
+              )}
+              <Group grow>
+                <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
+                <TextInput
+                  label={t('Відділення')}
+                  value={department}
+                  onChange={(event) => setDepartment(event.currentTarget.value)}
+                />
+              </Group>
+              {isChangedRecipient && (
+                <Text c="orange" size="xs">
+                  {t('При редагуванні буде створено нового одержувача')}
+                </Text>
+              )}
+              <Group grow>
+                <TextInput
+                  label={t('Отримувач товару')}
+                  value={recipientName}
+                  onChange={(event) => setRecipientName(event.currentTarget.value)}
+                />
+                <TextInput
+                  label={t('Мобільний телефон')}
+                  value={mobilePhone}
+                  onChange={(event) => setMobilePhone(event.currentTarget.value)}
+                />
+              </Group>
+            </>
           )}
-          <Group grow>
-            <TextInput label={t('Місто')} value={city} onChange={(event) => setCity(event.currentTarget.value)} />
-            <TextInput
-              label={t('Відділення')}
-              value={department}
-              onChange={(event) => setDepartment(event.currentTarget.value)}
-            />
-          </Group>
-          {isChangedRecipient && (
-            <Text c="orange" size="xs">
-              {t('При редагуванні буде створено нового одержувача')}
-            </Text>
-          )}
-          <Group grow>
-            <TextInput
-              label={t('Отримувач товару')}
-              value={recipientName}
-              onChange={(event) => setRecipientName(event.currentTarget.value)}
-            />
-            <TextInput
-              label={t('Мобільний телефон')}
-              value={mobilePhone}
-              onChange={(event) => setMobilePhone(event.currentTarget.value)}
-            />
-          </Group>
           <Textarea
             autosize
             label={t('Коментар')}
@@ -317,7 +342,7 @@ function SaleDetailsContent({ sale, onSaved }: { onSaved: () => void; sale: Sale
 
       <Divider />
 
-      <CarrierHistory entries={Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []} />
+      <CarrierHistory current={currentCarrier} entries={Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []} />
     </Stack>
   )
 }
@@ -326,24 +351,46 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const lifecycleStatusKey = getSaleLifecycleStatusKey(sale.BaseLifeCycleStatus?.SaleLifeCycleType ?? sale.BaseLifeCycleStatus?.Name)
   const showShipmentDate = lifecycleStatusKey === 'Packaging' || lifecycleStatusKey === 'Packaged'
+  const selfCheckout = isSelfCheckout(sale.Transporter ?? null)
+
+  // Highlight fields that differ from the last recorded change (sd_error in the legacy panel).
+  const entries = Array.isArray(sale.UpdateDataCarrier) ? sale.UpdateDataCarrier : []
+  const last = entries.length > 0 ? entries[entries.length - 1] : null
+  const changed = (current: unknown, previous: unknown) => last != null && normalizeCompare(current) !== normalizeCompare(previous)
 
   return (
     <Stack gap={6}>
       <Group gap="xs">
         {sale.Transporter?.ImageUrl && <Image alt="" h={20} src={toSecure(sale.Transporter.ImageUrl)} w={20} />}
-        <Text fw={600}>{displayValue(sale.Transporter?.Name || sale.Transporter?.Title)}</Text>
+        <Text fw={600} c={changed(sale.Transporter?.Name, last?.Transporter?.Name) ? 'orange.7' : undefined}>
+          {displayValue(sale.Transporter?.Name || sale.Transporter?.Title)}
+        </Text>
       </Group>
-      <Row label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
-      <Row label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
-      {showShipmentDate && <Row label={t('Дата відгрузки')} value={formatDate(sale.ShipmentDate)} />}
+      {!selfCheckout && (
+        <>
+          <Row changed={changed(sale.DeliveryRecipientAddress?.City, last?.City)} label={t('Місто')} value={sale.DeliveryRecipientAddress?.City} />
+          <Row changed={changed(sale.DeliveryRecipientAddress?.Department, last?.Department)} label={t('Відділення')} value={sale.DeliveryRecipientAddress?.Department} />
+        </>
+      )}
+      {showShipmentDate && (
+        <Row changed={changed(formatDate(sale.ShipmentDate), formatDate(last?.ShipmentDate))} label={t('Дата відгрузки')} value={formatDate(sale.ShipmentDate)} />
+      )}
       {sale.IsPrinted && <Row label={t('Номер декларації')} value={sale.TTN} />}
-      <Row label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
-      <Row label={t('Мобільний телефон')} value={sale.DeliveryRecipient?.MobilePhone} />
-      <Row label={t('Коментар')} value={sale.Comment} />
-      <Row label={t('Наложений платіж')} value={sale.IsCashOnDelivery ? t('Так') : t('Ні')} />
-      {sale.IsCashOnDelivery && <Row label={t('Сума накладеного платежу')} value={sale.CashOnDeliveryAmount} />}
-      <Row label={t('Є документи')} value={sale.HasDocuments ? t('Так') : t('Ні')} />
-      {sale.CustomersOwnTtn?.Number && <Row label={t('Власне ТТН')} value={sale.CustomersOwnTtn.Number} />}
+      {!selfCheckout && (
+        <>
+          <Row changed={changed(sale.DeliveryRecipient?.FullName, last?.FullName)} label={t('Отримувач товару')} value={sale.DeliveryRecipient?.FullName} />
+          <Row changed={changed(sale.DeliveryRecipient?.MobilePhone, last?.MobilePhone)} label={t('Мобільний телефон')} value={sale.DeliveryRecipient?.MobilePhone} />
+        </>
+      )}
+      <Row changed={changed(sale.Comment, last?.Comment)} label={t('Коментар')} value={sale.Comment} />
+      <Row changed={changed(Boolean(sale.IsCashOnDelivery), Boolean(last?.IsCashOnDelivery))} label={t('Наложений платіж')} value={sale.IsCashOnDelivery ? t('Так') : t('Ні')} />
+      {sale.IsCashOnDelivery && (
+        <Row changed={changed(sale.CashOnDeliveryAmount, last?.CashOnDeliveryAmount)} label={t('Сума накладеного платежу')} value={sale.CashOnDeliveryAmount} />
+      )}
+      <Row changed={changed(Boolean(sale.HasDocuments), Boolean(last?.HasDocument))} label={t('Є документи')} value={sale.HasDocuments ? t('Так') : t('Ні')} />
+      {sale.CustomersOwnTtn?.Number && (
+        <Row changed={changed(sale.CustomersOwnTtn.Number, last?.Number)} label={t('Власне ТТН')} value={sale.CustomersOwnTtn.Number} />
+      )}
       {sale.CustomersOwnTtn?.TtnPDFPath && (
         <Anchor href={toSecure(sale.CustomersOwnTtn.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
           {t('Завантажити ТТН')}
@@ -353,7 +400,7 @@ function DetailsView({ sale }: { sale: SalesUkraineSale }) {
   )
 }
 
-function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] }) {
+function CarrierHistory({ current, entries }: { current: SalesUkraineUpdateDataCarrier; entries: SalesUkraineUpdateDataCarrier[] }) {
   const { t } = useI18n()
 
   if (entries.length === 0) {
@@ -363,6 +410,12 @@ function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] 
       </Text>
     )
   }
+
+  // Snapshots first, then a live "current data" column that diffs against the last saved snapshot.
+  const columns: Array<{ entry: SalesUkraineUpdateDataCarrier; header: string; isCurrent?: boolean }> = [
+    ...entries.map((entry) => ({ entry, header: formatDateTime(entry.Created) })),
+    { entry: current, header: t('Актуальні дані'), isCurrent: true },
+  ]
 
   const rows: Array<{ label: string; render: (entry: SalesUkraineUpdateDataCarrier) => string }> = [
     { label: t('Перевізник'), render: (entry) => entry.Transporter?.Name || '' },
@@ -387,9 +440,12 @@ function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] 
           <Table.Thead>
             <Table.Tr>
               <Table.Th />
-              {entries.map((entry) => (
-                <Table.Th key={entry.NetUid || entry.Id} style={{ whiteSpace: 'nowrap' }}>
-                  {formatDateTime(entry.Created)}
+              {columns.map((col, index) => (
+                <Table.Th
+                  key={`head-${index}`}
+                  style={{ whiteSpace: 'nowrap', color: col.isCurrent ? 'var(--mantine-color-violet-7)' : undefined }}
+                >
+                  {col.header}
                 </Table.Th>
               ))}
             </Table.Tr>
@@ -398,15 +454,19 @@ function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] 
             {rows.map((row) => (
               <Table.Tr key={row.label}>
                 <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.label}</Table.Td>
-                {entries.map((entry, index) => {
-                  const value = row.render(entry)
-                  const previous = index > 0 ? row.render(entries[index - 1]) : value
-                  const changed = index > 0 && value !== previous
+                {columns.map((col, index) => {
+                  const value = row.render(col.entry)
+                  const previous = index > 0 ? row.render(columns[index - 1].entry) : value
+                  const isChanged = index > 0 && value !== previous
 
                   return (
                     <Table.Td
-                      key={`${row.label}-${entry.NetUid || entry.Id || index}`}
-                      style={{ whiteSpace: 'nowrap', color: changed ? 'var(--mantine-color-orange-7)' : undefined }}
+                      key={`${row.label}-${index}`}
+                      style={{
+                        whiteSpace: 'nowrap',
+                        color: isChanged ? 'var(--mantine-color-orange-7)' : undefined,
+                        fontWeight: col.isCurrent ? 600 : undefined,
+                      }}
                     >
                       {value || '—'}
                     </Table.Td>
@@ -416,10 +476,10 @@ function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] 
             ))}
             <Table.Tr>
               <Table.Td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{t('Документ')}</Table.Td>
-              {entries.map((entry, index) => (
-                <Table.Td key={`doc-${entry.NetUid || entry.Id || index}`}>
-                  {entry.TtnPDFPath ? (
-                    <Anchor href={toSecure(entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
+              {columns.map((col, index) => (
+                <Table.Td key={`doc-${index}`}>
+                  {col.entry.TtnPDFPath ? (
+                    <Anchor href={toSecure(col.entry.TtnPDFPath)} target="_blank" rel="noopener noreferrer">
                       {t('Завантажити')}
                     </Anchor>
                   ) : (
@@ -435,17 +495,25 @@ function CarrierHistory({ entries }: { entries: SalesUkraineUpdateDataCarrier[] 
   )
 }
 
-function Row({ label, value }: { label: string; value: unknown }) {
+function Row({ changed, label, value }: { changed?: boolean; label: string; value: unknown }) {
   return (
     <Group justify="space-between" align="flex-start" gap="lg" wrap="nowrap">
       <Text size="sm" c="dimmed">
         {label}
       </Text>
-      <Text size="sm" ta="right">
+      <Text size="sm" ta="right" c={changed ? 'orange.7' : undefined} fw={changed ? 600 : undefined}>
         {displayValue(value)}
       </Text>
     </Group>
   )
+}
+
+function normalizeCompare(value: unknown): string {
+  if (value == null) {
+    return ''
+  }
+
+  return String(value).trim()
 }
 
 function getTransporterValue(transporter?: SalesUkraineTransporter | null): string {

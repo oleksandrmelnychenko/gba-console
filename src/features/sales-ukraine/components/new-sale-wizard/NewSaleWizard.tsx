@@ -38,9 +38,11 @@ const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 
 export function NewSaleWizard({
   opened,
+  editSale,
   onClose,
   onCreated,
 }: {
+  editSale?: SalesUkraineSale | null
   onClose: () => void
   onCreated: () => void
   opened: boolean
@@ -79,6 +81,7 @@ export function NewSaleWizard({
       >
         {opened && (
           <NewSaleWizardContent
+            initialSale={editSale ?? null}
             onBusyChange={setContentBusy}
             onClose={onClose}
             onCreated={onCreated}
@@ -99,11 +102,13 @@ const WIZARD_STEPS: { icon: typeof IconUser; index: WizardStepIndex }[] = [
 ]
 
 function NewSaleWizardContent({
+  initialSale,
   onBusyChange,
   onClose,
   onCreated,
   onVatDocuments,
 }: {
+  initialSale?: SalesUkraineSale | null
   onBusyChange: (busy: boolean) => void
   onClose: () => void
   onCreated: () => void
@@ -130,6 +135,18 @@ function NewSaleWizardContent({
   useEffect(() => {
     clearWizardSplitOrderItems()
     clearWizardMergedSale()
+  }, [])
+
+  // Opened from the sales grid "Редагування" action: load the given sale and jump straight to
+  // the products step (step 2) instead of starting at client selection.
+  const editStartedRef = useRef(false)
+
+  useEffect(() => {
+    if (initialSale && !editStartedRef.current) {
+      editStartedRef.current = true
+      void openRegistrySale(initialSale)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -213,6 +230,7 @@ function NewSaleWizardContent({
 
     try {
       const fresh = sale.NetUid ? await getSaleById(sale.NetUid) : null
+      const next = fresh ?? sale
 
       clearWizardSplitOrderItems()
       clearWizardMergedSale()
@@ -221,7 +239,8 @@ function NewSaleWizardContent({
         ...current,
         agreement: agreement ?? current.agreement,
         agreementNetId: agreement?.NetUid ?? current.agreementNetId,
-        sale: fresh ?? sale,
+        clientNetId: next.ClientAgreement?.Client?.NetUid ?? agreement?.Client?.NetUid ?? current.clientNetId,
+        sale: next,
       }))
       bumpWizardDebtRefresh()
       setActive(1)

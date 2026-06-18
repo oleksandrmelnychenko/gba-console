@@ -93,7 +93,7 @@ export function splitProductSearchResults<T>(products: T[]): { bottomProducts: T
   }
 }
 
-function getProductShopImageUrl(product?: Product | null): string {
+export function getProductShopImageUrl(product?: Product | null): string {
   const vendorCode = product?.VendorCode?.trim()
 
   return vendorCode ? `${PRODUCT_SHOP_IMAGE_BASE_URL}${normalizeProductShopImageCode(vendorCode.toLowerCase())}_water.jpg` : ''

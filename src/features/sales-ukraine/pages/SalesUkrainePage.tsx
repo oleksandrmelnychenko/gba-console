@@ -29,7 +29,6 @@ import {
   IconDots,
   IconLock,
   IconPercentage,
-  IconExternalLink,
   IconFileInvoice,
   IconHistory,
   IconLockOpen,
@@ -83,7 +82,6 @@ import { getSaleLifecycleStatusKey, getStatusTypeKey, isDiscountEditableSaleLife
 import { ConsignmentNoteSettingsDrawer } from '../components/ConsignmentNoteSettingsDrawer'
 import { NewSaleWizard } from '../components/new-sale-wizard/NewSaleWizard'
 import { SaleEditDrawer } from '../components/SaleEditDrawer'
-import { SaleEditorDrawer } from '../components/SaleEditorDrawer'
 import { SaleDetailsDrawer } from '../components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../components/SaleDiscountModal'
 import { SaleExpandContent } from '../components/SaleExpandContent'
@@ -228,7 +226,7 @@ export function SalesUkrainePage() {
   } | null>(null)
   const [detailsSale, setDetailsSale] = useValueState<SalesUkraineSale | null>(null)
   const [consignmentSale, setConsignmentSale] = useValueState<SalesUkraineSale | null>(null)
-  const [editorSale, setEditorSale] = useValueState<SalesUkraineSale | null>(null)
+  const [wizardEditSale, setWizardEditSale] = useValueState<SalesUkraineSale | null>(null)
   const [editShiftSale, setEditShiftSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditSale, setAuditSale] = useValueState<SalesUkraineSale | null>(null)
   const [auditStatistic, setAuditStatistic] = useValueState<SaleAuditStatistic | null>(null)
@@ -906,7 +904,7 @@ export function SalesUkrainePage() {
                         isExpanded={isExpanded}
                         onToggleExpand={() => toggleExpand(key)}
                         onOpenSale={setSelectedSale}
-                        onOpenEditor={setEditorSale}
+                        onOpenEditor={setWizardEditSale}
                         onOpenEditShift={setEditShiftSale}
                         onOpenDetails={setDetailsSale}
                         onOpenConsignment={setConsignmentSale}
@@ -971,8 +969,6 @@ export function SalesUkrainePage() {
         onClose={() => setConsignmentSale(null)}
       />
 
-      <SaleEditorDrawer sale={editorSale} onClose={() => setEditorSale(null)} />
-
       <SaleEditDrawer
         sale={editShiftSale}
         onClose={() => setEditShiftSale(null)}
@@ -993,10 +989,16 @@ export function SalesUkrainePage() {
       </AppDrawer>
 
       <NewSaleWizard
-        opened={canCreateSale && isNewSaleOpen}
-        onClose={() => setNewSaleOpen(false)}
+        editSale={wizardEditSale}
+        opened={(canCreateSale && isNewSaleOpen) || Boolean(wizardEditSale)}
+        onClose={() => {
+          setNewSaleOpen(false)
+          setWizardEditSale(null)
+          reload()
+        }}
         onCreated={() => {
           setNewSaleOpen(false)
+          setWizardEditSale(null)
           reload()
         }}
       />
@@ -1124,8 +1126,8 @@ function SaleGridRow({
       <div className="sg-client">
         <div className="sg-client-actions" data-row-stop="true">
           {showEdit && (
-            <Tooltip label={t('Відкрити продаж')}>
-              <ActionIcon aria-label={t('Відкрити продаж')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
+            <Tooltip label={t('Редагування')}>
+              <ActionIcon aria-label={t('Редагування')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
                 <IconPencil size={15} />
               </ActionIcon>
             </Tooltip>
@@ -1278,8 +1280,8 @@ function SaleGridRow({
           </Menu.Target>
           <Menu.Dropdown>
             {showEdit && (
-              <Menu.Item leftSection={<IconExternalLink size={16} />} onClick={() => onOpenEditor(sale)}>
-                {t('Відкрити продаж')}
+              <Menu.Item leftSection={<IconPencil size={16} />} onClick={() => onOpenEditor(sale)}>
+                {t('Редагування')}
               </Menu.Item>
             )}
             {showEditShift && (

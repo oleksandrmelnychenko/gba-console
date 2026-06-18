@@ -330,8 +330,12 @@ export function NewSaleReviewStep({
   const transporterKey = value.transporter?.Id != null ? String(value.transporter.Id) : null
 
   const syntheticClientId = sale?.ClientAgreement?.Client?.Id
+  // Once a real recipient is picked/created (e.g. typed-in new one), show the real list so it is
+  // present among the options — otherwise the self-checkout synthetic placeholder hides it and the
+  // field looks cleared after creating a recipient.
+  const hasSelectedRecipient = (value.recipient?.Id ?? 0) > 0
   const recipientSource =
-    selfCheckout && !recipients.some((item) => item.FullName === t('Не вибраний перевізник'))
+    selfCheckout && !hasSelectedRecipient && !recipients.some((item) => item.FullName === t('Не вибраний перевізник'))
       ? [{ FullName: '', ...(syntheticClientId ? { ClientId: syntheticClientId } : {}) } as WizardDeliveryRecipient]
       : recipients
   const recipientOptions: WizardReviewComboboxOption<WizardDeliveryRecipient>[] = recipientSource.map((item, index) => ({

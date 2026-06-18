@@ -1908,6 +1908,8 @@ export function NewSaleProductsStep({
   const mainStatesActive = kbState === 'ProductSearch' || kbState === 'ProductSelection' || kbState === 'FullDetail'
   const analogueStatesActive = kbState === 'AnalogueSelection' || kbState === 'AnalogueFullDetail'
   const componentStatesActive = kbState === 'ComponentSelection' || kbState === 'ComponentFullDetail'
+  // Ctrl+Enter on the main product shows its full detail inline in the (widened) search column.
+  const isMainFullDetail = kbState === 'FullDetail' && Boolean(mainProduct)
   const setQtyByNetUid = new Map<string, number>()
 
   componentEntries.entries.forEach((entry) => {
@@ -1940,6 +1942,37 @@ export function NewSaleProductsStep({
       </Group>
     )
   }
+
+  // Full detail (Ctrl+Enter) for the main product — rendered as a floating overlay that overflows
+  // the narrow search column (instead of widening it), replacing the compact selected-product card.
+  const mainDetailPanel =
+    isMainFullDetail && mainProduct ? (
+      <ProductFullDetailPanel
+        canEditDescription={canEditMainDescription}
+        chips={getMainChips()}
+        descriptionDraft={descriptionDraft}
+        isEditingDescription={editingDescription && active?.source === 'main'}
+        isVatSale={isVatSale}
+        nearestSupplyOrder={nearestOrder}
+        pricing={detailPricingFor(mainProduct)}
+        product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
+        rows={
+          detail?.chipIndex != null
+            ? getMainChipRows(detail.chipIndex).map((row) => ({
+                amount: getWizardProductNumber(row.Amount) ?? 0,
+                analyst: row.OrderItem?.User?.LastName ?? '',
+                name: row.Name ?? '',
+                regionCode: row.RegionCode ?? '',
+              }))
+            : []
+        }
+        selectedChipIndex={detail?.chipIndex ?? null}
+        selectedRowIndex={detail?.rowIndex ?? null}
+        showRowDetails={detail?.chipIndex === 0}
+        onDescriptionDraftChange={setDescriptionDraft}
+        onToggleDescription={() => void toggleDescriptionEdit()}
+      />
+    ) : null
 
   return (
     <Box ref={containerRef} style={{ position: 'relative' }}>
@@ -1975,6 +2008,7 @@ export function NewSaleProductsStep({
           <Box style={{ flex: 1, minHeight: 0 }}>
             <WizardProductCarousel
               active={mainStatesActive}
+              detailSlot={mainDetailPanel}
               emptyText={query.trim().length < 4 ? t('Введіть мінімум 4 символи') : t('Нічого не знайдено')}
               focusedIndex={mainIndex}
               getItemColor={(product) => getRelatedProductRowColor(product)}
@@ -2000,40 +2034,13 @@ export function NewSaleProductsStep({
               onSearchChange={handleQueryChange}
             />
           </Box>
+
         </Box>
 
         {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
         <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
           <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <Stack gap="md">
-              {kbState === 'FullDetail' && mainProduct && (
-                <ProductFullDetailPanel
-                  canEditDescription={canEditMainDescription}
-                  chips={getMainChips()}
-                  descriptionDraft={descriptionDraft}
-                  isEditingDescription={editingDescription && active?.source === 'main'}
-                  isVatSale={isVatSale}
-                  nearestSupplyOrder={nearestOrder}
-                  pricing={detailPricingFor(mainProduct)}
-                  product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
-                  rows={
-                    detail?.chipIndex != null
-                      ? getMainChipRows(detail.chipIndex).map((row) => ({
-                          amount: getWizardProductNumber(row.Amount) ?? 0,
-                          analyst: row.OrderItem?.User?.LastName ?? '',
-                          name: row.Name ?? '',
-                          regionCode: row.RegionCode ?? '',
-                        }))
-                      : []
-                  }
-                  selectedChipIndex={detail?.chipIndex ?? null}
-                  selectedRowIndex={detail?.rowIndex ?? null}
-                  showRowDetails={detail?.chipIndex === 0}
-                  onDescriptionDraftChange={setDescriptionDraft}
-                  onToggleDescription={() => void toggleDescriptionEdit()}
-                />
-              )}
-
               {analogueState.items.length > 0 && (
                 <Stack gap={4}>
                   <Group gap={8}>
