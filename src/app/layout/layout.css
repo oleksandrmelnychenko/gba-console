@@ -198,9 +198,12 @@
 }
 
 .console-header-main {
-  --console-header-brand-width: 240px;
+  --console-header-side-width: 240px;
   display: grid;
-  grid-template-columns: var(--console-header-brand-width) minmax(0, 1fr) minmax(240px, auto);
+  grid-template-columns:
+    minmax(var(--console-header-side-width), 1fr)
+    auto
+    minmax(var(--console-header-side-width), 1fr);
   grid-template-rows: 62px 46px;
   column-gap: 16px;
   height: 108px;
@@ -267,6 +270,9 @@
   min-width: 0;
   position: relative;
   z-index: 1;
+  justify-self: center;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .console-header-top-nav {
@@ -294,7 +300,8 @@
   background: transparent;
   border: 0;
   border-radius: 0;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .console-header-top-nav > .console-subnav-mode-modules .console-subnav-row {
@@ -321,7 +328,8 @@
   border-top: 0; /* the row divider (::before) already draws this line */
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  width: 100%;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .console-header-bottom-nav > .console-subnav-mode-items .console-subnav-row {
