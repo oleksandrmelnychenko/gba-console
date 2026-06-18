@@ -6,7 +6,7 @@ export type EntityFields = {
   Updated?: Date | string
 }
 
-export type BasketSupplyWorkflowTab = 'cart' | 'sales' | 'recommendations' | 'dashboard' | 'cockpit'
+export type BasketSupplyWorkflowTab = 'cart' | 'sales' | 'recommendations' | 'dashboard' | 'cockpit' | 'budget-cart'
 
 export type BasketProduct = EntityFields & {
   MainOriginalNumber?: string

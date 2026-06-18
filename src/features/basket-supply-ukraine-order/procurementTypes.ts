@@ -89,6 +89,8 @@ export type ReorderSuggestion = {
   quadrant: string | null
   cheaper_alt: ReorderCheaperAlt | null
   learned_factor: number | null
+  value_density: number | null
+  within_budget: boolean | null
 }
 
 export type ProducerPlan = {
@@ -101,6 +103,25 @@ export type ProducerPlan = {
   as_of_date: string | null
   model_version: string
   items: ReorderSuggestion[]
+}
+
+export type CartOptimizeMethod = 'greedy' | 'milp'
+
+export type CartPlan = {
+  items: ReorderSuggestion[]
+  item_count: number
+  as_of_date: string | null
+  budget_eur: number
+  budget_used_eur: number
+  value_captured_eur: number
+  selected_count: number
+  deferred_count: number
+}
+
+export type CartPlanQuery = {
+  budgetEur: number
+  method: CartOptimizeMethod
+  asOfDate?: string
 }
 
 export type ProducerProfile = {

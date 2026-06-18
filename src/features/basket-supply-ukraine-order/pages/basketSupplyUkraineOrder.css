@@ -36,3 +36,36 @@
     max-width: none;
   }
 }
+
+.budget-cart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.budget-cart-table thead th {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--mantine-color-gray-7);
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  white-space: nowrap;
+}
+
+.budget-cart-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  vertical-align: middle;
+}
+
+.budget-cart-table tbody tr:hover td {
+  background: var(--mantine-color-gray-0);
+}
+
+.budget-cart-table .budget-cart-divider-row td {
+  padding: 0 12px;
+  border-bottom: none;
+}
+
+.budget-cart-table .budget-cart-divider-row:hover td {
+  background: transparent;
+}

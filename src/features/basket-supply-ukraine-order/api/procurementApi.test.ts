@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
   createCockpitDraftOrder,
+  getBudgetCartPlan,
   getProducerPlan,
   getProducerProfile,
   getProductTerms,
@@ -551,6 +552,216 @@ describe('createCockpitDraftOrder', () => {
     await expect(createCockpitDraftOrder(42, [{ productId: 100, qty: 30 }])).resolves.toBeNull()
   })
 })
+
+describe('getBudgetCartPlan', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('posts the cart request with budget, method, only_needed and unwraps the envelope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+
+    const plan = await getBudgetCartPlan({ budgetEur: 50000, method: 'milp', asOfDate: '2026-06-15' })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/cart', {
+      method: 'POST',
+      body: {
+        budget_eur: 50000,
+        method: 'milp',
+        only_needed: true,
+        as_of_date: '2026-06-15',
+      },
+    })
+
+    expect(plan.budget_eur).toBe(50000)
+    expect(plan.budget_used_eur).toBe(42350.5)
+    expect(plan.value_captured_eur).toBe(8120.25)
+    expect(plan.selected_count).toBe(2)
+    expect(plan.deferred_count).toBe(1)
+    expect(plan.item_count).toBe(3)
+    expect(plan.as_of_date).toBe('2026-06-15')
+    expect(plan.items).toHaveLength(3)
+
+    const [first] = plan.items
+
+    expect(first).toMatchObject({
+      product_id: 100,
+      producer_id: 42,
+      suggested_qty: 30,
+      line_cost_eur: 135,
+      unit_cost_eur: 4.5,
+      unit_margin_eur: 4.5,
+      urgency: 'critical',
+      quadrant: 'AX',
+      value_density: 1.25,
+      within_budget: true,
+    })
+  })
+
+  it('omits as_of_date from the body when not provided', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+
+    await getBudgetCartPlan({ budgetEur: 25000, method: 'greedy' })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/cart', {
+      method: 'POST',
+      body: {
+        budget_eur: 25000,
+        method: 'greedy',
+        only_needed: true,
+      },
+    })
+  })
+
+  it('falls back to greedy and zero budget for an invalid method or non-finite budget', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+
+    await getBudgetCartPlan({ budgetEur: Number.NaN, method: 'unknown' as never })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/cart', {
+      method: 'POST',
+      body: {
+        budget_eur: 0,
+        method: 'greedy',
+        only_needed: true,
+      },
+    })
+  })
+
+  it('forwards the abort signal when provided', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: buildFullCartPlan() })
+    const controller = new AbortController()
+
+    await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' }, controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/cart', {
+      method: 'POST',
+      body: { budget_eur: 1000, method: 'greedy', only_needed: true },
+      signal: controller.signal,
+    })
+  })
+
+  it('defaults budget fields to zero and tolerates null optional item fields', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      items: [
+        {
+          product_id: 200,
+          producer_id: 42,
+          suggested_qty: 5,
+          urgency: 'normal',
+          line_cost_eur: null,
+          unit_cost_eur: null,
+          unit_margin_eur: null,
+          value_density: null,
+          within_budget: null,
+        },
+      ],
+    })
+
+    const plan = await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })
+
+    expect(plan.budget_eur).toBe(0)
+    expect(plan.budget_used_eur).toBe(0)
+    expect(plan.value_captured_eur).toBe(0)
+    expect(plan.selected_count).toBe(0)
+    expect(plan.deferred_count).toBe(0)
+    expect(plan.item_count).toBe(1)
+
+    const [item] = plan.items
+
+    expect(item?.value_density).toBeNull()
+    expect(item?.within_budget).toBeNull()
+    expect(item?.line_cost_eur).toBeNull()
+  })
+
+  it('drops malformed item rows and coerces within_budget false', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        budget_eur: 1000,
+        items: [
+          null,
+          'noise',
+          { producer_id: 42, urgency: 'critical' },
+          { product_id: 5, urgency: 'unknown' },
+          { product_id: 9, urgency: 'high', within_budget: false, value_density: 0.4 },
+        ],
+      },
+    })
+
+    const plan = await getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })
+
+    expect(plan.items).toHaveLength(1)
+    expect(plan.items[0]?.product_id).toBe(9)
+    expect(plan.items[0]?.within_budget).toBe(false)
+    expect(plan.items[0]?.value_density).toBe(0.4)
+    expect(plan.item_count).toBe(1)
+  })
+
+  it('returns an empty cart plan for a null response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getBudgetCartPlan({ budgetEur: 1000, method: 'greedy' })).resolves.toEqual({
+      items: [],
+      item_count: 0,
+      as_of_date: null,
+      budget_eur: 0,
+      budget_used_eur: 0,
+      value_captured_eur: 0,
+      selected_count: 0,
+      deferred_count: 0,
+    })
+  })
+})
+
+function buildFullCartPlan() {
+  return {
+    item_count: 3,
+    as_of_date: '2026-06-15',
+    budget_eur: 50000,
+    budget_used_eur: 42350.5,
+    value_captured_eur: 8120.25,
+    selected_count: 2,
+    deferred_count: 1,
+    items: [
+      {
+        product_id: 100,
+        producer_id: 42,
+        suggested_qty: 30,
+        urgency: 'critical',
+        line_cost_eur: 135,
+        unit_cost_eur: 4.5,
+        unit_margin_eur: 4.5,
+        quadrant: 'AX',
+        value_density: 1.25,
+        within_budget: true,
+      },
+      {
+        product_id: 101,
+        producer_id: 42,
+        suggested_qty: 12,
+        urgency: 'high',
+        line_cost_eur: 90,
+        unit_cost_eur: 7.5,
+        unit_margin_eur: 2.1,
+        quadrant: 'BX',
+        value_density: 0.8,
+        within_budget: true,
+      },
+      {
+        product_id: 102,
+        producer_id: 7,
+        suggested_qty: 4,
+        urgency: 'normal',
+        line_cost_eur: 60,
+        unit_cost_eur: 15,
+        unit_margin_eur: 1,
+        quadrant: 'CZ',
+        value_density: 0.2,
+        within_budget: false,
+      },
+    ],
+  }
+}
 
 function buildFullPlan() {
   return {

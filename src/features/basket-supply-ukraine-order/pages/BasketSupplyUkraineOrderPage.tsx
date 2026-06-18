@@ -60,6 +60,7 @@ import {
 import { BasketSupplyUploadModal } from '../components/BasketSupplyUploadModal'
 import { DocumentTargetControls } from '../components/DocumentTargetControls'
 import { PreviewCartItemsModal } from '../components/PreviewCartItemsModal'
+import { BudgetCartTab } from '../components/BudgetCartTab'
 import { BuyerCockpitTab } from '../components/BuyerCockpitTab'
 import { ProcureDashboardTab } from '../components/ProcureDashboardTab'
 import type {
@@ -172,6 +173,7 @@ export function BasketSupplyUkraineOrderPage() {
             { value: 'recommendations', label: t('Рекомендації') },
             { value: 'dashboard', label: t('Дашборд') },
             { value: 'cockpit', label: t('Кокпіт байера') },
+            { value: 'budget-cart', label: t('Бюджетний кошик') },
           ].map((tab) => (
             <button
               key={tab.value}
@@ -191,6 +193,7 @@ export function BasketSupplyUkraineOrderPage() {
           {activeTab === 'recommendations' && <RecommendationsTab />}
           {activeTab === 'dashboard' && <ProcureDashboardTab />}
           {activeTab === 'cockpit' && <BuyerCockpitTab />}
+          {activeTab === 'budget-cart' && <BudgetCartTab />}
         </div>
       </div>
     </Stack>
@@ -2152,6 +2155,10 @@ function getActiveTab(pathname: string): BasketSupplyWorkflowTab {
     return 'cockpit'
   }
 
+  if (pathname.endsWith('/budget-cart')) {
+    return 'budget-cart'
+  }
+
   return 'cart'
 }
 
@@ -2170,6 +2177,10 @@ function getTabPath(tab: BasketSupplyWorkflowTab) {
 
   if (tab === 'cockpit') {
     return '/basket-supply-ukraine-order/cockpit'
+  }
+
+  if (tab === 'budget-cart') {
+    return '/basket-supply-ukraine-order/budget-cart'
   }
 
   return '/basket-supply-ukraine-order'

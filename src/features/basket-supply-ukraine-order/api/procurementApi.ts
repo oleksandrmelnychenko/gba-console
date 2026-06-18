@@ -1,5 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  CartOptimizeMethod,
+  CartPlan,
+  CartPlanQuery,
   CockpitDraftItem,
   FeedbackInput,
   ProcurementCharts,
@@ -18,6 +21,7 @@ import type {
 } from '../procurementTypes'
 
 const KNOWN_URGENCIES: ProcurementUrgency[] = ['critical', 'high', 'normal', 'none']
+const KNOWN_CART_METHODS: CartOptimizeMethod[] = ['greedy', 'milp']
 
 export async function getProducerPlan(
   producerId: number,
@@ -35,6 +39,24 @@ export async function getProducerPlan(
   })
 
   return normalizeProducerPlan(result)
+}
+
+export async function getBudgetCartPlan(query: CartPlanQuery, signal?: AbortSignal): Promise<CartPlan> {
+  const method: CartOptimizeMethod = KNOWN_CART_METHODS.includes(query.method) ? query.method : 'greedy'
+  const budgetEur = typeof query.budgetEur === 'number' && Number.isFinite(query.budgetEur) ? query.budgetEur : 0
+
+  const result = await apiRequest<unknown>('/procurement/cart', {
+    method: 'POST',
+    body: {
+      budget_eur: budgetEur,
+      method,
+      only_needed: true,
+      ...(query.asOfDate ? { as_of_date: query.asOfDate } : {}),
+    },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeCartPlan(result)
 }
 
 export async function getProcurementCharts(
@@ -375,6 +397,41 @@ function normalizeProducerPlan(result: unknown): ProducerPlan {
   }
 }
 
+function normalizeCartPlan(result: unknown): CartPlan {
+  const payload = unwrap(result)
+
+  if (!payload || typeof payload !== 'object') {
+    return emptyCartPlan()
+  }
+
+  const data = payload as Record<string, unknown>
+  const items = normalizeReorderSuggestions(data.items)
+
+  return {
+    items,
+    item_count: toNumber(data.item_count, items.length),
+    as_of_date: typeof data.as_of_date === 'string' ? data.as_of_date : null,
+    budget_eur: toNumber(data.budget_eur, 0),
+    budget_used_eur: toNumber(data.budget_used_eur, 0),
+    value_captured_eur: toNumber(data.value_captured_eur, 0),
+    selected_count: toNumber(data.selected_count, 0),
+    deferred_count: toNumber(data.deferred_count, 0),
+  }
+}
+
+function emptyCartPlan(): CartPlan {
+  return {
+    items: [],
+    item_count: 0,
+    as_of_date: null,
+    budget_eur: 0,
+    budget_used_eur: 0,
+    value_captured_eur: 0,
+    selected_count: 0,
+    deferred_count: 0,
+  }
+}
+
 function normalizeReorderSuggestions(value: unknown): ReorderSuggestion[] {
   return toArray(value)
     .map(normalizeReorderSuggestion)
@@ -418,6 +475,8 @@ function normalizeReorderSuggestion(value: unknown): ReorderSuggestion | null {
     quadrant: normalizeNullableString(entry.quadrant),
     cheaper_alt: normalizeCheaperAlt(entry.cheaper_alt),
     learned_factor: toNullableNumber(entry.learned_factor),
+    value_density: toNullableNumber(entry.value_density),
+    within_budget: toNullableBoolean(entry.within_budget),
   }
 }
 
@@ -508,6 +567,10 @@ function toNullableNumber(value: unknown): number | null {
   }
 
   return null
+}
+
+function toNullableBoolean(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null
 }
 
 function toNumber(value: unknown, fallback: number): number {
