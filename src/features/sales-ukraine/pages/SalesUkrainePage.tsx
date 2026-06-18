@@ -1133,41 +1133,53 @@ function SaleGridRow({
     >
       <div className="sg-client">
         <div className="sg-client-actions" data-row-stop="true">
-          {showEdit && (
-            <Tooltip label={t('Редагування')}>
-              <ActionIcon aria-label={t('Редагування')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
-                <IconPencil size={15} />
-              </ActionIcon>
-            </Tooltip>
+          {showEdit ? (
+            <span className="sg-action-slot">
+              <Tooltip label={t('Редагування')}>
+                <ActionIcon aria-label={t('Редагування')} color="gray" size="sm" variant="subtle" onClick={() => onOpenEditor(sale)}>
+                  <IconPencil size={15} />
+                </ActionIcon>
+              </Tooltip>
+            </span>
+          ) : (
+            <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
           {showBang ? (
-            <Tooltip label={t('Замовлення не буде відвантажено')}>
-              {bangClickable ? (
-                <button
-                  className="sg-bang"
-                  data-clickable="true"
-                  type="button"
-                  aria-label={t('Замовлення не буде відвантажено')}
-                  style={{ opacity: 1 }}
-                  onClick={() => onWillNotShip(sale)}
-                >
-                  !
-                </button>
-              ) : (
-                <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
-                  !
-                </span>
-              )}
-            </Tooltip>
+            <span className="sg-action-slot is-bang">
+              <Tooltip label={t('Замовлення не буде відвантажено')}>
+                {bangClickable ? (
+                  <button
+                    className="sg-bang"
+                    data-clickable="true"
+                    type="button"
+                    aria-label={t('Замовлення не буде відвантажено')}
+                    style={{ opacity: 1 }}
+                    onClick={() => onWillNotShip(sale)}
+                  >
+                    !
+                  </button>
+                ) : (
+                  <span className="sg-bang" style={{ opacity: sale.ChangedToInvoice ? 1 : 0.4 }}>
+                    !
+                  </span>
+                )}
+              </Tooltip>
+            </span>
           ) : (
-            <span className="sg-bang sg-bang-placeholder" aria-hidden="true" />
+            <span className="sg-action-slot is-bang" aria-hidden="true">
+              <span className="sg-bang sg-bang-placeholder">!</span>
+            </span>
           )}
-          {canExpand && (
-            <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
-              <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
-                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
-              </ActionIcon>
-            </Tooltip>
+          {canExpand ? (
+            <span className="sg-action-slot">
+              <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
+                <ActionIcon aria-label={t('Розгорнути')} color="gray" size="sm" variant="subtle" onClick={onToggleExpand}>
+                  {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+                </ActionIcon>
+              </Tooltip>
+            </span>
+          ) : (
+            <span className="sg-action-slot is-empty" aria-hidden="true" />
           )}
         </div>
 

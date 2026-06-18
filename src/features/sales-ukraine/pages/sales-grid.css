@@ -710,23 +710,43 @@
 }
 
 .sg-client-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: 26px 24px 26px;
   align-items: center;
-  gap: 0;
-  flex: 0 0 auto;
+  column-gap: 2px;
+  flex: 0 0 86px;
+  width: 86px;
   min-height: 40px;
-  padding-right: 5px;
+  padding-right: 6px;
   position: relative;
 }
 
 .sg-client-actions::after {
-  background: var(--mantine-color-gray-2);
+  border-right: 1px dashed var(--mantine-color-gray-2);
   bottom: 6px;
   content: '';
   position: absolute;
   right: 0;
   top: 6px;
   width: 1px;
+}
+
+.sg-action-slot {
+  align-items: center;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  min-width: 0;
+  width: 26px;
+}
+
+.sg-action-slot.is-bang {
+  height: 24px;
+  width: 24px;
+}
+
+.sg-action-slot.is-empty {
+  pointer-events: none;
 }
 
 .sg-bang {
@@ -742,7 +762,7 @@
   height: 22px;
   justify-content: center;
   line-height: 1;
-  margin: 0 1px;
+  margin: 0;
   padding: 0;
   align-self: center;
   font-family: inherit;
