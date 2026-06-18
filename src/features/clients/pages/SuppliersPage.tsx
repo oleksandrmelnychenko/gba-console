@@ -8,7 +8,6 @@ import {
   Divider,
   Group,
   Loader,
-  Pagination,
   Select,
   Stack,
   Text,
@@ -21,7 +20,12 @@ import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconBuildingStore,
   IconCash,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronDown,
+  IconChevronUp,
   IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
@@ -49,13 +53,9 @@ import {
   getSuppliers,
   switchClientActiveState,
 } from '../api/clientsApi'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type {
-  DataTableColumn,
-  DataTableDefaultLayout,
-  DataTableSortingState,
-} from '../../../shared/ui/data-table/types'
+import type { DataTableSortingState } from '../../../shared/ui/data-table/types'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './suppliers-page.css'
 
 const pageSizeOptions = ['15', '30', '50']
@@ -65,25 +65,10 @@ const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const SUPPLIER_SEARCH_DEBOUNCE_MS = 350
 const SUPPLIER_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:suppliers:page-size'
 const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = 30
-const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['status', 'regionCode', 'supplier'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
-
-const SUPPLIER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
+type SupplierSortId = 'balance' | 'email' | 'notResident' | 'phone' | 'regionCode' | 'role' | 'status' | 'supplier'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -98,7 +83,7 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: 'Client.EmailAddress', label: 'Email' },
 ]
 
-const SUPPLIER_SORT_COLUMNS: Record<string, string> = {
+const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
   balance: 'TotalCurrentAmount',
   email: 'EmailAddress',
   notResident: 'IsNotResident',
@@ -138,9 +123,6 @@ function useSuppliersPageModel() {
   const offset = (page - 1) * pageSize
   const canMoveBack = page > 1
   const canMoveForward = suppliers.length === pageSize
-  const totalPages = typeof totalCount === 'number'
-    ? Math.max(1, Math.ceil(totalCount / pageSize))
-    : canMoveForward ? page + 1 : page
   const active = activeFilter === 'all' ? null : activeFilter === 'active'
   const typeRoleFilter = roleFilter.join(',')
   const searchFieldOptions = useMemo(() => buildSupplierSearchFieldOptions(supplierFilterItems), [supplierFilterItems])
@@ -171,8 +153,6 @@ function useSuppliersPageModel() {
     }),
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
   )
-  const openSupplierActions = useCallback((supplier: Client) => setSelectedSupplier(supplier), [setSelectedSupplier])
-  const supplierColumns = useSupplierColumns(openSupplierActions)
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeSupplierTablePageSize(value)
 
@@ -180,16 +160,6 @@ function useSuppliersPageModel() {
     setPageSize(nextPageSize)
     writeSupplierTablePageSize(nextPageSize)
   }, [setPage, setPageSize])
-  const tableToolbarLeft = useMemo(
-    () => (
-      <SupplierTableSummary
-        page={page}
-        searchValue={normalizedSearchValue}
-        totalCount={totalCount}
-      />
-    ),
-    [normalizedSearchValue, page, totalCount],
-  )
   useSupplierListLoader({
     hasLoadedSuppliersRef,
     searchParams,
@@ -351,11 +321,8 @@ function useSuppliersPageModel() {
     selectedSupplier,
     sorting,
     supplierAction,
-    supplierColumns,
     suppliers,
-    tableToolbarLeft,
     totalCount,
-    totalPages,
     changePageSize,
     handleExport,
     handleSwitchActive,
@@ -499,6 +466,8 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   const { t } = useI18n()
   const {
     activeFilter,
+    canMoveBack,
+    canMoveForward,
     clientTypes,
     downloadDocument,
     downloadModalOpened,
@@ -514,10 +483,8 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     selectedSupplier,
     sorting,
     supplierAction,
-    supplierColumns,
     suppliers,
-    tableToolbarLeft,
-    totalPages,
+    totalCount,
     page,
     pageSize,
     changePageSize,
@@ -540,71 +507,58 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   } = model
 
   return (
-    <Stack className="suppliers-page" gap={6}>
+    <Stack className="suppliers-page console-table-page" gap="md">
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
           {t('Добавити')}
         </Button>
       </PageHeaderActions>
 
-      <SuppliersFilterToolbar
-        activeFilter={activeFilter}
-        clientTypes={clientTypes}
-        isExporting={supplierAction === 'export'}
-        isTableBusy={isTableBusy}
-        roleFilter={roleFilter}
-        searchField={searchField}
-        searchFieldOptions={searchFieldOptions}
-        searchInputRef={searchInputRef}
-        searchValue={searchValue}
-        onExport={handleExport}
-        onReset={resetSearch}
-        onSetActiveFilter={setActiveFilter}
-        onSetPage={setPage}
-        onSetRoleFilter={setRoleFilter}
-        onSetSearchField={setSearchField}
-        onSetSearchValue={setSearchValue}
-      />
+      <div className="suppliers-page__shell console-table-shell">
+        <SuppliersFilterToolbar
+          activeFilter={activeFilter}
+          canMoveBack={canMoveBack}
+          canMoveForward={canMoveForward}
+          clientTypes={clientTypes}
+          isExporting={supplierAction === 'export'}
+          isTableBusy={isTableBusy}
+          page={page}
+          pageSize={pageSize}
+          roleFilter={roleFilter}
+          searchField={searchField}
+          searchFieldOptions={searchFieldOptions}
+          searchInputRef={searchInputRef}
+          searchValue={searchValue}
+          totalCount={totalCount}
+          onExport={handleExport}
+          onPageSizeChange={changePageSize}
+          onReset={resetSearch}
+          onSetActiveFilter={setActiveFilter}
+          onSetPage={setPage}
+          onSetRoleFilter={setRoleFilter}
+          onSetSearchField={setSearchField}
+          onSetSearchValue={setSearchValue}
+        />
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <div className="suppliers-page__table">
-        <DataTable
-            columns={supplierColumns}
-            data={suppliers}
-            defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Постачальників не знайдено')}
-            getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
-            height="100%"
+        <div className="suppliers-page__table console-table-body">
+          <SuppliersList
             isLoading={isLoading}
-            layoutVersion="suppliers-table-default-freeze-2"
-            loadingText={t('Завантаження постачальників')}
-            manualSorting
-            minWidth={1120}
-            showLayoutControls={false}
-            showDensityToggle={false}
-            tableId="suppliers"
             sorting={sorting}
-            toolbarLeft={tableToolbarLeft}
-            onRowClick={setSelectedSupplier}
-            onSortingChange={(nextSorting) => {
+            suppliers={suppliers}
+            onOpenActions={setSelectedSupplier}
+            onSort={(id) => {
               setPage(1)
-              setSorting(nextSorting)
+              setSorting((currentSorting) => toggleSupplierSorting(currentSorting, id))
             }}
-            />
+          />
+        </div>
       </div>
-      <SupplierTablePagination
-        isTableBusy={isTableBusy}
-        page={page}
-        pageSize={pageSize}
-        totalPages={totalPages}
-        onPageSizeChange={changePageSize}
-        onSetPage={setPage}
-      />
 
       <SupplierActionsModal
         supplier={selectedSupplier}
@@ -729,15 +683,21 @@ function SupplierActionsModal({
 
 function SuppliersFilterToolbar({
   activeFilter,
+  canMoveBack,
+  canMoveForward,
   clientTypes,
   isExporting,
   isTableBusy,
+  page,
+  pageSize,
   roleFilter,
   searchField,
   searchFieldOptions,
   searchInputRef,
   searchValue,
+  totalCount,
   onExport,
+  onPageSizeChange,
   onReset,
   onSetActiveFilter,
   onSetPage,
@@ -746,15 +706,21 @@ function SuppliersFilterToolbar({
   onSetSearchValue,
 }: {
   activeFilter: ActiveFilter
+  canMoveBack: boolean
+  canMoveForward: boolean
   clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
+  page: number
+  pageSize: number
   roleFilter: string[]
   searchField: string
   searchFieldOptions: Array<{ label: string; value: string }>
   searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
+  totalCount: number | null
   onExport: () => void
+  onPageSizeChange: (value: string | null) => void
   onReset: () => void
   onSetActiveFilter: (value: ActiveFilter) => void
   onSetPage: (value: number) => void
@@ -769,9 +735,10 @@ function SuppliersFilterToolbar({
   )
 
   return (
-    <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Group align="end" gap="sm" wrap="nowrap" className="suppliers-command-bar">
       <TextInput
         ref={searchInputRef}
+        size="sm"
         leftSection={<IconSearch size={16} />}
         label={t('Пошук')}
         placeholder={t('Введіть значення')}
@@ -781,19 +748,21 @@ function SuppliersFilterToolbar({
           onSetPage(1)
           onSetSearchValue(event.currentTarget.value)
         }}
-        style={{ flex: '1 1 auto', minWidth: 160 }}
+        className="suppliers-search-input"
       />
       <Select
+        size="sm"
         label={t('Поле')}
         data={searchFieldOptions}
         value={searchField}
-        style={{ flex: '0 0 180px' }}
+        className="suppliers-field-select"
         onChange={(value) => {
           onSetPage(1)
           onSetSearchField(value || SUPPLIER_SEARCH_SQL)
         }}
       />
       <Select
+        size="sm"
         label={t('Статус')}
         data={[
           { value: 'all', label: t('Усі') },
@@ -801,7 +770,7 @@ function SuppliersFilterToolbar({
           { value: 'inactive', label: t('Неактивні') },
         ]}
         value={activeFilter}
-        style={{ flex: '0 0 130px' }}
+        className="suppliers-status-select"
         onChange={(value) => {
           onSetPage(1)
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
@@ -833,55 +802,63 @@ function SuppliersFilterToolbar({
           <ExcelIcon size={20} />
         </ActionIcon>
       </Tooltip>
+      <SupplierCommandPagination
+        canMoveBack={canMoveBack}
+        canMoveForward={canMoveForward}
+        isTableBusy={isTableBusy}
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        onPageSizeChange={onPageSizeChange}
+        onSetPage={onSetPage}
+      />
     </Group>
   )
 }
 
-function SupplierTableSummary({
-  page,
-  searchValue,
-  totalCount,
-}: {
-  page: number
-  searchValue: string
-  totalCount: number | null
-}) {
+function SupplierTotalCount({ totalCount }: { totalCount: number | null }) {
   const { t } = useI18n()
 
+  if (typeof totalCount !== 'number') {
+    return null
+  }
+
   return (
-    <Text size="xs" c="dimmed">
-      <Text component="span" inherit c="dark" fw={700}>
-        {t('сторінка')} {page}
-      </Text>
-      {typeof totalCount === 'number' ? `, ${t('всього')} ${totalCount}` : ''}
-      {searchValue ? `, ${t('фільтр')}: ${searchValue}` : ''}
-    </Text>
+    <span className="suppliers-total-count">
+      {t('Всього')} {totalCount}
+    </span>
   )
 }
 
-function SupplierTablePagination({
+function SupplierCommandPagination({
+  canMoveBack,
+  canMoveForward,
   isTableBusy,
   page,
   pageSize,
-  totalPages,
+  totalCount,
   onPageSizeChange,
   onSetPage,
 }: {
+  canMoveBack: boolean
+  canMoveForward: boolean
   isTableBusy: boolean
   page: number
   pageSize: number
-  totalPages: number
+  totalCount: number | null
   onPageSizeChange: (value: string | null) => void
   onSetPage: (value: number) => void
 }) {
   const { t } = useI18n()
 
   return (
-    <Group justify="flex-end" className="suppliers-page__pagination">
+    <div className="suppliers-command-pagination">
+      <SupplierTotalCount totalCount={totalCount} />
       <Group gap={6}>
         <Text c="dimmed" size="xs">{t('Рядків')}</Text>
         <Select
           allowDeselect={false}
+          className="suppliers-page-size"
           aria-label={t('Рядків')}
           data={pageSizeOptions.map((value) => ({ label: value, value }))}
           disabled={isTableBusy}
@@ -891,15 +868,28 @@ function SupplierTablePagination({
           onChange={onPageSizeChange}
         />
       </Group>
-      {totalPages > 1 && (
-        <Pagination
-          disabled={isTableBusy}
-          total={totalPages}
-          value={Math.min(page, totalPages)}
-          onChange={onSetPage}
-        />
-      )}
-    </Group>
+      <ActionIcon
+        aria-label="Previous page"
+        color="gray"
+        disabled={!canMoveBack || isTableBusy}
+        size={38}
+        variant="light"
+        onClick={() => onSetPage(Math.max(1, page - 1))}
+      >
+        <IconChevronLeft size={18} />
+      </ActionIcon>
+      <span className="suppliers-current-page">{page}</span>
+      <ActionIcon
+        aria-label="Next page"
+        color="gray"
+        disabled={!canMoveForward || isTableBusy}
+        size={38}
+        variant="light"
+        onClick={() => onSetPage(page + 1)}
+      >
+        <IconChevronRight size={18} />
+      </ActionIcon>
+    </div>
   )
 }
 
@@ -946,117 +936,116 @@ function SupplierDocumentModal({
   )
 }
 
-function useSupplierColumns(onOpenActions: (supplier: Client) => void) {
+function SuppliersList({
+  isLoading,
+  sorting,
+  suppliers,
+  onOpenActions,
+  onSort,
+}: {
+  isLoading: boolean
+  sorting: DataTableSortingState
+  suppliers: Client[]
+  onOpenActions: (supplier: Client) => void
+  onSort: (id: SupplierSortId) => void
+}) {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<Client>[]>(
-    () => [
-      {
-        id: 'status',
-        header: 'Статус',
-        width: 118,
-        minWidth: 108,
-        accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
-        cell: (supplier) => (
-          <Badge color={supplier.IsActive === false ? 'gray' : 'green'} variant="light">
-            {supplier.IsActive === false ? t('Неактивний') : t('Активний')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'regionCode',
-        header: 'Код',
-        width: 96,
-        minWidth: 84,
-        accessor: (supplier) => supplier.RegionCode?.Value,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.RegionCode?.Value)} />,
-      },
-      {
-        id: 'supplier',
-        header: 'Постачальник',
-        width: 300,
-        minWidth: 220,
-        accessor: getSupplierDisplayName,
-        cell: (supplier) => <SupplierTableValue fw={600} value={getSupplierDisplayName(supplier)} />,
-      },
-      {
-        id: 'phone',
-        header: 'Телефон',
-        width: 150,
-        minWidth: 132,
-        accessor: getSupplierPhone,
-        cell: (supplier) => <SupplierTableValue value={displayValue(getSupplierPhone(supplier))} />,
-      },
-      {
-        id: 'balance',
-        header: 'Поточний баланс',
-        width: 150,
-        minWidth: 130,
-        align: 'right',
-        accessor: (supplier) => supplier.TotalCurrentAmount,
-        cell: (supplier) => <SupplierTableValue value={formatAmount(supplier.TotalCurrentAmount)} />,
-      },
-      {
-        id: 'email',
-        header: 'Email',
-        width: 220,
-        minWidth: 160,
-        accessor: (supplier) => supplier.EmailAddress,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.EmailAddress)} />,
-      },
-      {
-        id: 'notResident',
-        header: 'Нерезидент',
-        width: 132,
-        minWidth: 112,
-        accessor: (supplier) => Boolean(supplier.IsNotResident),
-        cell: (supplier) =>
-          supplier.IsNotResident ? (
-            <Badge color="orange" variant="light">
-              {t('Так')}
-            </Badge>
-          ) : (
-            <Text c="dimmed" size="sm">
-              -
-            </Text>
-          ),
-      },
-      {
-        id: 'role',
-        header: 'Роль',
-        width: 180,
-        minWidth: 140,
-        accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.ClientInRole?.ClientTypeRole?.Name)} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 58,
-        minWidth: 58,
-        maxWidth: 58,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (supplier) => (
-          <Box onClick={(event) => event.stopPropagation()}>
-            <Tooltip label={t('Дії')}>
-              <ActionIcon
-                aria-label={t('Дії')}
-                color="gray"
-                variant="subtle"
-                onClick={() => onOpenActions(supplier)}
-              >
-                <IconDotsVertical size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Box>
-        ),
-      },
-    ],
-    [onOpenActions, t],
+  return (
+    <div className="suppliers-list">
+      <div className="suppliers-list-head">
+        <span className="suppliers-head-group">
+          <SupplierSortHeader id="supplier" label={t('Постачальник')} sorting={sorting} onSort={onSort} />
+          <SupplierSortHeader id="regionCode" label={t('Код')} sorting={sorting} onSort={onSort} />
+        </span>
+        <span className="suppliers-head-group">
+          <SupplierSortHeader id="role" label={t('Роль')} sorting={sorting} onSort={onSort} />
+          <SupplierSortHeader id="notResident" label={t('Резидентність')} sorting={sorting} onSort={onSort} />
+        </span>
+        <span className="suppliers-head-group">
+          <SupplierSortHeader id="phone" label={t('Телефон')} sorting={sorting} onSort={onSort} />
+          <SupplierSortHeader id="email" label="Email" sorting={sorting} onSort={onSort} />
+        </span>
+        <SupplierSortHeader align="right" id="balance" label={t('Поточний баланс')} sorting={sorting} onSort={onSort} />
+        <SupplierSortHeader id="status" label={t('Статус')} sorting={sorting} onSort={onSort} />
+        <span aria-hidden />
+      </div>
+
+      <div className="suppliers-list-body">
+        {isLoading ? (
+          <div className="suppliers-list-state">{t('Завантаження постачальників')}</div>
+        ) : suppliers.length === 0 ? (
+          <div className="suppliers-list-state">{t('Постачальників не знайдено')}</div>
+        ) : (
+          suppliers.map((supplier, index) => (
+            <SupplierRow
+              key={String(supplier.NetUid || supplier.Id || index)}
+              supplier={supplier}
+              onOpenActions={onOpenActions}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SupplierSortHeader({
+  align,
+  compact,
+  id,
+  label,
+  sorting,
+  onSort,
+}: {
+  align?: 'right'
+  compact?: boolean
+  id: SupplierSortId
+  label: string
+  sorting: DataTableSortingState
+  onSort: (id: SupplierSortId) => void
+}) {
+  const activeSort = sorting.find((item) => item.id === id)
+
+  return (
+    <button
+      className={`suppliers-sort-header${activeSort ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}${compact ? ' is-compact' : ''}`}
+      type="button"
+      onClick={() => onSort(id)}
+    >
+      <span>{label}</span>
+      {activeSort?.desc ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
+    </button>
+  )
+}
+
+function SupplierRow({
+  supplier,
+  onOpenActions,
+}: {
+  supplier: Client
+  onOpenActions: (supplier: Client) => void
+}) {
+  return (
+    <div
+      className={`suppliers-row ${getSupplierRowClassName(supplier) ?? ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenActions(supplier)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpenActions(supplier)
+        }
+      }}
+    >
+      <SupplierIdentityCell supplier={supplier} />
+      <SupplierMetaCell supplier={supplier} />
+      <SupplierContactsCell supplier={supplier} />
+      <SupplierBalanceCell currency={getSupplierCurrencies(supplier)} value={supplier.TotalCurrentAmount} />
+      <SupplierStatusCell isActive={supplier.IsActive !== false} />
+      <SupplierActionsCell supplier={supplier} onOpenActions={onOpenActions} />
+    </div>
   )
 }
 
@@ -1077,12 +1066,134 @@ function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
     : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
 }
 
-function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {
+function SupplierStatusCell({ isActive }: { isActive: boolean }) {
+  const { t } = useI18n()
+
+  return (
+    <span className={`suppliers-status-chip${isActive ? ' is-active' : ' is-inactive'}`}>
+      {isActive ? t('Активний') : t('Неактивний')}
+    </span>
+  )
+}
+
+function SupplierIdentityCell({ supplier }: { supplier: Client }) {
+  const title = getSupplierDisplayName(supplier)
+  const code = displayValue(supplier.RegionCode?.Value)
+  const location = compactStrings([supplier.RegionCode?.City, supplier.RegionCode?.District]).join(' · ')
+  const subtitle = compactStrings([supplier.Name && supplier.Name !== title ? supplier.Name : undefined, location]).join(' · ')
+  const tooltip = compactStrings([title, code, subtitle, supplier.EmailAddress, getSupplierPhone(supplier)]).join('\n')
+
+  return (
+    <Tooltip label={tooltip || title} multiline openDelay={350} withArrow>
+      <span className="console-table-entity-cell suppliers-identity-cell">
+        <span className="console-table-entity-marker suppliers-name-marker" aria-hidden>
+          <IconBuildingStore size={15} stroke={1.8} />
+        </span>
+        <span className="console-table-entity-copy">
+          <span className="console-table-entity-title">{title}</span>
+          <span className="suppliers-identity-meta">
+            <SupplierCodeCell value={code} />
+            <span className="console-table-entity-subtitle">{subtitle || '—'}</span>
+          </span>
+        </span>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierMetaCell({ supplier }: { supplier: Client }) {
+  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+
+  return (
+    <span className="suppliers-meta-cell">
+      {roleName ? (
+        <Badge className="suppliers-role-badge" color={roleBadgeColor(roleName)} variant="light">
+          {roleName}
+        </Badge>
+      ) : (
+        <span className="suppliers-muted-value">-</span>
+      )}
+      {supplier.IsNotResident ? <SupplierResidentCell /> : null}
+    </span>
+  )
+}
+
+function SupplierContactsCell({ supplier }: { supplier: Client }) {
+  return (
+    <span className="suppliers-contacts-cell">
+      <SupplierContactValue value={displayValue(getSupplierPhone(supplier))} />
+      <SupplierContactValue value={displayValue(supplier.EmailAddress)} />
+    </span>
+  )
+}
+
+function SupplierContactValue({ value }: { value: string }) {
+  const isEmpty = value === '-'
+
   return (
     <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={SUPPLIER_TABLE_CELL_STYLE}>
+      <span className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`}>
         {value}
-      </Text>
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierResidentCell() {
+  const { t } = useI18n()
+
+  return (
+    <span className="suppliers-resident-cell">
+      {t('Нерезидент')}
+    </span>
+  )
+}
+
+function SupplierActionsCell({
+  supplier,
+  onOpenActions,
+}: {
+  supplier: Client
+  onOpenActions: (supplier: Client) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Box className="suppliers-actions-cell" onClick={(event) => event.stopPropagation()}>
+      <Tooltip label={t('Дії')}>
+        <ActionIcon
+          aria-label={t('Дії')}
+          className="suppliers-actions-button"
+          color="gray"
+          variant="subtle"
+          onClick={() => onOpenActions(supplier)}
+        >
+          <IconDotsVertical size={17} />
+        </ActionIcon>
+      </Tooltip>
+    </Box>
+  )
+}
+
+function SupplierCodeCell({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className="suppliers-code-pill">{value}</span>
+    </Tooltip>
+  )
+}
+
+function SupplierBalanceCell({ currency, value }: { currency: string; value?: number | null }) {
+  const formatted = formatAmount(value)
+  const isNegative = typeof value === 'number' && value < 0
+  const tooltip = compactStrings([formatted, currency]).join('\n')
+
+  return (
+    <Tooltip label={tooltip || formatted} multiline={Boolean(currency)} openDelay={350} withArrow>
+      <span className={`suppliers-balance-cell${isNegative ? ' is-negative' : ''}`}>
+        <strong>{formatted}</strong>
+        {currency ? <small>{currency}</small> : null}
+      </span>
     </Tooltip>
   )
 }
@@ -1091,17 +1202,37 @@ function buildSupplierSortDescriptors(sorting: DataTableSortingState) {
   const descriptors: Array<{ Column: string; Dir: 'asc' | 'desc' }> = []
 
   sorting.forEach((sortItem) => {
+    if (!isSupplierSortId(sortItem.id)) {
+      return
+    }
+
     const column = SUPPLIER_SORT_COLUMNS[sortItem.id]
 
-    if (column) {
-      descriptors.push({
-        Column: column,
-        Dir: sortItem.desc ? 'desc' as const : 'asc' as const,
-      })
-    }
+    descriptors.push({
+      Column: column,
+      Dir: sortItem.desc ? 'desc' as const : 'asc' as const,
+    })
   })
 
   return descriptors
+}
+
+function isSupplierSortId(id: string): id is SupplierSortId {
+  return id in SUPPLIER_SORT_COLUMNS
+}
+
+function toggleSupplierSorting(sorting: DataTableSortingState, id: SupplierSortId): DataTableSortingState {
+  const current = sorting.find((item) => item.id === id)
+
+  if (!current) {
+    return [{ id, desc: false }]
+  }
+
+  if (!current.desc) {
+    return [{ id, desc: true }]
+  }
+
+  return []
 }
 
 function readSupplierTablePageSize() {
@@ -1140,6 +1271,15 @@ function shouldKeepSupplierInActiveFilter(supplier: Client, activeFilter: Active
   return activeFilter === 'active' ? supplier.IsActive !== false : supplier.IsActive === false
 }
 
+function getSupplierRowClassName(supplier: Client): string | undefined {
+  const classes = [
+    supplier.IsActive === false ? 'suppliers-row-inactive' : '',
+    supplier.IsNotResident ? 'suppliers-row-nonresident' : '',
+  ].filter(Boolean)
+
+  return classes.length > 0 ? classes.join(' ') : undefined
+}
+
 function getSupplierDisplayName(supplier: Client): string {
   const fullName = supplier.FullName?.trim() || supplier.Name?.trim()
 
@@ -1158,6 +1298,14 @@ function formatAmount(value?: number | null): string {
   return typeof value === 'number' ? amountFormatter.format(value) : '-'
 }
 
+function getSupplierCurrencies(supplier: Client): string {
+  return uniqueStrings(
+    (supplier.ClientAgreements || []).map((clientAgreement) =>
+      clientAgreement.Agreement?.Currency?.Code || clientAgreement.Agreement?.Currency?.Name,
+    ),
+  ).join(' · ')
+}
+
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
     return String(value)
@@ -1165,4 +1313,39 @@ function displayValue(value?: number | string | null): string {
 
   const normalized = value?.trim()
   return normalized || '-'
+}
+
+function compactStrings(values: Array<string | null | undefined>): string[] {
+  return values.map((value) => value?.trim()).filter(Boolean) as string[]
+}
+
+function uniqueStrings(values: Array<string | null | undefined>): string[] {
+  return [...new Set(compactStrings(values))]
+}
+
+const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
+
+function roleHash(value: string): number {
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index)
+    hash |= 0
+  }
+
+  return Math.abs(hash)
+}
+
+function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
+  const key = name.trim().toLowerCase()
+
+  if (key.includes('постач')) {
+    return 'teal'
+  }
+
+  if (key.includes('покуп')) {
+    return 'indigo'
+  }
+
+  return ROLE_BADGE_PALETTE[roleHash(key) % ROLE_BADGE_PALETTE.length]
 }
