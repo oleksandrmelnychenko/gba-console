@@ -57,6 +57,10 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 2,
 })
+const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
+  dateStyle: 'short',
+  timeStyle: 'short',
+})
 
 const emptyDebtors: ClientDebtors = {
   ClientInDebtors: [],
@@ -464,7 +468,7 @@ function DebtorRegionCell({ value }: { value: string }) {
 
 function DebtorClientCell({ debtor }: { debtor: ClientInDebt }) {
   const title = displayValue(debtor.ClientName)
-  const subtitle = debtor.CreatedDebt ? debtor.CreatedDebt : displayValue(debtor.ClientNetId)
+  const subtitle = debtor.CreatedDebt ? formatDateTime(debtor.CreatedDebt) : displayValue(debtor.ClientNetId)
 
   return (
     <div className="console-table-entity-cell sales-debtors-client-cell">
@@ -606,6 +610,16 @@ function displayValue(value: number | string | undefined | null): string {
   }
 
   return String(value)
+}
+
+function formatDateTime(value?: string): string {
+  if (!value) {
+    return '—'
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? value : dateTimeFormatter.format(date)
 }
 
 function splitProfileName(value: string): [string, string] {
