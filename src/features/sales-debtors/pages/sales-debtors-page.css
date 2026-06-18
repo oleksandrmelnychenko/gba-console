@@ -17,7 +17,7 @@
 
   align-items: end;
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 34%),
+    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
@@ -39,7 +39,7 @@
 }
 
 .sales-debtors-filter .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-7);
   display: block;
   font-size: 12px;
   font-weight: 400;
@@ -119,7 +119,7 @@
 }
 
 .sales-debtors-list-head {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-7);
   flex: 0 0 auto;
   font-size: 10.5px;
   font-weight: 500;
