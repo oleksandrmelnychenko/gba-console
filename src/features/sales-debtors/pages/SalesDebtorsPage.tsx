@@ -392,7 +392,7 @@ function DebtorsList({
         <DebtorsSortHeader id="clientName" label={t('Клієнт')} sortState={sortState} onSort={onSort} />
         <DebtorsSortHeader id="userName" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
         <DebtorsSortHeader id="totalDebtInDays" label={`${t('Борг через')} ${days} ${t('днів')}`} sortState={sortState} onSort={onSort} align="right" />
-        <DebtorsSortHeader id="missedDays" label={t('Дні')} sortState={sortState} onSort={onSort} align="center" />
+        <DebtorsSortHeader id="missedDays" label={t('Дні')} sortState={sortState} onSort={onSort} />
         <DebtorsSortHeader id="remainderDebt" label={t('Залишок')} sortState={sortState} onSort={onSort} align="right" />
         <DebtorsSortHeader id="overdueDebt" label={t('Прострочено')} sortState={sortState} onSort={onSort} align="right" />
       </div>

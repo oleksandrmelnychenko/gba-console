@@ -339,10 +339,11 @@
   color: var(--mantine-color-gray-9);
   display: inline-flex;
   gap: 8px;
-  justify-content: center;
-  justify-self: center;
+  justify-content: flex-start;
+  justify-self: stretch;
   line-height: 1;
   white-space: nowrap;
+  width: 100%;
 }
 
 .sales-debtors-days-cell span {
