@@ -13,6 +13,22 @@ describe('supplierOrganizationsApi', () => {
     apiRequestMock.mockReset()
   })
 
+  it('loads supplier organizations through the paged search endpoint by default', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-1' }])
+
+    await expect(getSupplyOrganizations()).resolves.toEqual([{ NetUid: 'supplier-1', SupplyOrganizationAgreements: [] }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/supplies/organizations/all/search', {
+      query: {
+        from: undefined,
+        limit: undefined,
+        offset: undefined,
+        to: undefined,
+        value: '',
+      },
+    })
+  })
+
   it('loads filtered supplier organizations through the paged search endpoint', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'supplier-1' }])
 

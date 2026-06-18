@@ -20,17 +20,14 @@ export type SupplyOrganizationsListParams = SupplyOrganizationsListFilters & {
 }
 
 export async function getSupplyOrganizations(params: SupplyOrganizationsListParams = {}): Promise<SupplyOrganization[]> {
-  const hasQuery = Boolean(params.from || params.to || typeof params.limit === 'number' || typeof params.offset === 'number')
-  const result = await apiRequest<unknown>(hasQuery ? '/supplies/organizations/all/search' : '/supplies/organizations/all', {
-    query: hasQuery
-      ? {
-          from: params.from,
-          limit: params.limit,
-          offset: params.offset,
-          to: params.to,
-          value: '',
-        }
-      : undefined,
+  const result = await apiRequest<unknown>('/supplies/organizations/all/search', {
+    query: {
+      from: params.from,
+      limit: params.limit,
+      offset: params.offset,
+      to: params.to,
+      value: '',
+    },
   })
 
   return normalizeSupplyOrganizations(result)
