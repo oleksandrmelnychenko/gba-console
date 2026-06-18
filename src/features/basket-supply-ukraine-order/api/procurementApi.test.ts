@@ -4,6 +4,7 @@ import {
   getProducerPlan,
   getProducerProfile,
   getProductTerms,
+  recordFeedback,
   upsertProducerProfile,
   upsertProductTerms,
 } from './procurementApi'
@@ -81,6 +82,7 @@ describe('getProducerPlan', () => {
       position: 8,
     })
     expect(item.cheaper_alt).toEqual({ producer_id: 7, cost_eur: 4.1 })
+    expect(item.learned_factor).toBe(1.2)
   })
 
   it('omits as_of_date from the body when not provided', async () => {
@@ -147,6 +149,7 @@ describe('getProducerPlan', () => {
     expect(item.xyz).toBeNull()
     expect(item.quadrant).toBeNull()
     expect(item.cheaper_alt).toBeNull()
+    expect(item.learned_factor).toBeNull()
     expect(item.forecast).toEqual({
       mean_daily: 1,
       std_daily: 0,
@@ -420,6 +423,84 @@ describe('upsertProductTerms', () => {
   })
 })
 
+describe('recordFeedback', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('posts the full body for an accept decision and unwraps the envelope', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { id: 'fb-1', action: 'accept' } })
+
+    const saved = await recordFeedback({
+      producer_id: 42,
+      product_id: 100,
+      suggested_qty: 30,
+      final_qty: 36,
+      action: 'accept',
+      abc: 'A',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/feedback', {
+      method: 'POST',
+      body: {
+        producer_id: 42,
+        product_id: 100,
+        action: 'accept',
+        suggested_qty: 30,
+        final_qty: 36,
+        abc: 'A',
+      },
+    })
+    expect(saved).toEqual({ id: 'fb-1', action: 'accept' })
+  })
+
+  it('always sends action and omits null, undefined, non-finite, or empty fields', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { ok: true } })
+
+    await recordFeedback({
+      producer_id: 42,
+      product_id: 100,
+      action: 'dismiss',
+      suggested_qty: null,
+      final_qty: 0,
+      abc: '',
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/feedback', {
+      method: 'POST',
+      body: {
+        producer_id: 42,
+        product_id: 100,
+        action: 'dismiss',
+        final_qty: 0,
+      },
+    })
+  })
+
+  it('forwards the abort signal when provided', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: {} })
+    const controller = new AbortController()
+
+    await recordFeedback({ producer_id: 42, product_id: 100, action: 'edit', final_qty: 25 }, controller.signal)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/feedback', {
+      method: 'POST',
+      body: { producer_id: 42, product_id: 100, action: 'edit', final_qty: 25 },
+      signal: controller.signal,
+    })
+  })
+
+  it('tolerates a malformed response by returning it unwrapped', async () => {
+    apiRequestMock.mockResolvedValueOnce('noise')
+
+    await expect(recordFeedback({ producer_id: 42, product_id: 100, action: 'edit' })).resolves.toBe('noise')
+
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(recordFeedback({ producer_id: 42, product_id: 100, action: 'accept' })).resolves.toBeNull()
+  })
+})
+
 function buildFullPlan() {
   return {
     producer_id: 42,
@@ -466,6 +547,7 @@ function buildFullPlan() {
         xyz: 'X',
         quadrant: 'AX',
         cheaper_alt: { producer_id: 7, cost_eur: 4.1 },
+        learned_factor: 1.2,
       },
     ],
   }

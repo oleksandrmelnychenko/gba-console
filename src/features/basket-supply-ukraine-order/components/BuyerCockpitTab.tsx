@@ -16,8 +16,17 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconAlertTriangle, IconCheck, IconRefresh, IconSettings } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import {
+  IconAlertCircle,
+  IconAlertTriangle,
+  IconCheck,
+  IconRefresh,
+  IconSchool,
+  IconSettings,
+  IconThumbDown,
+  IconThumbUp,
+} from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
@@ -27,12 +36,17 @@ import type { Client } from '../../supply-ukraine-orders/types'
 import {
   getProducerPlan,
   getProducerProfile,
+  recordFeedback,
   upsertProducerProfile,
   upsertProductTerms,
 } from '../api/procurementApi'
-import type { ProcurementUrgency, ProducerPlan, ReorderSuggestion } from '../procurementTypes'
+import type { FeedbackAction, ProcurementUrgency, ProducerPlan, ReorderSuggestion } from '../procurementTypes'
 
 type TermsSaveStatus = 'idle' | 'saving' | 'saved'
+
+type FeedbackDecision = 'accepted' | 'dismissed'
+
+type EditFeedbackStatus = 'idle' | 'saving' | 'saved'
 
 type TermsDraft = {
   moq: number | ''
@@ -127,6 +141,10 @@ export function BuyerCockpitTab() {
   const [profileLeadTime, setProfileLeadTime] = useState<number | ''>('')
   const [profileServiceLevel, setProfileServiceLevel] = useState<number | ''>('')
   const [isProfileSaving, setProfileSaving] = useState(false)
+  const [feedbackDecision, setFeedbackDecision] = useState<Record<number, FeedbackDecision>>({})
+  const [feedbackPending, setFeedbackPending] = useState<Record<number, boolean>>({})
+  const [editStatus, setEditStatus] = useState<Record<number, EditFeedbackStatus>>({})
+  const lastEditedQty = useRef<Record<number, number>>({})
   const { plan, error, isLoading } = state
 
   useEffect(() => {
@@ -187,6 +205,10 @@ export function BuyerCockpitTab() {
           setDraftQty(buildDraftQty(loaded.items))
           setTermsDraft(buildTermsDraft(loaded.items))
           setTermsStatus({})
+          setFeedbackDecision({})
+          setFeedbackPending({})
+          setEditStatus({})
+          lastEditedQty.current = {}
           dispatch({ plan: loaded, type: 'loaded' })
         }
       } catch (loadError) {
@@ -328,6 +350,104 @@ export function BuyerCockpitTab() {
     [selectedProducerId, t],
   )
 
+  const submitFeedback = useCallback(
+    async (item: ReorderSuggestion, action: Extract<FeedbackAction, 'accept' | 'dismiss'>) => {
+      if (selectedProducerId === null) {
+        return
+      }
+
+      const producerId = Number(selectedProducerId)
+
+      if (!Number.isFinite(producerId)) {
+        return
+      }
+
+      if (feedbackDecision[item.product_id] || feedbackPending[item.product_id]) {
+        return
+      }
+
+      const finalQty = action === 'dismiss' ? 0 : getDraftQty(draftQty, item)
+
+      setFeedbackPending((current) => ({ ...current, [item.product_id]: true }))
+
+      try {
+        await recordFeedback({
+          producer_id: producerId,
+          product_id: item.product_id,
+          suggested_qty: item.suggested_qty,
+          final_qty: finalQty,
+          action,
+          abc: item.abc,
+        })
+
+        setFeedbackDecision((current) => ({
+          ...current,
+          [item.product_id]: action === 'accept' ? 'accepted' : 'dismissed',
+        }))
+      } catch (feedbackError) {
+        notifications.show({
+          color: 'red',
+          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти рішення'),
+        })
+      } finally {
+        setFeedbackPending((current) => ({ ...current, [item.product_id]: false }))
+      }
+    },
+    [draftQty, feedbackDecision, feedbackPending, selectedProducerId, t],
+  )
+
+  const submitEditFeedback = useCallback(
+    async (item: ReorderSuggestion) => {
+      if (selectedProducerId === null) {
+        return
+      }
+
+      const producerId = Number(selectedProducerId)
+
+      if (!Number.isFinite(producerId)) {
+        return
+      }
+
+      if (feedbackDecision[item.product_id]) {
+        return
+      }
+
+      const finalQty = getDraftQty(draftQty, item)
+
+      if (finalQty === item.suggested_qty) {
+        return
+      }
+
+      if (lastEditedQty.current[item.product_id] === finalQty) {
+        return
+      }
+
+      lastEditedQty.current[item.product_id] = finalQty
+      setEditStatus((current) => ({ ...current, [item.product_id]: 'saving' }))
+
+      try {
+        await recordFeedback({
+          producer_id: producerId,
+          product_id: item.product_id,
+          suggested_qty: item.suggested_qty,
+          final_qty: finalQty,
+          action: 'edit',
+          abc: item.abc,
+        })
+
+        setEditStatus((current) => ({ ...current, [item.product_id]: 'saved' }))
+      } catch (feedbackError) {
+        delete lastEditedQty.current[item.product_id]
+        setEditStatus((current) => ({ ...current, [item.product_id]: 'idle' }))
+        notifications.show({
+          color: 'red',
+          message: feedbackError instanceof Error ? feedbackError.message : t('Не вдалося зберегти рішення'),
+        })
+      }
+    },
+    [draftQty, feedbackDecision, selectedProducerId, t],
+  )
+
   async function saveProfile() {
     if (selectedProducerId === null) {
       return
@@ -407,7 +527,7 @@ export function BuyerCockpitTab() {
         id: 'suggestedQty',
         header: t('Рекомендовано'),
         accessor: (item) => item.suggested_qty,
-        cell: (item) => <SuggestedQtyCell item={item} />,
+        cell: (item) => <SuggestedQtyCell item={item} t={t} />,
         width: 150,
         align: 'right',
         enableSorting: false,
@@ -459,17 +579,23 @@ export function BuyerCockpitTab() {
         header: t('К-сть до замовлення'),
         accessor: (item) => getDraftQty(draftQty, item),
         cell: (item) => (
-          <NumberInput
-            allowNegative={false}
-            min={0}
-            onChange={(value) => updateDraftQty(item.product_id, typeof value === 'number' ? value : '')}
-            size="xs"
-            value={getDraftQty(draftQty, item)}
-            w={120}
-          />
+          <Group gap={4} justify="flex-end" wrap="nowrap">
+            <NumberInput
+              allowNegative={false}
+              disabled={Boolean(feedbackDecision[item.product_id])}
+              min={0}
+              onBlur={() => void submitEditFeedback(item)}
+              onChange={(value) => updateDraftQty(item.product_id, typeof value === 'number' ? value : '')}
+              size="xs"
+              value={getDraftQty(draftQty, item)}
+              w={120}
+            />
+            <TermsStatusIndicator status={editStatus[item.product_id] ?? 'idle'} t={t} />
+          </Group>
         ),
-        width: 150,
+        width: 170,
         align: 'right',
+        enableSorting: false,
       },
       {
         id: 'unitCost',
@@ -530,8 +656,24 @@ export function BuyerCockpitTab() {
         width: 56,
         enableSorting: false,
       },
+      {
+        id: 'action',
+        header: t('Дія'),
+        cell: (item) => (
+          <FeedbackActionsCell
+            decision={feedbackDecision[item.product_id] ?? null}
+            isPending={Boolean(feedbackPending[item.product_id])}
+            onAccept={() => void submitFeedback(item, 'accept')}
+            onDismiss={() => void submitFeedback(item, 'dismiss')}
+            t={t}
+          />
+        ),
+        width: 120,
+        align: 'center',
+        enableSorting: false,
+      },
     ],
-    [draftQty, saveTerms, termsDraft, termsStatus, t],
+    [draftQty, editStatus, feedbackDecision, feedbackPending, saveTerms, submitEditFeedback, submitFeedback, termsDraft, termsStatus, t],
   )
 
   const toolbarRight = (
@@ -711,7 +853,7 @@ export function BuyerCockpitTab() {
               getRowId={(item) => String(item.product_id)}
               isLoading={isLoading}
               maxHeight={560}
-              minWidth={1370}
+              minWidth={1510}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
               toolbarRight={toolbarRight}
             />
@@ -764,7 +906,7 @@ function buildProducerOptions(producers: Client[]) {
     .filter((option): option is { label: string; value: string } => option !== null)
 }
 
-function SuggestedQtyCell({ item }: { item: ReorderSuggestion }) {
+function SuggestedQtyCell({ item, t }: { item: ReorderSuggestion; t: TranslateFunction }) {
   const hasRounding = item.raw_qty !== null && item.raw_qty !== item.suggested_qty
   const hints: string[] = []
 
@@ -775,6 +917,9 @@ function SuggestedQtyCell({ item }: { item: ReorderSuggestion }) {
   if (item.order_multiple !== null) {
     hints.push(`×${qtyFormatter.format(item.order_multiple)}`)
   }
+
+  const learnedFactor = item.learned_factor
+  const hasLearned = learnedFactor !== null && learnedFactor !== 1
 
   return (
     <Stack align="flex-end" gap={2}>
@@ -792,6 +937,18 @@ function SuggestedQtyCell({ item }: { item: ReorderSuggestion }) {
         <Badge color="gray" size="xs" variant="light">
           {hints.join(' / ')}
         </Badge>
+      )}
+      {hasLearned && (
+        <Tooltip label={t('Кількість скориговано на основі попередніх рішень байера')} withinPortal>
+          <Badge
+            color="grape"
+            leftSection={<IconSchool size={11} />}
+            size="xs"
+            variant="light"
+          >
+            {t('навчено')} ×{qtyFormatter.format(learnedFactor)}
+          </Badge>
+        </Tooltip>
       )}
     </Stack>
   )
@@ -811,6 +968,68 @@ function TermsStatusIndicator({ status, t }: { status: TermsSaveStatus; t: Trans
   }
 
   return <span style={{ display: 'inline-block', width: 16 }} />
+}
+
+function FeedbackActionsCell({
+  decision,
+  isPending,
+  onAccept,
+  onDismiss,
+  t,
+}: {
+  decision: FeedbackDecision | null
+  isPending: boolean
+  onAccept: () => void
+  onDismiss: () => void
+  t: TranslateFunction
+}) {
+  if (decision === 'accepted') {
+    return (
+      <Group gap={4} justify="center" wrap="nowrap">
+        <IconCheck color="var(--mantine-color-green-6)" size={16} />
+        <Text c="green" size="xs">
+          {t('Прийнято')}
+        </Text>
+      </Group>
+    )
+  }
+
+  if (decision === 'dismissed') {
+    return (
+      <Text c="dimmed" size="xs" ta="center">
+        {t('Відхилено')}
+      </Text>
+    )
+  }
+
+  return (
+    <Group gap={4} justify="center" wrap="nowrap">
+      <Tooltip label={t('Прийняти')}>
+        <ActionIcon
+          aria-label={t('Прийняти')}
+          color="green"
+          disabled={isPending}
+          onClick={onAccept}
+          size="sm"
+          variant="subtle"
+        >
+          <IconThumbUp size={16} />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip label={t('Відхилити')}>
+        <ActionIcon
+          aria-label={t('Відхилити')}
+          color="red"
+          disabled={isPending}
+          onClick={onDismiss}
+          size="sm"
+          variant="subtle"
+        >
+          <IconThumbDown size={16} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  )
 }
 
 function buildTermsDraft(items: ReorderSuggestion[]): Record<number, TermsDraft> {

@@ -1,5 +1,6 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
+  FeedbackInput,
   ProcurementCharts,
   ProcurementChartsQuery,
   ProcurementUrgency,
@@ -83,6 +84,16 @@ export async function upsertProductTerms(term: ProductTermsInput): Promise<Produ
   return normalizeProductTerms(result)
 }
 
+export async function recordFeedback(input: FeedbackInput, signal?: AbortSignal): Promise<unknown> {
+  const result = await apiRequest<unknown>('/procurement/feedback', {
+    method: 'POST',
+    body: buildFeedbackBody(input),
+    ...(signal ? { signal } : {}),
+  })
+
+  return unwrap(result)
+}
+
 function buildProducerProfileBody(profile: ProducerProfileInput): Record<string, number> {
   const body: Record<string, number> = { producer_id: profile.producer_id }
 
@@ -102,6 +113,28 @@ function buildProductTermsBody(term: ProductTermsInput): Record<string, number> 
   assignDefinedNumber(body, 'moq', term.moq)
   assignDefinedNumber(body, 'order_multiple', term.order_multiple)
   assignDefinedNumber(body, 'unit_cost_override', term.unit_cost_override)
+
+  return body
+}
+
+function buildFeedbackBody(input: FeedbackInput): Record<string, number | string> {
+  const body: Record<string, number | string> = {
+    producer_id: input.producer_id,
+    product_id: input.product_id,
+    action: input.action,
+  }
+
+  if (typeof input.suggested_qty === 'number' && Number.isFinite(input.suggested_qty)) {
+    body.suggested_qty = input.suggested_qty
+  }
+
+  if (typeof input.final_qty === 'number' && Number.isFinite(input.final_qty)) {
+    body.final_qty = input.final_qty
+  }
+
+  if (typeof input.abc === 'string' && input.abc !== '') {
+    body.abc = input.abc
+  }
 
   return body
 }
@@ -366,6 +399,7 @@ function normalizeReorderSuggestion(value: unknown): ReorderSuggestion | null {
     xyz: normalizeNullableString(entry.xyz),
     quadrant: normalizeNullableString(entry.quadrant),
     cheaper_alt: normalizeCheaperAlt(entry.cheaper_alt),
+    learned_factor: toNullableNumber(entry.learned_factor),
   }
 }
 

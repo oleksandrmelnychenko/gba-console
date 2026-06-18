@@ -88,6 +88,7 @@ export type ReorderSuggestion = {
   xyz: string | null
   quadrant: string | null
   cheaper_alt: ReorderCheaperAlt | null
+  learned_factor: number | null
 }
 
 export type ProducerPlan = {
@@ -141,4 +142,15 @@ export type ProductTermsInput = {
   moq?: number | null
   order_multiple?: number | null
   unit_cost_override?: number | null
+}
+
+export type FeedbackAction = 'accept' | 'edit' | 'dismiss'
+
+export type FeedbackInput = {
+  producer_id: number
+  product_id: number
+  action: FeedbackAction
+  suggested_qty?: number | null
+  final_qty?: number | null
+  abc?: string | null
 }
