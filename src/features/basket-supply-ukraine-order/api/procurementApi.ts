@@ -4,6 +4,11 @@ import type {
   ProcurementChartsQuery,
   ProcurementUrgency,
   ProducerPlan,
+  ProducerProductTerms,
+  ProducerProfile,
+  ProducerProfileInput,
+  ProductTerms,
+  ProductTermsInput,
   ReorderCheaperAlt,
   ReorderForecast,
   ReorderInventory,
@@ -40,6 +45,169 @@ export async function getProcurementCharts(
   })
 
   return normalizeCharts(result)
+}
+
+export async function getProducerProfile(producerId: number, signal?: AbortSignal): Promise<ProducerProfile> {
+  const result = await apiRequest<unknown>('/procurement/masters/producer', {
+    query: { producerId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeProducerProfile(result)
+}
+
+export async function upsertProducerProfile(profile: ProducerProfileInput): Promise<ProducerProfile> {
+  const result = await apiRequest<unknown>('/procurement/masters/producer', {
+    method: 'POST',
+    body: buildProducerProfileBody(profile),
+  })
+
+  return normalizeProducerProfile(result)
+}
+
+export async function getProductTerms(producerId: number, signal?: AbortSignal): Promise<ProducerProductTerms> {
+  const result = await apiRequest<unknown>('/procurement/masters/product-terms', {
+    query: { producerId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeProducerProductTerms(result)
+}
+
+export async function upsertProductTerms(term: ProductTermsInput): Promise<ProductTerms> {
+  const result = await apiRequest<unknown>('/procurement/masters/product-terms', {
+    method: 'POST',
+    body: buildProductTermsBody(term),
+  })
+
+  return normalizeProductTerms(result)
+}
+
+function buildProducerProfileBody(profile: ProducerProfileInput): Record<string, number> {
+  const body: Record<string, number> = { producer_id: profile.producer_id }
+
+  assignDefinedNumber(body, 'service_level_target', profile.service_level_target)
+  assignDefinedNumber(body, 'lead_time_override_days', profile.lead_time_override_days)
+  assignDefinedNumber(body, 'ordering_cost_eur', profile.ordering_cost_eur)
+  assignDefinedNumber(body, 'holding_rate_pct', profile.holding_rate_pct)
+  assignDefinedNumber(body, 'autonomy_level', profile.autonomy_level)
+  assignDefinedNumber(body, 'auto_place_max_eur', profile.auto_place_max_eur)
+
+  return body
+}
+
+function buildProductTermsBody(term: ProductTermsInput): Record<string, number> {
+  const body: Record<string, number> = { producer_id: term.producer_id, product_id: term.product_id }
+
+  assignDefinedNumber(body, 'moq', term.moq)
+  assignDefinedNumber(body, 'order_multiple', term.order_multiple)
+  assignDefinedNumber(body, 'unit_cost_override', term.unit_cost_override)
+
+  return body
+}
+
+function assignDefinedNumber(target: Record<string, number>, key: string, value: number | null | undefined) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    target[key] = value
+  }
+}
+
+function normalizeProducerProfile(result: unknown): ProducerProfile {
+  const payload = unwrap(result)
+
+  if (!payload || typeof payload !== 'object') {
+    return emptyProducerProfile()
+  }
+
+  const data = payload as Record<string, unknown>
+
+  return {
+    producer_id: toNullableNumber(data.producer_id),
+    service_level_target: toNullableNumber(data.service_level_target),
+    lead_time_override_days: toNullableNumber(data.lead_time_override_days),
+    ordering_cost_eur: toNullableNumber(data.ordering_cost_eur),
+    holding_rate_pct: toNullableNumber(data.holding_rate_pct),
+    autonomy_level: toNullableNumber(data.autonomy_level),
+    auto_place_max_eur: toNullableNumber(data.auto_place_max_eur),
+  }
+}
+
+function normalizeProducerProductTerms(result: unknown): ProducerProductTerms {
+  const payload = unwrap(result)
+
+  if (!payload || typeof payload !== 'object') {
+    return { producer_id: null, terms: [] }
+  }
+
+  const data = payload as Record<string, unknown>
+
+  return {
+    producer_id: toNullableNumber(data.producer_id),
+    terms: toArray(data.terms)
+      .map(normalizeNullableProductTerms)
+      .filter((term): term is ProductTerms => term !== null),
+  }
+}
+
+function normalizeNullableProductTerms(value: unknown): ProductTerms | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const entry = value as Record<string, unknown>
+  const productId = toNullableNumber(entry.product_id)
+
+  if (productId === null) {
+    return null
+  }
+
+  return {
+    producer_id: toNullableNumber(entry.producer_id),
+    product_id: productId,
+    moq: toNullableNumber(entry.moq),
+    order_multiple: toNullableNumber(entry.order_multiple),
+    unit_cost_override: toNullableNumber(entry.unit_cost_override),
+  }
+}
+
+function normalizeProductTerms(result: unknown): ProductTerms {
+  const payload = unwrap(result)
+
+  if (!payload || typeof payload !== 'object') {
+    return emptyProductTerms()
+  }
+
+  const data = payload as Record<string, unknown>
+
+  return {
+    producer_id: toNullableNumber(data.producer_id),
+    product_id: toNullableNumber(data.product_id),
+    moq: toNullableNumber(data.moq),
+    order_multiple: toNullableNumber(data.order_multiple),
+    unit_cost_override: toNullableNumber(data.unit_cost_override),
+  }
+}
+
+function emptyProducerProfile(): ProducerProfile {
+  return {
+    producer_id: null,
+    service_level_target: null,
+    lead_time_override_days: null,
+    ordering_cost_eur: null,
+    holding_rate_pct: null,
+    autonomy_level: null,
+    auto_place_max_eur: null,
+  }
+}
+
+function emptyProductTerms(): ProductTerms {
+  return {
+    producer_id: null,
+    product_id: null,
+    moq: null,
+    order_multiple: null,
+    unit_cost_override: null,
+  }
 }
 
 function buildChartsQuery(query: ProcurementChartsQuery) {
@@ -179,6 +347,9 @@ function normalizeReorderSuggestion(value: unknown): ReorderSuggestion | null {
     product_id: productId,
     producer_id: toNumber(entry.producer_id, 0),
     suggested_qty: toNumber(entry.suggested_qty, 0),
+    raw_qty: toNullableNumber(entry.raw_qty),
+    moq: toNullableNumber(entry.moq),
+    order_multiple: toNullableNumber(entry.order_multiple),
     reorder_point: toNumber(entry.reorder_point, 0),
     safety_stock: toNumber(entry.safety_stock, 0),
     days_of_cover: toNumber(entry.days_of_cover, 0),

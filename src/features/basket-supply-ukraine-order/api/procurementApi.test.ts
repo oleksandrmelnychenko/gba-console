@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getProducerPlan } from './procurementApi'
+import {
+  getProducerPlan,
+  getProducerProfile,
+  getProductTerms,
+  upsertProducerProfile,
+  upsertProductTerms,
+} from './procurementApi'
 import type { ReorderSuggestion } from '../procurementTypes'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -43,6 +49,9 @@ describe('getProducerPlan', () => {
       product_id: 100,
       producer_id: 42,
       suggested_qty: 30,
+      raw_qty: 27.4,
+      moq: 10,
+      order_multiple: 5,
       reorder_point: 12,
       safety_stock: 5,
       days_of_cover: 8.5,
@@ -126,6 +135,9 @@ describe('getProducerPlan', () => {
     expect(plan.lead_time_std_days).toBe(0)
     expect(plan.model_version).toBe('')
     expect(plan.as_of_date).toBeNull()
+    expect(item.raw_qty).toBeNull()
+    expect(item.moq).toBeNull()
+    expect(item.order_multiple).toBeNull()
     expect(item.unit_cost_eur).toBeNull()
     expect(item.line_cost_eur).toBeNull()
     expect(item.unit_sale_eur).toBeNull()
@@ -194,6 +206,220 @@ describe('getProducerPlan', () => {
   })
 })
 
+describe('getProducerProfile', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('requests the producer master with the camelCase producerId query and unwraps the envelope', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        producer_id: 42,
+        service_level_target: 0.97,
+        lead_time_override_days: 9,
+        ordering_cost_eur: 25,
+        holding_rate_pct: 0.18,
+        autonomy_level: 2,
+        auto_place_max_eur: 500,
+      },
+    })
+
+    const profile = await getProducerProfile(42)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/masters/producer', {
+      query: { producerId: 42 },
+    })
+    expect(profile).toEqual({
+      producer_id: 42,
+      service_level_target: 0.97,
+      lead_time_override_days: 9,
+      ordering_cost_eur: 25,
+      holding_rate_pct: 0.18,
+      autonomy_level: 2,
+      auto_place_max_eur: 500,
+    })
+  })
+
+  it('returns nulls for absent fields when only producer_id is set', async () => {
+    apiRequestMock.mockResolvedValueOnce({ producer_id: 42 })
+
+    const profile = await getProducerProfile(42)
+
+    expect(profile).toEqual({
+      producer_id: 42,
+      service_level_target: null,
+      lead_time_override_days: null,
+      ordering_cost_eur: null,
+      holding_rate_pct: null,
+      autonomy_level: null,
+      auto_place_max_eur: null,
+    })
+  })
+
+  it('returns an all-null profile for a null or malformed response', async () => {
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getProducerProfile(42)).resolves.toEqual({
+      producer_id: null,
+      service_level_target: null,
+      lead_time_override_days: null,
+      ordering_cost_eur: null,
+      holding_rate_pct: null,
+      autonomy_level: null,
+      auto_place_max_eur: null,
+    })
+
+    apiRequestMock.mockResolvedValueOnce('noise')
+
+    await expect(getProducerProfile(42)).resolves.toEqual({
+      producer_id: null,
+      service_level_target: null,
+      lead_time_override_days: null,
+      ordering_cost_eur: null,
+      holding_rate_pct: null,
+      autonomy_level: null,
+      auto_place_max_eur: null,
+    })
+  })
+})
+
+describe('upsertProducerProfile', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('posts only defined numeric fields and omits null or undefined ones', async () => {
+    apiRequestMock.mockResolvedValueOnce({ Body: { producer_id: 42, lead_time_override_days: 9 } })
+
+    const saved = await upsertProducerProfile({
+      producer_id: 42,
+      lead_time_override_days: 9,
+      service_level_target: null,
+      ordering_cost_eur: undefined,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/masters/producer', {
+      method: 'POST',
+      body: { producer_id: 42, lead_time_override_days: 9 },
+    })
+    expect(saved.producer_id).toBe(42)
+    expect(saved.lead_time_override_days).toBe(9)
+    expect(saved.service_level_target).toBeNull()
+  })
+
+  it('drops non-finite numbers from the posted body', async () => {
+    apiRequestMock.mockResolvedValueOnce({ producer_id: 42 })
+
+    await upsertProducerProfile({
+      producer_id: 42,
+      service_level_target: Number.NaN,
+      lead_time_override_days: 7,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/masters/producer', {
+      method: 'POST',
+      body: { producer_id: 42, lead_time_override_days: 7 },
+    })
+  })
+})
+
+describe('getProductTerms', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('requests the product terms with the camelCase producerId query and normalizes rows', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: {
+        producer_id: 42,
+        terms: [
+          { producer_id: 42, product_id: 100, moq: 10, order_multiple: 5, unit_cost_override: 4.2 },
+          { producer_id: 42, product_id: 101 },
+        ],
+      },
+    })
+
+    const result = await getProductTerms(42)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/masters/product-terms', {
+      query: { producerId: 42 },
+    })
+    expect(result.producer_id).toBe(42)
+    expect(result.terms).toEqual([
+      { producer_id: 42, product_id: 100, moq: 10, order_multiple: 5, unit_cost_override: 4.2 },
+      { producer_id: 42, product_id: 101, moq: null, order_multiple: null, unit_cost_override: null },
+    ])
+  })
+
+  it('drops malformed term rows and tolerates a null response', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      producer_id: 42,
+      terms: [null, 'noise', { producer_id: 42 }, { product_id: 9, moq: 3 }],
+    })
+
+    const result = await getProductTerms(42)
+
+    expect(result.terms).toHaveLength(1)
+    expect(result.terms[0]).toEqual({
+      producer_id: null,
+      product_id: 9,
+      moq: 3,
+      order_multiple: null,
+      unit_cost_override: null,
+    })
+
+    apiRequestMock.mockResolvedValueOnce(null)
+
+    await expect(getProductTerms(42)).resolves.toEqual({ producer_id: null, terms: [] })
+  })
+})
+
+describe('upsertProductTerms', () => {
+  beforeEach(() => {
+    apiRequestMock.mockReset()
+  })
+
+  it('posts producer and product ids with only defined numeric fields', async () => {
+    apiRequestMock.mockResolvedValueOnce({
+      Body: { producer_id: 42, product_id: 100, moq: 10, order_multiple: 5 },
+    })
+
+    const saved = await upsertProductTerms({
+      producer_id: 42,
+      product_id: 100,
+      moq: 10,
+      order_multiple: 5,
+      unit_cost_override: null,
+    })
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/procurement/masters/product-terms', {
+      method: 'POST',
+      body: { producer_id: 42, product_id: 100, moq: 10, order_multiple: 5 },
+    })
+    expect(saved).toEqual({
+      producer_id: 42,
+      product_id: 100,
+      moq: 10,
+      order_multiple: 5,
+      unit_cost_override: null,
+    })
+  })
+
+  it('returns an all-null term for a malformed response', async () => {
+    apiRequestMock.mockResolvedValueOnce('noise')
+
+    await expect(
+      upsertProductTerms({ producer_id: 42, product_id: 100, moq: 10 }),
+    ).resolves.toEqual({
+      producer_id: null,
+      product_id: null,
+      moq: null,
+      order_multiple: null,
+      unit_cost_override: null,
+    })
+  })
+})
+
 function buildFullPlan() {
   return {
     producer_id: 42,
@@ -209,6 +435,9 @@ function buildFullPlan() {
         product_id: 100,
         producer_id: 42,
         suggested_qty: 30,
+        raw_qty: 27.4,
+        moq: 10,
+        order_multiple: 5,
         reorder_point: 12,
         safety_stock: 5,
         days_of_cover: 8.5,

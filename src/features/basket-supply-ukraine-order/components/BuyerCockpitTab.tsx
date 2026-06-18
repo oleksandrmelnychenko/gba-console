@@ -4,24 +4,40 @@ import {
   Badge,
   Button,
   Card,
+  Divider,
   Group,
   Loader,
   NumberInput,
+  Popover,
   Select,
   SimpleGrid,
   Stack,
   Text,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconAlertTriangle, IconRefresh } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { notifications } from '@mantine/notifications'
+import { IconAlertCircle, IconAlertTriangle, IconCheck, IconRefresh, IconSettings } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import type { TranslateFunction } from '../../../shared/i18n/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
-import { getProducerPlan } from '../api/procurementApi'
+import {
+  getProducerPlan,
+  getProducerProfile,
+  upsertProducerProfile,
+  upsertProductTerms,
+} from '../api/procurementApi'
 import type { ProcurementUrgency, ProducerPlan, ReorderSuggestion } from '../procurementTypes'
+
+type TermsSaveStatus = 'idle' | 'saving' | 'saved'
+
+type TermsDraft = {
+  moq: number | ''
+  order_multiple: number | ''
+}
 
 type BuyerCockpitState = {
   plan: ProducerPlan | null
@@ -106,6 +122,11 @@ export function BuyerCockpitTab() {
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null)
   const [draftQty, setDraftQty] = useState<Record<number, number>>({})
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
+  const [termsDraft, setTermsDraft] = useState<Record<number, TermsDraft>>({})
+  const [termsStatus, setTermsStatus] = useState<Record<number, TermsSaveStatus>>({})
+  const [profileLeadTime, setProfileLeadTime] = useState<number | ''>('')
+  const [profileServiceLevel, setProfileServiceLevel] = useState<number | ''>('')
+  const [isProfileSaving, setProfileSaving] = useState(false)
   const { plan, error, isLoading } = state
 
   useEffect(() => {
@@ -164,6 +185,8 @@ export function BuyerCockpitTab() {
 
         if (!cancelled) {
           setDraftQty(buildDraftQty(loaded.items))
+          setTermsDraft(buildTermsDraft(loaded.items))
+          setTermsStatus({})
           dispatch({ plan: loaded, type: 'loaded' })
         }
       } catch (loadError) {
@@ -187,6 +210,48 @@ export function BuyerCockpitTab() {
       controller.abort()
     }
   }, [selectedProducerId, reloadKey, t])
+
+  useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+    const producerId = selectedProducerId === null ? Number.NaN : Number(selectedProducerId)
+
+    function clearProfileInputs() {
+      if (!cancelled) {
+        setProfileLeadTime('')
+        setProfileServiceLevel('')
+      }
+    }
+
+    async function loadProfile() {
+      if (!Number.isFinite(producerId)) {
+        clearProfileInputs()
+        return
+      }
+
+      try {
+        const loaded = await getProducerProfile(producerId, controller.signal)
+
+        if (!cancelled) {
+          setProfileLeadTime(loaded.lead_time_override_days ?? '')
+          setProfileServiceLevel(loaded.service_level_target === null ? '' : loaded.service_level_target * 100)
+        }
+      } catch {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        clearProfileInputs()
+      }
+    }
+
+    void loadProfile()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [selectedProducerId, reloadKey])
 
   const producerOptions = useMemo(() => buildProducerOptions(producers), [producers])
 
@@ -212,6 +277,87 @@ export function BuyerCockpitTab() {
     const nextValue = typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0
 
     setDraftQty((current) => ({ ...current, [productId]: nextValue }))
+  }
+
+  function updateTermsDraft(productId: number, field: keyof TermsDraft, value: number | '') {
+    setTermsDraft((current) => ({
+      ...current,
+      [productId]: { ...(current[productId] ?? { moq: '', order_multiple: '' }), [field]: value },
+    }))
+  }
+
+  const saveTerms = useCallback(
+    async (item: ReorderSuggestion, draft: TermsDraft) => {
+      if (selectedProducerId === null) {
+        return
+      }
+
+      const producerId = Number(selectedProducerId)
+
+      if (!Number.isFinite(producerId)) {
+        return
+      }
+
+      const moq = toTermsNumber(draft.moq, item.moq)
+      const orderMultiple = toTermsNumber(draft.order_multiple, item.order_multiple)
+
+      if (moq === (item.moq ?? null) && orderMultiple === (item.order_multiple ?? null)) {
+        return
+      }
+
+      setTermsStatus((current) => ({ ...current, [item.product_id]: 'saving' }))
+
+      try {
+        await upsertProductTerms({
+          producer_id: producerId,
+          product_id: item.product_id,
+          moq,
+          order_multiple: orderMultiple,
+        })
+
+        setTermsStatus((current) => ({ ...current, [item.product_id]: 'saved' }))
+        reload()
+      } catch (saveError) {
+        setTermsStatus((current) => ({ ...current, [item.product_id]: 'idle' }))
+        notifications.show({
+          color: 'red',
+          message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти умови'),
+        })
+      }
+    },
+    [selectedProducerId, t],
+  )
+
+  async function saveProfile() {
+    if (selectedProducerId === null) {
+      return
+    }
+
+    const producerId = Number(selectedProducerId)
+
+    if (!Number.isFinite(producerId)) {
+      return
+    }
+
+    setProfileSaving(true)
+
+    try {
+      await upsertProducerProfile({
+        producer_id: producerId,
+        lead_time_override_days: profileLeadTime === '' ? null : profileLeadTime,
+        service_level_target: profileServiceLevel === '' ? null : profileServiceLevel / 100,
+      })
+
+      notifications.show({ color: 'green', message: t('Налаштування виробника збережено') })
+      reload()
+    } catch (saveError) {
+      notifications.show({
+        color: 'red',
+        message: saveError instanceof Error ? saveError.message : t('Не вдалося зберегти налаштування виробника'),
+      })
+    } finally {
+      setProfileSaving(false)
+    }
   }
 
   const columns = useMemo<Array<DataTableColumn<ReorderSuggestion>>>(
@@ -256,6 +402,57 @@ export function BuyerCockpitTab() {
           )
         },
         width: 110,
+      },
+      {
+        id: 'suggestedQty',
+        header: t('Рекомендовано'),
+        accessor: (item) => item.suggested_qty,
+        cell: (item) => <SuggestedQtyCell item={item} />,
+        width: 150,
+        align: 'right',
+        enableSorting: false,
+      },
+      {
+        id: 'terms',
+        header: t('Умови'),
+        cell: (item) => {
+          const draft = termsDraft[item.product_id] ?? { moq: '', order_multiple: '' }
+
+          return (
+            <Group gap={4} justify="flex-end" wrap="nowrap">
+              <NumberInput
+                allowNegative={false}
+                aria-label={t('MOQ')}
+                hideControls
+                min={0}
+                onBlur={() => void saveTerms(item, draft)}
+                onChange={(value) => updateTermsDraft(item.product_id, 'moq', typeof value === 'number' ? value : '')}
+                placeholder={t('MOQ')}
+                size="xs"
+                value={draft.moq}
+                w={64}
+              />
+              <NumberInput
+                allowNegative={false}
+                aria-label={t('Кратність')}
+                hideControls
+                min={0}
+                onBlur={() => void saveTerms(item, draft)}
+                onChange={(value) =>
+                  updateTermsDraft(item.product_id, 'order_multiple', typeof value === 'number' ? value : '')
+                }
+                placeholder="×"
+                size="xs"
+                value={draft.order_multiple}
+                w={64}
+              />
+              <TermsStatusIndicator status={termsStatus[item.product_id] ?? 'idle'} t={t} />
+            </Group>
+          )
+        },
+        width: 180,
+        align: 'right',
+        enableSorting: false,
       },
       {
         id: 'draftQty',
@@ -334,7 +531,7 @@ export function BuyerCockpitTab() {
         enableSorting: false,
       },
     ],
-    [draftQty, t],
+    [draftQty, saveTerms, termsDraft, termsStatus, t],
   )
 
   const toolbarRight = (
@@ -424,14 +621,58 @@ export function BuyerCockpitTab() {
                   )}
                 </Group>
               </Stack>
-              <Stack align="flex-end" gap={2}>
-                <Text c="dimmed" size="xs">
-                  {t('Чернетка замовлення')} (EUR)
-                </Text>
-                <Text fw={700} size="lg">
-                  €{eurFormatter.format(totalDraftCost)}
-                </Text>
-              </Stack>
+              <Group align="flex-end" gap="md" wrap="nowrap">
+                <Stack align="flex-end" gap={2}>
+                  <Text c="dimmed" size="xs">
+                    {t('Чернетка замовлення')} (EUR)
+                  </Text>
+                  <Text fw={700} size="lg">
+                    €{eurFormatter.format(totalDraftCost)}
+                  </Text>
+                </Stack>
+                <Popover position="bottom-end" shadow="md" withinPortal>
+                  <Popover.Target>
+                    <Button leftSection={<IconSettings size={16} />} size="xs" variant="default">
+                      {t('Налаштування виробника')}
+                    </Button>
+                  </Popover.Target>
+                  <Popover.Dropdown p="md">
+                    <Stack gap="sm" w={260}>
+                      <Text fw={600} size="sm">
+                        {t('Налаштування виробника')}
+                      </Text>
+                      <NumberInput
+                        allowNegative={false}
+                        description={t('Перевизначення часу постачання')}
+                        label={`${t('Час постачання')} (${t('днів')})`}
+                        min={0}
+                        onChange={(value) => setProfileLeadTime(typeof value === 'number' ? value : '')}
+                        placeholder={qtyFormatter.format(plan.lead_time_days)}
+                        size="xs"
+                        value={profileLeadTime}
+                      />
+                      <NumberInput
+                        allowNegative={false}
+                        decimalScale={1}
+                        description={t('Цільовий рівень сервісу')}
+                        label={`${t('Рівень сервісу')} (%)`}
+                        max={100}
+                        min={0}
+                        onChange={(value) => setProfileServiceLevel(typeof value === 'number' ? value : '')}
+                        size="xs"
+                        suffix="%"
+                        value={profileServiceLevel}
+                      />
+                      <Divider />
+                      <Group justify="flex-end">
+                        <Button loading={isProfileSaving} onClick={() => void saveProfile()} size="xs">
+                          {t('Зберегти')}
+                        </Button>
+                      </Group>
+                    </Stack>
+                  </Popover.Dropdown>
+                </Popover>
+              </Group>
             </Group>
 
             <SimpleGrid cols={{ base: 2, md: 5 }} spacing="sm">
@@ -470,7 +711,7 @@ export function BuyerCockpitTab() {
               getRowId={(item) => String(item.product_id)}
               isLoading={isLoading}
               maxHeight={560}
-              minWidth={1040}
+              minWidth={1370}
               tableId="basket-supply-ukraine-order-buyer-cockpit"
               toolbarRight={toolbarRight}
             />
@@ -521,6 +762,77 @@ function buildProducerOptions(producers: Client[]) {
       return { label, value: String(id) }
     })
     .filter((option): option is { label: string; value: string } => option !== null)
+}
+
+function SuggestedQtyCell({ item }: { item: ReorderSuggestion }) {
+  const hasRounding = item.raw_qty !== null && item.raw_qty !== item.suggested_qty
+  const hints: string[] = []
+
+  if (item.moq !== null) {
+    hints.push(`MOQ ${qtyFormatter.format(item.moq)}`)
+  }
+
+  if (item.order_multiple !== null) {
+    hints.push(`×${qtyFormatter.format(item.order_multiple)}`)
+  }
+
+  return (
+    <Stack align="flex-end" gap={2}>
+      <Group gap={6} justify="flex-end" wrap="nowrap">
+        <Text fw={700} size="sm">
+          {qtyFormatter.format(item.suggested_qty)}
+        </Text>
+        {hasRounding && item.raw_qty !== null && (
+          <Text c="dimmed" size="xs" td="line-through">
+            {qtyFormatter.format(item.raw_qty)}
+          </Text>
+        )}
+      </Group>
+      {hasRounding && hints.length > 0 && (
+        <Badge color="gray" size="xs" variant="light">
+          {hints.join(' / ')}
+        </Badge>
+      )}
+    </Stack>
+  )
+}
+
+function TermsStatusIndicator({ status, t }: { status: TermsSaveStatus; t: TranslateFunction }) {
+  if (status === 'saving') {
+    return <Loader size={14} />
+  }
+
+  if (status === 'saved') {
+    return (
+      <Tooltip label={t('Збережено')}>
+        <IconCheck color="var(--mantine-color-green-6)" size={16} />
+      </Tooltip>
+    )
+  }
+
+  return <span style={{ display: 'inline-block', width: 16 }} />
+}
+
+function buildTermsDraft(items: ReorderSuggestion[]): Record<number, TermsDraft> {
+  return items.reduce<Record<number, TermsDraft>>((draft, item) => {
+    draft[item.product_id] = {
+      moq: item.moq ?? '',
+      order_multiple: item.order_multiple ?? '',
+    }
+    return draft
+  }, {})
+}
+
+function toTermsNumber(value: number | '' | undefined, fallback: number | null): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (value === '') {
+    return null
+  }
+
+  return fallback
 }
 
 function buildDraftQty(items: ReorderSuggestion[]): Record<number, number> {

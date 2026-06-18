@@ -69,6 +69,9 @@ export type ReorderSuggestion = {
   product_id: number
   producer_id: number
   suggested_qty: number
+  raw_qty: number | null
+  moq: number | null
+  order_multiple: number | null
   reorder_point: number
   safety_stock: number
   days_of_cover: number
@@ -97,4 +100,45 @@ export type ProducerPlan = {
   as_of_date: string | null
   model_version: string
   items: ReorderSuggestion[]
+}
+
+export type ProducerProfile = {
+  producer_id: number | null
+  service_level_target: number | null
+  lead_time_override_days: number | null
+  ordering_cost_eur: number | null
+  holding_rate_pct: number | null
+  autonomy_level: number | null
+  auto_place_max_eur: number | null
+}
+
+export type ProductTerms = {
+  producer_id: number | null
+  product_id: number | null
+  moq: number | null
+  order_multiple: number | null
+  unit_cost_override: number | null
+}
+
+export type ProducerProductTerms = {
+  producer_id: number | null
+  terms: ProductTerms[]
+}
+
+export type ProducerProfileInput = {
+  producer_id: number
+  service_level_target?: number | null
+  lead_time_override_days?: number | null
+  ordering_cost_eur?: number | null
+  holding_rate_pct?: number | null
+  autonomy_level?: number | null
+  auto_place_max_eur?: number | null
+}
+
+export type ProductTermsInput = {
+  producer_id: number
+  product_id: number
+  moq?: number | null
+  order_multiple?: number | null
+  unit_cost_override?: number | null
 }
