@@ -23,6 +23,7 @@ export async function getClientAgreements(netId: string, signal?: AbortSignal): 
   const result = await apiRequest<unknown>('/agreements/client/all', {
     query: {
       netId,
+      includeDebts: false,
     },
     ...(signal ? { signal } : {}),
   })
