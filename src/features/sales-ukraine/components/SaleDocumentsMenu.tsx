@@ -148,6 +148,15 @@ export function SaleDocumentsMenu({ sale }: { sale: SalesUkraineSale }) {
   )
 }
 
+// Label for a bundled revision entry, e.g. "Правка 1 документа" / "Поточна правка документа".
+function revisionDocumentsLabel(revision: number, isCurrent: boolean, t: (key: string) => string): string {
+  if (isCurrent) {
+    return `${t('Поточна')} ${t('правка документа')}`
+  }
+
+  return `${t('Правка')} ${revision} ${t('документа')}`
+}
+
 function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string): DocumentAction[] {
   const netId = sale.NetUid
 
@@ -166,17 +175,16 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
 
   if (hasTransporter && isPackaging) {
     if (hasHistory) {
-      // Revision 1 = the base invoice (+ shipment for VAT). Bundle the pair into one "first edit"
-      // entry; clicking it produces both documents together.
+      // Revision 1 = the base documents — bundled into one "Перша правка документів" entry.
       const parts: DocumentPart[] = [{ fetch: () => getSaleInvoiceDocument(netId), label: t('Видаткова накладна') }]
 
       if (isVat) {
         parts.push({ fetch: () => getSaleShipmentListDocument(netId), label: t('Лист на пакування') })
       }
 
-      actions.push({ key: 'first-revision', label: t('Перша правка документів'), parts })
+      actions.push({ key: 'revision-1', label: revisionDocumentsLabel(1, false, t), parts })
     } else {
-      // No edits yet — just the current invoice (+ shipment for VAT), unnumbered.
+      // No edits yet — just the current invoice (+ shipment for VAT).
       actions.push({ fetch: () => getSaleInvoiceDocument(netId), key: 'invoice', label: t('Видаткова накладна') })
 
       if (isVat) {
@@ -185,9 +193,8 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
     }
   }
 
-  // HistoryInvoiceEdit holds the edit revisions; the LAST entry is the current state. Legacy numbers
-  // mapped revisions starting at 2 and shows the last one unnumbered (the current document) — there
-  // is NO separate "current act" document, the last mapped act IS the current one.
+  // Each HistoryInvoiceEdit entry is one revision; bundle ALL of its documents into a single
+  // "N-та правка документів" entry (consistent with revision 1). The LAST entry is the current one.
   history.forEach((item, index) => {
     const historyNetId = item.NetUid
 
@@ -197,26 +204,16 @@ function buildDocumentActions(sale: SalesUkraineSale, t: (key: string) => string
 
     const isLast = index === history.length - 1
     const revision = index + 2
+    const parts: DocumentPart[] = [
+      { fetch: () => getSaleInvoiceHistoryDocument(netId, historyNetId), label: t('Видаткова накладна') },
+      { fetch: () => getSaleActForEditingHistoryDocument(netId, historyNetId), label: t('Акт редагування') },
+    ]
 
-    actions.push({
-      fetch: () => getSaleInvoiceHistoryDocument(netId, historyNetId),
-      key: `invoice-history-${index}`,
-      label: isLast ? `${t('Видаткова накладна')} (${t('поточна')})` : `${t('Видаткова накладна')} (${t('правка')} ${revision})`,
-    })
-    actions.push({
-      fetch: () => getSaleActForEditingHistoryDocument(netId, historyNetId),
-      key: `act-history-${index}`,
-      label: isLast ? `${t('Акт редагування')} (${t('поточний')})` : `${t('Акт редагування')} ${revision}`,
-    })
-
-    // Shipment list revision: only the current (last) entry, VAT only, unnumbered (legacy item_B).
     if (isLast && isVat) {
-      actions.push({
-        fetch: () => getSaleShipmentListHistoryDocument(netId, historyNetId),
-        key: `shipment-history-${index}`,
-        label: `${t('Лист на пакування')} (${t('поточна')})`,
-      })
+      parts.push({ fetch: () => getSaleShipmentListHistoryDocument(netId, historyNetId), label: t('Лист на пакування') })
     }
+
+    actions.push({ key: `revision-${revision}`, label: revisionDocumentsLabel(revision, isLast, t), parts })
   })
 
   if (isVat && withVatAccounting) {

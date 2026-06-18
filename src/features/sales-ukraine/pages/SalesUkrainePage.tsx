@@ -195,18 +195,25 @@ export function SalesUkrainePage() {
   const canUnlock = hasPermission(SALES_UKRAINE_UNLOCK_PERMISSION)
   const canWillNotShip = hasPermission(SALES_UKRAINE_WILL_NOT_SHIP_PERMISSION)
   const today = useMemo(() => formatLocalDate(new Date()), [])
+  // Default the period to the last week (from = today − 7 days) instead of just today.
+  const weekAgo = useMemo(() => {
+    const date = new Date()
+    date.setDate(date.getDate() - 7)
+
+    return formatLocalDate(date)
+  }, [])
   const initialDraft = useMemo<FilterDraft>(
     () => ({
       clientId: '',
       forEcommerce: false,
-      from: today,
+      from: weekAgo,
       onlyMine: false,
       organisationIds: [],
       status: 'all',
       to: today,
       value: '',
     }),
-    [today],
+    [today, weekAgo],
   )
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialDraft)
   const [activeDraft, setActiveDraft] = useValueState<FilterDraft>(initialDraft)

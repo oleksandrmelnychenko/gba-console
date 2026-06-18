@@ -354,29 +354,25 @@ function buildShiftPayload(sale: SalesUkraineSale, draft: ShiftDraft): SalesUkra
   const nextItems = orderItems.map((item, index) => {
     const key = itemKey(item, index)
     const entry = draft[key] || EMPTY_DRAFT_ENTRY
-    const existing = Array.isArray(item.ShiftStatuses) ? item.ShiftStatuses : []
-    const existingBill = existing.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Bill)
-    const existingStore = existing.find((status) => status.ShiftStatus === OrderItemShiftStatusType.Store)
     const nextStatuses: SalesUkraineOrderItemShiftStatus[] = []
 
+    // The server only processes NEW (Id === 0) shift statuses (IsNew filter). Always emit a fresh
+    // status for a touched box; never reuse the persisted (Id > 0) statuses loaded from
+    // /sales/get/shifted — those fail IsNew() so the server drops the whole item and shifts nothing.
     if (entry.billTouched) {
       const billQty = toNumber(entry.bill)
 
       if (billQty > 0) {
-        nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Bill, billQty, item))
+        nextStatuses.push(buildShiftStatus(OrderItemShiftStatusType.Bill, billQty, item))
       }
-    } else if (existingBill) {
-      nextStatuses.push(existingBill)
     }
 
     if (entry.storeTouched) {
       const storeQty = toNumber(entry.store)
 
       if (storeQty > 0) {
-        nextStatuses.push(buildShiftStatus(existing, OrderItemShiftStatusType.Store, storeQty, item))
+        nextStatuses.push(buildShiftStatus(OrderItemShiftStatusType.Store, storeQty, item))
       }
-    } else if (existingStore) {
-      nextStatuses.push(existingStore)
     }
 
     return { ...item, ShiftStatuses: nextStatuses }
@@ -421,18 +417,8 @@ function getExistingShiftQty(item: SalesUkraineOrderItem, shiftStatus: number): 
   return getNumber(statuses.find((status) => status.ShiftStatus === shiftStatus)?.Qty) ?? 0
 }
 
-function buildShiftStatus(
-  existing: SalesUkraineOrderItemShiftStatus[],
-  shiftStatus: number,
-  qty: number,
-  item: SalesUkraineOrderItem,
-): SalesUkraineOrderItemShiftStatus {
-  const current = existing.find((status) => status.ShiftStatus === shiftStatus)
-
-  if (current) {
-    return { ...current, Qty: qty }
-  }
-
+function buildShiftStatus(shiftStatus: number, qty: number, item: SalesUkraineOrderItem): SalesUkraineOrderItemShiftStatus {
+  // Always a brand-new status (Id 0 / empty NetUid) so it passes the server's IsNew() filter.
   return {
     Id: 0,
     NetUid: EMPTY_GUID,

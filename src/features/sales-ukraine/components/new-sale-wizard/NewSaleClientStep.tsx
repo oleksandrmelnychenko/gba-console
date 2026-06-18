@@ -863,13 +863,23 @@ export function NewSaleClientStep({
     setPrintState(null)
   }
 
-  function handleShiftSaved() {
+  async function handleShiftSaved() {
+    const shifted = editShiftSale
     setEditShiftSale(null)
     setExpandedKey(null)
     bumpWizardDebtRefresh()
 
     if (selectedClient) {
-      confirmClient(selectedClient)
+      void loadGroupedDebts(selectedClient)
+    }
+
+    // Refresh the whole register first (a bill-shift can spawn a new child sale), then re-pull the
+    // edited sale's row from the per-sale statistic endpoint so its recomputed Сума replaces the
+    // (stale) list value — otherwise it stays 0 until a manual page reload.
+    await fetchRegister()
+
+    if (shifted) {
+      await refreshRegistryRow(shifted, false)
     }
   }
 
