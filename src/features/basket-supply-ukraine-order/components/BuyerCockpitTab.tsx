@@ -116,6 +116,8 @@ const URGENCY_RANK: Record<ProcurementUrgency, number> = {
 
 const LEAD_TIME_SOURCE_LABEL: Record<string, string> = {
   empirical: 'емпіричний',
+  geo: 'за геогр.',
+  override: 'вручну',
   default: 'за замовч.',
 }
 
