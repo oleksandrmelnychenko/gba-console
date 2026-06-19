@@ -7,7 +7,9 @@ import {
   getRetailClientCart,
   getRetailClientSales,
   getRetailClients,
+  getRetailClientsPage,
   searchRetailClients,
+  searchRetailClientsPage,
   updateIncompleteSale,
 } from './onlineShopClientsApi'
 
@@ -31,6 +33,23 @@ describe('online-shop clients API query contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/all')
   })
 
+  it('loads a paged retail client list from the source endpoint', async () => {
+    const clients: RetailClient[] = [{ NetUid: 'retail-client', FullName: 'Retail Client' }]
+
+    apiRequestMock.mockResolvedValueOnce({ Collection: clients, TotalQty: 42 })
+
+    await expect(getRetailClientsPage({ limit: 20, offset: 40 })).resolves.toEqual({
+      Items: clients,
+      Total: 42,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/all', {
+      query: {
+        limit: 20,
+        offset: 40,
+      },
+    })
+  })
+
   it('searches retail clients with the source value query parameter', async () => {
     const clients: RetailClient[] = [{ NetUid: 'searched-client', FullName: 'Search Client' }]
 
@@ -40,6 +59,25 @@ describe('online-shop clients API query contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/sales/filtered', {
       query: {
         value: 'Search',
+      },
+    })
+  })
+
+  it('searches retail clients with paged source parameters', async () => {
+    const clients: RetailClient[] = [{ NetUid: 'searched-client', FullName: 'Search Client' }]
+
+    apiRequestMock.mockResolvedValueOnce({ Collection: clients, TotalQty: '7' })
+
+    await expect(searchRetailClientsPage('  Search  ', { limit: 20, offset: 20 })).resolves.toEqual({
+      Items: clients,
+      Total: 7,
+    })
+    expect(apiRequestMock).toHaveBeenCalledWith('/retail/clients/sales/filtered', {
+      query: {
+        value: 'Search',
+        limit: 20,
+        offset: 20,
+        paged: true,
       },
     })
   })

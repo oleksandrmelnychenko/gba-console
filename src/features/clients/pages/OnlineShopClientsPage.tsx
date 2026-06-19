@@ -7,6 +7,7 @@ import {
   Group,
   Loader,
   ScrollArea,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -14,13 +15,13 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { getRetailClientCart, getRetailClients, searchRetailClients } from '../api/onlineShopClientsApi'
+import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
 import { OnlineShopSalesFilter } from '../components/OnlineShopSalesFilter'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
@@ -33,6 +34,7 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS = 350
+const ONLINE_SHOP_CLIENT_PAGE_SIZE_OPTIONS = ['20', '50', '100']
 const ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
@@ -56,6 +58,9 @@ export function OnlineShopClientsPage() {
   const [cartItems, setCartItems] = useValueState<RetailCartItem[]>([])
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS)
+  const [totalClients, setTotalClients] = useValueState(0)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(20)
   const [error, setError] = useValueState<string | null>(null)
   const [cartError, setCartError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -66,6 +71,9 @@ export function OnlineShopClientsPage() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
+  const offset = (page - 1) * pageSize
+  const canMoveBack = page > 1
+  const canMoveForward = page * pageSize < totalClients
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
   const clientColumns = useRetailClientColumns()
   const tableToolbarLeft = useMemo(
@@ -77,6 +85,10 @@ export function OnlineShopClientsPage() {
       ) : null,
     [normalizedSearchValue, t],
   )
+
+  useEffect(() => {
+    setPage(1)
+  }, [normalizedSearchValue, setPage])
 
   useEffect(() => {
     let cancelled = false
@@ -91,14 +103,18 @@ export function OnlineShopClientsPage() {
       setError(null)
 
       try {
-        const nextClients = normalizedSearchValue ? await searchRetailClients(normalizedSearchValue) : await getRetailClients()
+        const response = normalizedSearchValue
+          ? await searchRetailClientsPage(normalizedSearchValue, { limit: pageSize, offset })
+          : await getRetailClientsPage({ limit: pageSize, offset })
 
         if (!cancelled) {
-          setClients(nextClients)
+          setClients(response.Items)
+          setTotalClients(response.Total)
         }
       } catch (loadError) {
         if (!cancelled) {
           setClients([])
+          setTotalClients(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити клієнтів інтернет-магазину'))
         }
       } finally {
@@ -113,7 +129,7 @@ export function OnlineShopClientsPage() {
     return () => {
       cancelled = true
     }
-  }, [normalizedSearchValue, setCartError, setCartItems, setCartLoading, setClients, setError, setLoading, setSelectedClient, t])
+  }, [normalizedSearchValue, offset, pageSize, setCartError, setCartItems, setCartLoading, setClients, setError, setLoading, setSelectedClient, setTotalClients, t])
 
   async function selectClient(client: RetailClient) {
     const netId = getRetailClientNetId(client)
@@ -156,6 +172,7 @@ export function OnlineShopClientsPage() {
     setCartError(null)
     setCartLoading(false)
     setSearchValue('')
+    setPage(1)
   }
 
   function openSalesDrawer() {
@@ -185,7 +202,10 @@ export function OnlineShopClientsPage() {
                 label={t('Пошук')}
                 placeholder={t('Клієнт, телефон або email')}
                 value={searchValue}
-                onChange={(event) => setSearchValue(event.currentTarget.value)}
+                onChange={(event) => {
+                  setPage(1)
+                  setSearchValue(event.currentTarget.value)
+                }}
                 style={{ flex: 1 }}
               />
               <Tooltip label={t('Скинути')}>
@@ -200,6 +220,43 @@ export function OnlineShopClientsPage() {
                 {error}
               </Alert>
             )}
+
+            <Group justify="space-between" gap="sm">
+              <Text size="sm" c="dimmed">
+                {t('Сторінка')} {page}
+                {totalClients ? `, ${t('усього')}: ${totalClients}` : ''}
+              </Text>
+              <Group gap="xs">
+                <Select
+                  aria-label={t('Розмір сторінки')}
+                  data={ONLINE_SHOP_CLIENT_PAGE_SIZE_OPTIONS}
+                  value={String(pageSize)}
+                  w={84}
+                  onChange={(value) => {
+                    setPage(1)
+                    setPageSize(Number(value || 20))
+                  }}
+                />
+                <ActionIcon
+                  aria-label={t('Попередня сторінка')}
+                  color="gray"
+                  disabled={!canMoveBack || isTableBusy}
+                  variant="light"
+                  onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+                >
+                  <IconChevronLeft size={18} />
+                </ActionIcon>
+                <ActionIcon
+                  aria-label={t('Наступна сторінка')}
+                  color="gray"
+                  disabled={!canMoveForward || isTableBusy}
+                  variant="light"
+                  onClick={() => setPage((currentPage) => currentPage + 1)}
+                >
+                  <IconChevronRight size={18} />
+                </ActionIcon>
+              </Group>
+            </Group>
 
             <DataTable
               columns={clientColumns}

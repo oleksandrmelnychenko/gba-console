@@ -1,10 +1,10 @@
 import { Loader, Popover, ScrollArea, Stack, Text, TextInput, UnstyledButton } from '@mantine/core'
 import { useDebouncedValue, useDisclosure } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { getRetailClients, searchRetailClients } from '../api/onlineShopClientsApi'
+import { getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
 import type { RetailClient } from '../onlineShopTypes'
 
 const FAST_CLIENT_PAGE_SIZE = 20
@@ -22,11 +22,13 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, FAST_CLIENT_SEARCH_DEBOUNCE_MS)
   const [clients, setClients] = useValueState<RetailClient[]>([])
-  const [visibleCount, setVisibleCount] = useValueState(FAST_CLIENT_PAGE_SIZE)
+  const [totalClients, setTotalClients] = useValueState(0)
   const [isLoading, setLoading] = useValueState(false)
+  const [isLoadingMore, setLoadingMore] = useValueState(false)
   const normalizedSearchValue = debouncedSearchValue.trim()
   const onGetAllSalesRef = useRef(onGetAllSales)
   const onClearSalesRef = useRef(onClearSales)
+  const canLoadMore = clients.length < totalClients
 
   useEffect(() => {
     onGetAllSalesRef.current = onGetAllSales
@@ -38,23 +40,24 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
 
     async function loadFastClients() {
       setLoading(true)
+      setLoadingMore(false)
 
       try {
-        const nextClients = normalizedSearchValue
-          ? await searchRetailClients(normalizedSearchValue)
+        const response = normalizedSearchValue
+          ? await searchRetailClientsPage(normalizedSearchValue, { limit: FAST_CLIENT_PAGE_SIZE, offset: 0 })
           : await (async () => {
               onGetAllSalesRef.current?.()
-              return getRetailClients()
+              return getRetailClientsPage({ limit: FAST_CLIENT_PAGE_SIZE, offset: 0 })
             })()
 
         if (!cancelled) {
-          setClients(nextClients)
-          setVisibleCount(FAST_CLIENT_PAGE_SIZE)
+          setClients(response.Items)
+          setTotalClients(response.Total)
         }
       } catch {
         if (!cancelled) {
           setClients([])
-          setVisibleCount(FAST_CLIENT_PAGE_SIZE)
+          setTotalClients(0)
         }
       } finally {
         if (!cancelled) {
@@ -68,16 +71,27 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
     return () => {
       cancelled = true
     }
-  }, [normalizedSearchValue, setClients, setLoading, setVisibleCount])
+  }, [normalizedSearchValue, setClients, setLoading, setLoadingMore, setTotalClients])
 
-  const visibleClients = useMemo(() => clients.slice(0, visibleCount), [clients, visibleCount])
-
-  function loadMore() {
-    if (visibleCount >= clients.length) {
+  async function loadMore() {
+    if (!canLoadMore || isLoading || isLoadingMore) {
       return
     }
 
-    setVisibleCount((count) => count + FAST_CLIENT_PAGE_SIZE)
+    setLoadingMore(true)
+
+    try {
+      const response = normalizedSearchValue
+        ? await searchRetailClientsPage(normalizedSearchValue, { limit: FAST_CLIENT_PAGE_SIZE, offset: clients.length })
+        : await getRetailClientsPage({ limit: FAST_CLIENT_PAGE_SIZE, offset: clients.length })
+
+      setClients((currentClients) => [...currentClients, ...response.Items])
+      setTotalClients(response.Total)
+    } catch {
+      setTotalClients(clients.length)
+    } finally {
+      setLoadingMore(false)
+    }
   }
 
   function selectClient(client: RetailClient) {
@@ -107,10 +121,10 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
           <Stack align="center" gap="xs" py="md">
             <Loader color="violet" size="sm" />
           </Stack>
-        ) : visibleClients.length > 0 ? (
+        ) : clients.length > 0 ? (
           <ScrollArea.Autosize mah={280} type="auto" onBottomReached={loadMore}>
             <Stack gap={0} p={4}>
-              {visibleClients.map((client, index) => (
+              {clients.map((client, index) => (
                 <UnstyledButton
                   key={getFastClientNetUid(client) || String(getFastClientId(client) || index)}
                   px="sm"
@@ -122,6 +136,11 @@ export function OnlineShopSalesFilter({ onClearSales, onGetAllSales, onSelectFas
                   </Text>
                 </UnstyledButton>
               ))}
+              {isLoadingMore && (
+                <Stack align="center" gap="xs" py="sm">
+                  <Loader color="violet" size="xs" />
+                </Stack>
+              )}
             </Stack>
           </ScrollArea.Autosize>
         ) : (

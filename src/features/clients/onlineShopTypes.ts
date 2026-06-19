@@ -23,6 +23,11 @@ export type RetailClient = {
   ShoppingCartJson?: string
 }
 
+export type RetailClientsPage = {
+  Items: RetailClient[]
+  Total: number
+}
+
 export type RetailClientRegion = {
   IsLocalPayment?: boolean
   NameRu?: string

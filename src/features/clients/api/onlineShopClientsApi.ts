@@ -4,13 +4,30 @@ import type {
   IncompleteSalesSearchParams,
   RetailCartItem,
   RetailClient,
+  RetailClientsPage,
   RetailSale,
 } from '../onlineShopTypes'
+
+type RetailClientsPageParams = {
+  limit: number
+  offset: number
+}
 
 export async function getRetailClients(): Promise<RetailClient[]> {
   const result = await apiRequest<unknown>('/retail/clients/all')
 
   return normalizeCollection<RetailClient>(result)
+}
+
+export async function getRetailClientsPage(params: RetailClientsPageParams): Promise<RetailClientsPage> {
+  const result = await apiRequest<unknown>('/retail/clients/all', {
+    query: {
+      limit: params.limit,
+      offset: params.offset,
+    },
+  })
+
+  return normalizeRetailClientsPage(result)
 }
 
 export async function searchRetailClients(value: string): Promise<RetailClient[]> {
@@ -21,6 +38,19 @@ export async function searchRetailClients(value: string): Promise<RetailClient[]
   })
 
   return normalizeCollection<RetailClient>(result)
+}
+
+export async function searchRetailClientsPage(value: string, params: RetailClientsPageParams): Promise<RetailClientsPage> {
+  const result = await apiRequest<unknown>('/retail/clients/sales/filtered', {
+    query: {
+      value: value.trim(),
+      limit: params.limit,
+      offset: params.offset,
+      paged: true,
+    },
+  })
+
+  return normalizeRetailClientsPage(result)
 }
 
 export async function getRetailClientCart(netId: string): Promise<RetailCartItem[]> {
@@ -91,11 +121,21 @@ function normalizeCollection<T>(result: unknown): T[] {
   }
 
   if (parsedResult && typeof parsedResult === 'object') {
-    const { Items, items, Data, data } = parsedResult as {
+    const { Collection, collection, Items, items, Data, data } = parsedResult as {
+      Collection?: unknown
+      collection?: unknown
       Data?: unknown
       Items?: unknown
       data?: unknown
       items?: unknown
+    }
+
+    if (Array.isArray(Collection)) {
+      return Collection as T[]
+    }
+
+    if (Array.isArray(collection)) {
+      return collection as T[]
     }
 
     if (Array.isArray(Items)) {
@@ -116,6 +156,31 @@ function normalizeCollection<T>(result: unknown): T[] {
   }
 
   return []
+}
+
+function normalizeRetailClientsPage(result: unknown): RetailClientsPage {
+  const parsedResult = parseJsonPayload(result)
+  const items = normalizeCollection<RetailClient>(parsedResult)
+
+  if (!parsedResult || typeof parsedResult !== 'object' || Array.isArray(parsedResult)) {
+    return {
+      Items: items,
+      Total: items.length,
+    }
+  }
+
+  const payload = parsedResult as Record<string, unknown>
+  const total =
+    readNumber(payload.TotalQty)
+    ?? readNumber(payload.TotalRowsQty)
+    ?? readNumber(payload.Total)
+    ?? readNumber(payload.Count)
+    ?? items.length
+
+  return {
+    Items: items,
+    Total: total,
+  }
 }
 
 function normalizeObject<T>(result: unknown): T | null {
@@ -140,4 +205,18 @@ function parseJsonPayload(result: unknown): unknown {
   } catch {
     return null
   }
+}
+
+function readNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number(value)
+
+    return Number.isFinite(parsedValue) ? parsedValue : null
+  }
+
+  return null
 }
