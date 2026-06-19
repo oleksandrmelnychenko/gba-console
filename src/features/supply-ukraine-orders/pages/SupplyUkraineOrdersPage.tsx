@@ -37,7 +37,7 @@ import {
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -451,8 +451,8 @@ function useSupplyUkraineOrdersPageController() {
   }, [activeFilters, filterError, page, pageSize, reloadKey, t])
 
   const rows = useMemo(
-    () => buildRows(state.toUkraineOrders, state.directOrders, expandedDirectOrders),
-    [expandedDirectOrders, state.directOrders, state.toUkraineOrders],
+    () => buildRows(state.toUkraineOrders, state.directOrders),
+    [state.directOrders, state.toUkraineOrders],
   )
   const totalQty = state.toUkraineTotal + state.directTotal
   const totalPages = Math.max(1, Math.ceil(totalQty / pageSize))
@@ -902,17 +902,27 @@ function SupplyOrdersGrid({
         <span>{t('Тип')}</span>
         <span>{t('Дії')}</span>
       </div>
-      {rows.map((row) => (
-        <SupplyOrderGridRow
-          key={getRowId(row)}
-          canDeleteOrder={canDeleteOrder}
-          expandedDirectOrders={expandedDirectOrders}
-          row={row}
-          onDelete={onDelete}
-          onRowClick={onRowClick}
-          onToggleDirectOrder={onToggleDirectOrder}
-        />
-      ))}
+      {rows.map((row) => {
+        const isExpanded = Boolean(row.directOrder && expandedDirectOrders.has(getOrderKey(row.directOrder)))
+
+        return (
+          <Fragment key={getRowId(row)}>
+            <SupplyOrderGridRow
+              canDeleteOrder={canDeleteOrder}
+              expandedDirectOrders={expandedDirectOrders}
+              row={row}
+              onDelete={onDelete}
+              onRowClick={onRowClick}
+              onToggleDirectOrder={onToggleDirectOrder}
+            />
+            {isExpanded && row.directOrder ? (
+              <div className="supply-orders-grid-expand">
+                <SupplyOrderInvoicesExpand order={row.directOrder} />
+              </div>
+            ) : null}
+          </Fragment>
+        )
+      })}
     </div>
   )
 }
@@ -941,7 +951,11 @@ function SupplyOrderGridRow({
       className={`supply-orders-grid-row is-${row.kind}${isExpanded ? ' is-expanded' : ''}`}
       role="row"
       tabIndex={isInteractive ? 0 : -1}
-      onClick={() => onRowClick(row)}
+      onClick={() => {
+        if (isInteractive) {
+          onRowClick(row)
+        }
+      }}
       onKeyDown={(event) => {
         if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
           event.preventDefault()
@@ -971,29 +985,25 @@ function SupplyOrderGridRow({
 function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
   const { t } = useI18n()
   const supplier = displayValue(row.supplier)
-  const title = supplier
 
   return (
     <div className="supply-order-main-cell">
       <OrderIndexCell row={row} />
       <div className="supply-order-main-body">
         <div className="supply-order-main-title-row">
-          <Tooltip label={title} disabled={title === '-'} openDelay={350} withArrow>
-            <span className="supply-order-main-title">{title}</span>
+          <Tooltip label={supplier} disabled={supplier === '-'} openDelay={350} withArrow>
+            <span className="supply-order-main-title">{supplier}</span>
           </Tooltip>
-          {row.kind === 'invoice' ? <span className="supply-order-inline-tag">{t('Інвойс')}</span> : null}
         </div>
-        <div className="supply-order-main-meta">
-          <OrderMetaValue label="№" value={displayValue(row.number)} strong />
-          <OrderMetaSeparator />
-          <OrderMetaValue label={t('ств.')} value={formatCompactDateTime(row.createdDate)} />
-          <OrderMetaSeparator />
-          <OrderMetaValue label={t('від')} value={formatCompactDateTime(row.orderDate)} />
-          <OrderMetaSeparator />
-          <OrderMetaValue label={t('інв.')} value={displayValue(row.invoiceNumber)} />
-          <OrderMetaSeparator />
-          <OrderMetaValue label={t('дата інв.')} value={formatCompactDateTime(row.invoiceDate)} />
-        </div>
+        <OrderMetaLine
+          items={[
+            { label: '№', value: displayValue(row.number), strong: true },
+            { label: t('ств.'), value: formatCompactDateTime(row.createdDate) },
+            { label: t('від'), value: formatCompactDateTime(row.orderDate) },
+            { label: t('інв.'), value: displayValue(row.invoiceNumber) },
+            { label: t('дата інв.'), value: formatCompactDateTime(row.invoiceDate) },
+          ]}
+        />
       </div>
     </div>
   )
@@ -1020,12 +1030,105 @@ function OrderResponsibleGridCell({ value }: { value: string }) {
   )
 }
 
+function SupplyOrderInvoicesExpand({ order }: { order: DirectSupplyOrder }) {
+  const { t } = useI18n()
+  const invoices = order.SupplyInvoices || []
+
+  if (!invoices.length) {
+    return (
+      <div className="supply-invoices-expand is-empty">
+        <Text c="dimmed" size="sm">{t('Інвойсів не знайдено')}</Text>
+      </div>
+    )
+  }
+
+  return (
+    <div className="supply-invoices-expand">
+      <div className="supply-invoices-expand-head">
+        <span>{t('Інвойс')}</span>
+        <span>{t('Дата')}</span>
+        <span>{t('К-сть')}</span>
+        <span>{t('Сума')}</span>
+        <span>{t('Розміщено')}</span>
+      </div>
+      {invoices.map((invoice, index) => (
+        <SupplyOrderInvoiceExpandItem
+          key={String(invoice.NetUid || invoice.Id || invoice.Number || index)}
+          index={index}
+          invoice={invoice}
+          order={order}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SupplyOrderInvoiceExpandItem({
+  index,
+  invoice,
+  order,
+}: {
+  index: number
+  invoice: SupplyInvoice
+  order: DirectSupplyOrder
+}) {
+  const { t } = useI18n()
+  const row = mapInvoiceRow(order, invoice, index + 1)
+
+  return (
+    <div className="supply-invoices-expand-item">
+      <div className="supply-invoice-main-cell">
+        <span className="supply-invoice-icon" aria-hidden>
+          <IconFileInvoice size={14} />
+        </span>
+        <div className="supply-invoice-copy">
+          <div className="supply-invoice-main-line">
+            <span className="supply-invoice-label">{t('Інвойс')}</span>
+            <Tooltip label={displayValue(row.invoiceNumber)} disabled={!row.invoiceNumber} openDelay={350} withArrow>
+              <span className="supply-invoice-number">{displayValue(row.invoiceNumber)}</span>
+            </Tooltip>
+          </div>
+          <div className="supply-invoice-meta">
+            <span>{t('Замовлення')} {displayValue(getDirectOrderDisplayNumber(order))}</span>
+            <span>{displayValue(order.ClientAgreement?.Agreement?.Name)}</span>
+          </div>
+        </div>
+      </div>
+      <OrderDateInline value={row.invoiceDate} />
+      <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+      <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
+      {placedBadge(row.isPlaced, t)}
+    </div>
+  )
+}
+
+function OrderDateInline({ value }: { value?: Date | string }) {
+  return <span className="supply-invoice-date">{formatCompactDateTime(value)}</span>
+}
+
 function OrderMetaValue({ label, strong = false, value }: { label: string; strong?: boolean; value: string }) {
   return (
     <span className={`supply-order-meta-value${strong ? ' is-strong' : ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </span>
+  )
+}
+
+function OrderMetaLine({
+  items,
+}: {
+  items: Array<{ label: string; strong?: boolean; value: string }>
+}) {
+  return (
+    <div className="supply-order-main-meta">
+      {items.map((item, index) => (
+        <Fragment key={`${item.label}-${index}`}>
+          {index > 0 ? <OrderMetaSeparator /> : null}
+          <OrderMetaValue label={item.label} strong={item.strong} value={item.value} />
+        </Fragment>
+      ))}
+    </div>
   )
 }
 
@@ -1421,17 +1524,8 @@ function OrderActionsModal({
 }
 
 function OrderIndexCell({ row }: { row: SupplyUkraineOrderRow }) {
-  if (row.kind === 'invoice') {
-    return (
-      <span className="supply-order-control-cell is-child">
-        <span className="supply-order-control-dot" aria-hidden />
-      </span>
-    )
-  }
-
   return (
     <span className={`supply-order-control-cell is-${row.kind}`}>
-      <span className="supply-order-control-index">{String(row.index).padStart(2, '0')}</span>
       <span className="supply-order-control-icon" aria-hidden>
         {getOrderKindIcon(row, 15)}
       </span>
@@ -1932,26 +2026,13 @@ function DownloadDocumentModal({
 function buildRows(
   toUkraineOrders: SupplyOrderUkraine[],
   directOrders: DirectSupplyOrder[],
-  expandedDirectOrders: Set<string>,
 ): SupplyUkraineOrderRow[] {
   const baseRows = [
     ...toUkraineOrders.map(mapToUkraineOrderRow),
     ...directOrders.map(mapDirectOrderRow),
   ].sort(compareRows)
 
-  const rows: SupplyUkraineOrderRow[] = []
-
-  baseRows.forEach((row) => {
-    rows.push({ ...row, index: rows.length + 1 })
-
-    if (row.kind === 'direct' && row.directOrder && expandedDirectOrders.has(getOrderKey(row.directOrder))) {
-      row.directOrder.SupplyInvoices?.forEach((invoice) => {
-        rows.push(mapInvoiceRow(row.directOrder as DirectSupplyOrder, invoice, rows.length + 1))
-      })
-    }
-  })
-
-  return rows
+  return baseRows.map((row, index) => ({ ...row, index: index + 1 }))
 }
 
 function mapToUkraineOrderRow(order: SupplyOrderUkraine): SupplyUkraineOrderRow {
@@ -2005,7 +2086,6 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
   const isResident = !order.Client?.IsNotResident
 
   return {
-    additionalPercent: positiveNumber(order.AdditionalPercent),
     agreement: order.ClientAgreement?.Agreement?.Name,
     currency: order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name,
     directOrder: order,
@@ -2017,6 +2097,7 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
     isPlaced: Boolean(invoice.IsFullyPlaced),
     kind: 'invoice',
     netUid: invoice.NetUid || `${order.NetUid || ''}-${invoice.Number || index}`,
+    number: getDirectOrderDisplayNumber(order),
     orderDate: order.DateFrom,
     organization: order.Organization?.Name,
     qty: positiveNumber(invoice.TotalQuantity),

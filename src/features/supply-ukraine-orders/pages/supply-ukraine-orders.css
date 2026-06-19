@@ -196,7 +196,7 @@
   --supply-orders-grid-columns:
     minmax(570px, 1.35fr)
     118px
-    84px
+    96px
     94px
     minmax(230px, 0.78fr)
     156px
@@ -264,6 +264,10 @@
 .supply-orders-grid-head span:nth-child(3),
 .supply-orders-grid-head span:nth-child(4) {
   text-align: right;
+}
+
+.supply-orders-grid-head span:nth-child(3) {
+  text-align: left;
 }
 
 .supply-orders-grid-head span:nth-child(7),
@@ -346,15 +350,6 @@
   transform: scaleY(1);
 }
 
-.supply-orders-grid-row.is-invoice {
-  background: #fbfcfd;
-  cursor: default;
-}
-
-.supply-orders-grid-row.is-invoice:hover {
-  background: #fffaf5;
-}
-
 .supply-orders-grid-state {
   align-items: center;
   color: var(--mantine-color-gray-6);
@@ -367,38 +362,218 @@
   text-align: center;
 }
 
+.supply-orders-grid-expand {
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.03), transparent 34%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  min-width: 1280px;
+  padding: 7px 12px 9px 68px;
+}
+
+.supply-invoices-expand {
+  --supply-invoices-grid: minmax(320px, 1fr) 124px 86px 122px 112px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.supply-invoices-expand.is-empty {
+  align-items: center;
+  border-style: dashed;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.supply-invoices-expand-head,
+.supply-invoices-expand-item {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: var(--supply-invoices-grid);
+  min-width: 760px;
+}
+
+.supply-invoices-expand-head {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.84) 48%, transparent),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 8px 12px;
+  text-transform: uppercase;
+}
+
+.supply-invoices-expand-head span:not(:first-child) {
+  text-align: right;
+}
+
+.supply-invoices-expand-head span:last-child {
+  text-align: center;
+}
+
+.supply-invoices-expand-item {
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  isolation: isolate;
+  min-height: 58px;
+  padding: 8px 12px;
+  position: relative;
+  transition:
+    background-color 160ms var(--tx-ease-smooth),
+    box-shadow 160ms var(--tx-ease-smooth),
+    transform 160ms var(--tx-ease-smooth);
+}
+
+.supply-invoices-expand-item::before {
+  background: #e8782e;
+  border-radius: 999px;
+  bottom: 10px;
+  content: '';
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 10px;
+  transition: opacity 120ms var(--tx-ease-smooth);
+  width: 2px;
+  z-index: 2;
+}
+
+.supply-invoices-expand-item::after {
+  background: #fffaf5;
+  content: '';
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 120ms var(--tx-ease-smooth);
+  z-index: 0;
+}
+
+.supply-invoices-expand-item > * {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.supply-invoices-expand-item:last-child {
+  border-bottom: 0;
+}
+
+.supply-invoices-expand-item:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(232, 120, 46, 0.08),
+    inset 0 -1px 0 rgba(232, 120, 46, 0.08);
+  transform: translateX(3px);
+}
+
+.supply-invoices-expand-item:hover::after,
+.supply-invoices-expand-item:hover::before {
+  opacity: 1;
+}
+
+.supply-invoice-main-cell {
+  align-items: flex-start;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+
+.supply-invoice-icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 7px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 26px;
+  justify-content: center;
+  margin-top: 1px;
+  width: 26px;
+}
+
+.supply-invoice-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.supply-invoice-main-line {
+  align-items: baseline;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.supply-invoice-label {
+  color: #e8782e;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.supply-invoice-number {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-invoice-meta {
+  align-items: center;
+  color: var(--mantine-color-gray-5);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 11px;
+  font-weight: 550;
+  gap: 4px 10px;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.supply-invoice-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-invoice-date {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .supply-order-control-cell {
   align-items: center;
   border-right: 1px dashed var(--mantine-color-gray-2);
   color: var(--mantine-color-gray-5);
   display: grid;
-  gap: 5px;
-  grid-template-columns: 28px 28px;
+  grid-template-columns: 28px;
   justify-content: start;
   line-height: 1;
   min-height: 34px;
   padding-right: 8px;
-  width: 72px;
-}
-
-.supply-order-control-cell.is-child {
-  grid-template-columns: 28px;
-  justify-content: center;
-}
-
-.supply-order-control-index {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  font-size: 10px;
-  font-weight: 750;
-  height: 24px;
-  justify-content: center;
-  min-width: 28px;
-  padding: 0 7px;
+  width: 42px;
 }
 
 .supply-order-control-icon {
@@ -423,18 +598,6 @@
   background: var(--mantine-color-blue-0);
   border-color: var(--mantine-color-blue-1);
   color: var(--mantine-color-blue-7);
-}
-
-.supply-order-control-dot {
-  background: transparent;
-  border-color: var(--mantine-color-gray-2);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  display: inline-flex;
-  height: 7px;
-  min-width: 7px;
-  padding: 0;
-  width: 7px;
 }
 
 .supply-order-actions {
@@ -496,21 +659,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.supply-order-inline-tag {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 10px;
-  font-weight: 650;
-  height: 20px;
-  line-height: 1;
-  padding: 0 7px;
 }
 
 .supply-order-main-meta {
@@ -617,6 +765,10 @@
 .supply-orders-grid-row > .supply-order-metric-value {
   border-left: 1px dashed var(--mantine-color-gray-2);
   padding-left: 10px;
+}
+
+.supply-orders-grid-row > .supply-order-metric-value:nth-child(3) {
+  justify-content: flex-start;
 }
 
 .supply-order-money-amount {
