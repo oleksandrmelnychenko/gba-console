@@ -2,12 +2,11 @@ import {
   ActionIcon,
   Alert,
   Anchor,
-  Badge,
   Button,
   FileInput,
   Group,
+  Loader,
   NumberInput,
-  Pagination,
   Select,
   SimpleGrid,
   Stack,
@@ -19,6 +18,7 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconChevronLeft,
   IconChevronDown,
   IconChevronRight,
   IconDownload,
@@ -29,13 +29,15 @@ import {
   IconFileTypeXls,
   IconListDetails,
   IconPackageImport,
+  IconPlus,
   IconReceipt,
   IconRefresh,
   IconRestore,
   IconRoute,
+  IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -43,9 +45,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createSupplyOrderUkraineDeliveryExpense,
@@ -74,29 +74,13 @@ import type {
   SupplyUkraineOrdersFilter,
   SupplyUkraineOrdersResponse,
 } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
 const FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
 const DEFAULT_PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
-
-const TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['index', 'number', 'createdDate'],
-    right: ['actions'],
-  },
-  density: 'compact',
-} satisfies DataTableDefaultLayout
-
-const ORDER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -167,12 +151,6 @@ type OrderActionsPermissions = {
   canOpenToUkrainePlacement: boolean
   canOpenToUkraineProtocols: boolean
   canOpenToUkraineView: boolean
-}
-
-type OrderCreatePermissions = {
-  canCreateDirect: boolean
-  canCreateToUkraine: boolean
-  canPrint: boolean
 }
 
 type OrdersUiState = {
@@ -482,16 +460,6 @@ function useSupplyUkraineOrdersPageController() {
     () => toSelectOptions(currenciesState.items, getCurrencyLabel),
     [currenciesState.items],
   )
-  const toolbarLeft = useMemo(
-    () => (
-      <Group gap="xs">
-        <Badge color="gray" variant="light">{t('Сторінка')} {page}</Badge>
-        <Badge color="blue" variant="light">{t('Поставки')}: {state.toUkraineTotal}</Badge>
-        <Badge color="teal" variant="light">{t('Замовлення')}: {state.directTotal}</Badge>
-      </Group>
-    ),
-    [page, state.directTotal, state.toUkraineTotal, t],
-  )
   const orderActionsPermissions = useMemo<OrderActionsPermissions>(
     () => ({
       canOpenDirectInvoices,
@@ -514,13 +482,6 @@ function useSupplyUkraineOrdersPageController() {
       canOpenToUkraineView,
     ],
   )
-  const columns = useSupplyUkraineOrdersColumns({
-    canDeleteOrder,
-    expandedDirectOrders,
-    onDelete: (row) => dispatchUi({ row, type: 'setDeleteCandidate' }),
-    onToggleDirectOrder: toggleDirectOrder,
-  })
-
   function updateFilterDraft(patch: Partial<SupplyUkraineOrdersFilter>) {
     dispatchUi({ patch, type: 'patchFilterDraft' })
   }
@@ -637,7 +598,6 @@ function useSupplyUkraineOrdersPageController() {
     closeDownload,
     closeOfficialCosts: () => dispatchUi({ row: null, type: 'setOfficialCostsRow' }),
     closeRow: () => dispatchUi({ row: null, type: 'setSelectedRow' }),
-    columns,
     confirmDelete,
     createDirect: () => navigate('/orders/ukraine/all/new', { state: { backgroundLocation: location } }),
     createPermissions: { canCreateDirect, canCreateToUkraine, canPrint },
@@ -669,9 +629,12 @@ function useSupplyUkraineOrdersPageController() {
     rows,
     selectedRow,
     state,
-    toolbarLeft,
     totalPages,
     updateFilterDraft,
+    canDeleteOrder,
+    expandedDirectOrders,
+    requestDelete: (row: SupplyUkraineOrderRow) => dispatchUi({ row, type: 'setDeleteCandidate' }),
+    toggleDirectOrder,
   }
 }
 
@@ -684,7 +647,6 @@ export function SupplyUkraineOrdersPage() {
     closeDownload,
     closeOfficialCosts,
     closeRow,
-    columns,
     confirmDelete,
     createDirect,
     createPermissions,
@@ -713,33 +675,37 @@ export function SupplyUkraineOrdersPage() {
     rows,
     selectedRow,
     state,
-    toolbarLeft,
     totalPages,
     updateFilterDraft,
+    canDeleteOrder,
+    expandedDirectOrders,
+    requestDelete,
+    toggleDirectOrder,
   } = useSupplyUkraineOrdersPageController()
 
   return (
-    <Stack gap="sm" className="supply-ukraine-orders-page">
+    <Stack gap="md" className="supply-ukraine-orders-page console-table-page">
       <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={state.isLoading}
-            size={38}
-            variant="light"
-            onClick={refreshOrders}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Group gap={8} wrap="nowrap">
+          {createPermissions.canCreateToUkraine && (
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={createToUkraine}>
+              {t('Поставка')}
+            </Button>
+          )}
+          {createPermissions.canCreateDirect && (
+            <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} variant="light" onClick={createDirect}>
+              {t('Замовлення')}
+            </Button>
+          )}
+        </Group>
       </PageHeaderActions>
 
       <OrdersListCard
-        columns={columns}
-        createPermissions={createPermissions}
+        canPrint={createPermissions.canPrint}
+        canDeleteOrder={canDeleteOrder}
         currenciesError={currenciesState.error}
         currencyOptions={currencyOptions}
+        expandedDirectOrders={expandedDirectOrders}
         filterDraft={filterDraft}
         filterError={filterError}
         isDownloading={isDownloading}
@@ -748,16 +714,16 @@ export function SupplyUkraineOrdersPage() {
         pageSize={pageSize}
         rows={filterError ? [] : rows}
         state={state}
-        toolbarLeft={toolbarLeft}
         totalPages={totalPages}
         onChangePage={changePage}
         onChangePageSize={changePageSize}
-        onCreateDirect={createDirect}
-        onCreateToUkraine={createToUkraine}
         onDownload={downloadPrintDocument}
         onFilterDraftChange={updateFilterDraft}
+        onRefresh={refreshOrders}
+        onDelete={requestDelete}
         onResetFilters={resetFilters}
         onRowClick={openRow}
+        onToggleDirectOrder={toggleDirectOrder}
       />
 
       <OrdersPageModals
@@ -784,10 +750,11 @@ export function SupplyUkraineOrdersPage() {
 }
 
 function OrdersListCard({
-  columns,
-  createPermissions,
+  canPrint,
+  canDeleteOrder,
   currenciesError,
   currencyOptions,
+  expandedDirectOrders,
   filterDraft,
   filterError,
   isDownloading,
@@ -796,21 +763,22 @@ function OrdersListCard({
   pageSize,
   rows,
   state,
-  toolbarLeft,
   totalPages,
   onChangePage,
   onChangePageSize,
-  onCreateDirect,
-  onCreateToUkraine,
+  onDelete,
   onDownload,
   onFilterDraftChange,
+  onRefresh,
   onResetFilters,
   onRowClick,
+  onToggleDirectOrder,
 }: {
-  columns: DataTableColumn<SupplyUkraineOrderRow>[]
-  createPermissions: OrderCreatePermissions
+  canPrint: boolean
+  canDeleteOrder: boolean
   currenciesError: string | null
   currencyOptions: Array<{ label: string, value: string }>
+  expandedDirectOrders: Set<string>
   filterDraft: SupplyUkraineOrdersFilter
   filterError: string | null
   isDownloading: boolean
@@ -819,168 +787,379 @@ function OrdersListCard({
   pageSize: number
   rows: SupplyUkraineOrderRow[]
   state: OrdersState
-  toolbarLeft: ReactNode
   totalPages: number
   onChangePage: (page: number) => void
   onChangePageSize: (value: string | null) => void
-  onCreateDirect: () => void
-  onCreateToUkraine: () => void
+  onDelete: (row: SupplyUkraineOrderRow) => void
   onDownload: () => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
+  onRefresh: () => void
   onResetFilters: () => void
   onRowClick: (row: SupplyUkraineOrderRow) => void
+  onToggleDirectOrder: (order: DirectSupplyOrder) => void
 }) {
   const { t } = useI18n()
 
   return (
-    <>
-      <Stack gap="xs" className="supply-ukraine-orders-card-stack">
-        <OrdersFilterToolbar
-          createPermissions={createPermissions}
-          currencyOptions={currencyOptions}
-          filterDraft={filterDraft}
-          isDownloading={isDownloading}
-          onCreateDirect={onCreateDirect}
-          onCreateToUkraine={onCreateToUkraine}
-          onDownload={onDownload}
-          onFilterDraftChange={onFilterDraftChange}
-          onResetFilters={onResetFilters}
+    <div className="supply-ukraine-orders-shell console-table-shell">
+      <OrdersFilterToolbar
+        canPrint={canPrint}
+        currencyOptions={currencyOptions}
+        directTotal={state.directTotal}
+        filterDraft={filterDraft}
+        isDownloading={isDownloading}
+        isLoading={state.isLoading}
+        page={page}
+        pageSize={pageSize}
+        toUkraineTotal={state.toUkraineTotal}
+        totalPages={totalPages}
+        totalQty={state.toUkraineTotal + state.directTotal}
+        onChangePage={onChangePage}
+        onChangePageSize={onChangePageSize}
+        onDownload={onDownload}
+        onFilterDraftChange={onFilterDraftChange}
+        onRefresh={onRefresh}
+        onResetFilters={onResetFilters}
+      />
+
+      {currenciesError && (
+        <Alert className="console-table-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+          {currenciesError}
+        </Alert>
+      )}
+
+      {(orderError || filterError) && (
+        <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError || orderError}
+        </Alert>
+      )}
+
+      <div className="supply-ukraine-orders-table console-table-body">
+        <SupplyOrdersGrid
+          canDeleteOrder={canDeleteOrder}
+          emptyText={t('Замовлень не знайдено')}
+          expandedDirectOrders={expandedDirectOrders}
+          isLoading={state.isLoading}
+          loadingText={t('Завантаження замовлень')}
+          rows={rows}
+          onDelete={onDelete}
+          onRowClick={onRowClick}
+          onToggleDirectOrder={onToggleDirectOrder}
         />
+      </div>
+    </div>
+  )
+}
 
-        {currenciesError && (
-          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-            {currenciesError}
-          </Alert>
-        )}
+function SupplyOrdersGrid({
+  canDeleteOrder,
+  emptyText,
+  expandedDirectOrders,
+  isLoading,
+  loadingText,
+  rows,
+  onDelete,
+  onRowClick,
+  onToggleDirectOrder,
+}: {
+  canDeleteOrder: boolean
+  emptyText: string
+  expandedDirectOrders: Set<string>
+  isLoading: boolean
+  loadingText: string
+  rows: SupplyUkraineOrderRow[]
+  onDelete: (row: SupplyUkraineOrderRow) => void
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+  onToggleDirectOrder: (order: DirectSupplyOrder) => void
+}) {
+  const { t } = useI18n()
 
-        {(orderError || filterError) && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {filterError || orderError}
-          </Alert>
-        )}
+  if (isLoading) {
+    return (
+      <div className="supply-orders-grid-state">
+        <Group justify="center" gap="xs">
+          <Loader size="sm" />
+          {loadingText}
+        </Group>
+      </div>
+    )
+  }
 
-        <div className="supply-ukraine-orders-table">
-          <DataTable
-            columns={columns}
-            data={rows}
-            defaultLayout={TABLE_DEFAULT_LAYOUT}
-            emptyText={t('Замовлень не знайдено')}
-            getRowId={getRowId}
-            height="100%"
-            isLoading={state.isLoading}
-            layoutVersion="supply-ukraine-orders-table-2"
-            loadingText={t('Завантаження замовлень')}
-            minWidth={1680}
-            rowClassName={(row) => (row.kind === 'invoice' ? 'is-child-row' : undefined)}
-            showLayoutControls={false}
-            showDensityToggle={false}
-            tableId="supply-ukraine-orders"
-            toolbarLeft={toolbarLeft}
-            onRowClick={onRowClick}
+  if (rows.length === 0) {
+    return <div className="supply-orders-grid-state">{emptyText}</div>
+  }
+
+  return (
+    <div className="supply-orders-grid" role="table">
+      <div className="supply-orders-grid-head" role="row">
+        <span>{t('Замовлення / постачальник')}</span>
+        <span>{t('Сума')}</span>
+        <span>{t('К-сть')}</span>
+        <span>{t('% дод.')}</span>
+        <span>{t('Організація / договір')}</span>
+        <span>{t('Відповідальний')}</span>
+        <span>{t('Розміщено')}</span>
+        <span>{t('Тип')}</span>
+        <span>{t('Дії')}</span>
+      </div>
+      {rows.map((row) => (
+        <SupplyOrderGridRow
+          key={getRowId(row)}
+          canDeleteOrder={canDeleteOrder}
+          expandedDirectOrders={expandedDirectOrders}
+          row={row}
+          onDelete={onDelete}
+          onRowClick={onRowClick}
+          onToggleDirectOrder={onToggleDirectOrder}
+        />
+      ))}
+    </div>
+  )
+}
+
+function SupplyOrderGridRow({
+  canDeleteOrder,
+  expandedDirectOrders,
+  row,
+  onDelete,
+  onRowClick,
+  onToggleDirectOrder,
+}: {
+  canDeleteOrder: boolean
+  expandedDirectOrders: Set<string>
+  row: SupplyUkraineOrderRow
+  onDelete: (row: SupplyUkraineOrderRow) => void
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+  onToggleDirectOrder: (order: DirectSupplyOrder) => void
+}) {
+  const { t } = useI18n()
+  const isExpanded = Boolean(row.directOrder && expandedDirectOrders.has(getOrderKey(row.directOrder)))
+  const isInteractive = row.kind !== 'invoice'
+
+  return (
+    <div
+      className={`supply-orders-grid-row is-${row.kind}${isExpanded ? ' is-expanded' : ''}`}
+      role="row"
+      tabIndex={isInteractive ? 0 : -1}
+      onClick={() => onRowClick(row)}
+      onKeyDown={(event) => {
+        if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
+          event.preventDefault()
+          onRowClick(row)
+        }
+      }}
+    >
+      <OrderMainGridCell row={row} />
+      <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
+      <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+      <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />
+      <OrderOrganizationGridCell row={row} />
+      <OrderResponsibleGridCell value={displayValue(row.responsible)} />
+      {placedBadge(row.isPlaced, t)}
+      {getKindBadge(row, t)}
+      <OrderActionsCell
+        canDelete={canDeleteOrder && canDeleteRow(row)}
+        isExpanded={isExpanded}
+        row={row}
+        onDelete={onDelete}
+        onToggleDirectOrder={onToggleDirectOrder}
+      />
+    </div>
+  )
+}
+
+function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
+  const { t } = useI18n()
+  const supplier = displayValue(row.supplier)
+  const title = supplier
+
+  return (
+    <div className="supply-order-main-cell">
+      <OrderIndexCell row={row} />
+      <div className="supply-order-main-body">
+        <div className="supply-order-main-title-row">
+          <Tooltip label={title} disabled={title === '-'} openDelay={350} withArrow>
+            <span className="supply-order-main-title">{title}</span>
+          </Tooltip>
+          {row.kind === 'invoice' ? <span className="supply-order-inline-tag">{t('Інвойс')}</span> : null}
+        </div>
+        <div className="supply-order-main-meta">
+          <OrderMetaValue label="№" value={displayValue(row.number)} strong />
+          <OrderMetaSeparator />
+          <OrderMetaValue label={t('ств.')} value={formatCompactDateTime(row.createdDate)} />
+          <OrderMetaSeparator />
+          <OrderMetaValue label={t('від')} value={formatCompactDateTime(row.orderDate)} />
+          <OrderMetaSeparator />
+          <OrderMetaValue label={t('інв.')} value={displayValue(row.invoiceNumber)} />
+          <OrderMetaSeparator />
+          <OrderMetaValue label={t('дата інв.')} value={formatCompactDateTime(row.invoiceDate)} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderOrganizationGridCell({ row }: { row: SupplyUkraineOrderRow }) {
+  return (
+    <span className="supply-order-two-line-cell">
+      <Tooltip label={displayValue(row.organization)} openDelay={350} withArrow>
+        <span className="supply-order-two-line-primary">{displayValue(row.organization)}</span>
+      </Tooltip>
+      <Tooltip label={displayValue(row.agreement)} openDelay={350} withArrow>
+        <span className="supply-order-two-line-secondary">{displayValue(row.agreement)}</span>
+      </Tooltip>
+    </span>
+  )
+}
+
+function OrderResponsibleGridCell({ value }: { value: string }) {
+  return (
+    <Tooltip label={value} disabled={value === '-'} openDelay={350} withArrow>
+      <span className="supply-order-responsible-cell">{value}</span>
+    </Tooltip>
+  )
+}
+
+function OrderMetaValue({ label, strong = false, value }: { label: string; strong?: boolean; value: string }) {
+  return (
+    <span className={`supply-order-meta-value${strong ? ' is-strong' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </span>
+  )
+}
+
+function OrderMetaSeparator() {
+  return <span className="supply-order-meta-separator" aria-hidden />
+}
+
+function OrdersFilterToolbar({
+  canPrint,
+  currencyOptions,
+  filterDraft,
+  isDownloading,
+  isLoading,
+  page,
+  pageSize,
+  toUkraineTotal,
+  directTotal,
+  totalPages,
+  totalQty,
+  onChangePage,
+  onChangePageSize,
+  onDownload,
+  onFilterDraftChange,
+  onRefresh,
+  onResetFilters,
+}: {
+  canPrint: boolean
+  currencyOptions: Array<{ label: string, value: string }>
+  filterDraft: SupplyUkraineOrdersFilter
+  isDownloading: boolean
+  isLoading: boolean
+  page: number
+  pageSize: number
+  toUkraineTotal: number
+  directTotal: number
+  totalPages: number
+  totalQty: number
+  onChangePage: (page: number) => void
+  onChangePageSize: (value: string | null) => void
+  onDownload: () => void
+  onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
+  onRefresh: () => void
+  onResetFilters: () => void
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="supply-ukraine-orders-command-bar">
+      <div className="supply-ukraine-orders-period-filter">
+        <span className="supply-ukraine-orders-filter-label">{t('Період')}</span>
+        <div className="supply-ukraine-orders-period-fields">
+          <TextInput
+            className="supply-ukraine-orders-date-input"
+            aria-label={t('Від')}
+            type="date"
+            value={filterDraft.from}
+            onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
+          />
+          <span className="supply-ukraine-orders-period-separator" />
+          <TextInput
+            className="supply-ukraine-orders-date-input"
+            aria-label={t('До')}
+            type="date"
+            value={filterDraft.to}
+            onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
           />
         </div>
-
-        <OrdersPagination
+      </div>
+      <TextInput
+        className="supply-ukraine-orders-search-input"
+        leftSection={<IconSearch size={16} />}
+        label={t('Постачальник')}
+        placeholder={t('Назва постачальника')}
+        value={filterDraft.supplier}
+        onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
+      />
+      <Select
+        clearable
+        className="supply-ukraine-orders-currency-filter"
+        data={currencyOptions}
+        label={t('Валюта')}
+        placeholder={t('Усі')}
+        searchable
+        value={filterDraft.currencyId || null}
+        onChange={(value) => onFilterDraftChange({ currencyId: value || '' })}
+      />
+      <Select
+        allowDeselect={false}
+        className="supply-ukraine-orders-type-filter"
+        data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+        label={t('Тип')}
+        value={filterDraft.type}
+        onChange={(value) => onFilterDraftChange({ type: (value as SupplyUkraineOrderKind) || 'all' })}
+      />
+      <div className="supply-ukraine-orders-command-actions">
+        <span className="supply-ukraine-orders-summary-pill">{t('Всього')} {totalQty}</span>
+        <span className="supply-ukraine-orders-summary-pill is-to-ukraine">{t('Поставки')} {toUkraineTotal}</span>
+        <span className="supply-ukraine-orders-summary-pill is-direct">{t('Замовлення')} {directTotal}</span>
+        <OrdersCommandPagination
           page={page}
           pageSize={pageSize}
           totalPages={totalPages}
           onChangePage={onChangePage}
           onChangePageSize={onChangePageSize}
         />
-      </Stack>
-    </>
+        {canPrint && (
+          <Tooltip label={t('Завантажити')}>
+            <ActionIcon aria-label={t('Завантажити')} color="gray" loading={isDownloading} size={38} variant="light" onClick={onDownload}>
+              <IconDownload size={18} />
+            </ActionIcon>
+          </Tooltip>
+        )}
+        <Tooltip label={t('Скинути фільтри')}>
+          <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={38} variant="light" onClick={onResetFilters}>
+            <IconRestore size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon
+            aria-label={t('Оновити')}
+            color="gray"
+            loading={isLoading}
+            size={38}
+            variant="light"
+            onClick={onRefresh}
+          >
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </div>
+    </div>
   )
 }
 
-function OrdersFilterToolbar({
-  createPermissions,
-  currencyOptions,
-  filterDraft,
-  isDownloading,
-  onCreateDirect,
-  onCreateToUkraine,
-  onDownload,
-  onFilterDraftChange,
-  onResetFilters,
-}: {
-  createPermissions: OrderCreatePermissions
-  currencyOptions: Array<{ label: string, value: string }>
-  filterDraft: SupplyUkraineOrdersFilter
-  isDownloading: boolean
-  onCreateDirect: () => void
-  onCreateToUkraine: () => void
-  onDownload: () => void
-  onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
-  onResetFilters: () => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group align="flex-end" gap="xs" wrap="wrap" className="supply-ukraine-orders-filters">
-      <TextInput
-        label={t('Від')}
-        type="date"
-        value={filterDraft.from}
-        w={150}
-        onChange={(event) => onFilterDraftChange({ from: event.currentTarget.value })}
-      />
-      <TextInput
-        label={t('До')}
-        type="date"
-        value={filterDraft.to}
-        w={150}
-        onChange={(event) => onFilterDraftChange({ to: event.currentTarget.value })}
-      />
-      <TextInput
-        label={t('Постачальник')}
-        placeholder={t('Назва постачальника')}
-        value={filterDraft.supplier}
-        style={{ flex: '1 1 240px', minWidth: 205 }}
-        onChange={(event) => onFilterDraftChange({ supplier: event.currentTarget.value })}
-      />
-      <Select
-        clearable
-        data={currencyOptions}
-        label={t('Валюта')}
-        placeholder={t('Усі')}
-        searchable
-        value={filterDraft.currencyId || null}
-        w={160}
-        onChange={(value) => onFilterDraftChange({ currencyId: value || '' })}
-      />
-      <Select
-        allowDeselect={false}
-        data={TYPE_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-        label={t('Тип')}
-        value={filterDraft.type}
-        w={210}
-        onChange={(value) => onFilterDraftChange({ type: (value as SupplyUkraineOrderKind) || 'all' })}
-      />
-      {createPermissions.canCreateToUkraine && (
-        <Button leftSection={<IconPackageImport size={16} />} variant="light" onClick={onCreateToUkraine}>
-          {t('Поставка в Україну')}
-        </Button>
-      )}
-      {createPermissions.canCreateDirect && (
-        <Button leftSection={<IconFileSpreadsheet size={16} />} variant="light" onClick={onCreateDirect}>
-          {t('Замовлення Україна')}
-        </Button>
-      )}
-      {createPermissions.canPrint && (
-        <Button leftSection={<IconDownload size={16} />} loading={isDownloading} variant="light" onClick={onDownload}>
-          {t('Завантажити')}
-        </Button>
-      )}
-      <Tooltip label={t('Скинути фільтри')}>
-        <ActionIcon aria-label={t('Скинути фільтри')} size="lg" variant="light" onClick={onResetFilters}>
-          <IconRestore size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  )
-}
-
-function OrdersPagination({
+function OrdersCommandPagination({
   page,
   pageSize,
   totalPages,
@@ -996,23 +1175,37 @@ function OrdersPagination({
   const { t } = useI18n()
 
   return (
-    <Group justify="flex-end" className="supply-ukraine-orders-pagination">
-      <Group gap={6}>
-        <Text c="dimmed" size="xs">{t('Рядків')}</Text>
-        <Select
-          allowDeselect={false}
-          aria-label={t('Рядків')}
-          data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
-          size="xs"
-          value={String(pageSize)}
-          w={82}
-          onChange={onChangePageSize}
-        />
-      </Group>
-      {totalPages > 1 && (
-        <Pagination total={totalPages} value={Math.min(page, totalPages)} onChange={onChangePage} />
-      )}
-    </Group>
+    <div className="supply-ukraine-orders-command-pagination">
+      <Select
+        allowDeselect={false}
+        aria-label={t('Рядків')}
+        className="supply-ukraine-orders-page-size"
+        data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
+        value={String(pageSize)}
+        onChange={onChangePageSize}
+      />
+      <ActionIcon
+        aria-label={t('Попередня сторінка')}
+        color="gray"
+        disabled={page <= 1}
+        size={38}
+        variant="light"
+        onClick={() => onChangePage(Math.max(1, page - 1))}
+      >
+        <IconChevronLeft size={18} />
+      </ActionIcon>
+      <span className="supply-ukraine-orders-current-page">{Math.min(page, totalPages)}</span>
+      <ActionIcon
+        aria-label={t('Наступна сторінка')}
+        color="gray"
+        disabled={page >= totalPages}
+        size={38}
+        variant="light"
+        onClick={() => onChangePage(Math.min(totalPages, page + 1))}
+      >
+        <IconChevronRight size={18} />
+      </ActionIcon>
+    </div>
   )
 }
 
@@ -1098,185 +1291,6 @@ function OrdersPageModals({
         onClose={onCloseDownload}
       />
     </>
-  )
-}
-
-function useSupplyUkraineOrdersColumns({
-  canDeleteOrder,
-  expandedDirectOrders,
-  onDelete,
-  onToggleDirectOrder,
-}: {
-  canDeleteOrder: boolean
-  expandedDirectOrders: Set<string>
-  onDelete: (row: SupplyUkraineOrderRow) => void
-  onToggleDirectOrder: (order: DirectSupplyOrder) => void
-}): DataTableColumn<SupplyUkraineOrderRow>[] {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<SupplyUkraineOrderRow>[]>(
-    () => [
-      {
-        id: 'index',
-        header: '',
-        width: 58,
-        minWidth: 50,
-        accessor: (row) => row.index,
-        cell: (row) => row.kind === 'invoice' ? '' : row.index,
-      },
-      {
-        id: 'number',
-        header: t('Номер'),
-        width: 140,
-        accessor: (row) => row.number,
-        cell: (row) => row.kind === 'invoice'
-          ? <OrderTableValue c="dimmed" value={displayValue(row.invoiceNumber)} />
-          : <OrderTableValue fw={700} value={displayValue(row.number)} />,
-      },
-      {
-        id: 'createdDate',
-        header: t('Створено'),
-        width: 142,
-        accessor: (row) => toTimestamp(row.createdDate),
-        cell: (row) => <OrderTableValue value={formatDateTime(row.createdDate)} />,
-      },
-      {
-        id: 'orderDate',
-        header: t('Від'),
-        width: 142,
-        accessor: (row) => toTimestamp(row.orderDate),
-        cell: (row) => <OrderTableValue value={formatDateTime(row.orderDate)} />,
-      },
-      {
-        id: 'invoiceNumber',
-        header: t('Номер інвойсу'),
-        width: 180,
-        accessor: (row) => row.invoiceNumber,
-        cell: (row) => <OrderTableValue value={displayValue(row.invoiceNumber)} />,
-      },
-      {
-        id: 'invoiceDate',
-        header: t('Дата інвойсу'),
-        width: 142,
-        accessor: (row) => toTimestamp(row.invoiceDate),
-        cell: (row) => <OrderTableValue value={formatDateTime(row.invoiceDate)} />,
-      },
-      {
-        id: 'grossPrice',
-        header: t('Сума'),
-        width: 110,
-        align: 'right',
-        accessor: (row) => row.grossPrice,
-        cell: (row) => <OrderTableValue value={formatMoney(row.grossPrice)} />,
-      },
-      {
-        id: 'supplier',
-        header: t('Постачальник'),
-        minWidth: 220,
-        accessor: (row) => row.supplier,
-        cell: (row) => <OrderTableValue value={displayValue(row.supplier)} />,
-      },
-      {
-        id: 'agreement',
-        header: t('Договір'),
-        width: 190,
-        accessor: (row) => row.agreement,
-        cell: (row) => <OrderTableValue value={displayValue(row.agreement)} />,
-      },
-      {
-        id: 'currency',
-        header: t('Валюта'),
-        width: 90,
-        accessor: (row) => row.currency,
-        cell: (row) => <OrderTableValue value={displayValue(row.currency)} />,
-      },
-      {
-        id: 'qty',
-        header: t('К-сть'),
-        width: 92,
-        align: 'right',
-        accessor: (row) => row.qty,
-        cell: (row) => <OrderTableValue value={formatAmount(row.qty)} />,
-      },
-      {
-        id: 'additionalPercent',
-        header: t('% дод.'),
-        width: 96,
-        align: 'right',
-        accessor: (row) => row.additionalPercent,
-        cell: (row) => <OrderTableValue value={formatAmount(row.additionalPercent)} />,
-      },
-      {
-        id: 'organization',
-        header: t('Організація'),
-        width: 180,
-        accessor: (row) => row.organization,
-        cell: (row) => <OrderTableValue value={displayValue(row.organization)} />,
-      },
-      {
-        id: 'isPlaced',
-        header: t('Розміщено'),
-        width: 110,
-        accessor: (row) => row.isPlaced,
-        cell: (row) => row.kind === 'invoice' ? placedBadge(row.isPlaced, t) : placedBadge(row.isPlaced, t),
-      },
-      {
-        id: 'responsible',
-        header: t('Відповідальний'),
-        width: 150,
-        accessor: (row) => row.responsible,
-        cell: (row) => <OrderTableValue value={displayValue(row.responsible)} />,
-      },
-      {
-        id: 'kind',
-        header: t('Тип'),
-        width: 130,
-        accessor: (row) => row.kind,
-        cell: (row) => getKindBadge(row, t),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 104,
-        enableSorting: false,
-        cell: (row) => (
-          <Group gap={4} justify="center" wrap="nowrap">
-            {row.kind === 'direct' && row.directOrder && (row.directOrder.SupplyInvoices?.length || 0) > 0 && (
-              <Tooltip label={expandedDirectOrders.has(getOrderKey(row.directOrder)) ? t('Згорнути інвойси') : t('Показати інвойси')}>
-                <ActionIcon
-                  aria-label={t('Показати інвойси')}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event: MouseEvent<HTMLButtonElement>) => {
-                    event.stopPropagation()
-                    onToggleDirectOrder(row.directOrder as DirectSupplyOrder)
-                  }}
-                >
-                  {expandedDirectOrders.has(getOrderKey(row.directOrder)) ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {canDeleteOrder && canDeleteRow(row) && (
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event: MouseEvent<HTMLButtonElement>) => {
-                    event.stopPropagation()
-                    onDelete(row)
-                  }}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        ),
-      },
-    ],
-    [canDeleteOrder, expandedDirectOrders, onDelete, onToggleDirectOrder, t],
   )
 }
 
@@ -1406,21 +1420,111 @@ function OrderActionsModal({
   )
 }
 
-function OrderTableValue({
-  c,
-  fw,
-  value,
-}: {
-  c?: string
-  fw?: number
-  value: string
-}) {
+function OrderIndexCell({ row }: { row: SupplyUkraineOrderRow }) {
+  if (row.kind === 'invoice') {
+    return (
+      <span className="supply-order-control-cell is-child">
+        <span className="supply-order-control-dot" aria-hidden />
+      </span>
+    )
+  }
+
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text c={c} component="span" fw={fw} style={ORDER_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
+    <span className={`supply-order-control-cell is-${row.kind}`}>
+      <span className="supply-order-control-index">{String(row.index).padStart(2, '0')}</span>
+      <span className="supply-order-control-icon" aria-hidden>
+        {getOrderKindIcon(row, 15)}
+      </span>
+    </span>
+  )
+}
+
+function OrderActionsCell({
+  canDelete,
+  isExpanded,
+  row,
+  onDelete,
+  onToggleDirectOrder,
+}: {
+  canDelete: boolean
+  isExpanded: boolean
+  row: SupplyUkraineOrderRow
+  onDelete: (row: SupplyUkraineOrderRow) => void
+  onToggleDirectOrder: (order: DirectSupplyOrder) => void
+}) {
+  const { t } = useI18n()
+  const canToggleInvoices = row.kind === 'direct' && row.directOrder && (row.directOrder.SupplyInvoices?.length || 0) > 0
+
+  return (
+    <span className="supply-order-actions">
+      {canToggleInvoices ? (
+        <Tooltip label={isExpanded ? t('Згорнути інвойси') : t('Показати інвойси')}>
+          <ActionIcon
+            aria-label={t('Показати інвойси')}
+            className="supply-order-action-button"
+            size={30}
+            variant="subtle"
+            onClick={(event: MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation()
+              onToggleDirectOrder(row.directOrder as DirectSupplyOrder)
+            }}
+          >
+            {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
+          </ActionIcon>
+        </Tooltip>
+      ) : (
+        <span className="supply-order-action-placeholder" aria-hidden />
+      )}
+      {canDelete ? (
+        <Tooltip label={t('Видалити')}>
+          <ActionIcon
+            aria-label={t('Видалити')}
+            className="supply-order-action-button is-danger"
+            color="red"
+            size={30}
+            variant="subtle"
+            onClick={(event: MouseEvent<HTMLButtonElement>) => {
+              event.stopPropagation()
+              onDelete(row)
+            }}
+          >
+            <IconTrash size={16} />
+          </ActionIcon>
+        </Tooltip>
+      ) : (
+        <span className="supply-order-action-placeholder" aria-hidden />
+      )}
+    </span>
+  )
+}
+
+function getOrderKindIcon(row: SupplyUkraineOrderRow, size = 15) {
+  if (row.kind === 'invoice') {
+    return <IconFileInvoice size={size} />
+  }
+
+  if (row.kind === 'direct') {
+    return <IconFileSpreadsheet size={size} />
+  }
+
+  return <IconPackageImport size={size} />
+}
+
+function OrderMoneyCell({ currency, value }: { currency?: string; value?: number }) {
+  return (
+    <span className="supply-order-money-cell">
+      <span className="supply-order-money-amount">{formatMoney(value)}</span>
+      <span className="supply-order-money-currency">{displayValue(currency)}</span>
+    </span>
+  )
+}
+
+function OrderMetricValue({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="supply-order-metric-value">
+      <span className="supply-order-metric-label">{label}</span>
+      <span className="supply-order-metric-number">{value}</span>
+    </span>
   )
 }
 
@@ -1901,6 +2005,9 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
   const isResident = !order.Client?.IsNotResident
 
   return {
+    additionalPercent: positiveNumber(order.AdditionalPercent),
+    agreement: order.ClientAgreement?.Agreement?.Name,
+    currency: order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name,
     directOrder: order,
     grossPrice: isResident ? positiveNumber(invoice.TotalValueWithVat) : positiveNumber(invoice.TotalNetPrice),
     index,
@@ -1911,7 +2018,10 @@ function mapInvoiceRow(order: DirectSupplyOrder, invoice: SupplyInvoice, index: 
     kind: 'invoice',
     netUid: invoice.NetUid || `${order.NetUid || ''}-${invoice.Number || index}`,
     orderDate: order.DateFrom,
+    organization: order.Organization?.Name,
     qty: positiveNumber(invoice.TotalQuantity),
+    responsible: getEntityName(order.Responsible),
+    supplier: getEntityName(order.Client),
   }
 }
 
@@ -2030,18 +2140,30 @@ function getRowTitle(row: SupplyUkraineOrderRow | null): string {
 
 function getKindBadge(row: SupplyUkraineOrderRow, t: (key: string) => string) {
   if (row.kind === 'invoice') {
-    return <Badge color="gray" variant="light">{t('Інвойс')}</Badge>
+    return <OrderStatusTag tone="neutral">{t('Інвойс')}</OrderStatusTag>
   }
 
   if (row.kind === 'direct') {
-    return <Badge color="teal" variant="light">{t('Замовлення')}</Badge>
+    return <OrderStatusTag tone="info">{t('Замовлення')}</OrderStatusTag>
   }
 
-  return <Badge color="blue" variant="light">{t('Поставка')}</Badge>
+  return <OrderStatusTag tone="accent">{t('Поставка')}</OrderStatusTag>
 }
 
 function placedBadge(value: boolean | undefined, t: (key: string) => string) {
-  return value ? <Badge color="green" variant="light">{t('Так')}</Badge> : <Badge color="gray" variant="light">{t('Ні')}</Badge>
+  return value
+    ? <OrderStatusTag tone="success">{t('Так')}</OrderStatusTag>
+    : <OrderStatusTag tone="neutral">{t('Ні')}</OrderStatusTag>
+}
+
+function OrderStatusTag({
+  children,
+  tone,
+}: {
+  children: string
+  tone: 'accent' | 'info' | 'neutral' | 'success'
+}) {
+  return <span className={`supply-order-status-tag is-${tone}`}>{children}</span>
 }
 
 function buildPrintColumns(t: (key: string) => string) {
@@ -2190,6 +2312,10 @@ function formatDateTime(value?: Date | string): string {
   }
 
   return dateTimeFormatter.format(date)
+}
+
+function formatCompactDateTime(value?: Date | string): string {
+  return formatDateTime(value).replace(', ', ' ')
 }
 
 function formatAmount(value?: number): string {

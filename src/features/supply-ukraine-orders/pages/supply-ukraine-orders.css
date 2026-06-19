@@ -1,48 +1,737 @@
 .supply-ukraine-orders-page {
-  height: calc(100vh - var(--app-shell-header-offset, 134px) - var(--app-shell-footer-offset, 36px) - 24px);
+  box-sizing: border-box;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
   min-height: 0;
   overflow: hidden;
 }
 
-.supply-ukraine-orders-card {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
+.supply-ukraine-orders-shell {
+  --supply-orders-control-height: 36px;
+  --supply-orders-label-gap: 4px;
+  --supply-orders-label-height: 17px;
 }
 
-.supply-ukraine-orders-card-stack {
-  flex: 1 1 auto;
-  height: 100%;
-  min-height: 0;
+.supply-ukraine-orders-command-bar {
+  align-items: end;
+  background:
+    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(310px, 380px)
+    minmax(260px, 1fr)
+    minmax(132px, 156px)
+    minmax(156px, 190px)
+    auto;
+  min-height: 85px;
+  padding: 12px;
 }
 
-.supply-ukraine-orders-filters {
+.supply-ukraine-orders-period-filter,
+.supply-ukraine-orders-date-input,
+.supply-ukraine-orders-search-input,
+.supply-ukraine-orders-currency-filter,
+.supply-ukraine-orders-type-filter,
+.supply-ukraine-orders-page-size {
+  min-width: 0;
+}
+
+.supply-ukraine-orders-filter-label,
+.supply-ukraine-orders-search-input .mantine-InputWrapper-label,
+.supply-ukraine-orders-currency-filter .mantine-InputWrapper-label,
+.supply-ukraine-orders-type-filter .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  height: var(--supply-orders-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: var(--supply-orders-label-gap);
+}
+
+.supply-ukraine-orders-period-filter {
+  display: grid;
+  gap: 3px;
+}
+
+.supply-ukraine-orders-period-fields {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+}
+
+.supply-ukraine-orders-period-separator {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  display: block;
+  height: 1px;
+  justify-self: center;
+  width: 10px;
+}
+
+.supply-ukraine-orders-date-input .mantine-Input-wrapper,
+.supply-ukraine-orders-date-input .mantine-Input-input,
+.supply-ukraine-orders-search-input .mantine-Input-wrapper,
+.supply-ukraine-orders-search-input .mantine-TextInput-input,
+.supply-ukraine-orders-currency-filter .mantine-Input-wrapper,
+.supply-ukraine-orders-currency-filter .mantine-Input-input,
+.supply-ukraine-orders-type-filter .mantine-Input-wrapper,
+.supply-ukraine-orders-type-filter .mantine-Input-input,
+.supply-ukraine-orders-page-size .mantine-Input-wrapper,
+.supply-ukraine-orders-page-size .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  height: var(--supply-orders-control-height);
+  line-height: 1.2;
+  min-height: var(--supply-orders-control-height);
+}
+
+.supply-ukraine-orders-date-input .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-ukraine-orders-search-input .mantine-Input-wrapper,
+.supply-ukraine-orders-search-input .mantine-TextInput-input {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit,
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit-fields-wrapper,
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit-text,
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit-month-field,
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit-day-field,
+.supply-ukraine-orders-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
+  color: inherit;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.supply-ukraine-orders-command-actions {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.supply-ukraine-orders-summary-pill {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
   flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 680;
+  height: 30px;
+  line-height: 1;
+  padding: 0 10px;
+  white-space: nowrap;
 }
 
-.supply-ukraine-orders-filters .mantine-InputWrapper-label {
-  margin-bottom: 3px;
-  line-height: 1.15;
+.supply-ukraine-orders-summary-pill.is-to-ukraine {
+  background: #fff8f2;
+  border-color: #ffd8bd;
+  color: #c95716;
+}
+
+.supply-ukraine-orders-summary-pill.is-direct {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-1);
+  color: var(--mantine-color-blue-8);
+}
+
+.supply-ukraine-orders-command-pagination {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.supply-ukraine-orders-page-size {
+  flex: 0 0 78px;
+  width: 78px;
+}
+
+.supply-ukraine-orders-current-page {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-8);
+  display: inline-flex;
+  flex: 0 0 34px;
+  font-size: 12px;
+  font-weight: 680;
+  height: 30px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 34px;
 }
 
 .supply-ukraine-orders-table {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.supply-ukraine-orders-table .data-table {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-.supply-ukraine-orders-table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
 }
 
-.supply-ukraine-orders-pagination {
+.supply-orders-grid {
+  --supply-orders-grid-columns:
+    minmax(570px, 1.35fr)
+    118px
+    84px
+    94px
+    minmax(230px, 0.78fr)
+    156px
+    112px
+    124px
+    74px;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px 12px 0;
+  scrollbar-color: var(--mantine-color-gray-4) transparent;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: thin;
+}
+
+.supply-orders-grid::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.supply-orders-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.supply-orders-grid::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+}
+
+.supply-orders-grid-head,
+.supply-orders-grid-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: var(--supply-orders-grid-columns);
+  min-width: 1280px;
+}
+
+.supply-orders-grid-head {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.2;
+  min-height: 34px;
+  padding: 8px 12px 7px 6px;
+  position: sticky;
+  text-transform: uppercase;
+  top: 0;
+  z-index: 4;
+}
+
+.supply-orders-grid-head span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-orders-grid-head span:nth-child(2),
+.supply-orders-grid-head span:nth-child(3),
+.supply-orders-grid-head span:nth-child(4) {
+  text-align: right;
+}
+
+.supply-orders-grid-head span:nth-child(7),
+.supply-orders-grid-head span:nth-child(8),
+.supply-orders-grid-head span:nth-child(9) {
+  text-align: center;
+}
+
+.supply-orders-grid-row {
+  background: var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  cursor: pointer;
+  isolation: isolate;
+  min-height: 68px;
+  padding: 9px 12px 9px 6px;
+  position: relative;
+  transition:
+    background-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.supply-orders-grid-row::before {
+  background: #e8782e;
+  border-radius: 999px;
+  bottom: 10px;
+  content: '';
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  top: 10px;
+  transform: scaleY(0.72);
+  transition:
+    opacity 140ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+  width: 2px;
+  z-index: 2;
+}
+
+.supply-orders-grid-row::after {
+  background:
+    linear-gradient(90deg, rgba(232, 120, 46, 0.055), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), transparent);
+  content: '';
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 140ms var(--tx-ease-smooth);
+  z-index: 0;
+}
+
+.supply-orders-grid-row > * {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.supply-orders-grid-row:hover,
+.supply-orders-grid-row.is-expanded {
+  background: #fffdfb;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 120, 46, 0.08),
+    inset 0 -1px 0 rgba(232, 120, 46, 0.08);
+}
+
+.supply-orders-grid-row:hover {
+  transform: translateX(2px);
+}
+
+.supply-orders-grid-row:hover::before,
+.supply-orders-grid-row.is-expanded::before,
+.supply-orders-grid-row:hover::after,
+.supply-orders-grid-row.is-expanded::after {
+  opacity: 1;
+}
+
+.supply-orders-grid-row:hover::before,
+.supply-orders-grid-row.is-expanded::before {
+  transform: scaleY(1);
+}
+
+.supply-orders-grid-row.is-invoice {
+  background: #fbfcfd;
+  cursor: default;
+}
+
+.supply-orders-grid-row.is-invoice:hover {
+  background: #fffaf5;
+}
+
+.supply-orders-grid-state {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  flex: 1 1 auto;
+  font-size: 12px;
+  justify-content: center;
+  min-height: 220px;
+  padding: 32px;
+  text-align: center;
+}
+
+.supply-order-control-cell {
+  align-items: center;
+  border-right: 1px dashed var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  display: grid;
+  gap: 5px;
+  grid-template-columns: 28px 28px;
+  justify-content: start;
+  line-height: 1;
+  min-height: 34px;
+  padding-right: 8px;
+  width: 72px;
+}
+
+.supply-order-control-cell.is-child {
+  grid-template-columns: 28px;
+  justify-content: center;
+}
+
+.supply-order-control-index {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 750;
+  height: 24px;
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 7px;
+}
+
+.supply-order-control-icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  width: 28px;
+}
+
+.supply-order-control-cell.is-toUkraine .supply-order-control-icon {
+  background: #fff8f2;
+  border-color: #ffd8bd;
+  color: #e8782e;
+}
+
+.supply-order-control-cell.is-direct .supply-order-control-icon {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-1);
+  color: var(--mantine-color-blue-7);
+}
+
+.supply-order-control-dot {
+  background: transparent;
+  border-color: var(--mantine-color-gray-2);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 7px;
+  min-width: 7px;
+  padding: 0;
+  width: 7px;
+}
+
+.supply-order-actions {
+  align-items: center;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 30px 30px;
+  justify-content: end;
+  min-width: 64px;
+}
+
+.supply-order-action-button {
+  color: var(--mantine-color-gray-5);
+}
+
+.supply-order-action-button:hover {
+  background: var(--mantine-color-orange-0);
+  color: var(--mantine-color-orange-8);
+}
+
+.supply-order-action-button.is-danger:hover {
+  background: var(--mantine-color-red-0);
+  color: var(--mantine-color-red-7);
+}
+
+.supply-order-action-placeholder {
+  display: block;
+  height: 30px;
+  width: 30px;
+}
+
+.supply-order-main-cell {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.supply-order-main-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.supply-order-main-title-row {
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+}
+
+.supply-order-main-title {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.18;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-inline-tag {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
   flex: 0 0 auto;
-  padding-top: 2px;
+  font-size: 10px;
+  font-weight: 650;
+  height: 20px;
+  line-height: 1;
+  padding: 0 7px;
+}
+
+.supply-order-main-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.supply-order-meta-value {
+  align-items: center;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 1 auto;
+  font-size: 11.5px;
+  font-weight: 520;
+  gap: 4px;
+  line-height: 1.2;
+  max-width: 210px;
+  min-width: 0;
+}
+
+.supply-order-meta-value strong {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-meta-value.is-strong {
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-order-meta-value.is-strong strong {
+  color: var(--mantine-color-gray-9);
+  font-weight: 700;
+}
+
+.supply-order-meta-separator {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 3px;
+  height: 3px;
+  width: 3px;
+}
+
+.supply-order-responsible-cell {
+  color: var(--mantine-color-gray-8);
+  display: block;
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-two-line-cell,
+.supply-order-money-cell {
+  min-width: 0;
+}
+
+.supply-order-two-line-primary,
+.supply-order-two-line-secondary {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-two-line-primary {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.supply-order-two-line-secondary {
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.supply-order-two-line-cell,
+.supply-order-money-cell {
+  display: block;
+}
+
+.supply-order-money-cell {
+  text-align: right;
+}
+
+.supply-orders-grid-row > .supply-order-money-cell,
+.supply-orders-grid-row > .supply-order-metric-value {
+  border-left: 1px dashed var(--mantine-color-gray-2);
+  padding-left: 10px;
+}
+
+.supply-order-money-amount {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.15;
+}
+
+.supply-order-money-currency {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 10px;
+  font-weight: 720;
+  line-height: 1;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.supply-order-metric-value {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.supply-orders-grid-row > .supply-order-status-tag,
+.supply-orders-grid-row > .supply-order-actions {
+  justify-self: center;
+}
+
+.supply-order-metric-label {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 26px;
+  font-size: 11px;
+  font-weight: 720;
+  height: 26px;
+  justify-content: center;
+  line-height: 1;
+  width: 26px;
+}
+
+.supply-order-metric-number {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.supply-order-status-tag {
+  align-items: center;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10.5px;
+  font-weight: 750;
+  height: 24px;
+  justify-content: center;
+  line-height: 1;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-order-status-tag.is-neutral {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-order-status-tag.is-success {
+  background: var(--mantine-color-green-0);
+  border-color: var(--mantine-color-green-2);
+  color: var(--mantine-color-green-8);
+}
+
+.supply-order-status-tag.is-info {
+  background: var(--mantine-color-blue-0);
+  border-color: var(--mantine-color-blue-1);
+  color: var(--mantine-color-blue-8);
+}
+
+.supply-order-status-tag.is-accent {
+  background: #fff8f2;
+  border-color: #ffd8bd;
+  color: #c95716;
+}
+
+@media (max-width: 1320px) {
+  .supply-ukraine-orders-command-bar {
+    grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) 150px 180px;
+  }
+
+  .supply-ukraine-orders-command-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 780px) {
+  .supply-ukraine-orders-command-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .supply-ukraine-orders-command-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 }
