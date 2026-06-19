@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   Group,
-  ScrollArea,
   Select,
   Stack,
   Text,
@@ -14,7 +13,7 @@ import { notifications } from '@mantine/notifications'
 import { IconArrowsExchange2 } from '@tabler/icons-react'
 import { useCallback, useEffect, useReducer } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { markDataSyncStarted } from '../../../shared/realtime/dataSyncProgressStore'
+import { markDataSyncStarted, useDataSyncProgress } from '../../../shared/realtime/dataSyncProgressStore'
 import { realtimeEvents, useRealtimeEvent, type DataSyncNotification } from '../../../shared/realtime/events'
 import { getSyncHistory, startDailySync, startGbaToOneCSync, startRemnantsSync } from '../api/syncApi'
 import { TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
@@ -209,6 +208,7 @@ function syncReducer(state: SyncState, action: SyncAction): SyncState {
 
 export function SyncControl() {
   const { t } = useI18n()
+  const dataSyncProgress = useDataSyncProgress()
   const [state, dispatch] = useReducer(syncReducer, undefined, createInitialSyncState)
   const handleRealtimeSyncNotification = useCallback((notification: DataSyncNotification) => {
     dispatch({
@@ -308,6 +308,9 @@ export function SyncControl() {
   }
 
   const isEveryDailyTypeSelected = state.selectedDailyTypes.length === allDailySyncTypes.length
+  const isSyncInProgress = state.isSyncing || dataSyncProgress.isActive
+  const syncMessages = mergeSyncMessages(state.messages, dataSyncProgress.messages)
+  const syncSourceLabel = getSyncSourceLabel(state.activeTab, state.dailyForAmg, t)
 
   async function runSyncRequest(request: () => Promise<SyncRunResponse>) {
     dispatch({ type: 'syncStarted' })
@@ -363,153 +366,134 @@ export function SyncControl() {
             ))}
           </Group>
 
-          <Stack gap="md" className="sync-resizable">
           <Box className="sync-panel">
-            {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
-              <Stack gap="md">
-                <SyncHistoryPanel history={state.history} isLoading={state.isHistoryLoading} />
-                <RemnantsSyncSection
-                  isLoading={state.isSyncing}
-                  selectedTypes={state.selectedSyncTypes}
-                  title={t('Залишки з 1С в GBA')}
-                  onRun={() => runRemnantsSync(state.activeTab === 'amg')}
-                  onTypeChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
-                />
-              </Stack>
-            )}
+            <Stack gap="md" className="sync-resizable">
+              <SyncHistoryPanel
+                history={state.history}
+                historyKind={state.activeTab === 'daily' ? 'daily' : 'entity'}
+                isLoading={state.isHistoryLoading}
+                isError={dataSyncProgress.isError}
+                isSyncing={isSyncInProgress}
+                messages={syncMessages}
+                sourceLabel={syncSourceLabel}
+              />
 
-            {state.activeTab === 'gba-to-1c' && (
-              <Stack gap="md">
-                <SyncSectionHeader title={t('Вигрузка GBA в 1С')} />
-                <Group gap="sm" align="end" wrap="wrap">
-                  <TextInput
-                    label={t('З')}
-                    type="date"
-                    value={toDateInputValue(state.fromDate)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'fromDateChanged',
-                        date: parseDateInputValue(event.currentTarget.value, state.fromDate),
-                      })
-                    }
+              {(state.activeTab === 'fenix' || state.activeTab === 'amg') && (
+                <Stack gap="md">
+                  <RemnantsSyncSection
+                    isLoading={state.isSyncing}
+                    selectedTypes={state.selectedSyncTypes}
+                    title={t('Залишки з 1С в GBA')}
+                    onRun={() => runRemnantsSync(state.activeTab === 'amg')}
+                    onTypeChange={(key, checked) => dispatch({ type: 'syncTypeChanged', key, checked })}
                   />
-                  <TextInput
-                    label={t('По')}
-                    type="date"
-                    value={toDateInputValue(state.toDate)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'toDateChanged',
-                        date: parseDateInputValue(event.currentTarget.value, state.toDate, true),
-                      })
-                    }
-                  />
-                  <Select
-                    label={t('Тип')}
-                    value={state.documentType}
-                    onChange={(value) => value && dispatch({ type: 'documentTypeChanged', value })}
-                    data={[
-                      { value: String(TypeOfXmlDocument.Sales), label: t('Продажі') },
-                      { value: String(TypeOfXmlDocument.ProductIncomes), label: t('Прихідні накладні на товар') },
-                    ]}
-                  />
-                  <Button color="violet" loading={state.isSyncing} onClick={runGbaToOneCSync}>
-                    {t('Синхронізувати')}
-                  </Button>
-                </Group>
-              </Stack>
-            )}
-
-            {state.activeTab === 'daily' && (
-              <Stack gap="md">
-                <SyncHistoryPanel history={state.history} isLoading={state.isHistoryLoading} />
-                <SyncSectionHeader title={t('Щоденна синхронізація руху товарів')} />
-                <Group gap="sm" align="end" wrap="wrap">
-                  <TextInput
-                    label={t('З')}
-                    type="datetime-local"
-                    value={toDateTimeInputValue(state.dailyFrom)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'dailyFromChanged',
-                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyFrom),
-                      })
-                    }
-                  />
-                  <TextInput
-                    label={t('По')}
-                    type="datetime-local"
-                    value={toDateTimeInputValue(state.dailyTo)}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'dailyToChanged',
-                        date: parseDateTimeInputValue(event.currentTarget.value, state.dailyTo),
-                      })
-                    }
-                  />
-                  <Select
-                    label={t('Організація')}
-                    value={state.dailyForAmg}
-                    onChange={(value) => value && dispatch({ type: 'dailyOrganisationChanged', value })}
-                    data={[
-                      { value: 'true', label: 'AMG' },
-                      { value: 'false', label: 'FENIX' },
-                    ]}
-                  />
-                </Group>
-                <DailySyncTypeChecklist
-                  selectedTypes={state.selectedDailyTypes}
-                  onChange={(types) => dispatch({ type: 'dailyTypesChanged', types })}
-                />
-                <Group justify="flex-end">
-                  <Button
-                    color="violet"
-                    loading={state.isSyncing}
-                    onClick={() =>
-                      dispatch({
-                        type: 'dailyTypesChanged',
-                        types: isEveryDailyTypeSelected ? [] : allDailySyncTypes,
-                      })
-                    }
-                    variant="light"
-                  >
-                    {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
-                  </Button>
-                  <Button color="violet" loading={state.isSyncing} onClick={runDailySync}>
-                    {t('Синхронізувати')}
-                  </Button>
-                </Group>
-              </Stack>
-            )}
-          </Box>
-
-          <Box className={`sync-messages${state.isSyncing ? ' is-active' : ''}`}>
-            <Group justify="space-between" mb={8}>
-              <Text size="xs" fw={700} c="dimmed" tt="uppercase">
-                {t('Процес синхронізації')}
-              </Text>
-              <Box className="sync-messages-pulse" data-active={state.isSyncing} />
-            </Group>
-            <ScrollArea h={108} type="auto">
-              {state.messages.length === 0 ? (
-                <Text size="xs" c="dimmed" className="sync-message-empty">
-                  {state.isSyncing ? t('Очікування…') : t('Лог появиться тут')}
-                </Text>
-              ) : (
-                <Stack gap={3}>
-                  {state.messages.map((message, index) => (
-                    // Messages are only prepended, so (length - index) is stable per row —
-                    // existing rows keep their key and don't remount (only the new row animates),
-                    // which stops the whole log from re-flashing on every notification.
-                    <Text key={state.messages.length - index} size="xs" className="sync-message tx-text-swap">
-                      {message}
-                    </Text>
-                  ))}
                 </Stack>
               )}
-            </ScrollArea>
+
+              {state.activeTab === 'gba-to-1c' && (
+                <Stack gap="md">
+                  <SyncSectionHeader title={t('Вигрузка GBA в 1С')} />
+                  <Group gap="sm" align="end" wrap="wrap">
+                    <TextInput
+                      label={t('З')}
+                      type="date"
+                      value={toDateInputValue(state.fromDate)}
+                      onChange={(event) =>
+                        dispatch({
+                          type: 'fromDateChanged',
+                          date: parseDateInputValue(event.currentTarget.value, state.fromDate),
+                        })
+                      }
+                    />
+                    <TextInput
+                      label={t('По')}
+                      type="date"
+                      value={toDateInputValue(state.toDate)}
+                      onChange={(event) =>
+                        dispatch({
+                          type: 'toDateChanged',
+                          date: parseDateInputValue(event.currentTarget.value, state.toDate, true),
+                        })
+                      }
+                    />
+                    <Select
+                      label={t('Тип')}
+                      value={state.documentType}
+                      onChange={(value) => value && dispatch({ type: 'documentTypeChanged', value })}
+                      data={[
+                        { value: String(TypeOfXmlDocument.Sales), label: t('Продажі') },
+                        { value: String(TypeOfXmlDocument.ProductIncomes), label: t('Прихідні накладні на товар') },
+                      ]}
+                    />
+                    <Button color="violet" loading={state.isSyncing} onClick={runGbaToOneCSync}>
+                      {t('Синхронізувати')}
+                    </Button>
+                  </Group>
+                </Stack>
+              )}
+
+              {state.activeTab === 'daily' && (
+                <Stack gap="md">
+                  <SyncSectionHeader title={t('Щоденна синхронізація руху товарів')} />
+                  <Group gap="sm" align="end" wrap="wrap">
+                    <TextInput
+                      label={t('З')}
+                      type="datetime-local"
+                      value={toDateTimeInputValue(state.dailyFrom)}
+                      onChange={(event) =>
+                        dispatch({
+                          type: 'dailyFromChanged',
+                          date: parseDateTimeInputValue(event.currentTarget.value, state.dailyFrom),
+                        })
+                      }
+                    />
+                    <TextInput
+                      label={t('По')}
+                      type="datetime-local"
+                      value={toDateTimeInputValue(state.dailyTo)}
+                      onChange={(event) =>
+                        dispatch({
+                          type: 'dailyToChanged',
+                          date: parseDateTimeInputValue(event.currentTarget.value, state.dailyTo),
+                        })
+                      }
+                    />
+                    <Select
+                      label={t('Організація')}
+                      value={state.dailyForAmg}
+                      onChange={(value) => value && dispatch({ type: 'dailyOrganisationChanged', value })}
+                      data={[
+                        { value: 'true', label: 'AMG' },
+                        { value: 'false', label: 'FENIX' },
+                      ]}
+                    />
+                  </Group>
+                  <DailySyncTypeChecklist
+                    selectedTypes={state.selectedDailyTypes}
+                    onChange={(types) => dispatch({ type: 'dailyTypesChanged', types })}
+                  />
+                  <Group justify="flex-end">
+                    <Button
+                      color="violet"
+                      loading={state.isSyncing}
+                      onClick={() =>
+                        dispatch({
+                          type: 'dailyTypesChanged',
+                          types: isEveryDailyTypeSelected ? [] : allDailySyncTypes,
+                        })
+                      }
+                      variant="light"
+                    >
+                      {t(isEveryDailyTypeSelected ? 'Скинути' : 'Вибрати всі')}
+                    </Button>
+                    <Button color="violet" loading={state.isSyncing} onClick={runDailySync}>
+                      {t('Синхронізувати')}
+                    </Button>
+                  </Group>
+                </Stack>
+              )}
+            </Stack>
           </Box>
-          </Stack>
         </Stack>
       </AppModal>
     </>
@@ -518,6 +502,26 @@ export function SyncControl() {
 
 function getHistoryForAmg(activeTab: SyncTab, dailyForAmg: string): boolean {
   return activeTab === 'daily' ? dailyForAmg === 'true' : activeTab === 'amg'
+}
+
+function getSyncSourceLabel(
+  activeTab: SyncTab,
+  dailyForAmg: string,
+  t: (key: 'Вигрузка GBA в 1С' | 'Щоденна синхронізація') => string,
+): string {
+  if (activeTab === 'amg') {
+    return 'AMG'
+  }
+
+  if (activeTab === 'fenix') {
+    return 'FENIX'
+  }
+
+  if (activeTab === 'daily') {
+    return `${t('Щоденна синхронізація')} · ${dailyForAmg === 'true' ? 'AMG' : 'FENIX'}`
+  }
+
+  return t('Вигрузка GBA в 1С')
 }
 
 function getKnownDailyTypes(types: string[]): string[] {
@@ -534,6 +538,29 @@ function appendSyncMessage(messages: string[], message: string): string[] {
   }
 
   return [nextMessage, ...messages]
+}
+
+function mergeSyncMessages(localMessages: string[], progressMessages: string[]): string[] {
+  const seenMessages = new Set<string>()
+  const messages: string[] = []
+
+  appendUniqueMessages(localMessages, seenMessages, messages)
+  appendUniqueMessages(progressMessages, seenMessages, messages)
+
+  return messages
+}
+
+function appendUniqueMessages(source: string[], seenMessages: Set<string>, messages: string[]): void {
+  for (const message of source) {
+    const normalizedMessage = message.trim()
+
+    if (!normalizedMessage || seenMessages.has(normalizedMessage)) {
+      continue
+    }
+
+    seenMessages.add(normalizedMessage)
+    messages.push(normalizedMessage)
+  }
 }
 
 function RemnantsSyncSection({

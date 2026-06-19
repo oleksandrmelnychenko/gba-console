@@ -828,14 +828,64 @@
 .sync-message {
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   color: var(--mantine-color-gray-7);
+  overflow-wrap: anywhere;
 }
 
 .sync-history-panel {
-  margin-top: 0;
+  padding: 12px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff 0%, var(--mantine-color-gray-0) 100%);
+  transition:
+    border-color 180ms var(--tx-ease-spring),
+    box-shadow 180ms var(--tx-ease-spring);
+}
+
+.sync-history-panel.is-active {
+  border-color: var(--mantine-color-violet-3);
+  box-shadow: 0 8px 24px rgba(91, 33, 182, 0.08);
+}
+
+.sync-history-panel.is-error {
+  border-color: var(--mantine-color-red-3);
+  box-shadow: 0 8px 24px rgba(224, 36, 36, 0.08);
+}
+
+.sync-status-heading {
+  min-width: 0;
+}
+
+.sync-status-source,
+.sync-status-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sync-status-label {
+  letter-spacing: 0;
+}
+
+.sync-status-card,
+.sync-history-feed,
+.sync-message-feed {
+  padding: 10px;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.sync-status-card {
+  min-height: 78px;
+}
+
+.sync-history-feed,
+.sync-message-feed {
+  min-width: 0;
 }
 
 .sync-history-state {
-  padding: 12px 0;
+  min-height: 48px;
+  padding: 10px 0;
   text-align: center;
 }
 
@@ -844,8 +894,8 @@
 }
 
 .sync-history-row {
-  min-height: 26px;
-  padding: 4px 0;
+  min-height: 28px;
+  padding: 5px 0;
   align-items: baseline;
   flex-wrap: nowrap;
   border-bottom: 1px solid var(--mantine-color-gray-1);
@@ -863,6 +913,12 @@
   min-width: 0;
   color: var(--mantine-color-gray-9);
   font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.sync-history-clock {
+  flex: 0 0 auto;
+  color: var(--mantine-color-gray-5);
 }
 
 .sync-type-checklist {

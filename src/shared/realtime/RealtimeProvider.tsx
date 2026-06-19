@@ -231,22 +231,22 @@ function showDataSyncNotification(
   user: AuthUser | null,
   t: (key: string) => string,
 ): void {
-  if (!shouldShowDataSyncNotification(notification, user)) {
+  if (!shouldShowDataSyncErrorNotification(notification, user)) {
     return
   }
 
   const { description, title } = splitDataSyncMessage(notification.DisplayMessage, t)
 
   notifications.show({
-    autoClose: notification.IsError ? false : 8_000,
-    color: notification.IsError ? 'red' : 'green',
+    autoClose: false,
+    color: 'red',
     message: description || title,
     title,
   })
 }
 
-function shouldShowDataSyncNotification(notification: DataSyncNotification, user: AuthUser | null): boolean {
-  if (!notification.StopProgressBar && !notification.IsError) {
+function shouldShowDataSyncErrorNotification(notification: DataSyncNotification, user: AuthUser | null): boolean {
+  if (!notification.IsError) {
     return false
   }
 
