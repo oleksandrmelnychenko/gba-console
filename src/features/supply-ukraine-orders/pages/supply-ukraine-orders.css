@@ -1,6 +1,10 @@
 .supply-ukraine-orders-page {
   box-sizing: border-box;
-  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 20px);
+  /* Fill the console frame exactly rather than guessing viewport offsets — the
+     frame is already a bounded flex column, so a hard 100vh calc could overshoot
+     it and push the table bottom out of view (clipped, unscrollable). */
+  flex: 1 1 auto;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -188,6 +192,7 @@
 .supply-ukraine-orders-table {
   display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-height: 0;
   min-width: 0;
 }
@@ -207,7 +212,8 @@
   min-height: 0;
   min-width: 0;
   overflow: auto;
-  padding: 10px 12px 0;
+  overscroll-behavior: contain;
+  padding: 10px 12px 12px;
   scrollbar-color: var(--mantine-color-gray-4) transparent;
   scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;

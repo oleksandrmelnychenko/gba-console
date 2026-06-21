@@ -34,6 +34,7 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import './supply-order-detail.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -606,28 +607,32 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <Group gap="sm" align="center">
+      <header className="supply-detail-header">
+        <div className="supply-detail-header-main">
           <Tooltip label={t('Назад')}>
             <ActionIcon
               aria-label={t('Назад')}
-              color="gray"
-              variant="light"
+              className="supply-detail-back"
+              variant="default"
               onClick={() => navigate('/orders/ukraine/all')}
             >
               <IconArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
-          <Stack gap={2}>
-            <Text fw={700} size="xl">
-              {t('Логістика замовлення')} {getOrderNumber(order)}
-            </Text>
-            <Text c="dimmed" size="sm">
-              {t('Постачальник')}: {getEntityName(order?.Client)}
-            </Text>
-          </Stack>
-        </Group>
-        <Group gap="xs" justify="flex-end">
+          <span className="supply-detail-icon">
+            <IconRoute size={22} stroke={1.8} />
+          </span>
+          <div className="supply-detail-copy">
+            <h1 className="supply-detail-title">
+              {t('Логістика замовлення')}
+              {getOrderNumber(order) && <span className="supply-detail-number">{getOrderNumber(order)}</span>}
+            </h1>
+            <p className="supply-detail-subtitle">
+              {t('Постачальник')}: <strong>{getEntityName(order?.Client)}</strong>
+            </p>
+          </div>
+        </div>
+        <div className="supply-detail-header-actions">
           <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={reloadOrder}>
             {t('Оновити')}
           </Button>
@@ -641,8 +646,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
               {t('Кредит ноти')}
             </Button>
           )}
-        </Group>
-      </Group>
+        </div>
+      </header>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -656,7 +661,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         </Group>
       ) : order ? (
         <Stack gap="lg">
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
               <Group gap="xs" wrap="wrap">
                 {statusBadge(t('Погоджено'), order.IsApproved)}
@@ -756,7 +761,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             onReload={reloadOrder}
           />
 
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Group gap="xs" wrap="wrap">
               {canOpenInvoices && (
                 <Button
@@ -788,7 +793,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             </Group>
           </Card>
 
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
               <Group gap="xs">
                 <IconRoute size={18} />

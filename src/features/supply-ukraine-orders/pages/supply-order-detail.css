@@ -1,0 +1,244 @@
+/* Shared Sales-aligned design for the supply-order detail sub-screens
+   (Специфікації, Інвойси і пак листи, Логістика замовлення).
+
+   Takes the "Продажі" aesthetic — warm brand corner glow, darkened legible
+   typography, pill chips, soft orange focus rings — and applies it to the
+   header hero, the content cards and the filter/search controls so the detail
+   screens read as one family with the orders list. */
+
+/* ---- Hero header ------------------------------------------------------- */
+.supply-detail-header {
+  align-items: center;
+  background:
+    radial-gradient(720px 300px at 0% -40%, rgba(232, 120, 46, 0.1), rgba(232, 120, 46, 0) 70%),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(20, 28, 38, 0.04);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.supply-detail-header-main {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.supply-detail-back.mantine-ActionIcon-root {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-detail-back.mantine-ActionIcon-root:hover {
+  background: var(--mantine-color-orange-0);
+  border-color: #ffd8b8;
+  color: #e8782e;
+}
+
+.supply-detail-icon {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid #ffd8b8;
+  border-radius: 12px;
+  color: #e8782e;
+  display: inline-flex;
+  flex: 0 0 42px;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.supply-detail-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.supply-detail-title {
+  align-items: baseline;
+  color: var(--mantine-color-gray-9);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 19px;
+  font-weight: 760;
+  gap: 8px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+  min-width: 0;
+}
+
+.supply-detail-number {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  height: 24px;
+  letter-spacing: 0;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.supply-detail-subtitle {
+  color: var(--mantine-color-gray-6);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supply-detail-subtitle strong {
+  color: var(--mantine-color-gray-8);
+  font-weight: 650;
+}
+
+.supply-detail-header-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+/* ---- Content card ------------------------------------------------------ */
+.supply-detail-card.mantine-Card-root {
+  border-color: var(--mantine-color-gray-2);
+  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
+}
+
+/* Section heading inside a content card. */
+.supply-detail-section-title {
+  color: var(--mantine-color-gray-8);
+  font-size: 14px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* ---- Selection toolbar (invoices, pack lists) -------------------------- */
+/* A flush warm strip that groups the document-selector buttons, echoing the
+   Sales filter bar. */
+.supply-detail-toolbar {
+  background:
+    radial-gradient(560px 240px at 0% -45%, rgba(232, 120, 46, 0.07), rgba(232, 120, 46, 0) 70%),
+    var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.supply-detail-toolbar-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+}
+
+/* ---- Search / filter inputs ------------------------------------------- */
+.supply-detail-search .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.supply-detail-search .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  min-height: 36px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.supply-detail-search .mantine-Input-input::placeholder {
+  color: var(--mantine-color-gray-6);
+}
+
+.supply-detail-search .mantine-Input-input:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.supply-detail-search .mantine-Input-input:focus,
+.supply-detail-search .mantine-Input-input:focus-within {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+}
+
+/* ---- Summary metric tiles ---------------------------------------------- */
+.supply-detail-metric {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 13px 15px;
+  position: relative;
+  transition: box-shadow 140ms ease;
+}
+
+.supply-detail-metric::before {
+  background: var(--mantine-color-gray-3);
+  bottom: 10px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 10px;
+  width: 3px;
+}
+
+.supply-detail-metric.is-brand::before {
+  background: #e8782e;
+}
+
+.supply-detail-metric:hover {
+  box-shadow: 0 6px 16px rgba(20, 28, 38, 0.06);
+}
+
+.supply-detail-metric-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.supply-detail-metric-value {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 20px;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-top: 6px;
+}
+
+/* ---- Empty / state rows ------------------------------------------------ */
+.supply-detail-state {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 13px;
+  font-weight: 550;
+  gap: 8px;
+  justify-content: center;
+  min-height: 160px;
+}

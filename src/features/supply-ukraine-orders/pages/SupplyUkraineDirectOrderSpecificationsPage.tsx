@@ -16,12 +16,14 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowLeft,
+  IconClipboardList,
   IconDownload,
   IconFileImport,
   IconFilesOff,
 } from '@tabler/icons-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import './supply-order-detail.css'
 import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
@@ -759,22 +761,35 @@ function SupplyUkraineDirectOrderSpecificationsView({ model }: { model: DirectOr
 function DirectOrderSpecificationsHeader({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
 
+  const orderNumber = getOrderNumber(model.order)
+
   return (
-    <Group justify="space-between" align="center">
-      <Group gap="sm">
+    <header className="supply-detail-header">
+      <div className="supply-detail-header-main">
         <Tooltip label={t('Назад')}>
-          <ActionIcon aria-label={t('Назад')} color="gray" variant="light" onClick={model.goBack}>
+          <ActionIcon
+            aria-label={t('Назад')}
+            className="supply-detail-back"
+            variant="default"
+            onClick={model.goBack}
+          >
             <IconArrowLeft size={18} />
           </ActionIcon>
         </Tooltip>
-        <Stack gap={2}>
-          <Text fw={700} size="xl">{t('Специфікації')} {getOrderNumber(model.order)}</Text>
-          <Text c="dimmed" size="sm">
-            {t('Постачальник')}: {model.order?.Client?.FullName || model.order?.Client?.Name || '-'}
-          </Text>
-        </Stack>
-      </Group>
-      <Group gap="sm" align="center">
+        <span className="supply-detail-icon">
+          <IconClipboardList size={22} stroke={1.8} />
+        </span>
+        <div className="supply-detail-copy">
+          <h1 className="supply-detail-title">
+            {t('Специфікації')}
+            {orderNumber && <span className="supply-detail-number">{orderNumber}</span>}
+          </h1>
+          <p className="supply-detail-subtitle">
+            {t('Постачальник')}: <strong>{model.order?.Client?.FullName || model.order?.Client?.Name || '-'}</strong>
+          </p>
+        </div>
+      </div>
+      <div className="supply-detail-header-actions">
         <SegmentedControl
           data={[
             { label: t('EUR'), value: 'eur' },
@@ -793,8 +808,8 @@ function DirectOrderSpecificationsHeader({ model }: { model: DirectOrderSpecific
           value={model.withManagementServices ? 'management' : 'base'}
           onChange={(value) => model.setWithManagementServices(value === 'management')}
         />
-      </Group>
-    </Group>
+      </div>
+    </header>
   )
 }
 
@@ -810,7 +825,7 @@ function DirectOrderSpecificationsBody({ model }: { model: DirectOrderSpecificat
   }
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="supply-detail-card" withBorder radius="md" padding="md">
       <Stack gap="md">
         <SpecificationActionButtons model={model} />
         <InvoiceButtons model={model} />
@@ -866,21 +881,28 @@ function SpecificationActionButtons({ model }: { model: DirectOrderSpecification
 function InvoiceButtons({ model }: { model: DirectOrderSpecificationsPageModel }) {
   const { t } = useI18n()
 
+  if (model.invoices.length === 0) {
+    return null
+  }
+
   return (
-    <Group gap="xs" wrap="wrap">
-      {model.invoices.map((invoice) => (
-        <Button
-          key={invoice.NetUid || invoice.Id}
-          color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
-          disabled={model.isActionBusy}
-          loading={model.isInvoiceLoading && invoice.NetUid === model.selectedInvoiceNetId}
-          variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
-          onClick={() => model.selectInvoice(invoice)}
-        >
-          {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
-        </Button>
-      ))}
-    </Group>
+    <div className="supply-detail-toolbar">
+      <span className="supply-detail-toolbar-label">{t('Інвойси')}</span>
+      <Group gap="xs" wrap="wrap">
+        {model.invoices.map((invoice) => (
+          <Button
+            key={invoice.NetUid || invoice.Id}
+            color={invoice.NetUid === model.selectedInvoiceNetId ? 'blue' : 'gray'}
+            disabled={model.isActionBusy}
+            loading={model.isInvoiceLoading && invoice.NetUid === model.selectedInvoiceNetId}
+            variant={invoice.NetUid === model.selectedInvoiceNetId ? 'filled' : 'light'}
+            onClick={() => model.selectInvoice(invoice)}
+          >
+            {t('Інвойс')} {invoice.Number || '-'} {t('Від')} {formatDate(invoice.DateFrom)}
+          </Button>
+        ))}
+      </Group>
+    </div>
   )
 }
 
@@ -892,20 +914,23 @@ function PackListButtons({ model }: { model: DirectOrderSpecificationsPageModel 
   }
 
   return (
-    <Group gap="xs" wrap="wrap">
-      {(model.selectedInvoice.PackingLists || []).map((packList) => (
-        <Button
-          key={packList.NetUid || packList.Id}
-          color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
-          disabled={model.isActionBusy}
-          size="xs"
-          variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
-          onClick={() => model.selectPackList(packList)}
-        >
-          {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
-        </Button>
-      ))}
-    </Group>
+    <div className="supply-detail-toolbar">
+      <span className="supply-detail-toolbar-label">{t('Пак листи')}</span>
+      <Group gap="xs" wrap="wrap">
+        {(model.selectedInvoice.PackingLists || []).map((packList) => (
+          <Button
+            key={packList.NetUid || packList.Id}
+            color={packList.NetUid === model.selectedPackListNetId ? 'blue' : 'gray'}
+            disabled={model.isActionBusy}
+            size="xs"
+            variant={packList.NetUid === model.selectedPackListNetId ? 'outline' : 'subtle'}
+            onClick={() => model.selectPackList(packList)}
+          >
+            {t('Пак лист')} №: {packList.InvNo || packList.No || '-'} ({t('Від')} {formatDate(packList.FromDate)})
+          </Button>
+        ))}
+      </Group>
+    </div>
   )
 }
 
@@ -922,6 +947,7 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
 
       {model.packingList && (model.packingList.PackingListPackageOrderItems?.length || 0) > 0 && (
         <TextInput
+          className="supply-detail-search"
           label={t('Пошук')}
           placeholder={t('Код товару')}
           disabled={model.isActionBusy}
@@ -943,10 +969,10 @@ function SpecificationGridArea({ model }: { model: DirectOrderSpecificationsPage
           onOpenProductCard={model.setProductCardNetId}
         />
       ) : (
-        <Group gap="xs" c="dimmed">
+        <div className="supply-detail-state">
           <IconFilesOff size={18} />
-          <Text size="sm">{t('Немає даних')}</Text>
-        </Group>
+          <span>{t('Немає даних')}</span>
+        </div>
       )}
     </>
   )
