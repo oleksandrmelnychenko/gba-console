@@ -138,9 +138,7 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
   return (
     <Card withBorder radius="md" shadow="sm">
       <Stack gap="md">
-        <Text fw={700} size="lg">
-          {t('Дашборд завдань')}
-        </Text>
+        <Text className="cockpit-section-title">{t('Дашборд завдань')}</Text>
 
         {error && (
           <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
@@ -149,18 +147,16 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
         )}
 
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-          <StatCard label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
-          <StatCard label={t('Активні')} value={String(completedTotals.open)} />
-          <StatCard label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
+          <StatCard accent="danger" label={t('Сума під ризиком')} value={formatMoney(dashboard?.value_at_risk_eur ?? 0)} />
+          <StatCard accent="info" label={t('Активні')} value={String(completedTotals.open)} />
+          <StatCard accent="success" label={t('Виконано (місяць)')} value={String(completedTotals.done)} />
           <StatCard label={t('Відхилено (місяць)')} value={String(completedTotals.dismissed)} />
         </SimpleGrid>
 
         <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-          <Card padding="md" radius="md" withBorder>
+          <Card className="cockpit-chart-card" padding="md" radius="md">
             <Stack align="center" gap="xs">
-              <Text fw={600} size="sm">
-                {t('За терміновістю')}
-              </Text>
+              <Text className="cockpit-subtitle">{t('За терміновістю')}</Text>
               <UrgencyDonut
                 data={urgencyData}
                 emptyLabel={t('Немає активних завдань')}
@@ -170,11 +166,9 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
             </Stack>
           </Card>
 
-          <Card padding="md" radius="md" withBorder>
+          <Card className="cockpit-chart-card" padding="md" radius="md">
             <Stack align="center" gap="xs">
-              <Text fw={600} size="sm">
-                {t('За типом завдання')}
-              </Text>
+              <Text className="cockpit-subtitle">{t('За типом завдання')}</Text>
               <TaskTypeDonut
                 data={taskTypeData}
                 emptyLabel={t('Немає активних завдань')}
@@ -185,12 +179,10 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
           </Card>
         </SimpleGrid>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="cockpit-chart-card" padding="md" radius="md">
           <Stack gap="xs">
             <Group justify="space-between" wrap="wrap">
-              <Text fw={600} size="sm">
-                {t('Старіння заборгованості')}
-              </Text>
+              <Text className="cockpit-subtitle">{t('Старіння заборгованості')}</Text>
               <Text c="dimmed" size="xs">
                 {t('Сума під ризиком')}: {formatMoney(dashboard?.value_at_risk_eur ?? 0)}
               </Text>
@@ -211,16 +203,12 @@ export function CockpitDashboardPanel({ reloadKey }: { reloadKey: number }) {
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <Card withBorder radius="md" padding="md">
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={700} size="lg">
-        {value}
-      </Text>
-    </Card>
+    <div className={`cockpit-metric${accent ? ` is-${accent}` : ''}`}>
+      <span className="cockpit-metric-label">{label}</span>
+      <span className="cockpit-metric-value">{value}</span>
+    </div>
   )
 }
 

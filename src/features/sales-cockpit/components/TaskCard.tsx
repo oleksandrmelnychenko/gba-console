@@ -54,7 +54,7 @@ export function TaskCard({
   const notesCount = task.notes?.length ?? 0
 
   return (
-    <Card padding="md" radius="md" withBorder>
+    <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="md" radius="md" withBorder>
       <Stack gap="sm">
         <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
           <Stack gap={4}>
@@ -73,12 +73,8 @@ export function TaskCard({
                 </Badge>
               )}
             </Group>
-            <Text fw={600}>{task.title || t('Завдання')}</Text>
-            {task.client_name && (
-              <Text c="dimmed" size="sm">
-                {task.client_name}
-              </Text>
-            )}
+            <Text className="cockpit-task-title">{task.title || t('Завдання')}</Text>
+            {task.client_name && <Text className="cockpit-task-client">{task.client_name}</Text>}
           </Stack>
 
           <Group gap={4} wrap="nowrap">
@@ -106,9 +102,7 @@ export function TaskCard({
           </Group>
         </Group>
 
-        {task.reason && (
-          <Text size="sm">{task.reason}</Text>
-        )}
+        {task.reason && <Text className="cockpit-task-reason">{task.reason}</Text>}
 
         <WhyThisTask task={task} />
 

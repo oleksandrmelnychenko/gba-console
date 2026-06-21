@@ -1,0 +1,395 @@
+/* Sales-cockpit visual language.
+   Brings the established "Продажі" aesthetic — warm brand corner glow, darkened
+   legible typography, pill chips, soft orange accents — to the two dashboard
+   pages (Кокпіт продажів, Дашборд відділу) and their panels.
+
+   These are dashboard surfaces (stat tiles, charts, task cards) rather than
+   data tables, so instead of the flush-table pattern they share a common
+   header "hero" treatment and a refined metric-card / section-card system. */
+
+.cockpit-page {
+  --cockpit-glow: radial-gradient(720px 300px at 0% -40%, rgba(232, 120, 46, 0.1), rgba(232, 120, 46, 0) 70%);
+}
+
+/* ---- Hero header ------------------------------------------------------- */
+.cockpit-hero {
+  align-items: center;
+  background:
+    var(--cockpit-glow),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(20, 28, 38, 0.04);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px 18px;
+  position: relative;
+}
+
+.cockpit-hero-main {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.cockpit-hero-icon {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid #ffd8b8;
+  border-radius: 12px;
+  color: #e8782e;
+  display: inline-flex;
+  flex: 0 0 44px;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.cockpit-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.cockpit-hero-title {
+  color: var(--mantine-color-gray-9);
+  font-size: 19px;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.cockpit-hero-subtitle {
+  color: var(--mantine-color-gray-6);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.cockpit-hero-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+/* Count chip in the hero (e.g. "Завдань: 12"). */
+.cockpit-hero-chip {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+  height: 30px;
+  line-height: 1;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.cockpit-hero-chip strong {
+  color: var(--mantine-color-gray-9);
+  font-weight: 760;
+}
+
+.cockpit-hero-action {
+  color: var(--mantine-color-gray-6);
+}
+
+.cockpit-hero-action:hover {
+  background: var(--mantine-color-orange-0);
+  color: #e8782e;
+}
+
+/* ---- Filter bar -------------------------------------------------------- */
+/* A self-contained, padded filter card (NOT the flush table-page strip, which
+   needs overflow:hidden and would clip the selects on a filter-only card).
+   Carries the same warm glow + darkened control styling as the rest of the app. */
+.cockpit-filter {
+  background:
+    var(--cockpit-glow),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(20, 28, 38, 0.04);
+  padding: 12px 14px;
+}
+
+.cockpit-filter .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-7);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.cockpit-filter .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  min-height: 36px;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.cockpit-filter .mantine-Input-input::placeholder {
+  color: var(--mantine-color-gray-6);
+}
+
+.cockpit-filter .mantine-Input-input:hover {
+  border-color: var(--mantine-color-gray-3);
+}
+
+.cockpit-filter .mantine-Input-input:focus,
+.cockpit-filter .mantine-Input-input:focus-within {
+  border-color: rgba(232, 120, 46, 0.58);
+  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+}
+
+/* ---- Metric tiles ------------------------------------------------------ */
+.cockpit-metric {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 13px 15px;
+  position: relative;
+  transition: box-shadow 140ms ease;
+}
+
+.cockpit-metric::before {
+  background: var(--mantine-color-gray-3);
+  bottom: 10px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 10px;
+  width: 3px;
+}
+
+.cockpit-metric.is-brand::before {
+  background: #e8782e;
+}
+
+.cockpit-metric.is-danger::before {
+  background: var(--mantine-color-red-6);
+}
+
+.cockpit-metric.is-success::before {
+  background: #2fbd57;
+}
+
+.cockpit-metric.is-info::before {
+  background: var(--mantine-color-blue-6);
+}
+
+.cockpit-metric:hover {
+  box-shadow: 0 6px 16px rgba(20, 28, 38, 0.06);
+}
+
+.cockpit-metric-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.cockpit-metric-value {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 20px;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-top: 6px;
+}
+
+.cockpit-metric-value.is-danger {
+  color: var(--mantine-color-red-6);
+}
+
+/* Label + status-badge row inside a metric tile. Wraps so a long label and its
+   badge never collide or push out of the tile. */
+.cockpit-metric-head {
+  align-items: center;
+  column-gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 4px;
+}
+
+/* "Факт  / план · %" — big value baseline-aligned with a muted secondary part. */
+.cockpit-target-row {
+  align-items: baseline;
+  column-gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.cockpit-target-row .cockpit-metric-value {
+  margin-top: 0;
+}
+
+.cockpit-target-of {
+  color: var(--mantine-color-gray-5);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.cockpit-metric-sub {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+
+/* ---- Section cards ----------------------------------------------------- */
+.cockpit-section-title {
+  color: var(--mantine-color-gray-8);
+  font-size: 15px;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.cockpit-subtitle {
+  color: var(--mantine-color-gray-7);
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.cockpit-chart-card {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+}
+
+/* ---- Task cards -------------------------------------------------------- */
+.cockpit-task {
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  transition:
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.cockpit-task::before {
+  background: var(--mantine-color-gray-3);
+  bottom: 0;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 4px;
+}
+
+.cockpit-task.is-critical::before {
+  background: var(--mantine-color-red-6);
+}
+
+.cockpit-task.is-high::before {
+  background: #e8782e;
+}
+
+.cockpit-task.is-normal::before {
+  background: var(--mantine-color-blue-5);
+}
+
+.cockpit-task.is-low::before {
+  background: var(--mantine-color-gray-4);
+}
+
+.cockpit-task:hover {
+  box-shadow: 0 8px 20px rgba(20, 28, 38, 0.07);
+  transform: translateY(-1px);
+}
+
+.cockpit-task-title {
+  color: var(--mantine-color-gray-9);
+  font-size: 14px;
+  font-weight: 680;
+  line-height: 1.25;
+}
+
+.cockpit-task-client {
+  color: var(--mantine-color-gray-6);
+  font-size: 12.5px;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
+.cockpit-task-reason {
+  color: var(--mantine-color-gray-7);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ---- Escalated rows ---------------------------------------------------- */
+.cockpit-escalated-row {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: background 140ms ease;
+}
+
+.cockpit-escalated-row:hover {
+  background: var(--mantine-color-orange-0);
+}
+
+.cockpit-escalated-title {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 640;
+  line-height: 1.2;
+}
+
+.cockpit-escalated-client {
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
+/* ---- Team table -------------------------------------------------------- */
+.cockpit-team-table thead th {
+  background: var(--mantine-color-gray-0);
+  color: var(--mantine-color-gray-7);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cockpit-team-table tbody td {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.cockpit-team-manager {
+  color: var(--mantine-color-gray-9);
+  font-weight: 680;
+}
