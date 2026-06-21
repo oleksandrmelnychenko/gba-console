@@ -1,7 +1,7 @@
 import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import {
@@ -20,6 +20,7 @@ import { TaskFilters } from '../components/TaskFilters'
 import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency, HeadPaceStatus } from '../types'
 
 const INBOX_LIMIT = 50
+const POLL_INTERVAL_MS = 60_000
 
 // Inbox ordering: triage by urgency band, then business tier (debt = cash at risk first), then score.
 // Mirrors the gba-nba inbox ordering so the cockpit shows the same queue order.
@@ -81,11 +82,15 @@ export function SalesCockpitPage() {
   const [doneTask, setDoneTask] = useState<CockpitTask | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
+  const busyRef = useRef(false)
+  useEffect(() => {
+    busyRef.current = Boolean(noteTask || snoozeTask || doneTask || pendingTaskKey || isRegenerating)
+  }, [noteTask, snoozeTask, doneTask, pendingTaskKey, isRegenerating])
+
   useEffect(() => {
     const controller = new AbortController()
 
     async function loadInbox() {
-      setLoading(true)
       setError(null)
 
       try {
@@ -98,7 +103,6 @@ export function SalesCockpitPage() {
       } catch (loadError) {
         if (!controller.signal.aborted && !isAbortError(loadError)) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити завдання'))
-          setTasks([])
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -109,7 +113,16 @@ export function SalesCockpitPage() {
 
     void loadInbox()
 
-    return () => controller.abort()
+    const interval = setInterval(() => {
+      if (!busyRef.current) {
+        void loadInbox()
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      controller.abort()
+      clearInterval(interval)
+    }
   }, [reloadKey, setError, setTarget, setTasks, t])
 
   const visibleTasks = useMemo(() => {
@@ -226,6 +239,11 @@ export function SalesCockpitPage() {
     }
   }, [t])
 
+  const handleReload = useCallback(() => {
+    setLoading(true)
+    reload()
+  }, [])
+
   return (
     <Stack gap="md">
       <Card withBorder radius="md" shadow="sm">
@@ -251,7 +269,7 @@ export function SalesCockpitPage() {
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={handleReload}>
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
