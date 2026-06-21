@@ -2,6 +2,12 @@ import type { NavigationMatch, NavigationModule, NavigationNode } from './types'
 
 const wildcardRouteSegments = new Set(['all', 'edit', 'new'])
 const removedNavigationNodeNetUids = new Set(['d27584ab-ac29-4994-b1d1-016af5f073b1'])
+// Frontend label overrides for backend-provided menu items whose names we want
+// to present differently than the source DB label. Keyed by the exact backend
+// label; the override flows into both the side menu and the breadcrumb.
+const navigationLabelOverrides = new Map<string, string>([
+  ['Кокпіт продажів', 'Завдання продажів'],
+])
 const removedNavigationLabelPatterns = [/allegro/i, /poland/i, /польщ/i]
 const removedNavigationRoutePatterns = [
   /^\/?orders\/poland(?:\/|$)/i,
@@ -82,6 +88,7 @@ export function normalizeNavigation(modules: NavigationModule[] | null | undefin
 
     normalizedModules.push({
       ...module,
+      Module: overrideNavigationLabel(module.Module),
       Children: children,
     })
   }
@@ -99,6 +106,7 @@ function normalizeNavigationNodes(nodes: NavigationNode[] | null | undefined): N
 
     normalizedNodes.push({
       ...node,
+      Module: overrideNavigationLabel(node.Module),
       Children: normalizeNavigationNodes(node.Children),
     })
   }
@@ -108,6 +116,10 @@ function normalizeNavigationNodes(nodes: NavigationNode[] | null | undefined): N
 
 export function getModuleKey(module: NavigationModule): string {
   return module.NetUid || String(module.Id)
+}
+
+function overrideNavigationLabel(label: string | undefined): string {
+  return (label && navigationLabelOverrides.get(label)) || label || ''
 }
 
 export function getNavigationNodePath(node: NavigationNode): string {

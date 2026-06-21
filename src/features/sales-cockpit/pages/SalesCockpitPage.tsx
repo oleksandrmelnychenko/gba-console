@@ -243,7 +243,7 @@ export function SalesCockpitPage() {
             <IconTargetArrow size={24} stroke={1.8} />
           </span>
           <div className="cockpit-hero-copy">
-            <h1 className="cockpit-hero-title">{t('Кокпіт продажів')}</h1>
+            <h1 className="cockpit-hero-title">{t('Завдання продажів')}</h1>
             <p className="cockpit-hero-subtitle">{t('Пріоритетна черга завдань на сьогодні')}</p>
           </div>
         </div>
