@@ -1,6 +1,14 @@
+.products-page {
+  /* This page's content (detail card + tabs) is taller than the fixed app frame, so it scrolls
+     here — the layout frame itself is overflow:hidden. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .product-assortment-workspace {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: 272px minmax(0, 1fr);
   align-items: start; /* carousel keeps its own height; right panel resizing won't shake the drum */
   gap: 16px;
   min-height: calc(100vh - 128px);
@@ -319,27 +327,32 @@
 
 .product-inline-title-text {
   display: flex;
+  flex: 1;
   min-width: 0;
   gap: 8px;
   align-items: baseline;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .product-inline-code {
+  flex-shrink: 0;
   font-size: 20px;
-  overflow-wrap: anywhere;
 }
 
 .product-inline-name {
+  flex: 1;
+  min-width: 0;
   color: var(--mantine-color-gray-7);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.25;
-  text-align: right;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-inline-title-actions {
+  flex-shrink: 0;
   max-width: 100%;
 }
 
@@ -348,8 +361,9 @@
 }
 
 .product-inline-main {
+  /* Legacy 3-column layout: image | dense info grid | price list, all in one compact row. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.6fr);
+  grid-template-columns: 250px minmax(0, 1fr) 400px;
   gap: 14px;
   align-items: start;
 }
@@ -360,6 +374,19 @@
 .product-inline-description,
 .product-inline-prices {
   min-width: 0;
+}
+
+.product-inline-info {
+  grid-column: 1;
+}
+
+.product-inline-description {
+  grid-column: 2;
+}
+
+.product-inline-prices {
+  grid-column: 3;
+  max-width: 400px;
 }
 
 .product-inline-primary {
@@ -394,7 +421,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 170px;
+  height: 190px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: #f7f9fa;
@@ -420,7 +447,7 @@
 
 .product-inline-description {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
   align-content: start;
 }
@@ -529,11 +556,26 @@
 
 @media (max-width: 1280px) {
   .product-inline-main {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+    grid-template-columns: 230px minmax(0, 1fr) 320px;
+  }
+
+  .product-inline-description {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1040px) {
+  .product-inline-main {
+    grid-template-columns: 220px minmax(0, 1fr);
   }
 
   .product-inline-prices {
     grid-column: 1 / -1;
+    max-width: 100%;
+  }
+
+  .product-inline-description {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -569,12 +611,18 @@
     grid-template-columns: 1fr;
   }
 
+  .product-inline-info,
+  .product-inline-description,
   .product-inline-prices {
     grid-column: auto;
   }
 
   .product-inline-description {
     grid-template-columns: 1fr;
+  }
+
+  .product-inline-prices {
+    max-width: 100%;
   }
 }
 

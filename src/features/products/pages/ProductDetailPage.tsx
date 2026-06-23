@@ -32,7 +32,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -102,7 +102,6 @@ import {
   formatAmount,
   formatPrice,
   getBooleanBadgeColor,
-  getProductAvailableQty,
   getProductCode,
   getProductGroupNames,
   getProductMainImage,
@@ -647,44 +646,34 @@ export function ProductStockSummary({
 }) {
   const { t } = useI18n()
   const availabilityItems = product.ProductAvailabilities || []
+  // Legacy "Всього" = the sum of the per-warehouse amounts (not a separate aggregate field).
+  const warehousesTotal = availabilityItems.reduce((total, item) => total + (Number(item.Amount) || 0), 0)
 
   return (
     <Stack gap="xs">
-      <Title order={4}>{t('Залишки')}</Title>
       {reservationError && (
         <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {reservationError}
         </Alert>
       )}
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
-        <TotalQtyTile label={t('Усього доступно')} value={getProductAvailableQty(product)} />
-        <TotalQtyTile label={t('Україна')} value={product.AvailableQtyUk} />
-        <TotalQtyTile label={t('Україна ПДВ')} value={product.AvailableQtyUkVAT} />
-        <TotalQtyTile label={t('У дорозі')} value={product.AvailableQtyRoad} />
-        <TotalQtyTile label={`${t('Резерв в корзині')} UK`} value={reservation.TotalCartReservedUK} />
-        <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} />
-        <TotalQtyTile label={t('В рахунках в Україні')} value={reservation.TotalReservedUK} />
-        <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
+        {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
-        {reservation.SupplyOrderUkraineCartItem && (
-          <TotalQtyTile label={t('В кошику постачання Україна')} value={reservation.SupplyOrderUkraineCartItem.ReservedQty} />
-        )}
+        <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
+        <TotalQtyTile label={t('В рахунках в Україні')} value={reservation.TotalReservedUK} />
+        <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} />
+        <TotalQtyTile label={`${t('Резерв в корзині')} UK`} value={reservation.TotalCartReservedUK} />
+        {/* Dynamic per-warehouse list (ProductAvailabilities). */}
+        {availabilityItems.map((availability, index) => (
+          <ProductAvailabilityPlacementRow
+            availability={availability}
+            key={`${availability.StorageId || availability.Storage?.Name || index}`}
+            onProductSaved={onProductSaved}
+          />
+        ))}
+        {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
+        <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
       </SimpleGrid>
-
-      {availabilityItems.length > 0 && (
-        <>
-          <Divider my={4} />
-          <Stack gap={6}>
-            {availabilityItems.map((availability, index) => (
-              <ProductAvailabilityPlacementRow
-                availability={availability}
-                key={`${availability.StorageId || availability.Storage?.Name || index}`}
-                onProductSaved={onProductSaved}
-              />
-            ))}
-          </Stack>
-        </>
-      )}
     </Stack>
   )
 }
@@ -700,29 +689,23 @@ function ProductAvailabilityPlacementRow({
   const placements = availability.Storage?.ProductPlacements || []
   const hasPlacements = placements.length > 0
   const content = (
-    <Group
-      justify="space-between"
-      gap="sm"
-      wrap="nowrap"
+    <Box
       style={{
+        background: 'var(--mantine-color-gray-0)',
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
         cursor: hasPlacements ? 'pointer' : 'default',
-        padding: '6px 8px',
+        minWidth: 0,
+        padding: '8px 10px',
       }}
     >
-      <Box style={{ minWidth: 0 }}>
-        <Text size="sm" fw={600} lineClamp={1}>
-          {displayValue(availability.Storage?.Name)}
-        </Text>
-        <Text size="xs" c="dimmed" lineClamp={1}>
-          {displayValue(availability.Storage?.Organization?.Name)}
-        </Text>
-      </Box>
-      <Text size="sm" fw={700}>
+      <Text size="xs" c="dimmed" lineClamp={1} title={displayValue(availability.Storage?.Name)}>
+        {displayValue(availability.Storage?.Name)}
+      </Text>
+      <Text size="md" fw={700}>
         {formatAmount(availability.Amount)}
       </Text>
-    </Group>
+    </Box>
   )
 
   if (!hasPlacements) {
@@ -1787,6 +1770,12 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   )
 }
 
+// Same grid design as the clients table: pinned key columns + hidden density/layout controls.
+const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
+  columnPinning: { left: ['document', 'number'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
 function ProductMovementPanel({ product }: { product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
@@ -1800,7 +1789,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
   const [isLoading, setLoading] = useState(false)
   const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
   const [isExporting, setExporting] = useState(false)
-  const { density, toggleDensity } = useDataTableDensity('product-movement', 'normal')
+  const { density } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -1913,7 +1902,6 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="light" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
       <Group gap="md" wrap="wrap" align="center">
         {movementItemTypeOptions.map((option) => (
@@ -1934,14 +1922,17 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <DataTable
           columns={movementColumns}
           data={rows}
+          defaultLayout={PRODUCT_MOVEMENT_DEFAULT_LAYOUT}
           density={density}
           emptyText={t('Рух товару не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
           isLoading={isLoading}
-          layoutVersion="product-movement-1"
+          layoutVersion="product-movement-2"
           loadingText={t('Завантаження руху товару')}
-          maxHeight="calc(100vh - 320px)"
+          height="calc(100vh - 320px)"
           minWidth={1640}
+          showDensityToggle={false}
+          showLayoutControls={false}
           tableId="product-movement"
         />
       )}

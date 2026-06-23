@@ -28,8 +28,6 @@ import {
   IconAlertCircle,
   IconArrowsExchange,
   IconBox,
-  IconChevronLeft,
-  IconChevronRight,
   IconClipboardList,
   IconDeviceFloppy,
   IconDownload,
@@ -52,6 +50,7 @@ import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer,
 import { useSearchParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { translate } from '../../../shared/i18n/translate'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
@@ -826,7 +825,7 @@ export function ProductsPage() {
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" className="products-page">
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
@@ -847,8 +846,6 @@ export function ProductsPage() {
           selectedProduct={selectedProduct}
           topProducts={topProducts}
           onKeyDown={handleCarouselKeyDown}
-          onNext={selectNextProduct}
-          onPrevious={selectPreviousProduct}
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
@@ -890,8 +887,6 @@ function ProductAssortmentCarousel({
   isSelectionMode,
   isVirtualLoad,
   onKeyDown,
-  onNext,
-  onPrevious,
   onSearchDraftChange,
   onSearchModeChange,
   onSortModeChange,
@@ -910,8 +905,6 @@ function ProductAssortmentCarousel({
   isSelectionMode: boolean
   isVirtualLoad: boolean
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
-  onNext: () => void
-  onPrevious: () => void
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
@@ -928,38 +921,32 @@ function ProductAssortmentCarousel({
   const { t } = useI18n()
 
   return (
-    <Box className="product-assortment-carousel" role="region" tabIndex={0} onKeyDown={onKeyDown}>
+    <Box className="product-assortment-column" role="region" tabIndex={0} onKeyDown={onKeyDown}>
       <Group justify="space-between" className="product-assortment-carousel-header">
         <Text size="xs" c="dimmed" fw={600}>
           {t('Весь асортимент')}
         </Text>
-        <Group gap={6}>
-          <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
-          <Tooltip label={t('Попередній товар')}>
-            <ActionIcon
-              aria-label={t('Попередній товар')}
-              color="gray"
-              disabled={isLoading}
-              variant="light"
-              onClick={onPrevious}
-            >
-              <IconChevronLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Наступний товар')}>
-            <ActionIcon
-              aria-label={t('Наступний товар')}
-              color="gray"
-              disabled={isLoading}
-              variant="light"
-              onClick={onNext}
-            >
-              <IconChevronRight size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Group>
 
+      <Group gap={6} grow mb="xs">
+        <Select
+          aria-label={t('Поле пошуку')}
+          size="xs"
+          data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
+          value={searchMode}
+          onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
+        />
+        <Select
+          aria-label={t('Сортування')}
+          size="xs"
+          data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
+          value={sortMode}
+          onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
+        />
+      </Group>
+
+      <Box className="product-assortment-carousel">
       <Box className="product-assortment-rail product-assortment-rail-top">
         {isLoading && !isVirtualLoad ? (
           <Stack align="center" justify="center" h="100%">
@@ -988,34 +975,16 @@ function ProductAssortmentCarousel({
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
         ) : (
-          <Stack gap={6}>
-            <TextInput
-              autoFocus
-              aria-label={t('Введіть товар')}
-              leftSection={<IconSearch size={17} />}
-              placeholder={t('Введіть артикул або назву товару')}
-              size="md"
-              value={searchDraft}
-              className="product-assortment-search-input"
-              onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-            />
-            <Group gap={6} grow>
-              <Select
-                aria-label={t('Поле пошуку')}
-                size="xs"
-                data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
-                value={searchMode}
-                onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
-              />
-              <Select
-                aria-label={t('Сортування')}
-                size="xs"
-                data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
-                value={sortMode}
-                onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
-              />
-            </Group>
-          </Stack>
+          <TextInput
+            autoFocus
+            aria-label={t('Введіть товар')}
+            leftSection={<IconSearch size={17} />}
+            placeholder={t('Введіть артикул або назву товару')}
+            size="md"
+            value={searchDraft}
+            className="product-assortment-search-input"
+            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+          />
         )}
       </Box>
 
@@ -1032,6 +1001,7 @@ function ProductAssortmentCarousel({
             <Loader size="xs" />
           </Group>
         ) : null}
+      </Box>
       </Box>
     </Box>
   )
@@ -1097,12 +1067,14 @@ function ProductInlineView({
 
   return (
     <Box className="product-inline-view">
-      <Group align="flex-start" justify="space-between" gap="sm" className="product-inline-title">
+      <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
         <Box className="product-inline-title-text">
           <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
-          <Text component="span" fw={650} className="product-inline-name">{getProductTitle(product)}</Text>
+          <Tooltip label={getProductTitle(product)} multiline maw={420} withinPortal>
+            <Text component="span" fw={650} truncate className="product-inline-name">{getProductTitle(product)}</Text>
+          </Tooltip>
         </Box>
-        <Group gap="xs" justify="flex-end" className="product-inline-title-actions">
+        <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-title-actions">
           <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
@@ -1171,14 +1143,12 @@ function ProductInlineView({
         </Box>
 
         <Box className="product-inline-prices">
-          <Group justify="space-between" mb="xs">
-            <Text fw={700}>{t('Тип ціни')}</Text>
-            <Group gap="lg">
-              <Text c="dimmed" size="sm">{t('EUR')}</Text>
-              <Text c="dimmed" size="sm">{t('UAH')}</Text>
-            </Group>
+          <Group gap="sm" mb="xs" wrap="nowrap">
+            <Text fw={700} style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
+            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('EUR')}</Text>
+            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('UAH')}</Text>
           </Group>
-          <Stack gap={4}>
+          <Stack gap={2}>
             {prices.length > 0 ? (
               prices.map((price, index) => (
                 <ProductInlinePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
@@ -1221,20 +1191,18 @@ function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
 
   return (
     <Box className="product-inline-price-row">
-      <Group justify="space-between" gap="sm" wrap="nowrap">
-        <Text size="sm" lineClamp={1}>{displayValue(breakdown.pricingName)}</Text>
-        <Group gap="md" wrap="nowrap">
-          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceEUR)}</Text>
-          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceLocal)}</Text>
-        </Group>
+      <Group gap="sm" wrap="nowrap">
+        <Text size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>{displayValue(breakdown.pricingName)}</Text>
+        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
+        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
       </Group>
       {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
-        <Group gap={6} mt={4} wrap="wrap">
+        <Group gap={6} mt={1} wrap="wrap">
           {breakdown.hasBasePrice ? (
-            <Text c="dimmed" size="xs">{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+            <Text c="dimmed" lh={1.1} style={{ fontSize: 10 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
           ) : null}
           {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 10 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
           ) : null}
           {breakdown.discountRate !== undefined ? (
             <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
@@ -3237,10 +3205,15 @@ function getNextSearchedProducts(product: Product): Product[] {
 
 function copyToClipboard(value: string) {
   if (!value || !navigator.clipboard) {
+    notifications.show({ color: 'red', message: translate('Не вдалося скопіювати') })
+
     return
   }
 
-  void navigator.clipboard.writeText(value)
+  void navigator.clipboard.writeText(value).then(
+    () => notifications.show({ color: 'green', message: `${value} — ${translate('скопійовано')}` }),
+    () => notifications.show({ color: 'red', message: translate('Не вдалося скопіювати') }),
+  )
 }
 
 function getTodayDate(): string {
