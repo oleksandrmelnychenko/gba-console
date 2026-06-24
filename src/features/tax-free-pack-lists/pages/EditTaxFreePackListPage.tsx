@@ -17,6 +17,7 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -467,7 +468,7 @@ export function EditTaxFreePackListPage() {
             </ActionIcon>
           </Tooltip>
           {!packList?.IsSent && (
-            <Button disabled={isDirty || (packList?.TaxFrees || []).length === 0} onClick={sendPackList}>
+            <Button color={CREATE_ACTION_COLOR} disabled={isDirty || (packList?.TaxFrees || []).length === 0} onClick={sendPackList}>
               {t('Провести')}
             </Button>
           )}
@@ -480,7 +481,7 @@ export function EditTaxFreePackListPage() {
         </Alert>
       )}
 
-      <Card withBorder radius="md">
+      <Card withBorder radius="md" className="app-section-card">
         <Stack>
           {packList?.IsSent ? (
             <SimpleGrid cols={{ base: 1, md: 4 }}>
@@ -558,7 +559,7 @@ export function EditTaxFreePackListPage() {
               {isDirty && (
                 <Group>
                   <Button variant="subtle" onClick={cancelChanges}>{t('Скасувати')}</Button>
-                  <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => persistPackList()}>
+                  <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => persistPackList()}>
                     {t('Зберегти')}
                   </Button>
                 </Group>
@@ -569,7 +570,7 @@ export function EditTaxFreePackListPage() {
       </Card>
 
       <div className="tax-free-pack-list-edit-grid">
-        <Card withBorder radius="md" className="tax-free-pack-list-source-card">
+        <Card withBorder radius="md" className="app-section-card tax-free-pack-list-source-card">
           <Stack>
             <Group justify="space-between">
               <Title order={4}>{packList?.IsFromSale ? t('Позиції продажу') : t('Позиції замовлення')}</Title>
@@ -637,7 +638,7 @@ export function EditTaxFreePackListPage() {
           </Tooltip>
         </div>
 
-        <Card withBorder radius="md" className="tax-free-pack-list-tax-frees-card">
+        <Card withBorder radius="md" className="app-section-card tax-free-pack-list-tax-frees-card">
           <Stack>
             <Group justify="space-between">
               <Title order={4}>{t('Tax Free')}</Title>

@@ -28,6 +28,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import type { DataTableColumn, DataTableDensity } from '../../../shared/ui/data-table/types'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { SpreadsheetCellValue, SpreadsheetSheet } from '../types'
 import {
   buildDateFileSuffix,
@@ -120,10 +121,10 @@ export function ReportsSalePage() {
         </Badge>
       </Group>
 
-      <Card withBorder radius="md" padding="md">
+      <Card withBorder radius="md" padding="md" className="app-section-card">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-            <Button component="label" leftSection={<IconUpload size={16} />} loading={isLoading}>
+            <Button color={CREATE_ACTION_COLOR} component="label" leftSection={<IconUpload size={16} />} loading={isLoading}>
               {t('Завантажити файл')}
               <input
                 accept=".csv,.tsv,.txt,.xlsx,.xls"
@@ -184,7 +185,7 @@ export function ReportsSalePage() {
       {error ? <Alert color="red" icon={<IconAlertCircle size={18} />}>{error}</Alert> : null}
 
       {activeSheet ? (
-        <Card withBorder radius="md" padding="md">
+        <Card withBorder radius="md" padding="md" className="app-section-card">
           <div>
             <div className="pill-tabs" style={{ width: 'fit-content' }}>
               {sheets.map((sheet) => (
@@ -207,7 +208,7 @@ export function ReportsSalePage() {
           </div>
         </Card>
       ) : (
-        <Card withBorder radius="md" padding="xl">
+        <Card withBorder radius="md" padding="xl" className="app-section-card">
           <Text c="dimmed" ta="center">{t('Завантажте CSV/TSV/TXT файл для перегляду')}</Text>
         </Card>
       )}

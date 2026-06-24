@@ -1368,7 +1368,7 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
       />
       <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={!selectedRole}
           leftSection={<IconPlus size={16} />}
           size="xs"
@@ -4351,7 +4351,7 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
         }}
       />
       <Button
-        color="violet"
+        color={CREATE_ACTION_COLOR}
         disabled={!selectedTransporterType}
         leftSection={<IconPlus size={16} />}
         size="xs"

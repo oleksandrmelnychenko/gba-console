@@ -35,6 +35,7 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -645,7 +646,7 @@ function BasketCartWorkflow() {
   )
   const destinationToolbarRight = useMemo(
     () => (
-      <Button disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+      <Button color={CREATE_ACTION_COLOR} disabled={!destinationItems.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
         {isCreatingDocument ? t('Створення') : t('Створити')}
       </Button>
     ),
@@ -675,7 +676,7 @@ function BasketCartWorkflow() {
         </Alert>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
           <Group align="end" justify="space-between" wrap="wrap">
             <SimpleGrid className="basket-supply-filters" cols={{ base: 1, md: 3 }} spacing="sm">
@@ -763,7 +764,7 @@ function BasketCartWorkflow() {
         </Button>
       </Group>
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
           <DataTable
             columns={destinationColumns}
@@ -820,7 +821,7 @@ function BasketCartWorkflow() {
               <Button color="gray" disabled={isCreatingDocument} variant="light" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
-              <Button loading={isCreatingDocument} onClick={createDocument}>
+              <Button color={CREATE_ACTION_COLOR} loading={isCreatingDocument} onClick={createDocument}>
                 {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
@@ -844,7 +845,7 @@ function BasketCartWorkflow() {
             <Button disabled={isUpdatingReserve} variant="subtle" onClick={() => setReserveItem(null)}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isUpdatingReserve} onClick={saveReserveQty}>
+            <Button color={CREATE_ACTION_COLOR} loading={isUpdatingReserve} onClick={saveReserveQty}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -1184,7 +1185,7 @@ function SalesWorkflowTab() {
         </Alert>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
@@ -1262,7 +1263,7 @@ function SalesWorkflowTab() {
         </Button>
       </Group>
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
           <DataTable
             columns={destinationColumns}
@@ -1290,7 +1291,7 @@ function SalesWorkflowTab() {
               </Group>
             }
             toolbarRight={
-              <Button disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!destinationSales.length} loading={isCreatingDocument} onClick={() => setCreateModalOpen(true)}>
                 {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             }
@@ -1319,7 +1320,7 @@ function SalesWorkflowTab() {
               <Button color="gray" disabled={isCreatingDocument} variant="light" onClick={closeCreateModal}>
                 {t('Скасувати')}
               </Button>
-              <Button loading={isCreatingDocument} onClick={createSalesDocument}>
+              <Button color={CREATE_ACTION_COLOR} loading={isCreatingDocument} onClick={createSalesDocument}>
                 {isCreatingDocument ? t('Створення') : t('Створити')}
               </Button>
             </Group>
@@ -1437,7 +1438,7 @@ function RecommendationsTab() {
         </Alert>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <DataTable
           columns={columns}
           data={recommendations}

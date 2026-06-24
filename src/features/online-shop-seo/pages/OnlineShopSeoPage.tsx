@@ -1960,7 +1960,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePageEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2035,7 +2035,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 {t('Скасувати')}
               </Button>
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 disabled={isImageUploading}
                 leftSection={<IconDeviceFloppy size={16} />}
                 loading={isSaving}
@@ -2093,7 +2093,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePriorityEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
