@@ -44,6 +44,7 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
+import './accounting-cash-flow-page.css'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import type {
@@ -450,7 +451,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   )
 
   return (
-    <Stack gap="lg">
+    <Stack className="cash-flow-page" gap="sm">
       <Group justify="space-between" align="end" gap="sm">
         <Text c="dimmed" size="sm">
           {counterpartyName || t('Завантаження контрагента')}
@@ -545,7 +546,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md" className="app-section-card">
+      <Card withBorder radius="md" padding="xs" className="app-section-card cash-flow-page__grid-card">
         <CashFlowGrid
           items={items}
           leadColumns={leadColumns}
@@ -556,7 +557,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           isLoading={isCashFlowLoading}
           isRowActive={(item) => item === selectedItem}
           loadingText={t('Завантаження руху коштів')}
-          maxHeight="calc(100vh - 430px)"
+          maxHeight="100%"
           renderRowBadge={renderRowBadge}
           onRowClick={handleCashFlowRowClick}
         />
