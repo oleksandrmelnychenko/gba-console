@@ -118,7 +118,7 @@ export function SalesByClientChart() {
   const periodFormatter = useMemo(() => createPeriodFormatter(typePeriod), [typePeriod])
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="md">
         <Group align="end" gap="sm" wrap="wrap">
           <Autocomplete

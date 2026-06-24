@@ -32,6 +32,7 @@ import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -435,6 +436,7 @@ export function SupplyUkraineOrderOverviewPage() {
           </Stack>
           {canManageDocuments && order && (
             <Button
+              color="gray"
               disabled={isSavingDocuments}
               leftSection={<IconFileUpload size={16} />}
               variant="light"
@@ -445,6 +447,7 @@ export function SupplyUkraineOrderOverviewPage() {
           )}
           {canOpenPlacement && id && !order?.IsPlaced && (
             <Button
+              color="gray"
               disabled={isSavingDocuments || isSavingVat || isSavingVatItems}
               leftSection={<IconPackageImport size={16} />}
               variant="light"
@@ -462,7 +465,7 @@ export function SupplyUkraineOrderOverviewPage() {
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Text fw={700}>{t('Замовлення')}</Text>
@@ -501,6 +504,7 @@ export function SupplyUkraineOrderOverviewPage() {
             />
             {canCalculateVat && (
               <Button
+                color={CREATE_ACTION_COLOR}
                 leftSection={<IconCalculator size={16} />}
                 disabled={!order || isSavingVat || isSavingVatItems}
                 loading={isSavingVat}
@@ -514,7 +518,7 @@ export function SupplyUkraineOrderOverviewPage() {
       </Card>
 
       {canManageDocuments && (
-        <Card withBorder radius="md" padding="md">
+        <Card className="app-section-card" withBorder radius="md" padding="md">
           <Stack gap="md">
             <Group justify="space-between" align="center">
               <Stack gap={2}>
@@ -522,7 +526,7 @@ export function SupplyUkraineOrderOverviewPage() {
               </Stack>
               <Group gap="xs">
                 {order && (
-                  <Button disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
+                  <Button color="gray" disabled={isSavingDocuments} leftSection={<IconFileUpload size={16} />} variant="light" onClick={openDocumentsModal}>
                     {t('Завантажити')}
                   </Button>
                 )}
@@ -543,7 +547,7 @@ export function SupplyUkraineOrderOverviewPage() {
         </Card>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="flex-end">
             <Stack gap={2}>
@@ -553,6 +557,7 @@ export function SupplyUkraineOrderOverviewPage() {
               {hasVatItemChanges && (
                 <Group gap="xs">
                   <Button
+                    color={CREATE_ACTION_COLOR}
                     leftSection={<IconDeviceFloppy size={16} />}
                     disabled={isSavingVatItems}
                     loading={isSavingVatItems}
@@ -600,7 +605,7 @@ export function SupplyUkraineOrderOverviewPage() {
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Group gap="xl" justify="flex-end" wrap="wrap">
           <TotalValue label={t('Управлінські витрати')} value={formatMoney(readNumber(orderRecord.TotalDeliveryExpenseAmount))} />
           <TotalValue label={t('Бухгалтерські витрати')} value={formatMoney(readNumber(orderRecord.TotalAccountingDeliveryExpenseAmount))} />
@@ -640,7 +645,7 @@ export function SupplyUkraineOrderOverviewPage() {
             <Button color="gray" disabled={isSavingDocuments} variant="light" onClick={() => setDocumentsCloseConfirmOpened(false)}>
               {t('Залишитися')}
             </Button>
-            <Button color="red" disabled={isSavingDocuments} onClick={closeDocumentsModal}>
+            <Button color="red" disabled={isSavingDocuments} variant="light" onClick={closeDocumentsModal}>
               {t('Закрити без збереження')}
             </Button>
           </Group>

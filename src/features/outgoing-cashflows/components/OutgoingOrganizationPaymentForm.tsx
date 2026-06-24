@@ -17,6 +17,7 @@ import { type FormEvent, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowOrganizations,
@@ -438,7 +439,7 @@ export function OutgoingOrganizationPaymentForm({ onCancel, onCreated }: Outgoin
                 {t('Скасувати')}
               </Button>
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 disabled={isLoading || isResolving || isSaving}
                 leftSection={<IconDeviceFloppy size={16} />}
                 loading={isSaving}

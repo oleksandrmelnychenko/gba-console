@@ -9,6 +9,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportProductIncomeDocument,
@@ -162,7 +163,7 @@ function SupplyOrderProductPlacementContent({
             {t('Назад')}
           </Button>
           {firstUkraineItem && income?.NetUid && (
-            <Button loading={isExporting} variant="light" onClick={() => void handleExport()}>
+            <Button color={CREATE_ACTION_COLOR} loading={isExporting} onClick={() => void handleExport()}>
               {t('Експорт')}
             </Button>
           )}
@@ -183,7 +184,7 @@ function SupplyOrderProductPlacementContent({
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Title order={4}>{firstUkraineItem ? t('Замовлення Україна') : t('Замовлення постачальника')}</Title>
@@ -214,7 +215,7 @@ function SupplyOrderProductPlacementContent({
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Title order={4}>{t('Позиції')}</Title>
@@ -236,7 +237,7 @@ function SupplyOrderProductPlacementContent({
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Group gap="xl" justify="flex-end" wrap="wrap">
           <TotalValue label={t('Всього товарів')} value={rows.length} />
           <TotalValue label={t('Всього кількість')} value={formatAmount(packingList?.TotalQuantity || income?.TotalQty)} />

@@ -42,6 +42,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   createSupplyCreditNote,
@@ -637,7 +638,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             {t('Оновити')}
           </Button>
           {order && !order.IsApproved && canApproveOrder && (
-            <Button leftSection={<IconCheck size={16} />} loading={isSaving} variant="light" onClick={approveOrder}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
               {t('Погодити')}
             </Button>
           )}
@@ -701,8 +702,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     transportationType === String(order.TransportationType ?? 0) ||
                     Boolean(order.IsOrderShipped)
                   }
+                  color={CREATE_ACTION_COLOR}
                   loading={isSaving}
-                  variant="light"
                   onClick={saveTransportationType}
                 >
                   {t('Зберегти')}
@@ -731,7 +732,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     <Button color="gray" disabled={isSaving} variant="light" onClick={cancelAmountEdit}>
                       {t('Скасувати')}
                     </Button>
-                    <Button loading={isSaving} variant="light" onClick={saveAmount}>
+                    <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveAmount}>
                       {t('Оновити')}
                     </Button>
                   </Group>
@@ -818,7 +819,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
       <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}>
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button loading={isSaving} variant="light" onClick={openCreditNoteModal}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={openCreditNoteModal}>
               {t('Створити')}
             </Button>
           </Group>
@@ -921,7 +922,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Button color="gray" disabled={isSaving} variant="light" onClick={closeCreditNoteModal}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isSaving} variant="light" onClick={() => void saveCreditNote()}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveCreditNote()}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -953,7 +954,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Button color="gray" disabled={isSaving} variant="light" onClick={closeStatusModal}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isSaving} variant="light" onClick={saveDocumentStatus}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveDocumentStatus}>
               {t('Зберегти')}
             </Button>
           </Group>

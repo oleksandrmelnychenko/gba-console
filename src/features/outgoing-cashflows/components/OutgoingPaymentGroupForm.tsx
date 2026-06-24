@@ -22,6 +22,7 @@ import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createIncomeCashflowPaymentMovement,
   getIncomeCashflowClientAgreements,
@@ -651,7 +652,7 @@ export function OutgoingPaymentGroupForm({ onCancel, onCreated }: OutgoingPaymen
                 {t('Назад')}
               </Button>
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 disabled={isLoading || isResolvingCounterparty || isSaving}
                 leftSection={<IconDeviceFloppy size={16} />}
                 loading={isSaving}

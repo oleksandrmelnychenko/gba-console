@@ -45,6 +45,7 @@ import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
@@ -1143,7 +1144,7 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="products" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <DataTable
           columns={model.orderItemColumns}
           data={model.orderRows}
@@ -1165,7 +1166,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="invoices" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <InvoiceSelector model={model} />
           {model.selectedInvoice && <InvoiceDocumentsSummary invoice={model.selectedInvoice} />}
@@ -1192,6 +1193,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               />
               <Group justify="flex-end">
                 <Button
+                  color={CREATE_ACTION_COLOR}
                   disabled={
                     model.isBusy
                     || !model.canEditInvoice
@@ -1297,7 +1299,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="packlists" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <PackListSelector model={model} />
           <QuantityBalanceSummary
@@ -1318,6 +1320,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               </Button>
             )}
             <Button
+              color={CREATE_ACTION_COLOR}
               disabled={
                 model.isBusy
                 || !model.canAddPackList
@@ -1518,7 +1521,7 @@ function InvoiceUploadModal({
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </Group>
       </Stack>
     </AppModal>
@@ -1595,7 +1598,7 @@ function PackListUploadModal({
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </Group>
       </Stack>
     </AppModal>
@@ -1742,7 +1745,7 @@ function InvoiceMetadataModalBody({
       <Divider />
       <Group justify="flex-end">
         <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-        <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
       </Group>
     </Stack>
   )
@@ -1871,7 +1874,7 @@ function PackListMetadataModalBody({
         <Divider />
         <Group justify="flex-end">
           <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
         </Group>
     </Stack>
   )
@@ -2441,7 +2444,7 @@ function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageMode
                 {editingPaymentIndex !== null && (
                   <Button disabled={isDisabled} variant="subtle" onClick={resetPaymentDraft}>{t('Скасувати')}</Button>
                 )}
-                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
+                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
                   {t('Зберегти')}
                 </Button>
               </Group>
@@ -2548,7 +2551,7 @@ function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageMode
                 {editingInformationIndex !== null && (
                   <Button disabled={isDisabled} variant="subtle" onClick={resetInformationDraft}>{t('Скасувати')}</Button>
                 )}
-                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
+                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
                   {t('Зберегти')}
                 </Button>
               </Group>

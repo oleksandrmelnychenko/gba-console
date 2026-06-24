@@ -98,7 +98,7 @@ export function ManagerSalesByTopNXView() {
   const rows = useMemo<SalesChartsTopNXRow[]>(() => flattenReport(report, t('Всього')), [report, t])
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="md">
         <Group align="end" gap="sm" wrap="wrap">
           <TextInput

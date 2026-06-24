@@ -15,6 +15,13 @@
   overflow: hidden;
 }
 
+/* Branded content card for forms / detail sections — the «Продажі» card look at
+   natural (content) height, no flex-fill. Put on a <Card withBorder radius="md">
+   (Mantine supplies the border + md radius; this adds the soft brand shadow). */
+.app-section-card {
+  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
+}
+
 /* ---- Canonical card shell (= the reference .sales-ukraine-card) ---- */
 /* Shared subset. .console-table-shell is a raw <div>, so it additionally
    supplies the border/background/radius the Mantine <Card> variants get from

@@ -8,6 +8,7 @@ import {
   Text,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -234,7 +235,7 @@ export function ProductGroupDetailPage() {
             {t('Скасувати')}
           </Button>
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             disabled={!formProductGroup || !isEdited}
             form="product-group-edit-form"
             leftSection={<IconDeviceFloppy size={16} />}
@@ -263,7 +264,7 @@ export function ProductGroupDetailPage() {
         </Card>
       ) : formProductGroup ? (
         <form id="product-group-edit-form" onSubmit={handleSubmit}>
-          <Card withBorder radius="md" padding="md">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
             <ProductGroupForm
               disabled={isSaving}
               isLoadingRootGroups={isLoadingRootGroups}
@@ -282,7 +283,7 @@ export function ProductGroupDetailPage() {
       )}
 
       {productGroup?.NetUid && (
-        <Card withBorder radius="md" padding="md">
+        <Card className="app-section-card" withBorder radius="md" padding="md">
           <div className="pill-tabs" style={{ width: 'fit-content', marginBottom: 'var(--mantine-spacing-md)' }}>
             {([
               { value: 'subGroups', label: t('Підгрупи') },

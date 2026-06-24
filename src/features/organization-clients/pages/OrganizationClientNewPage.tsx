@@ -169,7 +169,7 @@ export function OrganizationClientNewPage() {
         )}
 
         <form id="organization-client-new-form" onSubmit={handleSubmit}>
-          <Stack gap="lg">
+          <Stack gap="md">
             <OrganizationClientForm client={client} disabled={isSaving} onFieldChange={setField} />
 
             <OrganizationClientAgreementsPanel

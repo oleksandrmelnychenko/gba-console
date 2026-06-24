@@ -798,7 +798,7 @@ export function ConsumableOrderFormPage() {
                 {visibleItems.length}
               </Badge>
             </Group>
-            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} type="button" variant="light" onClick={openNewItemEditor}>
+            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} type="button" variant="default" onClick={openNewItemEditor}>
               {t('Додати')}
             </Button>
           </Group>
@@ -1045,10 +1045,10 @@ export function ConsumableOrderFormPage() {
           </SimpleGrid>
 
           <Group justify="flex-end">
-            <Button color="gray" disabled={isMutationLocked} leftSection={<IconX size={16} />} variant="light" onClick={closeItemEditor}>
+            <Button disabled={isMutationLocked} leftSection={<IconX size={16} />} variant="default" onClick={closeItemEditor}>
               {t('Скасувати')}
             </Button>
-            <Button disabled={isMutationLocked} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
+            <Button color={CREATE_ACTION_COLOR} disabled={isMutationLocked} leftSection={<IconDeviceFloppy size={16} />} onClick={() => void saveEditorItem()}>
               {t('Зберегти')}
             </Button>
           </Group>

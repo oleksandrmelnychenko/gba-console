@@ -160,7 +160,7 @@ export function HeadDashboardPage() {
       </header>
 
       {forbidden ? (
-        <Card withBorder radius="md" padding="xl">
+        <Card className="app-section-card" withBorder radius="md" padding="xl">
           <Text c="dimmed" fw={600} ta="center">
             {t('Доступ лише для керівника відділу')}
           </Text>
@@ -205,13 +205,13 @@ export function HeadDashboardPage() {
               </Text>
             </Group>
           ) : rows.length === 0 ? (
-            <Card withBorder radius="md" padding="xl">
+            <Card className="app-section-card" withBorder radius="md" padding="xl">
               <Text c="dimmed" fw={600} ta="center">
                 {t('Немає менеджерів для відображення')}
               </Text>
             </Card>
           ) : (
-            <Card withBorder radius="md" padding={0}>
+            <Card className="app-section-card" withBorder radius="md" padding={0}>
               <Table.ScrollContainer minWidth={960}>
                 <Table className="cockpit-team-table" highlightOnHover striped withColumnBorders>
                   <Table.Thead>
@@ -263,7 +263,7 @@ export function HeadDashboardPage() {
             </Card>
           )}
 
-          <Card withBorder radius="md" shadow="sm">
+          <Card className="app-section-card" withBorder radius="md">
             <Stack gap="sm">
               <Group gap="xs">
                 <Text className="cockpit-section-title">{t('Ескальовані задачі')}</Text>

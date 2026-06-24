@@ -13,6 +13,7 @@ import {
   Title,
 } from '@mantine/core'
 import { AppModal } from "../../../shared/ui/AppModal"
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { notifications } from '@mantine/notifications'
 import { IconAlertCircle, IconCheck, IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
@@ -806,7 +807,7 @@ export function ClientNewPage() {
               {visibleSteps.indexOf(currentStep) === visibleSteps.length - 1 ? (
                 <Button
                   type="submit"
-                  color="violet"
+                  color={CREATE_ACTION_COLOR}
                   disabled={!isPricingValid || isLoadingRegionCode || Boolean(regionCodeError)}
                   leftSection={<IconCheck size={16} />}
                   loading={isSaving}
@@ -815,7 +816,7 @@ export function ClientNewPage() {
                 </Button>
               ) : (
                 <Button
-                  color="violet"
+                  color={CREATE_ACTION_COLOR}
                   rightSection={<IconChevronRight size={16} />}
                   disabled={currentStep === 'role' && !draft.ClientInRole.ClientTypeRole}
                   onClick={goNext}

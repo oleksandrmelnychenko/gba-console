@@ -52,7 +52,7 @@ export function RetailIncompleteSalePage() {
 
   return (
     <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           {netUid && error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">

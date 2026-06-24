@@ -55,6 +55,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
@@ -398,7 +399,7 @@ export function ProductDetailPage() {
       {product && (
         <>
           <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="sm">
                 {mainImage?.ImageUrl ? (
                   <button
@@ -442,7 +443,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Основне')}</Title>
                 <InfoRow label="Код" value={getProductCode(product)} />
@@ -454,7 +455,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
                 <ProductStockSummary
                   product={product}
                   reservation={reservation}
@@ -465,7 +466,7 @@ export function ProductDetailPage() {
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Опис')}</Title>
                 <InfoRow label="Опис" value={product.DescriptionUA || product.Description} multiline />
@@ -474,7 +475,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Параметри')}</Title>
                 <InfoRow label="Вага" value={formatAmount(product.Weight)} />
@@ -488,7 +489,7 @@ export function ProductDetailPage() {
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Ціни')}</Title>
                 <InfoRow label="EUR" value={formatPrice(product.CurrentPrice)} />
@@ -505,7 +506,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Номери')}</Title>
                 {originalNumbers.length > 0 ? (
@@ -921,7 +922,7 @@ function ProductPlacementEditor({
               <Button size="xs" color="gray" variant="light" disabled={isSaving} onClick={cancelEditing}>
                 {t('Скасувати')}
               </Button>
-              <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
+              <Button size="xs" color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -1105,7 +1106,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
           <Switch checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
         </Group>
         <Group justify="flex-end">
-          <Button type="submit" loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
+          <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1230,7 +1231,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           <Button variant="light" color="gray" leftSection={<IconRefresh size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1530,7 +1531,7 @@ function ProductSpecificationPanel({
               </SimpleGrid>
               <Group justify="flex-end">
                 <Button
-                  color="violet"
+                  color={CREATE_ACTION_COLOR}
                   leftSection={<IconDeviceFloppy size={16} />}
                   loading={isSaving}
                   onClick={() => void saveSpecification()}
@@ -2263,7 +2264,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         ) : null}
         <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
         <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
+        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
           {t('Додати')}
         </Button>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />

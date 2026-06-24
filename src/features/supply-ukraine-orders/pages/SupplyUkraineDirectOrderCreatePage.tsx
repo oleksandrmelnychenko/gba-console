@@ -521,7 +521,7 @@ function OrderDetailsSection({
   const { t } = useI18n()
 
   return (
-    <Stack gap="sm">
+    <Stack gap="md">
       <Text fw={600}>{t('Замовлення')}</Text>
       <TextInput
         disabled={isLoading || isSaving}
@@ -617,7 +617,7 @@ function ImportConfigurationSection({
   const { t } = useI18n()
 
   return (
-    <Stack gap="sm">
+    <Stack gap="md">
       <Text fw={600}>{t('Імпорт')}</Text>
       <FileInput
         clearable

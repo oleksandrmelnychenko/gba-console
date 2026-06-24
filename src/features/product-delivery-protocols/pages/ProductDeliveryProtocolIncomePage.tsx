@@ -36,6 +36,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import { getDirectSupplyOrderById } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
@@ -1814,7 +1815,7 @@ function ProtocolIncomeSummaryCard({ model, source }: ProductIncomePageSectionPr
   const currencyCode = model.protocol?.ClientAgreement?.Agreement?.Currency?.Code || '-'
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Group gap="xl" wrap="wrap">
         <Stack gap={2}>
           <Text c="dimmed" size="xs">
@@ -1869,7 +1870,7 @@ function PlacedProductIncomeCard({ isPlaced, model }: { isPlaced: boolean; model
   }
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Group gap="xl" wrap="wrap">
         <Stack gap={2}>
           <Text c="dimmed" size="xs">
@@ -1929,7 +1930,7 @@ function ProductIncomeControlsCard({
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Group justify="space-between" align="end" wrap="wrap">
         <Group gap="sm" align="end">
           <Select
@@ -2048,7 +2049,7 @@ function ProductIncomeControlsCard({
               {t('Скасувати')}
             </Button>
           )}
-          <Button disabled={!canUseIncome || !model.isDirty || model.isSaving} loading={model.isSaving} onClick={model.handleSave}>
+          <Button color={CREATE_ACTION_COLOR} disabled={!canUseIncome || !model.isDirty || model.isSaving} loading={model.isSaving} onClick={model.handleSave}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -2075,7 +2076,7 @@ function ProductIncomeGridCard({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="md">
         <TextInput
           label={t('Пошук')}

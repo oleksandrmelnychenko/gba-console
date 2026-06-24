@@ -151,7 +151,7 @@ export function ManagerSalesByTopView() {
   const rows = useMemo<SalesChartsManagerTopRow[]>(() => buildRows(report, t('Всього')), [report, t])
 
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="md">
         <Group align="end" gap="sm" wrap="wrap">
           <Select

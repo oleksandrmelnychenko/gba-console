@@ -26,6 +26,7 @@ import { formatLocalDate, formatLocalInputDateTime } from '../../../shared/date/
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getProtocolByNetId } from '../api/productDeliveryProtocolsApi'
 import { searchSupplyOrganizations } from '../api/protocolDetailApi'
@@ -951,16 +952,15 @@ export function ProductDeliveryProtocolSpecificationPage() {
             </Alert>
           )}
 
-          <Card withBorder radius="md" padding="md">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <Group justify="flex-end" gap="xs">
                 {canUpload && (
                   <Button
-                    color="violet"
+                    color={CREATE_ACTION_COLOR}
                     disabled={model.isActionBusy}
                     leftSection={<IconFileImport size={16} />}
                     loading={model.isUploading}
-                    variant="light"
                     onClick={() => model.setUploadOpen(true)}
                   >
                     {t('Завантаження митних кодів')}
