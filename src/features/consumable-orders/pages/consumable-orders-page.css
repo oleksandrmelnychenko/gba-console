@@ -174,7 +174,7 @@
 }
 
 .consumable-orders-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -240,7 +240,7 @@
 
 .consumable-orders-row:hover::before,
 .consumable-orders-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .consumable-orders-document-cell {

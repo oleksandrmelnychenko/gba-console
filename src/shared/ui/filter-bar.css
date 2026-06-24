@@ -19,7 +19,7 @@
    natural (content) height, no flex-fill. Put on a <Card withBorder radius="md">
    (Mantine supplies the border + md radius; this adds the soft brand shadow). */
 .app-section-card {
-  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
+  box-shadow: var(--app-card-shadow);
 }
 
 /* ---- Canonical card shell (= the reference .sales-ukraine-card) ---- */
@@ -29,7 +29,7 @@
 .app-data-card,
 .sales-ukraine-card,
 .console-table-shell {
-  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
+  box-shadow: var(--app-card-shadow);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -51,9 +51,7 @@
 .sales-filter-bar,
 .console-table-command-bar {
   position: relative;
-  background:
-    radial-gradient(640px 280px at 0% -35%, rgba(var(--brand-orange-rgb), 0.09), rgba(var(--brand-orange-rgb), 0) 68%),
-    var(--mantine-color-white);
+  background: var(--app-filter-glow), var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-3);
   padding: 9px 10px 10px;
 }
@@ -133,6 +131,6 @@
 .sales-filter-period-menu .mantine-Input-input:focus-within,
 .console-table-command-bar .mantine-Input-input:focus,
 .console-table-command-bar .mantine-Input-input:focus-within {
-  border-color: rgba(var(--brand-orange-rgb), 0.58);
-  box-shadow: 0 0 0 2px rgba(var(--brand-orange-rgb), 0.1);
+  border-color: var(--app-focus-border);
+  box-shadow: var(--app-focus-ring);
 }

@@ -8,7 +8,7 @@
    header "hero" treatment and a refined metric-card / section-card system. */
 
 .cockpit-page {
-  --cockpit-glow: radial-gradient(720px 300px at 0% -40%, rgba(232, 120, 46, 0.1), rgba(232, 120, 46, 0) 70%);
+  --cockpit-glow: radial-gradient(720px 300px at 0% -40%, rgba(var(--brand-orange-rgb), 0.1), rgba(var(--brand-orange-rgb), 0) 70%);
 }
 
 /* ---- Hero header ------------------------------------------------------- */
@@ -39,7 +39,7 @@
   background: var(--mantine-color-orange-0);
   border: 1px solid #ffd8b8;
   border-radius: 12px;
-  color: #e8782e;
+  color: var(--brand-orange);
   display: inline-flex;
   flex: 0 0 44px;
   height: 44px;
@@ -106,7 +106,7 @@
 
 .cockpit-hero-action:hover {
   background: var(--mantine-color-orange-0);
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 /* ---- Filter bar -------------------------------------------------------- */
@@ -150,8 +150,8 @@
 
 .cockpit-filter .mantine-Input-input:focus,
 .cockpit-filter .mantine-Input-input:focus-within {
-  border-color: rgba(232, 120, 46, 0.58);
-  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
+  border-color: rgba(var(--brand-orange-rgb), 0.58);
+  box-shadow: 0 0 0 2px rgba(var(--brand-orange-rgb), 0.1);
 }
 
 /* ---- Metric tiles ------------------------------------------------------ */
@@ -176,7 +176,7 @@
 }
 
 .cockpit-metric.is-brand::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .cockpit-metric.is-danger::before {
@@ -307,7 +307,7 @@
 }
 
 .cockpit-task.is-high::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .cockpit-task.is-normal::before {

@@ -57,7 +57,7 @@
     linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
     var(--mantine-color-white);
   border-color: var(--mantine-color-orange-2) !important;
-  box-shadow: 0 5px 16px rgba(232, 120, 46, 0.14);
+  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
   color: var(--mantine-color-orange-9) !important;
 }
 

@@ -100,7 +100,7 @@
 }
 
 .suppliers-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.56;
 }
@@ -163,7 +163,7 @@
 
 .suppliers-row:hover::before,
 .suppliers-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .suppliers-row:last-child {
@@ -189,14 +189,14 @@
 .suppliers-row:focus-visible .suppliers-name-marker {
   background: var(--mantine-color-orange-0);
   border-color: var(--mantine-color-orange-2);
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 .suppliers-row:hover .suppliers-actions-button,
 .suppliers-row:focus-visible .suppliers-actions-button {
   background: var(--mantine-color-orange-0);
   border-color: var(--mantine-color-orange-2);
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 .suppliers-list-state {
@@ -370,7 +370,7 @@
 }
 
 .suppliers-resident-cell::before {
-  background: #e8782e;
+  background: var(--brand-orange);
   border-radius: 999px;
   content: '';
   display: inline-block;

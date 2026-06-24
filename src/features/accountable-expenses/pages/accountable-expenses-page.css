@@ -185,7 +185,7 @@
 }
 
 .accountable-expenses-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -251,7 +251,7 @@
 
 .accountable-expenses-row:hover::before,
 .accountable-expenses-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .accountable-expenses-document-cell {

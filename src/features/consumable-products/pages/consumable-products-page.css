@@ -95,7 +95,7 @@
     linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
     var(--mantine-color-white);
   border-color: var(--mantine-color-orange-2);
-  box-shadow: 0 5px 16px rgba(232, 120, 46, 0.14);
+  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
   color: var(--mantine-color-orange-9);
   padding-left: 10px;
 }
@@ -122,7 +122,7 @@
 }
 
 .consumable-products-nav-item.is-active .consumable-products-category-button__count {
-  border-color: rgba(232, 120, 46, 0.22);
+  border-color: rgba(var(--brand-orange-rgb), 0.22);
   color: #d95f16;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .consumable-category-panel__header::after {
-  background: #e8782e;
+  background: var(--brand-orange);
   border: 3px solid var(--mantine-color-white);
   border-radius: 999px;
   bottom: -4px;
@@ -246,7 +246,7 @@
 }
 
 .consumable-products-roster-sort__direction {
-  color: #e8782e;
+  color: var(--brand-orange);
   font-size: 10px;
   line-height: 1;
 }

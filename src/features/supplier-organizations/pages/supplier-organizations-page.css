@@ -172,7 +172,7 @@
 }
 
 .supplier-organizations-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -238,7 +238,7 @@
 
 .supplier-organizations-row:hover::before,
 .supplier-organizations-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .supplier-organizations-name-cell,

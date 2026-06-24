@@ -22,9 +22,7 @@
 
 .list-tree-item {
   align-items: center;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 252, 0.96)),
-    var(--mantine-color-white);
+  background: var(--app-surface-gradient), var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 7px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
@@ -46,17 +44,15 @@
 .list-tree-item:has(.list-tree-item-select:focus-visible),
 .list-tree-item:has(.list-tree-item-action:focus-visible) {
   border-color: var(--mantine-color-gray-4);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  box-shadow: var(--app-row-hover-shadow);
   outline: 0;
   transform: translateX(4px);
 }
 
 .list-tree-item.is-selected {
-  background:
-    linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
-    var(--mantine-color-white);
+  background: var(--app-surface-selected), var(--mantine-color-white);
   border-color: var(--mantine-color-orange-2);
-  box-shadow: 0 5px 16px rgba(232, 120, 46, 0.14);
+  box-shadow: var(--app-selected-shadow);
 }
 
 .list-tree-item-select {

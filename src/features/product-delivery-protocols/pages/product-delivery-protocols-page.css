@@ -190,7 +190,7 @@
 }
 
 .product-delivery-protocols-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -255,7 +255,7 @@
 
 .product-delivery-protocols-row:hover::before,
 .product-delivery-protocols-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .product-delivery-protocols-main-cell,

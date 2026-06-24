@@ -164,7 +164,7 @@
 }
 
 .new-sale-return-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -228,7 +228,7 @@
   background:
     linear-gradient(90deg, rgba(255, 250, 245, 0.96), rgba(255, 250, 245, 0.48) 42%, transparent),
     var(--mantine-color-white);
-  border-color: rgba(232, 120, 46, 0.24);
+  border-color: rgba(var(--brand-orange-rgb), 0.24);
   box-shadow: 0 10px 24px rgba(20, 28, 38, 0.07);
   transform: translateX(3px);
   z-index: 1;
@@ -236,7 +236,7 @@
 
 .new-sale-return-row:hover::before,
 .new-sale-return-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .new-sale-return-row.is-canceled {
@@ -268,8 +268,8 @@
 
 .new-sale-return-document-marker {
   background: #fff4ea;
-  border: 1px solid rgba(232, 120, 46, 0.24);
-  color: #e8782e;
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.24);
+  color: var(--brand-orange);
 }
 
 .new-sale-return-avatar {

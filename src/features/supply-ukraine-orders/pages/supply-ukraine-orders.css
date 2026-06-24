@@ -224,7 +224,7 @@
 }
 
 .supply-orders-grid-row::before {
-  background: #e8782e;
+  background: var(--brand-orange);
   border-radius: 999px;
   bottom: 10px;
   content: '';
@@ -242,7 +242,7 @@
 
 .supply-orders-grid-row::after {
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.055), transparent 34%),
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.055), transparent 34%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.74), transparent);
   content: '';
   inset: 0;
@@ -263,8 +263,8 @@
 .supply-orders-grid-row.is-expanded {
   background: #fffdfb;
   box-shadow:
-    inset 0 1px 0 rgba(232, 120, 46, 0.08),
-    inset 0 -1px 0 rgba(232, 120, 46, 0.08);
+    inset 0 1px 0 rgba(var(--brand-orange-rgb), 0.08),
+    inset 0 -1px 0 rgba(var(--brand-orange-rgb), 0.08);
 }
 
 .supply-orders-grid-row:hover {
@@ -297,7 +297,7 @@
 
 .supply-orders-grid-expand {
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.03), transparent 34%),
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.03), transparent 34%),
     var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   min-width: 1280px;
@@ -365,7 +365,7 @@
 }
 
 .supply-invoices-expand-item::before {
-  background: #e8782e;
+  background: var(--brand-orange);
   border-radius: 999px;
   bottom: 10px;
   content: '';
@@ -401,8 +401,8 @@
 
 .supply-invoices-expand-item:hover {
   box-shadow:
-    inset 0 1px 0 rgba(232, 120, 46, 0.08),
-    inset 0 -1px 0 rgba(232, 120, 46, 0.08);
+    inset 0 1px 0 rgba(var(--brand-orange-rgb), 0.08),
+    inset 0 -1px 0 rgba(var(--brand-orange-rgb), 0.08);
   transform: translateX(3px);
 }
 
@@ -446,7 +446,7 @@
 }
 
 .supply-invoice-label {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   font-size: 12px;
   font-weight: 700;
@@ -524,7 +524,7 @@
 .supply-order-control-cell.is-toUkraine .supply-order-control-icon {
   background: #fff8f2;
   border-color: #ffd8bd;
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 .supply-order-control-cell.is-direct .supply-order-control-icon {

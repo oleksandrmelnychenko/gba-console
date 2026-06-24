@@ -117,7 +117,7 @@
 }
 
 .console-table-page .data-table-sort-icon {
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 .console-table-page .data-table-sort-icon[data-sorted='false'] {
@@ -182,7 +182,7 @@
 }
 
 .console-table-page .data-table-row:hover .data-table-cell:first-child {
-  border-left-color: #e8782e;
+  border-left-color: var(--brand-orange);
 }
 
 .console-table-page .data-table-row:hover {

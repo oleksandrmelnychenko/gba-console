@@ -124,7 +124,7 @@
 }
 
 .sales-debtors-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -194,7 +194,7 @@
 
 .sales-debtors-row:hover::before,
 .sales-debtors-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .sales-debtors-region-cell {
@@ -344,7 +344,7 @@
 .sales-debtors-days-cell.is-warning span {
   background: var(--mantine-color-orange-0);
   border-color: #ffd8b8;
-  color: #e8782e;
+  color: var(--brand-orange);
 }
 
 .sales-debtors-list-state {
