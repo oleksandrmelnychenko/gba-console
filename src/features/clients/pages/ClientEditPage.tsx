@@ -595,7 +595,7 @@ export function ClientEditPage() {
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
       position="right"
-      size="min(980px, 100vw)"
+      size="90vw"
       onClose={closeSheet}
       footer={
         <ClientEditActions

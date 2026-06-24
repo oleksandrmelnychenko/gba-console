@@ -1,72 +1,104 @@
-import { Alert, Button, Group, Loader, Stack, Text, UnstyledButton } from '@mantine/core'
-import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { Alert, Button, Group, Loader, Stack, Text } from '@mantine/core'
+import { IconAlertCircle, IconPlus, IconUser, IconUsersGroup } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
+import { TreeView, type TreeViewNode } from '../../../../shared/ui/tree/TreeView'
 import { getClientSubClients } from '../../api/clientCabinetApi'
-import type { Client, ClientSubClient } from '../../types'
+import type { Client } from '../../types'
 
 export type SubClientsPanelProps = {
   client: Client
 }
 
-function getSubClientName(client?: Client): string {
-  return client?.FullName?.trim() || client?.Name?.trim() || ''
-}
-
+/**
+ * Sub-client structure as a lazily-loaded expand/collapse tree (the reusable
+ * tree pattern). The current client's direct sub-clients are the top level;
+ * each node lazy-loads its own sub-clients on expand.
+ */
 export function SubClientsPanel({ client }: SubClientsPanelProps) {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const netId = client.NetUid
-  const [subClients, setSubClients] = useValueState<ClientSubClient[]>(client.SubClients || [])
+  const [rootChildren, setRootChildren] = useValueState<Client[]>(() => extractSubClients(client))
+  const [childrenByKey, setChildrenByKey] = useValueState<Record<string, Client[]>>({})
+  const [loadingKeys, setLoadingKeys] = useValueState<ReadonlySet<string>>(() => new Set())
+  const [loadedKeys, setLoadedKeys] = useValueState<ReadonlySet<string>>(() => new Set())
   const [isLoading, setLoading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
 
   useEffect(() => {
+    if (!netId) {
+      return
+    }
+
     let cancelled = false
+    setLoading(true)
+    setError(null)
 
-    async function loadSubClients() {
-      if (!netId) {
-        return
-      }
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        const items = await getClientSubClients(netId)
-
+    void getClientSubClients(netId)
+      .then((items) => {
         if (!cancelled) {
-          setSubClients(items)
+          setRootChildren(items.reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), []))
         }
-      } catch (loadError) {
+      })
+      .catch((loadError: unknown) => {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити субклієнтів'))
-          setSubClients([])
+          setRootChildren([])
         }
-      } finally {
+      })
+      .finally(() => {
         if (!cancelled) {
           setLoading(false)
         }
-      }
-    }
-
-    void loadSubClients()
+      })
 
     return () => {
       cancelled = true
     }
-  }, [netId, setSubClients, setLoading, setError, t])
+  }, [netId, setError, setLoading, setRootChildren, t])
 
-  function openSubClient(subClientNetId?: string) {
-    if (!subClientNetId) {
-      return
-    }
+  const loadChildren = useCallback(
+    (subNetId: string) => {
+      if (!subNetId || loadedKeys.has(subNetId) || loadingKeys.has(subNetId)) {
+        return
+      }
+      setLoadingKeys((current) => new Set(current).add(subNetId))
 
-    navigate(`/clients/edit/${subClientNetId}`)
-  }
+      void getClientSubClients(subNetId)
+        .then((links) => {
+          setChildrenByKey((current) => ({
+            ...current,
+            [subNetId]: links.reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), []),
+          }))
+        })
+        .catch(() => {
+          setChildrenByKey((current) => ({ ...current, [subNetId]: current[subNetId] || [] }))
+        })
+        .finally(() => {
+          setLoadedKeys((current) => new Set(current).add(subNetId))
+          setLoadingKeys((current) => {
+            const next = new Set(current)
+            next.delete(subNetId)
+            return next
+          })
+        })
+    },
+    [loadedKeys, loadingKeys, setChildrenByKey, setLoadedKeys, setLoadingKeys],
+  )
+
+  const openSubClient = useCallback(
+    (subClientNetId?: string) => {
+      if (subClientNetId) {
+        navigate(`/clients/edit/${subClientNetId}`)
+      }
+    },
+    [navigate],
+  )
 
   function openNewUser() {
     navigate('/clients/new/role', {
@@ -80,17 +112,34 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
     })
   }
 
+  const buildNode = useCallback(
+    function build(subClient: Client): TreeViewNode {
+      const key = subClient.NetUid || String(subClient.Id || '')
+      const loaded = loadedKeys.has(key)
+      const childClients = childrenByKey[key] || []
+
+      return {
+        id: key,
+        label: getSubClientName(subClient, t),
+        meta: getSubClientMeta(subClient),
+        icon: childClients.length > 0 ? <IconUsersGroup size={15} /> : <IconUser size={15} />,
+        hasChildren: loaded ? childClients.length > 0 : true,
+        loading: loadingKeys.has(key),
+        onExpand: () => loadChildren(key),
+        onActivate: () => openSubClient(subClient.NetUid),
+        children: childClients.map(build),
+      }
+    },
+    [childrenByKey, loadChildren, loadedKeys, loadingKeys, openSubClient, t],
+  )
+
+  const nodes = useMemo(() => rootChildren.map(buildNode), [buildNode, rootChildren])
+
   return (
     <Stack gap="sm">
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Субклієнти')}</Text>
-        <Button
-          color="violet"
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          variant="light"
-          onClick={openNewUser}
-        >
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openNewUser}>
           {t('Новий користувач')}
         </Button>
       </Group>
@@ -103,50 +152,31 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
 
       {isLoading ? (
         <Group justify="center" py="md">
-          <Loader color="violet" size="sm" />
+          <Loader size="sm" />
           <Text c="dimmed" size="sm">
             {t('Завантаження')}
           </Text>
         </Group>
-      ) : subClients.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          {t('Субклієнтів не додано')}
-        </Text>
       ) : (
-        <Stack gap="xs">
-          {subClients.map((subClient, index) => {
-            const sub = subClient.SubClient
-
-            return (
-              <UnstyledButton
-                key={subClient.NetUid || sub?.NetUid || index}
-                p="sm"
-                style={{
-                  border: '1px solid var(--mantine-color-default-border)',
-                  borderRadius: 'var(--mantine-radius-sm)',
-                }}
-                onClick={() => openSubClient(sub?.NetUid)}
-              >
-                <Group justify="space-between" align="flex-start" wrap="nowrap">
-                  <Stack gap={2}>
-                    <Text fw={500}>{getSubClientName(sub) || t('Без назви')}</Text>
-                    {sub?.EmailAddress && (
-                      <Text c="dimmed" size="sm">
-                        {sub.EmailAddress}
-                      </Text>
-                    )}
-                  </Stack>
-                  {sub?.Abbreviation && (
-                    <Text c="dimmed" size="sm">
-                      {sub.Abbreviation}
-                    </Text>
-                  )}
-                </Group>
-              </UnstyledButton>
-            )
-          })}
-        </Stack>
+        <TreeView defaultExpandedDepth={0} emptyText={t('Субклієнтів не додано')} nodes={nodes} />
       )}
     </Stack>
   )
+}
+
+function extractSubClients(client: Client): Client[] {
+  return (client.SubClients || []).reduce<Client[]>((acc, link) => (link.SubClient ? [...acc, link.SubClient] : acc), [])
+}
+
+function getSubClientName(client: Client, t: (value: string) => string): string {
+  return (
+    client.FullName?.trim()
+    || client.Name?.trim()
+    || [client.LastName, client.FirstName, client.MiddleName].filter(Boolean).join(' ').trim()
+    || t('Без назви')
+  )
+}
+
+function getSubClientMeta(client: Client): string {
+  return [client.RegionCode?.Value, client.EmailAddress, client.Abbreviation].filter(Boolean).join(' · ')
 }
