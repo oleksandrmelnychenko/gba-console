@@ -1,0 +1,22 @@
+/* Shared paginator pill — the canonical «Продажі» control cluster.
+   Mirrors .sales-filter-toolbar > .mantine-Group-root: a compact gray-0 pill
+   holding the page-size select, the "стор. N" label, prev/next chevrons and an
+   optional refresh. Drop it into a filter bar's right-hand actions zone
+   (.app-filter-actions) or anywhere a paginator is needed. */
+.app-paginator {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+}
+
+.app-paginator-label {
+  color: var(--mantine-color-dark-5);
+  font-weight: 700;
+  padding: 0 4px;
+  white-space: nowrap;
+}

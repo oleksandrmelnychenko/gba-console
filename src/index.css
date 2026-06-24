@@ -13,6 +13,13 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Brand accent (the «Продажі» orange). Use rgba(var(--brand-orange-rgb), a)
+     for tints/glows/focus rings, or var(--brand-orange) for the solid color.
+     Single source of truth — replaces the #e8782e / rgba(232,120,46,*) literals
+     scattered across feature CSS. */
+  --brand-orange: #e8782e;
+  --brand-orange-rgb: 232, 120, 46;
 }
 
 html,
