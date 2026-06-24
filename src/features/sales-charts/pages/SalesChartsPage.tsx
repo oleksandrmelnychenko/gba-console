@@ -1,5 +1,6 @@
 import { Stack, Tabs } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { ManagerSalesByTopNXView } from '../components/ManagerSalesByTopNXView'
 import { ManagerSalesByTopView } from '../components/ManagerSalesByTopView'
 import { SalesByClientChart } from '../components/SalesByClientChart'
@@ -9,7 +10,7 @@ export function SalesChartsPage() {
 
   return (
     <Stack gap="lg">
-      <Tabs defaultValue="topNX" keepMounted={false}>
+      <Tabs color={CREATE_ACTION_COLOR} defaultValue="topNX" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="topNX">Top N-X</Tabs.Tab>
           <Tabs.Tab value="sales">{t('Продажі')}</Tabs.Tab>

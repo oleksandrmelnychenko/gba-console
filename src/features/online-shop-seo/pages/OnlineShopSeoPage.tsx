@@ -25,6 +25,7 @@ import {
   IconBuilding,
   IconBuildingWarehouse,
   IconCheck,
+  IconChevronRight,
   IconCreditCard,
   IconDeviceFloppy,
   IconFileText,
@@ -1579,11 +1580,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 <button
                   key={tab.value}
                   type="button"
-                  className={`seo-page-nav-item${activeTab === tab.value ? ' is-active' : ''}`}
+                  className={`seo-page-nav-item online-shop-seo-nav-item${activeTab === tab.value ? ' is-active' : ''}`}
                   aria-pressed={activeTab === tab.value}
                   onClick={() => setActiveTab(tab.value)}
                 >
-                  {t(tab.label)}
+                  <span className="online-shop-seo-nav-item-label">{t(tab.label)}</span>
+                  <IconChevronRight className="online-shop-seo-nav-item-chevron" size={16} stroke={2} aria-hidden />
                 </button>
               ))}
             </div>
