@@ -133,6 +133,10 @@ import './products.css'
 
 const PAGE_SIZE = 20
 const VIRTUAL_PAGE_SIZE = 10
+// The server-driven menu links the «Весь асортимент» tab to /products?netId=assortment.
+// "assortment" is a tab sentinel, NOT a product NetUid, so it must not be treated as a
+// product deep-link (which would fail with «Товар не знайдено»).
+const ROUTE_ASSORTMENT_SENTINEL = 'assortment'
 const SEARCH_DEBOUNCE_MS = 250
 const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
 const DEFAULT_SORT_MODE: ProductSortMode = '2'
@@ -301,7 +305,10 @@ type ProductPlacementStorageCorrectionStateUpdater = (
 export function ProductsPage() {
   const { t } = useI18n()
   const [urlSearchParams, setUrlSearchParams] = useSearchParams()
-  const routeProductNetId = urlSearchParams.get('netId')?.trim() || ''
+  const rawRouteProductNetId = urlSearchParams.get('netId')?.trim() || ''
+  // Ignore the «Весь асортимент» tab sentinel so the page opens in its normal search-ready
+  // state instead of trying to load a product named "assortment".
+  const routeProductNetId = rawRouteProductNetId === ROUTE_ASSORTMENT_SENTINEL ? '' : rawRouteProductNetId
   const [topProducts, setTopProducts] = useValueState<Product[]>([])
   const [bottomProducts, setBottomProducts] = useValueState<Product[]>([])
   const [selectedProduct, setSelectedProduct] = useValueState<Product | null>(null)
