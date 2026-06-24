@@ -26,6 +26,7 @@ import { ExcelIcon } from '../../../../shared/ui/ExcelIcon'
 import { useMemo, useReducer } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
@@ -222,7 +223,7 @@ export function ClientAgreementsPanel({
         <Text fw={600}>{t('Договори')}</Text>
         {canEdit && (
           <Button
-            color="violet"
+            color={CREATE_ACTION_COLOR}
             leftSection={<IconPlus size={16} />}
             size="xs"
             variant="light"
@@ -341,7 +342,7 @@ export function ClientAgreementsPanel({
                   {t('Скасувати')}
                 </Button>
                 <Button
-                  color="violet"
+                  color={CREATE_ACTION_COLOR}
                   leftSection={<IconCheck size={16} />}
                   loading={isSaving}
                   onClick={handleSave}
@@ -436,8 +437,8 @@ function BuyerAgreementItem({
       radius="md"
       style={{
         cursor: 'pointer',
-        borderColor: isHighlighted ? 'var(--mantine-color-violet-5)' : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-violet-0)' : undefined,
+        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
+        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
       }}
       onClick={onClick}
     >
@@ -554,8 +555,8 @@ function ProviderAgreementItem({
       radius="md"
       style={{
         cursor: 'pointer',
-        borderColor: isHighlighted ? 'var(--mantine-color-violet-5)' : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-violet-0)' : undefined,
+        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
+        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
       }}
       onClick={onClick}
     >

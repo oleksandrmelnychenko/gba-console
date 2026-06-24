@@ -1,3 +1,17 @@
+/* Card top «hero»: code + client name + status / type badges + Active switch.
+   A light brand wash — a warm orange corner glow over white — anchors the card
+   the same way the «Продажі» filter strips do. */
+.client-edit-hero {
+  background:
+    radial-gradient(620px 220px at 0% -45%, rgba(var(--brand-orange-rgb), 0.08), rgba(var(--brand-orange-rgb), 0) 70%),
+    var(--mantine-color-white);
+}
+
+.client-edit-hero-code {
+  color: var(--mantine-color-orange-7);
+  letter-spacing: 0.02em;
+}
+
 /* Left step-nav (rail) styled as the «Ролі» polished list items: gradient
    cards, a translate-on-hover lift, and an orange-tinted selected state. */
 .client-edit-nav {

@@ -183,18 +183,23 @@ export function SalesPanel({ netId }: SalesPanelProps) {
 
   return (
     <Stack gap="md">
-      <Group gap="sm" align="flex-end" wrap="wrap">
-        <DateFilter
-          label={t('Дата з')}
-          value={fromKey}
-          onChange={(value) => setFromDate(parseDateInputValue(value, fromDate))}
-        />
-        <DateFilter
-          label={t('Дата по')}
-          value={toKey}
-          onChange={(value) => setToDate(parseDateInputValue(value, toDate, true))}
-        />
-      </Group>
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="sm">
+          <Text fw={600}>{t('Період')}</Text>
+          <Group gap="sm" align="flex-end" wrap="wrap">
+            <DateFilter
+              label={t('Дата з')}
+              value={fromKey}
+              onChange={(value) => setFromDate(parseDateInputValue(value, fromDate))}
+            />
+            <DateFilter
+              label={t('Дата по')}
+              value={toKey}
+              onChange={(value) => setToDate(parseDateInputValue(value, toDate, true))}
+            />
+          </Group>
+        </Stack>
+      </Card>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -210,7 +215,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
           </Text>
         </Group>
       ) : sales.length === 0 ? (
-        <Card withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding="lg">
           <Text c="dimmed" size="sm" ta="center">
             {t('Продажів не знайдено')}
           </Text>
@@ -559,7 +564,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
         {t('Редагування продажу доступне у застосунку менеджера продажів')}
       </Alert>
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="xs">
           <DetailRow label={t('Номер')} value={displayValue(sale.SaleNumber?.Value)} />
           <DetailRow label={t('Статус')} value={getLifeCycleLabel(sale.BaseLifeCycleStatus?.SaleLifeCycleType, t)} />
@@ -572,7 +577,7 @@ function SaleEditDetail({ sale }: { sale: Sale }) {
         </Stack>
       </Card>
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Text fw={600} mb="xs">
           {t('Товари')}
         </Text>
@@ -592,7 +597,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
   return (
     <Stack gap="md">
       {sale.Transporter && (
-        <Card withBorder padding="md" radius="md">
+        <Card className="app-section-card" withBorder padding="md" radius="md">
           <Group gap="sm">
             <ThemeIcon color="violet" radius="sm" variant="light">
               <IconTruckDelivery size={18} />
@@ -602,7 +607,7 @@ function SaleCarrierDetail({ sale }: { sale: Sale }) {
         </Card>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="xs">
           <DetailRow label={t('Номер')} value={displayValue(sale.SaleNumber?.Value)} />
           <DetailRow label={t('Дата')} value={formatDateTime(sale.ShipmentDate || sale.Created)} />

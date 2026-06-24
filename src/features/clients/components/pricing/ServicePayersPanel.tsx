@@ -1,5 +1,6 @@
-import { Button, Group, Stack, Text, UnstyledButton } from '@mantine/core'
+import { Button, Card, Group, Stack, Text, UnstyledButton } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { IconPlus } from '@tabler/icons-react'
 import { useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -60,58 +61,62 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
   }
 
   return (
-    <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Text fw={600}>{t('Платники')}</Text>
-        <Button
-          color="violet"
-          disabled={disabled}
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          variant="light"
-          onClick={openNew}
-        >
-          {t('Додати')}
-        </Button>
-      </Group>
-
-      {payers.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          {t('Платників не додано')}
-        </Text>
-      ) : (
-        <Stack gap="xs">
-          {payers.map((payer, index) => (
-            <UnstyledButton
-              key={payer.NetUid || payer.Id || index}
+    <>
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="center">
+            <Text fw={600}>{t('Платники')}</Text>
+            <Button
+              color={CREATE_ACTION_COLOR}
               disabled={disabled}
-              p="sm"
-              style={{
-                border: '1px solid var(--mantine-color-default-border)',
-                borderRadius: 'var(--mantine-radius-sm)',
-              }}
-              onClick={() => openEdit(index)}
+              leftSection={<IconPlus size={16} />}
+              size="xs"
+              variant="light"
+              onClick={openNew}
             >
-              <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <Stack gap={2}>
-                  <Text fw={500}>{getFullName(payer) || t('Без імені')}</Text>
-                  {payer.PaymentAddress && (
-                    <Text c="dimmed" size="sm">
-                      {payer.PaymentAddress}
-                    </Text>
-                  )}
-                </Stack>
-                <Stack gap={0} align="flex-end">
-                  <Text c="dimmed" size="xs">
-                    {t('Рахунок')}
-                  </Text>
-                  <Text size="sm">{payer.PaymentCard}</Text>
-                </Stack>
-              </Group>
-            </UnstyledButton>
-          ))}
+              {t('Додати')}
+            </Button>
+          </Group>
+
+          {payers.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {t('Платників не додано')}
+            </Text>
+          ) : (
+            <Stack gap="xs">
+              {payers.map((payer, index) => (
+                <UnstyledButton
+                  key={payer.NetUid || payer.Id || index}
+                  disabled={disabled}
+                  p="sm"
+                  style={{
+                    border: '1px solid var(--mantine-color-default-border)',
+                    borderRadius: 'var(--mantine-radius-sm)',
+                  }}
+                  onClick={() => openEdit(index)}
+                >
+                  <Group justify="space-between" align="flex-start" wrap="nowrap">
+                    <Stack gap={2}>
+                      <Text fw={500}>{getFullName(payer) || t('Без імені')}</Text>
+                      {payer.PaymentAddress && (
+                        <Text c="dimmed" size="sm">
+                          {payer.PaymentAddress}
+                        </Text>
+                      )}
+                    </Stack>
+                    <Stack gap={0} align="flex-end">
+                      <Text c="dimmed" size="xs">
+                        {t('Рахунок')}
+                      </Text>
+                      <Text size="sm">{payer.PaymentCard}</Text>
+                    </Stack>
+                  </Group>
+                </UnstyledButton>
+              ))}
+            </Stack>
+          )}
         </Stack>
-      )}
+      </Card>
 
       <AppModal
         centered
@@ -127,6 +132,6 @@ export function ServicePayersPanel({ payers, disabled = false, onChange }: Servi
           onSubmit={handleSubmit}
         />
       </AppModal>
-    </Stack>
+    </>
   )
 }

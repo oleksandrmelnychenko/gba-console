@@ -13,6 +13,7 @@ import {
 import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import {
@@ -168,52 +169,54 @@ export function DeliveryRecipientsPanel({
   }
 
   return (
-    <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Text fw={600}>{t('Отримувачі доставки')}</Text>
-        <Button
-          color="violet"
-          disabled={isBusy}
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          variant="light"
-          onClick={() => setModalOpened(true)}
-        >
-          {t('Додати')}
-        </Button>
-      </Group>
+    <Stack gap="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="center">
+            <Text fw={600}>{t('Отримувачі доставки')}</Text>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={isBusy}
+              leftSection={<IconPlus size={16} />}
+              size="xs"
+              variant="light"
+              onClick={() => setModalOpened(true)}
+            >
+              {t('Додати')}
+            </Button>
+          </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-      {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження')}
-          </Text>
-        </Group>
-      ) : recipients.length === 0 ? (
-        <Card withBorder radius="md" padding="lg">
-          <Text c="dimmed" size="sm">
-            {t('Отримувачів не додано')}
-          </Text>
-        </Card>
-      ) : (
-        <Stack gap="xs">
-          {recipients.map((recipient, index) => (
-            <RecipientItem
-              key={recipient.NetUid || recipient.Id || index}
-              isDeleting={deletingNetUid === recipient.NetUid}
-              recipient={recipient}
-              onRemove={() => setRemoveTarget(recipient)}
-            />
-          ))}
+          {isLoading ? (
+            <Group justify="center" py="xl">
+              <Loader color="violet" size="sm" />
+              <Text c="dimmed" size="sm">
+                {t('Завантаження')}
+              </Text>
+            </Group>
+          ) : recipients.length === 0 ? (
+            <Text c="dimmed" size="sm" py="md">
+              {t('Отримувачів не додано')}
+            </Text>
+          ) : (
+            <Stack gap="xs">
+              {recipients.map((recipient, index) => (
+                <RecipientItem
+                  key={recipient.NetUid || recipient.Id || index}
+                  isDeleting={deletingNetUid === recipient.NetUid}
+                  recipient={recipient}
+                  onRemove={() => setRemoveTarget(recipient)}
+                />
+              ))}
+            </Stack>
+          )}
         </Stack>
-      )}
+      </Card>
 
       <NewDeliveryRecipientModal
         isSaving={isSaving}
@@ -271,8 +274,8 @@ function RecipientItem({
       padding="sm"
       radius="md"
       style={{
-        backgroundColor: isHovered ? 'var(--mantine-color-violet-0)' : undefined,
-        borderColor: isHovered ? 'var(--mantine-color-violet-3)' : undefined,
+        backgroundColor: isHovered ? 'var(--mantine-color-orange-0)' : undefined,
+        borderColor: isHovered ? 'var(--mantine-color-orange-3)' : undefined,
         boxShadow: isHovered ? 'var(--mantine-shadow-xs)' : undefined,
         opacity: recipient.Deleted ? 0.55 : 1,
         transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
@@ -282,7 +285,7 @@ function RecipientItem({
     >
       <Group justify="space-between" align="center" wrap="nowrap">
         <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Avatar color={recipient.Deleted ? 'gray' : 'violet'} radius="xl">
+          <Avatar color={recipient.Deleted ? 'gray' : CREATE_ACTION_COLOR} radius="xl">
             {fullName ? fullName.slice(0, 2).toUpperCase() : 'OO'}
           </Avatar>
           <Tooltip

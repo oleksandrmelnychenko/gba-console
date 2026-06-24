@@ -727,45 +727,49 @@ function ClientEditHeader({
   const { t } = useI18n()
   const regionCodeValue = client?.RegionCode?.Value
 
+  if (!client) {
+    return null
+  }
+
   return (
-    <Stack gap="xs">
-      {client && (regionCodeValue || client.FullName) && (
+    <Card className="client-edit-hero app-section-card" withBorder radius="md" padding="md">
+      <Stack gap="xs">
+        {(regionCodeValue || client.FullName) && (
+          <Group gap="sm" align="baseline">
+            {regionCodeValue && (
+              <Text className="client-edit-hero-code" fw={700} size="sm">
+                {regionCodeValue}
+              </Text>
+            )}
+            {client.FullName && (
+              <Text fw={600} size="lg">
+                {client.FullName}
+              </Text>
+            )}
+          </Group>
+        )}
         <Group gap="xs">
-          {regionCodeValue && (
-            <Text fw={600} size="sm">
-              {regionCodeValue}
-            </Text>
-          )}
-          {client.FullName && (
-            <Text fw={600} size="sm">
-              {client.FullName}
-            </Text>
-          )}
-        </Group>
-      )}
-      <Group gap="xs">
-        {client && (
           <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
             {client.IsActive === false ? t('Неактивний') : t('Активний')}
           </Badge>
-        )}
-        {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-          <Badge
-            color="violet"
-            variant="light"
-            style={canEditType ? { cursor: 'pointer' } : undefined}
-            onClick={canEditType ? onTypeClick : undefined}
-          >
-            {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
-          </Badge>
-        )}
-        {client?.IsTemporaryClient && (
-          <Badge color="violet" variant="light">
-            {t('З інтернет-магазину')}
-          </Badge>
-        )}
-      </Group>
-    </Stack>
+          {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+            <Badge
+              color="orange"
+              variant="light"
+              style={canEditType ? { cursor: 'pointer' } : undefined}
+              onClick={canEditType ? onTypeClick : undefined}
+            >
+              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
+            </Badge>
+          )}
+          {client.IsTemporaryClient && (
+            <Badge color="violet" variant="light">
+              {t('З інтернет-магазину')}
+            </Badge>
+          )}
+        </Group>
+      </Stack>
+    </Card>
   )
 }
 
@@ -841,7 +845,7 @@ function ClientEditBody({
 
   if (isLoading) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card className="app-section-card" withBorder radius="md" padding="lg">
         <Group justify="center" py="xl">
           <Loader color="violet" size="sm" />
           <Text c="dimmed" size="sm">
@@ -854,7 +858,7 @@ function ClientEditBody({
 
   if (!client) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card className="app-section-card" withBorder radius="md" padding="lg">
         <Text c="dimmed">{t('Картку не знайдено')}</Text>
       </Card>
     )
@@ -864,7 +868,7 @@ function ClientEditBody({
     <form id="client-edit-form" onSubmit={onSubmit}>
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
-          <Card withBorder radius="md" padding="md">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap={5} className="client-edit-nav" component="nav">
               {steps.map((item) => {
                 const isActive = item.value === selectedStep
@@ -889,10 +893,10 @@ function ClientEditBody({
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, lg: 9 }}>
-          <Card withBorder radius="md" padding="md">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <Group justify="space-between" align="center">
-                <Title order={3} size="h4">
+                <Title order={3} size="h4" fw={600}>
                   {activeStep?.label || firstStep?.label}
                 </Title>
                 {canEditActive && (
@@ -1083,7 +1087,7 @@ function EditStepContent({
     return (
       <Stack gap="lg">
         <RecommendationsPanel client={client} productNetId={productNetId} />
-        <Card withBorder radius="md" padding="md">
+        <Card className="app-section-card" withBorder radius="md" padding="md">
           <SolvencyPanel clientNetId={client.NetUid} />
         </Card>
       </Stack>

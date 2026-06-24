@@ -5,14 +5,15 @@ import {
   NumberInput,
   PasswordInput,
   Stack,
+  Text,
   TextInput,
-  Title,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconKey } from '@tabler/icons-react'
 import { type KeyboardEvent } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { changeClientPassword } from '../../api/clientCabinetApi'
 import type { Client } from '../../types'
 
@@ -80,11 +81,9 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
 
   return (
     <Stack gap="lg">
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Title order={4} size="h5">
-            {t('Зміна пароля')}
-          </Title>
+          <Text fw={600}>{t('Зміна пароля')}</Text>
           <TextInput
             autoFocus
             label={t('Мобільний телефон')}
@@ -108,7 +107,7 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
           />
           <Group justify="flex-end">
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               disabled={isChanging}
               leftSection={<IconKey size={16} />}
               loading={isChanging}
@@ -120,14 +119,17 @@ export function EcommercePanel({ client, onChange }: EcommercePanelProps) {
         </Stack>
       </Card>
 
-      <Card withBorder padding="md" radius="md">
-        <NumberInput
-          allowNegative={false}
-          label={t('Резервація корзини інтернет магазина (днів)')}
-          min={0}
-          value={client.ClearCartAfterDays ?? ''}
-          onChange={handleClearCartAfterDaysChange}
-        />
+      <Card className="app-section-card" withBorder padding="md" radius="md">
+        <Stack gap="md">
+          <Text fw={600}>{t('Налаштування магазину')}</Text>
+          <NumberInput
+            allowNegative={false}
+            label={t('Резервація корзини інтернет магазина (днів)')}
+            min={0}
+            value={client.ClearCartAfterDays ?? ''}
+            onChange={handleClearCartAfterDaysChange}
+          />
+        </Stack>
       </Card>
     </Stack>
   )

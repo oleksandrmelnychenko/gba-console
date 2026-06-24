@@ -25,6 +25,7 @@ import {
 } from './pricingNames'
 import type { Agreement, Currency, Organization, Pricing, ProviderPricing } from '../../types'
 import { organizationHasVat } from './organizationVat'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 
 export type AgreementFormProps = {
   agreement: Agreement
@@ -80,247 +81,265 @@ export function AgreementForm({
 
   return (
     <Stack gap="md">
-      <Switch
-        checked={Boolean(agreement.IsActive)}
-        label={t('Активний договір')}
-        onChange={(event) => onChange({ IsActive: event.currentTarget.checked })}
-      />
-
-      {isEdit && (
-        <TextInput disabled label={t('Номер договору')} value={agreement.Number || ''} />
-      )}
-
-      <Select
-        data={organizationOptions}
-        disabled={isEdit}
-        label={t('Організація')}
-        searchable
-        value={agreement.Organization?.Id ? String(agreement.Organization.Id) : null}
-        onChange={(value) => handleOrganizationChange(findById(organizations, value))}
-      />
-
-      <Select
-        data={currencyOptions}
-        label={t('Валюта')}
-        searchable
-        value={agreement.Currency?.Id ? String(agreement.Currency.Id) : null}
-        onChange={(value) => onChange({ Currency: findById(currencies, value) })}
-      />
-
-      {isProvider ? (
-        <Stack gap="xs">
-          <Text size="sm" fw={500}>
-            {t('Тип ціни')}
-          </Text>
-          {providerPricing?.Name ? (
-            <Group gap="xs" wrap="nowrap">
-              <Card
-                withBorder
-                padding="xs"
-                radius="md"
-                style={{ flex: 1, cursor: 'pointer' }}
-                onClick={openProviderPricingEditor}
-              >
-                <Text size="sm">{providerPricing.Name}</Text>
-              </Card>
-              <ActionIcon
-                aria-label={t('Видалити')}
-                color="red"
-                variant="subtle"
-                onClick={handleDeleteProviderPricing}
-              >
-                <IconTrash size={18} />
-              </ActionIcon>
-            </Group>
-          ) : (
-            <Button
-              color="violet"
-              leftSection={<IconPlus size={16} />}
-              size="xs"
-              variant="light"
-              onClick={openProviderPricingEditor}
-            >
-              {t('Створіть тип цін')}
-            </Button>
-          )}
-
-          {providerPricingEditorOpened && (
-            <Card withBorder padding="sm" radius="md">
-              <Stack gap="xs">
-                <TextInput
-                  label={t('Назва')}
-                  value={providerPricingName}
-                  onChange={(event) => setProviderPricingName(event.currentTarget.value)}
-                />
-                <Group gap={4}>
-                  <Text c="dimmed" size="xs">
-                    {t('Валюта')}:
-                  </Text>
-                  <Text size="xs">{CURRENCY_NAME_EURO}</Text>
-                </Group>
-                <Group gap={4}>
-                  <Text c="dimmed" size="xs">
-                    {t('Тип ціни')}:
-                  </Text>
-                  <Text size="xs">{PRICING_NAME_PURCHASE}</Text>
-                </Group>
-                <Group justify="flex-end" gap="xs">
-                  <Button color="gray" size="xs" variant="subtle" onClick={cancelProviderPricingEditor}>
-                    {t('Скасувати')}
-                  </Button>
-                  <Button
-                    color="violet"
-                    disabled={!providerPricingName.trim()}
-                    size="xs"
-                    onClick={handleSaveProviderPricing}
-                  >
-                    {providerPricing?.Name ? t('Оновити') : t('Створити')}
-                  </Button>
-                </Group>
-              </Stack>
-            </Card>
-          )}
-        </Stack>
-      ) : (
-        <Select
-          data={pricingOptions}
-          label={t('Тип ціни')}
-          searchable
-          value={agreement.Pricing?.Id ? String(agreement.Pricing.Id) : null}
-          onChange={(value) => onChange({ Pricing: findById(pricings, value) })}
-        />
-      )}
-
-      {!isProvider && (
-        <Select
-          clearable
-          data={promotionalPricingOptions}
-          label={t('Акційний тип ціни')}
-          searchable
-          value={agreement.PromotionalPricing?.Id ? String(agreement.PromotionalPricing.Id) : null}
-          onChange={(value) => onChange({ PromotionalPricing: findById(promotionalPricings, value) })}
-        />
-      )}
-
-      <TextInput
-        error={errors?.name}
-        label={t('Найменування')}
-        maxLength={NAME_MAX_LENGTH}
-        required
-        value={agreement.Name || ''}
-        onChange={(event) => onChange({ Name: event.currentTarget.value })}
-      />
-
-      {!isProvider && (
-        <Group grow align="flex-start">
-          <NumberInput
-            allowNegative={false}
-            label={t('Сума боргу')}
-            value={agreement.AmountDebt ?? ''}
-            onChange={(value) => onChange({ AmountDebt: toNumber(value) })}
-          />
-          <NumberInput
-            allowNegative={false}
-            label={t('Кількість днів боргу')}
-            value={agreement.NumberDaysDebt ?? ''}
-            onChange={(value) => onChange({ NumberDaysDebt: toNumber(value) })}
-          />
-        </Group>
-      )}
-
-      <Group grow align="flex-start">
-        <TextInput
-          label={t('Діє з')}
-          type="date"
-          value={toInputDate(agreement.FromDate)}
-          onChange={(event) => onChange({ FromDate: event.currentTarget.value || undefined })}
-        />
-        <TextInput
-          label={t('Діє по')}
-          type="date"
-          value={toInputDate(agreement.ToDate)}
-          onChange={(event) => onChange({ ToDate: event.currentTarget.value || undefined })}
-        />
-      </Group>
-
-      {isProvider ? (
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
-          <NumberInput
-            allowNegative={false}
-            label={`${t('Відстрочка платежу')} (${t('днів')})`}
-            max={999}
-            value={agreement.DeferredPayment ? Number(agreement.DeferredPayment) : ''}
-            onChange={(value) => onChange({ DeferredPayment: value === '' ? '' : String(value) })}
+          <Text fw={600}>{t('Загальні дані')}</Text>
+
+          <Switch
+            checked={Boolean(agreement.IsActive)}
+            label={t('Активний договір')}
+            onChange={(event) => onChange({ IsActive: event.currentTarget.checked })}
           />
 
-          <Stack gap="xs">
-            <Text size="sm" fw={500}>
-              {t('Умови оплати')}
-            </Text>
-            <SegmentedControl
-              data={[
-                { label: t('100%'), value: 'full' },
-                { label: t('Часткова'), value: 'partial' },
-              ]}
-              value={agreement.IsPrePaymentFull === false ? 'partial' : 'full'}
-              onChange={(value) => handlePrepaymentChange(value === 'full')}
-            />
-          </Stack>
-
-          {agreement.IsPrePaymentFull === false && (
-            <NumberInput
-              allowNegative={false}
-              label={t('Відсоток передоплати')}
-              max={100}
-              value={agreement.PrePaymentPercentages ?? ''}
-              onChange={(value) => onChange({ PrePaymentPercentages: toNumber(value) })}
-            />
+          {isEdit && (
+            <TextInput disabled label={t('Номер договору')} value={agreement.Number || ''} />
           )}
 
-          <Checkbox
-            checked={Boolean(agreement.IsPayForDelivery)}
-            label={t('Постачальник сплачує доставку')}
-            onChange={(event) => onChange({ IsPayForDelivery: event.currentTarget.checked })}
+          <Select
+            data={organizationOptions}
+            disabled={isEdit}
+            label={t('Організація')}
+            searchable
+            value={agreement.Organization?.Id ? String(agreement.Organization.Id) : null}
+            onChange={(value) => handleOrganizationChange(findById(organizations, value))}
+          />
+
+          <Select
+            data={currencyOptions}
+            label={t('Валюта')}
+            searchable
+            value={agreement.Currency?.Id ? String(agreement.Currency.Id) : null}
+            onChange={(value) => onChange({ Currency: findById(currencies, value) })}
           />
         </Stack>
-      ) : (
-        <Stack gap="xs">
-          {isAdmin && (
-            <Checkbox
-              checked={Boolean(agreement.ForReSale)}
-              label={t('Для перепродажу')}
-              onChange={(event) => onChange({ ForReSale: event.currentTarget.checked })}
+      </Card>
+
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Text fw={600}>{t('Ціноутворення')}</Text>
+
+          {isProvider ? (
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>
+                {t('Тип ціни')}
+              </Text>
+              {providerPricing?.Name ? (
+                <Group gap="xs" wrap="nowrap">
+                  <Card
+                    withBorder
+                    padding="xs"
+                    radius="md"
+                    style={{ flex: 1, cursor: 'pointer' }}
+                    onClick={openProviderPricingEditor}
+                  >
+                    <Text size="sm">{providerPricing.Name}</Text>
+                  </Card>
+                  <ActionIcon
+                    aria-label={t('Видалити')}
+                    color="red"
+                    variant="subtle"
+                    onClick={handleDeleteProviderPricing}
+                  >
+                    <IconTrash size={18} />
+                  </ActionIcon>
+                </Group>
+              ) : (
+                <Button
+                  color={CREATE_ACTION_COLOR}
+                  leftSection={<IconPlus size={16} />}
+                  size="xs"
+                  variant="light"
+                  onClick={openProviderPricingEditor}
+                >
+                  {t('Створіть тип цін')}
+                </Button>
+              )}
+
+              {providerPricingEditorOpened && (
+                <Card withBorder padding="sm" radius="md">
+                  <Stack gap="xs">
+                    <TextInput
+                      label={t('Назва')}
+                      value={providerPricingName}
+                      onChange={(event) => setProviderPricingName(event.currentTarget.value)}
+                    />
+                    <Group gap={4}>
+                      <Text c="dimmed" size="xs">
+                        {t('Валюта')}:
+                      </Text>
+                      <Text size="xs">{CURRENCY_NAME_EURO}</Text>
+                    </Group>
+                    <Group gap={4}>
+                      <Text c="dimmed" size="xs">
+                        {t('Тип ціни')}:
+                      </Text>
+                      <Text size="xs">{PRICING_NAME_PURCHASE}</Text>
+                    </Group>
+                    <Group justify="flex-end" gap="xs">
+                      <Button color="gray" size="xs" variant="subtle" onClick={cancelProviderPricingEditor}>
+                        {t('Скасувати')}
+                      </Button>
+                      <Button
+                        color={CREATE_ACTION_COLOR}
+                        disabled={!providerPricingName.trim()}
+                        size="xs"
+                        onClick={handleSaveProviderPricing}
+                      >
+                        {providerPricing?.Name ? t('Оновити') : t('Створити')}
+                      </Button>
+                    </Group>
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
+          ) : (
+            <Select
+              data={pricingOptions}
+              label={t('Тип ціни')}
+              searchable
+              value={agreement.Pricing?.Id ? String(agreement.Pricing.Id) : null}
+              onChange={(value) => onChange({ Pricing: findById(pricings, value) })}
             />
           )}
 
-          <Checkbox
-            checked={Boolean(agreement.IsManagementAccounting)}
-            label={t('Управлінський облік')}
-            onChange={(event) => handleManagementAccountingChange(event.currentTarget.checked)}
-          />
-
-          <Checkbox
-            checked={Boolean(agreement.IsAccounting)}
-            label={t('Бухгалтерський облік')}
-            onChange={(event) => handleAccountingChange(event.currentTarget.checked)}
-          />
-
-          {!isVatAccountingHidden && (
-            <Checkbox
-              checked={Boolean(agreement.WithVATAccounting)}
-              disabled={!isAdmin}
-              label={t('Облік з ПДВ')}
-              onChange={(event) => onChange({ WithVATAccounting: event.currentTarget.checked, Pricing: undefined })}
+          {!isProvider && (
+            <Select
+              clearable
+              data={promotionalPricingOptions}
+              label={t('Акційний тип ціни')}
+              searchable
+              value={agreement.PromotionalPricing?.Id ? String(agreement.PromotionalPricing.Id) : null}
+              onChange={(value) => onChange({ PromotionalPricing: findById(promotionalPricings, value) })}
             />
           )}
 
-          <Checkbox
-            checked={Boolean(agreement.WithAgreementLine)}
-            label={t('Друкувати рядок договору')}
-            onChange={(event) => onChange({ WithAgreementLine: event.currentTarget.checked })}
+          <TextInput
+            error={errors?.name}
+            label={t('Найменування')}
+            maxLength={NAME_MAX_LENGTH}
+            required
+            value={agreement.Name || ''}
+            onChange={(event) => onChange({ Name: event.currentTarget.value })}
           />
         </Stack>
-      )}
+      </Card>
+
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Text fw={600}>{t('Умови договору')}</Text>
+
+          {!isProvider && (
+            <Group grow align="flex-start">
+              <NumberInput
+                allowNegative={false}
+                label={t('Сума боргу')}
+                value={agreement.AmountDebt ?? ''}
+                onChange={(value) => onChange({ AmountDebt: toNumber(value) })}
+              />
+              <NumberInput
+                allowNegative={false}
+                label={t('Кількість днів боргу')}
+                value={agreement.NumberDaysDebt ?? ''}
+                onChange={(value) => onChange({ NumberDaysDebt: toNumber(value) })}
+              />
+            </Group>
+          )}
+
+          <Group grow align="flex-start">
+            <TextInput
+              label={t('Діє з')}
+              type="date"
+              value={toInputDate(agreement.FromDate)}
+              onChange={(event) => onChange({ FromDate: event.currentTarget.value || undefined })}
+            />
+            <TextInput
+              label={t('Діє по')}
+              type="date"
+              value={toInputDate(agreement.ToDate)}
+              onChange={(event) => onChange({ ToDate: event.currentTarget.value || undefined })}
+            />
+          </Group>
+
+          {isProvider ? (
+            <Stack gap="md">
+              <NumberInput
+                allowNegative={false}
+                label={`${t('Відстрочка платежу')} (${t('днів')})`}
+                max={999}
+                value={agreement.DeferredPayment ? Number(agreement.DeferredPayment) : ''}
+                onChange={(value) => onChange({ DeferredPayment: value === '' ? '' : String(value) })}
+              />
+
+              <Stack gap="xs">
+                <Text size="sm" fw={500}>
+                  {t('Умови оплати')}
+                </Text>
+                <SegmentedControl
+                  data={[
+                    { label: t('100%'), value: 'full' },
+                    { label: t('Часткова'), value: 'partial' },
+                  ]}
+                  value={agreement.IsPrePaymentFull === false ? 'partial' : 'full'}
+                  onChange={(value) => handlePrepaymentChange(value === 'full')}
+                />
+              </Stack>
+
+              {agreement.IsPrePaymentFull === false && (
+                <NumberInput
+                  allowNegative={false}
+                  label={t('Відсоток передоплати')}
+                  max={100}
+                  value={agreement.PrePaymentPercentages ?? ''}
+                  onChange={(value) => onChange({ PrePaymentPercentages: toNumber(value) })}
+                />
+              )}
+
+              <Checkbox
+                checked={Boolean(agreement.IsPayForDelivery)}
+                label={t('Постачальник сплачує доставку')}
+                onChange={(event) => onChange({ IsPayForDelivery: event.currentTarget.checked })}
+              />
+            </Stack>
+          ) : (
+            <Stack gap="xs">
+              {isAdmin && (
+                <Checkbox
+                  checked={Boolean(agreement.ForReSale)}
+                  label={t('Для перепродажу')}
+                  onChange={(event) => onChange({ ForReSale: event.currentTarget.checked })}
+                />
+              )}
+
+              <Checkbox
+                checked={Boolean(agreement.IsManagementAccounting)}
+                label={t('Управлінський облік')}
+                onChange={(event) => handleManagementAccountingChange(event.currentTarget.checked)}
+              />
+
+              <Checkbox
+                checked={Boolean(agreement.IsAccounting)}
+                label={t('Бухгалтерський облік')}
+                onChange={(event) => handleAccountingChange(event.currentTarget.checked)}
+              />
+
+              {!isVatAccountingHidden && (
+                <Checkbox
+                  checked={Boolean(agreement.WithVATAccounting)}
+                  disabled={!isAdmin}
+                  label={t('Облік з ПДВ')}
+                  onChange={(event) => onChange({ WithVATAccounting: event.currentTarget.checked, Pricing: undefined })}
+                />
+              )}
+
+              <Checkbox
+                checked={Boolean(agreement.WithAgreementLine)}
+                label={t('Друкувати рядок договору')}
+                onChange={(event) => onChange({ WithAgreementLine: event.currentTarget.checked })}
+              />
+            </Stack>
+          )}
+        </Stack>
+      </Card>
     </Stack>
   )
 
