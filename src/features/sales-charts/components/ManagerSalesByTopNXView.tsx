@@ -1,3 +1,4 @@
+import { BarChart } from '@mantine/charts'
 import { Alert, Card, Group, Select, Stack, Text, TextInput } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo } from 'react'
@@ -96,6 +97,14 @@ export function ManagerSalesByTopNXView() {
   }, [report.Managers, t])
 
   const rows = useMemo<SalesChartsTopNXRow[]>(() => flattenReport(report, t('Всього')), [report, t])
+  const chartData = useMemo(
+    () =>
+      report.Managers.map((manager) => ({
+        manager: manager.ManagerName || `#${manager.NetId}`,
+        total: manager.TotalManagerSold || 0,
+      })),
+    [report.Managers],
+  )
 
   return (
     <Card className="app-section-card" withBorder radius="md" padding="md">
@@ -132,6 +141,18 @@ export function ManagerSalesByTopNXView() {
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
+        )}
+
+        {chartData.length > 0 && (
+          <BarChart
+            data={chartData}
+            dataKey="manager"
+            h={260}
+            series={[{ color: 'orange.6', label: t('Продано'), name: 'total' }]}
+            tickLine="y"
+            valueFormatter={(value) => formatMoney(value)}
+            withLegend={false}
+          />
         )}
 
         <DataTable
