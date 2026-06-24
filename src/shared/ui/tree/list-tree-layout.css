@@ -1,0 +1,192 @@
+/* Two-pane «list + tree» layout — generalized from the Roles screen
+   (.user-roles-layout + .user-role-list-*). Left = a selectable entity list,
+   right = a detail/tree pane. Reusable across domains. */
+.list-tree-layout {
+  display: grid;
+  gap: var(--mantine-spacing-lg);
+  grid-template-columns: minmax(340px, 1.25fr) minmax(0, 2.75fr);
+}
+
+@media (max-width: 992px) {
+  .list-tree-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.list-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 4px;
+}
+
+.list-tree-item {
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 252, 0.96)),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 7px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  display: grid;
+  gap: 5px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 46px;
+  overflow: hidden;
+  padding: 8px 8px 8px 10px;
+  position: relative;
+  transition:
+    border-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+  width: 100%;
+}
+
+.list-tree-item:hover,
+.list-tree-item:has(.list-tree-item-select:focus-visible),
+.list-tree-item:has(.list-tree-item-action:focus-visible) {
+  border-color: var(--mantine-color-gray-4);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  outline: 0;
+  transform: translateX(4px);
+}
+
+.list-tree-item.is-selected {
+  background:
+    linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
+    var(--mantine-color-white);
+  border-color: var(--mantine-color-orange-2);
+  box-shadow: 0 5px 16px rgba(232, 120, 46, 0.14);
+}
+
+.list-tree-item-select {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.list-tree-item-select:focus-visible {
+  outline: 0;
+}
+
+.list-tree-item-content {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.list-tree-item-content.no-index {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.list-tree-item-index {
+  border-right: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  padding-left: 4px;
+  padding-right: 7px;
+}
+
+.list-tree-item-name {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-tree-item-details {
+  align-items: center;
+  background: rgba(248, 250, 252, 0.76);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  justify-self: end;
+  line-height: 1.1;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.list-tree-item-metric {
+  align-items: center;
+  display: inline-flex;
+  gap: 3px;
+  padding: 0 3px;
+}
+
+.list-tree-item-metric strong {
+  color: var(--mantine-color-gray-7);
+  font-weight: 500;
+}
+
+.list-tree-item-metric-divider {
+  background: var(--mantine-color-gray-3);
+  display: inline-block;
+  height: 8px;
+  margin: 0 2px;
+  width: 1px;
+}
+
+.list-tree-item-action {
+  align-self: center;
+  color: var(--mantine-color-gray-5);
+  justify-self: end;
+  margin-left: 14px;
+  opacity: 0.72;
+}
+
+.list-tree-item:hover .list-tree-item-action,
+.list-tree-item-action:focus-visible {
+  color: var(--mantine-color-gray-7);
+  opacity: 1;
+}
+
+.list-tree-item.is-selected .list-tree-item-index {
+  border-right-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-7);
+}
+
+.list-tree-item.is-selected .list-tree-item-name {
+  color: var(--mantine-color-orange-9);
+}
+
+.list-tree-item.is-selected .list-tree-item-details {
+  background: rgba(255, 247, 237, 0.7);
+  border-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-7);
+}
+
+.list-tree-item.is-selected .list-tree-item-action {
+  color: var(--mantine-color-orange-7);
+  opacity: 1;
+}
+
+.list-tree-empty {
+  align-items: center;
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: 7px;
+  display: flex;
+  justify-content: center;
+  min-height: 120px;
+  padding: 16px;
+}

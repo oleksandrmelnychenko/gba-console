@@ -46,6 +46,7 @@ export const ProductAvailabilitiesPage = lazy(() => import('../../features/produ
 export const ProductCapitalizationsPage = lazy(() => import('../../features/product-capitalizations/pages/ProductCapitalizationsPage').then((module) => ({ default: module.ProductCapitalizationsPage })))
 export const ProductGroupDetailPage = lazy(() => import('../../features/product-groups/pages/ProductGroupDetailPage').then((module) => ({ default: module.ProductGroupDetailPage })))
 export const ProductGroupsPage = lazy(() => import('../../features/product-groups/pages/ProductGroupsPage').then((module) => ({ default: module.ProductGroupsPage })))
+export const ProductGroupsTreePage = lazy(() => import('../../features/product-groups/pages/ProductGroupsTreePage').then((module) => ({ default: module.ProductGroupsTreePage })))
 export const ProductHistoryPage = lazy(() => import('../../features/product-history/pages/ProductHistoryPage').then((module) => ({ default: module.ProductHistoryPage })))
 export const ProductIncomeDocumentsPage = lazy(() => import('../../features/product-income-documents/pages/ProductIncomeDocumentsPage').then((module) => ({ default: module.ProductIncomeDocumentsPage })))
 export const SupplyOrderProductPlacementPage = lazy(() => import('../../features/product-income-documents/pages/SupplyOrderProductPlacementPage').then((module) => ({ default: module.SupplyOrderProductPlacementPage })))
