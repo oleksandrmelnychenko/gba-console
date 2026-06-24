@@ -464,7 +464,7 @@ function ConsumableCategoryPanel({
         </div>
         <Group className="consumable-category-panel__actions" gap="xs">
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
-              <Button leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
                 {t('Товар')}
               </Button>
             </PermissionGate>

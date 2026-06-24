@@ -617,6 +617,7 @@ export function EditTaxFreePackListPage() {
           <Tooltip label={t('Перенести у Tax Free')}>
             <ActionIcon
               aria-label={t('Перенести у Tax Free')}
+              color={CREATE_ACTION_COLOR}
               disabled={selectedSourceIds.size === 0 || packList?.IsSent || isDirty}
               size="lg"
               variant="filled"
