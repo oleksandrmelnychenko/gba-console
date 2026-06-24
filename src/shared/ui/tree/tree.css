@@ -160,6 +160,16 @@
   padding: 12px 4px;
 }
 
+.app-tree-loading {
+  padding: 6px 10px 6px calc(10px + var(--app-tree-indent, 0px));
+}
+
+.app-tree-empty-children {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  padding: 5px 10px 7px calc(10px + var(--app-tree-indent, 0px));
+}
+
 /* Tri-state selection mark (optional per node) — from .role-tree-check. */
 .app-tree-check {
   align-items: center;

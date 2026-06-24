@@ -15,6 +15,7 @@ import {
   ClientNewPage,
   ClientResourcesPage,
   ClientsPage,
+  ClientsStructureTreePage,
   ConsumableOrderFormPage,
   ConsumableOrderPayPage,
   ConsumableOrdersPage,
@@ -188,6 +189,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
 
 const clientMigrationRoutes: ConsoleRoute[] = [
   { path: '/clients', element: lazyRoute(<ClientsPage />) },
+  { path: '/clients/structure', element: lazyRoute(<ClientsStructureTreePage />) },
   { path: '/clients/new/:step', element: lazyRoute(<ClientNewPage />) },
   { path: '/clients/new', element: lazyRoute(<ClientNewPage />) },
   { path: '/clients/edit/:netid/:step/:productNetId', element: lazyRoute(<ClientEditPage />) },

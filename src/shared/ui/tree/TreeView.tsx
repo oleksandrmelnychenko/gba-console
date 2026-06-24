@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Collapse, ThemeIcon } from '@mantine/core'
+import { ActionIcon, Box, Collapse, Group, Loader, Text, ThemeIcon } from '@mantine/core'
 import { IconCheck, IconChevronRight, IconMinus } from '@tabler/icons-react'
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from 'react'
 import { useI18n } from '../../i18n/useI18n'
@@ -21,6 +21,12 @@ export type TreeViewNode = {
   actions?: ReactNode
   /** Child nodes (rendered recursively, indented). */
   children?: TreeViewNode[]
+  /** Force the disclosure chevron even before children are loaded (lazy trees). */
+  hasChildren?: boolean
+  /** Children are being loaded — shows a spinner inside the expanded node. */
+  loading?: boolean
+  /** Called the first time the node is expanded — use to lazy-load children. */
+  onExpand?: () => void
   /** When set, a tri-state selection mark is shown. */
   selection?: TreeSelectionState
   /** Toggle handler for the selection mark. */
@@ -91,9 +97,17 @@ type TreeRowProps = {
 
 function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
   const children = node.children || []
-  const hasChildren = children.length > 0
+  const hasChildren = children.length > 0 || Boolean(node.hasChildren)
   const isOpen = expanded.has(node.id)
   const style = { '--app-tree-indent': `${depth * 18}px` } as CSSProperties
+
+  function handleToggle() {
+    const willOpen = !isOpen
+    onToggleExpand(node.id)
+    if (willOpen) {
+      node.onExpand?.()
+    }
+  }
 
   return (
     <Box className={`app-tree-node${node.active ? ' is-active' : ''}`} style={style}>
@@ -106,7 +120,7 @@ function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
             color="gray"
             size="sm"
             variant="subtle"
-            onClick={() => onToggleExpand(node.id)}
+            onClick={handleToggle}
           >
             <IconChevronRight size={16} stroke={2} style={{ transform: isOpen ? 'rotate(90deg)' : undefined }} />
           </ActionIcon>
@@ -132,7 +146,7 @@ function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
           className="app-tree-node-title"
           disabled={!node.onActivate && !hasChildren}
           type="button"
-          onClick={node.onActivate ?? (hasChildren ? () => onToggleExpand(node.id) : undefined)}
+          onClick={node.onActivate ?? (hasChildren ? handleToggle : undefined)}
         >
           <span className="app-tree-node-name">{node.label}</span>
           {node.meta ? <span className="app-tree-node-meta">{node.meta}</span> : null}
@@ -145,9 +159,22 @@ function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
       {hasChildren ? (
         <Collapse expanded={isOpen}>
           <div className="app-tree-children">
-            {children.map((child) => (
-              <TreeRow key={child.id} depth={depth + 1} expanded={expanded} node={child} onToggleExpand={onToggleExpand} t={t} />
-            ))}
+            {node.loading ? (
+              <Group className="app-tree-loading" gap="xs">
+                <Loader size="xs" />
+                <Text c="dimmed" size="xs">
+                  {t('Завантаження')}
+                </Text>
+              </Group>
+            ) : children.length > 0 ? (
+              children.map((child) => (
+                <TreeRow key={child.id} depth={depth + 1} expanded={expanded} node={child} onToggleExpand={onToggleExpand} t={t} />
+              ))
+            ) : (
+              <div className="app-tree-empty-children" style={{ '--app-tree-indent': `${(depth + 1) * 18}px` } as CSSProperties}>
+                {t('Немає вкладень')}
+              </div>
+            )}
           </div>
         </Collapse>
       ) : null}
