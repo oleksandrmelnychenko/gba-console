@@ -9,6 +9,14 @@
 
 .cockpit-page {
   --cockpit-glow: radial-gradient(720px 300px at 0% -40%, rgba(var(--brand-orange-rgb), 0.1), rgba(var(--brand-orange-rgb), 0) 70%);
+  /* Rendered inside SalesDashboardShell (a height-constrained frame): fill the
+     available height and own the scroll, so the dashboard never overflows/clips
+     and there's one clean scroll instead of the whole frame jumping. */
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 /* ---- Hero header ------------------------------------------------------- */
@@ -24,7 +32,10 @@
   gap: 16px;
   justify-content: space-between;
   padding: 16px 18px;
-  position: relative;
+  /* Stays pinned at the top while the dashboard body scrolls under it. */
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .cockpit-hero-main {
