@@ -5,32 +5,17 @@
   min-height: 0;
 }
 
-.sales-ukraine-card {
-  box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
+/* .sales-ukraine-card shell lives in the shared filter-bar.css now (grouped with
+   .app-data-card / .console-table-shell) — single source of truth. */
 .sales-ukraine-content {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
 }
 
-.sales-filter-bar {
-  /* Soft warm glow anchored just off the top-left corner — reads as ambient
-     brand lighting rather than a hard left band. Uses an explicit 0-alpha
-     orange (not `transparent`) so the falloff stays clean, no muddy edge. */
-  background:
-    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-3);
-  padding: 9px 10px 10px;
-}
-
+/* .sales-filter-bar strip chrome lives in the shared filter-bar.css now (grouped
+   with .app-filter-bar / .console-table-command-bar). The grid layout below is
+   reference-specific and stays here. */
 .sales-filter-row {
   align-items: end;
   display: grid;
@@ -165,14 +150,6 @@
 
 .sales-filter-toolbar {
   min-width: 0;
-}
-
-.sales-filter-toolbar > .mantine-Group-root {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  gap: 2px;
-  padding: 2px;
 }
 
 .sales-filter-dropdown {
@@ -417,52 +394,6 @@
   color: var(--mantine-color-gray-6);
   font-size: 12px;
   padding: 8px 10px;
-}
-
-.sales-filter-bar .mantine-InputWrapper-label,
-.sales-filter-period-menu .mantine-InputWrapper-label,
-.sales-filter-ecommerce .mantine-Checkbox-label {
-  color: var(--mantine-color-gray-7);
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.2;
-}
-
-.sales-filter-bar .mantine-Input-input,
-.sales-filter-period-menu .mantine-Input-input,
-.sales-filter-ecommerce {
-  background: var(--mantine-color-white);
-  border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
-  min-height: 36px;
-  transition:
-    border-color 140ms var(--tx-ease-smooth),
-    box-shadow 140ms var(--tx-ease-smooth);
-}
-
-.sales-filter-bar .mantine-Input-input,
-.sales-filter-period-menu .mantine-Input-input {
-  font-size: 12.5px;
-}
-
-.sales-filter-bar .mantine-Input-input::placeholder,
-.sales-filter-period-menu .mantine-Input-input::placeholder {
-  color: var(--mantine-color-gray-6);
-}
-
-.sales-filter-bar .mantine-Input-input:hover,
-.sales-filter-period-menu .mantine-Input-input:hover,
-.sales-filter-ecommerce:hover {
-  border-color: var(--mantine-color-gray-3);
-}
-
-.sales-filter-bar .mantine-Input-input:focus,
-.sales-filter-bar .mantine-Input-input:focus-within,
-.sales-filter-period-menu .mantine-Input-input:focus,
-.sales-filter-period-menu .mantine-Input-input:focus-within {
-  border-color: rgba(232, 120, 46, 0.58);
-  box-shadow: 0 0 0 2px rgba(232, 120, 46, 0.1);
 }
 
 .sales-filter-ecommerce {

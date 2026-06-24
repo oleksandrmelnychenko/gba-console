@@ -1,22 +1,27 @@
-/* Shared filter-bar treatment.
-   Brings the Sales ("Продажі") filter aesthetic to any module's filter row:
-   a soft warm brand glow plus darkened, legible labels and placeholders.
+/* Canonical shared chrome for list/registry pages — the SINGLE source of truth
+   for the «Продажі» reference look. Globally imported in main.tsx, so the same
+   definitions back all three historical naming schemes:
+     .app-*            generic pages (the extracted generalization)
+     .sales-*          the reference (SalesUkrainePage / SalesOnlineShop)
+     .console-table-*  the console-table pages
+   Values mirror the approved reference exactly, so converging the other schemes
+   onto these rules changes the reference's pixels by zero. Page-specific layout
+   (grids, the reference's period/organisation/dropdown controls, grid rows) stays
+   in each feature's own CSS. */
 
-   Apply the `app-filter-bar` class to the element that wraps a page's filter
-   controls (a Mantine <Group>, <SimpleGrid>, or a plain <div>). It is
-   self-contained, so it reads correctly both standalone and nested in a <Card>. */
-/* The card that hosts a filter strip. Use padding={0} on the Mantine Card and
-   add this class so the flush strip's square corners are clipped to the card's
-   rounded corners (mirrors .sales-ukraine-card). */
+/* Mantine <Card padding={0}> that hosts a flush strip — clip square strip
+   corners to the card radius (used by chart/standalone pages). */
 .app-filter-card {
   overflow: hidden;
 }
 
-/* Canonical list/registry card shell — the shared equal of .sales-ukraine-card.
-   Apply to a Mantine <Card withBorder radius="md" padding={0}> that hosts a
-   filter strip + a scrollable body (table/grid). Fills its flex-column parent
-   and clips the flush strip; the body inside owns its own scroll. */
-.app-data-card {
+/* ---- Canonical card shell (= the reference .sales-ukraine-card) ---- */
+/* Shared subset. .console-table-shell is a raw <div>, so it additionally
+   supplies the border/background/radius the Mantine <Card> variants get from
+   withBorder + radius="md". */
+.app-data-card,
+.sales-ukraine-card,
+.console-table-shell {
   box-shadow: 0 10px 28px rgba(20, 28, 38, 0.05);
   display: flex;
   flex: 1 1 auto;
@@ -25,8 +30,36 @@
   overflow: hidden;
 }
 
-/* The right-hand actions cluster of a filter strip (mirrors .sales-filter-actions):
-   reset / export ActionIcons + the <Paginator> pill, pinned to the trailing edge. */
+.console-table-shell {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: var(--mantine-radius-md);
+  min-width: 0;
+}
+
+/* ---- Canonical filter strip ---- */
+/* Flush strip across the top of a padding-0 card: warm corner glow + a bottom
+   divider, no outer border/radius. The body below carries its own padding. */
+.app-filter-bar,
+.sales-filter-bar,
+.console-table-command-bar {
+  position: relative;
+  background:
+    radial-gradient(640px 280px at 0% -35%, rgba(var(--brand-orange-rgb), 0.09), rgba(var(--brand-orange-rgb), 0) 68%),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-3);
+  padding: 9px 10px 10px;
+}
+
+/* When the strip is the only/last thing in its card (e.g. a chart page with no
+   table below), drop the divider so it doesn't double up with the card border. */
+.app-filter-bar:last-child,
+.sales-filter-bar:last-child {
+  border-bottom: 0;
+}
+
+/* The right-hand actions cluster (reset / export ActionIcons + the <Paginator>),
+   pinned to the trailing edge of a strip (= the reference .sales-filter-actions). */
 .app-filter-actions {
   align-items: center;
   display: flex;
@@ -35,56 +68,64 @@
   min-width: 0;
 }
 
-/* The filter row, rendered as a flush strip across the top of a padding-0 card
-   (mirrors .sales-filter-bar): warm corner glow + a bottom divider, no outer
-   border or radius. The body below the strip carries its own padding. */
-.app-filter-bar {
-  position: relative;
-  /* Warm glow anchored just off the top-left corner — matches .sales-filter-bar.
-     Explicit 0-alpha orange (not `transparent`) keeps the falloff clean. */
-  background:
-    radial-gradient(640px 280px at 0% -35%, rgba(var(--brand-orange-rgb), 0.09), rgba(var(--brand-orange-rgb), 0) 68%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  padding: 10px 12px;
-}
-
-/* When the strip is the only/last thing in its card (no table below it, e.g. a
-   chart page), drop the divider so it doesn't double up with the card border. */
-.app-filter-bar:last-child {
-  border-bottom: 0;
-}
-
-/* Labels matched to the sales filter bar: smaller 12px caption, gray-7. */
-.app-filter-bar .mantine-InputWrapper-label {
+/* ---- Compact labels (12px caption, gray-7) ---- */
+.app-filter-bar .mantine-InputWrapper-label,
+.sales-filter-bar .mantine-InputWrapper-label,
+.sales-filter-period-menu .mantine-InputWrapper-label,
+.sales-filter-ecommerce .mantine-Checkbox-label,
+.console-table-command-bar .mantine-InputWrapper-label {
   color: var(--mantine-color-gray-7);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 1.2;
 }
 
-/* Compact inputs matched to the sales filter bar: 36px tall, 12.5px text,
-   softer 8px radius, light gray-2 border with an orange focus ring. */
-.app-filter-bar .mantine-Input-input {
+/* ---- Compact inputs: 36px tall, 8px radius, gray-2 border, orange focus ring ---- */
+.app-filter-bar .mantine-Input-input,
+.sales-filter-bar .mantine-Input-input,
+.sales-filter-period-menu .mantine-Input-input,
+.sales-filter-ecommerce,
+.console-table-command-bar .mantine-Input-input {
+  background: var(--mantine-color-white);
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
-  font-size: 12.5px;
   min-height: 36px;
   transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+    border-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth);
 }
 
-.app-filter-bar .mantine-Input-input::placeholder {
+.app-filter-bar .mantine-Input-input,
+.sales-filter-bar .mantine-Input-input,
+.sales-filter-period-menu .mantine-Input-input,
+.console-table-command-bar .mantine-Input-input {
+  font-size: 12.5px;
+}
+
+.app-filter-bar .mantine-Input-input::placeholder,
+.sales-filter-bar .mantine-Input-input::placeholder,
+.sales-filter-period-menu .mantine-Input-input::placeholder,
+.console-table-command-bar .mantine-Input-input::placeholder {
   color: var(--mantine-color-gray-6);
 }
 
-.app-filter-bar .mantine-Input-input:hover {
+.app-filter-bar .mantine-Input-input:hover,
+.sales-filter-bar .mantine-Input-input:hover,
+.sales-filter-period-menu .mantine-Input-input:hover,
+.sales-filter-ecommerce:hover,
+.console-table-command-bar .mantine-Input-input:hover {
   border-color: var(--mantine-color-gray-3);
 }
 
 .app-filter-bar .mantine-Input-input:focus,
-.app-filter-bar .mantine-Input-input:focus-within {
+.app-filter-bar .mantine-Input-input:focus-within,
+.sales-filter-bar .mantine-Input-input:focus,
+.sales-filter-bar .mantine-Input-input:focus-within,
+.sales-filter-period-menu .mantine-Input-input:focus,
+.sales-filter-period-menu .mantine-Input-input:focus-within,
+.console-table-command-bar .mantine-Input-input:focus,
+.console-table-command-bar .mantine-Input-input:focus-within {
   border-color: rgba(var(--brand-orange-rgb), 0.58);
   box-shadow: 0 0 0 2px rgba(var(--brand-orange-rgb), 0.1);
 }
