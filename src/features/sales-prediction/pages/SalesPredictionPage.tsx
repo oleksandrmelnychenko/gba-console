@@ -10,7 +10,7 @@ import {
   searchPredictionClients,
   searchPredictionProducts,
 } from '../api/salesPredictionApi'
-import { SalesPredictionChart } from '../components/SalesPredictionChart'
+import { SalesPredictionChart, SalesPredictionComparisonChart } from '../components/SalesPredictionChart'
 import type {
   SalesPredictionChartPoint,
   SalesPredictionClientOption,
@@ -35,6 +35,11 @@ function getProductLabel(product: SalesPredictionProductOption): string {
     || product.NetUid
     || ''
   )
+}
+
+type SelectOption = {
+  label: string
+  value: string
 }
 
 export function SalesPredictionPage() {
@@ -231,93 +236,217 @@ export function SalesPredictionPage() {
     return acc
   }, [])
 
+  function handleClientChange(value: string | null) {
+    setClientNetId(value)
+    setByClient([])
+    setCombined([])
+
+    if (!value) {
+      setClientFullName('')
+
+      return
+    }
+
+    const selected = clientOptions.find((client) => client.NetUid === value)
+
+    setClientFullName(selected ? getClientLabel(selected) : '')
+  }
+
+  function handleProductChange(value: string | null) {
+    setProductNetId(value)
+    setByProduct([])
+    setCombined([])
+
+    if (!value) {
+      setProductVendorCode('')
+
+      return
+    }
+
+    const selected = productOptions.find((product) => product.NetUid === value)
+
+    setProductVendorCode(selected?.VendorCode?.trim() || selected?.NetUid || '')
+  }
+
   return (
     <Stack gap="lg">
       <Text fw={700} size="lg">
         {t('Прогноз продажів')}
       </Text>
 
-      <Card withBorder radius="md" padding={0} className="app-filter-card">
-        <div className="app-filter-bar">
-          <Grid gap="md">
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Select
-            clearable
-            searchable
-            data={clientData}
-            label={t('Клієнт')}
-            leftSection={<IconSearch size={16} />}
-            nothingFoundMessage={
-              clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
-            }
-            placeholder={t('Пошук клієнта')}
-            rightSection={isLoadingClient ? <Loader size="xs" /> : null}
-            searchValue={clientQuery}
-            value={clientNetId}
-            onChange={(value) => {
-              setClientNetId(value)
+      <PredictionFilters
+        clientData={clientData}
+        clientNetId={clientNetId}
+        clientQuery={clientQuery}
+        isLoadingClient={isLoadingClient}
+        isLoadingProduct={isLoadingProduct}
+        productData={productData}
+        productNetId={productNetId}
+        productQuery={productQuery}
+        onClientChange={handleClientChange}
+        onClientSearchChange={setClientQuery}
+        onProductChange={handleProductChange}
+        onProductSearchChange={setProductQuery}
+      />
 
-              if (!value) {
-                setClientFullName('')
-                setByClient([])
-                setCombined([])
+      <PredictionCharts
+        byClient={byClient}
+        byProduct={byProduct}
+        clientFullName={clientFullName}
+        clientNetId={clientNetId}
+        combined={combined}
+        isLoadingClient={isLoadingClient}
+        isLoadingCombined={isLoadingCombined}
+        isLoadingProduct={isLoadingProduct}
+        productNetId={productNetId}
+        productVendorCode={productVendorCode}
+      />
+    </Stack>
+  )
+}
 
-                return
+function PredictionFilters({
+  clientData,
+  clientNetId,
+  clientQuery,
+  isLoadingClient,
+  isLoadingProduct,
+  productData,
+  productNetId,
+  productQuery,
+  onClientChange,
+  onClientSearchChange,
+  onProductChange,
+  onProductSearchChange,
+}: {
+  clientData: SelectOption[]
+  clientNetId: string | null
+  clientQuery: string
+  isLoadingClient: boolean
+  isLoadingProduct: boolean
+  productData: SelectOption[]
+  productNetId: string | null
+  productQuery: string
+  onClientChange: (value: string | null) => void
+  onClientSearchChange: (value: string) => void
+  onProductChange: (value: string | null) => void
+  onProductSearchChange: (value: string) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <Card withBorder radius="md" padding={0} className="app-filter-card">
+      <div className="app-filter-bar">
+        <Grid gap="md">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Select
+              clearable
+              searchable
+              data={clientData}
+              label={t('Клієнт')}
+              leftSection={<IconSearch size={16} />}
+              nothingFoundMessage={
+                clientQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
               }
+              placeholder={t('Пошук клієнта')}
+              rightSection={isLoadingClient ? <Loader size="xs" /> : null}
+              searchValue={clientQuery}
+              value={clientNetId}
+              onChange={onClientChange}
+              onSearchChange={onClientSearchChange}
+            />
+          </Grid.Col>
 
-              const selected = clientOptions.find((client) => client.NetUid === value)
-
-              setClientFullName(selected ? getClientLabel(selected) : '')
-            }}
-            onSearchChange={setClientQuery}
-          />
-        </Grid.Col>
-
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Select
-            clearable
-            searchable
-            data={productData}
-            label={t('Товар')}
-            leftSection={<IconSearch size={16} />}
-            nothingFoundMessage={
-              productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
-            }
-            placeholder={t('Пошук товару')}
-            rightSection={isLoadingProduct ? <Loader size="xs" /> : null}
-            searchValue={productQuery}
-            value={productNetId}
-            onChange={(value) => {
-              setProductNetId(value)
-
-              if (!value) {
-                setProductVendorCode('')
-                setByProduct([])
-                setCombined([])
-
-                return
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Select
+              clearable
+              searchable
+              data={productData}
+              label={t('Товар')}
+              leftSection={<IconSearch size={16} />}
+              nothingFoundMessage={
+                productQuery.trim().length < 2 ? t('Введіть мінімум 2 символи') : t('Нічого не знайдено')
               }
+              placeholder={t('Пошук товару')}
+              rightSection={isLoadingProduct ? <Loader size="xs" /> : null}
+              searchValue={productQuery}
+              value={productNetId}
+              onChange={onProductChange}
+              onSearchChange={onProductSearchChange}
+            />
+          </Grid.Col>
+        </Grid>
+      </div>
+    </Card>
+  )
+}
 
-              const selected = productOptions.find((product) => product.NetUid === value)
+function PredictionCharts({
+  byClient,
+  byProduct,
+  clientFullName,
+  clientNetId,
+  combined,
+  isLoadingClient,
+  isLoadingCombined,
+  isLoadingProduct,
+  productNetId,
+  productVendorCode,
+}: {
+  byClient: SalesPredictionChartPoint[]
+  byProduct: SalesPredictionChartPoint[]
+  clientFullName: string
+  clientNetId: string | null
+  combined: SalesPredictionChartPoint[]
+  isLoadingClient: boolean
+  isLoadingCombined: boolean
+  isLoadingProduct: boolean
+  productNetId: string | null
+  productVendorCode: string
+}) {
+  const { t } = useI18n()
+  const isLoadingPrediction = isLoadingClient || isLoadingProduct || isLoadingCombined
 
-              setProductVendorCode(selected?.VendorCode?.trim() || selected?.NetUid || '')
-            }}
-            onSearchChange={setProductQuery}
-          />
-        </Grid.Col>
-      </Grid>
-        </div>
-      </Card>
+  if (!clientNetId && !productNetId) {
+    return (
+      <Text c="dimmed" size="sm">
+        {t('Для відображення прогнозу виберіть у відповідному полі')}
+      </Text>
+    )
+  }
 
-      {!clientNetId && !productNetId && (
-        <Text c="dimmed" size="sm">
-          {t('Для відображення прогнозу виберіть у відповідному полі')}
-        </Text>
-      )}
+  return (
+    <>
+      <SalesPredictionComparisonChart
+        isLoading={isLoadingPrediction}
+        series={[
+          {
+            color: 'blue.6',
+            data: byClient,
+            label: t('Клієнт'),
+            name: 'clientAmount',
+          },
+          {
+            color: 'orange.6',
+            data: byProduct,
+            label: t('Товар'),
+            name: 'productAmount',
+          },
+          {
+            color: 'teal.6',
+            data: combined,
+            label: t('Клієнт + товар'),
+            name: 'combinedAmount',
+          },
+        ]}
+        title={t('Прогноз продажів')}
+      />
 
       {clientNetId && (
         <SalesPredictionChart
+          color="blue.6"
           data={byClient}
+          isLoading={isLoadingClient}
           title={t('Прогноз продажів по клієнту: {customer} на {monthCount} місяців', {
             customer: clientFullName,
             monthCount: byClient.length,
@@ -327,7 +456,9 @@ export function SalesPredictionPage() {
 
       {productNetId && (
         <SalesPredictionChart
+          color="orange.6"
           data={byProduct}
+          isLoading={isLoadingProduct}
           title={t('Прогноз продажів по продукту: {product} на {monthCount} місяців', {
             monthCount: byProduct.length,
             product: productVendorCode,
@@ -337,7 +468,9 @@ export function SalesPredictionPage() {
 
       {clientNetId && productNetId && (
         <SalesPredictionChart
+          color="teal.6"
           data={combined}
+          isLoading={isLoadingCombined}
           title={
             isLoadingCombined
               ? t('Завантаження')
@@ -349,6 +482,6 @@ export function SalesPredictionPage() {
           }
         />
       )}
-    </Stack>
+    </>
   )
 }
