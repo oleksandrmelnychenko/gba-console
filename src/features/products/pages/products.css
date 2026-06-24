@@ -1,6 +1,8 @@
 .products-page {
-  /* This page's content (detail card + tabs) is taller than the fixed app frame, so it scrolls
-     here — the layout frame itself is overflow:hidden. */
+  /* The page scrolls; the left assortment column is sticky so it stays in view while the
+     detail panel scrolls past it. The layout frame itself is overflow:hidden.
+     (Page scroll — not an inner scroll on the right — so the wheel works everywhere,
+     including over the selected plate that floats out over the detail panel.) */
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -9,7 +11,7 @@
 .product-assortment-workspace {
   display: grid;
   grid-template-columns: 272px minmax(0, 1fr);
-  align-items: start; /* carousel keeps its own height; right panel resizing won't shake the drum */
+  align-items: start; /* sticky column keeps its own height and pins while the page scrolls */
   gap: 16px;
   min-height: calc(100vh - 128px);
 }
@@ -20,6 +22,9 @@
   gap: 10px;
   height: calc(100vh - 128px);
   min-height: 0;
+  position: sticky; /* stays in view while the detail panel scrolls past */
+  top: 0;
+  align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
 }
 
 .product-assortment-controls {
@@ -406,22 +411,26 @@
 }
 
 .product-inline-stock-bar {
-  margin-top: 10px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: #f8faf9;
 }
 
+/* Legacy stock bar = a single horizontal row of counters (no wrapping). */
 .product-inline-stock-bar .mantine-SimpleGrid-root {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+  grid-template-columns: none !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(0, 1fr) !important;
+  gap: 6px !important;
 }
 
 .product-inline-image {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 190px;
+  height: 150px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: #f7f9fa;
@@ -448,13 +457,13 @@
 .product-inline-description {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
   align-content: start;
 }
 
 .product-inline-info-block {
   min-width: 0;
-  padding: 5px 8px;
+  padding: 4px 8px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 6px;
   background: #f8faf9;
@@ -591,6 +600,13 @@
 
   .product-assortment-column {
     height: auto;
+    position: static; /* no sticky pin when stacked into a single column */
+  }
+
+  .product-inline-stock-bar .mantine-SimpleGrid-root {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: auto !important;
   }
 
   .product-assortment-carousel {

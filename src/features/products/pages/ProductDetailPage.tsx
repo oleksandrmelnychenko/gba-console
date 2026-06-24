@@ -697,13 +697,13 @@ function ProductAvailabilityPlacementRow({
         borderRadius: 6,
         cursor: hasPlacements ? 'pointer' : 'default',
         minWidth: 0,
-        padding: '8px 10px',
+        padding: '5px 8px',
       }}
     >
-      <Text size="xs" c="dimmed" lineClamp={1} title={displayValue(availability.Storage?.Name)}>
+      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
         {displayValue(availability.Storage?.Name)}
       </Text>
-      <Text size="md" fw={700}>
+      <Text size="sm" fw={700}>
         {formatAmount(availability.Amount)}
       </Text>
     </Box>
@@ -961,13 +961,13 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
         background: 'var(--mantine-color-gray-0)',
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
-        padding: '8px 10px',
+        padding: '5px 8px',
       }}
     >
-      <Text size="xs" c="dimmed" lineClamp={1}>
+      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2}>
         {label}
       </Text>
-      <Text size="md" fw={700}>
+      <Text size="sm" fw={700}>
         {formatAmount(value)}
       </Text>
     </Box>

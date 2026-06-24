@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Divider,
   FileInput,
@@ -48,6 +47,8 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
@@ -1149,7 +1150,7 @@ function ProductInlineView({
             <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('EUR')}</Text>
             <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('UAH')}</Text>
           </Group>
-          <Stack gap={2}>
+          <Stack gap={2} style={{ maxHeight: 230, overflowY: 'auto' }}>
             {prices.length > 0 ? (
               prices.map((price, index) => (
                 <ProductInlinePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
@@ -1158,7 +1159,7 @@ function ProductInlineView({
               <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
             )}
           </Stack>
-          <Divider my="sm" />
+          <Divider my={8} />
           <Group gap="xs">
             <Badge color={getBooleanBadgeColor(product.IsForZeroSale)} variant="light">{t('Нульовий продаж')}</Badge>
             <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">{t('Продаж')}</Badge>
@@ -1189,6 +1190,7 @@ function ProductInlineView({
 function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
   const { t } = useI18n()
   const breakdown = getProductPriceBreakdown(price)
+  const showBase = breakdown.hasBasePrice && breakdown.basePriceEUR !== 0
 
   return (
     <Box className="product-inline-price-row">
@@ -1197,9 +1199,9 @@ function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
         <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
         <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
       </Group>
-      {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
+      {(showBase || breakdown.hasDiscount) ? (
         <Group gap={6} mt={1} wrap="wrap">
-          {breakdown.hasBasePrice ? (
+          {showBase ? (
             <Text c="dimmed" lh={1.1} style={{ fontSize: 10 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
           ) : null}
           {breakdown.discountPriceEUR !== undefined ? (
@@ -1524,6 +1526,80 @@ function ProductOriginalNumbersTab({
     }
   }
 
+  const numberColumns: DataTableColumn<ProductOriginalNumber>[] = [
+    {
+      id: 'number',
+      header: t('Оригінальний номер'),
+      minWidth: 200,
+      accessor: (item) => getOriginalNumberText(item),
+      cell: (item) => (
+        <Text size="sm" fw={650}>
+          {displayValue(getOriginalNumberText(item))}
+        </Text>
+      ),
+    },
+    {
+      id: 'main',
+      header: t('Основний'),
+      width: 120,
+      minWidth: 96,
+      align: 'center',
+      enableSorting: false,
+      cell: (item) =>
+        item.IsMainOriginalNumber ? (
+          <Badge size="xs" color="green" variant="light">
+            {t('Основний')}
+          </Badge>
+        ) : null,
+    },
+    {
+      id: 'actions',
+      header: '',
+      width: 96,
+      minWidth: 80,
+      align: 'right',
+      enableSorting: false,
+      enableHiding: false,
+      enableResizing: false,
+      cell: (item) => (
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+          <Group gap={6} justify="flex-end" wrap="nowrap">
+            <Tooltip label={t('Зробити основним')}>
+              <ActionIcon
+                aria-label={t('Зробити основним')}
+                color="yellow"
+                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                size="sm"
+                variant="light"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void makeMainOriginalNumber(item)
+                }}
+              >
+                <IconStar size={15} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                size="sm"
+                variant="light"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void removeOriginalNumber(item)
+                }}
+              >
+                <IconTrash size={15} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </PermissionGate>
+      ),
+    },
+  ]
+
   return (
     <Stack gap="sm" tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
       {error && (
@@ -1579,68 +1655,21 @@ function ProductOriginalNumbersTab({
         </Text>
       ) : null}
 
-      {originalNumbers.length > 0 ? (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-          {originalNumbers.map((item) => {
-            const itemKey = getProductOriginalNumberIdentity(item)
-            const isSelected = itemKey === selectedNetUid
-
-            return (
-              <Card
-                withBorder
-                radius="sm"
-                padding="xs"
-                className={`product-original-number-card ${isSelected ? 'is-selected' : ''}`}
-                key={itemKey}
-                onClick={() => selectOriginalNumber(item)}
-              >
-                <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Text fw={650} size="sm" lineClamp={1}>
-                    {displayValue(getOriginalNumberText(item))}
-                  </Text>
-                  {item.IsMainOriginalNumber ? <Badge size="xs" color="green" variant="light">{t('Основний')}</Badge> : null}
-                </Group>
-                <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-                  <Group gap={6} mt="xs">
-                    <Tooltip label={t('Зробити основним')}>
-                      <ActionIcon
-                        aria-label={t('Зробити основним')}
-                        color="yellow"
-                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                        size="sm"
-                        variant="light"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void makeMainOriginalNumber(item)
-                        }}
-                      >
-                        <IconStar size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                        size="sm"
-                        variant="light"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void removeOriginalNumber(item)
-                        }}
-                      >
-                        <IconTrash size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </PermissionGate>
-              </Card>
-            )
-          })}
-        </SimpleGrid>
-      ) : (
-        <Text c="dimmed" size="sm">{t('Номерів не знайдено')}</Text>
-      )}
+      <DataTable
+        columns={numberColumns}
+        data={originalNumbers}
+        emptyText={t('Номерів не знайдено')}
+        getRowId={(item, index) => getProductOriginalNumberIdentity(item) || String(index)}
+        maxHeight="320px"
+        minWidth={360}
+        rowClassName={(item) =>
+          getProductOriginalNumberIdentity(item) === selectedNetUid ? 'is-selected' : undefined
+        }
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId="product-original-numbers"
+        onRowClick={selectOriginalNumber}
+      />
     </Stack>
   )
 }
@@ -1707,6 +1736,117 @@ function ProductRelatedProductsTab({
     }
   }
 
+  const relatedColumns: DataTableColumn<RelatedProductRow>[] = [
+    {
+      id: 'code',
+      header: t('Код'),
+      minWidth: 150,
+      accessor: (row) => row.product.VendorCode || row.product.NetUid,
+      cell: (row) => (
+        <Group gap={6} wrap="nowrap" align="center">
+          {type === 'components' ? (
+            row.isProductSet ? (
+              <IconBox size={15} className="product_page_iconBox" />
+            ) : (
+              <IconSettings size={15} />
+            )
+          ) : null}
+          <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>
+            {displayValue(row.product.VendorCode || row.product.NetUid)}
+          </Text>
+        </Group>
+      ),
+    },
+    {
+      id: 'name',
+      header: t('Назва'),
+      minWidth: 220,
+      accessor: (row) => row.product.NameUA || row.product.Name,
+      cell: (row) => (
+        <Text size="sm" lineClamp={2} c={getRelatedProductRowColor(row.product) ?? 'dimmed'}>
+          {displayValue(row.product.NameUA || row.product.Name)}
+        </Text>
+      ),
+    },
+    {
+      id: 'originalNumber',
+      header: t('Оригінальний номер'),
+      minWidth: 150,
+      accessor: (row) => row.product.MainOriginalNumber,
+      cell: (row) => (
+        <Text size="sm" fw={600} c={getRelatedProductRowColor(row.product)}>
+          {displayValue(row.product.MainOriginalNumber)}
+        </Text>
+      ),
+    },
+    {
+      id: 'packing',
+      header: t('Пакування'),
+      width: 110,
+      minWidth: 90,
+      align: 'right',
+      accessor: (row) => row.product.PackingStandard,
+      cell: (row) => displayValue(row.product.PackingStandard),
+    },
+    {
+      id: 'stockUk',
+      header: t('Склад Укр.'),
+      width: 110,
+      minWidth: 90,
+      align: 'right',
+      accessor: (row) => getRelatedProductAvailableQty(row.product, type),
+      cell: (row) => formatAmount(getRelatedProductAvailableQty(row.product, type)),
+    },
+    ...(type === 'components'
+      ? ([
+          {
+            id: 'quantity',
+            header: t('Кількість'),
+            width: 100,
+            minWidth: 80,
+            align: 'right',
+            cell: (row) => displayValue(row.quantity),
+          },
+          {
+            id: 'unit',
+            header: t('Одиниця'),
+            width: 110,
+            minWidth: 90,
+            cell: (row) => displayValue(row.product.MeasureUnit?.Name),
+          },
+        ] as DataTableColumn<RelatedProductRow>[])
+      : []),
+    {
+      id: 'actions',
+      header: '',
+      width: 64,
+      minWidth: 56,
+      align: 'center',
+      enableSorting: false,
+      enableHiding: false,
+      enableResizing: false,
+      cell: (row) => (
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+          <Tooltip label={t('Видалити')}>
+            <ActionIcon
+              aria-label={t('Видалити')}
+              color="red"
+              loading={removingNetUid === row.product.NetUid}
+              size="sm"
+              variant="light"
+              onClick={(event) => {
+                event.stopPropagation()
+                void removeRelatedProduct(row)
+              }}
+            >
+              <IconTrash size={15} />
+            </ActionIcon>
+          </Tooltip>
+        </PermissionGate>
+      ),
+    },
+  ]
+
   return (
     <Stack gap="sm">
       {error && (
@@ -1740,67 +1880,22 @@ function ProductRelatedProductsTab({
         </Group>
       )}
 
-      {rows.length === 0 ? (
-        <Text c="dimmed" size="sm">{emptyLabel}</Text>
-      ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-          {rows.map((row) => {
-            const rowKey = getRelatedProductKey(row.source)
-            const isRemoving = removingNetUid === row.product.NetUid
-            const rowColor = getRelatedProductRowColor(row.product)
-
-            return (
-              <Card withBorder radius="sm" padding="xs" key={rowKey}>
-                <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <button
-                    type="button"
-                    className="product-related-open-button"
-                    disabled={!row.product.NetUid}
-                    onClick={() => onSelectProduct(row.product)}
-                  >
-                    <Group gap={6} wrap="nowrap" align="center">
-                      {type === 'components' ? (
-                        row.isProductSet ? (
-                          <IconBox size={15} className="product_page_iconBox" />
-                        ) : (
-                          <IconSettings size={15} />
-                        )
-                      ) : null}
-                      <Text fw={650} size="sm" lineClamp={1} c={rowColor}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
-                    </Group>
-                    <Text c={rowColor ?? 'dimmed'} size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
-                  </button>
-                  <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        loading={isRemoving}
-                        size="sm"
-                        variant="light"
-                        onClick={() => void removeRelatedProduct(row)}
-                      >
-                        <IconTrash size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </PermissionGate>
-                </Group>
-                <SimpleGrid cols={2} spacing={6} mt="xs">
-                  <InfoBlock label="Оригінальний номер" value={row.product.MainOriginalNumber ? <Text size="sm" fw={600} c={rowColor}>{row.product.MainOriginalNumber}</Text> : undefined} />
-                  <InfoBlock label="Пакування" value={row.product.PackingStandard} />
-                  <InfoBlock label="Склад Укр." value={formatAmount(getRelatedProductAvailableQty(row.product, type))} />
-                  {type === 'components' ? (
-                    <>
-                      <InfoBlock label="Кількість" value={displayValue(row.quantity)} />
-                      <InfoBlock label="Одиниця" value={row.product.MeasureUnit?.Name} />
-                    </>
-                  ) : null}
-                </SimpleGrid>
-              </Card>
-            )
-          })}
-        </SimpleGrid>
-      )}
+      <DataTable
+        columns={relatedColumns}
+        data={rows}
+        emptyText={emptyLabel}
+        getRowId={(row, index) => getRelatedProductKey(row.source) || String(index)}
+        maxHeight="calc(100vh - 360px)"
+        minWidth={type === 'components' ? 880 : 720}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId={`product-related-${type}`}
+        onRowClick={(row) => {
+          if (row.product.NetUid) {
+            onSelectProduct(row.product)
+          }
+        }}
+      />
     </Stack>
   )
 }
