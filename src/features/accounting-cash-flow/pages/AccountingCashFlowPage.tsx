@@ -44,7 +44,6 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
-import './accounting-cash-flow-page.css'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import type {

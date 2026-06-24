@@ -231,7 +231,7 @@ export function SupplierOrganizationCashFlowPage() {
   )
 
   return (
-    <Stack gap="md">
+    <Stack className="cash-flow-page" gap="sm">
       <Group justify="space-between" align="center" gap="sm">
         <Group gap="xs">
           <Tooltip label={t('Назад')}>
@@ -341,7 +341,7 @@ export function SupplierOrganizationCashFlowPage() {
         isLoading={isLoadingCashFlow}
         isRowActive={(row) => row === selectedRow}
         loadingText={t('Завантаження взаєморозрахунків')}
-        maxHeight="calc(100vh - 340px)"
+        maxHeight="100%"
         onRowClick={setSelectedRow}
       />
 
