@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { formatDateForQuery } from '../../../shared/date/dateTime'
 import type {
   ClientShoppingCart,
   OfferClientAgreement,
@@ -18,8 +19,8 @@ export function getPublicOfferLink(netUid: string): string {
 export async function getOffers(filters: OffersFilters): Promise<ClientShoppingCart[]> {
   const result = await apiRequest<unknown>('/sales/offers/all/filtered', {
     query: {
-      from: filters.from.toDateString(),
-      to: filters.to.toDateString(),
+      from: formatDateForQuery(filters.from),
+      to: formatDateForQuery(filters.to),
     },
   })
 

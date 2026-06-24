@@ -8,17 +8,7 @@ export function getDateShiftedByDays(days: number): string {
 }
 
 export function toDateString(value: string): string {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toDateString()
+  return formatDateInputForQuery(value)
 }
 
 export function toIsoString(value: string): string {

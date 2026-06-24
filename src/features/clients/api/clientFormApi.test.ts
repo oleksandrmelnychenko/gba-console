@@ -22,6 +22,7 @@ describe('client form API contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/get', {
       query: {
         netId: 'client-net-id',
+        includeDebts: false,
       },
     })
   })

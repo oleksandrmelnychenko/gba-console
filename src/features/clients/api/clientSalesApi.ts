@@ -1,17 +1,18 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { formatDateForQuery, formatDateInputForQuery } from '../../../shared/date/dateTime'
 import type { ClientPrintDocument } from '../types'
 import type { ClientSalesParams, SaleStatistic } from '../salesTypes'
 
-function toLegacyDateParam(value: Date | string): string {
-  return value instanceof Date ? value.toDateString() : value
+function toDateParam(value: Date | string): string {
+  return value instanceof Date ? formatDateForQuery(value) : formatDateInputForQuery(value)
 }
 
 export async function getSalesByClient(params: ClientSalesParams): Promise<SaleStatistic[]> {
   const result = await apiRequest<unknown>('/sales/all/client', {
     query: {
       netId: params.netId,
-      from: toLegacyDateParam(params.from),
-      to: toLegacyDateParam(params.to),
+      from: toDateParam(params.from),
+      to: toDateParam(params.to),
     },
   })
 
