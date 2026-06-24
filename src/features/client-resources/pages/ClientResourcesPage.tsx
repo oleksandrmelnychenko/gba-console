@@ -558,15 +558,15 @@ function ClientResourcesNav({
         return (
           <Button
             key={section.step}
-            className="client-resources-nav-item"
-            color={isActive ? CREATE_ACTION_COLOR : 'gray'}
+            className={`client-resources-nav-item${isActive ? ' is-active' : ''}`}
+            color="gray"
             fullWidth
             justify="space-between"
             leftSection={<Icon size={18} stroke={1.8} />}
             onClick={() => onNavigate(section.step)}
-            rightSection={isActive ? <IconChevronRight size={16} stroke={2} /> : undefined}
+            rightSection={<IconChevronRight size={16} stroke={2} />}
             size="sm"
-            variant={isActive ? 'filled' : 'subtle'}
+            variant="subtle"
           >
             {t(section.label)}
           </Button>
