@@ -21,6 +21,7 @@ const SHEET_WIDTHS = {
   compact: 'min(560px, 100vw)',
   standard: 'min(900px, 100vw)',
   wide: 'min(1240px, 100vw)',
+  full: '90vw',
 } as const
 
 type SheetTier = keyof typeof SHEET_WIDTHS
