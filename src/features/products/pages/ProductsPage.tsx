@@ -74,6 +74,7 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
@@ -1556,6 +1557,7 @@ function ProductOriginalNumbersTab({
             onChange={(event) => setMainDraft(event.currentTarget.checked)}
           />
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!canSave}
             leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
             loading={isSaving}
@@ -2098,7 +2100,7 @@ function ProductPlacementStorageUploadModal({
               <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
             </SimpleGrid>
             <Group justify="flex-end">
-              <Button disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
                 {t('Завантажити')}
               </Button>
             </Group>
@@ -2138,7 +2140,7 @@ function ProductPlacementStorageUploadModal({
               <Button color="gray" variant="light" disabled={isSavingReturn} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
-              <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2410,7 +2412,7 @@ function ProductFileUploadModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -2592,7 +2594,7 @@ function ProductUploadDocumentModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
