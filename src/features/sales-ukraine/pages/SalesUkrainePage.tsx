@@ -24,7 +24,6 @@ import {
   IconBrandEdge,
   IconCheck,
   IconChevronDown,
-  IconChevronLeft,
   IconChevronRight,
   IconDots,
   IconLock,
@@ -37,7 +36,6 @@ import {
   IconPrinter,
   IconReceipt,
   IconReceipt2,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconTag,
@@ -59,6 +57,8 @@ import { useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
@@ -119,9 +119,6 @@ type ConfirmState = {
   onConfirm: () => Promise<void>
   title: string
 }
-
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100', '500']
-const DEFAULT_PAGE_SIZE = 20
 
 const STATUS_OPTIONS: Array<{ label: string; value: SalesUkraineStatusFilter }> = [
   { value: 'all', label: 'Усі' },
@@ -218,7 +215,7 @@ export function SalesUkrainePage() {
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialDraft)
   const [activeDraft, setActiveDraft] = useValueState<FilterDraft>(initialDraft)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [sales, setSales] = useValueState<SalesUkraineSale[]>([])
   const [selectedSale, setSelectedSale] = useValueState<SalesUkraineSale | null>(null)
   const [error, setError] = useValueState<string | null>(null)
@@ -608,52 +605,20 @@ export function SalesUkrainePage() {
 
   const toolbarRight = useMemo(
     () => (
-      <Group gap={4} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          comboboxProps={SALES_FILTER_COMBOBOX_PROPS}
-          data={PAGE_SIZE_OPTIONS}
-          disabled={isLoading}
-          scrollAreaProps={SALES_FILTER_SCROLL_AREA_PROPS}
-          size="xs"
-          value={String(pageSize)}
-          w={72}
-          onChange={(value) => {
-            setPage(1)
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-          }}
-        />
-        <Text size="xs" c="dark" fw={700} style={{ whiteSpace: 'nowrap' }}>
-          {t('стор.')} {page}
-        </Text>
-        <ActionIcon
-          aria-label={t('Попередня сторінка')}
-          color="gray"
-          disabled={page <= 1 || isLoading}
-          size="sm"
-          variant="subtle"
-          onClick={() => setPage((current) => Math.max(1, current - 1))}
-        >
-          <IconChevronLeft size={16} />
-        </ActionIcon>
-        <ActionIcon
-          aria-label={t('Наступна сторінка')}
-          color="gray"
-          disabled={page >= totalPages || isLoading}
-          size="sm"
-          variant="subtle"
-          onClick={() => setPage((current) => current + 1)}
-        >
-          <IconChevronRight size={16} />
-        </ActionIcon>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size="sm" variant="subtle" onClick={() => reload()}>
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+      <Paginator
+        isLoading={isLoading}
+        page={page}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        onPageSizeChange={(nextPageSize) => {
+          setPage(1)
+          setPageSize(nextPageSize)
+        }}
+        onRefresh={() => reload()}
+      />
     ),
-    [isLoading, page, pageSize, reload, setPage, setPageSize, t, totalPages],
+    [isLoading, page, pageSize, reload, setPage, setPageSize, totalPages],
   )
 
   return (
