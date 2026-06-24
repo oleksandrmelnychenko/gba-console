@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Checkbox, Group, Loader, Stack, Text, TextInput, Tooltip } from '@mantine/core'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import './discounts-tree.css'
 import { useAuth } from '../../../auth/useAuth'
 import { getAgreementProductGroupDiscounts } from '../../api/clientAgreementsApi'
 import {
@@ -361,9 +362,10 @@ export function DiscountsTree({
     const children = childNodesByParent.get(node.netId) || []
 
     return (
-      <Box key={node.netId} pl={depth > 0 ? 'lg' : undefined}>
+      <Box key={node.netId}>
         <GroupRow
           canCheck={canCheckRow}
+          depth={depth}
           disabled={disabled}
           node={node}
           onCheck={handleCheckNode}
@@ -495,6 +497,7 @@ function isSameOrDescendant(node: DiscountNode, targetNetId: string, map: Discou
 
 type GroupRowProps = {
   node: DiscountNode
+  depth: number
   disabled: boolean
   canCheck: boolean
   t: ReturnType<typeof useI18n>['t']
@@ -503,17 +506,13 @@ type GroupRowProps = {
   onToggleActive: (netId: string) => void
 }
 
-function GroupRow({ node, disabled, canCheck, t, onSelect, onCheck, onToggleActive }: GroupRowProps) {
+function GroupRow({ node, depth, disabled, canCheck, t, onSelect, onCheck, onToggleActive }: GroupRowProps) {
   return (
     <Group
       align="center"
+      className={`discounts-tree-row${node.isSelected ? ' is-selected' : ''}`}
       gap="sm"
-      px="xs"
-      py={6}
-      style={{
-        borderRadius: 6,
-        backgroundColor: node.isSelected ? 'var(--mantine-color-violet-light)' : undefined,
-      }}
+      style={{ '--discounts-tree-indent': `${depth * 18}px` } as CSSProperties}
       wrap="nowrap"
     >
       <Text
