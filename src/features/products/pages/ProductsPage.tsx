@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   Checkbox,
   Divider,
   FileInput,
@@ -28,8 +27,6 @@ import {
   IconAlertCircle,
   IconArrowsExchange,
   IconBox,
-  IconChevronLeft,
-  IconChevronRight,
   IconClipboardList,
   IconDeviceFloppy,
   IconDownload,
@@ -50,8 +47,11 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { type KeyboardEvent, type ReactNode, useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { translate } from '../../../shared/i18n/translate'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import {
@@ -75,6 +75,7 @@ import {
   uploadProductRelatedDocument,
 } from '../api/productsApi'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useAuth } from '../../auth/useAuth'
 import type {
@@ -826,7 +827,7 @@ export function ProductsPage() {
   useRealtimeEvent(realtimeEvents.productReservationUpdated, handleRealtimeProductUpdate)
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" className="products-page">
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error}
@@ -847,8 +848,6 @@ export function ProductsPage() {
           selectedProduct={selectedProduct}
           topProducts={topProducts}
           onKeyDown={handleCarouselKeyDown}
-          onNext={selectNextProduct}
-          onPrevious={selectPreviousProduct}
           onRefresh={commitSearch}
           onReset={resetSearch}
           onSearchDraftChange={updateSearchDraft}
@@ -890,8 +889,6 @@ function ProductAssortmentCarousel({
   isSelectionMode,
   isVirtualLoad,
   onKeyDown,
-  onNext,
-  onPrevious,
   onSearchDraftChange,
   onSearchModeChange,
   onSortModeChange,
@@ -910,8 +907,6 @@ function ProductAssortmentCarousel({
   isSelectionMode: boolean
   isVirtualLoad: boolean
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
-  onNext: () => void
-  onPrevious: () => void
   onRefresh: () => void
   onReset: () => void
   onSearchDraftChange: (value: string) => void
@@ -928,38 +923,32 @@ function ProductAssortmentCarousel({
   const { t } = useI18n()
 
   return (
-    <Box className="product-assortment-carousel" role="region" tabIndex={0} onKeyDown={onKeyDown}>
+    <Box className="product-assortment-column" role="region" tabIndex={0} onKeyDown={onKeyDown}>
       <Group justify="space-between" className="product-assortment-carousel-header">
         <Text size="xs" c="dimmed" fw={600}>
           {t('Весь асортимент')}
         </Text>
-        <Group gap={6}>
-          <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
-          <Tooltip label={t('Попередній товар')}>
-            <ActionIcon
-              aria-label={t('Попередній товар')}
-              color="gray"
-              disabled={isLoading}
-              variant="light"
-              onClick={onPrevious}
-            >
-              <IconChevronLeft size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Наступний товар')}>
-            <ActionIcon
-              aria-label={t('Наступний товар')}
-              color="gray"
-              disabled={isLoading}
-              variant="light"
-              onClick={onNext}
-            >
-              <IconChevronRight size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        <ProductUploadDocumentToolbar product={selectedProduct} onUploadSuccess={onUploadSuccess} />
       </Group>
 
+      <Group gap={6} grow mb="xs">
+        <Select
+          aria-label={t('Поле пошуку')}
+          size="xs"
+          data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
+          value={searchMode}
+          onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
+        />
+        <Select
+          aria-label={t('Сортування')}
+          size="xs"
+          data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
+          value={sortMode}
+          onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
+        />
+      </Group>
+
+      <Box className="product-assortment-carousel">
       <Box className="product-assortment-rail product-assortment-rail-top">
         {isLoading && !isVirtualLoad ? (
           <Stack align="center" justify="center" h="100%">
@@ -988,34 +977,16 @@ function ProductAssortmentCarousel({
             <span className="product-assortment-selected-name">{getProductTitle(selectedProduct)}</span>
           </button>
         ) : (
-          <Stack gap={6}>
-            <TextInput
-              autoFocus
-              aria-label={t('Введіть товар')}
-              leftSection={<IconSearch size={17} />}
-              placeholder={t('Введіть артикул або назву товару')}
-              size="md"
-              value={searchDraft}
-              className="product-assortment-search-input"
-              onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
-            />
-            <Group gap={6} grow>
-              <Select
-                aria-label={t('Поле пошуку')}
-                size="xs"
-                data={SEARCH_MODE_OPTION_VALUES.map((value) => ({ label: t(SEARCH_MODE_LABELS[value]), value }))}
-                value={searchMode}
-                onChange={(value) => onSearchModeChange((value as ProductSearchMode) || DEFAULT_SEARCH_MODE)}
-              />
-              <Select
-                aria-label={t('Сортування')}
-                size="xs"
-                data={SORT_MODE_OPTION_VALUES.map((value) => ({ label: t(SORT_MODE_LABELS[value]), value }))}
-                value={sortMode}
-                onChange={(value) => onSortModeChange((value as ProductSortMode) || DEFAULT_SORT_MODE)}
-              />
-            </Group>
-          </Stack>
+          <TextInput
+            autoFocus
+            aria-label={t('Введіть товар')}
+            leftSection={<IconSearch size={17} />}
+            placeholder={t('Введіть артикул або назву товару')}
+            size="md"
+            value={searchDraft}
+            className="product-assortment-search-input"
+            onChange={(event) => onSearchDraftChange(event.currentTarget.value)}
+          />
         )}
       </Box>
 
@@ -1032,6 +1003,7 @@ function ProductAssortmentCarousel({
             <Loader size="xs" />
           </Group>
         ) : null}
+      </Box>
       </Box>
     </Box>
   )
@@ -1097,12 +1069,14 @@ function ProductInlineView({
 
   return (
     <Box className="product-inline-view">
-      <Group align="flex-start" justify="space-between" gap="sm" className="product-inline-title">
+      <Group align="flex-start" justify="space-between" gap="sm" wrap="nowrap" className="product-inline-title">
         <Box className="product-inline-title-text">
           <Text component="span" fw={800} className="product-inline-code">{getProductCode(product)}</Text>
-          <Text component="span" fw={650} className="product-inline-name">{getProductTitle(product)}</Text>
+          <Tooltip label={getProductTitle(product)} multiline maw={420} withinPortal>
+            <Text component="span" fw={650} truncate className="product-inline-name">{getProductTitle(product)}</Text>
+          </Tooltip>
         </Box>
-        <Group gap="xs" justify="flex-end" className="product-inline-title-actions">
+        <Group gap="xs" justify="flex-end" wrap="nowrap" className="product-inline-title-actions">
           <ProductInlineActions disabled={isLoading} onOpenPanel={onOpenPanel} />
           <Tooltip label={t('Оновити')}>
             <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} variant="light" onClick={onReload}>
@@ -1171,14 +1145,12 @@ function ProductInlineView({
         </Box>
 
         <Box className="product-inline-prices">
-          <Group justify="space-between" mb="xs">
-            <Text fw={700}>{t('Тип ціни')}</Text>
-            <Group gap="lg">
-              <Text c="dimmed" size="sm">{t('EUR')}</Text>
-              <Text c="dimmed" size="sm">{t('UAH')}</Text>
-            </Group>
+          <Group gap="sm" mb="xs" wrap="nowrap">
+            <Text fw={700} style={{ flex: 1, minWidth: 0 }}>{t('Тип ціни')}</Text>
+            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('EUR')}</Text>
+            <Text c="dimmed" size="sm" ta="right" style={{ flexShrink: 0, width: 80 }}>{t('UAH')}</Text>
           </Group>
-          <Stack gap={4}>
+          <Stack gap={2} style={{ maxHeight: 230, overflowY: 'auto' }}>
             {prices.length > 0 ? (
               prices.map((price, index) => (
                 <ProductInlinePriceRow key={`${price.Pricing?.NetUid || price.Pricing?.Name || index}`} price={price} />
@@ -1187,7 +1159,7 @@ function ProductInlineView({
               <Text c="dimmed" size="sm">{t('Цін не знайдено')}</Text>
             )}
           </Stack>
-          <Divider my="sm" />
+          <Divider my={8} />
           <Group gap="xs">
             <Badge color={getBooleanBadgeColor(product.IsForZeroSale)} variant="light">{t('Нульовий продаж')}</Badge>
             <Badge color={getBooleanBadgeColor(product.IsForSale)} variant="light">{t('Продаж')}</Badge>
@@ -1218,23 +1190,22 @@ function ProductInlineView({
 function ProductInlinePriceRow({ price }: { price: CalculatedProductPrice }) {
   const { t } = useI18n()
   const breakdown = getProductPriceBreakdown(price)
+  const showBase = breakdown.hasBasePrice && breakdown.basePriceEUR !== 0
 
   return (
     <Box className="product-inline-price-row">
-      <Group justify="space-between" gap="sm" wrap="nowrap">
-        <Text size="sm" lineClamp={1}>{displayValue(breakdown.pricingName)}</Text>
-        <Group gap="md" wrap="nowrap">
-          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceEUR)}</Text>
-          <Text size="sm" fw={650}>{formatPrice(breakdown.retailPriceLocal)}</Text>
-        </Group>
+      <Group gap="sm" wrap="nowrap">
+        <Text size="sm" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>{displayValue(breakdown.pricingName)}</Text>
+        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceEUR)}</Text>
+        <Text size="sm" fw={650} ta="right" style={{ flexShrink: 0, width: 80 }}>{formatPrice(breakdown.retailPriceLocal)}</Text>
       </Group>
-      {(breakdown.hasBasePrice || breakdown.hasDiscount) ? (
-        <Group gap={6} mt={4} wrap="wrap">
-          {breakdown.hasBasePrice ? (
-            <Text c="dimmed" size="xs">{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
+      {(showBase || breakdown.hasDiscount) ? (
+        <Group gap={6} mt={1} wrap="wrap">
+          {showBase ? (
+            <Text c="dimmed" lh={1.1} style={{ fontSize: 10 }}>{t('База EUR')}: {formatPrice(breakdown.basePriceEUR)}</Text>
           ) : null}
           {breakdown.discountPriceEUR !== undefined ? (
-            <Text c="teal.8" size="xs" fw={650}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
+            <Text c="teal.8" fw={650} lh={1.1} style={{ fontSize: 10 }}>{t('Після знижки EUR')}: {formatPrice(breakdown.discountPriceEUR)}</Text>
           ) : null}
           {breakdown.discountRate !== undefined ? (
             <Badge size="xs" variant="light" color="teal">{t('Знижка')} {formatAmount(breakdown.discountRate)}%</Badge>
@@ -1555,6 +1526,80 @@ function ProductOriginalNumbersTab({
     }
   }
 
+  const numberColumns: DataTableColumn<ProductOriginalNumber>[] = [
+    {
+      id: 'number',
+      header: t('Оригінальний номер'),
+      minWidth: 200,
+      accessor: (item) => getOriginalNumberText(item),
+      cell: (item) => (
+        <Text size="sm" fw={650}>
+          {displayValue(getOriginalNumberText(item))}
+        </Text>
+      ),
+    },
+    {
+      id: 'main',
+      header: t('Основний'),
+      width: 120,
+      minWidth: 96,
+      align: 'center',
+      enableSorting: false,
+      cell: (item) =>
+        item.IsMainOriginalNumber ? (
+          <Badge size="xs" color="green" variant="light">
+            {t('Основний')}
+          </Badge>
+        ) : null,
+    },
+    {
+      id: 'actions',
+      header: '',
+      width: 96,
+      minWidth: 80,
+      align: 'right',
+      enableSorting: false,
+      enableHiding: false,
+      enableResizing: false,
+      cell: (item) => (
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+          <Group gap={6} justify="flex-end" wrap="nowrap">
+            <Tooltip label={t('Зробити основним')}>
+              <ActionIcon
+                aria-label={t('Зробити основним')}
+                color="yellow"
+                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                size="sm"
+                variant="light"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void makeMainOriginalNumber(item)
+                }}
+              >
+                <IconStar size={15} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Видалити')}>
+              <ActionIcon
+                aria-label={t('Видалити')}
+                color="red"
+                disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
+                size="sm"
+                variant="light"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  void removeOriginalNumber(item)
+                }}
+              >
+                <IconTrash size={15} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
+        </PermissionGate>
+      ),
+    },
+  ]
+
   return (
     <Stack gap="sm" tabIndex={0} onKeyDown={handleOriginalNumbersKeyDown}>
       {error && (
@@ -1588,6 +1633,7 @@ function ProductOriginalNumbersTab({
             onChange={(event) => setMainDraft(event.currentTarget.checked)}
           />
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!canSave}
             leftSection={selectedItem ? <IconDeviceFloppy size={16} /> : <IconPlus size={16} />}
             loading={isSaving}
@@ -1609,68 +1655,21 @@ function ProductOriginalNumbersTab({
         </Text>
       ) : null}
 
-      {originalNumbers.length > 0 ? (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-          {originalNumbers.map((item) => {
-            const itemKey = getProductOriginalNumberIdentity(item)
-            const isSelected = itemKey === selectedNetUid
-
-            return (
-              <Card
-                withBorder
-                radius="sm"
-                padding="xs"
-                className={`product-original-number-card ${isSelected ? 'is-selected' : ''}`}
-                key={itemKey}
-                onClick={() => selectOriginalNumber(item)}
-              >
-                <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <Text fw={650} size="sm" lineClamp={1}>
-                    {displayValue(getOriginalNumberText(item))}
-                  </Text>
-                  {item.IsMainOriginalNumber ? <Badge size="xs" color="green" variant="light">{t('Основний')}</Badge> : null}
-                </Group>
-                <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-                  <Group gap={6} mt="xs">
-                    <Tooltip label={t('Зробити основним')}>
-                      <ActionIcon
-                        aria-label={t('Зробити основним')}
-                        color="yellow"
-                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                        size="sm"
-                        variant="light"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void makeMainOriginalNumber(item)
-                        }}
-                      >
-                        <IconStar size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        disabled={Boolean(item.IsMainOriginalNumber) || isSaving}
-                        size="sm"
-                        variant="light"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          void removeOriginalNumber(item)
-                        }}
-                      >
-                        <IconTrash size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Group>
-                </PermissionGate>
-              </Card>
-            )
-          })}
-        </SimpleGrid>
-      ) : (
-        <Text c="dimmed" size="sm">{t('Номерів не знайдено')}</Text>
-      )}
+      <DataTable
+        columns={numberColumns}
+        data={originalNumbers}
+        emptyText={t('Номерів не знайдено')}
+        getRowId={(item, index) => getProductOriginalNumberIdentity(item) || String(index)}
+        maxHeight="320px"
+        minWidth={360}
+        rowClassName={(item) =>
+          getProductOriginalNumberIdentity(item) === selectedNetUid ? 'is-selected' : undefined
+        }
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId="product-original-numbers"
+        onRowClick={selectOriginalNumber}
+      />
     </Stack>
   )
 }
@@ -1737,6 +1736,117 @@ function ProductRelatedProductsTab({
     }
   }
 
+  const relatedColumns: DataTableColumn<RelatedProductRow>[] = [
+    {
+      id: 'code',
+      header: t('Код'),
+      minWidth: 150,
+      accessor: (row) => row.product.VendorCode || row.product.NetUid,
+      cell: (row) => (
+        <Group gap={6} wrap="nowrap" align="center">
+          {type === 'components' ? (
+            row.isProductSet ? (
+              <IconBox size={15} className="product_page_iconBox" />
+            ) : (
+              <IconSettings size={15} />
+            )
+          ) : null}
+          <Text fw={650} size="sm" lineClamp={1} c={getRelatedProductRowColor(row.product)}>
+            {displayValue(row.product.VendorCode || row.product.NetUid)}
+          </Text>
+        </Group>
+      ),
+    },
+    {
+      id: 'name',
+      header: t('Назва'),
+      minWidth: 220,
+      accessor: (row) => row.product.NameUA || row.product.Name,
+      cell: (row) => (
+        <Text size="sm" lineClamp={2} c={getRelatedProductRowColor(row.product) ?? 'dimmed'}>
+          {displayValue(row.product.NameUA || row.product.Name)}
+        </Text>
+      ),
+    },
+    {
+      id: 'originalNumber',
+      header: t('Оригінальний номер'),
+      minWidth: 150,
+      accessor: (row) => row.product.MainOriginalNumber,
+      cell: (row) => (
+        <Text size="sm" fw={600} c={getRelatedProductRowColor(row.product)}>
+          {displayValue(row.product.MainOriginalNumber)}
+        </Text>
+      ),
+    },
+    {
+      id: 'packing',
+      header: t('Пакування'),
+      width: 110,
+      minWidth: 90,
+      align: 'right',
+      accessor: (row) => row.product.PackingStandard,
+      cell: (row) => displayValue(row.product.PackingStandard),
+    },
+    {
+      id: 'stockUk',
+      header: t('Склад Укр.'),
+      width: 110,
+      minWidth: 90,
+      align: 'right',
+      accessor: (row) => getRelatedProductAvailableQty(row.product, type),
+      cell: (row) => formatAmount(getRelatedProductAvailableQty(row.product, type)),
+    },
+    ...(type === 'components'
+      ? ([
+          {
+            id: 'quantity',
+            header: t('Кількість'),
+            width: 100,
+            minWidth: 80,
+            align: 'right',
+            cell: (row) => displayValue(row.quantity),
+          },
+          {
+            id: 'unit',
+            header: t('Одиниця'),
+            width: 110,
+            minWidth: 90,
+            cell: (row) => displayValue(row.product.MeasureUnit?.Name),
+          },
+        ] as DataTableColumn<RelatedProductRow>[])
+      : []),
+    {
+      id: 'actions',
+      header: '',
+      width: 64,
+      minWidth: 56,
+      align: 'center',
+      enableSorting: false,
+      enableHiding: false,
+      enableResizing: false,
+      cell: (row) => (
+        <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
+          <Tooltip label={t('Видалити')}>
+            <ActionIcon
+              aria-label={t('Видалити')}
+              color="red"
+              loading={removingNetUid === row.product.NetUid}
+              size="sm"
+              variant="light"
+              onClick={(event) => {
+                event.stopPropagation()
+                void removeRelatedProduct(row)
+              }}
+            >
+              <IconTrash size={15} />
+            </ActionIcon>
+          </Tooltip>
+        </PermissionGate>
+      ),
+    },
+  ]
+
   return (
     <Stack gap="sm">
       {error && (
@@ -1770,67 +1880,22 @@ function ProductRelatedProductsTab({
         </Group>
       )}
 
-      {rows.length === 0 ? (
-        <Text c="dimmed" size="sm">{emptyLabel}</Text>
-      ) : (
-        <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="xs">
-          {rows.map((row) => {
-            const rowKey = getRelatedProductKey(row.source)
-            const isRemoving = removingNetUid === row.product.NetUid
-            const rowColor = getRelatedProductRowColor(row.product)
-
-            return (
-              <Card withBorder radius="sm" padding="xs" key={rowKey}>
-                <Group justify="space-between" gap="xs" wrap="nowrap">
-                  <button
-                    type="button"
-                    className="product-related-open-button"
-                    disabled={!row.product.NetUid}
-                    onClick={() => onSelectProduct(row.product)}
-                  >
-                    <Group gap={6} wrap="nowrap" align="center">
-                      {type === 'components' ? (
-                        row.isProductSet ? (
-                          <IconBox size={15} className="product_page_iconBox" />
-                        ) : (
-                          <IconSettings size={15} />
-                        )
-                      ) : null}
-                      <Text fw={650} size="sm" lineClamp={1} c={rowColor}>{displayValue(row.product.VendorCode || row.product.NetUid)}</Text>
-                    </Group>
-                    <Text c={rowColor ?? 'dimmed'} size="xs" lineClamp={2}>{displayValue(row.product.NameUA || row.product.Name)}</Text>
-                  </button>
-                  <PermissionGate permissionKey={PRODUCT_EDIT_PERMISSION}>
-                    <Tooltip label={t('Видалити')}>
-                      <ActionIcon
-                        aria-label={t('Видалити')}
-                        color="red"
-                        loading={isRemoving}
-                        size="sm"
-                        variant="light"
-                        onClick={() => void removeRelatedProduct(row)}
-                      >
-                        <IconTrash size={15} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </PermissionGate>
-                </Group>
-                <SimpleGrid cols={2} spacing={6} mt="xs">
-                  <InfoBlock label="Оригінальний номер" value={row.product.MainOriginalNumber ? <Text size="sm" fw={600} c={rowColor}>{row.product.MainOriginalNumber}</Text> : undefined} />
-                  <InfoBlock label="Пакування" value={row.product.PackingStandard} />
-                  <InfoBlock label="Склад Укр." value={formatAmount(getRelatedProductAvailableQty(row.product, type))} />
-                  {type === 'components' ? (
-                    <>
-                      <InfoBlock label="Кількість" value={displayValue(row.quantity)} />
-                      <InfoBlock label="Одиниця" value={row.product.MeasureUnit?.Name} />
-                    </>
-                  ) : null}
-                </SimpleGrid>
-              </Card>
-            )
-          })}
-        </SimpleGrid>
-      )}
+      <DataTable
+        columns={relatedColumns}
+        data={rows}
+        emptyText={emptyLabel}
+        getRowId={(row, index) => getRelatedProductKey(row.source) || String(index)}
+        maxHeight="calc(100vh - 360px)"
+        minWidth={type === 'components' ? 880 : 720}
+        showDensityToggle={false}
+        showLayoutControls={false}
+        tableId={`product-related-${type}`}
+        onRowClick={(row) => {
+          if (row.product.NetUid) {
+            onSelectProduct(row.product)
+          }
+        }}
+      />
     </Stack>
   )
 }
@@ -2130,7 +2195,7 @@ function ProductPlacementStorageUploadModal({
               <NumberInput label={t('Колонка місця')} min={1} value={columnPlacement} onChange={(value) => setColumnPlacement(Number(value) || 0)} />
             </SimpleGrid>
             <Group justify="flex-end">
-              <Button disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
+              <Button color={CREATE_ACTION_COLOR} disabled={!canUpload} leftSection={<IconUpload size={16} />} loading={isUploading} onClick={() => void uploadFile()}>
                 {t('Завантажити')}
               </Button>
             </Group>
@@ -2170,7 +2235,7 @@ function ProductPlacementStorageUploadModal({
               <Button color="gray" variant="light" disabled={isSavingReturn} onClick={closeModal}>
                 {t('Закрити')}
               </Button>
-              <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSavingReturn} onClick={() => void saveNotPassedRows()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2442,7 +2507,7 @@ function ProductFileUploadModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -2624,7 +2689,7 @@ function ProductUploadDocumentModal({
           <Button color="gray" disabled={isUploading} variant="light" onClick={closeModal}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconUpload size={16} />} loading={isUploading} disabled={!canSubmit} onClick={() => void submitUpload()}>
             {t('Завантажити')}
           </Button>
         </Group>
@@ -3237,10 +3302,15 @@ function getNextSearchedProducts(product: Product): Product[] {
 
 function copyToClipboard(value: string) {
   if (!value || !navigator.clipboard) {
+    notifications.show({ color: 'red', message: translate('Не вдалося скопіювати') })
+
     return
   }
 
-  void navigator.clipboard.writeText(value)
+  void navigator.clipboard.writeText(value).then(
+    () => notifications.show({ color: 'green', message: `${value} — ${translate('скопійовано')}` }),
+    () => notifications.show({ color: 'red', message: translate('Не вдалося скопіювати') }),
+  )
 }
 
 function getTodayDate(): string {

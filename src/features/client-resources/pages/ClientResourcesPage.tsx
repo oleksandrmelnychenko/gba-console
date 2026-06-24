@@ -558,15 +558,15 @@ function ClientResourcesNav({
         return (
           <Button
             key={section.step}
-            className="client-resources-nav-item"
-            color={isActive ? CREATE_ACTION_COLOR : 'gray'}
+            className={`client-resources-nav-item${isActive ? ' is-active' : ''}`}
+            color="gray"
             fullWidth
             justify="space-between"
             leftSection={<Icon size={18} stroke={1.8} />}
             onClick={() => onNavigate(section.step)}
-            rightSection={isActive ? <IconChevronRight size={16} stroke={2} /> : undefined}
+            rightSection={<IconChevronRight size={16} stroke={2} />}
             size="sm"
-            variant={isActive ? 'filled' : 'subtle'}
+            variant="subtle"
           >
             {t(section.label)}
           </Button>
@@ -1368,7 +1368,7 @@ function PerfectClientsPanel({ section }: { section: ClientResourceSection }) {
       />
       <PermissionGate permissionKey={PERFECT_CLIENT_CREATE_PERMISSION}>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={!selectedRole}
           leftSection={<IconPlus size={16} />}
           size="xs"
@@ -4351,7 +4351,7 @@ function CarrierPanel({ section }: { section: ClientResourceSection }) {
         }}
       />
       <Button
-        color="violet"
+        color={CREATE_ACTION_COLOR}
         disabled={!selectedTransporterType}
         leftSection={<IconPlus size={16} />}
         size="xs"

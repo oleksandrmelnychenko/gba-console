@@ -14,9 +14,9 @@ import {
   Text,
   TextInput,
   Textarea,
-  Title,
 } from '@mantine/core'
 import { AppModal } from '../../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { IconAlertCircle, IconPlus } from '@tabler/icons-react'
 import { useEffect, useRef } from 'react'
 import { useValueState } from '../../../../shared/hooks/useValueState'
@@ -283,78 +283,80 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
   }
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" align="center">
-        <Title order={3} size="h4">
-          {t('Ідеальний клієнт')}
-        </Title>
-        <Button
-          color="violet"
-          disabled={!roleId}
-          leftSection={<IconPlus size={16} />}
-          size="xs"
-          variant="light"
-          onClick={openAddModal}
-        >
-          {t('Додати параметр')}
-        </Button>
-      </Group>
+    <>
+      <Card className="app-section-card" withBorder padding="md" radius="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="center">
+            <Text fw={600}>{t('Ідеальний клієнт')}</Text>
+            <Button
+              color={CREATE_ACTION_COLOR}
+              disabled={!roleId}
+              leftSection={<IconPlus size={16} />}
+              size="xs"
+              variant="light"
+              onClick={openAddModal}
+            >
+              {t('Додати параметр')}
+            </Button>
+          </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-      {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження ідеального клієнта')}
-          </Text>
-        </Group>
-      ) : perfectClients.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          {t('Параметрів не додано')}
-        </Text>
-      ) : (
-        <Box
-          style={{
-            maxHeight: 'min(560px, calc(100vh - 380px))',
-            overflowX: 'hidden',
-            overflowY: 'auto',
-            paddingRight: 8,
-          }}
-        >
-          <Grid gap="lg">
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Stack gap="sm">
-                {checkboxClients.map((perfectClient, index) => (
-                  <CheckboxRow
-                    key={getKey(perfectClient, index)}
-                    perfectClient={perfectClient}
-                    onSelectedChange={(isSelected) => handleCheckboxSelectedChange(perfectClient, isSelected)}
-                    onValueChange={(value) => handleCheckboxValueChange(perfectClient, value)}
-                  />
-                ))}
-              </Stack>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, md: 6 }}>
-              <Stack gap="sm">
-                {toggleClients.map((perfectClient, index) => (
-                  <ToggleRow
-                    key={getKey(perfectClient, index)}
-                    perfectClient={perfectClient}
-                    onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
-                    onSelectedChange={(isSelected) => handleToggleSelectedChange(perfectClient, isSelected)}
-                    onSideChange={() => handleToggleSideChange(perfectClient)}
-                  />
-                ))}
-              </Stack>
-            </Grid.Col>
-          </Grid>
-        </Box>
-      )}
+          {isLoading ? (
+            <Group justify="center" py="xl">
+              <Loader color="violet" size="sm" />
+              <Text c="dimmed" size="sm">
+                {t('Завантаження ідеального клієнта')}
+              </Text>
+            </Group>
+          ) : perfectClients.length === 0 ? (
+            <Text c="dimmed" size="sm">
+              {t('Параметрів не додано')}
+            </Text>
+          ) : (
+            <Box
+              style={{
+                maxHeight: 'min(560px, calc(100vh - 380px))',
+                overflowX: 'hidden',
+                overflowY: 'auto',
+                paddingRight: 8,
+              }}
+            >
+              <Grid gap="lg">
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="sm">
+                    {checkboxClients.map((perfectClient, index) => (
+                      <CheckboxRow
+                        key={getKey(perfectClient, index)}
+                        perfectClient={perfectClient}
+                        onSelectedChange={(isSelected) => handleCheckboxSelectedChange(perfectClient, isSelected)}
+                        onValueChange={(value) => handleCheckboxValueChange(perfectClient, value)}
+                      />
+                    ))}
+                  </Stack>
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <Stack gap="sm">
+                    {toggleClients.map((perfectClient, index) => (
+                      <ToggleRow
+                        key={getKey(perfectClient, index)}
+                        perfectClient={perfectClient}
+                        onCommentChange={(value) => handleToggleCommentChange(perfectClient, value)}
+                        onSelectedChange={(isSelected) => handleToggleSelectedChange(perfectClient, isSelected)}
+                        onSideChange={() => handleToggleSideChange(perfectClient)}
+                      />
+                    ))}
+                  </Stack>
+                </Grid.Col>
+              </Grid>
+            </Box>
+          )}
+        </Stack>
+      </Card>
 
       <PerfectClientAddModal
         error={addError}
@@ -363,7 +365,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
         onClose={() => setAddModalOpened(false)}
         onSave={handleAddPerfectClient}
       />
-    </Stack>
+    </>
   )
 }
 
@@ -570,7 +572,7 @@ function PerfectClientAddModal({
             <Button color="gray" disabled={isSaving} variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button color="violet" loading={isSaving} type="submit">
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} type="submit">
               {t('Зберегти')}
             </Button>
           </Group>

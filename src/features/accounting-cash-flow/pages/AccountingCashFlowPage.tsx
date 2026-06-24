@@ -29,6 +29,7 @@ import {
   IconRestore,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -449,7 +450,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   )
 
   return (
-    <Stack gap="lg">
+    <Stack className="cash-flow-page" gap="sm">
       <Group justify="space-between" align="end" gap="sm">
         <Text c="dimmed" size="sm">
           {counterpartyName || t('Завантаження контрагента')}
@@ -492,7 +493,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
 
-      <Card withBorder radius="md" padding={0} className="app-filter-card">
+      <Card withBorder radius="md" padding={0} className="app-filter-card app-section-card">
         <form onSubmit={submitFilters}>
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row app-filter-bar">
               <TextInput
@@ -515,7 +516,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   setFilterDraft((current) => ({ ...current, to: value }))
                 }}
               />
-              <Button color="violet" type="submit">
+              <Button color={CREATE_ACTION_COLOR} type="submit">
                 {t('Застосувати')}
               </Button>
               <Tooltip label={t('Скинути')}>
@@ -544,7 +545,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         </Stack>
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card withBorder radius="md" padding="xs" className="app-section-card cash-flow-page__grid-card">
         <CashFlowGrid
           items={items}
           leadColumns={leadColumns}
@@ -555,7 +556,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           isLoading={isCashFlowLoading}
           isRowActive={(item) => item === selectedItem}
           loadingText={t('Завантаження руху коштів')}
-          maxHeight="calc(100vh - 430px)"
+          maxHeight="100%"
           renderRowBadge={renderRowBadge}
           onRowClick={handleCashFlowRowClick}
         />

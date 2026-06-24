@@ -18,7 +18,6 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconChevronLeft,
   IconChevronDown,
   IconChevronRight,
   IconDownload,
@@ -31,7 +30,6 @@ import {
   IconPackageImport,
   IconPlus,
   IconReceipt,
-  IconRefresh,
   IconRestore,
   IconRoute,
   IconSearch,
@@ -46,6 +44,8 @@ import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/event
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createSupplyOrderUkraineDeliveryExpense,
@@ -78,8 +78,7 @@ import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
 const FILTER_STORAGE_KEY = 'allOrdersUkraineFilter'
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SUPPLY_ORGANIZATION_SEARCH_DEBOUNCE_MS = 300
 
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', {
@@ -805,15 +804,12 @@ function OrdersListCard({
       <OrdersFilterToolbar
         canPrint={canPrint}
         currencyOptions={currencyOptions}
-        directTotal={state.directTotal}
         filterDraft={filterDraft}
         isDownloading={isDownloading}
         isLoading={state.isLoading}
         page={page}
         pageSize={pageSize}
-        toUkraineTotal={state.toUkraineTotal}
         totalPages={totalPages}
-        totalQty={state.toUkraineTotal + state.directTotal}
         onChangePage={onChangePage}
         onChangePageSize={onChangePageSize}
         onDownload={onDownload}
@@ -1144,10 +1140,7 @@ function OrdersFilterToolbar({
   isLoading,
   page,
   pageSize,
-  toUkraineTotal,
-  directTotal,
   totalPages,
-  totalQty,
   onChangePage,
   onChangePageSize,
   onDownload,
@@ -1162,10 +1155,7 @@ function OrdersFilterToolbar({
   isLoading: boolean
   page: number
   pageSize: number
-  toUkraineTotal: number
-  directTotal: number
   totalPages: number
-  totalQty: number
   onChangePage: (page: number) => void
   onChangePageSize: (value: string | null) => void
   onDownload: () => void
@@ -1175,7 +1165,7 @@ function OrdersFilterToolbar({
 }) {
   const { t } = useI18n()
   return (
-    <div className="supply-ukraine-orders-command-bar">
+    <div className="app-filter-bar supply-ukraine-orders-filter-bar">
       <div className="supply-ukraine-orders-period-filter">
         <span className="supply-ukraine-orders-filter-label">{t('Період')}</span>
         <div className="supply-ukraine-orders-period-fields">
@@ -1222,92 +1212,29 @@ function OrdersFilterToolbar({
         value={filterDraft.type}
         onChange={(value) => onFilterDraftChange({ type: (value as SupplyUkraineOrderKind) || 'all' })}
       />
-      <div className="supply-ukraine-orders-command-actions">
-        <span className="supply-ukraine-orders-summary-pill">{t('Всього')} {totalQty}</span>
-        <span className="supply-ukraine-orders-summary-pill is-to-ukraine">{t('Поставки')} {toUkraineTotal}</span>
-        <span className="supply-ukraine-orders-summary-pill is-direct">{t('Замовлення')} {directTotal}</span>
-        <OrdersCommandPagination
-          page={page}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          onChangePage={onChangePage}
-          onChangePageSize={onChangePageSize}
-        />
+      <div className="app-filter-actions">
+        <Tooltip label={t('Скинути фільтри')}>
+          <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={onResetFilters}>
+            <IconRestore size={17} />
+          </ActionIcon>
+        </Tooltip>
         {canPrint && (
           <Tooltip label={t('Завантажити')}>
-            <ActionIcon aria-label={t('Завантажити')} color="gray" loading={isDownloading} size={38} variant="light" onClick={onDownload}>
+            <ActionIcon variant="light" color="gray" size={34} aria-label={t('Завантажити')} loading={isDownloading} onClick={onDownload}>
               <IconDownload size={18} />
             </ActionIcon>
           </Tooltip>
         )}
-        <Tooltip label={t('Скинути фільтри')}>
-          <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={38} variant="light" onClick={onResetFilters}>
-            <IconRestore size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={onRefresh}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
+        <Paginator
+          isLoading={isLoading}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={onChangePage}
+          onPageSizeChange={(nextPageSize) => onChangePageSize(String(nextPageSize))}
+          onRefresh={onRefresh}
+        />
       </div>
-    </div>
-  )
-}
-
-function OrdersCommandPagination({
-  page,
-  pageSize,
-  totalPages,
-  onChangePage,
-  onChangePageSize,
-}: {
-  page: number
-  pageSize: number
-  totalPages: number
-  onChangePage: (page: number) => void
-  onChangePageSize: (value: string | null) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <div className="supply-ukraine-orders-command-pagination">
-      <Select
-        allowDeselect={false}
-        aria-label={t('Рядків')}
-        className="supply-ukraine-orders-page-size"
-        data={PAGE_SIZE_OPTIONS.map((value) => ({ label: value, value }))}
-        value={String(pageSize)}
-        onChange={onChangePageSize}
-      />
-      <ActionIcon
-        aria-label={t('Попередня сторінка')}
-        color="gray"
-        disabled={page <= 1}
-        size={38}
-        variant="light"
-        onClick={() => onChangePage(Math.max(1, page - 1))}
-      >
-        <IconChevronLeft size={18} />
-      </ActionIcon>
-      <span className="supply-ukraine-orders-current-page">{Math.min(page, totalPages)}</span>
-      <ActionIcon
-        aria-label={t('Наступна сторінка')}
-        color="gray"
-        disabled={page >= totalPages}
-        size={38}
-        variant="light"
-        onClick={() => onChangePage(Math.min(totalPages, page + 1))}
-      >
-        <IconChevronRight size={18} />
-      </ActionIcon>
     </div>
   )
 }

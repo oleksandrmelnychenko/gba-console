@@ -11,21 +11,18 @@
   min-width: 0;
 }
 
+/* Chrome (corner glow / divider / padding) comes from the canonical
+   .app-filter-bar (filter-bar.css). Only the page-specific grid layout for the
+   period + search + actions controls stays here. */
 .consumable-orders-command-bar {
   --consumable-orders-command-control-height: 36px;
   --consumable-orders-command-label-gap: 4px;
   --consumable-orders-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
-  height: 85px;
-  padding: 12px;
 }
 
 .consumable-orders-period-filter,
@@ -115,14 +112,6 @@
   line-height: 1.2;
 }
 
-.consumable-orders-command-actions {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
 .consumable-orders-list {
   display: flex;
   flex: 1 1 auto;
@@ -185,7 +174,7 @@
 }
 
 .consumable-orders-sort-header svg {
-  color: #e8782e;
+  color: var(--brand-orange);
   flex: 0 0 auto;
   opacity: 0.58;
 }
@@ -251,7 +240,7 @@
 
 .consumable-orders-row:hover::before,
 .consumable-orders-row:focus-visible::before {
-  background: #e8782e;
+  background: var(--brand-orange);
 }
 
 .consumable-orders-document-cell {
@@ -481,10 +470,9 @@
   .consumable-orders-command-bar {
     align-items: stretch;
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
   }
 
-  .consumable-orders-command-actions {
+  .consumable-orders-command-bar .app-filter-actions {
     justify-content: flex-start;
   }
 }

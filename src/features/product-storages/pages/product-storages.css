@@ -1,0 +1,31 @@
+/* Body region below the shared filter bar keeps the original card padding. */
+.product-storages-body {
+  padding: 16px;
+}
+
+/* Storages grid styled with the shared SEO roster look (online-shop-seo-page.css). */
+
+/* Keep the header aligned with the body during horizontal scroll and pinned on vertical scroll. */
+.product-storages-roster .seo-roster-head {
+  background: var(--mantine-color-white);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Highlight the currently selected rows. */
+.product-storages-roster .seo-roster-row.is-selected {
+  background:
+    linear-gradient(90deg, transparent, rgba(231, 243, 255, 0.7) 48%, transparent),
+    #f4f9ff;
+}
+
+.product-storages-roster .seo-roster-row.is-selected::before {
+  background: #3b82f6;
+}
+
+.product-storages-roster .seo-roster-row.is-selected:hover {
+  background:
+    linear-gradient(90deg, transparent, rgba(231, 243, 255, 0.85) 48%, transparent),
+    #eef6ff;
+}

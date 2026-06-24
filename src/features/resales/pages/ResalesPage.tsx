@@ -23,11 +23,11 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconArrowRight,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconFileTypePdf,
+  IconPlus,
   IconRefresh,
+  IconRestore,
   IconSearch,
   IconTrash,
   IconTruckDelivery,
@@ -45,6 +45,9 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addResale,
@@ -104,10 +107,10 @@ import {
   rowsShareSingleStorage,
   type ResaleAvailabilityForm,
 } from '../resalesFlowHelpers'
+import './resales-page.css'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const DEFAULT_RESALES_LOOKBACK_DAYS = 3
-const pageSizeOptions = ['20', '40', '60', '100']
 
 const RESALES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -229,8 +232,11 @@ export function ResalesPage() {
   const { density, toggleDensity } = useDataTableDensity('resales', RESALES_TABLE_DEFAULT_LAYOUT.density)
   const { isLoading, items, total } = listState
   const offset = (page - 1) * pageSize
-  const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : items.length === pageSize
+  const totalPages =
+    typeof total === 'number' && total > 0
+      ? Math.max(1, Math.ceil(total / pageSize))
+      : page + (canMoveForward ? 1 : 0)
   const columns = useResalesColumns({
     exportingKey,
     removingNetId,
@@ -343,33 +349,36 @@ export function ResalesPage() {
     }
   }
 
-  return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          <Button
-            color="violet"
-            onClick={() =>
-              navigate('/resales/new', {
-                state: {
-                  backgroundLocation: location,
-                  returnPath: `${location.pathname}${location.search}`,
-                },
-              })
-            }
-          >
-            {t('Створити')}
-          </Button>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
+  function resetFilters() {
+    setPage(1)
+    setFromDate(shiftDateInput(-DEFAULT_RESALES_LOOKBACK_DAYS))
+    setToDate(shiftDateInput(1))
+    setStatus('0')
+  }
 
-      <Card withBorder radius="md" padding={0} className="app-filter-card">
-        <Group align="end" gap="sm" wrap="nowrap" className="app-filter-bar">
+  return (
+    <Stack className="resales-page" gap={6}>
+      <PageHeaderActions>
+        <Button
+          color={CREATE_ACTION_COLOR}
+          size="sm"
+          leftSection={<IconPlus size={16} />}
+          onClick={() =>
+            navigate('/resales/new', {
+              state: {
+                backgroundLocation: location,
+                returnPath: `${location.pathname}${location.search}`,
+              },
+            })
+          }
+        >
+          {t('Створити')}
+        </Button>
+      </PageHeaderActions>
+
+      <Card className="app-data-card resales-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar resales-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="resales-filter-row">
             <TextInput
               label={t('Від')}
               type="date"
@@ -405,57 +414,41 @@ export function ResalesPage() {
                 setStatus(value || '0')
               }}
             />
-          </Group>
-
-          <Stack gap="md" p="md">
-            {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Сторінка')} {page}
-            </Text>
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Paginator
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
                   setPage(1)
-                  setPageSize(Number(value || PAGE_SIZE))
+                  setPageSize(nextPageSize)
                 }}
+                onRefresh={reload}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBackward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" w={34} ta="center">
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-            </Group>
+            </div>
           </Group>
+        </div>
 
+        {(error || filterError) && (
+          <Alert
+            className="resales-page__alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {filterError || error}
+          </Alert>
+        )}
+
+        <div className="resales-page__table">
           <DataTable
             columns={columns}
             data={items}
@@ -463,10 +456,10 @@ export function ResalesPage() {
             density={density}
             emptyText={`${t('Перепродажів не знайдено')}. ${t('Дані можуть бути поза вибраним періодом. Розширте дати у фільтрі.')}`}
             getRowId={(resale, index) => String(resale.NetUid || resale.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="resales-table-1"
             loadingText={t('Завантаження перепродажів')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1320}
             tableId="resales"
             onRowClick={(resale) => {
@@ -475,7 +468,7 @@ export function ResalesPage() {
               }
             }}
           />
-        </Stack>
+        </div>
       </Card>
 
       <AppModal

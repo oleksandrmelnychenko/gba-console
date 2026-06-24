@@ -166,8 +166,8 @@ export function UserNewPage() {
         )}
 
         <form id="user-new-form" onSubmit={handleSubmit}>
-          <Card withBorder radius="md" padding="md">
-            <Stack gap="lg">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
+            <Stack gap="md">
               <UserForm
                 confirmPassword={confirmPassword}
                 disabled={isSaving || isLoadingRoles}

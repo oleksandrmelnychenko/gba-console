@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -21,6 +20,7 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getVatReports } from '../api/vatReportsApi'
 import type { VatReport } from '../types'
+import './vat-reports-page.css'
 
 const DEFAULT_LIMIT = 20
 
@@ -198,73 +198,62 @@ export function VatReportsPage() {
 
   return (
     <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('VAT')}
-              </Text>
-            </div>
-
-            <Group gap="xs">
+      <Card className="app-data-card vat-reports-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar vat-reports-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="vat-reports-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap">
+              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => updateFromDate(event.currentTarget.value)} />
+              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => updateToDate(event.currentTarget.value)} />
+            </Group>
+            <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={refreshReports}>
+                <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={refreshReports}>
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-              <DataTableDensityToggle density={density} size={36} onToggle={toggleDensity} />
-            </Group>
+              <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
+            </div>
           </Group>
+        </div>
 
-          <Group align="end" gap="sm">
-            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => updateFromDate(event.currentTarget.value)} />
-            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => updateToDate(event.currentTarget.value)} />
+        {error && (
+          <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        {filterError && (
+          <Alert m="md" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
+
+        <DataTable
+          columns={columns}
+          data={reports}
+          defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
+          density={density}
+          emptyText={t('VAT записів не знайдено')}
+          getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
+          isLoading={isLoading}
+          layoutVersion="vat-reports-table-1"
+          maxHeight="calc(100vh - 330px)"
+          minWidth={900}
+          tableId="vat-reports"
+        />
+
+        {hasMore && (
+          <Group justify="center" p="md">
+            <Button color="gray" disabled={Boolean(filterError)} loading={isLoadingMore} variant="light" onClick={loadMore}>
+              {t('Завантажити ще')}
+            </Button>
           </Group>
-
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          {filterError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError}
-            </Alert>
-          )}
-
-          <Badge color="blue" variant="light" w="fit-content">
-            {t('Завантажено')}: {reports.length}
-          </Badge>
-
-          <DataTable
-            columns={columns}
-            data={reports}
-            defaultLayout={VAT_REPORTS_TABLE_DEFAULT_LAYOUT}
-            density={density}
-            emptyText={t('VAT записів не знайдено')}
-            getRowId={(report, index) => `${report.FromDate || 'vat'}-${getReportNumber(report)}-${index}`}
-            isLoading={isLoading}
-            layoutVersion="vat-reports-table-1"
-            maxHeight="calc(100vh - 330px)"
-            minWidth={900}
-            tableId="vat-reports"
-          />
-
-          {hasMore && (
-            <Group justify="center">
-              <Button color="gray" disabled={Boolean(filterError)} loading={isLoadingMore} variant="light" onClick={loadMore}>
-                {t('Завантажити ще')}
-              </Button>
-            </Group>
-          )}
-        </Stack>
+        )}
       </Card>
     </Stack>
   )

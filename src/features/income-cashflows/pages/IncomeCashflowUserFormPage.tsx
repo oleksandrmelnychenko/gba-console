@@ -479,7 +479,7 @@ export function IncomeCashflowUserFormPage() {
               leftSection={<IconPlus size={16} />}
               mt={24}
               type="button"
-              variant="light"
+              variant="default"
               onClick={() => void handleCreateMovement()}
             >
               {t('Створити статтю')}

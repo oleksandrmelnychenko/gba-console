@@ -4,10 +4,17 @@
   overflow: hidden;
 }
 
-.tax-free-documents-page__stack {
-  flex: 1 1 auto;
-  height: 100%;
-  min-height: 0;
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.tax-free-documents-filter-bar {
+  flex: 0 0 auto;
+}
+
+.tax-free-documents-filter-bar .tax-free-documents-filter-row {
+  width: 100%;
+}
+
+.tax-free-documents-page__alert {
+  margin: 10px 12px 0;
 }
 
 .tax-free-documents-page__table {

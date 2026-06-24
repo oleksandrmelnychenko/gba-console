@@ -20,12 +20,9 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconAlertTriangle,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconFileImport,
   IconFileTypePdf,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconUpload,
@@ -43,6 +40,9 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   exportProductPlacements,
   exportReturnedProductPlacements,
@@ -57,10 +57,9 @@ import type {
   ProductPlacementsExportDocument,
   ProductPlacementStorageLocation,
 } from '../types'
+import './product-placements-page.css'
 
-const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 200
-const pageSizeOptions = ['20', '40', '60', '100']
 
 const PLACEMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -107,7 +106,7 @@ function useProductPlacementsPageModel() {
   const [debouncedSearchDraft] = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS)
   const searchValue = debouncedSearchDraft.trim()
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [listState, setListState] = useValueState<PlacementsListState>({
     isLoading: false,
     placements: [],
@@ -133,7 +132,6 @@ function useProductPlacementsPageModel() {
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateTo, selectedStorageIds)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
-  const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : placements.length === pageSize
   const columns = useProductPlacementColumns(placements, offset, setProductCardNetId)
   const returnedColumns = useReturnedProductPlacementColumns({
@@ -425,7 +423,6 @@ function useProductPlacementsPageModel() {
   }
 
   return {
-    canMoveBackward,
     canMoveForward,
     columns,
     dateTo,
@@ -483,7 +480,6 @@ export function ProductPlacementsPage() {
 function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProductPlacementsPageModel> }) {
   const { t } = useI18n()
   const {
-    canMoveBackward,
     canMoveForward,
     columns,
     dateTo,
@@ -533,62 +529,23 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
   const noStorages = !isLoadingStorages && storageOptions.length === 0
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          {returnedRows.length > 0 && (
-            <Button
-              color="red"
-              leftSection={<IconAlertTriangle size={16} />}
-              variant="light"
-              onClick={() => setReturnModalOpened(true)}
-            >
-              {t('Не пройдені товари')}
-            </Button>
-          )}
-          <Tooltip label={t('Імпорт')}>
-            <ActionIcon
-              aria-label={t('Імпорт')}
-              color="gray"
-              disabled={storageOptions.length === 0}
-              size={38}
-              variant="light"
-              onClick={() => setImportModalOpened(true)}
-            >
-              <IconFileImport size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Експорт')}>
-            <ActionIcon
-              aria-label={t('Експорт')}
-              color="gray"
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={handleExport}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
+    <Stack className="product-placements-page" gap={6}>
+      {returnedRows.length > 0 && (
+        <PageHeaderActions>
+          <Button
+            color="red"
+            leftSection={<IconAlertTriangle size={16} />}
+            variant="light"
+            onClick={() => setReturnModalOpened(true)}
+          >
+            {t('Не пройдені товари')}
+          </Button>
+        </PageHeaderActions>
+      )}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card className="app-data-card product-placements-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-placements-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-placements-filter-row">
             <MultiSelect
               searchable
               data={storageOptions}
@@ -621,57 +578,65 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
               style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {(error || filterError || noStorages) && (
-            <Alert color={filterError && !noStorages ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {noStorages ? t('Складів не знайдено') : filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="flex-end" gap="sm">
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Імпорт')}>
+                <ActionIcon
+                  aria-label={t('Імпорт')}
+                  color="gray"
+                  disabled={storageOptions.length === 0}
+                  size={34}
+                  variant="light"
+                  onClick={() => setImportModalOpened(true)}
+                >
+                  <IconFileImport size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  color="gray"
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={handleExport}
+                >
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Paginator
+                hasNext={canMoveForward}
+                isLoading={isLoading || isLoadingStorages}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
                   setPage(1)
-                  setPageSize(Number(value || PAGE_SIZE))
+                  setPageSize(nextPageSize)
                 }}
+                onRefresh={() => reload()}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBackward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" w={34} ta="center">
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
+            </div>
           </Group>
+        </div>
 
+        {(error || filterError || noStorages) && (
+          <Alert
+            className="product-placements-page__alert"
+            color={filterError && !noStorages ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {noStorages ? t('Складів не знайдено') : filterError || error}
+          </Alert>
+        )}
+
+        <div className="product-placements-page__table">
           <DataTable
             columns={columns}
             data={placements}
@@ -681,15 +646,15 @@ function ProductPlacementsPageView({ model }: { model: ReturnType<typeof useProd
             getRowId={(placement, index) =>
               String(placement.NetUid || placement.Id || `${placement.VendorCode || ''}-${placement.StorageId || ''}-${index}`)
             }
+            height="100%"
             isLoading={isLoading || isLoadingStorages}
             layoutVersion="product-placements-table-2"
             loadingText={t('Завантаження розміщень')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={980}
             tableId="product-placements"
             toolbarLeft={toolbarLeft}
           />
-        </Stack>
+        </div>
       </Card>
 
       <ProductPlacementImportModal

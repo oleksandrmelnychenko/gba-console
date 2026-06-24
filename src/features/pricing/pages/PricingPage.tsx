@@ -11,7 +11,7 @@ export function PricingPage() {
   return (
     <Stack gap="md">
       <Title order={3}>{t('Рекомендація ціни')}</Title>
-      <Card padding="md" radius="md" withBorder>
+      <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="md">
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
             <TextInput

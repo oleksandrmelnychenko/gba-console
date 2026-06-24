@@ -156,47 +156,51 @@ export function RecommendationsPanel({ client, productNetId }: RecommendationsPa
     <Stack gap="md" pos="relative">
       <LoadingOverlay visible={isLoading} overlayProps={{ blur: 1 }} loaderProps={{ color: 'violet' }} />
 
-      <Group justify="space-between" align="center" wrap="wrap">
-        <Title order={4} size="h4">
-          {t('Рекомендації')}
-          {selectedProduct?.VendorCode ? ` - ${selectedProduct.VendorCode}` : ''}
-        </Title>
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <Stack gap="md">
+          <Group justify="space-between" align="center" wrap="wrap">
+            <Title order={4} size="h4">
+              {t('Рекомендації')}
+              {selectedProduct?.VendorCode ? ` - ${selectedProduct.VendorCode}` : ''}
+            </Title>
 
-        <Group gap="sm">
-          <SegmentedControl
-            data={[
-              { value: 'sales', label: t('За продажами') },
-              { value: 'region', label: t('За регіоном') },
-            ]}
-            value={isByRegion ? 'region' : 'sales'}
-            onChange={(value) => dispatch({ type: 'setByRegion', value: value === 'region' })}
-          />
-          <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
-            <ActionIcon color="violet" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
-              {isGrid ? <IconList size={18} /> : <IconLayoutGrid size={18} />}
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
+            <Group gap="sm">
+              <SegmentedControl
+                data={[
+                  { value: 'sales', label: t('За продажами') },
+                  { value: 'region', label: t('За регіоном') },
+                ]}
+                value={isByRegion ? 'region' : 'sales'}
+                onChange={(value) => dispatch({ type: 'setByRegion', value: value === 'region' })}
+              />
+              <Tooltip label={isGrid ? t('Список') : t('Таблиця')}>
+                <ActionIcon color="violet" variant="light" onClick={() => dispatch({ type: 'toggleGrid' })}>
+                  {isGrid ? <IconList size={18} /> : <IconLayoutGrid size={18} />}
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Group>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
 
-      {isLoading ? (
-        <Group justify="center" py="xl">
-          <Loader color="violet" size="sm" />
-          <Text c="dimmed" size="sm">
-            {t('Завантаження рекомендацій')}
-          </Text>
-        </Group>
-      ) : selectedProduct ? (
-        <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
-      ) : (
-        <RecommendationsList isGrid={isGrid} products={products} onPreview={(product) => dispatch({ product, type: 'previewProduct' })} />
-      )}
+          {isLoading ? (
+            <Group justify="center" py="xl">
+              <Loader color="violet" size="sm" />
+              <Text c="dimmed" size="sm">
+                {t('Завантаження рекомендацій')}
+              </Text>
+            </Group>
+          ) : selectedProduct ? (
+            <SelectedProductCard product={selectedProduct} onPreview={() => dispatch({ product: selectedProduct, type: 'previewProduct' })} />
+          ) : (
+            <RecommendationsList isGrid={isGrid} products={products} onPreview={(product) => dispatch({ product, type: 'previewProduct' })} />
+          )}
+        </Stack>
+      </Card>
 
       <ProductImagePreviewModal product={previewProduct} onClose={() => dispatch({ product: null, type: 'previewProduct' })} />
     </Stack>
@@ -211,7 +215,7 @@ function SelectedProductCard({
   onPreview: () => void
 }) {
   return (
-    <Card withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md">
       <Stack gap="sm">
         <ProductImage product={product} height={380} onPreview={onPreview} />
         <ProductFields product={product} />
@@ -269,7 +273,7 @@ function RecommendationsList({
   return (
     <SimpleGrid cols={{ base: 1, md: 2, lg: 3 }} spacing="md">
       {products.map((product, index) => (
-        <Card key={getProductKey(product, index)} withBorder radius="md" padding="md">
+        <Card key={getProductKey(product, index)} className="app-section-card" withBorder radius="md" padding="md">
           <Stack gap="sm">
             <ProductImage product={product} height={220} onPreview={() => onPreview(product)} />
             <ProductFields product={product} />

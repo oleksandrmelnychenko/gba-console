@@ -1,0 +1,18 @@
+/* Outgoing cashflows list — chrome aligned with the «Продажі» reference.
+   The page keeps its load-more (infinite-scroll) mechanism and the table's
+   own maxHeight scroll model; only the filter strip + card shell are aligned. */
+.outgoing-cashflows-filter-row {
+  width: 100%;
+}
+
+/* Pin the reset / refresh / density cluster to the trailing edge of the
+   wrapping filter row. */
+.outgoing-cashflows-filter-actions {
+  margin-left: auto;
+}
+
+/* Body below the flush filter strip carries its own padding (the card is
+   padding={0} so the strip can sit flush). */
+.outgoing-cashflows-card__body {
+  padding: 12px;
+}

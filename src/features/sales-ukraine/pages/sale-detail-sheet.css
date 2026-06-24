@@ -21,7 +21,7 @@
 .sale-detail-hero {
   align-items: stretch;
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 42%),
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 42%),
     linear-gradient(180deg, var(--mantine-color-white), #fbfcfd);
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 12px;
@@ -36,7 +36,7 @@
 }
 
 .sale-detail-hero::before {
-  background: #e8782e;
+  background: var(--brand-orange);
   border-radius: 999px;
   bottom: 14px;
   content: '';
@@ -70,7 +70,7 @@
 }
 
 .sale-detail-dot {
-  background: #e8782e;
+  background: var(--brand-orange);
   border-radius: 999px;
   display: inline-flex;
   flex: 0 0 auto;
@@ -251,7 +251,7 @@
 .sale-detail-section-header {
   align-items: center;
   background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.035), transparent 38%),
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.035), transparent 38%),
     var(--mantine-color-white);
   display: flex;
   gap: 8px;
@@ -273,7 +273,7 @@
 }
 
 .sale-detail-section-header::after {
-  background: #e8782e;
+  background: var(--brand-orange);
   border: 3px solid var(--mantine-color-white);
   border-radius: 999px;
   bottom: -4px;
@@ -358,7 +358,7 @@
 
 .sale-detail-comment {
   background: #fffaf5;
-  border: 1px solid rgba(232, 120, 46, 0.16);
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.16);
   border-radius: 10px;
   min-width: 0;
   padding: 10px 12px;

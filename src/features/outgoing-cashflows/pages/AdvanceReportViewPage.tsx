@@ -16,6 +16,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   calculateAdvanceReportOrder,
@@ -482,7 +483,7 @@ export function AdvanceReportViewPage() {
           )}
           {model.canSave && (
             <Button
-              color="violet"
+              color={CREATE_ACTION_COLOR}
               leftSection={<IconDeviceFloppy size={16} />}
               loading={model.isSaving || model.isRecalculating}
               onClick={() => model.save(model.createIncomeAutomatically)}
@@ -571,7 +572,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
 
   return (
     <Stack gap="md">
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap={4}>
           <Text fw={700}>{model.reportTitle}</Text>
           <Group gap={8}>
@@ -589,7 +590,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
       </Card>
 
       {hasConsumables && (
-        <Card withBorder padding="md" radius="md">
+        <Card className="app-section-card" withBorder padding="md" radius="md">
           <Stack gap="sm">
             <Text fw={700}>
               {t('Товари')} / {t('Послуги')}
@@ -604,7 +605,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
       )}
 
       {hasFuel && (
-        <Card withBorder padding="md" radius="md">
+        <Card className="app-section-card" withBorder padding="md" radius="md">
           <Stack gap="sm">
             <Text fw={700}>{t('Пальне')}</Text>
             <AdvanceReportFuelGrid canRemove={!model.isBusy} rows={model.fuelRows} onRemove={model.removeFuelRow} />
@@ -613,7 +614,7 @@ function AdvanceReportContent({ model }: { model: ReturnType<typeof useAdvanceRe
       )}
 
       {hasAnyRows(order) && (
-        <Card withBorder padding="md" radius="md">
+        <Card className="app-section-card" withBorder padding="md" radius="md">
           <Stack gap="md">
             <IncomeMessage model={model} />
             <DifferenceMessage model={model} />

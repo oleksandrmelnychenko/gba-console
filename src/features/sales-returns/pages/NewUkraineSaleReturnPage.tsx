@@ -22,8 +22,6 @@ import {
   IconAlertCircle,
   IconCheck,
   IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
   IconChevronUp,
   IconReceiptRefund,
   IconShoppingCart,
@@ -31,7 +29,6 @@ import {
   IconEye,
   IconFileTypePdf,
   IconPlus,
-  IconRefresh,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
@@ -42,6 +39,8 @@ import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import '../../../shared/ui/console-table-page.css'
 import './new-ukraine-sale-return-page.css'
@@ -79,9 +78,6 @@ import {
   parseStatusValue,
   readNumber,
 } from '../utils'
-
-const PAGE_SIZE = 20
-const pageSizeOptions = ['20', '40', '60', '100']
 
 const SALE_ITEMS_TABLE_LAYOUT = {
   columnPinning: {
@@ -131,7 +127,7 @@ export function NewUkraineSaleReturnPage() {
   const [searchDraft, setSearchDraft] = useState('')
   const [searchValue, setSearchValue] = useState('')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(PAGE_SIZE)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [reloadKey, setReloadKey] = useState(0)
   const [listState, setListState] = useState<ReturnsListState>({
     isLoading: false,
@@ -177,7 +173,6 @@ export function NewUkraineSaleReturnPage() {
   const { items, isLoading } = listState
   const sortedItems = useMemo(() => sortReturns(items, returnsSortState), [items, returnsSortState])
   const offset = (page - 1) * pageSize
-  const canMoveBackward = page > 1
   const canMoveForward = items.length === pageSize
   const selectedOrganization = useMemo(
     () => organizations.find((organization) => getEntityKey(organization) === organizationId) || null,
@@ -590,7 +585,7 @@ export function NewUkraineSaleReturnPage() {
         </Button>
       </PageHeaderActions>
       <div className="console-table-shell new-sale-return-shell">
-        <div className="new-sale-return-command-bar">
+        <div className="new-sale-return-command-bar app-filter-bar">
           <div className="new-sale-return-period-filter">
             <span className="new-sale-return-filter-label">{t('Період')}</span>
             <div className="new-sale-return-period-fields">
@@ -627,50 +622,19 @@ export function NewUkraineSaleReturnPage() {
             onChange={(event) => updateListSearch(event.currentTarget.value)}
           />
 
-          <div className="new-sale-return-command-actions">
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => setReloadKey((value) => value + 1)}
-              >
-                <IconRefresh size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Select
-              aria-label={t('Рядків')}
-              className="new-sale-return-page-size"
-              data={pageSizeOptions.map((option) => ({ label: option, value: option }))}
-              value={String(pageSize)}
-              onChange={(value) => {
+          <div className="app-filter-actions new-sale-return-command-actions">
+            <Paginator
+              hasNext={canMoveForward}
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
                 setPage(1)
-                setPageSize(Number(value || PAGE_SIZE))
+                setPageSize(nextPageSize)
               }}
+              onRefresh={() => setReloadKey((value) => value + 1)}
             />
-            <ActionIcon
-              aria-label={t('Попередня')}
-              color="gray"
-              disabled={!canMoveBackward}
-              size={34}
-              variant="light"
-              onClick={() => setPage((value) => Math.max(1, value - 1))}
-            >
-              <IconChevronLeft size={17} />
-            </ActionIcon>
-            <span className="new-sale-return-current-page">{page}</span>
-            <ActionIcon
-              aria-label={t('Наступна')}
-              color="gray"
-              disabled={!canMoveForward}
-              size={34}
-              variant="light"
-              onClick={() => setPage((value) => value + 1)}
-            >
-              <IconChevronRight size={17} />
-            </ActionIcon>
           </div>
         </div>
 

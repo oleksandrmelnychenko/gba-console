@@ -32,7 +32,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
@@ -55,6 +55,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
@@ -102,7 +103,6 @@ import {
   formatAmount,
   formatPrice,
   getBooleanBadgeColor,
-  getProductAvailableQty,
   getProductCode,
   getProductGroupNames,
   getProductMainImage,
@@ -399,7 +399,7 @@ export function ProductDetailPage() {
       {product && (
         <>
           <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="sm">
                 {mainImage?.ImageUrl ? (
                   <button
@@ -443,7 +443,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Основне')}</Title>
                 <InfoRow label="Код" value={getProductCode(product)} />
@@ -455,7 +455,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
                 <ProductStockSummary
                   product={product}
                   reservation={reservation}
@@ -466,7 +466,7 @@ export function ProductDetailPage() {
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Опис')}</Title>
                 <InfoRow label="Опис" value={product.DescriptionUA || product.Description} multiline />
@@ -475,7 +475,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Параметри')}</Title>
                 <InfoRow label="Вага" value={formatAmount(product.Weight)} />
@@ -489,7 +489,7 @@ export function ProductDetailPage() {
           </SimpleGrid>
 
           <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="md">
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Ціни')}</Title>
                 <InfoRow label="EUR" value={formatPrice(product.CurrentPrice)} />
@@ -506,7 +506,7 @@ export function ProductDetailPage() {
               </Stack>
             </Card>
 
-            <Card withBorder radius="md" padding="md">
+            <Card className="app-section-card" withBorder radius="md" padding="md">
               <Stack gap="xs">
                 <Title order={4}>{t('Номери')}</Title>
                 {originalNumbers.length > 0 ? (
@@ -647,44 +647,34 @@ export function ProductStockSummary({
 }) {
   const { t } = useI18n()
   const availabilityItems = product.ProductAvailabilities || []
+  // Legacy "Всього" = the sum of the per-warehouse amounts (not a separate aggregate field).
+  const warehousesTotal = availabilityItems.reduce((total, item) => total + (Number(item.Amount) || 0), 0)
 
   return (
     <Stack gap="xs">
-      <Title order={4}>{t('Залишки')}</Title>
       {reservationError && (
         <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
           {reservationError}
         </Alert>
       )}
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={8}>
-        <TotalQtyTile label={t('Усього доступно')} value={getProductAvailableQty(product)} />
-        <TotalQtyTile label={t('Україна')} value={product.AvailableQtyUk} />
-        <TotalQtyTile label={t('Україна ПДВ')} value={product.AvailableQtyUkVAT} />
-        <TotalQtyTile label={t('У дорозі')} value={product.AvailableQtyRoad} />
-        <TotalQtyTile label={`${t('Резерв в корзині')} UK`} value={reservation.TotalCartReservedUK} />
-        <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} />
-        <TotalQtyTile label={t('В рахунках в Україні')} value={reservation.TotalReservedUK} />
-        <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
+        {/* Static reserve fields, in the legacy stock-bar order. */}
         <TotalQtyTile label={t('В рахунку в ресейлі')} value={reservation.TotalProductReSaleQty} />
-        {reservation.SupplyOrderUkraineCartItem && (
-          <TotalQtyTile label={t('В кошику постачання Україна')} value={reservation.SupplyOrderUkraineCartItem.ReservedQty} />
-        )}
+        <TotalQtyTile label={t('В рахунках в Польщі')} value={reservation.TotalReservedPL} />
+        <TotalQtyTile label={t('В рахунках в Україні')} value={reservation.TotalReservedUK} />
+        <TotalQtyTile label={`${t('Резерв в корзині')} PL`} value={reservation.TotalCartReservedPL} />
+        <TotalQtyTile label={`${t('Резерв в корзині')} UK`} value={reservation.TotalCartReservedUK} />
+        {/* Dynamic per-warehouse list (ProductAvailabilities). */}
+        {availabilityItems.map((availability, index) => (
+          <ProductAvailabilityPlacementRow
+            availability={availability}
+            key={`${availability.StorageId || availability.Storage?.Name || index}`}
+            onProductSaved={onProductSaved}
+          />
+        ))}
+        {/* Total = sum of the warehouse amounts (legacy "Всього"). */}
+        <TotalQtyTile label={t('Всього')} value={warehousesTotal} />
       </SimpleGrid>
-
-      {availabilityItems.length > 0 && (
-        <>
-          <Divider my={4} />
-          <Stack gap={6}>
-            {availabilityItems.map((availability, index) => (
-              <ProductAvailabilityPlacementRow
-                availability={availability}
-                key={`${availability.StorageId || availability.Storage?.Name || index}`}
-                onProductSaved={onProductSaved}
-              />
-            ))}
-          </Stack>
-        </>
-      )}
     </Stack>
   )
 }
@@ -700,29 +690,23 @@ function ProductAvailabilityPlacementRow({
   const placements = availability.Storage?.ProductPlacements || []
   const hasPlacements = placements.length > 0
   const content = (
-    <Group
-      justify="space-between"
-      gap="sm"
-      wrap="nowrap"
+    <Box
       style={{
+        background: 'var(--mantine-color-gray-0)',
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
         cursor: hasPlacements ? 'pointer' : 'default',
-        padding: '6px 8px',
+        minWidth: 0,
+        padding: '5px 8px',
       }}
     >
-      <Box style={{ minWidth: 0 }}>
-        <Text size="sm" fw={600} lineClamp={1}>
-          {displayValue(availability.Storage?.Name)}
-        </Text>
-        <Text size="xs" c="dimmed" lineClamp={1}>
-          {displayValue(availability.Storage?.Organization?.Name)}
-        </Text>
-      </Box>
+      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2} title={displayValue(availability.Storage?.Name)}>
+        {displayValue(availability.Storage?.Name)}
+      </Text>
       <Text size="sm" fw={700}>
         {formatAmount(availability.Amount)}
       </Text>
-    </Group>
+    </Box>
   )
 
   if (!hasPlacements) {
@@ -938,7 +922,7 @@ function ProductPlacementEditor({
               <Button size="xs" color="gray" variant="light" disabled={isSaving} onClick={cancelEditing}>
                 {t('Скасувати')}
               </Button>
-              <Button size="xs" leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
+              <Button size="xs" color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={14} />} loading={isSaving} onClick={() => void savePlacements()}>
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -977,13 +961,13 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
         background: 'var(--mantine-color-gray-0)',
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
-        padding: '8px 10px',
+        padding: '5px 8px',
       }}
     >
-      <Text size="xs" c="dimmed" lineClamp={1}>
+      <Text size="xs" c="dimmed" lh={1.15} lineClamp={2}>
         {label}
       </Text>
-      <Text size="md" fw={700}>
+      <Text size="sm" fw={700}>
         {formatAmount(value)}
       </Text>
     </Box>
@@ -1122,7 +1106,7 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
           <Switch checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
         </Group>
         <Group justify="flex-end">
-          <Button type="submit" loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
+          <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1247,7 +1231,7 @@ function ProductImagesPanel({ onProductSaved, product }: { onProductSaved: (prod
           <Button variant="light" color="gray" leftSection={<IconRefresh size={18} />} disabled={!hasChanges || isSaving} onClick={resetImageChanges}>
             {t('Скасувати')}
           </Button>
-          <Button leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={18} />} loading={isSaving} disabled={!hasChanges} onClick={saveImages}>
             {t('Зберегти')}
           </Button>
         </Group>
@@ -1547,7 +1531,7 @@ function ProductSpecificationPanel({
               </SimpleGrid>
               <Group justify="flex-end">
                 <Button
-                  color="violet"
+                  color={CREATE_ACTION_COLOR}
                   leftSection={<IconDeviceFloppy size={16} />}
                   loading={isSaving}
                   onClick={() => void saveSpecification()}
@@ -1787,6 +1771,12 @@ function ProductStorageHistoryPanel({ product }: { product: Product }) {
   )
 }
 
+// Same grid design as the clients table: pinned key columns + hidden density/layout controls.
+const PRODUCT_MOVEMENT_DEFAULT_LAYOUT = {
+  columnPinning: { left: ['document', 'number'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
 function ProductMovementPanel({ product }: { product: Product }) {
   const { t } = useI18n()
   const productNetUid = product.NetUid?.trim()
@@ -1800,7 +1790,7 @@ function ProductMovementPanel({ product }: { product: Product }) {
   const [isLoading, setLoading] = useState(false)
   const [exportDocument, setExportDocument] = useState<ProductMovementExportDocument | null>(null)
   const [isExporting, setExporting] = useState(false)
-  const { density, toggleDensity } = useDataTableDensity('product-movement', 'normal')
+  const { density } = useDataTableDensity('product-movement', 'normal')
   const filterError = getDateRangeError(dateFrom, dateTo, t)
   const missingNetUidError = productNetUid ? null : t('У товару немає NetUid для завантаження руху товару')
   const typesError = selectedTypes.length === 0 ? t('Оберіть хоча б один тип руху') : null
@@ -1913,7 +1903,6 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <Button disabled={!productNetUid || Boolean(filterError) || Boolean(typesError)} leftSection={<IconDownload size={18} />} loading={isExporting} variant="light" onClick={() => void exportMovements()}>
           {t('Друк')}
         </Button>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
       </Group>
       <Group gap="md" wrap="wrap" align="center">
         {movementItemTypeOptions.map((option) => (
@@ -1934,14 +1923,17 @@ function ProductMovementPanel({ product }: { product: Product }) {
         <DataTable
           columns={movementColumns}
           data={rows}
+          defaultLayout={PRODUCT_MOVEMENT_DEFAULT_LAYOUT}
           density={density}
           emptyText={t('Рух товару не знайдено')}
           getRowId={(row, index) => String(row.NetUid || row.Id || row.DocumentNumber || index)}
           isLoading={isLoading}
-          layoutVersion="product-movement-1"
+          layoutVersion="product-movement-2"
           loadingText={t('Завантаження руху товару')}
-          maxHeight="calc(100vh - 320px)"
+          height="calc(100vh - 320px)"
           minWidth={1640}
+          showDensityToggle={false}
+          showLayoutControls={false}
           tableId="product-movement"
         />
       )}
@@ -2272,7 +2264,7 @@ function ProductWriteOffRulesPanel({ onChanged, product }: { onChanged: () => vo
         ) : null}
         <Select label={t('Правило')} data={writeOffRuleTypeOptions.map((option) => ({ ...option, label: t(option.label) }))} value={ruleType} w={220} onChange={(value) => setRuleType(value || '0')} />
         <Select label={t('Регіон')} data={writeOffLocaleOptions.map((option) => ({ ...option, label: t(option.label) }))} value={locale} w={180} onChange={(value) => setLocale(value || 'uk')} />
-        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
+        <Button disabled={!productNetUid || isLoading || (scope === 'group' && (isLoadingGroups || !selectedProductGroupNetId))} color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={18} />} loading={isSaving} onClick={addRule}>
           {t('Додати')}
         </Button>
         <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />

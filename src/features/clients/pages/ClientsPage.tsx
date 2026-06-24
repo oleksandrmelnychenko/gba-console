@@ -5,11 +5,11 @@ import {
   Badge,
   Box,
   Button,
+  Card,
   Divider,
   Group,
   Loader,
   NumberInput,
-  Pagination,
   Select,
   Stack,
   Text,
@@ -33,7 +33,7 @@ import {
   IconToggleRight,
 } from '@tabler/icons-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
@@ -41,6 +41,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type {
@@ -61,7 +63,7 @@ import {
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
 import './clients-page.css'
 
-const pageSizeOptions = ['15', '30', '50']
+const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 const CLIENT_CREATE_PERMISSION = 'Header_NewClient_clientsAllView_PKEY'
 const CLIENT_CASH_FLOW_PERMISSION = 'AccountingCashFlow_row_clientModal_clientsAll_PKEY'
@@ -104,7 +106,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 const CLIENT_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:clients:page-size'
-const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 30
+const DEFAULT_CLIENT_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const CLIENT_SEARCH_DEBOUNCE_MS = 350
 const CLIENT_TABLE_CELL_STYLE = {
   display: 'block',
@@ -146,6 +148,7 @@ function useClientsPageModel() {
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, CLIENT_SEARCH_DEBOUNCE_MS)
   const [sorting, setSorting] = useValueState<DataTableSortingState>([])
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const canMoveForward = clients.length === pageSize
   const totalPages = typeof totalCount === 'number' && totalCount > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : page + (canMoveForward ? 1 : 0)
@@ -203,30 +206,6 @@ function useClientsPageModel() {
       return nextParams
     }, { replace: true, state: location.state })
   }, [location.state, setActiveFilter, setUrlSearchParams])
-  const tableToolbarLeft = useMemo(
-    () => (
-      <ClientTableSummary
-        page={page}
-        searchValue={normalizedSearchValue}
-        totalCount={totalCount}
-      />
-    ),
-    [normalizedSearchValue, page, totalCount],
-  )
-  const tablePagination = useMemo(
-    () => (
-      <ClientTablePagination
-        isTableBusy={isTableBusy}
-        page={page}
-        pageSize={pageSize}
-        totalPages={totalPages}
-        onPageSizeChange={changePageSize}
-        onSetPage={setPage}
-      />
-    ),
-    [changePageSize, isTableBusy, page, pageSize, setPage, totalPages],
-  )
-
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -276,7 +255,7 @@ function useClientsPageModel() {
       cancelled = true
       controller.abort()
     }
-  }, [searchParams, setClients, setError, setLoading, setRefreshing, t])
+  }, [reloadKey, searchParams, setClients, setError, setLoading, setRefreshing, t])
 
   useEffect(() => {
     let cancelled = false
@@ -493,6 +472,11 @@ function useClientsPageModel() {
     error,
     isLoading,
     isTableBusy,
+    page,
+    pageSize,
+    totalPages,
+    changePageSize,
+    reload,
     reserveClient,
     reserveDays,
     roleFilter,
@@ -503,8 +487,6 @@ function useClientsPageModel() {
     selectedClient,
     sorting,
     structureClient,
-    tablePagination,
-    tableToolbarLeft,
     handleExport,
     handleReserveSubmit,
     handleSwitchActive,
@@ -550,6 +532,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     error,
     isLoading,
     isTableBusy,
+    page,
+    pageSize,
+    totalPages,
+    changePageSize,
+    reload,
     reserveClient,
     reserveDays,
     roleFilter,
@@ -560,8 +547,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     selectedClient,
     sorting,
     structureClient,
-    tablePagination,
-    tableToolbarLeft,
     handleExport,
     handleReserveSubmit,
     handleSwitchActive,
@@ -594,32 +579,40 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         </PageHeaderActions>
       )}
 
-      <ClientsFilterToolbar
-        activeFilter={activeFilter}
-        clientTypes={clientTypes}
-        isExporting={clientAction === 'export'}
-        isTableBusy={isTableBusy}
-        roleFilter={roleFilter}
-        searchField={searchField}
-        searchFieldOptions={searchFieldOptions}
-        searchInputRef={searchInputRef}
-        searchValue={searchValue}
-        onExport={handleExport}
-        onReset={resetSearch}
-        onSetActiveFilter={setActiveFilter}
-        onSetPage={setPage}
-        onSetRoleFilter={setRoleFilter}
-        onSetSearchField={setSearchField}
-        onSetSearchValue={setSearchValue}
-      />
+      <Card className="app-data-card clients-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar clients-filter-bar">
+          <ClientsFilterToolbar
+            activeFilter={activeFilter}
+            clientTypes={clientTypes}
+            isExporting={clientAction === 'export'}
+            isTableBusy={isTableBusy}
+            page={page}
+            pageSize={pageSize}
+            roleFilter={roleFilter}
+            searchField={searchField}
+            searchFieldOptions={searchFieldOptions}
+            searchInputRef={searchInputRef}
+            searchValue={searchValue}
+            totalPages={totalPages}
+            onChangePageSize={changePageSize}
+            onExport={handleExport}
+            onRefresh={reload}
+            onReset={resetSearch}
+            onSetActiveFilter={setActiveFilter}
+            onSetPage={setPage}
+            onSetRoleFilter={setRoleFilter}
+            onSetSearchField={setSearchField}
+            onSetSearchValue={setSearchValue}
+          />
+        </div>
 
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert className="clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-      <div className="clients-page__table">
+        <div className="clients-page__table">
           <DataTable
             columns={clientColumns.filter((column) => column.id !== 'actions')}
             data={clients}
@@ -637,16 +630,14 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             showLayoutControls={false}
             tableId="clients"
             sorting={sorting}
-            toolbarLeft={tableToolbarLeft}
             onRowClick={setSelectedClient}
             onSortingChange={(nextSorting) => {
               setPage(1)
               setSorting(nextSorting)
             }}
           />
-      </div>
-
-      {tablePagination}
+        </div>
+      </Card>
 
       <ClientActionsModal
         canOpenCashFlow={canOpenCashFlow}
@@ -802,12 +793,17 @@ function ClientsFilterToolbar({
   clientTypes,
   isExporting,
   isTableBusy,
+  page,
+  pageSize,
   roleFilter,
   searchField,
   searchFieldOptions,
   searchInputRef,
   searchValue,
+  totalPages,
+  onChangePageSize,
   onExport,
+  onRefresh,
   onReset,
   onSetActiveFilter,
   onSetPage,
@@ -819,12 +815,17 @@ function ClientsFilterToolbar({
   clientTypes: ClientType[]
   isExporting: boolean
   isTableBusy: boolean
+  page: number
+  pageSize: number
   roleFilter: string[]
   searchField: string
   searchFieldOptions: Array<{ label: string; value: string }>
   searchInputRef: RefObject<HTMLInputElement | null>
   searchValue: string
+  totalPages: number
+  onChangePageSize: (value: string | null) => void
   onExport: () => void
+  onRefresh: () => void
   onReset: () => void
   onSetActiveFilter: (value: ActiveFilter) => void
   onSetPage: (value: number) => void
@@ -884,23 +885,33 @@ function ClientsFilterToolbar({
           onSetRoleFilter(value)
         }}
       />
-      <Tooltip label={t('Скинути')}>
-        <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={onReset} style={{ flex: '0 0 auto' }}>
-          <IconRestore size={18} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label={t('Експорт в Excel')}>
-        <ActionIcon
-          variant="default"
-          size={36}
-          aria-label={t('Експорт в Excel')}
-          loading={isExporting}
-          onClick={onExport}
-          style={{ flex: '0 0 auto' }}
-        >
-          <ExcelIcon size={22} />
-        </ActionIcon>
-      </Tooltip>
+      <div className="app-filter-actions">
+        <Tooltip label={t('Скинути')}>
+          <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
+            <IconRestore size={17} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Експорт в Excel')}>
+          <ActionIcon
+            variant="default"
+            size={34}
+            aria-label={t('Експорт в Excel')}
+            loading={isExporting}
+            onClick={onExport}
+          >
+            <ExcelIcon size={22} />
+          </ActionIcon>
+        </Tooltip>
+        <Paginator
+          isLoading={isTableBusy}
+          page={page}
+          pageSize={pageSize}
+          totalPages={totalPages}
+          onPageChange={onSetPage}
+          onPageSizeChange={(nextPageSize) => onChangePageSize(String(nextPageSize))}
+          onRefresh={onRefresh}
+        />
+      </div>
     </Group>
   )
 }
@@ -1203,67 +1214,6 @@ function ClientTableValue({ fw, value }: { fw?: number; value: string }) {
         {value}
       </Text>
     </Tooltip>
-  )
-}
-
-function ClientTableSummary({
-  page,
-  searchValue,
-  totalCount,
-}: {
-  page: number
-  searchValue: string
-  totalCount: number | null
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Text size="xs" c="dimmed">
-      <Text component="span" inherit c="dark" fw={700}>
-        {t('сторінка')} {page}
-      </Text>
-      {typeof totalCount === 'number' ? `, ${t('всього')} ${totalCount}` : ''}
-      {searchValue ? `, ${t('фільтр')}: ${searchValue}` : ''}
-    </Text>
-  )
-}
-
-function ClientTablePagination({
-  isTableBusy,
-  page,
-  pageSize,
-  totalPages,
-  onPageSizeChange,
-  onSetPage,
-}: {
-  isTableBusy: boolean
-  page: number
-  pageSize: number
-  totalPages: number
-  onPageSizeChange: (value: string | null) => void
-  onSetPage: (value: number | ((currentPage: number) => number)) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <Group justify="flex-end" className="clients-page__pagination">
-      <Group gap={6}>
-        <Text c="dimmed" size="xs">{t('Рядків')}</Text>
-        <Select
-          allowDeselect={false}
-          aria-label={t('Рядків')}
-          data={pageSizeOptions.map((value) => ({ label: value, value }))}
-          disabled={isTableBusy}
-          size="xs"
-          value={String(pageSize)}
-          w={82}
-          onChange={onPageSizeChange}
-        />
-      </Group>
-      {totalPages > 1 && (
-        <Pagination disabled={isTableBusy} total={totalPages} value={Math.min(page, totalPages)} onChange={onSetPage} />
-      )}
-    </Group>
   )
 }
 

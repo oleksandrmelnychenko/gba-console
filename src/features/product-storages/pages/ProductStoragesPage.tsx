@@ -8,7 +8,9 @@ import {
   Checkbox,
   Divider,
   Group,
+  Loader,
   NumberInput,
+  ScrollArea,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -31,28 +33,24 @@ import {
   IconEye,
   IconFileTypePdf,
   IconFileTypeXls,
-  IconHistory,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
 import { useDebouncedValue } from '@mantine/hooks'
-import { useCallback, useEffect, useMemo, useReducer, useRef, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { UserRoleType } from '../../../shared/auth/types'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import {
-  ProductMovementHistoryDrawer,
-  ProductStorageLocationHistoryDrawer,
-  type MovementHistoryProduct,
-} from '../../../shared/ui/product-movement-history/ProductMovementHistoryDrawers'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
+import '../../online-shop-seo/pages/online-shop-seo-page.css'
+import './product-storages.css'
 import {
   createProductStorageSupplyReturn,
   createProductStorageTransfer,
@@ -72,19 +70,13 @@ import type {
   ProductStoragesExportDocument,
 } from '../types'
 
-const PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['select', 'index', 'vendorCode', 'productName'],
-    right: ['actions'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
+const PRODUCT_STORAGES_ROSTER_TEMPLATE =
+  '54px 56px minmax(132px, 0.7fr) minmax(260px, 1.7fr) minmax(220px, 1.3fr) 120px minmax(180px, 0.9fr) 64px'
 
 const pageSizeOptions = ['50', '100', '150']
 const PRODUCT_STORAGES_SEARCH_DEBOUNCE_MS = 200
 const PRODUCT_STORAGES_ACTION_PERMISSION = 'Products_Storages_Action_WithAPosition_Btn_PKEY'
 const PRODUCT_STORAGES_PREVIEW_PERMISSION = 'Products_Storages_Preview_Btn_PKEY'
-const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -161,8 +153,6 @@ function useProductStoragesPageModel() {
   const [actionForm, setActionForm] = useValueState<ProductStorageActionForm>(() => createActionForm())
   const [actionError, setActionError] = useValueState<string | null>(null)
   const [isActionSubmitting, setActionSubmitting] = useValueState(false)
-  const [movementHistoryProduct, setMovementHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
-  const [storageLocationHistoryProduct, setStorageLocationHistoryProduct] = useValueState<MovementHistoryProduct | null>(null)
   const [returnConsignmentsState, setReturnConsignmentsState] = useValueState<ReturnConsignmentsState>({
     error: null,
     isLoading: false,
@@ -180,7 +170,6 @@ function useProductStoragesPageModel() {
   const totalAvailabilities = availabilityList.total
   const canOpenAction = hasPermission(PRODUCT_STORAGES_ACTION_PERMISSION)
   const canOpenPreview = hasPermission(PRODUCT_STORAGES_PREVIEW_PERMISSION)
-  const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
   const selectedStorage = useMemo(
     () => storages.find((storage) => storage.NetUid === selectedStorageNetId) || null,
@@ -204,13 +193,10 @@ function useProductStoragesPageModel() {
   const columns = useProductStoragesColumns({
     availabilityIndexMap,
     canOpenAction,
-    canOpenProductMovement,
     isAllVisibleSelected,
     isSomeVisibleSelected,
     selectedAvailabilityKeys,
     onOpenAction: openSingleAction,
-    onOpenMovementHistory: openMovementHistory,
-    onOpenStorageLocationHistory: openStorageLocationHistory,
     onToggleAvailability: toggleAvailability,
     onToggleVisible: toggleVisibleAvailabilities,
   })
@@ -619,22 +605,6 @@ function useProductStoragesPageModel() {
     setActionError(null)
   }
 
-  function openMovementHistory(availability: ProductStorageAvailability) {
-    const product = getMovementHistoryProduct(availability)
-
-    if (product.NetUid) {
-      setMovementHistoryProduct(product)
-    }
-  }
-
-  function openStorageLocationHistory(availability: ProductStorageAvailability) {
-    const product = getMovementHistoryProduct(availability)
-
-    if (product.NetUid) {
-      setStorageLocationHistoryProduct(product)
-    }
-  }
-
   function openGroupAction() {
     if (!canOpenPreview) {
       setActionError(t('Недостатньо прав для Preview'))
@@ -924,8 +894,6 @@ function useProductStoragesPageModel() {
     selectedActionToStorage,
     selectedStorageNetId,
     selectedReturnConsignment,
-    movementHistoryProduct,
-    storageLocationHistoryProduct,
     storageOptions,
     toDate,
     toolbarLeft,
@@ -945,9 +913,7 @@ function useProductStoragesPageModel() {
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
-    setMovementHistoryProduct,
     setPreviewOpened,
-    setStorageLocationHistoryProduct,
     submitAction,
     toggleAvailability,
     updateFromDate,
@@ -998,8 +964,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectedActionToStorage,
     selectedStorageNetId,
     selectedReturnConsignment,
-    movementHistoryProduct,
-    storageLocationHistoryProduct,
     storageOptions,
     toDate,
     toolbarLeft,
@@ -1019,9 +983,7 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
     selectStorageNetId,
     setActionForm,
     setDownloadModalOpened,
-    setMovementHistoryProduct,
     setPreviewOpened,
-    setStorageLocationHistoryProduct,
     submitAction,
     toggleAvailability,
     updateFromDate,
@@ -1033,46 +995,16 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
 
   return (
     <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          {canOpenPreview && selectedAvailabilities.length > 0 ? (
-            <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="light" onClick={openPreview}>
-              {t('Preview')} ({selectedAvailabilities.length})
-            </Button>
-          ) : null}
-          <Tooltip label={t('Експорт')}>
-            <ActionIcon
-              aria-label={t('Експорт')}
-              color="gray"
-              disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={handleExport}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={() => {
-                closeStorageActions()
-                reload()
-              }}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
+      {canOpenPreview && selectedAvailabilities.length > 0 ? (
+        <Group justify="flex-end" align="end">
+          <Button disabled={Boolean(filterError)} leftSection={<IconEye size={16} />} variant="light" onClick={openPreview}>
+            {t('Preview')} ({selectedAvailabilities.length})
+          </Button>
         </Group>
-      </Group>
+      ) : null}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <Select
               searchable
@@ -1107,13 +1039,45 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               style={{ flex: '1 1 240px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <div className="app-filter-actions">
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  color="gray"
+                  disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={handleExport}
+                >
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading || isLoadingStorages}
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    closeStorageActions()
+                    reload()
+                  }}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
           </Group>
+        </div>
 
+        <Stack gap="md" className="product-storages-body">
           {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
             <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {filterError ? t(filterError) : error || t('Складів не знайдено')}
@@ -1145,23 +1109,22 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
             </Group>
           </Group>
 
-          <DataTable
+          {toolbarLeft}
+
+          <StoragesRosterTable
             columns={columns}
+            columnsTemplate={PRODUCT_STORAGES_ROSTER_TEMPLATE}
             data={availabilities}
-            defaultLayout={PRODUCT_STORAGES_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Товарів на складі не знайдено')}
-            getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
-            isLoading={isLoading || isLoadingStorages}
-            layoutVersion="product-storages-table-2"
-            loadingText={t('Завантаження товарів складу')}
-            maxHeight="calc(100vh - 320px)"
-            minWidth={1320}
-            rowClassName={(availability) =>
+            getRowClassName={(availability) =>
               selectedAvailabilityKeys.has(getAvailabilityKey(availability)) ? 'is-selected' : undefined
             }
+            getRowId={(availability, index) => getAvailabilityKey(availability) || String(index)}
+            isLoading={isLoading || isLoadingStorages}
+            loadingText={t('Завантаження товарів складу')}
+            maxHeight="calc(100vh - 320px)"
+            minWidth={1180}
             onRowClick={(availability) => toggleAvailability(availability)}
-            tableId="product-storages"
-            toolbarLeft={toolbarLeft}
           />
         </Stack>
       </Card>
@@ -1194,18 +1157,6 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         onChangeMode={changeActionMode}
         onClose={closeActionModal}
         onSubmit={submitAction}
-      />
-
-      <ProductMovementHistoryDrawer
-        opened={Boolean(movementHistoryProduct)}
-        product={movementHistoryProduct}
-        onClose={() => setMovementHistoryProduct(null)}
-      />
-
-      <ProductStorageLocationHistoryDrawer
-        opened={Boolean(storageLocationHistoryProduct)}
-        product={storageLocationHistoryProduct}
-        onClose={() => setStorageLocationHistoryProduct(null)}
       />
 
       <AppModal
@@ -1684,25 +1635,19 @@ function ProductStorageActionModal({
 function useProductStoragesColumns({
   availabilityIndexMap,
   canOpenAction,
-  canOpenProductMovement,
   isAllVisibleSelected,
   isSomeVisibleSelected,
   selectedAvailabilityKeys,
   onOpenAction,
-  onOpenMovementHistory,
-  onOpenStorageLocationHistory,
   onToggleAvailability,
   onToggleVisible,
 }: {
   availabilityIndexMap: Map<ProductStorageAvailability, number>
   canOpenAction: boolean
-  canOpenProductMovement: boolean
   isAllVisibleSelected: boolean
   isSomeVisibleSelected: boolean
   selectedAvailabilityKeys: Set<string>
   onOpenAction: (availability: ProductStorageAvailability) => void
-  onOpenMovementHistory: (availability: ProductStorageAvailability) => void
-  onOpenStorageLocationHistory: (availability: ProductStorageAvailability) => void
   onToggleAvailability: (availability: ProductStorageAvailability, checked: boolean) => void
   onToggleVisible: (checked: boolean) => void
 }): DataTableColumn<ProductStorageAvailability>[] {
@@ -1804,64 +1749,29 @@ function useProductStoragesColumns({
       {
         id: 'actions',
         header: '',
-        width: 140,
-        minWidth: 128,
+        width: 64,
+        minWidth: 56,
         align: 'center',
         enableSorting: false,
         enableHiding: false,
         enableReorder: false,
         enableResizing: false,
         cell: (availability) => {
-          const productNetUid = getProductNetUid(availability)
-          const missingProductLabel = t('У товару немає NetUid')
-
           return (
-            <Group gap={4} justify="flex-end" wrap="nowrap">
-              <Tooltip label={productNetUid ? t('Історія місця зберігання') : missingProductLabel}>
-                <ActionIcon
-                  aria-label={t('Історія місця зберігання')}
-                  color="gray"
-                  disabled={!productNetUid}
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onOpenStorageLocationHistory(availability)
-                  }}
-                >
-                  <IconHistory size={16} />
-                </ActionIcon>
-              </Tooltip>
-              {canOpenProductMovement ? (
-                <Tooltip label={productNetUid ? t('Рух товару') : missingProductLabel}>
-                  <ActionIcon
-                    aria-label={t('Рух товару')}
-                    color="gray"
-                    disabled={!productNetUid}
-                    size="sm"
-                    variant="subtle"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onOpenMovementHistory(availability)
-                    }}
-                  >
-                    <IconArrowsExchange size={16} />
-                  </ActionIcon>
-                </Tooltip>
-              ) : null}
+            <Group className="seo-table-action-cell" gap={4} justify="center" wrap="nowrap">
               {canOpenAction ? (
                 <Tooltip label={t('Операція зі складської позиції')}>
                   <ActionIcon
                     aria-label={t('Операція зі складської позиції')}
                     color="gray"
-                    size="sm"
+                    size={34}
                     variant="light"
                     onClick={(event) => {
                       event.stopPropagation()
                       onOpenAction(availability)
                     }}
                   >
-                    <IconClipboardList size={16} />
+                    <IconClipboardList size={20} />
                   </ActionIcon>
                 </Tooltip>
               ) : null}
@@ -1873,17 +1783,136 @@ function useProductStoragesColumns({
     [
       availabilityIndexMap,
       canOpenAction,
-      canOpenProductMovement,
       isAllVisibleSelected,
       isSomeVisibleSelected,
       onOpenAction,
-      onOpenMovementHistory,
-      onOpenStorageLocationHistory,
       onToggleAvailability,
       onToggleVisible,
       selectedAvailabilityKeys,
       t,
     ],
+  )
+}
+
+function getRosterCellAlignStyle(align?: 'left' | 'center' | 'right'): CSSProperties | undefined {
+  if (align === 'right') {
+    return { justifySelf: 'end', textAlign: 'right' }
+  }
+
+  if (align === 'center') {
+    return { justifySelf: 'center', textAlign: 'center' }
+  }
+
+  return undefined
+}
+
+function isRosterActionCellEventTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('.seo-table-action-cell'))
+}
+
+function StoragesRosterTable<TData>({
+  columns,
+  columnsTemplate,
+  data,
+  emptyText,
+  getRowClassName,
+  getRowId,
+  isLoading,
+  loadingText,
+  maxHeight,
+  minWidth,
+  onRowClick,
+}: {
+  columns: DataTableColumn<TData>[]
+  columnsTemplate: string
+  data: TData[]
+  emptyText: ReactNode
+  getRowClassName?: (row: TData, index: number) => string | undefined
+  getRowId: (row: TData, index: number) => string
+  isLoading?: boolean
+  loadingText: ReactNode
+  maxHeight: string
+  minWidth: number
+  onRowClick?: (row: TData) => void
+}) {
+  const tableStyle = {
+    '--seo-roster-columns': columnsTemplate,
+    '--seo-roster-min-width': `${minWidth}px`,
+  } as CSSProperties
+
+  return (
+    <div className="seo-roster-table product-storages-roster" style={tableStyle}>
+      <ScrollArea.Autosize mah={maxHeight} type="auto">
+        <div className="seo-roster-head">
+          {columns.map((column) => (
+            <span
+              className={`seo-roster-head-cell is-${column.id}`}
+              key={column.id}
+              style={getRosterCellAlignStyle(column.align)}
+            >
+              {column.header}
+            </span>
+          ))}
+        </div>
+
+        <div className="seo-roster-body">
+          {isLoading ? (
+            <div className="seo-roster-empty">
+              <Group gap="xs">
+                <Loader size="sm" />
+                <span>{loadingText}</span>
+              </Group>
+            </div>
+          ) : data.length ? (
+            data.map((row, index) => {
+              const rowId = getRowId(row, index)
+              const rowClassNames = ['seo-roster-row', 'is-clickable', getRowClassName?.(row, index)]
+                .filter(Boolean)
+                .join(' ')
+
+              return (
+                <div className="seo-roster-row-frame" key={rowId}>
+                  <div
+                    className={rowClassNames}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      if (isRosterActionCellEventTarget(event.target)) {
+                        return
+                      }
+
+                      onRowClick?.(row)
+                    }}
+                    onKeyDown={(event) => {
+                      if (isRosterActionCellEventTarget(event.target)) {
+                        return
+                      }
+
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        onRowClick?.(row)
+                      }
+                    }}
+                  >
+                    {columns.map((column) => (
+                      <div
+                        className={`seo-roster-cell is-${column.id}`}
+                        key={column.id}
+                        style={getRosterCellAlignStyle(column.align)}
+                      >
+                        {column.cell ? column.cell(row) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="seo-roster-empty">{emptyText}</div>
+          )}
+        </div>
+      </ScrollArea.Autosize>
+    </div>
   )
 }
 
@@ -2273,17 +2302,6 @@ function getAvailabilityProduct(availability?: ProductStorageAvailability): Prod
     Name: availability.ProductName,
     NetUid: availability.ProductNetUid,
     VendorCode: availability.VendorCode,
-  }
-}
-
-function getMovementHistoryProduct(availability: ProductStorageAvailability): MovementHistoryProduct {
-  const product = getAvailabilityProduct(availability)
-
-  return {
-    Name: product?.Name || availability.ProductName,
-    NameUA: product?.NameUA,
-    NetUid: getProductNetUid(availability),
-    VendorCode: product?.VendorCode || availability.VendorCode,
   }
 }
 

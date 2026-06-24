@@ -29,6 +29,7 @@ import {
   IconDeviceFloppy,
   IconEdit,
   IconFileImport,
+  IconFileInvoice,
   IconFileUpload,
   IconPackage,
   IconRefresh,
@@ -37,12 +38,14 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState, type Dispatch, type SetStateAction } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import './supply-order-detail.css'
 import { formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import {
@@ -1043,19 +1046,34 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
   const { t } = useI18n()
 
   return (
-    <Group justify="space-between" align="flex-start">
-      <Group gap="sm">
+    <header className="supply-detail-header">
+      <div className="supply-detail-header-main">
         <Tooltip label={t('Назад')}>
-          <ActionIcon aria-label={t('Назад')} color="gray" variant="light" onClick={model.goBack}>
+          <ActionIcon
+            aria-label={t('Назад')}
+            className="supply-detail-back"
+            variant="default"
+            onClick={model.goBack}
+          >
             <IconArrowLeft size={18} />
           </ActionIcon>
         </Tooltip>
-        <Stack gap={2}>
-          <Text fw={700} size="xl">{t('Інвойси і пак листи')} {getOrderNumber(model.order)}</Text>
-          <Text c="dimmed" size="sm">{t('Постачальник')}: {getEntityName(model.order?.Client)}</Text>
-        </Stack>
-      </Group>
-      <Group gap="xs">
+        <span className="supply-detail-icon">
+          <IconFileInvoice size={22} stroke={1.8} />
+        </span>
+        <div className="supply-detail-copy">
+          <h1 className="supply-detail-title">
+            {t('Інвойси і пак листи')}
+            {getOrderNumber(model.order) && (
+              <span className="supply-detail-number">{getOrderNumber(model.order)}</span>
+            )}
+          </h1>
+          <p className="supply-detail-subtitle">
+            {t('Постачальник')}: <strong>{getEntityName(model.order?.Client)}</strong>
+          </p>
+        </div>
+      </div>
+      <div className="supply-detail-header-actions">
         <Button
           disabled={model.isSaving || model.isInvoiceLoading}
           leftSection={<IconRefresh size={16} />}
@@ -1087,8 +1105,8 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
             {t('Додати пак лист')}
           </Button>
         )}
-      </Group>
-    </Group>
+      </div>
+    </header>
   )
 }
 
@@ -1105,7 +1123,7 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
         <TotalCard label={t('Рядків замовлення')} value={String(model.orderItems.length)} />
         <TotalCard label={t('Інвойсів')} value={String(model.invoices.length)} />
         <TotalCard label={t('Кількість')} value={formatNumber(model.order.TotalQuantity)} />
-        <TotalCard label={t('Сума')} value={formatMoney(model.order.TotalNetPrice)} />
+        <TotalCard accent label={t('Сума')} value={formatMoney(model.order.TotalNetPrice)} />
       </SimpleGrid>
       <Tabs defaultValue="products" keepMounted={false}>
         <Tabs.List>
@@ -1126,7 +1144,7 @@ function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="products" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <DataTable
           columns={model.orderItemColumns}
           data={model.orderRows}
@@ -1148,7 +1166,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="invoices" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <InvoiceSelector model={model} />
           {model.selectedInvoice && <InvoiceDocumentsSummary invoice={model.selectedInvoice} />}
@@ -1175,6 +1193,7 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               />
               <Group justify="flex-end">
                 <Button
+                  color={CREATE_ACTION_COLOR}
                   disabled={
                     model.isBusy
                     || !model.canEditInvoice
@@ -1280,7 +1299,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
 
   return (
     <Tabs.Panel value="packlists" pt="md">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <PackListSelector model={model} />
           <QuantityBalanceSummary
@@ -1301,6 +1320,7 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
               </Button>
             )}
             <Button
+              color={CREATE_ACTION_COLOR}
               disabled={
                 model.isBusy
                 || !model.canAddPackList
@@ -1501,7 +1521,7 @@ function InvoiceUploadModal({
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </Group>
       </Stack>
     </AppModal>
@@ -1578,7 +1598,7 @@ function PackListUploadModal({
         />
         <Group justify="flex-end">
           <Button disabled={isSaving} variant="subtle" onClick={close}>{t('Скасувати')}</Button>
-          <Button loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
+          <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => onSubmit(form)}>{t('Створити')}</Button>
         </Group>
       </Stack>
     </AppModal>
@@ -1725,7 +1745,7 @@ function InvoiceMetadataModalBody({
       <Divider />
       <Group justify="flex-end">
         <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-        <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
       </Group>
     </Stack>
   )
@@ -1854,7 +1874,7 @@ function PackListMetadataModalBody({
         <Divider />
         <Group justify="flex-end">
           <Button disabled={isSaving} leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>{t('Скасувати')}</Button>
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} onClick={() => onSubmit(form)}>{t('Зберегти')}</Button>
         </Group>
     </Stack>
   )
@@ -2424,7 +2444,7 @@ function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageMode
                 {editingPaymentIndex !== null && (
                   <Button disabled={isDisabled} variant="subtle" onClick={resetPaymentDraft}>{t('Скасувати')}</Button>
                 )}
-                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
+                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
                   {t('Зберегти')}
                 </Button>
               </Group>
@@ -2531,7 +2551,7 @@ function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageMode
                 {editingInformationIndex !== null && (
                   <Button disabled={isDisabled} variant="subtle" onClick={resetInformationDraft}>{t('Скасувати')}</Button>
                 )}
-                <Button disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
+                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
                   {t('Зберегти')}
                 </Button>
               </Group>
@@ -3760,14 +3780,12 @@ function TotalsBadges({ totals }: { totals: SupplyOrderInvoiceTotals }) {
   )
 }
 
-function TotalCard({ label, value }: { label: string, value: string }) {
+function TotalCard({ label, value, accent }: { label: string, value: string, accent?: boolean }) {
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap={2}>
-        <Text c="dimmed" size="xs">{label}</Text>
-        <Text fw={700} size="lg">{value}</Text>
-      </Stack>
-    </Card>
+    <div className={`supply-detail-metric${accent ? ' is-brand' : ''}`}>
+      <span className="supply-detail-metric-label">{label}</span>
+      <span className="supply-detail-metric-value">{value}</span>
+    </div>
   )
 }
 

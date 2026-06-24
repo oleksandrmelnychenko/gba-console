@@ -10,11 +10,11 @@ import {
   Loader,
   Stack,
   Text,
-  Title,
 } from '@mantine/core'
 import { IconAlertCircle, IconUpload, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { upgradeHttpToHttps } from '../../../../shared/url/upgradeHttpToHttps'
 import {
   getClientResourceCurrencies,
@@ -496,7 +496,7 @@ export function PricingPanel({
             />
 
             {showDiscountsTree && highlightedAgreement?.Agreement?.NetUid && (
-              <Card withBorder padding="md" radius="md">
+              <Card className="app-section-card" withBorder padding="md" radius="md">
                 <DiscountsTree
                   clientAgreementNetId={highlightedAgreement.Agreement.NetUid}
                   disabled={disabled}
@@ -550,9 +550,9 @@ function ContractDocumentsSection({
   const visibleDocuments = documents.filter((document) => !document.Deleted)
 
   return (
-    <Card withBorder padding="md" radius="md">
-      <Stack gap="sm">
-        <Title order={5}>{t('Документи договору')}</Title>
+    <Card className="app-section-card" withBorder padding="md" radius="md">
+      <Stack gap="md">
+        <Text fw={600}>{t('Документи договору')}</Text>
 
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={16} />} variant="light">
@@ -617,7 +617,7 @@ function ContractDocumentsSection({
 
         {showSave && visibleDocuments.length > 0 && (
           <Group justify="flex-end">
-            <Button color="violet" disabled={disabled} loading={isUploading} variant="light" onClick={onSave}>
+            <Button color={CREATE_ACTION_COLOR} disabled={disabled} loading={isUploading} variant="light" onClick={onSave}>
               {t('Зберегти')}
             </Button>
           </Group>

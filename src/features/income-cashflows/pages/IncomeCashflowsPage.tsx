@@ -4,6 +4,7 @@ import {
   Autocomplete,
   Badge,
   Button,
+  Card,
   Divider,
   Group,
   Menu,
@@ -16,7 +17,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronDown, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronDown, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconRestore, IconSearch, IconUserShare, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -42,6 +43,7 @@ import {
   updateIncomeCashflowClient,
 } from '../api/incomeCashflowsApi'
 import { IncomePaymentOperationType, PaymentRegisterType } from '../types'
+import './income-cashflows-page.css'
 import type {
   AssignedPaymentOrder,
   Client,
@@ -518,7 +520,7 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
   const location = useLocation()
 
   return (
-    <Stack gap="md">
+    <Stack gap="lg">
       <PageHeaderActions>
         <Menu position="bottom-end" shadow="md" width={300} withinPortal>
           <Menu.Target>
@@ -568,124 +570,125 @@ function IncomeCashflowsContent({ model }: { model: IncomeCashflowsPageModel }) 
         </Menu>
       </PageHeaderActions>
 
-      <Group align="end" justify="space-between" gap="sm">
-        <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Номер, платник, рахунок або коментар')}
-            value={searchValue}
-            w={340}
-            onChange={(event) => onSetSearchValue(event.currentTarget.value)}
-          />
+      <Card className="app-data-card income-cashflows-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="income-cashflows-filter-row">
+            <Group align="end" gap="sm" wrap="wrap">
+              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
+              <TextInput
+                leftSection={<IconSearch size={16} />}
+                label={t('Пошук')}
+                placeholder={t('Номер, платник, рахунок або коментар')}
+                value={searchValue}
+                w={340}
+                onChange={(event) => onSetSearchValue(event.currentTarget.value)}
+              />
+              <Select
+                clearable
+                searchable
+                data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
+                label={t('Валюта')}
+                placeholder={t('Усі')}
+                value={currencyNetId || null}
+                w={190}
+                onChange={(value) => onSetCurrencyNetId(value || '')}
+              />
+              <Select
+                clearable
+                searchable
+                data={toSelectOptions(paymentRegisters, (register) => register.Name)}
+                label={t('Рахунок')}
+                placeholder={t('Усі')}
+                value={paymentRegisterNetId || null}
+                w={250}
+                onChange={(value) => onSetPaymentRegisterNetId(value || '')}
+              />
+              <MultiSelect
+                clearable
+                searchable
+                data={organizationOptions}
+                label={t('Організації')}
+                placeholder={t('Без фільтра')}
+                value={selectedOrganizationIds}
+                w={360}
+                onChange={onSetSelectedOrganizationIds}
+              />
+            </Group>
+
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={onResetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading || isLoadingLookups}
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    void onLoadLookups()
+                    void onLoadIncomeOrders(0, false)
+                  }}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
+            </div>
+          </Group>
+        </div>
+
+        {error && (
+          <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        {filterError && (
+          <Alert m="md" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
+
+        <Group gap="xs" px="md" pt="md">
+          <Badge color="violet" variant="light">
+            {t('Завантажено')}: {incomeOrders.length}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Всього')}: {totalQty}
+          </Badge>
+          <Badge color="gray" variant="light">
+            {t('Скасовано')}: {incomeOrders.filter((order) => order.IsCanceled).length}
+          </Badge>
         </Group>
 
-        <Group align="end" gap="xs">
-          <Tooltip label={t('Скинути фільтри')}>
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={onResetFilters}>
-              {t('Скинути')}
+        <DataTable
+          columns={columns}
+          data={rows}
+          defaultLayout={TABLE_DEFAULT_LAYOUT}
+          density={density}
+          emptyText={t('Прибуткових ордерів не знайдено')}
+          getRowId={(row) => row.id}
+          isLoading={isTableBusy}
+          layoutVersion="income-cashflows-1"
+          maxHeight="calc(100vh - 365px)"
+          minWidth={1680}
+          tableId="income-cashflows"
+          onRowClick={onOpenDetails}
+        />
+
+        {hasMore && (
+          <Group justify="center" p="md">
+            <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
+              {t('Завантажити ще')}
             </Button>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingLookups}
-              size={38}
-              variant="light"
-              onClick={() => {
-                void onLoadLookups()
-                void onLoadIncomeOrders(0, false)
-              }}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Group align="end" gap="sm">
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
-          label={t('Валюта')}
-          placeholder={t('Усі')}
-          value={currencyNetId || null}
-          w={190}
-          onChange={(value) => onSetCurrencyNetId(value || '')}
-        />
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-          label={t('Рахунок')}
-          placeholder={t('Усі')}
-          value={paymentRegisterNetId || null}
-          w={250}
-          onChange={(value) => onSetPaymentRegisterNetId(value || '')}
-        />
-        <MultiSelect
-          clearable
-          searchable
-          data={organizationOptions}
-          label={t('Організації')}
-          placeholder={t('Без фільтра')}
-          value={selectedOrganizationIds}
-          w={360}
-          onChange={onSetSelectedOrganizationIds}
-        />
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError}
-        </Alert>
-      )}
-
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Завантажено')}: {incomeOrders.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Всього')}: {totalQty}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Скасовано')}: {incomeOrders.filter((order) => order.IsCanceled).length}
-        </Badge>
-      </Group>
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        density={density}
-        emptyText={t('Прибуткових ордерів не знайдено')}
-        getRowId={(row) => row.id}
-        isLoading={isTableBusy}
-        layoutVersion="income-cashflows-1"
-        maxHeight="calc(100vh - 365px)"
-        minWidth={1680}
-        tableId="income-cashflows"
-        onRowClick={onOpenDetails}
-      />
-
-      {hasMore && (
-        <Group justify="center">
-          <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadIncomeOrders(incomeOrders.length, true)}>
-            {t('Завантажити ще')}
-          </Button>
-        </Group>
-      )}
+          </Group>
+        )}
+      </Card>
 
       <IncomeCashflowDetailDrawer
         row={selectedRow}

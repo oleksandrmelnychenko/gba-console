@@ -25,6 +25,7 @@ import {
   IconBuilding,
   IconBuildingWarehouse,
   IconCheck,
+  IconChevronRight,
   IconCreditCard,
   IconDeviceFloppy,
   IconFileText,
@@ -1579,11 +1580,12 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 <button
                   key={tab.value}
                   type="button"
-                  className={`seo-page-nav-item${activeTab === tab.value ? ' is-active' : ''}`}
+                  className={`seo-page-nav-item online-shop-seo-nav-item${activeTab === tab.value ? ' is-active' : ''}`}
                   aria-pressed={activeTab === tab.value}
                   onClick={() => setActiveTab(tab.value)}
                 >
-                  {t(tab.label)}
+                  <span className="online-shop-seo-nav-item-label">{t(tab.label)}</span>
+                  <IconChevronRight className="online-shop-seo-nav-item-chevron" size={16} stroke={2} aria-hidden />
                 </button>
               ))}
             </div>
@@ -1960,7 +1962,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePageEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>
@@ -2035,7 +2037,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
                 {t('Скасувати')}
               </Button>
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 disabled={isImageUploading}
                 leftSection={<IconDeviceFloppy size={16} />}
                 loading={isSaving}
@@ -2093,7 +2095,7 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
               <Button color="gray" disabled={isSaving} type="button" variant="light" onClick={closePriorityEditor}>
                 {t('Скасувати')}
               </Button>
-              <Button color="violet" leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
                 {t('Зберегти')}
               </Button>
             </Group>

@@ -1,0 +1,11 @@
+/* Branch B (load-more) page: wraps the shared «Продажі» chrome around the
+   existing load-more / max-height scroll model. The card shadow and filter
+   strip come from the global filter-bar.css; only the full-width filter row
+   and the body padding (the card uses padding={0}) are page-local. */
+.product-specification-codes-filter-row {
+  width: 100%;
+}
+
+.product-specification-codes-body {
+  padding: 16px;
+}

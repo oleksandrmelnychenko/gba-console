@@ -4,7 +4,6 @@ import {
   Anchor,
   Button,
   Group,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -14,17 +13,14 @@ import {
   IconAlertCircle,
   IconBuilding,
   IconBuildingBank,
-  IconChevronLeft,
   IconCash,
   IconChevronDown,
-  IconChevronRight,
   IconChevronUp,
   IconDownload,
   IconDots,
   IconEye,
   IconFileTypePdf,
   IconPlus,
-  IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
@@ -36,6 +32,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
@@ -47,8 +45,7 @@ import './supplier-organizations-page.css'
 import '../../../shared/ui/console-table-page.css'
 
 const SEARCH_STORAGE_KEY = 'searchSupplyOrganization'
-const SUPPLIER_ORGANIZATIONS_PAGE_SIZE = 40
-const pageSizeOptions = ['20', '40', '60', '100']
+const SUPPLIER_ORGANIZATIONS_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
   dateStyle: 'short',
@@ -171,6 +168,11 @@ export function SupplierOrganizationsPage() {
     }
   }
 
+  function changePageSize(nextPageSize: number) {
+    setPage(1)
+    setPageSize(nextPageSize)
+  }
+
   function updateSearchValue(value: string) {
     setSearchValue(value)
     setPage(1)
@@ -207,8 +209,6 @@ export function SupplierOrganizationsPage() {
 
   const sortedOrganizations = useMemo(() => sortSupplierOrganizations(organizations, sortState), [organizations, sortState])
   const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
-  const canMoveBackward = page > 1
-  const canMoveForward = hasMore
 
   function toggleSort(id: SupplierOrganizationSortId) {
     setSortState((current) => {
@@ -231,7 +231,7 @@ export function SupplierOrganizationsPage() {
       </PermissionGate>
 
       <div className="console-table-shell">
-        <div className="supplier-organizations-command-bar">
+        <div className="app-filter-bar supplier-organizations-command-bar">
           <div className="supplier-organizations-period-filter">
             <span className="supplier-organizations-filter-label">{t('Період')}</span>
             <div className="supplier-organizations-period-fields">
@@ -261,17 +261,17 @@ export function SupplierOrganizationsPage() {
             value={searchValue}
             onChange={(event) => updateSearchValue(event.currentTarget.value)}
           />
-          <div className="supplier-organizations-command-actions">
+          <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveFilters}
-                size={38}
+                size={34}
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={18} />
+                <IconRestore size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Друк')}>
@@ -280,49 +280,22 @@ export function SupplierOrganizationsPage() {
                 color="gray"
                 disabled={isExporting}
                 loading={isExporting}
-                size={38}
+                size={34}
                 variant="light"
                 onClick={exportList}
               >
                 <IconDownload size={18} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void reloadOrganizations()}>
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Select
-              aria-label={t('Розмір сторінки')}
-              className="supplier-organizations-page-size"
-              data={pageSizeOptions}
-              value={String(pageSize)}
-              onChange={(value) => {
-                setPage(1)
-                setPageSize(Number(value || SUPPLIER_ORGANIZATIONS_PAGE_SIZE))
-              }}
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              hasNext={hasMore}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+              onRefresh={() => void reloadOrganizations()}
             />
-            <ActionIcon
-              aria-label={t('Попередня сторінка')}
-              color="gray"
-              disabled={!canMoveBackward || isLoading}
-              size={38}
-              variant="light"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-            >
-              <IconChevronLeft size={18} />
-            </ActionIcon>
-            <span className="supplier-organizations-current-page">{page}</span>
-            <ActionIcon
-              aria-label={t('Наступна сторінка')}
-              color="gray"
-              disabled={!canMoveForward || isLoading}
-              size={38}
-              variant="light"
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              <IconChevronRight size={18} />
-            </ActionIcon>
           </div>
         </div>
 

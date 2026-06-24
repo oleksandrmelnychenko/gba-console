@@ -464,7 +464,7 @@ function ConsumableCategoryPanel({
         </div>
         <Group className="consumable-category-panel__actions" gap="xs">
             <PermissionGate permissionKey="SERVICE_Accounting_Consumable_Product_addSupCategoryBtn_PKEY">
-              <Button leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
+              <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" variant="light" onClick={onAddProduct}>
                 {t('Товар')}
               </Button>
             </PermissionGate>
@@ -744,6 +744,7 @@ function CategoryEditorForm({
           {t('Скасувати')}
         </Button>
         <Button
+          color={CREATE_ACTION_COLOR}
           leftSection={<IconPlus size={16} />}
           loading={isSubmitting}
           onClick={() => onSubmit({ isSupplyServiceCategory, name })}
@@ -886,7 +887,7 @@ function ProductEditorForm({
         <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
           {t('Скасувати')}
         </Button>
-        <Button leftSection={<IconPlus size={16} />} loading={isSubmitting} onClick={submit}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} loading={isSubmitting} onClick={submit}>
           {t('Зберегти')}
         </Button>
       </Group>

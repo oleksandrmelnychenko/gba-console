@@ -14,6 +14,7 @@ import { IconAlertCircle, IconPlus, IconTrash } from '@tabler/icons-react'
 import { useState } from 'react'
 import { AppModal } from '../../../../shared/ui/AppModal'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { Client, ClientGroup, ClientWorkplace } from '../../types'
 import { WorkplaceForm } from './WorkplaceForm'
 
@@ -100,11 +101,10 @@ export function WorkplacesPanel({
       <Group justify="space-between" align="center">
         <Text fw={600}>{t('Робочі місця')}</Text>
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={isSaving}
           leftSection={<IconPlus size={16} />}
           size="xs"
-          variant="light"
           onClick={openCreate}
         >
           {t('Додати')}
@@ -125,7 +125,7 @@ export function WorkplacesPanel({
           </Text>
         </Group>
       ) : workplaces.length === 0 ? (
-        <Card withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding="lg">
           <Text c="dimmed" size="sm">
             {t('Робочих місць не додано')}
           </Text>
@@ -243,6 +243,9 @@ function WorkplaceItem({
   onRemove?: () => void
 }) {
   const fullName = getFullName(workplace)
+  const [isHovered, setHovered] = useState(false)
+  const interactive = !readonly && !workplace.IsBlocked
+  const isActive = interactive && isHovered
 
   return (
     <Card
@@ -250,10 +253,16 @@ function WorkplaceItem({
       padding="sm"
       radius="md"
       style={{
-        cursor: readonly || workplace.IsBlocked ? 'default' : 'pointer',
+        backgroundColor: isActive ? 'var(--mantine-color-orange-0)' : undefined,
+        borderColor: isActive ? 'var(--mantine-color-orange-2)' : undefined,
+        boxShadow: isActive ? 'var(--mantine-shadow-xs)' : undefined,
+        cursor: interactive ? 'pointer' : 'default',
         opacity: workplace.IsBlocked ? 0.55 : 1,
+        transition: 'background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
       }}
       onClick={readonly ? undefined : onSelect}
+      onMouseEnter={interactive ? () => setHovered(true) : undefined}
+      onMouseLeave={interactive ? () => setHovered(false) : undefined}
     >
       <Group justify="space-between" align="center" wrap="nowrap">
         <Group gap="sm" align="center" wrap="nowrap">

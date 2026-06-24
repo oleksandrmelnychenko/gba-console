@@ -34,6 +34,7 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getAccountingBanks, saveAccountingBank } from '../api/accountingBanksApi'
 import type { AccountingBank, AccountingBankFormValues } from '../types'
+import './accounting-banks-page.css'
 
 const ACCOUNTING_BANK_CREATE_PERMISSION = 'Accounting_Banks_All_ADDBtn_PKEY'
 const ACCOUNTING_BANK_SAVE_PERMISSION = 'Accounting_Banks_All_Modal_edit_SaveBtn_PKEY'
@@ -84,14 +85,6 @@ export function AccountingBanksPage() {
     setFormError(null)
   }, [])
   const columns = useAccountingBankColumns(openEditor, requestDelete)
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {searchValue ? `${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [searchValue, t],
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -223,10 +216,11 @@ export function AccountingBanksPage() {
           </Button>
         </PageHeaderActions>
       </PermissionGate>
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card className="app-data-card accounting-banks-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar accounting-banks-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="accounting-banks-filter-row">
             <TextInput
+              size="sm"
               leftSection={<IconSearch size={16} />}
               label={t('Пошук')}
               placeholder={t('Назва, МФО, ЄДРПОУ, місто, телефон або адреса')}
@@ -234,35 +228,30 @@ export function AccountingBanksPage() {
               onChange={(event) => updateSearch(event.currentTarget.value)}
               style={{ flex: '1 1 auto', minWidth: 180 }}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                type="button"
-                variant="light"
-                onClick={resetSearch}
-              >
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={reload}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetSearch}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={reload}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            </div>
           </Group>
+        </div>
 
+        <Stack className="accounting-banks-card__body" gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
@@ -282,7 +271,6 @@ export function AccountingBanksPage() {
             maxHeight="calc(100vh - 320px)"
             minWidth={1180}
             tableId="accounting-banks"
-            toolbarLeft={toolbarLeft}
             onRowClick={openEditor}
           />
         </Stack>

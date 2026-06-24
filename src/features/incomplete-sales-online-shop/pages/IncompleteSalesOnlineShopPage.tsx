@@ -27,7 +27,7 @@ import {
   IconSearch,
   IconUserPlus,
 } from '@tabler/icons-react'
-import { type ReactNode, useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
@@ -57,6 +57,7 @@ import {
   getRetailClientNetUid,
   getRetailClientPhone,
 } from '../utils'
+import './incomplete-sales-online-shop-page.css'
 
 type FilterDraft = {
   from: string
@@ -187,27 +188,6 @@ function useIncompleteSalesOnlineShopPageModel() {
     user,
   })
 
-  const activeFilterText = useMemo(() => {
-    const parts = [
-      activeFilters.from ? `${t('з')} ${activeFilters.from}` : '',
-      activeFilters.to ? `${t('по')} ${activeFilters.to}` : '',
-      activeFilters.number ? `${t('номер')}: ${activeFilters.number}` : '',
-      activeFilters.isAccepted ? t('тільки мої') : '',
-    ].filter(Boolean)
-
-    return parts.join(', ')
-  }, [activeFilters, t])
-
-  const toolbarLeft = useMemo(
-    () =>
-      activeFilterText ? (
-        <Text size="xs" c="dimmed">
-          {activeFilterText}
-        </Text>
-      ) : null,
-    [activeFilterText],
-  )
-
   const isConfirming = Boolean(
     pendingStatusAction && updatingId === getIncompleteSaleKey(pendingStatusAction.sale),
   )
@@ -314,7 +294,6 @@ function useIncompleteSalesOnlineShopPageModel() {
     pendingStatusAction,
     sales,
     selectedSale,
-    toolbarLeft,
     toggleDensity,
     closeDetail,
     confirmStatusAction,
@@ -349,7 +328,6 @@ function IncompleteSalesOnlineShopPageView({
     pendingStatusAction,
     sales,
     selectedSale,
-    toolbarLeft,
     toggleDensity,
     closeDetail,
     confirmStatusAction,
@@ -370,7 +348,6 @@ function IncompleteSalesOnlineShopPageView({
         filterDraft={filterDraft}
         isLoading={isLoading}
         sales={sales}
-        toolbarLeft={toolbarLeft}
         onFromChange={(from) => applyFilters({ ...filterDraft, from })}
         onNumberChange={(number) => applyFilters({ ...filterDraft, number })}
         onOpenDetail={openDetail}
@@ -405,7 +382,6 @@ function IncompleteSalesTableCard({
   filterDraft,
   isLoading,
   sales,
-  toolbarLeft,
   onFromChange,
   onNumberChange,
   onOpenDetail,
@@ -421,7 +397,6 @@ function IncompleteSalesTableCard({
   filterDraft: FilterDraft
   isLoading: boolean
   sales: IncompleteSalesOnlineShopItem[]
-  toolbarLeft: ReactNode
   onFromChange: (from: string) => void
   onNumberChange: (number: string) => void
   onOpenDetail: (sale: IncompleteSalesOnlineShopItem) => void
@@ -434,9 +409,9 @@ function IncompleteSalesTableCard({
   const { t } = useI18n()
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Card className="app-data-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="incomplete-sales-online-shop-filter-row">
           <TextInput
             label={t('З')}
             max={filterDraft.to || undefined}
@@ -465,42 +440,43 @@ function IncompleteSalesTableCard({
             mb={8}
             onChange={(event) => onToggleAccepted(event.currentTarget.checked)}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon variant="light" color="gray" size={36} aria-label={t('Скинути')} onClick={onReset}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon variant="light" color="gray" size={36} aria-label={t('Оновити')} onClick={onReload}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={36} />
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Оновити')} onClick={onReload}>
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
+          </div>
         </Group>
+      </div>
 
-        {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert m="md" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
-        <DataTable
-          columns={columns}
-          data={sales}
-          defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
-          density={density}
-          emptyText={t('Продажів не знайдено')}
-          getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
-          isLoading={isLoading}
-          layoutVersion="incomplete-sales-online-shop-table-1"
-          loadingText={t('Завантаження продажів')}
-          maxHeight="calc(100vh - 310px)"
-          minWidth={1260}
-          tableId="incomplete-sales-online-shop"
-          toolbarLeft={toolbarLeft}
-          onRowClick={onOpenDetail}
-        />
-      </Stack>
+      <DataTable
+        columns={columns}
+        data={sales}
+        defaultLayout={INCOMPLETE_SALES_TABLE_DEFAULT_LAYOUT}
+        density={density}
+        emptyText={t('Продажів не знайдено')}
+        getRowId={(sale, index) => getIncompleteSaleKey(sale, index)}
+        isLoading={isLoading}
+        layoutVersion="incomplete-sales-online-shop-table-1"
+        loadingText={t('Завантаження продажів')}
+        maxHeight="calc(100vh - 310px)"
+        minWidth={1260}
+        tableId="incomplete-sales-online-shop"
+        onRowClick={onOpenDetail}
+      />
     </Card>
   )
 }

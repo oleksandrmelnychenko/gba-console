@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../../shared/hooks/useValueState'
 import { useI18n } from '../../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getClientGroups, getClientWorkplaces } from '../../api/clientLookupsApi'
 import {
   createClientWorkplace,
@@ -182,7 +183,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
         </Alert>
       )}
 
-      <Card withBorder padding="md" radius="md">
+      <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
           <Group justify="space-between" align="center">
             <Text fw={600}>{t('Структура клієнта')}</Text>
@@ -198,7 +199,12 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t('Новий користувач')}>
-                <ActionIcon color="violet" size="lg" variant="light" onClick={openNewUser}>
+                <ActionIcon
+                  color={CREATE_ACTION_COLOR}
+                  size="lg"
+                  variant="light"
+                  onClick={openNewUser}
+                >
                   <IconUserPlus size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -235,7 +241,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
 
       <Grid gap="lg">
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card withBorder padding="md" radius="md">
+          <Card className="app-section-card" withBorder padding="md" radius="md">
             <ServicePayersPanel
               payers={client.ServicePayers || []}
               onChange={handleServicePayersChange}
@@ -243,7 +249,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card withBorder padding="md" radius="md">
+          <Card className="app-section-card" withBorder padding="md" radius="md">
             <DeliveryRecipientsPanel clientId={clientId} clientNetId={netId || ''} />
           </Card>
         </Grid.Col>

@@ -1,0 +1,35 @@
+.supply-returns-page {
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.supply-returns-filter-bar {
+  flex: 0 0 auto;
+}
+
+.supply-returns-filter-bar .supply-returns-filter-row {
+  width: 100%;
+}
+
+.supply-returns-page__alert {
+  margin: 12px 12px 0;
+}
+
+.supply-returns-page__table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.supply-returns-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.supply-returns-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

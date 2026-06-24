@@ -1,0 +1,18 @@
+/* Tax-free carriers registry — chrome aligned with the «Продажі» reference.
+   The page loads all carriers (or the search result) and has no pagination, so it
+   keeps the table's own maxHeight scroll model; only the filter strip + card shell
+   are converged onto the shared primitives. */
+.tax-free-carriers-filter-row {
+  width: 100%;
+}
+
+/* Push the reset / refresh / export cluster to the trailing edge of the row. */
+.tax-free-carriers-filter-row .app-filter-actions {
+  margin-left: auto;
+}
+
+/* Body below the flush filter strip carries its own padding (the card is
+   padding={0} so the strip sits flush). */
+.tax-free-carriers-card__body {
+  padding: 12px;
+}

@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Checkbox,
@@ -73,6 +72,7 @@ import type {
   PaymentCostMovementOperation,
   UserProfile,
 } from '../types'
+import './consumable-storages-page.css'
 
 const TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -186,19 +186,6 @@ export function ConsumableStoragesPage() {
     return () => controller.abort()
   }, [reloadKey, setError, setLoading, setStorages, t])
 
-  const toolbarLeft = useMemo(
-    () => (
-      <TextInput
-        leftSection={<IconSearch size={16} />}
-        placeholder={t('Пошук')}
-        value={searchValue}
-        w={{ base: '100%', sm: 360 }}
-        onChange={(event) => setSearchValue(event.currentTarget.value)}
-      />
-    ),
-    [searchValue, setSearchValue, t],
-  )
-
   async function handleDelete() {
     if (!deleteStorageTarget?.NetUid) {
       return
@@ -222,41 +209,52 @@ export function ConsumableStoragesPage() {
   return (
     <Stack gap="md">
       <PageHeaderActions>
-        <Group gap="xs" wrap="nowrap">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              size="sm"
-              leftSection={<IconPlus size={16} />}
-              onClick={openCreateStorage}
-            >
-              {t('Новий склад')}
-            </Button>
-          </PermissionGate>
-        </Group>
+        <PermissionGate permissionKey={CONSUMABLE_STORAGE_CREATE_PERMISSION}>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={openCreateStorage}
+          >
+            {t('Новий склад')}
+          </Button>
+        </PermissionGate>
       </PageHeaderActions>
 
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
+      <Card className="app-data-card consumable-storages-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar consumable-storages-filter-bar">
+          <Group align="end" gap="sm" wrap="wrap" className="consumable-storages-filter-row">
+            <TextInput
+              label={t('Пошук')}
+              leftSection={<IconSearch size={16} />}
+              placeholder={t('Пошук')}
+              value={searchValue}
+              w={{ base: '100%', sm: 360 }}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+            />
+            <div className="app-filter-actions consumable-storages-filter-actions">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={reload}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+          </Group>
+        </div>
+
+        <Stack className="consumable-storages-card__body" gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>
           )}
-
-          <Group gap="xs">
-            <Badge color="blue" variant="light">
-              {t('Складів')}: {visibleStorages.length}
-            </Badge>
-            <Badge color="gray" variant="light">
-              {t('Позицій')}: {visibleStorages.reduce((total, storage) => total + (storage.ConsumableProducts?.length || 0), 0)}
-            </Badge>
-          </Group>
 
           <DataTable
             columns={columns}
@@ -268,7 +266,6 @@ export function ConsumableStoragesPage() {
             layoutVersion="consumable-storages-compact-2"
             minWidth={960}
             tableId="consumable-storages"
-            toolbarLeft={toolbarLeft}
             onRowClick={setSelectedStorage}
           />
         </Stack>

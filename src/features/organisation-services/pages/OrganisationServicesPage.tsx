@@ -513,7 +513,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
 
   return (
     <Stack gap="lg">
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <form onSubmit={submitSearch}>
           <Stack gap="md">
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
@@ -598,7 +598,7 @@ function OrganisationServicesPageView({ model }: { model: OrganisationServicesPa
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <DataTable
             columns={columns}

@@ -41,6 +41,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createSupplyOrganization,
   createSupplyOrganizationAgreement,
@@ -305,7 +306,7 @@ export function SupplierOrganizationEditPage() {
         </Alert>
       )}
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
           <Tabs.Tab value="agreements" disabled={tabsDisabled}>
@@ -410,7 +411,7 @@ function GeneralInfoForm({
           />
         </Group>
         <Group justify="flex-end">
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -456,7 +457,7 @@ function BankDetailsForm({
           <TextInput label="BankAccountEUR" value={values.BankAccountEUR} onChange={(event) => setField('BankAccountEUR', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -498,7 +499,7 @@ function ContactPersonForm({
           <TextInput label={t('Коментар')} value={values.ContactPersonComment} onChange={(event) => setField('ContactPersonComment', event.currentTarget.value)} />
         </SimpleGrid>
         <Group justify="flex-end">
-          <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
+          <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} type="submit">
             {t('Зберегти')}
           </Button>
         </Group>
@@ -611,7 +612,7 @@ function AgreementsPanel({
             {t('Договорів')}: {agreements.length}
           </Badge>
         </Group>
-        <Button leftSection={<IconPlus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
+        <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} onClick={() => setEditor(createEmptyAgreement())}>
           {t('Новий договір')}
         </Button>
       </Group>
@@ -853,7 +854,7 @@ function AgreementDrawer({
             <Button color="gray" leftSection={<IconX size={16} />} variant="subtle" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconDeviceFloppy size={16} />} loading={isSubmitting} type="submit">
               {t('Зберегти')}
             </Button>
           </Group>

@@ -1,7 +1,8 @@
-import { Badge, Box, Button, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { Badge, Box, Button, Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { useAuth } from '../../auth/useAuth'
 import { getClientTypes } from '../api/clientsApi'
@@ -98,41 +99,47 @@ export function EditClientTypePanel({
               }
 
               return (
-                <Stack key={clientType.Id || clientType.NetUid || clientType.Name} gap="xs">
-                  <Title order={4} size="h5">
-                    {clientType.Name || '-'}
-                  </Title>
-                  <SimpleGrid cols={1} spacing="sm">
-                    {roles.map((clientRole) => {
-                      const isSelected =
-                        isSameType(clientType.NetUid, currentTypeNetUid)
-                        && isSameRole(clientRole, currentRoleNetUid, currentRoleId)
+                <Card
+                  key={clientType.Id || clientType.NetUid || clientType.Name}
+                  className="app-section-card"
+                  withBorder
+                  padding="md"
+                  radius="md"
+                >
+                  <Stack gap="sm">
+                    <Text fw={600}>{clientType.Name || '-'}</Text>
+                    <SimpleGrid cols={1} spacing="sm">
+                      {roles.map((clientRole) => {
+                        const isSelected =
+                          isSameType(clientType.NetUid, currentTypeNetUid)
+                          && isSameRole(clientRole, currentRoleNetUid, currentRoleId)
 
-                      return (
-                        <Button
-                          key={clientRole.Id || clientRole.NetUid || clientRole.Name}
-                          type="button"
-                          fullWidth
-                          h="auto"
-                          justify="space-between"
-                          color={isSelected ? 'violet' : 'gray'}
-                          variant={isSelected ? 'light' : 'default'}
-                          onClick={() => {
-                            onSelect(clientType, clientRole)
-                            onClose()
-                          }}
-                        >
-                          <Group justify="space-between" w="100%" py={4}>
-                            <Box ta="left">
-                              <Text fw={600}>{clientRole.Name || t('Без назви')}</Text>
-                            </Box>
-                            {isSelected && <Badge color="violet">{t('Обрано')}</Badge>}
-                          </Group>
-                        </Button>
-                      )
-                    })}
-                  </SimpleGrid>
-                </Stack>
+                        return (
+                          <Button
+                            key={clientRole.Id || clientRole.NetUid || clientRole.Name}
+                            type="button"
+                            fullWidth
+                            h="auto"
+                            justify="space-between"
+                            color={isSelected ? CREATE_ACTION_COLOR : 'gray'}
+                            variant={isSelected ? 'light' : 'default'}
+                            onClick={() => {
+                              onSelect(clientType, clientRole)
+                              onClose()
+                            }}
+                          >
+                            <Group justify="space-between" w="100%" py={4}>
+                              <Box ta="left">
+                                <Text fw={600}>{clientRole.Name || t('Без назви')}</Text>
+                              </Box>
+                              {isSelected && <Badge color={CREATE_ACTION_COLOR}>{t('Обрано')}</Badge>}
+                            </Group>
+                          </Button>
+                        )
+                      })}
+                    </SimpleGrid>
+                  </Stack>
+                </Card>
               )
             })}
           </Stack>

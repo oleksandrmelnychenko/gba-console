@@ -26,6 +26,7 @@ import {
 } from '../components/MergedServicesSection'
 import { ProtocolDetailsCard } from '../components/ProtocolDetailsCard'
 import { StatusSection } from '../components/StatusSection'
+import './product-delivery-protocol-logistic-path.css'
 
 type LogisticPathLoadState = {
   error: string | null
@@ -335,7 +336,7 @@ export function ProductDeliveryProtocolLogisticPathPage() {
           {t('Завантаження')}
         </Text>
       ) : model.protocol ? (
-        <Stack gap="lg">
+        <Stack gap="lg" className="product-delivery-protocol-logistic-path-sections">
           <ProtocolDetailsCard protocol={model.protocol} />
 
           {(model.protocol.SupplyInvoices?.length || 0) > 0 && (

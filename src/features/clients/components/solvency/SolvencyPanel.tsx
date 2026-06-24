@@ -167,15 +167,15 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 
   return (
     <Stack gap="lg">
-      <ScoreHeader score={score} />
-      <SubFactorBars subFactors={score.sub_factors} />
-      <ScoreNotes score={score} />
-      {charts && (
-        <>
+      <Card className="app-section-card" padding="lg" radius="md" withBorder>
+        <Stack gap="lg">
+          <ScoreHeader score={score} />
           <Divider />
-          <SolvencyChartsView charts={charts} />
-        </>
-      )}
+          <SubFactorBars subFactors={score.sub_factors} />
+          <ScoreNotes score={score} />
+        </Stack>
+      </Card>
+      {charts && <SolvencyChartsView charts={charts} />}
     </Stack>
   )
 }
@@ -247,7 +247,7 @@ function SubFactorRow({ factor, label }: { factor: SubFactor; label: string }) {
           {formatNumber(factor.points)} {t('балів')} · {formatPercent(factor.weight)}
         </Text>
       </Group>
-      <Progress color="violet" radius="xl" size="sm" value={clampPercent(factor.value * 100)} />
+      <Progress color="orange" radius="xl" size="sm" value={clampPercent(factor.value * 100)} />
     </Stack>
   )
 }
@@ -304,7 +304,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
   return (
     <Stack gap="lg">
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack align="center" gap="xs">
             <Text fw={600} size="sm">
               {t('Використання ліміту')}
@@ -326,7 +326,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
           </Stack>
         </Card>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack align="center" gap="xs">
             <Text fw={600} size="sm">
               {t('Платіжна дисципліна')}
@@ -342,7 +342,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
         </Card>
       </SimpleGrid>
 
-      <Card padding="md" radius="md" withBorder>
+      <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="xs">
           <Text fw={600} size="sm">
             {t('Прострочені рахунки')}
@@ -363,13 +363,13 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
       </Card>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
             <Text fw={600} size="sm">
               {t('Динаміка оцінки')}
             </Text>
             {sparklineData.length > 0 ? (
-              <Sparkline color="violet.6" curveType="linear" data={sparklineData} fillOpacity={0.2} h={80} w="100%" />
+              <Sparkline color="orange.6" curveType="linear" data={sparklineData} fillOpacity={0.2} h={80} w="100%" />
             ) : (
               <Text c="dimmed" size="sm">
                 {t('Дані відсутні')}
@@ -378,7 +378,7 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
           </Stack>
         </Card>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
             <Text fw={600} size="sm">
               {t('Оборот, EUR')}

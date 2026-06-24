@@ -22,6 +22,7 @@ import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableD
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getSyncDocuments } from '../api/balancesApi'
 import { ContractorType, type ContractorTypeValue, type SyncDocument } from '../types'
+import './balances-page.css'
 
 type FilterDraft = {
   from: string
@@ -252,26 +253,11 @@ export function BalancesPage() {
 
 function BalancesHeader({ model }: { model: ReturnType<typeof useBalancesPageModel> }) {
   const { t } = useI18n()
-  const { isLoading, reload } = model
 
   return (
-    <Group justify="space-between" align="center">
-      <Text fw={700} size="lg">
-        {t('Всього')} {model.totalQty}
-      </Text>
-      <Tooltip label={t('Оновити')}>
-        <ActionIcon
-          aria-label={t('Оновити')}
-          color="gray"
-          loading={isLoading}
-          size={38}
-          variant="light"
-          onClick={() => reload()}
-        >
-          <IconRefresh size={18} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
+    <Text fw={700} size="lg">
+      {t('Всього')} {model.totalQty}
+    </Text>
   )
 }
 
@@ -293,9 +279,9 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
   )
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="wrap">
+    <Card className="app-data-card balances-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar balances-filter-bar">
+        <Group align="end" gap="sm" wrap="wrap" className="balances-filter-row">
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}
@@ -327,33 +313,46 @@ function BalancesTableCard({ model }: { model: ReturnType<typeof useBalancesPage
               })
             }
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+          <div className="app-filter-actions balances-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            <Select
+              aria-label={t('Кількість рядків')}
+              data={PAGE_SIZE_OPTIONS}
+              size="xs"
+              value={String(pageSize)}
+              w={88}
+              onChange={(value) => {
+                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+                reload()
+              }}
+            />
+          </div>
         </Group>
+      </div>
 
+      <Stack className="balances-card__body" gap="md">
         {(error || filterError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
-
-        <Group justify="flex-end" gap="xs">
-          <Select
-            aria-label={t('Кількість рядків')}
-            data={PAGE_SIZE_OPTIONS}
-            size="xs"
-            value={String(pageSize)}
-            w={88}
-            onChange={(value) => {
-              setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-              reload()
-            }}
-          />
-        </Group>
 
         <DataTable
           columns={columns}

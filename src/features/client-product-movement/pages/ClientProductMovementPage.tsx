@@ -3,23 +3,23 @@ import {
   Alert,
   Anchor,
   Box,
-  Button,
   Card,
   Group,
-  Pagination,
   Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconChevronDown, IconChevronRight, IconDownload, IconRefresh } from '@tabler/icons-react'
+import { IconAlertCircle, IconChevronDown, IconChevronRight, IconDownload } from '@tabler/icons-react'
 import { useEffect, useMemo, useReducer, useState } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { CheckboxMultiSelect } from '../../../shared/ui/CheckboxMultiSelect'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   CLIENT_SEARCH_PAGE_SIZE,
@@ -38,6 +38,7 @@ import type {
   ClientProductMovementInfoItem,
   ClientProductMovementOrganizationOption,
 } from '../types'
+import './client-product-movement-page.css'
 
 type FilterDraft = {
   article: string
@@ -64,9 +65,6 @@ type SelectOption = {
   label: string
   value: string
 }
-
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
-const DEFAULT_PAGE_SIZE = 20
 
 const MOVEMENT_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
@@ -98,7 +96,7 @@ export function ClientProductMovementPage() {
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialDraft)
   const [activeDraft, setActiveDraft] = useValueState<FilterDraft>(initialDraft)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [documents, setDocuments] = useValueState<ClientProductMovementDocument[]>([])
   const [organizations, setOrganizations] = useValueState<ClientProductMovementOrganizationOption[]>([])
   const [clientQuery, setClientQuery] = useValueState('')
@@ -304,42 +302,11 @@ export function ClientProductMovementPage() {
     [hasClient, t],
   )
 
-  const toolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => {
-            setPage(1)
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-          }}
-        />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            disabled={!hasClient}
-            loading={isLoading}
-            size="sm"
-            variant="subtle"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [hasClient, isLoading, pageSize, setPage, setPageSize, t],
-  )
-
   return (
-    <Stack gap="lg">
-      <Card withBorder radius="md" padding={0} className="app-filter-card">
-        <Group align="end" gap="sm" wrap="wrap" className="app-filter-bar">
+    <Stack className="client-product-movement-page" gap={6}>
+      <Card className="app-data-card client-product-movement-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar client-product-movement-filter-bar">
+          <Group align="end" gap="sm" wrap="wrap" className="client-product-movement-filter-row">
             <Select
               clearable
               searchable
@@ -382,48 +349,65 @@ export function ClientProductMovementPage() {
               value={filterDraft.to}
               onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
             />
-            {hasClient && (
-              <Button
-                leftSection={<IconDownload size={16} />}
-                loading={isExporting}
-                variant="light"
-                onClick={exportDocument}
-              >
-                {t('Експорт')}
-              </Button>
-            )}
+            <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+              {hasClient && (
+                <Tooltip label={t('Експорт')}>
+                  <ActionIcon
+                    aria-label={t('Експорт')}
+                    color="gray"
+                    loading={isExporting}
+                    size={34}
+                    variant="light"
+                    onClick={exportDocument}
+                  >
+                    <IconDownload size={18} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              <Paginator
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPage(1)
+                  setPageSize(nextPageSize)
+                }}
+                onRefresh={reload}
+              />
+            </div>
           </Group>
+        </div>
 
-          <Stack gap="md" p="md">
-            {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert
+            className="client-product-movement-page__alert"
+            color="red"
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {error}
+          </Alert>
+        )}
 
+        <div className="client-product-movement-page__table">
           <DataTable
             columns={columns}
             data={rows}
             defaultLayout={MOVEMENT_TABLE_DEFAULT_LAYOUT}
             emptyText={hasClient ? t('Документів не знайдено') : t('Оберіть клієнта для перегляду')}
             getRowId={(row) => row.id}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="client-product-movement-table-1"
             loadingText={t('Завантаження руху товару')}
-            maxHeight="calc(100vh - 360px)"
             minWidth={1280}
             rowClassName={(row) => (row.kind === MOVEMENT_ROW.DETAIL ? 'gba-movement-detail-row' : undefined)}
             tableId="client-product-movement"
             toolbarLeft={toolbarLeft}
-            toolbarRight={toolbarRight}
           />
-
-          {totalPages > 1 && (
-            <Group justify="flex-end">
-              <Pagination total={totalPages} value={page} onChange={setPage} />
-            </Group>
-          )}
-        </Stack>
+        </div>
       </Card>
 
       <DownloadDocumentModal

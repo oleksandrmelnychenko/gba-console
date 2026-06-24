@@ -30,6 +30,7 @@ import {
 } from '../api/companyCarsApi'
 import { CompanyCarRoadListFormModal } from '../components/CompanyCarRoadListFormModal'
 import type { CompanyCar, CompanyCarRoadList } from '../types'
+import './company-car-road-lists-page.css'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 const DEFAULT_LOOKBACK_DAYS = 7
@@ -183,7 +184,7 @@ export function CompanyCarRoadListsPage() {
   }
 
   return (
-    <Stack gap="md">
+    <Stack className="company-car-road-lists-page" gap={6}>
       <PageHeaderActions>
         <Button
           color={CREATE_ACTION_COLOR}
@@ -196,64 +197,66 @@ export function CompanyCarRoadListsPage() {
         </Button>
       </PageHeaderActions>
 
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Group gap="xs">
-              <Button color="gray" leftSection={<IconArrowLeft size={16} />} variant="light" onClick={() => navigate(returnPath)}>
+      <Card className="app-data-card company-car-road-lists-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar company-car-road-lists-filter-bar">
+          <Group align="end" gap="sm" wrap="wrap" className="company-car-road-lists-filter-row">
+            <Group gap="xs" wrap="nowrap" className="company-car-road-lists-identity">
+              <Button color="gray" leftSection={<IconArrowLeft size={16} />} size="sm" variant="light" onClick={() => navigate(returnPath)}>
                 {t('Назад')}
               </Button>
+              <Badge color="blue" variant="light">
+                {displayValue(companyCar?.LicensePlate)}
+              </Badge>
+              <Text fw={700}>{displayValue(companyCar?.CarBrand)}</Text>
+              {companyCar?.Organization && (
+                <Text c="dimmed" size="sm">
+                  {displayValue(companyCar.Organization.Name)}
+                </Text>
+              )}
+            </Group>
+            <TextInput
+              label={t('Від якої дати')}
+              type="date"
+              value={fromDate}
+              w={170}
+              onChange={(event) => setFromDate(event.currentTarget.value)}
+            />
+            <TextInput
+              label={t('До якої дати')}
+              type="date"
+              value={toDate}
+              w={170}
+              onChange={(event) => setToDate(event.currentTarget.value)}
+            />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
               <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
+                <ActionIcon aria-label={t('Оновити')} loading={isLoading} size={34} variant="light" onClick={reload}>
                   <IconRefresh size={18} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
+            </div>
           </Group>
+        </div>
 
-          <Group gap="xs" wrap="wrap">
-            <Badge color="blue" variant="light">
-              {displayValue(companyCar?.LicensePlate)}
-            </Badge>
-            <Text fw={700} size="lg">
-              {displayValue(companyCar?.CarBrand)}
-            </Text>
-            {companyCar?.Organization && (
-              <Text c="dimmed" size="sm">
-                {displayValue(companyCar.Organization.Name)}
-              </Text>
-            )}
-          </Group>
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-          <Group align="end" gap="sm" wrap="wrap">
-            <TextInput label={t('Від якої дати')} type="date" value={fromDate} onChange={(event) => setFromDate(event.currentTarget.value)} />
-            <TextInput label={t('До якої дати')} type="date" value={toDate} onChange={(event) => setToDate(event.currentTarget.value)} />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-          </Group>
+        {filterError && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          {filterError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError}
-            </Alert>
-          )}
-
-          <Group gap="xs">
-            <Badge color="violet" variant="light">
-              {t('Шляхових листів')}: {roadLists.length}
-            </Badge>
-          </Group>
-
+        <div className="company-car-road-lists-page__table">
           <DataTable
             columns={columns}
             data={roadLists}
@@ -261,12 +264,13 @@ export function CompanyCarRoadListsPage() {
             density={density}
             emptyText={t('Шляхових листів не знайдено')}
             getRowId={(roadList, index) => String(roadList.NetUid || roadList.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="company-car-road-lists-1"
             minWidth={1280}
             tableId="company-car-road-lists"
           />
-        </Stack>
+        </div>
       </Card>
 
       {companyCar && (

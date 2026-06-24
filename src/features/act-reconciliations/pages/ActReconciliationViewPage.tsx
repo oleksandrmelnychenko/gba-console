@@ -22,6 +22,7 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getActReconciliationByNetId, getAppliedActions } from '../api/actReconciliationsApi'
 import {
   ActReconciliationActionsModal,
@@ -278,7 +279,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
             </ActionIcon>
           </Tooltip>
           {model.selectedItems.length > 0 && (
-            <Button color="violet" onClick={model.openMultiAction}>
+            <Button color={CREATE_ACTION_COLOR} onClick={model.openMultiAction}>
               {t('Обробити')} ({model.selectedItems.length})
             </Button>
           )}
@@ -292,7 +293,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <DataTable
           columns={columns}
           data={model.items}
@@ -309,7 +310,7 @@ function ActReconciliationViewPageView({ model }: { model: ReturnType<typeof use
         />
       </Card>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
           <TotalValue label={t('Всього товарів')} value={model.totals.totalProducts} />
           <TotalValue label={t('Вся кількість')} value={model.totals.totalCount} />

@@ -481,7 +481,7 @@ function UserPasswordPanel({
           {isPasswordChangeEnabled && (
             <Group justify="flex-end">
               <Button
-                color="violet"
+                color={CREATE_ACTION_COLOR}
                 leftSection={<IconKey size={16} />}
                 loading={isResettingPassword}
                 type="submit"

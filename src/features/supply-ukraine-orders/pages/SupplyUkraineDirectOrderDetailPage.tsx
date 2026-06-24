@@ -34,6 +34,7 @@ import {
 } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import './supply-order-detail.css'
 import { formatLocalDate, formatLocalDateTime } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -41,6 +42,7 @@ import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   createSupplyCreditNote,
@@ -606,33 +608,37 @@ export function SupplyUkraineDirectOrderDetailPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="flex-start">
-        <Group gap="sm" align="center">
+      <header className="supply-detail-header">
+        <div className="supply-detail-header-main">
           <Tooltip label={t('Назад')}>
             <ActionIcon
               aria-label={t('Назад')}
-              color="gray"
-              variant="light"
+              className="supply-detail-back"
+              variant="default"
               onClick={() => navigate('/orders/ukraine/all')}
             >
               <IconArrowLeft size={18} />
             </ActionIcon>
           </Tooltip>
-          <Stack gap={2}>
-            <Text fw={700} size="xl">
-              {t('Логістика замовлення')} {getOrderNumber(order)}
-            </Text>
-            <Text c="dimmed" size="sm">
-              {t('Постачальник')}: {getEntityName(order?.Client)}
-            </Text>
-          </Stack>
-        </Group>
-        <Group gap="xs" justify="flex-end">
+          <span className="supply-detail-icon">
+            <IconRoute size={22} stroke={1.8} />
+          </span>
+          <div className="supply-detail-copy">
+            <h1 className="supply-detail-title">
+              {t('Логістика замовлення')}
+              {getOrderNumber(order) && <span className="supply-detail-number">{getOrderNumber(order)}</span>}
+            </h1>
+            <p className="supply-detail-subtitle">
+              {t('Постачальник')}: <strong>{getEntityName(order?.Client)}</strong>
+            </p>
+          </div>
+        </div>
+        <div className="supply-detail-header-actions">
           <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={reloadOrder}>
             {t('Оновити')}
           </Button>
           {order && !order.IsApproved && canApproveOrder && (
-            <Button leftSection={<IconCheck size={16} />} loading={isSaving} variant="light" onClick={approveOrder}>
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
               {t('Погодити')}
             </Button>
           )}
@@ -641,8 +647,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
               {t('Кредит ноти')}
             </Button>
           )}
-        </Group>
-      </Group>
+        </div>
+      </header>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -656,7 +662,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
         </Group>
       ) : order ? (
         <Stack gap="lg">
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
               <Group gap="xs" wrap="wrap">
                 {statusBadge(t('Погоджено'), order.IsApproved)}
@@ -696,8 +702,8 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     transportationType === String(order.TransportationType ?? 0) ||
                     Boolean(order.IsOrderShipped)
                   }
+                  color={CREATE_ACTION_COLOR}
                   loading={isSaving}
-                  variant="light"
                   onClick={saveTransportationType}
                 >
                   {t('Зберегти')}
@@ -726,7 +732,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
                     <Button color="gray" disabled={isSaving} variant="light" onClick={cancelAmountEdit}>
                       {t('Скасувати')}
                     </Button>
-                    <Button loading={isSaving} variant="light" onClick={saveAmount}>
+                    <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveAmount}>
                       {t('Оновити')}
                     </Button>
                   </Group>
@@ -756,7 +762,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             onReload={reloadOrder}
           />
 
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Group gap="xs" wrap="wrap">
               {canOpenInvoices && (
                 <Button
@@ -788,7 +794,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             </Group>
           </Card>
 
-          <Card withBorder radius="md" padding="lg">
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
               <Group gap="xs">
                 <IconRoute size={18} />
@@ -813,7 +819,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
       <AppDrawer opened={creditNotesOpen} size="md" title={t('Кредит ноти')} onClose={() => dispatchCreditNote({ type: 'setDrawerOpen', open: false })}>
         <Stack gap="md">
           <Group justify="flex-end">
-            <Button loading={isSaving} variant="light" onClick={openCreditNoteModal}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={openCreditNoteModal}>
               {t('Створити')}
             </Button>
           </Group>
@@ -916,7 +922,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Button color="gray" disabled={isSaving} variant="light" onClick={closeCreditNoteModal}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isSaving} variant="light" onClick={() => void saveCreditNote()}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={() => void saveCreditNote()}>
               {t('Зберегти')}
             </Button>
           </Group>
@@ -948,7 +954,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Button color="gray" disabled={isSaving} variant="light" onClick={closeStatusModal}>
               {t('Скасувати')}
             </Button>
-            <Button loading={isSaving} variant="light" onClick={saveDocumentStatus}>
+            <Button color={CREATE_ACTION_COLOR} loading={isSaving} onClick={saveDocumentStatus}>
               {t('Зберегти')}
             </Button>
           </Group>

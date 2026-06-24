@@ -7,7 +7,6 @@ import {
   Card,
   Divider,
   Group,
-  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -18,13 +17,10 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconEye,
   IconFileTypePdf,
   IconPlus,
-  IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -36,6 +32,8 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
@@ -50,6 +48,7 @@ import type {
   ProductCapitalizationItem,
   ProductCapitalizationsExportDocument,
 } from '../types'
+import './product-capitalizations-page.css'
 
 type FilterDraft = {
   from: string
@@ -68,9 +67,6 @@ type ProductCapitalizationsListAction =
   | { type: 'failed' }
   | { type: 'loaded'; items: ProductCapitalization[]; pageSize: number; total: number | null }
   | { type: 'loading' }
-
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
 
 const PRODUCT_CAPITALIZATIONS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -146,7 +142,7 @@ function useProductCapitalizationsPageModel() {
   const [detailError, setDetailError] = useValueState<string | null>(null)
   const [isDetailLoading, setDetailLoading] = useValueState(false)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductCapitalizationsExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
@@ -256,7 +252,6 @@ function useProductCapitalizationsPageModel() {
     [selectedCapitalization?.ProductCapitalizationItems],
   )
   const itemColumns = useProductCapitalizationItemColumns(detailItems)
-  const canMoveBack = page > 1
   const canMoveForward = total !== null ? page * pageSize < total : hasNextPage
 
   useEffect(() => {
@@ -330,7 +325,6 @@ function useProductCapitalizationsPageModel() {
 
   return {
     activeFilters,
-    canMoveBack,
     canMoveForward,
     capitalizations,
     columns,
@@ -349,7 +343,6 @@ function useProductCapitalizationsPageModel() {
     page,
     pageSize,
     selectedCapitalization,
-    total,
     handleExport,
     closeDetail,
     openDetail,
@@ -374,7 +367,6 @@ export function ProductCapitalizationsPage() {
 function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof useProductCapitalizationsPageModel> }) {
   const { t } = useI18n()
   const {
-    canMoveBack,
     canMoveForward,
     capitalizations,
     columns,
@@ -393,7 +385,6 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
     page,
     pageSize,
     selectedCapitalization,
-    total,
     closeDetail,
     handleExport,
     openDetail,
@@ -409,102 +400,72 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
   } = model
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-capitalizations-page" gap={6}>
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={() => setCreatePanelOpened(true)}>
           {t('Нове оприбуткування')}
         </Button>
       </PageHeaderActions>
 
-      <Group justify="flex-end" align="end">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            disabled={isLoading}
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <form onSubmit={submitFilters}>
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <TextInput
-                label={t('З')}
-                type="date"
-                value={filterDraft.from}
-                w={150}
-                onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, from: nextValue })) }}
-              />
-              <TextInput
-                label={t('По')}
-                type="date"
-                value={filterDraft.to}
-                w={150}
-                onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, to: nextValue })) }}
-              />
-              <Button color="violet" type="submit">
-                {t('Застосувати')}
-              </Button>
+      <Card className="app-data-card product-capitalizations-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-capitalizations-filter-bar">
+          <div className="product-capitalizations-filter-row">
+            <form className="product-capitalizations-filter-form" onSubmit={submitFilters}>
+              <Group align="end" gap="sm" wrap="nowrap">
+                <TextInput
+                  label={t('З')}
+                  type="date"
+                  value={filterDraft.from}
+                  w={150}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, from: nextValue })) }}
+                />
+                <TextInput
+                  label={t('По')}
+                  type="date"
+                  value={filterDraft.to}
+                  w={150}
+                  onChange={(event) => { const nextValue = event.currentTarget.value; setFilterDraft((current) => ({ ...current, to: nextValue })) }}
+                />
+                <Button color="violet" type="submit">
+                  {t('Застосувати')}
+                </Button>
+              </Group>
+            </form>
+            <div className="app-filter-actions">
               <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
-          </form>
-
-          {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Сторінка')} {page}
-              {total !== null ? `, ${t('усього')}: ${total}` : ''}
-            </Text>
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={PAGE_SIZE_OPTIONS}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
+              <DataTableDensityToggle density={density} size={34} onToggle={toggleDensity} />
+              <Paginator
+                hasNext={canMoveForward}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
                   setPage(1)
-                  setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+                  setPageSize(nextPageSize)
                 }}
+                onRefresh={reload}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBack || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
-          </Group>
+            </div>
+          </div>
+        </div>
 
+        {(error || filterError) && (
+          <Alert
+            className="product-capitalizations-page__alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {filterError || error}
+          </Alert>
+        )}
+
+        <div className="product-capitalizations-page__table">
           <DataTable
             columns={columns}
             data={capitalizations}
@@ -512,15 +473,15 @@ function ProductCapitalizationsPageView({ model }: { model: ReturnType<typeof us
             density={density}
             emptyText={t('Оприбуткувань не знайдено')}
             getRowId={(capitalization, index) => String(capitalization.NetUid || capitalization.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="product-capitalizations-table-1"
             loadingText={t('Завантаження оприбуткувань')}
-            maxHeight="calc(100vh - 310px)"
             minWidth={1280}
             tableId="product-capitalizations"
             onRowClick={openDetail}
           />
-        </Stack>
+        </div>
       </Card>
 
       {createPanelOpened && (

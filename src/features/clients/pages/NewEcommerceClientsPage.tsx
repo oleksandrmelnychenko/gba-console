@@ -1,4 +1,4 @@
-import { Alert, Badge, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Badge, Card, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -164,17 +164,23 @@ export function NewEcommerceClientsPage() {
 
   return (
     <Stack className="new-ecommerce-clients-page" gap={6}>
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      <Card className="app-data-card new-ecommerce-clients-card" withBorder radius="md" padding={0}>
+        {error && (
+          <Alert
+            className="new-ecommerce-clients-page__alert"
+            color="red"
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {error}
+          </Alert>
+        )}
 
-      <div className="new-ecommerce-clients-page__table">
-        <DataTable
-          key="new-ecommerce-clients-table-default-freeze-4"
-          columns={columns}
-          data={clients}
+        <div className="new-ecommerce-clients-page__table">
+          <DataTable
+            key="new-ecommerce-clients-table-default-freeze-4"
+            columns={columns}
+            data={clients}
             defaultLayout={NEW_ECOMMERCE_CLIENTS_TABLE_DEFAULT_LAYOUT}
             emptyText={t('Нових e-commerce клієнтів не знайдено')}
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
@@ -186,8 +192,9 @@ export function NewEcommerceClientsPage() {
             showLayoutControls={false}
             tableId="new-ecommerce-clients"
             onRowClick={openClient}
-        />
-      </div>
+          />
+        </div>
+      </Card>
     </Stack>
   )
 }

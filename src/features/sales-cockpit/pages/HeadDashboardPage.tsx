@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { IconAlertCircle, IconRefresh, IconUsersGroup } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -7,6 +7,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadPaceStatus, HeadTeam, HeadTeamRow } from '../types'
+import './sales-cockpit-page.css'
 
 const POLL_INTERVAL_MS = 60_000
 
@@ -131,24 +132,36 @@ export function HeadDashboardPage() {
   }, [])
 
   return (
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <Group justify="space-between" wrap="wrap">
-          <Text fw={700} size="xl">
-            {t('Дашборд керівника відділу продажів')}
-          </Text>
+    <Stack className="cockpit-page" gap="md">
+      <header className="cockpit-hero">
+        <div className="cockpit-hero-main">
+          <span className="cockpit-hero-icon">
+            <IconUsersGroup size={24} stroke={1.8} />
+          </span>
+          <div className="cockpit-hero-copy">
+            <h1 className="cockpit-hero-title">{t('Дашборд керівника відділу продажів')}</h1>
+            <p className="cockpit-hero-subtitle">{t('Виконання плану та активність команди')}</p>
+          </div>
+        </div>
 
+        <div className="cockpit-hero-actions">
           <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={handleReload}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              className="cockpit-hero-action"
+              loading={isLoading}
+              variant="subtle"
+              onClick={handleReload}
+            >
               <IconRefresh size={18} />
             </ActionIcon>
           </Tooltip>
-        </Group>
-      </Card>
+        </div>
+      </header>
 
       {forbidden ? (
-        <Card withBorder radius="md" padding="xl">
-          <Text c="dimmed" ta="center">
+        <Card className="app-section-card" withBorder radius="md" padding="xl">
+          <Text c="dimmed" fw={600} ta="center">
             {t('Доступ лише для керівника відділу')}
           </Text>
         </Card>
@@ -170,11 +183,13 @@ export function HeadDashboardPage() {
               value={`${formatMoney(team.totals.paid_mtd)} / ${formatMoney(team.totals.paid_target)}`}
             />
             <TotalCard
+              accent="success"
               label={t('Виконано / Продано за місяць')}
               value={`${team.totals.done_month} / ${team.totals.sold_month}`}
             />
-            <TotalCard label={t('Виторг за місяць')} value={formatMoney(team.totals.revenue_month)} />
+            <TotalCard accent="brand" label={t('Виторг за місяць')} value={formatMoney(team.totals.revenue_month)} />
             <TotalCard
+              accent="info"
               label={t('Закриття / Конверсія')}
               value={`${formatRate(team.totals.close_rate)} / ${formatRate(team.totals.conversion_rate)}`}
             />
@@ -190,15 +205,15 @@ export function HeadDashboardPage() {
               </Text>
             </Group>
           ) : rows.length === 0 ? (
-            <Card withBorder radius="md" padding="xl">
-              <Text c="dimmed" ta="center">
+            <Card className="app-section-card" withBorder radius="md" padding="xl">
+              <Text c="dimmed" fw={600} ta="center">
                 {t('Немає менеджерів для відображення')}
               </Text>
             </Card>
           ) : (
-            <Card withBorder radius="md" padding={0}>
+            <Card className="app-section-card" withBorder radius="md" padding={0}>
               <Table.ScrollContainer minWidth={960}>
-                <Table striped highlightOnHover withColumnBorders>
+                <Table className="cockpit-team-table" highlightOnHover striped withColumnBorders>
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>{t('Менеджер')}</Table.Th>
@@ -216,7 +231,7 @@ export function HeadDashboardPage() {
                   <Table.Tbody>
                     {rows.map((row) => (
                       <Table.Tr key={row.manager_id}>
-                        <Table.Td>{row.manager_name?.trim() || `#${row.manager_id}`}</Table.Td>
+                        <Table.Td className="cockpit-team-manager">{row.manager_name?.trim() || `#${row.manager_id}`}</Table.Td>
                         <Table.Td style={{ textAlign: 'right' }}>{formatMoney(row.target.shipped.target)}</Table.Td>
                         <Table.Td style={{ textAlign: 'right' }}>{formatMoney(row.target.shipped.mtd)}</Table.Td>
                         <Table.Td style={{ textAlign: 'right' }}>
@@ -248,12 +263,10 @@ export function HeadDashboardPage() {
             </Card>
           )}
 
-          <Card withBorder radius="md" shadow="sm">
+          <Card className="app-section-card" withBorder radius="md">
             <Stack gap="sm">
               <Group gap="xs">
-                <Text fw={700} size="lg">
-                  {t('Ескальовані задачі')}
-                </Text>
+                <Text className="cockpit-section-title">{t('Ескальовані задачі')}</Text>
                 <Badge color={escalated.count > 0 ? 'red' : 'gray'} variant="light">
                   {escalated.count}
                 </Badge>
@@ -282,16 +295,10 @@ function EscalatedRow({ task }: { task: EscalatedTask }) {
   const { t } = useI18n()
 
   return (
-    <Group align="flex-start" gap="sm" justify="space-between" wrap="nowrap">
+    <Group align="center" className="cockpit-escalated-row" gap="sm" justify="space-between" wrap="nowrap">
       <Stack gap={2}>
-        <Text fw={600} size="sm">
-          {task.title || t('Завдання')}
-        </Text>
-        {task.client_name && (
-          <Text c="dimmed" size="xs">
-            {task.client_name}
-          </Text>
-        )}
+        <Text className="cockpit-escalated-title">{task.title || t('Завдання')}</Text>
+        {task.client_name && <Text className="cockpit-escalated-client">{task.client_name}</Text>}
       </Stack>
 
       <Group gap="xs" wrap="nowrap">
@@ -316,16 +323,12 @@ function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => s
   return t(urgency ? URGENCY_LABEL[urgency] : URGENCY_LABEL.normal)
 }
 
-function TotalCard({ label, value }: { label: string; value: string }) {
+function TotalCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <Card withBorder radius="md" padding="md">
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={700} size="lg">
-        {value}
-      </Text>
-    </Card>
+    <div className={`cockpit-metric${accent ? ` is-${accent}` : ''}`}>
+      <span className="cockpit-metric-label">{label}</span>
+      <span className="cockpit-metric-value">{value}</span>
+    </div>
   )
 }
 

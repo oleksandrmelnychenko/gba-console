@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Box,
+  Card,
   Group,
   Stack,
   Text,
@@ -17,9 +18,9 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { translate } from '../../../shared/i18n/translate'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getActReconciliations } from '../api/actReconciliationsApi'
 import type { ActReconciliation } from '../types'
+import './act-reconciliations-page.css'
 
 type FilterDraft = {
   from: string
@@ -183,48 +184,51 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
 
   return (
     <Stack gap={6}>
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <Stack gap="xs">
-        <Group align="flex-end" gap="xs" wrap="nowrap">
-          <TextInput
-            label={t('Від')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            w={150}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="act-reconciliations-filter-row">
+            <Group align="end" gap="sm" wrap="nowrap">
+              <TextInput
+                label={t('Від')}
+                max={filterDraft.to || undefined}
+                type="date"
+                value={filterDraft.from}
+                w={150}
+                onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+              />
+              <TextInput
+                label={t('До')}
+                min={filterDraft.from || undefined}
+                type="date"
+                value={filterDraft.to}
+                w={150}
+                onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+              />
+            </Group>
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+          </Group>
+        </div>
 
         {(error || filterError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert m="md" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error}
           </Alert>
         )}
@@ -243,7 +247,7 @@ function ActReconciliationsPageView({ model }: { model: ReturnType<typeof useAct
           tableId="act-reconciliations"
           onRowClick={openDetail}
         />
-      </Stack>
+      </Card>
     </Stack>
   )
 }

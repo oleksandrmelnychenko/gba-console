@@ -3,6 +3,7 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
   Divider,
   Group,
   MultiSelect,
@@ -14,7 +15,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconSearch, IconX } from '@tabler/icons-react'
+import { IconAlertCircle, IconEdit, IconEye, IconHierarchy2, IconPlus, IconRefresh, IconRestore, IconSearch, IconX } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -49,6 +50,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import './outgoing-cashflows-page.css'
 
 const PAGE_SIZE = 40
 const SEARCH_DEBOUNCE_MS = 350
@@ -563,137 +565,137 @@ function OutgoingCashflowsContent({ model }: { model: OutgoingCashflowsPageModel
         </Button>
       </PageHeaderActions>
 
-      <Group align="end" justify="space-between" gap="sm">
-        <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Номер, отримувач, рахунок або коментар')}
-            value={searchValue}
-            w={340}
-            onChange={(event) => onSetSearchValue(event.currentTarget.value)}
+      <Card className="app-data-card outgoing-cashflows-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar outgoing-cashflows-filter-bar">
+          <Group align="end" gap="sm" wrap="wrap" className="outgoing-cashflows-filter-row">
+            <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => onSetFromDate(event.currentTarget.value)} />
+            <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => onSetToDate(event.currentTarget.value)} />
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Номер, отримувач, рахунок або коментар')}
+              value={searchValue}
+              w={340}
+              onChange={(event) => onSetSearchValue(event.currentTarget.value)}
+            />
+            <Select
+              clearable
+              searchable
+              data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
+              label={t('Валюта')}
+              placeholder={t('Усі')}
+              value={currencyNetId || null}
+              w={190}
+              onChange={(value) => onSetCurrencyNetId(value || '')}
+            />
+            <Select
+              clearable
+              searchable
+              data={toSelectOptions(paymentRegisters, (register) => register.Name)}
+              label={t('Рахунок')}
+              placeholder={t('Усі')}
+              value={paymentRegisterNetId || null}
+              w={250}
+              onChange={(value) => onSetPaymentRegisterNetId(value || '')}
+            />
+            <Select
+              clearable
+              searchable
+              data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
+              label={t('Стаття руху')}
+              placeholder={t('Усі')}
+              value={paymentMovementNetId || null}
+              w={280}
+              onChange={(value) => onSetPaymentMovementNetId(value || '')}
+            />
+            <MultiSelect
+              clearable
+              searchable
+              data={organizationOptions}
+              label={t('Організації')}
+              placeholder={t('Без фільтра')}
+              value={selectedOrganizationIds}
+              w={360}
+              onChange={onSetSelectedOrganizationIds}
+            />
+            <div className="app-filter-actions outgoing-cashflows-filter-actions">
+              <Tooltip label={t('Скинути фільтри')}>
+                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={onResetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading || isLoadingLookups}
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    void onLoadLookups()
+                    void onLoadCashflows(0, false)
+                  }}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={34} />
+            </div>
+          </Group>
+        </div>
+
+        <Stack className="outgoing-cashflows-card__body" gap="md">
+          {error && (
+            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          {filterError && (
+            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+              {filterError}
+            </Alert>
+          )}
+
+          <Group gap="xs">
+            <Badge color="violet" variant="light">
+              {t('Завантажено')}: {cashflows.Collection.length}
+            </Badge>
+            <Badge color="gray" variant="light">
+              {t('Рядків')}: {rows.length}
+            </Badge>
+            <Badge color="green" variant="light">
+              {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
+            </Badge>
+            <Badge color="red" variant="light">
+              {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
+            </Badge>
+          </Group>
+
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Видаткових ордерів не знайдено')}
+            getRowId={(row) => row.id}
+            isLoading={isTableBusy}
+            layoutVersion="outgoing-cashflows-1"
+            maxHeight="calc(100vh - 365px)"
+            minWidth={1860}
+            tableId="outgoing-cashflows"
+            onRowClick={onOpenDetails}
           />
-        </Group>
 
-        <Group align="end" gap="xs">
-          <Tooltip label={t('Скинути фільтри')}>
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={onResetFilters}>
-              {t('Скинути')}
-            </Button>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingLookups}
-              size={38}
-              variant="light"
-              onClick={() => {
-                void onLoadLookups()
-                void onLoadCashflows(0, false)
-              }}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={onToggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Group align="end" gap="sm">
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
-          label={t('Валюта')}
-          placeholder={t('Усі')}
-          value={currencyNetId || null}
-          w={190}
-          onChange={(value) => onSetCurrencyNetId(value || '')}
-        />
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-          label={t('Рахунок')}
-          placeholder={t('Усі')}
-          value={paymentRegisterNetId || null}
-          w={250}
-          onChange={(value) => onSetPaymentRegisterNetId(value || '')}
-        />
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
-          label={t('Стаття руху')}
-          placeholder={t('Усі')}
-          value={paymentMovementNetId || null}
-          w={280}
-          onChange={(value) => onSetPaymentMovementNetId(value || '')}
-        />
-        <MultiSelect
-          clearable
-          searchable
-          data={organizationOptions}
-          label={t('Організації')}
-          placeholder={t('Без фільтра')}
-          value={selectedOrganizationIds}
-          w={360}
-          onChange={onSetSelectedOrganizationIds}
-        />
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError}
-        </Alert>
-      )}
-
-      <Group gap="xs">
-        <Badge color="violet" variant="light">
-          {t('Завантажено')}: {cashflows.Collection.length}
-        </Badge>
-        <Badge color="gray" variant="light">
-          {t('Рядків')}: {rows.length}
-        </Badge>
-        <Badge color="green" variant="light">
-          {t('Кредиторська заборгованість')}: {formatMoney(cashflows.PositiveDifferenceAmount)}
-        </Badge>
-        <Badge color="red" variant="light">
-          {t('Дебіторська заборгованість')}: {formatMoney(cashflows.NegativeDifferenceAmount)}
-        </Badge>
-      </Group>
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        density={density}
-        emptyText={t('Видаткових ордерів не знайдено')}
-        getRowId={(row) => row.id}
-        isLoading={isTableBusy}
-        layoutVersion="outgoing-cashflows-1"
-        maxHeight="calc(100vh - 365px)"
-        minWidth={1860}
-        tableId="outgoing-cashflows"
-        onRowClick={onOpenDetails}
-      />
-
-      {hasMore && (
-        <Group justify="center">
-          <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
-            {t('Завантажити ще')}
-          </Button>
-        </Group>
-      )}
+          {hasMore && (
+            <Group justify="center">
+              <Button loading={isLoadingMore} variant="light" onClick={() => void onLoadCashflows(cashflows.Collection.length, true)}>
+                {t('Завантажити ще')}
+              </Button>
+            </Group>
+          )}
+        </Stack>
+      </Card>
 
       <OutgoingCashflowDetailDrawer row={selectedRow} onClose={onCloseDetails} />
       <OutgoingCashflowDocumentStructureDrawer

@@ -1,0 +1,22 @@
+/* Discount-hierarchy rows aligned to the shared <TreeView> look
+   (src/shared/ui/tree/tree.css): depth indentation via --discounts-tree-indent,
+   gray-0 hover, and an orange "selected" highlight matching .app-tree-node.is-active.
+   Visual-only — the discount editing logic in DiscountsTree.tsx is untouched. */
+.discounts-tree-row {
+  align-items: center;
+  border-radius: 6px;
+  min-height: 42px;
+  padding: 6px 10px 6px calc(10px + var(--discounts-tree-indent, 0px));
+  transition:
+    background-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth);
+}
+
+.discounts-tree-row:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.discounts-tree-row.is-selected {
+  background: #fff7ef;
+  box-shadow: inset 2px 0 0 var(--mantine-color-orange-6);
+}

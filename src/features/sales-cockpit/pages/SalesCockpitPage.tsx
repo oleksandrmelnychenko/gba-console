@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
+import { IconAlertCircle, IconRefresh, IconSparkles, IconTargetArrow } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -18,6 +18,7 @@ import { SnoozeModal } from '../components/SnoozeModal'
 import { TaskCard } from '../components/TaskCard'
 import { TaskFilters } from '../components/TaskFilters'
 import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency, HeadPaceStatus } from '../types'
+import './sales-cockpit-page.css'
 
 const INBOX_LIMIT = 50
 const POLL_INTERVAL_MS = 60_000
@@ -45,6 +46,14 @@ const PACE_LABEL: Record<HeadPaceStatus, string> = {
   on: 'У графіку',
   behind: 'Відстає',
   no_target: 'Немає цілі',
+}
+
+// Maps a pace status to the metric tile's left-accent variant in sales-cockpit-page.css.
+const PACE_ACCENT: Record<HeadPaceStatus, string> = {
+  ahead: 'success',
+  on: 'info',
+  behind: 'danger',
+  no_target: 'neutral',
 }
 
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -245,51 +254,61 @@ export function SalesCockpitPage() {
   }, [])
 
   return (
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <Text fw={700} size="xl">
-              {t('Кокпіт продажів')}
-            </Text>
+    <Stack className="cockpit-page" gap="md">
+      <header className="cockpit-hero">
+        <div className="cockpit-hero-main">
+          <span className="cockpit-hero-icon">
+            <IconTargetArrow size={24} stroke={1.8} />
+          </span>
+          <div className="cockpit-hero-copy">
+            <h1 className="cockpit-hero-title">{t('Завдання продажів')}</h1>
+            <p className="cockpit-hero-subtitle">{t('Пріоритетна черга завдань на сьогодні')}</p>
+          </div>
+        </div>
 
-            <Group gap="xs">
-              <Badge color="blue" variant="light">
-                {t('Завдань')}: {visibleTasks.length}
-              </Badge>
-              <Tooltip label={t('Згенерувати завдання')}>
-                <ActionIcon
-                  aria-label={t('Згенерувати завдання')}
-                  color="violet"
-                  loading={isRegenerating}
-                  variant="light"
-                  onClick={handleRegenerate}
-                >
-                  <IconSparkles size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={handleReload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          </Group>
+        <div className="cockpit-hero-actions">
+          <span className="cockpit-hero-chip">
+            {t('Завдань')}: <strong>{visibleTasks.length}</strong>
+          </span>
+          <Tooltip label={t('Згенерувати завдання')}>
+            <ActionIcon
+              aria-label={t('Згенерувати завдання')}
+              className="cockpit-hero-action"
+              loading={isRegenerating}
+              variant="subtle"
+              onClick={handleRegenerate}
+            >
+              <IconSparkles size={18} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label={t('Оновити')}>
+            <ActionIcon
+              aria-label={t('Оновити')}
+              className="cockpit-hero-action"
+              loading={isLoading}
+              variant="subtle"
+              onClick={handleReload}
+            >
+              <IconRefresh size={18} />
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </header>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
 
-          <TaskFilters
-            taskType={taskTypeFilter}
-            urgency={urgencyFilter}
-            onTaskTypeChange={setTaskTypeFilter}
-            onUrgencyChange={setUrgencyFilter}
-          />
-        </Stack>
-      </Card>
+      <div className="cockpit-filter">
+        <TaskFilters
+          taskType={taskTypeFilter}
+          urgency={urgencyFilter}
+          onTaskTypeChange={setTaskTypeFilter}
+          onUrgencyChange={setUrgencyFilter}
+        />
+      </div>
 
       {target && <TargetCard target={target} />}
 
@@ -304,7 +323,7 @@ export function SalesCockpitPage() {
         </Group>
       ) : visibleTasks.length === 0 ? (
         <Card withBorder radius="md" padding="xl">
-          <Text c="dimmed" ta="center">
+          <Text c="dimmed" fw={600} ta="center">
             {t('Активних завдань немає')}
           </Text>
         </Card>
@@ -353,47 +372,44 @@ function TargetCard({ target }: { target: CockpitTarget }) {
   return (
     <Card withBorder radius="md" shadow="sm">
       <Stack gap="sm">
-        <Text fw={700} size="lg">
-          {t('Моя ціль (місяць)')}
-        </Text>
+        <Text className="cockpit-section-title">{t('Моя ціль (місяць)')}</Text>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Stack gap={4}>
-            <Group gap="xs" wrap="nowrap">
-              <Text c="dimmed" size="xs" tt="uppercase">
-                {t('Відвантаження')}
-              </Text>
-              <Badge color={PACE_COLOR[target.shipped.pace_status]} variant="light">
-                {t(PACE_LABEL[target.shipped.pace_status])}
-              </Badge>
-            </Group>
-            <Text fw={600} size="sm">
-              {formatMoney(target.shipped.mtd)} / {formatMoney(target.shipped.target)} · {formatPercent(target.shipped.attainment_pct)}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('Сьогодні потрібно')}: {formatMoney(target.shipped.today_needed)}
-            </Text>
-          </Stack>
-
-          <Stack gap={4}>
-            <Group gap="xs" wrap="nowrap">
-              <Text c="dimmed" size="xs" tt="uppercase">
-                {t('Оплати')}
-              </Text>
-              <Badge color={PACE_COLOR[target.paid.pace_status]} variant="light">
-                {t(PACE_LABEL[target.paid.pace_status])}
-              </Badge>
-            </Group>
-            <Text fw={600} size="sm">
-              {formatMoney(target.paid.mtd)} / {formatMoney(target.paid.target)} · {formatPercent(target.paid.attainment_pct)}
-            </Text>
-            <Text c="dimmed" size="xs">
-              {t('Сьогодні потрібно')}: {formatMoney(target.paid.today_needed)}
-            </Text>
-          </Stack>
+          <TargetMetric label={t('Відвантаження')} metric={target.shipped} t={t} />
+          <TargetMetric label={t('Оплати')} metric={target.paid} t={t} />
         </SimpleGrid>
       </Stack>
     </Card>
+  )
+}
+
+function TargetMetric({
+  label,
+  metric,
+  t,
+}: {
+  label: string
+  metric: CockpitTarget['shipped']
+  t: (key: string) => string
+}) {
+  return (
+    <div className={`cockpit-metric is-${PACE_ACCENT[metric.pace_status]}`}>
+      <div className="cockpit-metric-head">
+        <span className="cockpit-metric-label">{label}</span>
+        <Badge color={PACE_COLOR[metric.pace_status]} size="sm" variant="light">
+          {t(PACE_LABEL[metric.pace_status])}
+        </Badge>
+      </div>
+      <div className="cockpit-target-row">
+        <span className="cockpit-metric-value">{formatMoney(metric.mtd)}</span>
+        <span className="cockpit-target-of">
+          / {formatMoney(metric.target)} · {formatPercent(metric.attainment_pct)}
+        </span>
+      </div>
+      <span className="cockpit-metric-sub">
+        {t('Сьогодні потрібно')}: {formatMoney(metric.today_needed)}
+      </span>
+    </div>
   )
 }
 

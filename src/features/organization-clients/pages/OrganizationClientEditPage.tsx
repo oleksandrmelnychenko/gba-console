@@ -288,7 +288,7 @@ export function OrganizationClientEditPage() {
       ) : client ? (
         <form id="organization-client-edit-form" onSubmit={handleSubmit}>
           <Card withBorder radius="md" padding="md">
-            <Stack gap="lg">
+            <Stack gap="md">
               <OrganizationClientForm client={client} disabled={isSaving || isDeleting} onFieldChange={setField} />
 
               <OrganizationClientAgreementsPanel

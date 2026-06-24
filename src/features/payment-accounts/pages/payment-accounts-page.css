@@ -1,0 +1,13 @@
+/* Payment accounts registry — chrome aligned with the «Продажі» reference.
+   The page loads all accounts and filters server-side without page-based
+   pagination, so it keeps the table's own maxHeight scroll model; only the
+   filter strip + card shell are converged onto the shared primitives. */
+.payment-accounts-filter-row {
+  width: 100%;
+}
+
+/* Body below the flush filter strip carries its own padding (the card is
+   padding={0} so the strip sits flush). */
+.payment-accounts-card__body {
+  padding: 12px;
+}

@@ -1,7 +1,17 @@
+.products-page {
+  /* The page scrolls; the left assortment column is sticky so it stays in view while the
+     detail panel scrolls past it. The layout frame itself is overflow:hidden.
+     (Page scroll — not an inner scroll on the right — so the wheel works everywhere,
+     including over the selected plate that floats out over the detail panel.) */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .product-assortment-workspace {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
-  align-items: start; /* carousel keeps its own height; right panel resizing won't shake the drum */
+  grid-template-columns: 272px minmax(0, 1fr);
+  align-items: start; /* sticky column keeps its own height and pins while the page scrolls */
   gap: 16px;
   min-height: calc(100vh - 128px);
 }
@@ -12,6 +22,9 @@
   gap: 10px;
   height: calc(100vh - 128px);
   min-height: 0;
+  position: sticky; /* stays in view while the detail panel scrolls past */
+  top: 0;
+  align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
 }
 
 .product-assortment-controls {
@@ -319,27 +332,32 @@
 
 .product-inline-title-text {
   display: flex;
+  flex: 1;
   min-width: 0;
   gap: 8px;
   align-items: baseline;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .product-inline-code {
+  flex-shrink: 0;
   font-size: 20px;
-  overflow-wrap: anywhere;
 }
 
 .product-inline-name {
+  flex: 1;
+  min-width: 0;
   color: var(--mantine-color-gray-7);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.25;
-  text-align: right;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-inline-title-actions {
+  flex-shrink: 0;
   max-width: 100%;
 }
 
@@ -348,8 +366,9 @@
 }
 
 .product-inline-main {
+  /* Legacy 3-column layout: image | dense info grid | price list, all in one compact row. */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.6fr);
+  grid-template-columns: 250px minmax(0, 1fr) 400px;
   gap: 14px;
   align-items: start;
 }
@@ -360,6 +379,19 @@
 .product-inline-description,
 .product-inline-prices {
   min-width: 0;
+}
+
+.product-inline-info {
+  grid-column: 1;
+}
+
+.product-inline-description {
+  grid-column: 2;
+}
+
+.product-inline-prices {
+  grid-column: 3;
+  max-width: 400px;
 }
 
 .product-inline-primary {
@@ -379,22 +411,26 @@
 }
 
 .product-inline-stock-bar {
-  margin-top: 10px;
-  padding: 10px 12px;
+  margin-top: 8px;
+  padding: 8px 10px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: #f8faf9;
 }
 
+/* Legacy stock bar = a single horizontal row of counters (no wrapping). */
 .product-inline-stock-bar .mantine-SimpleGrid-root {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+  grid-template-columns: none !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(0, 1fr) !important;
+  gap: 6px !important;
 }
 
 .product-inline-image {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 170px;
+  height: 150px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 8px;
   background: #f7f9fa;
@@ -420,14 +456,14 @@
 
 .product-inline-description {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
   align-content: start;
 }
 
 .product-inline-info-block {
   min-width: 0;
-  padding: 5px 8px;
+  padding: 4px 8px;
   border: 1px solid var(--mantine-color-gray-2);
   border-radius: 6px;
   background: #f8faf9;
@@ -529,11 +565,26 @@
 
 @media (max-width: 1280px) {
   .product-inline-main {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+    grid-template-columns: 230px minmax(0, 1fr) 320px;
+  }
+
+  .product-inline-description {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1040px) {
+  .product-inline-main {
+    grid-template-columns: 220px minmax(0, 1fr);
   }
 
   .product-inline-prices {
     grid-column: 1 / -1;
+    max-width: 100%;
+  }
+
+  .product-inline-description {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -549,6 +600,13 @@
 
   .product-assortment-column {
     height: auto;
+    position: static; /* no sticky pin when stacked into a single column */
+  }
+
+  .product-inline-stock-bar .mantine-SimpleGrid-root {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    grid-auto-flow: row !important;
+    grid-auto-columns: auto !important;
   }
 
   .product-assortment-carousel {
@@ -569,12 +627,18 @@
     grid-template-columns: 1fr;
   }
 
+  .product-inline-info,
+  .product-inline-description,
   .product-inline-prices {
     grid-column: auto;
   }
 
   .product-inline-description {
     grid-template-columns: 1fr;
+  }
+
+  .product-inline-prices {
+    max-width: 100%;
   }
 }
 

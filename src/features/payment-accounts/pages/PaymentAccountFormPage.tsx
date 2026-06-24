@@ -34,6 +34,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import {
   cancelPaymentAccountExchange,
@@ -843,7 +844,7 @@ function PaymentAccountFormHeader({
       </Button>
       {isEditMode && canSave && !isEditing && (
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={isLoading || isSaving || isDeleting}
           leftSection={<IconPencil size={16} />}
           type="button"
@@ -872,7 +873,7 @@ function PaymentAccountFormHeader({
       )}
       {(!isEditMode || isEditing) && (
         <Button
-          color="violet"
+          color={CREATE_ACTION_COLOR}
           disabled={isLoading || !canSave}
           leftSection={<IconDeviceFloppy size={16} />}
           loading={isSaving}
@@ -1190,7 +1191,7 @@ function PaymentAccountActivityPanel({
 
   return (
     <>
-      <Card withBorder radius="md" shadow="sm">
+      <Card className="app-section-card" withBorder radius="md">
         <Stack gap="md">
           <Group justify="space-between" wrap="wrap">
             <Group gap="xs">
@@ -1533,7 +1534,7 @@ function PaymentAccountTransferModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>
@@ -1736,7 +1737,7 @@ function PaymentAccountExchangeModal({
             <Button color="gray" disabled={isSubmitting} type="button" variant="light" onClick={onClose}>
               {t('Скасувати')}
             </Button>
-            <Button leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
+            <Button color={CREATE_ACTION_COLOR} leftSection={<IconArrowsExchange size={16} />} loading={isSubmitting} type="submit">
               {t('Створити')}
             </Button>
           </Group>

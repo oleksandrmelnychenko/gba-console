@@ -14,6 +14,22 @@ const violet: MantineColorsTuple = [
   '#4C1D95',
 ]
 
+// Brand accent ramp around #E8782E (the «Продажі» orange). primaryColor stays
+// violet — `brand` is the named Mantine color for create actions / brand accents,
+// mirroring the --brand-orange CSS token in index.css.
+const brand: MantineColorsTuple = [
+  '#FFF4EB',
+  '#FCE3D1',
+  '#F8C5A1',
+  '#F3A66E',
+  '#EF8C45',
+  '#EC7E2F',
+  '#E8782E',
+  '#CB6526',
+  '#A4501D',
+  '#7C3C13',
+]
+
 export const theme = createTheme({
   fontFamily: 'Onest, Inter, system-ui, sans-serif',
   headings: {
@@ -22,6 +38,7 @@ export const theme = createTheme({
   },
   colors: {
     violet,
+    brand,
   },
   primaryColor: 'violet',
   primaryShade: 8,

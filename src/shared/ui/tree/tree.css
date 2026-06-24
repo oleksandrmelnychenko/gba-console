@@ -1,0 +1,216 @@
+/* Generic hierarchical tree — generalized from the Roles permission tree
+   (features/users RolePermissionsEditor). Recursive expand/collapse rows with
+   indentation (--app-tree-indent), an optional tri-state selection mark, and
+   optional per-node icon / meta / badges / actions. Reusable across domains. */
+.app-tree {
+  min-width: 0;
+}
+
+.app-tree-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  min-height: 34px;
+  padding-bottom: 8px;
+}
+
+.app-tree-text-action {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 6px;
+  color: var(--mantine-color-gray-8);
+  cursor: pointer;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.app-tree-text-action:hover,
+.app-tree-text-action:focus-visible {
+  background: var(--mantine-color-gray-1);
+  border-color: var(--mantine-color-gray-3);
+  color: var(--mantine-color-gray-9);
+  outline: 0;
+}
+
+.app-tree-nodes {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-tree-node {
+  min-width: 0;
+}
+
+.app-tree-node-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 10px 6px calc(10px + var(--app-tree-indent, 0px));
+  transition: background-color 110ms var(--tx-ease-smooth);
+}
+
+.app-tree-node-row:hover {
+  background: var(--mantine-color-gray-0);
+}
+
+.app-tree-node.is-active > .app-tree-node-row {
+  background: #fff7ef;
+  box-shadow: inset 2px 0 0 var(--mantine-color-orange-6);
+}
+
+.app-tree-disclosure {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+}
+
+.app-tree-disclosure svg {
+  stroke-width: 1.7;
+  transition: transform 120ms var(--tx-ease-smooth);
+}
+
+.app-tree-disclosure-spacer {
+  flex: 0 0 auto;
+  width: 28px;
+}
+
+.app-tree-node-icon {
+  color: var(--mantine-color-gray-6);
+  flex: 0 0 auto;
+}
+
+.app-tree-node-icon svg,
+.app-tree-node-actions svg {
+  stroke-width: 1.7;
+}
+
+.app-tree-node-title {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.app-tree-node-title:disabled {
+  cursor: default;
+}
+
+.app-tree-node-name {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-tree-node-meta {
+  align-items: center;
+  color: var(--mantine-color-gray-6);
+  display: flex;
+  font-size: 11px;
+  gap: 8px;
+  line-height: 1.2;
+  margin-top: 2px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.app-tree-node-badges {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.app-tree-node-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+.app-tree-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-tree-empty {
+  color: var(--mantine-color-gray-6);
+  font-size: 13px;
+  padding: 12px 4px;
+}
+
+.app-tree-loading {
+  padding: 6px 10px 6px calc(10px + var(--app-tree-indent, 0px));
+}
+
+.app-tree-empty-children {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  padding: 5px 10px 7px calc(10px + var(--app-tree-indent, 0px));
+}
+
+/* Tri-state selection mark (optional per node) — from .role-tree-check. */
+.app-tree-check {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 4px;
+  color: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 18px;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background-color 110ms var(--tx-ease-smooth),
+    border-color 110ms var(--tx-ease-smooth),
+    color 110ms var(--tx-ease-smooth);
+  width: 18px;
+}
+
+.app-tree-check:hover {
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-gray-5);
+}
+
+.app-tree-check:focus-visible {
+  outline: 2px solid var(--mantine-color-gray-3);
+  outline-offset: 2px;
+}
+
+.app-tree-check.is-selected,
+.app-tree-check.is-indeterminate {
+  border-color: var(--mantine-color-gray-4);
+  color: var(--mantine-color-orange-6);
+}
+
+.app-tree-check:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.app-tree-check svg {
+  stroke-width: 2.2;
+}

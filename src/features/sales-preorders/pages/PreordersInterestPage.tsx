@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Button, Center, Group, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Button, Card, Center, Stack, Text, Tooltip } from '@mantine/core'
 import { IconRefresh } from '@tabler/icons-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -10,6 +10,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { ProductCardModal } from '../../products/components/ProductCardModal'
 import { getPreorders } from '../api/salesPreordersApi'
 import type { PreOrder } from '../types'
+import './preorders-interest-page.css'
 
 const PREORDERS_PAGE_SIZE = 30
 
@@ -213,49 +214,54 @@ export function PreordersInterestPage() {
   )
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="center">
-        <Group gap="sm" align="center">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
+    <Stack className="preorders-interest-page" gap={6}>
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <div className="app-filter-actions">
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={refresh}
+              >
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+          </div>
+        </div>
+
+        <div className="preorders-interest-page__table">
+          <DataTable
+            columns={columns}
+            data={preOrders}
+            defaultLayout={PREORDERS_TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Передзамовлень не знайдено')}
+            getRowId={(preOrder, index) => String(preOrder.NetUid || preOrder.Id || index)}
+            height="100%"
+            isLoading={isLoading}
+            layoutVersion="sales-preorders-table-1"
+            tableId="sales-preorders"
+          />
+        </div>
+
+        {hasMore && (
+          <Center p="md">
+            <Button
               color="gray"
-              loading={isLoading}
-              size="lg"
-              variant="subtle"
-              onClick={refresh}
+              loading={isLoadingMore}
+              variant="light"
+              onClick={loadMore}
             >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size="lg" />
-        </Group>
-      </Group>
-
-      <DataTable
-        columns={columns}
-        data={preOrders}
-        defaultLayout={PREORDERS_TABLE_DEFAULT_LAYOUT}
-        density={density}
-        emptyText={t('Передзамовлень не знайдено')}
-        getRowId={(preOrder, index) => String(preOrder.NetUid || preOrder.Id || index)}
-        isLoading={isLoading}
-        layoutVersion="sales-preorders-table-1"
-        tableId="sales-preorders"
-      />
-
-      {hasMore && (
-        <Center>
-          <Button
-            color="gray"
-            loading={isLoadingMore}
-            variant="light"
-            onClick={loadMore}
-          >
-            {t('Завантажити ще')}
-          </Button>
-        </Center>
-      )}
+              {t('Завантажити ще')}
+            </Button>
+          </Center>
+        )}
+      </Card>
 
       <ProductCardModal productNetId={productCardNetId} onClose={() => setProductCardNetId(null)} />
     </Stack>

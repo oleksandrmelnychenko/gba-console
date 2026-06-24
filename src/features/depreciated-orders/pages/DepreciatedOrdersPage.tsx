@@ -48,6 +48,7 @@ import type {
   DepreciatedOrderExportDocument,
   DepreciatedOrderStorage,
 } from '../types'
+import './depreciated-orders-page.css'
 
 type FilterDraft = {
   from: string
@@ -466,7 +467,6 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
           {t('Створити акт списання')}
         </Button>
       </PageHeaderActions>
-      <DepreciatedOrdersHeader model={model} />
       <DepreciatedOrdersTableCard model={model} />
       <DepreciatedOrderDetailDrawer
         detailError={model.detailError}
@@ -499,107 +499,97 @@ function DepreciatedOrdersPageView({ model }: { model: ReturnType<typeof useDepr
   )
 }
 
-function DepreciatedOrdersHeader({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
-  const { t } = useI18n()
-  const { isLoading, isLoadingStorages, reload } = model
-
-  return (
-    <Group justify="flex-end" align="center">
-      <Group gap="xs">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading || isLoadingStorages}
-            size={38}
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    </Group>
-  )
-}
-
 function DepreciatedOrdersTableCard({ model }: { model: ReturnType<typeof useDepreciatedOrdersPageModel> }) {
   const { t } = useI18n()
   const {
-    columns, density, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, loadMoreOrders, openDetail,
-    orders, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError, toggleDensity,
+    columns, density, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, isLoadingStorages,
+    loadMoreOrders, openDetail, orders, pageSize, reload, resetFilters, applyFilters, setPageSize, storageError,
+    toggleDensity,
   } = model
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-          <TextInput
-            label={t('Від якої дати')}
-            max={filterDraft.to || undefined}
-            type="date"
-            value={filterDraft.from}
-            onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
-          />
-          <TextInput
-            label={t('До якої дати')}
-            min={filterDraft.from || undefined}
-            type="date"
-            value={filterDraft.to}
-            onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
-          />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-        </Group>
-
-        {(error || filterError || storageError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-            {filterError || error || storageError}
-          </Alert>
-        )}
-
-        <Group justify="flex-end" gap="xs">
-          <Select
-            aria-label={t('Кількість рядків')}
-            data={PAGE_SIZE_OPTIONS}
-            size="xs"
-            value={String(pageSize)}
-            w={88}
-            onChange={(value) => {
-              setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-              reload()
-            }}
-          />
-        </Group>
-
-        <DataTable
-          columns={columns}
-          data={orders}
-          density={density}
-          defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
-          emptyText={t('Актів списання не знайдено')}
-          getRowId={(order, index) => String(order.NetUid || order.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="depreciated-orders-table-1"
-          loadingText={t('Завантаження актів списання')}
-          maxHeight="calc(100vh - 340px)"
-          minWidth={1320}
-          tableId="depreciated-orders"
-          onRowClick={openDetail}
-        />
-
-        {hasMore && (
-          <Group justify="center">
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreOrders}>
-              {t('Завантажити ще')}
-            </Button>
+    <Card className="app-data-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" justify="space-between" className="depreciated-orders-filter-row">
+          <Group align="end" gap="sm" wrap="nowrap">
+            <TextInput
+              label={t('Від якої дати')}
+              max={filterDraft.to || undefined}
+              type="date"
+              value={filterDraft.from}
+              onChange={(event) => applyFilters({ ...filterDraft, from: event.currentTarget.value })}
+            />
+            <TextInput
+              label={t('До якої дати')}
+              min={filterDraft.from || undefined}
+              type="date"
+              value={filterDraft.to}
+              onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
+            />
           </Group>
-        )}
-      </Stack>
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading || isLoadingStorages}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Select
+              aria-label={t('Кількість рядків')}
+              data={PAGE_SIZE_OPTIONS}
+              size="xs"
+              value={String(pageSize)}
+              w={88}
+              onChange={(value) => {
+                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+                reload()
+              }}
+            />
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+          </div>
+        </Group>
+      </div>
+
+      {(error || filterError || storageError) && (
+        <Alert m="md" color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
+          {filterError || error || storageError}
+        </Alert>
+      )}
+
+      <DataTable
+        columns={columns}
+        data={orders}
+        density={density}
+        defaultLayout={DEPRECIATED_ORDERS_TABLE_DEFAULT_LAYOUT}
+        emptyText={t('Актів списання не знайдено')}
+        getRowId={(order, index) => String(order.NetUid || order.Id || index)}
+        isLoading={isLoading}
+        layoutVersion="depreciated-orders-table-1"
+        loadingText={t('Завантаження актів списання')}
+        maxHeight="calc(100vh - 340px)"
+        minWidth={1320}
+        tableId="depreciated-orders"
+        onRowClick={openDetail}
+      />
+
+      {hasMore && (
+        <Group justify="center" p="md">
+          <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreOrders}>
+            {t('Завантажити ще')}
+          </Button>
+        </Group>
+      )}
     </Card>
   )
 }

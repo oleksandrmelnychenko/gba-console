@@ -1,0 +1,9 @@
+/* Match the «Продажі» reference data-card shadow while keeping the page's
+   existing load-more / max-height scroll model intact. */
+.product-transfers-card {
+  box-shadow: var(--app-card-shadow);
+}
+
+.product-transfers-filter-row {
+  width: 100%;
+}

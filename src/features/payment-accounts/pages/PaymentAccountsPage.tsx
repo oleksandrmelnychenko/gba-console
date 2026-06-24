@@ -31,6 +31,7 @@ import {
 import { PAYMENT_ACCOUNT_CREATE_PERMISSION, PAYMENT_ACCOUNT_EDIT_PERMISSION } from '../permissions'
 import type { Organization, PaymentAccount, PaymentCurrencyRegister } from '../types'
 import { PaymentRegisterType } from '../types'
+import './payment-accounts-page.css'
 
 const SEARCH_DEBOUNCE_MS = 350
 const SKIPPED_CURRENCY_CODE = ['P', 'L', 'N'].join('')
@@ -52,7 +53,6 @@ export function PaymentAccountsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [accounts, setAccounts] = useValueState<PaymentAccount[]>([])
   const [organizations, setOrganizations] = useValueState<Organization[]>([])
-  const [totalEuroAmount, setTotalEuroAmount] = useValueState(0)
   const [searchValue, setSearchValue] = useValueState(() => searchParams.get('value') || '')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SEARCH_DEBOUNCE_MS)
   const [typeFilter, setTypeFilter] = useValueState<TypeFilter>(() => normalizeTypeFilter(searchParams.get('type')))
@@ -148,12 +148,10 @@ export function PaymentAccountsPage() {
 
         if (isActive) {
           setAccounts(response.paymentRegisters)
-          setTotalEuroAmount(response.totalEuroAmount)
         }
       } catch (loadError) {
         if (isActive) {
           setAccounts([])
-          setTotalEuroAmount(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рахунки'))
         }
       } finally {
@@ -175,7 +173,6 @@ export function PaymentAccountsPage() {
     setAccounts,
     setError,
     setLoading,
-    setTotalEuroAmount,
     t,
     typeFilter,
   ])
@@ -190,19 +187,6 @@ export function PaymentAccountsPage() {
     setTypeFilter('all')
     setOrganizationNetId('')
   }
-
-  const toolbarLeft = useMemo(
-    () => (
-      <TextInput
-        leftSection={<IconSearch size={16} />}
-        placeholder={t('Пошук')}
-        value={searchValue}
-        w={{ base: '100%', sm: 340 }}
-        onChange={(event) => setSearchValue(event.currentTarget.value)}
-      />
-    ),
-    [searchValue, setSearchValue, t],
-  )
 
   return (
     <Stack gap="md">
@@ -225,25 +209,18 @@ export function PaymentAccountsPage() {
           </Button>
         </PageHeaderActions>
       </PermissionGate>
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Group gap="xs">
-              <Tooltip label={t('Скинути фільтри')}>
-                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading || isLoadingLookups} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-            </Group>
-          </Group>
-
-          <Group align="end" gap="sm" wrap="wrap">
+      <Card className="app-data-card payment-accounts-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar payment-accounts-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="payment-accounts-filter-row">
+            <TextInput
+              size="sm"
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Введіть значення')}
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+            />
             <SegmentedControl
               data={[
                 { label: t('Усі'), value: 'all' },
@@ -261,25 +238,38 @@ export function PaymentAccountsPage() {
               label={t('Організація')}
               placeholder={t('Усі')}
               value={organizationNetId || null}
-              w={{ base: '100%', sm: 280 }}
+              style={{ flex: '0 0 240px' }}
               onChange={(value) => setOrganizationNetId(value || '')}
             />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути фільтри')}>
+                <ActionIcon aria-label={t('Скинути фільтри')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading || isLoadingLookups}
+                  size={34}
+                  variant="light"
+                  onClick={reload}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            </div>
           </Group>
+        </div>
 
+        <Stack className="payment-accounts-card__body" gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
             </Alert>
           )}
-
-          <Group gap="xs">
-            <Badge color="blue" variant="light">
-              {t('Завантажено')}: {accounts.length}
-            </Badge>
-            <Badge color="gray" variant="light">
-              {t('Всього в EUR')}: {formatMoney(totalEuroAmount)}
-            </Badge>
-          </Group>
 
           <DataTable
             columns={columns}
@@ -293,7 +283,6 @@ export function PaymentAccountsPage() {
             maxHeight="calc(100vh - 330px)"
             minWidth={1120}
             tableId="payment-accounts"
-            toolbarLeft={toolbarLeft}
             onRowClick={openAccount}
           />
         </Stack>

@@ -9,6 +9,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getSupplyUkraineOrderDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
@@ -825,7 +826,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Group>
       </Group>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Group justify="space-between" align="end" wrap="wrap">
           <Group gap="sm" align="end">
             {!model.order?.IsPlaced && (
@@ -875,7 +876,12 @@ export function WarehouseUkraineOrderPlacementsPage() {
               </Button>
             )}
             {canEditPlacement && (
-              <Button disabled={!model.isDirty || model.isBusy} loading={model.isSaving} onClick={model.handleSave}>
+              <Button
+                color={CREATE_ACTION_COLOR}
+                disabled={!model.isDirty || model.isBusy}
+                loading={model.isSaving}
+                onClick={model.handleSave}
+              >
                 {t('Зберегти')}
               </Button>
             )}
@@ -909,7 +915,7 @@ export function WarehouseUkraineOrderPlacementsPage() {
         </Alert>
       )}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <DataTable
             columns={columns}

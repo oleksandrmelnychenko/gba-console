@@ -37,6 +37,7 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   createStockReport,
   getReportClientAgreements,
@@ -261,14 +262,14 @@ export function ReportsStocksPage() {
         </Badge>
       </Group>
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <form onSubmit={submitReport}>
           <Stack gap="md">
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput label={t('З')} type="date" value={from} onChange={(event) => setFrom(event.currentTarget.value)} />
               <TextInput label={t('По')} type="date" value={to} onChange={(event) => setTo(event.currentTarget.value)} />
               <Tooltip label={t('Сформувати')}>
-                <Button loading={isLoading} disabled={!canSubmit} type="submit">
+                <Button color={CREATE_ACTION_COLOR} loading={isLoading} disabled={!canSubmit} type="submit">
                   {t('Сформувати')}
                 </Button>
               </Tooltip>
@@ -475,7 +476,7 @@ export function ReportsStocksPage() {
 
       {error ? <Alert color="red" icon={<IconAlertCircle size={18} />}>{error}</Alert> : null}
 
-      <Card withBorder radius="md" padding="md">
+      <Card className="app-section-card" withBorder radius="md" padding="md">
         <Group justify="space-between" mb="sm">
           <Box>
             <Text fw={700}>{t('Результат')}</Text>

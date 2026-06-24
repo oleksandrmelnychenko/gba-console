@@ -156,3 +156,37 @@
   color: var(--mantine-color-gray-6);
   font-size: 12px;
 }
+
+/* ── Fill-the-screen layout for «Рух коштів» pages ────────────────────────
+   The page fills the frame and the ledger grid takes the remaining height
+   (no fixed maxHeight), so far more rows are visible. Shared by the accounting
+   and supplier-organization cash-flow screens. Put .cash-flow-page on the page
+   root and (optionally) .cash-flow-page__grid-card on a card wrapping the grid. */
+.cash-flow-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cash-flow-page__grid-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.cash-flow-page .cfg-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.cash-flow-page .cfg-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none !important;
+}

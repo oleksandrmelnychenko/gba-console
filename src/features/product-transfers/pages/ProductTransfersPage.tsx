@@ -59,6 +59,7 @@ import type {
   ProductTransferLocation,
   ProductTransferStorage,
 } from '../types'
+import './product-transfers-page.css'
 
 type FilterDraft = {
   from: string
@@ -261,37 +262,6 @@ function useProductTransfersPageModel() {
   const transferIndexMap = useMemo(() => buildTransferIndexMap(transfers), [transfers])
   const columns = useProductTransferColumns(openDetail, transferIndexMap)
 
-  const toolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => {
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-            reload()
-          }}
-        />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size="sm"
-            variant="subtle"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [isLoading, pageSize, setPageSize, t],
-  )
-
   useProductTransferStoragesLoader({
     reloadKey,
     setCreateForm,
@@ -437,7 +407,7 @@ function useProductTransfersPageModel() {
     columns, createError, createForm, detailError, downloadDocument, downloadError, downloadOpened,
     effectiveToStorageNetUid, error, exceptionMessages, filterDraft, filterError, hasMore, isAdmin,
     isCreateModalOpen, isCreating, isDetailLoading, isDownloading, isLoading, isLoadingMore, isLoadingStorages,
-    selectedTransfer, storageError, storageOptions, storages, toolbarRight, toStorageOptions,
+    pageSize, selectedTransfer, setPageSize, storageError, storageOptions, storages, toStorageOptions,
     transfers, closeCreateModal, closeDownload, handleCreate, loadMoreTransfers, openCreateModal, openDetail,
     openDownload, reload, resetFilters, setCreateForm, setExceptionMessages, applyFilters, setSelectedTransfer,
     closeDetail,
@@ -600,39 +570,21 @@ function ProductTransfersPageView({ model }: { model: ReturnType<typeof useProdu
 
 function ProductTransfersHeader({ model }: { model: ReturnType<typeof useProductTransfersPageModel> }) {
   const { t } = useI18n()
-  const { isLoading, isLoadingStorages, openCreateModal, reload, storageOptions } = model
+  const { isLoadingStorages, openCreateModal, storageOptions } = model
 
   return (
-    <>
-      <PageHeaderActions>
-        <Button
-          color={CREATE_ACTION_COLOR}
-          size="sm"
-          disabled={!isLoadingStorages && storageOptions.length === 0}
-          leftSection={<IconPlus size={16} />}
-          loading={isLoadingStorages}
-          onClick={openCreateModal}
-        >
-          {t('Нове переміщення')}
-        </Button>
-      </PageHeaderActions>
-      <Group justify="flex-end" align="center">
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
-      </Group>
-    </>
+    <PageHeaderActions>
+      <Button
+        color={CREATE_ACTION_COLOR}
+        size="sm"
+        disabled={!isLoadingStorages && storageOptions.length === 0}
+        leftSection={<IconPlus size={16} />}
+        loading={isLoadingStorages}
+        onClick={openCreateModal}
+      >
+        {t('Нове переміщення')}
+      </Button>
+    </PageHeaderActions>
   )
 }
 
@@ -640,13 +592,13 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
   const { t } = useI18n()
   const {
     columns, error, filterDraft, filterError, hasMore, isLoading, isLoadingMore, openDetail, loadMoreTransfers,
-    resetFilters, applyFilters, storageError, toolbarRight, transfers,
+    pageSize, reload, resetFilters, applyFilters, setPageSize, storageError, transfers,
   } = model
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Card className="app-filter-card product-transfers-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="product-transfers-filter-row">
           <TextInput
             label={t('З')}
             max={filterDraft.to || undefined}
@@ -661,13 +613,40 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
             value={filterDraft.to}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+            <Select
+              aria-label={t('Кількість рядків')}
+              data={PAGE_SIZE_OPTIONS}
+              size="sm"
+              value={String(pageSize)}
+              w={88}
+              onChange={(value) => {
+                setPageSize(Number(value || DEFAULT_PAGE_SIZE))
+                reload()
+              }}
+            />
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="default"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
         </Group>
+      </div>
 
+      <Stack gap="md" p="md">
         {(error || filterError || storageError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error || storageError}
@@ -686,7 +665,6 @@ function ProductTransfersTableCard({ model }: { model: ReturnType<typeof useProd
           maxHeight="calc(100vh - 340px)"
           minWidth={1780}
           tableId="product-transfers"
-          toolbarRight={toolbarRight}
           onRowClick={openDetail}
         />
 

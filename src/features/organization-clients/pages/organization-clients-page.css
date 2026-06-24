@@ -4,6 +4,19 @@
   overflow: hidden;
 }
 
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.organization-clients-filter-bar {
+  flex: 0 0 auto;
+}
+
+.organization-clients-filter-bar .clients-filter-row {
+  width: 100%;
+}
+
+.organization-clients-page__alert {
+  margin: 10px 10px 0;
+}
+
 .organization-clients-page__table {
   flex: 1 1 auto;
   min-height: 0;

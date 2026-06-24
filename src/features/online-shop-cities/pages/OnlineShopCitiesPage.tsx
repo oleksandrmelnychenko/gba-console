@@ -344,7 +344,7 @@ function OnlineShopCitiesRegistry({
 
   return (
     <Box className="online-shop-cities-shell">
-      <div className="online-shop-cities-command-bar">
+      <div className="app-filter-bar online-shop-cities-command-bar">
         <TextInput
           className="online-shop-cities-search-input"
           leftSection={<IconSearch size={15} />}
@@ -354,7 +354,7 @@ function OnlineShopCitiesRegistry({
           onChange={(event) => onSearchChange(event.currentTarget.value)}
         />
 
-        <div className="online-shop-cities-toolbar-actions">
+        <div className="app-filter-actions">
           <Tooltip label={t('Очистити')}>
             <ActionIcon
               aria-label={t('Очистити')}

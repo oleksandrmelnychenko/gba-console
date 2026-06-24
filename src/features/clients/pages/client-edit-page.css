@@ -1,0 +1,70 @@
+/* Card top «hero»: code + client name + status / type badges + Active switch.
+   A light brand wash — a warm orange corner glow over white — anchors the card
+   the same way the «Продажі» filter strips do. */
+.client-edit-hero {
+  background:
+    radial-gradient(620px 220px at 0% -45%, rgba(var(--brand-orange-rgb), 0.08), rgba(var(--brand-orange-rgb), 0) 70%),
+    var(--mantine-color-white);
+}
+
+.client-edit-hero-code {
+  color: var(--mantine-color-orange-7);
+  letter-spacing: 0.02em;
+}
+
+/* Left step-nav (rail) styled as the «Ролі» polished list items: gradient
+   cards, a translate-on-hover lift, and an orange-tinted selected state. */
+.client-edit-nav {
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.client-edit-nav-item {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 252, 0.96)),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
+  border-radius: 7px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  color: var(--mantine-color-gray-8) !important;
+  font-weight: 500;
+  min-height: 44px;
+  transition:
+    border-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.client-edit-nav-item:hover {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(250, 251, 252, 0.96)),
+    var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-4) !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  transform: translateX(4px);
+}
+
+.client-edit-nav-item .mantine-Button-section[data-position='right'] {
+  color: var(--mantine-color-gray-4);
+  opacity: 0;
+  transition: opacity 110ms var(--tx-ease-smooth);
+}
+
+.client-edit-nav-item.is-active {
+  background:
+    linear-gradient(135deg, rgba(255, 247, 237, 0.95), rgba(255, 255, 255, 0.98)),
+    var(--mantine-color-white);
+  border-color: var(--mantine-color-orange-2) !important;
+  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
+  color: var(--mantine-color-orange-9) !important;
+}
+
+.client-edit-nav-item.is-active .mantine-Button-section {
+  color: var(--mantine-color-orange-6);
+}
+
+.client-edit-nav-item.is-active .mantine-Button-section[data-position='right'] {
+  opacity: 1;
+}

@@ -15,7 +15,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconCheck, IconChevronRight, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -53,6 +53,7 @@ import {
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
+import './client-edit-page.css'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -595,7 +596,7 @@ export function ClientEditPage() {
       closeOnClickOutside={!isSaving && !isDeleting}
       keepMounted={false}
       position="right"
-      size="min(980px, 100vw)"
+      size="full"
       onClose={closeSheet}
       footer={
         <ClientEditActions
@@ -726,45 +727,49 @@ function ClientEditHeader({
   const { t } = useI18n()
   const regionCodeValue = client?.RegionCode?.Value
 
+  if (!client) {
+    return null
+  }
+
   return (
-    <Stack gap="xs">
-      {client && (regionCodeValue || client.FullName) && (
+    <Card className="client-edit-hero app-section-card" withBorder radius="md" padding="md">
+      <Stack gap="xs">
+        {(regionCodeValue || client.FullName) && (
+          <Group gap="sm" align="baseline">
+            {regionCodeValue && (
+              <Text className="client-edit-hero-code" fw={700} size="sm">
+                {regionCodeValue}
+              </Text>
+            )}
+            {client.FullName && (
+              <Text fw={600} size="lg">
+                {client.FullName}
+              </Text>
+            )}
+          </Group>
+        )}
         <Group gap="xs">
-          {regionCodeValue && (
-            <Text fw={600} size="sm">
-              {regionCodeValue}
-            </Text>
-          )}
-          {client.FullName && (
-            <Text fw={600} size="sm">
-              {client.FullName}
-            </Text>
-          )}
-        </Group>
-      )}
-      <Group gap="xs">
-        {client && (
           <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
             {client.IsActive === false ? t('Неактивний') : t('Активний')}
           </Badge>
-        )}
-        {client && (client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-          <Badge
-            color="violet"
-            variant="light"
-            style={canEditType ? { cursor: 'pointer' } : undefined}
-            onClick={canEditType ? onTypeClick : undefined}
-          >
-            {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
-          </Badge>
-        )}
-        {client?.IsTemporaryClient && (
-          <Badge color="violet" variant="light">
-            {t('З інтернет-магазину')}
-          </Badge>
-        )}
-      </Group>
-    </Stack>
+          {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+            <Badge
+              color="orange"
+              variant="light"
+              style={canEditType ? { cursor: 'pointer' } : undefined}
+              onClick={canEditType ? onTypeClick : undefined}
+            >
+              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
+            </Badge>
+          )}
+          {client.IsTemporaryClient && (
+            <Badge color="violet" variant="light">
+              {t('З інтернет-магазину')}
+            </Badge>
+          )}
+        </Group>
+      </Stack>
+    </Card>
   )
 }
 
@@ -840,7 +845,7 @@ function ClientEditBody({
 
   if (isLoading) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card className="app-section-card" withBorder radius="md" padding="lg">
         <Group justify="center" py="xl">
           <Loader color="violet" size="sm" />
           <Text c="dimmed" size="sm">
@@ -853,7 +858,7 @@ function ClientEditBody({
 
   if (!client) {
     return (
-      <Card withBorder radius="md" padding="lg">
+      <Card className="app-section-card" withBorder radius="md" padding="lg">
         <Text c="dimmed">{t('Картку не знайдено')}</Text>
       </Card>
     )
@@ -863,27 +868,35 @@ function ClientEditBody({
     <form id="client-edit-form" onSubmit={onSubmit}>
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
-          <Card withBorder radius="md" padding="md">
-            <Stack gap="xs">
-              {steps.map((item) => (
-                <Button
-                  key={item.value}
-                  color={item.value === selectedStep ? 'violet' : 'gray'}
-                  justify="flex-start"
-                  variant={item.value === selectedStep ? 'light' : 'subtle'}
-                  onClick={() => onGoToStep(item.value)}
-                >
-                  {item.label}
-                </Button>
-              ))}
+          <Card className="app-section-card" withBorder radius="md" padding="md">
+            <Stack gap={5} className="client-edit-nav" component="nav">
+              {steps.map((item) => {
+                const isActive = item.value === selectedStep
+
+                return (
+                  <Button
+                    key={item.value}
+                    className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
+                    color="gray"
+                    fullWidth
+                    justify="space-between"
+                    rightSection={<IconChevronRight size={16} stroke={2} />}
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => onGoToStep(item.value)}
+                  >
+                    {item.label}
+                  </Button>
+                )
+              })}
             </Stack>
           </Card>
         </Grid.Col>
         <Grid.Col span={{ base: 12, lg: 9 }}>
-          <Card withBorder radius="md" padding="md">
+          <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
               <Group justify="space-between" align="center">
-                <Title order={3} size="h4">
+                <Title order={3} size="h4" fw={600}>
                   {activeStep?.label || firstStep?.label}
                 </Title>
                 {canEditActive && (
@@ -1074,7 +1087,7 @@ function EditStepContent({
     return (
       <Stack gap="lg">
         <RecommendationsPanel client={client} productNetId={productNetId} />
-        <Card withBorder radius="md" padding="md">
+        <Card className="app-section-card" withBorder radius="md" padding="md">
           <SolvencyPanel clientNetId={client.NetUid} />
         </Card>
       </Stack>

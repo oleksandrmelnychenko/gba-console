@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   getActProvidingService,
   updateActProvidingService,
@@ -252,6 +253,7 @@ function ActProvidingServiceDetailPageView({
             {t('Оновити')}
           </Button>
           <Button
+            color={CREATE_ACTION_COLOR}
             disabled={!act || !isDirty || isLoading}
             leftSection={<IconDeviceFloppy size={16} />}
             loading={isSaving}
@@ -269,7 +271,7 @@ function ActProvidingServiceDetailPageView({
       )}
 
       {displayModel ? (
-        <Card withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding="lg">
           <Stack gap="lg">
             <Group justify="space-between" align="flex-start" gap="sm">
               <Stack gap={4}>
@@ -319,13 +321,13 @@ function ActProvidingServiceDetailPageView({
           </Stack>
         </Card>
       ) : isLoading ? (
-        <Card withBorder radius="md" padding="lg">
+        <Card className="app-section-card" withBorder radius="md" padding="lg">
           <Group justify="center" py="xl">
             <Loader />
           </Group>
         </Card>
       ) : (
-          <Card withBorder radius="md" padding="lg">
+          <Card className="app-section-card" withBorder radius="md" padding="lg">
             <Text c="dimmed">{t('Акт надання послуг не знайдено')}</Text>
           </Card>
       )}

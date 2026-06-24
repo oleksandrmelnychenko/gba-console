@@ -2,11 +2,10 @@ import {
   ActionIcon,
   Alert,
   Badge,
-  Button,
+  Card,
   Divider,
   Group,
   Menu,
-  Pagination,
   Select,
   SimpleGrid,
   Stack,
@@ -21,9 +20,8 @@ import {
   IconEdit,
   IconEye,
   IconHierarchy2,
-  IconRefresh,
+  IconRestore,
   IconSearch,
-  IconX,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -35,6 +33,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   calculateAdvancedReportOrder,
   getAdvancedReportCurrencies,
@@ -54,9 +54,9 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import './advanced-reports-page.css'
 
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
-const DEFAULT_PAGE_SIZE = 20
+const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const SEARCH_DEBOUNCE_MS = 350
 
 const OUTGOING_CASHFLOW_ROUTE = '/accounting/outgoing-cashflow'
@@ -392,137 +392,121 @@ export function AdvancedReportsPage() {
     setPaymentMovementNetId('')
   }, [setCurrencyNetId, setFromDate, setPage, setPaymentMovementNetId, setPaymentRegisterNetId, setSearchValue, setToDate])
 
+  const handleRefresh = useCallback(() => {
+    void loadLookups()
+    reload()
+  }, [loadLookups])
+
   return (
-    <Stack gap="md">
-      <Group align="end" justify="space-between" gap="sm">
-        <Group align="end" gap="sm">
-          <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
-          <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Номер, організація, отримувач або коментар')}
-            value={searchValue}
-            w={340}
-            onChange={(event) => changeSearchValue(event.currentTarget.value)}
+    <Stack className="advanced-reports-page" gap={6}>
+      <Card className="app-data-card advanced-reports-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar advanced-reports-filter-bar">
+          <Stack gap={8}>
+            <Group align="end" gap="sm" wrap="nowrap" className="advanced-reports-filter-row">
+              <TextInput label={t('Від')} type="date" value={fromDate} onChange={(event) => changeFromDate(event.currentTarget.value)} />
+              <TextInput label={t('До')} type="date" value={toDate} onChange={(event) => changeToDate(event.currentTarget.value)} />
+              <TextInput
+                leftSection={<IconSearch size={16} />}
+                label={t('Пошук')}
+                placeholder={t('Номер, організація, отримувач або коментар')}
+                value={searchValue}
+                style={{ flex: '1 1 auto', minWidth: 220 }}
+                onChange={(event) => changeSearchValue(event.currentTarget.value)}
+              />
+              <div className="app-filter-actions">
+                <Tooltip label={t('Скинути фільтри')}>
+                  <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути фільтри')} onClick={resetFilters}>
+                    <IconRestore size={17} />
+                  </ActionIcon>
+                </Tooltip>
+                <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+                <Paginator
+                  isLoading={isTableBusy || isLoadingLookups}
+                  page={page}
+                  pageSize={pageSize}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  onPageSizeChange={(nextPageSize) => changePageSize(String(nextPageSize))}
+                  onRefresh={handleRefresh}
+                />
+              </div>
+            </Group>
+
+            <Group align="end" justify="space-between" gap="sm" wrap="nowrap">
+              <Group align="end" gap="sm" wrap="nowrap">
+                <Select
+                  clearable
+                  searchable
+                  data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
+                  label={t('Валюта')}
+                  placeholder={t('Усі')}
+                  value={currencyNetId || null}
+                  w={210}
+                  onChange={(value) => changeCurrencyNetId(value || '')}
+                />
+                <Select
+                  clearable
+                  searchable
+                  data={toSelectOptions(paymentRegisters, (register) => register.Name)}
+                  label={t('Грошовий рахунок')}
+                  placeholder={t('Усі')}
+                  value={paymentRegisterNetId || null}
+                  w={260}
+                  onChange={(value) => changePaymentRegisterNetId(value || '')}
+                />
+                <Select
+                  clearable
+                  searchable
+                  data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
+                  label={t('Стаття руху')}
+                  placeholder={t('Усі')}
+                  value={paymentMovementNetId || null}
+                  w={300}
+                  onChange={(value) => changePaymentMovementNetId(value || '')}
+                />
+              </Group>
+
+              <Group gap="xs" wrap="nowrap">
+                <Badge color="green" variant="light">
+                  {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
+                </Badge>
+                <Badge color="red" variant="light">
+                  {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
+                </Badge>
+              </Group>
+            </Group>
+          </Stack>
+        </div>
+
+        {error && (
+          <Alert className="advanced-reports-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        {filterError && (
+          <Alert className="advanced-reports-page__alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
+
+        <div className="advanced-reports-page__table">
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={TABLE_DEFAULT_LAYOUT}
+            density={density}
+            emptyText={t('Авансових звітів не знайдено')}
+            getRowId={(row) => row.id}
+            height="100%"
+            isLoading={isTableBusy}
+            layoutVersion="advanced-reports-1"
+            minWidth={1720}
+            tableId="advanced-reports"
+            onRowClick={handleRowClick}
           />
-        </Group>
-
-        <Group align="end" gap="xs">
-          <Tooltip label={t('Скинути фільтри')}>
-            <Button color="gray" leftSection={<IconX size={16} />} variant="light" onClick={resetFilters}>
-              {t('Скинути')}
-            </Button>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingLookups}
-              size={38}
-              variant="light"
-              onClick={() => {
-                void loadLookups()
-                reload()
-              }}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Group align="end" gap="sm">
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(currencies, (currency) => currency.Name || currency.Code)}
-          label={t('Валюта')}
-          placeholder={t('Усі')}
-          value={currencyNetId || null}
-          w={210}
-          onChange={(value) => changeCurrencyNetId(value || '')}
-        />
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(paymentRegisters, (register) => register.Name)}
-          label={t('Грошовий рахунок')}
-          placeholder={t('Усі')}
-          value={paymentRegisterNetId || null}
-          w={260}
-          onChange={(value) => changePaymentRegisterNetId(value || '')}
-        />
-        <Select
-          clearable
-          searchable
-          data={toSelectOptions(paymentMovements, (movement) => movement.OperationName)}
-          label={t('Стаття руху')}
-          placeholder={t('Усі')}
-          value={paymentMovementNetId || null}
-          w={300}
-          onChange={(value) => changePaymentMovementNetId(value || '')}
-        />
-      </Group>
-
-      {error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-          {error}
-        </Alert>
-      )}
-
-      {filterError && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-          {filterError}
-        </Alert>
-      )}
-
-      <Group gap="xs" justify="space-between">
-        <Group gap="xs">
-          <Badge color="blue" variant="light">
-            {t('Завантажено')}: {reports.Collection.length}
-          </Badge>
-          <Badge color="gray" variant="light">
-            {t('Рядків')}: {rows.length}
-          </Badge>
-          <Badge color="green" variant="light">
-            {t('Кредиторська заборгованість')}: {formatMoney(reports.PositiveDifferenceAmount)}
-          </Badge>
-          <Badge color="red" variant="light">
-            {t('Дебіторська заборгованість')}: {formatMoney(reports.NegativeDifferenceAmount)}
-          </Badge>
-        </Group>
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={changePageSize}
-        />
-      </Group>
-
-      <DataTable
-        columns={columns}
-        data={rows}
-        defaultLayout={TABLE_DEFAULT_LAYOUT}
-        density={density}
-        emptyText={t('Авансових звітів не знайдено')}
-        getRowId={(row) => row.id}
-        isLoading={isTableBusy}
-        layoutVersion="advanced-reports-1"
-        maxHeight="calc(100vh - 315px)"
-        minWidth={1720}
-        tableId="advanced-reports"
-        onRowClick={handleRowClick}
-      />
-
-      {totalPages > 1 && (
-        <Group justify="flex-end">
-          <Pagination total={totalPages} value={page} onChange={setPage} />
-        </Group>
-      )}
+        </div>
+      </Card>
 
       <AdvancedReportDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
       <AdvancedReportDocumentStructureDrawer

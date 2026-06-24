@@ -4,9 +4,13 @@
   overflow: hidden;
 }
 
-.clients-page .clients-filter-row {
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.clients-filter-bar {
   flex: 0 0 auto;
-  overflow-y: visible;
+}
+
+.clients-filter-bar .clients-filter-row {
+  width: 100%;
 }
 
 .clients-page__table {
@@ -33,8 +37,4 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.clients-page__pagination {
-  flex: 0 0 auto;
 }

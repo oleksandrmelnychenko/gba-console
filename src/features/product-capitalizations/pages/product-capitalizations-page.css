@@ -1,0 +1,44 @@
+.product-capitalizations-page {
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.product-capitalizations-filter-bar {
+  flex: 0 0 auto;
+}
+
+.product-capitalizations-filter-row {
+  align-items: flex-end;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.product-capitalizations-filter-form {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.product-capitalizations-page__alert {
+  margin: 10px 12px 0;
+}
+
+.product-capitalizations-page__table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.product-capitalizations-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.product-capitalizations-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

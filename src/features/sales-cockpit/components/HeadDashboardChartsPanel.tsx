@@ -121,9 +121,7 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
   return (
     <Card withBorder radius="md" shadow="sm">
       <Stack gap="md">
-        <Text fw={700} size="lg">
-          {t('Дашборд команди')}
-        </Text>
+        <Text className="cockpit-section-title">{t('Дашборд команди')}</Text>
 
         {error && (
           <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
@@ -133,31 +131,26 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
           <StatCard
+            accent="danger"
             label={t('Сума під ризиком (відділ)')}
             value={formatMoney(dashboard?.total_value_at_risk_eur ?? 0)}
           />
-          <Card withBorder radius="md" padding="md">
-            <Text c="dimmed" size="xs" tt="uppercase">
-              {t('Ескальовані задачі')}
-            </Text>
-            <Group gap="xs">
-              <Text fw={700} size="lg">
-                {escalatedCount}
-              </Text>
+          <div className={`cockpit-metric${escalatedCount > 0 ? ' is-danger' : ''}`}>
+            <span className="cockpit-metric-label">{t('Ескальовані задачі')}</span>
+            <Group align="center" gap="xs">
+              <span className="cockpit-metric-value">{escalatedCount}</span>
               {escalatedCount > 0 && (
                 <Badge color="red" variant="light">
                   {t('Потребують уваги')}
                 </Badge>
               )}
             </Group>
-          </Card>
+          </div>
         </SimpleGrid>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="cockpit-chart-card" padding="md" radius="md">
           <Stack gap="xs">
-            <Text fw={600} size="sm">
-              {t('Сума під ризиком за менеджером')}
-            </Text>
+            <Text className="cockpit-subtitle">{t('Сума під ризиком за менеджером')}</Text>
             <AgingBars
               bucketKey="manager"
               data={valueData}
@@ -170,11 +163,9 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
           </Stack>
         </Card>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="cockpit-chart-card" padding="md" radius="md">
           <Stack gap="xs">
-            <Text fw={600} size="sm">
-              {t('Завдання за менеджером')}
-            </Text>
+            <Text className="cockpit-subtitle">{t('Завдання за менеджером')}</Text>
             <AgingBars
               bucketKey="manager"
               data={tasksData}
@@ -191,16 +182,12 @@ export function HeadDashboardChartsPanel({ reloadKey, rows }: { reloadKey: numbe
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, accent }: { label: string; value: string; accent?: string }) {
   return (
-    <Card withBorder radius="md" padding="md">
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text fw={700} size="lg">
-        {value}
-      </Text>
-    </Card>
+    <div className={`cockpit-metric${accent ? ` is-${accent}` : ''}`}>
+      <span className="cockpit-metric-label">{label}</span>
+      <span className="cockpit-metric-value">{value}</span>
+    </div>
   )
 }
 

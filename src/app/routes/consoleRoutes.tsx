@@ -15,6 +15,7 @@ import {
   ClientNewPage,
   ClientResourcesPage,
   ClientsPage,
+  ClientsStructureTreePage,
   ConsumableOrderFormPage,
   ConsumableOrderPayPage,
   ConsumableOrdersPage,
@@ -66,6 +67,7 @@ import {
   SupplyUkraineToUkraineOrderCreatePage,
   ProductGroupDetailPage,
   ProductGroupsPage,
+  ProductGroupsTreePage,
   ProductHistoryPage,
   ProductIncomeDocumentsPage,
   ProductIncomeUkrainePage,
@@ -176,6 +178,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/products/history', element: lazyRoute(<ProductHistoryPage />) },
   { path: '/products/:netId', element: <ProductCarouselDeepLinkRedirect /> },
   { path: '/product-groups', element: lazyRoute(<ProductGroupsPage />) },
+  { path: '/product-groups/tree', element: lazyRoute(<ProductGroupsTreePage />) },
   { path: '/product-groups/:id', element: lazyRoute(<ProductGroupDetailPage />) },
   { path: '/transporters', element: lazyRoute(<TransportersPage />) },
   { path: '/warehouse/ukraine', element: lazyRoute(<WarehouseUkrainePage />) },
@@ -186,6 +189,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
 
 const clientMigrationRoutes: ConsoleRoute[] = [
   { path: '/clients', element: lazyRoute(<ClientsPage />) },
+  { path: '/clients/structure', element: lazyRoute(<ClientsStructureTreePage />) },
   { path: '/clients/new/:step', element: lazyRoute(<ClientNewPage />) },
   { path: '/clients/new', element: lazyRoute(<ClientNewPage />) },
   { path: '/clients/edit/:netid/:step/:productNetId', element: lazyRoute(<ClientEditPage />) },
