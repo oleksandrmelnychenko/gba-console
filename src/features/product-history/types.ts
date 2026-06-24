@@ -66,6 +66,7 @@ export type ProductHistoryItem = EntityFields & {
 }
 
 export type ProductHistorySearchParams = {
+  from: string
   limit: number
   offset: number
   storageIds: number[]

@@ -20,6 +20,7 @@ export async function getProductHistory(
 ): Promise<ProductHistoryResponse> {
   const result = await apiRequest<unknown>('/history/order/item/get', {
     query: {
+      from: params.from,
       limit: params.limit,
       offset: params.offset,
       storageIds: serializeStorageIds(params.storageIds),
@@ -37,6 +38,7 @@ export async function exportProductHistory(
 ): Promise<ProductHistoryExportDocument> {
   const result = await apiRequest<unknown>('/history/order/item/document/create/export', {
     query: {
+      from: params.from,
       limit: params.limit,
       offset: params.offset,
       storageIds: serializeStorageIds(params.storageIds),

@@ -1,7 +1,7 @@
 import { Badge, Box, Group, Loader, ScrollArea, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core'
 import { IconAlertCircle, IconClock, IconHistory } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { dailySyncTypeOptions, syncTypeOptions } from '../syncOptions'
+import { getSyncTypeLabel } from '../syncHistoryLabels'
 import type { SyncHistoryItem } from '../types'
 
 type SyncHistoryPanelProps = {
@@ -173,15 +173,6 @@ export function SyncHistoryPanel({
       )}
     </Stack>
   )
-}
-
-function getSyncTypeLabel(type: number | undefined, historyKind: SyncHistoryPanelProps['historyKind']): string {
-  if (typeof type !== 'number') {
-    return 'Невідомий тип'
-  }
-
-  const options = historyKind === 'daily' ? dailySyncTypeOptions : syncTypeOptions
-  return options.find((option) => option.value === String(type))?.label || 'Невідомий тип'
 }
 
 function getCurrentMessage(

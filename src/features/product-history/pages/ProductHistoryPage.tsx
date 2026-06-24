@@ -34,6 +34,7 @@ import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/pagina
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import { exportProductHistory, getProductHistory, getProductHistoryStorages } from '../api/productHistoryApi'
 import type {
   ProductAvailabilityDataHistory,
@@ -166,10 +167,11 @@ function useProductHistoryPageModel() {
       try {
         const response = await getProductHistory(
           {
+            from: toStartOfDayQuery(dateTo),
             limit: pageSize,
             offset,
             storageIds: selectedStorageIdNumbers,
-            to: toEndOfDayIso(dateTo),
+            to: toEndOfDayQuery(dateTo),
             value: searchValue,
           },
           controller.signal,
@@ -236,10 +238,11 @@ function useProductHistoryPageModel() {
 
     try {
       const document = await exportProductHistory({
+        from: toStartOfDayQuery(dateTo),
         limit: pageSize,
         offset,
         storageIds: selectedStorageIdNumbers,
-        to: toEndOfDayIso(dateTo),
+        to: toEndOfDayQuery(dateTo),
         value: searchValue,
       })
 
@@ -723,8 +726,12 @@ function formatDateInputValue(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-function toEndOfDayIso(dateValue: string): string {
-  return new Date(`${dateValue}T23:59:59.999`).toISOString()
+function toStartOfDayQuery(dateValue: string): string {
+  return toDateTimeQuery(dateValue, 'start')
+}
+
+function toEndOfDayQuery(dateValue: string): string {
+  return toDateTimeQuery(dateValue, 'end')
 }
 
 function getFilterError(dateTo: string, selectedStorageIds: string[]): string | null {

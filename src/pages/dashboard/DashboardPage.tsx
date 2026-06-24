@@ -1,183 +1,154 @@
 import {
-  Badge,
   Box,
-  Button,
   Card,
   Group,
-  Progress,
-  RingProgress,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   Title,
+  UnstyledButton,
 } from '@mantine/core'
 import {
-  IconArrowRight,
-  IconLayoutDashboard,
-  IconRoute,
-  IconServer2,
-  IconShieldCheck,
+  IconBasket,
+  IconBuildingStore,
+  IconChartBar,
+  IconChevronRight,
+  IconFileAnalytics,
+  IconPackage,
+  IconTruckDelivery,
+  IconUsers,
 } from '@tabler/icons-react'
 import { useMemo, type ComponentType } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useNavigation } from '../../features/navigation/hooks/useNavigation'
+import { isNavigationPathAllowed } from '../../features/navigation/navigationUtils'
 import { useI18n } from '../../shared/i18n/useI18n'
 import type { TranslationKey } from '../../shared/i18n/types'
-import { DataTable } from '../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../shared/ui/data-table/types'
 
-type StatItem = {
-  label: TranslationKey
-  value?: string
-  valueKey?: TranslationKey
-  detail: TranslationKey
+type DashboardAction = {
+  color: string
+  description: TranslationKey
   icon: ComponentType<{ size?: number; stroke?: number }>
+  label: TranslationKey
+  route: string
 }
 
-type MigrationRow = {
-  area: TranslationKey
-  owner: TranslationKey | 'CRM'
-  status: TranslationKey
-  progress: number
-}
-
-const stats: StatItem[] = [
-  { label: 'Активні модулі', value: '5', detail: 'Обсяг консолі', icon: IconLayoutDashboard },
-  { label: 'API напрями', value: '2', detail: 'Concord та аналітика', icon: IconServer2 },
-  { label: 'Групи маршрутів', value: '149', detail: 'CRM інвентар', icon: IconRoute },
-  { label: 'Базова збірка', valueKey: 'Готово', detail: 'Резерв зі старого клієнта', icon: IconShieldCheck },
+const dashboardActions: DashboardAction[] = [
+  {
+    color: 'teal',
+    description: 'Рахунки, відвантаження, повернення',
+    icon: IconBasket,
+    label: 'Продажі Україна',
+    route: '/sales/ukraine/all',
+  },
+  {
+    color: 'cyan',
+    description: 'Наявність, розміщення, історія руху',
+    icon: IconPackage,
+    label: 'Товари',
+    route: '/products',
+  },
+  {
+    color: 'indigo',
+    description: 'Прихід, інвойси, специфікації',
+    icon: IconTruckDelivery,
+    label: 'Замовлення постачання',
+    route: '/orders/ukraine/all',
+  },
+  {
+    color: 'grape',
+    description: 'Приймання, пакування, склади',
+    icon: IconBuildingStore,
+    label: 'Склад Україна',
+    route: '/warehouse/ukraine',
+  },
+  {
+    color: 'blue',
+    description: 'Клієнти, виробники, організації',
+    icon: IconUsers,
+    label: 'Клієнти',
+    route: '/clients',
+  },
+  {
+    color: 'orange',
+    description: 'Рейтинги, запас, маржа, повернення',
+    icon: IconChartBar,
+    label: 'Аналітика асортименту',
+    route: '/products/assortment',
+  },
+  {
+    color: 'gray',
+    description: 'Платежі, звіти, взаєморозрахунки',
+    icon: IconFileAnalytics,
+    label: 'Облік',
+    route: '/accounting/available-payments',
+  },
 ]
-
-const migrationRows: MigrationRow[] = [
-  { area: 'Оболонка панелі', owner: 'Консоль', status: 'Готово', progress: 100 },
-  { area: 'Авторизація', owner: 'Ядро', status: 'Готово', progress: 100 },
-  { area: 'Список клієнтів', owner: 'CRM', status: 'Наступний', progress: 0 },
-  { area: 'Замовлення постачання', owner: 'Логістика', status: 'У черзі', progress: 0 },
-]
-
-const MIGRATION_TABLE_DEFAULT_LAYOUT = {
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 export function DashboardPage() {
   const { t } = useI18n()
-  const migrationColumns = useMemo<DataTableColumn<MigrationRow>[]>(
-    () => [
-      {
-        id: 'area',
-        header: 'Зона',
-        accessor: (row) => t(row.area),
-        minWidth: 180,
-      },
-      {
-        id: 'owner',
-        header: 'Власник',
-        accessor: (row) => row.owner === 'CRM' ? row.owner : t(row.owner),
-        width: 140,
-      },
-      {
-        id: 'status',
-        header: 'Статус',
-        accessor: (row) => t(row.status),
-        width: 140,
-        cell: (row) => (
-          <Badge color={row.status === 'Готово' ? 'violet' : 'gray'} variant="light">
-            {t(row.status)}
-          </Badge>
-        ),
-      },
-      {
-        id: 'progress',
-        header: 'Прогрес',
-        accessor: (row) => row.progress,
-        minWidth: 170,
-        cell: (row) => <Progress value={row.progress} color="violet" size="sm" radius="xl" />,
-      },
-    ],
-    [t],
+  const navigate = useNavigate()
+  const { error, isLoading, modules } = useNavigation()
+  const visibleActions = useMemo(
+    () => dashboardActions.filter((action) => isNavigationPathAllowed(modules, action.route)),
+    [modules],
   )
 
   return (
-    <Stack className="dashboard-page" gap="lg">
-      <Group className="dashboard-page-actions" justify="flex-end" align="end">
-        <Button rightSection={<IconArrowRight size={16} />} color="violet">
-          {t('Відкрити наступний модуль')}
-        </Button>
+    <Stack className="dashboard-page" gap="md">
+      <Group className="dashboard-heading" justify="space-between" align="flex-end">
+        <Box className="dashboard-heading-copy">
+          <Title order={1}>{t('Робочий простір')}</Title>
+          <Text c="dimmed" size="sm">
+            {t('Основні розділи консолі')}
+          </Text>
+        </Box>
       </Group>
 
-      <SimpleGrid className="dashboard-stats-grid" cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-        {stats.map((item) => (
-          <Card key={item.label} withBorder radius="md" padding="lg" className="dashboard-stat-card">
-            <Group justify="space-between" align="flex-start" wrap="nowrap">
-              <Box className="dashboard-stat-copy">
-                <Text size="sm" c="dimmed">
-                  {t(item.label)}
-                </Text>
-                <Title order={3} mt={4}>
-                  {item.valueKey ? t(item.valueKey) : item.value}
-                </Title>
-                <Text size="xs" c="dimmed" mt={6}>
-                  {t(item.detail)}
-                </Text>
-              </Box>
-              <ThemeIcon variant="light" color="violet" size={40} radius="md">
-                <item.icon size={21} stroke={1.8} />
-              </ThemeIcon>
-            </Group>
-          </Card>
-        ))}
-      </SimpleGrid>
-
-      <Box className="dashboard-overview-grid">
-        <Card withBorder radius="md" padding="lg" className="dashboard-migration-card">
-          <Group justify="space-between" mb="md" gap="sm" align="flex-start">
-            <Box className="dashboard-section-copy">
-              <Title order={3} size="h4">
-                {t('Черга перенесення')}
-              </Title>
-              <Text size="sm" c="dimmed">
-                {t('Поступове перенесення маршрутів у консоль')}
-              </Text>
-            </Box>
-            <Badge color="violet" variant="light">
-              {t('активно')}
-            </Badge>
-          </Group>
-
-          <Box className="dashboard-table-wrap">
-            <DataTable
-              columns={migrationColumns}
-              data={migrationRows}
-              defaultLayout={MIGRATION_TABLE_DEFAULT_LAYOUT}
-              getRowId={(row) => row.area}
-              layoutVersion="dashboard-migration-table-1"
-              minWidth={640}
-              tableId="dashboard-migration"
-            />
-          </Box>
-        </Card>
-
-        <Card withBorder radius="md" padding="lg" className="dashboard-readiness-card">
-          <Stack align="center" gap="sm">
-            <RingProgress
-              size={160}
-              thickness={14}
-              roundCaps
-              sections={[{ value: 50, color: 'violet' }]}
-              label={
-                <Text ta="center" fw={700} size="xl">
-                  50%
-                </Text>
-              }
-            />
-            <Title order={3} size="h4" ta="center">
-              {t('Готовність консолі')}
-            </Title>
-            <Text c="dimmed" size="sm" ta="center">
-              {t('Оболонка, деплой, логін і шлях даних футера.')}
-            </Text>
-          </Stack>
-        </Card>
-      </Box>
+      {isLoading ? (
+        <DashboardStateCard title={t('Меню завантажується')} />
+      ) : error ? (
+        <DashboardStateCard title={t('Меню недоступне')} />
+      ) : visibleActions.length === 0 ? (
+        <DashboardStateCard title={t('Немає доступних розділів')} />
+      ) : (
+        <SimpleGrid className="dashboard-actions-grid" cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
+          {visibleActions.map((action) => (
+            <UnstyledButton
+              key={action.route}
+              className="dashboard-action-card"
+              type="button"
+              onClick={() => navigate(action.route)}
+            >
+              <Group align="flex-start" justify="space-between" gap="md" wrap="nowrap">
+                <Group align="flex-start" gap="sm" wrap="nowrap" className="dashboard-action-main">
+                  <ThemeIcon color={action.color} radius="md" size={42} variant="light">
+                    <action.icon size={22} stroke={1.8} />
+                  </ThemeIcon>
+                  <Box className="dashboard-action-copy">
+                    <Text fw={700}>{t(action.label)}</Text>
+                    <Text c="dimmed" size="sm">
+                      {t(action.description)}
+                    </Text>
+                  </Box>
+                </Group>
+                <ThemeIcon className="dashboard-action-arrow" color="gray" radius="xl" size={30} variant="subtle">
+                  <IconChevronRight size={18} stroke={1.9} />
+                </ThemeIcon>
+              </Group>
+            </UnstyledButton>
+          ))}
+        </SimpleGrid>
+      )}
     </Stack>
+  )
+}
+
+function DashboardStateCard({ title }: { title: string }) {
+  return (
+    <Card className="dashboard-state-card" withBorder radius="md" padding="lg">
+      <Text fw={700}>{title}</Text>
+    </Card>
   )
 }
