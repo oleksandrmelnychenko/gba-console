@@ -8,7 +8,6 @@ import {
   Group,
   Loader,
   Menu,
-  Pagination,
   Select,
   Stack,
   Text,
@@ -36,7 +35,6 @@ import {
   IconPrinter,
   IconReceipt,
   IconReceipt2,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconTag,
@@ -59,6 +57,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { SaleAuditDetail, getSaleStatisticBySaleId, type SaleAuditStatistic } from '../../../shared/sale-audit'
 import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
@@ -119,9 +119,6 @@ type FilterDraft = {
   to: string
   value: string
 }
-
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
-const DEFAULT_PAGE_SIZE = 20
 
 const STATUS_OPTIONS: Array<{ label: string; value: SalesOnlineShopStatusFilter }> = [
   { value: 'all', label: 'Усі' },
@@ -190,7 +187,7 @@ export function SalesOnlineShopPage() {
   const [filterDraft, setFilterDraft] = useValueState<FilterDraft>(initialDraft)
   const [activeDraft, setActiveDraft] = useValueState<FilterDraft>(initialDraft)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [sales, setSales] = useValueState<SalesOnlineShopSale[]>([])
   const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [selectedSale, setSelectedSale] = useValueState<SalesOnlineShopSale | null>(null)
@@ -402,37 +399,6 @@ export function SalesOnlineShopPage() {
   useRealtimeEvent(realtimeEvents.saleAdded, handleRealtimeSaleAdded)
   useRealtimeEvent(realtimeEvents.saleUpdated, handleRealtimeSaleUpdated)
 
-  const toolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => {
-            setPage(1)
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-          }}
-        />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size="sm"
-            variant="subtle"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [isLoading, pageSize, setPage, setPageSize, t],
-  )
-
   useEffect(() => {
     let cancelled = false
 
@@ -561,7 +527,18 @@ export function SalesOnlineShopPage() {
                     <IconRestore size={17} />
                   </ActionIcon>
                 </Tooltip>
-                <Box className="sales-filter-toolbar">{toolbarRight}</Box>
+                <Paginator
+                  isLoading={isLoading}
+                  page={page}
+                  pageSize={pageSize}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  onPageSizeChange={(nextPageSize) => {
+                    setPage(1)
+                    setPageSize(nextPageSize)
+                  }}
+                  onRefresh={() => reload()}
+                />
               </div>
             </div>
           </div>
@@ -634,12 +611,6 @@ export function SalesOnlineShopPage() {
               </>
             )}
           </div>
-
-          {totalPages > 1 && (
-            <Group className="sales-online-pagination" justify="flex-end">
-              <Pagination total={totalPages} value={page} onChange={setPage} />
-            </Group>
-          )}
         </Stack>
       </Card>
 

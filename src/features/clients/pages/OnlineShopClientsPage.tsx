@@ -7,7 +7,6 @@ import {
   Group,
   Loader,
   ScrollArea,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -15,11 +14,13 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
@@ -34,7 +35,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS = 350
-const ONLINE_SHOP_CLIENT_PAGE_SIZE_OPTIONS = ['20', '50', '100']
 const ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
     left: ['client'],
@@ -60,7 +60,7 @@ export function OnlineShopClientsPage() {
   const [debouncedSearchValue] = useDebouncedValue(searchValue, ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS)
   const [totalClients, setTotalClients] = useValueState(0)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(20)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [cartError, setCartError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -72,8 +72,7 @@ export function OnlineShopClientsPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const offset = (page - 1) * pageSize
-  const canMoveBack = page > 1
-  const canMoveForward = page * pageSize < totalClients
+  const totalPages = totalClients > 0 ? Math.max(1, Math.ceil(totalClients / pageSize)) : page
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
   const clientColumns = useRetailClientColumns()
   const tableToolbarLeft = useMemo(
@@ -194,8 +193,8 @@ export function OnlineShopClientsPage() {
       <Box
         className="online-shop-clients-page__layout"
       >
-        <div className="online-shop-clients-page__left">
-          <Stack gap="md" className="online-shop-clients-page__left-stack">
+        <Card className="app-data-card online-shop-clients-page__left" withBorder radius="md" padding={0}>
+          <div className="app-filter-bar">
             <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
               <TextInput
                 leftSection={<IconSearch size={16} />}
@@ -208,56 +207,34 @@ export function OnlineShopClientsPage() {
                 }}
                 style={{ flex: 1 }}
               />
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetSearch}>
-                  <IconRestore size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-
-            {error && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {error}
-              </Alert>
-            )}
-
-            <Group justify="space-between" gap="sm">
-              <Text size="sm" c="dimmed">
-                {t('Сторінка')} {page}
-                {totalClients ? `, ${t('усього')}: ${totalClients}` : ''}
-              </Text>
-              <Group gap="xs">
-                <Select
-                  aria-label={t('Розмір сторінки')}
-                  data={ONLINE_SHOP_CLIENT_PAGE_SIZE_OPTIONS}
-                  value={String(pageSize)}
-                  w={84}
-                  onChange={(value) => {
+              <div className="app-filter-actions">
+                <Tooltip label={t('Скинути')}>
+                  <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetSearch}>
+                    <IconRestore size={17} />
+                  </ActionIcon>
+                </Tooltip>
+                <Paginator
+                  isLoading={isTableBusy}
+                  page={page}
+                  pageSize={pageSize}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  onPageSizeChange={(nextPageSize) => {
                     setPage(1)
-                    setPageSize(Number(value || 20))
+                    setPageSize(nextPageSize)
                   }}
                 />
-                <ActionIcon
-                  aria-label={t('Попередня сторінка')}
-                  color="gray"
-                  disabled={!canMoveBack || isTableBusy}
-                  variant="light"
-                  onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-                >
-                  <IconChevronLeft size={18} />
-                </ActionIcon>
-                <ActionIcon
-                  aria-label={t('Наступна сторінка')}
-                  color="gray"
-                  disabled={!canMoveForward || isTableBusy}
-                  variant="light"
-                  onClick={() => setPage((currentPage) => currentPage + 1)}
-                >
-                  <IconChevronRight size={18} />
-                </ActionIcon>
-              </Group>
+              </div>
             </Group>
+          </div>
 
+          {error && (
+            <Alert className="online-shop-clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+              {error}
+            </Alert>
+          )}
+
+          <div className="online-shop-clients-page__table">
             <DataTable
               columns={clientColumns}
               data={clients}
@@ -279,8 +256,8 @@ export function OnlineShopClientsPage() {
                 void selectClient(client)
               }}
             />
-          </Stack>
-        </div>
+          </div>
+        </Card>
 
         <Card withBorder radius="md" padding="md" style={{ minWidth: 0, paddingTop: 0 }}>
           <Stack gap="md">

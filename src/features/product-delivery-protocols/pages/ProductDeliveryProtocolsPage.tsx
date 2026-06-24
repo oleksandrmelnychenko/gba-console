@@ -15,15 +15,12 @@ import {
   IconBuilding,
   IconCalendar,
   IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
   IconChevronUp,
   IconDownload,
   IconDots,
   IconFileTypePdf,
   IconPackageImport,
   IconPlus,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconTruckDelivery,
@@ -38,6 +35,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import { useAuth } from '../../auth/useAuth'
 import {
@@ -65,9 +64,6 @@ type FilterDraft = {
   supplier: string
   to: string
 }
-
-const DEFAULT_PAGE_SIZE = 30
-const PAGE_SIZE_OPTIONS = ['30', '50', '100', '150']
 
 type ProtocolSortId = 'comment' | 'created' | 'fromDate' | 'number' | 'organization' | 'responsible' | 'status' | 'suppliers'
 
@@ -122,7 +118,7 @@ function useProtocolsPageModel() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [hasMore, setHasMore] = useValueState(false)
   const [sortState, setSortState] = useValueState<ProtocolSortState>(null)
   const [downloadOpened, setDownloadOpened] = useValueState(false)
@@ -430,32 +426,18 @@ export function ProductDeliveryProtocolsPage() {
 
   return (
     <Stack className="product-delivery-protocols-page console-table-page" gap="md">
-      <PageHeaderActions>
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={model.isLoading}
-              size={38}
-              variant="light"
-              onClick={() => model.reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          {model.canCreate && (
-            <Button
-              color={CREATE_ACTION_COLOR}
-              size="sm"
-              leftSection={<IconPlus size={16} />}
-              onClick={model.openCreateModal}
-            >
-              {t('Додати')}
-            </Button>
-          )}
-        </Group>
-      </PageHeaderActions>
+      {model.canCreate && (
+        <PageHeaderActions>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={model.openCreateModal}
+          >
+            {t('Додати')}
+          </Button>
+        </PageHeaderActions>
+      )}
       <ProtocolsTableCard model={model} />
       <ProtocolOptionsModal
         canOpenIncome={model.canOpenIncome}
@@ -484,9 +466,9 @@ export function ProductDeliveryProtocolsPage() {
 function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPageModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, canExport, canMoveBackward, canMoveForward, canOpenOptions, error, exportDocument, filterDraft,
+    applyFilters, canExport, canOpenOptions, error, exportDocument, filterDraft,
     filterError, isDownloading, isLoading, openOptions, organizations, page, pageSize, protocols, reload,
-    resetFilters, setPage, setPageSize, setSortState, sortState, totalPages, totalQty,
+    resetFilters, setPage, setPageSize, setSortState, sortState, totalPages,
   } = model
   const organizationOptions = useMemo(
     () => [
@@ -505,12 +487,10 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
     [organizations, t],
   )
   const hasActiveFilters = Boolean(filterDraft.supplier.trim() || filterDraft.organization || filterDraft.from || filterDraft.to)
-  const visibleFrom = totalQty === 0 ? 0 : (page - 1) * pageSize + 1
-  const visibleTo = totalQty === 0 ? 0 : (page - 1) * pageSize + protocols.length
 
   return (
     <div className="console-table-shell">
-      <div className="product-delivery-protocols-command-bar">
+      <div className="app-filter-bar product-delivery-protocols-command-bar">
         <div className="product-delivery-protocols-period-filter">
           <span className="product-delivery-protocols-filter-label">{t('Період')}</span>
           <div className="product-delivery-protocols-period-fields">
@@ -552,20 +532,17 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
           onChange={(value) => applyFilters({ ...filterDraft, organization: value || '' })}
         />
 
-        <div className="product-delivery-protocols-command-actions">
-          <span className="console-table-summary">
-            {visibleFrom}-{visibleTo} / {totalQty}
-          </span>
+        <div className="app-filter-actions product-delivery-protocols-command-actions">
           <Tooltip label={t('Скинути')}>
             <ActionIcon
               aria-label={t('Скинути')}
               color="gray"
               disabled={!hasActiveFilters}
-              size={38}
+              size={34}
               variant="light"
               onClick={resetFilters}
             >
-              <IconRestore size={18} />
+              <IconRestore size={17} />
             </ActionIcon>
           </Tooltip>
           {canExport && (
@@ -575,7 +552,7 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
                 color="gray"
                 disabled={Boolean(filterError) || isDownloading}
                 loading={isDownloading}
-                size={38}
+                size={34}
                 variant="light"
                 onClick={exportDocument}
               >
@@ -583,50 +560,18 @@ function ProtocolsTableCard({ model }: { model: ReturnType<typeof useProtocolsPa
               </ActionIcon>
             </Tooltip>
           )}
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Select
-            aria-label={t('Розмір сторінки')}
-            className="product-delivery-protocols-page-size"
-            data={PAGE_SIZE_OPTIONS}
-            value={String(pageSize)}
-            onChange={(value) => {
+          <Paginator
+            isLoading={isLoading}
+            page={page}
+            pageSize={pageSize}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
               setPage(1)
-              setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-              reload()
+              setPageSize(nextPageSize)
             }}
+            onRefresh={() => reload()}
           />
-          <ActionIcon
-            aria-label={t('Попередня сторінка')}
-            color="gray"
-            disabled={!canMoveBackward || isLoading}
-            size={38}
-            variant="light"
-            onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-          >
-            <IconChevronLeft size={18} />
-          </ActionIcon>
-          <span className="product-delivery-protocols-current-page">{page}</span>
-          <ActionIcon
-            aria-label={t('Наступна сторінка')}
-            color="gray"
-            disabled={!canMoveForward || isLoading || page >= totalPages}
-            size={38}
-            variant="light"
-            onClick={() => setPage((currentPage) => currentPage + 1)}
-          >
-            <IconChevronRight size={18} />
-          </ActionIcon>
         </div>
       </div>
 

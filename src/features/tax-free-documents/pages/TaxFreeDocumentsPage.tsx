@@ -21,11 +21,9 @@ import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
   IconCash,
-  IconChevronLeft,
   IconChevronRight,
   IconEye,
   IconPrinter,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconTimeline,
@@ -39,7 +37,8 @@ import { DocumentOutcomePaymentModal } from '../../document-outcome-payment/comp
 import type { DocumentOutcomePaymentSource } from '../../document-outcome-payment/types'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   getTaxFreeCarrier,
   getTaxFreeDocuments,
@@ -65,8 +64,6 @@ import {
 import './tax-free-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'taxFreeDocumentFilters:v2'
-const PAGE_SIZE = 21
-const pageSizeOptions = ['21', '42', '63', '105']
 
 const EMPTY_TAX_FREE_ITEMS: TaxFreeItem[] = []
 
@@ -159,7 +156,7 @@ function useTaxFreeDocumentsPageModel() {
   const [carrierOptions, setCarrierOptions] = useValueState<Statham[]>([])
   const [selectedCarrierNetId, setSelectedCarrierNetId] = useValueState(restoredFilters.carrierNetId)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [selectedDocument, setSelectedDocument] = useValueState<TaxFreeDocument | null>(null)
   const [previewDocument, setPreviewDocument] = useValueState<TaxFreeDocument | null>(null)
@@ -173,7 +170,6 @@ function useTaxFreeDocumentsPageModel() {
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const selectedStatus = statusOptions.find((option) => option.value === statusValue)?.status ?? ''
-  const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : documents.length === pageSize
   const rows = useMemo(() => documents.map(mapTaxFreeDocumentRow), [documents])
   const openDocument = useCallback(
@@ -387,7 +383,6 @@ function useTaxFreeDocumentsPageModel() {
   }
 
   return {
-    canMoveBackward,
     canMoveForward,
     accountingDocument,
     carrierSearch,
@@ -444,7 +439,6 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
   const { t } = useI18n()
   const {
     accountingDocument,
-    canMoveBackward,
     canMoveForward,
     carrierSearch,
     carrierSelectOptions,
@@ -491,17 +485,9 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
 
   return (
     <Stack className="tax-free-documents-page" gap={6}>
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => reload()}>
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <>
-        <Stack className="tax-free-documents-page__stack" gap="xs">
-          <Group align="flex-end" gap="xs" wrap="nowrap" className="clients-filter-row">
+      <Card className="app-data-card tax-free-documents-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar tax-free-documents-filter-bar">
+          <Group align="flex-end" gap="xs" wrap="nowrap" className="tax-free-documents-filter-row">
             <TextInput
               label={t('Від')}
               type="date"
@@ -556,21 +542,41 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
               style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                hasNext={canMoveForward}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPage(1)
+                  setPageSize(nextPageSize)
+                }}
+                onRefresh={reload}
+              />
+            </div>
           </Group>
+        </div>
 
-          {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
+        {(error || filterError) && (
+          <Alert
+            className="tax-free-documents-page__alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {filterError || error}
+          </Alert>
+        )}
 
-          <div className="tax-free-documents-page__table">
-            <DataTable
+        <div className="tax-free-documents-page__table">
+          <DataTable
             columns={columns}
             data={rows}
             defaultLayout={DOCUMENTS_TABLE_DEFAULT_LAYOUT}
@@ -585,48 +591,9 @@ function TaxFreeDocumentsPageView({ model }: { model: ReturnType<typeof useTaxFr
             showDensityToggle={false}
             tableId="tax-free-documents"
             onRowClick={(row) => openDocument(row.document)}
-            />
-          </div>
-
-          <Group justify="flex-end" gap="sm">
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
-                  setPage(1)
-                  setPageSize(Number(value || PAGE_SIZE))
-                }}
-              />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBackward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" w={34} ta="center">
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
-          </Group>
-        </Stack>
-      </>
+          />
+        </div>
+      </Card>
 
       <TaxFreeDocumentDrawer
         carrierOptions={carrierSelectOptions}

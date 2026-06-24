@@ -1,0 +1,39 @@
+/* Rendered inside SalesDashboardShell (pill-tabs above), so fill the height the
+   shell gives us — same model as the reference .sales-ukraine-page — rather than
+   a fixed 100vh calc that ignores the tab bar and overflows the frame. */
+.resales-page {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Filter strip pinned at the top of the card; the table below it scrolls. */
+.resales-filter-bar {
+  flex: 0 0 auto;
+}
+
+.resales-filter-bar .resales-filter-row {
+  width: 100%;
+}
+
+.resales-page__alert {
+  margin: 12px 12px 0;
+}
+
+.resales-page__table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.resales-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.resales-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

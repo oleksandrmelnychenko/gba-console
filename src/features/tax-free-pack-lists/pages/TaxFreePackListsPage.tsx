@@ -3,8 +3,8 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
   Group,
-  Pagination,
   Stack,
   Text,
   TextInput,
@@ -16,7 +16,6 @@ import {
   IconDownload,
   IconEdit,
   IconPackageExport,
-  IconRefresh,
   IconRestore,
   IconTrash,
 } from '@tabler/icons-react'
@@ -27,7 +26,8 @@ import { formatLocalDate, SYNC_DATA_RANGE_START } from '../../../shared/date/dat
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
-import { PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   deleteTaxFreePackList,
   exportTaxFreePackLists,
@@ -44,7 +44,9 @@ import {
 } from '../utils'
 import './taxFreePackLists.css'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = PAGINATOR_PAGE_SIZE_OPTIONS
+const DEFAULT_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
+const PAGE_SIZE_STORAGE_KEY = 'gba-data-table:tax-free-pack-lists:page-size'
 const FILTER_STORAGE_KEY = 'taxFreePackListFilters:v2'
 
 const TABLE_DEFAULT_LAYOUT = {
@@ -85,6 +87,7 @@ type ListState = {
   filters: PackListFilters
   isLoading: boolean
   page: number
+  pageSize: number
   packLists: TaxFreePackList[]
   reloadKey: number
   totalQty?: number
@@ -94,6 +97,7 @@ type ListAction =
   | { type: 'filterChanged'; field: keyof PackListFilters; value: string }
   | { type: 'filtersReset'; filters: PackListFilters }
   | { type: 'pageChanged'; page: number }
+  | { type: 'pageSizeChanged'; pageSize: number }
   | { type: 'reloadRequested' }
   | { type: 'loadStarted' }
   | { type: 'loadSucceeded'; packLists: TaxFreePackList[]; totalQty?: number }
@@ -108,11 +112,13 @@ export function TaxFreePackListsPage() {
   const [deleteCandidate, setDeleteCandidate] = useState<TaxFreePackList | null>(null)
   const [orderPackList, setOrderPackList] = useState<TaxFreePackList | null>(null)
   const [isExporting, setExporting] = useState(false)
-  const { error, filters, isLoading, packLists, page, reloadKey, totalQty } = listState
+  const { error, filters, isLoading, packLists, page, pageSize, reloadKey, totalQty } = listState
   const filterError = filters.from > filters.to ? t('Початкова дата має бути не пізніше кінцевої') : null
-  const offset = (page - 1) * PAGE_SIZE
-  const totalPages = typeof totalQty === 'number' ? Math.max(1, Math.ceil(totalQty / PAGE_SIZE)) : page
-  const canMoveForward = typeof totalQty === 'number' ? page < totalPages : packLists.length === PAGE_SIZE
+  const offset = (page - 1) * pageSize
+  const canMoveForward = packLists.length === pageSize
+  const totalPages = typeof totalQty === 'number' && totalQty > 0
+    ? Math.max(1, Math.ceil(totalQty / pageSize))
+    : page + (canMoveForward ? 1 : 0)
   const columns = usePackListColumns({
     onDelete: setDeleteCandidate,
     onOpen: setSelectedPackList,
@@ -134,7 +140,7 @@ export function TaxFreePackListsPage() {
       try {
         const response = await getTaxFreePackLists({
           from: filters.from,
-          limit: PAGE_SIZE,
+          limit: pageSize,
           offset,
           to: filters.to,
         })
@@ -157,7 +163,7 @@ export function TaxFreePackListsPage() {
     return () => {
       cancelled = true
     }
-  }, [filters.from, filters.to, filterError, offset, reloadKey, t])
+  }, [filters.from, filters.to, filterError, offset, pageSize, reloadKey, t])
 
   function resetFilters() {
     dispatchList({ type: 'filtersReset', filters: getDefaultFilters() })
@@ -212,24 +218,9 @@ export function TaxFreePackListsPage() {
 
   return (
     <Stack className="tax-free-pack-lists-page" gap={6}>
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => dispatchList({ type: 'reloadRequested' })}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </PageHeaderActions>
-
-      <>
-        <Stack className="tax-free-pack-lists-page__stack" gap="xs">
-          <Group align="flex-end" gap="xs">
+      <Card className="app-data-card tax-free-pack-lists-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar tax-free-pack-lists-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="tax-free-pack-lists-filter-row">
             <TextInput
               label={t('Від')}
               type="date"
@@ -248,36 +239,53 @@ export function TaxFreePackListsPage() {
                 dispatchList({ type: 'filterChanged', field: 'to', value: event.currentTarget.value })
               }}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                variant="light"
-                color="violet"
-                size={36}
-                aria-label={t('Скинути')}
-                style={{ marginLeft: 'auto' }}
-                onClick={resetFilters}
-              >
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Button
-              leftSection={<IconDownload size={16} />}
-              loading={isExporting}
-              variant="light"
-              onClick={exportPackLists}
-            >
-              {t('Завантажити')}
-            </Button>
+            <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  variant="light"
+                  color="gray"
+                  size={34}
+                  aria-label={t('Скинути')}
+                  onClick={resetFilters}
+                >
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Завантажити')}>
+                <ActionIcon
+                  variant="default"
+                  size={34}
+                  aria-label={t('Завантажити')}
+                  loading={isExporting}
+                  onClick={exportPackLists}
+                >
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                totalPages={totalPages}
+                onPageChange={(nextPage) => dispatchList({ type: 'pageChanged', page: nextPage })}
+                onPageSizeChange={(nextPageSize) => {
+                  writeStoredPageSize(nextPageSize)
+                  dispatchList({ type: 'pageSizeChanged', pageSize: nextPageSize })
+                }}
+                onRefresh={() => dispatchList({ type: 'reloadRequested' })}
+              />
+            </div>
           </Group>
+        </div>
 
-          {(error || filterError) && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
+        {(error || filterError) && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError || error}
+          </Alert>
+        )}
 
-          <div className="tax-free-pack-lists-page__table">
-            <DataTable
+        <div className="tax-free-pack-lists-page__table">
+          <DataTable
             columns={columns}
             data={filterError ? [] : packLists}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
@@ -292,20 +300,9 @@ export function TaxFreePackListsPage() {
             showDensityToggle={false}
             tableId="tax-free-pack-lists"
             onRowClick={setSelectedPackList}
-            />
-          </div>
-
-          {(page > 1 || canMoveForward) && (
-            <Group justify="flex-end">
-              <Pagination
-                total={typeof totalQty === 'number' ? totalPages : canMoveForward ? page + 1 : page}
-                value={page}
-                onChange={(nextPage) => dispatchList({ type: 'pageChanged', page: nextPage })}
-              />
-            </Group>
-          )}
-        </Stack>
-      </>
+          />
+        </div>
+      </Card>
 
       <AppModal centered opened={Boolean(selectedPackList)} title={t('Оберіть дію')} onClose={() => setSelectedPackList(null)}>
         {selectedPackList && (
@@ -373,6 +370,7 @@ function createInitialListState(): ListState {
     filters,
     isLoading: false,
     page: 1,
+    pageSize: readStoredPageSize(),
     packLists: [],
     reloadKey: 0,
     totalQty: undefined,
@@ -400,6 +398,12 @@ function listReducer(state: ListState, action: ListAction): ListState {
       return {
         ...state,
         page: action.page,
+      }
+    case 'pageSizeChanged':
+      return {
+        ...state,
+        page: 1,
+        pageSize: action.pageSize,
       }
     case 'reloadRequested':
       return {
@@ -610,4 +614,24 @@ function writeStoredFilters(filters: ReturnType<typeof getDefaultFilters>) {
   } catch {
     // Ignore unavailable storage; filters still work for the current session.
   }
+}
+
+function readStoredPageSize() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PAGE_SIZE
+  }
+
+  return normalizePageSize(window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY))
+}
+
+function writeStoredPageSize(pageSize: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function normalizePageSize(value?: string | null) {
+  return PAGE_SIZE_OPTIONS.includes(value ?? '') ? Number(value) : DEFAULT_PAGE_SIZE
 }

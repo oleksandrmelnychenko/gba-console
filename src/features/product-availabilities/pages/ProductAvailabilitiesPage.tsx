@@ -13,11 +13,8 @@ import {
 import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconFileTypePdf,
-  IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
@@ -31,6 +28,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportProductAvailabilities,
   getProductAvailabilities,
@@ -42,6 +41,7 @@ import type {
   ProductPlacement,
   Storage,
 } from '../types'
+import './product-availabilities-page.css'
 
 const PRODUCT_AVAILABILITIES_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -50,7 +50,7 @@ const PRODUCT_AVAILABILITIES_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const pageSizeOptions = ['20', '40', '60', '100']
+const PRODUCT_AVAILABILITIES_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:product-availabilities:page-size'
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -70,7 +70,7 @@ function useProductAvailabilitiesPageModel() {
   const [searchValue, setSearchValue] = useValueState('')
   const [total, setTotal] = useValueState(0)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(20)
+  const [pageSize, setPageSize] = useValueState(readProductAvailabilityTablePageSize)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductAvailabilityExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
@@ -85,13 +85,19 @@ function useProductAvailabilitiesPageModel() {
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
-  const canMoveBack = page > 1
-  const canMoveForward = page * pageSize < total
+  const totalPages = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : page
   const resetAvailabilities = useCallback(() => {
     setAvailabilities([])
     setTotal(0)
     setLoading(false)
   }, [setAvailabilities, setLoading, setTotal])
+  const changePageSize = useCallback((value: string | null) => {
+    const nextPageSize = normalizeProductAvailabilityTablePageSize(value)
+
+    setPage(1)
+    setPageSize(nextPageSize)
+    writeProductAvailabilityTablePageSize(nextPageSize)
+  }, [setPage, setPageSize])
   const columns = useProductAvailabilityColumns()
   const toolbarLeft = useMemo(
     () =>
@@ -231,8 +237,7 @@ function useProductAvailabilitiesPageModel() {
 
   return {
     availabilities,
-    canMoveBack,
-    canMoveForward,
+    changePageSize,
     columns,
     dateFrom,
     dateTo,
@@ -250,7 +255,7 @@ function useProductAvailabilitiesPageModel() {
     selectedStorageNetId,
     storageOptions,
     toolbarLeft,
-    total,
+    totalPages,
     handleExport,
     reload,
     resetFilters,
@@ -258,7 +263,6 @@ function useProductAvailabilitiesPageModel() {
     setDateTo,
     setDownloadModalOpened,
     setPage,
-    setPageSize,
     setSelectedStorageNetId,
     toggleDensity,
     updateSearch,
@@ -275,8 +279,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
   const { t } = useI18n()
   const {
     availabilities,
-    canMoveBack,
-    canMoveForward,
+    changePageSize,
     columns,
     dateFrom,
     dateTo,
@@ -294,7 +297,7 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     selectedStorageNetId,
     storageOptions,
     toolbarLeft,
-    total,
+    totalPages,
     handleExport,
     reload,
     resetFilters,
@@ -302,48 +305,16 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
     setDateTo,
     setDownloadModalOpened,
     setPage,
-    setPageSize,
     setSelectedStorageNetId,
     toggleDensity,
     updateSearch,
   } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          <Tooltip label={t('Експорт')}>
-            <ActionIcon
-              aria-label={t('Експорт')}
-              color="gray"
-              disabled={!selectedStorageNetId || Boolean(filterError)}
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={handleExport}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack className="product-availabilities-page" gap={6}>
+      <Card className="app-data-card product-availabilities-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-availabilities-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-availabilities-filter-row">
             <Select
               searchable
               allowDeselect={false}
@@ -386,56 +357,51 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
               style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {(error || filterError || (!isLoadingStorages && storageOptions.length === 0)) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error || t('Складів не знайдено')}
-            </Alert>
-          )}
-
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Сторінка')} {page}
-              {total ? `, ${t('усього')}: ${total}` : ''}
-            </Text>
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
-                  setPage(1)
-                  setPageSize(Number(value || 20))
-                }}
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  color="gray"
+                  disabled={!selectedStorageNetId || Boolean(filterError)}
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={handleExport}
+                >
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Paginator
+                isLoading={isLoading || isLoadingStorages}
+                page={page}
+                pageSize={pageSize}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => changePageSize(String(nextPageSize))}
+                onRefresh={reload}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBack || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
+            </div>
           </Group>
+        </div>
 
+        {(error || filterError || (!isLoadingStorages && storageOptions.length === 0)) && (
+          <Alert
+            className="product-availabilities-page__alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {filterError || error || t('Складів не знайдено')}
+          </Alert>
+        )}
+
+        <div className="product-availabilities-page__table">
           <DataTable
             columns={columns}
             data={availabilities}
@@ -445,15 +411,15 @@ function ProductAvailabilitiesPageView({ model }: { model: ReturnType<typeof use
             getRowId={(availability, index) =>
               String(availability.Id || `${availability.ProductNetId || 'product'}-${availability.StorageNetId || 'storage'}-${index}`)
             }
+            height="100%"
             isLoading={isLoading || isLoadingStorages}
             layoutVersion="product-availabilities-table-1"
             loadingText={t('Завантаження доступності партій')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1680}
             tableId="product-availabilities"
             toolbarLeft={toolbarLeft}
           />
-        </Stack>
+        </div>
       </Card>
 
       <AppModal
@@ -608,6 +574,30 @@ function useProductAvailabilityColumns(): DataTableColumn<ConsignmentAvailabilit
     ],
     [],
   )
+}
+
+function readProductAvailabilityTablePageSize() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PAGINATOR_PAGE_SIZE
+  }
+
+  return normalizeProductAvailabilityTablePageSize(
+    window.localStorage.getItem(PRODUCT_AVAILABILITIES_TABLE_PAGE_SIZE_STORAGE_KEY),
+  )
+}
+
+function writeProductAvailabilityTablePageSize(pageSize: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(PRODUCT_AVAILABILITIES_TABLE_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function normalizeProductAvailabilityTablePageSize(value?: string | null) {
+  return PAGINATOR_PAGE_SIZE_OPTIONS.includes(value ?? '')
+    ? Number(value)
+    : DEFAULT_PAGINATOR_PAGE_SIZE
 }
 
 function getDefaultDateFrom(): string {

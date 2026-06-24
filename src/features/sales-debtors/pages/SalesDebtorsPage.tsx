@@ -1,19 +1,19 @@
-import { ActionIcon, Alert, Avatar, Button, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Avatar, Button, Select, Stack, Text, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
   IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
   IconChevronUp,
   IconFileDownload,
   IconUserDollar,
 } from '@tabler/icons-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportDebtorsDocument,
   getDebtorsManagers,
@@ -34,8 +34,6 @@ import type {
 import '../../../shared/ui/console-table-page.css'
 import './sales-debtors-page.css'
 
-const PAGE_SIZE = 20
-const pageSizeOptions = ['20', '40', '60', '100']
 const daysOptions = ['3', '5', '7', '10']
 
 const currencyCodeByType: Record<TypeOfCurrencyOfAgreementValue, string> = {
@@ -78,7 +76,7 @@ export function SalesDebtorsPage() {
   const [typeCurrency, setTypeCurrency] = useValueState<TypeOfCurrencyOfAgreementValue>(TypeOfCurrencyOfAgreement.None)
   const [days, setDays] = useValueState(3)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [managers, setManagers] = useValueState<DebtorsManagerOption[]>([])
   const [organizations, setOrganizations] = useValueState<DebtorsOrganizationOption[]>([])
   const [debtors, setDebtors] = useValueState<ClientDebtors>(emptyDebtors)
@@ -88,6 +86,7 @@ export function SalesDebtorsPage() {
   const [downloadDocument, setDownloadDocument] = useValueState<DebtorsDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [sortState, setSortState] = useValueState<DebtorsSortState>(null)
+  const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('sales-debtors', 'compact')
 
   const offset = (page - 1) * pageSize
@@ -180,7 +179,7 @@ export function SalesDebtorsPage() {
     return () => {
       cancelled = true
     }
-  }, [days, offset, organizationNetId, pageSize, setDebtors, setError, setLoading, t, typeAgreement, typeCurrency, userNetId])
+  }, [days, offset, organizationNetId, pageSize, reloadKey, setDebtors, setError, setLoading, t, typeAgreement, typeCurrency, userNetId])
 
   async function handleExport() {
     setExporting(true)
@@ -228,7 +227,7 @@ export function SalesDebtorsPage() {
       </PageHeaderActions>
 
       <div className="console-table-shell">
-        <div className="sales-debtors-command-bar">
+        <div className="sales-debtors-command-bar app-filter-bar">
           <Select
             clearable
             searchable
@@ -299,40 +298,20 @@ export function SalesDebtorsPage() {
               setDays(Number(value) || 3)
             }}
           />
-          <div className="sales-debtors-command-actions">
-            <Select
-              aria-label={t('Розмір сторінки')}
-              className="sales-debtors-page-size"
-              data={pageSizeOptions}
-              disabled={isLoading}
-              value={String(pageSize)}
-              onChange={(value) => {
-                setPage(1)
-                setPageSize(Number(value) || PAGE_SIZE)
-              }}
-            />
-            <ActionIcon
-              aria-label={t('Попередня сторінка')}
-              color="gray"
-              disabled={page <= 1 || isLoading}
-              size={34}
-              variant="light"
-              onClick={() => setPage((current) => Math.max(1, current - 1))}
-            >
-              <IconChevronLeft size={17} />
-            </ActionIcon>
-            <span className="sales-debtors-current-page">{page}</span>
-            <ActionIcon
-              aria-label={t('Наступна сторінка')}
-              color="gray"
-              disabled={page >= totalPages || isLoading}
-              size={34}
-              variant="light"
-              onClick={() => setPage((current) => current + 1)}
-            >
-              <IconChevronRight size={17} />
-            </ActionIcon>
+          <div className="app-filter-actions sales-debtors-command-actions">
             <DataTableDensityToggle density={density} onToggle={toggleDensity} size="sm" />
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
+              }}
+              onRefresh={reload}
+            />
           </div>
         </div>
 

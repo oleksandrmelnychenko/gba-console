@@ -4,7 +4,6 @@ import {
   Badge,
   Button,
   Group,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -13,12 +12,9 @@ import {
 import {
   IconAlertCircle,
   IconChevronDown,
-  IconChevronLeft,
-  IconChevronRight,
   IconChevronUp,
   IconFileText,
   IconEye,
-  IconRefresh,
   IconRestore,
   IconRoute,
   IconSearch,
@@ -30,6 +26,8 @@ import { SYNC_DATA_RANGE_START, formatLocalDate } from '../../../shared/date/dat
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { useAuth } from '../../auth/useAuth'
 import { getActProvidingServices } from '../api/actProvidingServicesApi'
 import type { ActProvidingService } from '../types'
@@ -37,8 +35,7 @@ import { toActProvidingServiceDisplayModel, type ActProvidingServiceDisplayModel
 import './act-providing-services-page.css'
 import '../../../shared/ui/console-table-page.css'
 
-const PAGE_SIZE = 20
-const pageSizeOptions = ['20', '40', '60', '100']
+const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 const PERMISSION_LOGISTIC_WAY = 'ActProvidingServices_SelectAnOption_LogisticWayBtn_PKEY'
 const PERMISSION_VIEW_ACT = 'ActProvidingServices_SelectAnOption_viewBtn_PKEY'
 
@@ -95,7 +92,6 @@ function useActProvidingServicesPageModel() {
     () => acts.map((act) => ({ ...toActProvidingServiceDisplayModel(act, t), act })),
     [acts, t],
   )
-  const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : hasMore
   const openSelectedRow = useCallback(
     (row: ActProvidingServiceRow) => {
@@ -174,7 +170,6 @@ function useActProvidingServicesPageModel() {
   }
 
   return {
-    canMoveBackward,
     canMoveForward,
     dateFrom,
     dateTo,
@@ -205,7 +200,6 @@ export function ActProvidingServicesPage() {
 function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useActProvidingServicesPageModel> }) {
   const { t } = useI18n()
   const {
-    canMoveBackward,
     canMoveForward,
     dateFrom,
     dateTo,
@@ -251,95 +245,66 @@ function ActProvidingServicesPageView({ model }: { model: ReturnType<typeof useA
   return (
     <Stack className="act-providing-services-page console-table-page" gap="md">
       <div className="console-table-shell">
-        <div className="act-services-command-bar">
-          <div className="act-services-period-filter">
-            <span className="act-services-filter-label">{t('Період')}</span>
-            <div className="act-services-period-fields">
-              <TextInput
-                className="act-services-date-input"
-                aria-label={t('Від')}
-                type="date"
-                value={dateFrom}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateFrom(event.currentTarget.value)
-                }}
-              />
-              <span className="act-services-period-separator" />
-              <TextInput
-                className="act-services-date-input"
-                aria-label={t('До')}
-                type="date"
-                value={dateTo}
-                onChange={(event) => {
-                  setPage(1)
-                  setDateTo(event.currentTarget.value)
-                }}
-              />
+        <div className="app-filter-bar">
+          <div className="act-services-filter-row">
+            <div className="act-services-period-filter">
+              <span className="act-services-filter-label">{t('Період')}</span>
+              <div className="act-services-period-fields">
+                <TextInput
+                  className="act-services-date-input"
+                  aria-label={t('Від')}
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => {
+                    setPage(1)
+                    setDateFrom(event.currentTarget.value)
+                  }}
+                />
+                <span className="act-services-period-separator" />
+                <TextInput
+                  className="act-services-date-input"
+                  aria-label={t('До')}
+                  type="date"
+                  value={dateTo}
+                  onChange={(event) => {
+                    setPage(1)
+                    setDateTo(event.currentTarget.value)
+                  }}
+                />
+              </div>
             </div>
-          </div>
 
-          <TextInput
-            className="act-services-search-input"
-            leftSection={<IconSearch size={15} />}
-            label={t('Пошук')}
-            placeholder={t('Номер, акт, інвойс, постачальник')}
-            value={searchValue}
-            onChange={(event) => {
-              setPage(1)
-              setSearchValue(event.currentTarget.value)
-            }}
-          />
-
-          <div className="act-services-command-actions">
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetPageFilters}>
-                <IconRestore size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={34}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={17} />
-              </ActionIcon>
-            </Tooltip>
-            <Select
-              aria-label={t('Розмір сторінки')}
-              className="act-services-page-size"
-              data={pageSizeOptions}
-              value={String(pageSize)}
-              onChange={(value) => {
+            <TextInput
+              className="act-services-search-input"
+              leftSection={<IconSearch size={15} />}
+              label={t('Пошук')}
+              placeholder={t('Номер, акт, інвойс, постачальник')}
+              value={searchValue}
+              onChange={(event) => {
                 setPage(1)
-                setPageSize(Number(value || PAGE_SIZE))
+                setSearchValue(event.currentTarget.value)
               }}
             />
-            <ActionIcon
-              aria-label={t('Попередня сторінка')}
-              color="gray"
-              disabled={!canMoveBackward || isLoading}
-              size={34}
-              variant="light"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-            >
-              <IconChevronLeft size={17} />
-            </ActionIcon>
-            <span className="act-services-current-page">{page}</span>
-            <ActionIcon
-              aria-label={t('Наступна сторінка')}
-              color="gray"
-              disabled={!canMoveForward || isLoading}
-              size={34}
-              variant="light"
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              <IconChevronRight size={17} />
-            </ActionIcon>
+
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetPageFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                hasNext={canMoveForward}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
+                  setPage(1)
+                  setPageSize(nextPageSize)
+                }}
+                onRefresh={reload}
+              />
+            </div>
           </div>
         </div>
 

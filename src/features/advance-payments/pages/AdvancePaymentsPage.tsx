@@ -1,17 +1,15 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Card,
   Group,
-  Select,
   Stack,
   Text,
   TextInput,
   Tooltip,
 } from '@mantine/core'
-import { IconAlertCircle, IconChevronLeft, IconChevronRight, IconRefresh, IconRestore } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { IconAlertCircle, IconRestore } from '@tabler/icons-react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -19,8 +17,11 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getAdvancePayments } from '../api/advancePaymentsApi'
 import type { AdvancePayment, User } from '../types'
+import './advance-payments-page.css'
 
 const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -29,8 +30,9 @@ const ADVANCE_PAYMENTS_TABLE_DEFAULT_LAYOUT = {
   density: 'normal',
 } satisfies DataTableDefaultLayout
 
-const PAGE_SIZE = 40
-const pageSizeOptions = ['20', '40', '60', '100']
+const ADVANCE_PAYMENTS_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:advance-payments:page-size'
+const DEFAULT_ADVANCE_PAYMENTS_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
+const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
 
 type AdvancePaymentsLoadState = {
   error: string | null
@@ -55,16 +57,22 @@ export function AdvancePaymentsPage() {
   const [fromDate, setFromDate] = useValueState(() => shiftMonth(-1))
   const [toDate, setToDate] = useValueState(() => formatLocalDate(new Date()))
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(PAGE_SIZE)
+  const [pageSize, setPageSize] = useValueState(readAdvancePaymentsPageSize)
   const [loadState, dispatchLoadState] = useReducer(advancePaymentsLoadReducer, INITIAL_ADVANCE_PAYMENTS_LOAD_STATE)
   const { error, isLoading, payments } = loadState
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const filterError = getDateRangeError(fromDate, toDate)
   const offset = (page - 1) * pageSize
-  const canMoveBackward = page > 1
   const canMoveForward = payments.length === pageSize
   const columns = useAdvancePaymentColumns()
   const { density, toggleDensity } = useDataTableDensity('advance-payments', 'normal')
+  const changePageSize = useCallback((value: string | null) => {
+    const nextPageSize = normalizeAdvancePaymentsPageSize(value)
+
+    setPage(1)
+    setPageSize(nextPageSize)
+    writeAdvancePaymentsPageSize(nextPageSize)
+  }, [setPage, setPageSize])
 
   useEffect(() => {
     let isActive = true
@@ -115,36 +123,15 @@ export function AdvancePaymentsPage() {
   }
 
   return (
-    <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="space-between" wrap="wrap">
-            <div>
-              <Text fw={700} size="xl">
-                {t('Зарахування авансу')}
-              </Text>
-            </div>
-
-            <Group gap="xs">
-              <Tooltip label={t('Скинути')}>
-                <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                  <IconRestore size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-            </Group>
-          </Group>
-
-          <Group align="end" gap="sm">
+    <Stack className="advance-payments-page" gap={6}>
+      <Card className="app-data-card advance-payments-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar advance-payments-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="advance-payments-filter-row">
             <TextInput
               label={t('Від якої дати')}
               type="date"
               value={fromDate}
+              w={170}
               onChange={(event) => {
                 setPage(1)
                 setFromDate(event.currentTarget.value)
@@ -154,29 +141,45 @@ export function AdvancePaymentsPage() {
               label={t('До якої дати')}
               type="date"
               value={toDate}
+              w={170}
               onChange={(event) => {
                 setPage(1)
                 setToDate(event.currentTarget.value)
               }}
             />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Paginator
+                hasNext={canMoveForward}
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => changePageSize(String(nextPageSize))}
+                onRefresh={reload}
+              />
+            </div>
           </Group>
+        </div>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-          {filterError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError}
-            </Alert>
-          )}
+        {filterError && (
+          <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
 
-          <Badge color="blue" variant="light" w="fit-content">
-            {t('Сторінка')}: {page}, {t('завантажено')}: {payments.length}
-          </Badge>
-
+        <div className="advance-payments-page__table">
           <DataTable
             columns={columns}
             data={payments}
@@ -184,49 +187,13 @@ export function AdvancePaymentsPage() {
             density={density}
             emptyText={t('Немає даних за вибраний період')}
             getRowId={(payment, index) => String(payment.NetUid || payment.Id || payment.Number || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="advance-payments-table-1"
-            maxHeight="calc(100vh - 310px)"
             minWidth={1080}
             tableId="advance-payments"
           />
-
-          <Group justify="flex-end" gap="sm">
-            <Select
-              aria-label={t('Розмір сторінки')}
-              data={pageSizeOptions}
-              value={String(pageSize)}
-              w={84}
-              onChange={(value) => {
-                setPage(1)
-                setPageSize(Number(value || PAGE_SIZE))
-              }}
-            />
-            <ActionIcon
-              aria-label={t('Попередня сторінка')}
-              color="gray"
-              disabled={!canMoveBackward || isLoading}
-              size={36}
-              variant="light"
-              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-            >
-              <IconChevronLeft size={18} />
-            </ActionIcon>
-            <Text size="sm" ta="center" w={34}>
-              {page}
-            </Text>
-            <ActionIcon
-              aria-label={t('Наступна сторінка')}
-              color="gray"
-              disabled={!canMoveForward || isLoading}
-              size={36}
-              variant="light"
-              onClick={() => setPage((currentPage) => currentPage + 1)}
-            >
-              <IconChevronRight size={18} />
-            </ActionIcon>
-          </Group>
-        </Stack>
+        </div>
       </Card>
     </Stack>
   )
@@ -313,6 +280,26 @@ function shiftMonth(months: number): string {
   date.setMonth(date.getMonth() + months)
 
   return formatLocalDate(date)
+}
+
+function readAdvancePaymentsPageSize(): number {
+  if (typeof window === 'undefined') {
+    return DEFAULT_ADVANCE_PAYMENTS_PAGE_SIZE
+  }
+
+  return normalizeAdvancePaymentsPageSize(window.localStorage.getItem(ADVANCE_PAYMENTS_PAGE_SIZE_STORAGE_KEY))
+}
+
+function writeAdvancePaymentsPageSize(pageSize: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(ADVANCE_PAYMENTS_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function normalizeAdvancePaymentsPageSize(value?: string | null): number {
+  return pageSizeOptions.includes(value ?? '') ? Number(value) : DEFAULT_ADVANCE_PAYMENTS_PAGE_SIZE
 }
 
 function advancePaymentsLoadReducer(

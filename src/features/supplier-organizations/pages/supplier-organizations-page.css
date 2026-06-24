@@ -17,15 +17,9 @@
   --supplier-organizations-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
-  height: 85px;
-  padding: 12px;
 }
 
 .supplier-organizations-period-filter,
@@ -78,9 +72,7 @@
 .supplier-organizations-date-input .mantine-Input-wrapper,
 .supplier-organizations-date-input .mantine-Input-input,
 .supplier-organizations-search-input .mantine-Input-wrapper,
-.supplier-organizations-search-input .mantine-TextInput-input,
-.supplier-organizations-page-size .mantine-Input-wrapper,
-.supplier-organizations-page-size .mantine-Input-input {
+.supplier-organizations-search-input .mantine-TextInput-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
@@ -91,9 +83,7 @@
 }
 
 .supplier-organizations-date-input .mantine-Input-wrapper,
-.supplier-organizations-date-input .mantine-Input-input,
-.supplier-organizations-page-size .mantine-Input-wrapper,
-.supplier-organizations-page-size .mantine-Input-input {
+.supplier-organizations-date-input .mantine-Input-input {
   font-size: 12.5px;
   font-weight: 520;
   letter-spacing: 0;
@@ -117,35 +107,6 @@
   font-weight: 520;
   letter-spacing: 0;
   line-height: 1.2;
-}
-
-.supplier-organizations-command-actions {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.supplier-organizations-page-size {
-  flex: 0 0 84px;
-  width: 84px;
-}
-
-.supplier-organizations-current-page {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 12px;
-  font-weight: 680;
-  height: 30px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 34px;
 }
 
 .supplier-organizations-list {
@@ -483,10 +444,5 @@
   .supplier-organizations-command-bar {
     align-items: stretch;
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
-  }
-
-  .supplier-organizations-command-actions {
-    justify-content: flex-start;
   }
 }

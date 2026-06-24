@@ -8,7 +8,6 @@ import {
   MultiSelect,
   Popover,
   ScrollArea,
-  Select,
   Stack,
   Table,
   Text,
@@ -18,11 +17,7 @@ import {
 import { AppModal } from "../../../shared/ui/AppModal"
 import {
   IconAlertCircle,
-  IconChevronLeft,
-  IconChevronRight,
-  IconDownload,
   IconFileTypePdf,
-  IconRefresh,
   IconRestore,
   IconSearch,
 } from '@tabler/icons-react'
@@ -34,6 +29,8 @@ import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
@@ -45,6 +42,7 @@ import type {
   ProductHistoryPlacement,
   ProductHistoryStorage,
 } from '../types'
+import './product-history-page.css'
 
 const PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -54,7 +52,6 @@ const PRODUCT_HISTORY_TABLE_DEFAULT_LAYOUT = {
 } satisfies DataTableDefaultLayout
 
 const SEARCH_DEBOUNCE_MS = 200
-const pageSizeOptions = ['20', '40', '60', '100']
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 3,
 })
@@ -77,7 +74,7 @@ function useProductHistoryPageModel() {
   const searchValue = debouncedSearchDraft.trim()
   const [total, setTotal] = useValueState<number | undefined>(undefined)
   const [page, setPage] = useValueState(1)
-  const [pageSize, setPageSize] = useValueState(20)
+  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGINATOR_PAGE_SIZE)
   const [error, setError] = useValueState<string | null>(null)
   const [downloadDocument, setDownloadDocument] = useValueState<ProductHistoryExportDocument | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
@@ -90,7 +87,6 @@ function useProductHistoryPageModel() {
   const filterError = getFilterError(dateTo, selectedStorageIds)
   const selectedStorageIdNumbers = useMemo(() => parseStorageIds(selectedStorageIds), [selectedStorageIds])
   const storageOptions = useMemo(() => buildStorageOptions(storages), [storages])
-  const canMoveBack = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : historyItems.length === pageSize
   const columns = useProductHistoryColumns(selectedStorageIdNumbers, historyItems, offset)
   const toolbarLeft = useMemo(
@@ -257,7 +253,6 @@ function useProductHistoryPageModel() {
   }
 
   return {
-    canMoveBack,
     canMoveForward,
     columns,
     dateTo,
@@ -276,7 +271,6 @@ function useProductHistoryPageModel() {
     selectedStorageIds,
     storageOptions,
     toolbarLeft,
-    total,
     handleExport,
     reload,
     resetFilters,
@@ -299,7 +293,6 @@ export function ProductHistoryPage() {
 function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProductHistoryPageModel> }) {
   const { t } = useI18n()
   const {
-    canMoveBack,
     canMoveForward,
     columns,
     dateTo,
@@ -318,7 +311,6 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
     selectedStorageIds,
     storageOptions,
     toolbarLeft,
-    total,
     handleExport,
     reload,
     resetFilters,
@@ -333,41 +325,10 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
   const noStorages = !isLoadingStorages && storageOptions.length === 0
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          <Tooltip label={t('Експорт')}>
-            <ActionIcon
-              aria-label={t('Експорт')}
-              color="gray"
-              disabled={Boolean(filterError)}
-              loading={isExporting}
-              size={38}
-              variant="light"
-              onClick={handleExport}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack className="product-history-page" gap={6}>
+      <Card className="app-data-card product-history-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-history-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-history-filter-row">
             <MultiSelect
               searchable
               clearable
@@ -401,56 +362,53 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
               style={{ flex: '1 1 220px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {(error || filterError || noStorages) && (
-            <Alert color={filterError && !noStorages ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {noStorages ? t('Складів не знайдено') : filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="space-between" gap="sm">
-            <Text size="sm" c="dimmed">
-              {t('Сторінка')} {page}
-              {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
-            </Text>
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  variant="default"
+                  size={34}
+                  disabled={Boolean(filterError)}
+                  loading={isExporting}
+                  onClick={handleExport}
+                >
+                  <ExcelIcon size={22} />
+                </ActionIcon>
+              </Tooltip>
+              <Paginator
+                isLoading={isLoading || isLoadingStorages}
+                page={page}
+                pageSize={pageSize}
+                hasNext={canMoveForward}
+                onPageChange={setPage}
+                onPageSizeChange={(nextPageSize) => {
                   setPage(1)
-                  setPageSize(Number(value || 20))
+                  setPageSize(nextPageSize)
                 }}
+                onRefresh={() => reload()}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBack || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                variant="light"
-                onClick={() => setPage((currentPage) => currentPage + 1)}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-            </Group>
+            </div>
           </Group>
+        </div>
 
+        {(error || filterError || noStorages) && (
+          <Alert
+            className="product-history-page__alert"
+            color={filterError && !noStorages ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {noStorages ? t('Складів не знайдено') : filterError || error}
+          </Alert>
+        )}
+
+        <div className="product-history-page__table">
           <DataTable
             columns={columns}
             data={historyItems}
@@ -460,15 +418,15 @@ function ProductHistoryPageView({ model }: { model: ReturnType<typeof useProduct
             getRowId={(historyItem, index) =>
               String(historyItem.NetUid || historyItem.Id || `${historyItem.Product?.VendorCode || 'product'}-${index}`)
             }
+            height="100%"
             isLoading={isLoading || isLoadingStorages}
             layoutVersion="product-history-table-2"
             loadingText={t('Завантаження історії товарів')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1420}
             tableId="product-history"
             toolbarLeft={toolbarLeft}
           />
-        </Stack>
+        </div>
       </Card>
 
       <AppModal

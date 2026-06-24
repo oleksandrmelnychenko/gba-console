@@ -1003,8 +1003,8 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
         </Group>
       ) : null}
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <Select
               searchable
@@ -1039,41 +1039,45 @@ function ProductStoragesPageView({ model }: { model: ReturnType<typeof useProduc
               style={{ flex: '1 1 240px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Експорт')}>
-              <ActionIcon
-                aria-label={t('Експорт')}
-                color="gray"
-                disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
-                loading={isExporting}
-                size={36}
-                variant="light"
-                onClick={handleExport}
-              >
-                <IconDownload size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading || isLoadingStorages}
-                size={36}
-                variant="light"
-                onClick={() => {
-                  closeStorageActions()
-                  reload()
-                }}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <div className="app-filter-actions">
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  color="gray"
+                  disabled={!selectedStorageNetId || Boolean(filterError) || isExporting}
+                  loading={isExporting}
+                  size={34}
+                  variant="light"
+                  onClick={handleExport}
+                >
+                  <IconDownload size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading || isLoadingStorages}
+                  size={34}
+                  variant="light"
+                  onClick={() => {
+                    closeStorageActions()
+                    reload()
+                  }}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
           </Group>
+        </div>
 
+        <Stack gap="md" className="product-storages-body">
           {(filterError || error || (!isLoadingStorages && storageOptions.length === 0)) && (
             <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {filterError ? t(filterError) : error || t('Складів не знайдено')}

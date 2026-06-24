@@ -15,12 +15,8 @@
   --supply-orders-label-height: 17px;
 }
 
-.supply-ukraine-orders-command-bar {
+.supply-ukraine-orders-filter-bar {
   align-items: end;
-  background:
-    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 10px;
   grid-template-columns:
@@ -29,16 +25,13 @@
     minmax(132px, 156px)
     minmax(156px, 190px)
     auto;
-  min-height: 85px;
-  padding: 12px;
 }
 
 .supply-ukraine-orders-period-filter,
 .supply-ukraine-orders-date-input,
 .supply-ukraine-orders-search-input,
 .supply-ukraine-orders-currency-filter,
-.supply-ukraine-orders-type-filter,
-.supply-ukraine-orders-page-size {
+.supply-ukraine-orders-type-filter {
   min-width: 0;
 }
 
@@ -83,9 +76,7 @@
 .supply-ukraine-orders-currency-filter .mantine-Input-wrapper,
 .supply-ukraine-orders-currency-filter .mantine-Input-input,
 .supply-ukraine-orders-type-filter .mantine-Input-wrapper,
-.supply-ukraine-orders-type-filter .mantine-Input-input,
-.supply-ukraine-orders-page-size .mantine-Input-wrapper,
-.supply-ukraine-orders-page-size .mantine-Input-input {
+.supply-ukraine-orders-type-filter .mantine-Input-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
@@ -123,70 +114,6 @@
   font-weight: 520;
   letter-spacing: 0;
   line-height: 1.2;
-}
-
-.supply-ukraine-orders-command-actions {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.supply-ukraine-orders-summary-pill {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-7);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 680;
-  height: 30px;
-  line-height: 1;
-  padding: 0 10px;
-  white-space: nowrap;
-}
-
-.supply-ukraine-orders-summary-pill.is-to-ukraine {
-  background: #fff8f2;
-  border-color: #ffd8bd;
-  color: #c95716;
-}
-
-.supply-ukraine-orders-summary-pill.is-direct {
-  background: var(--mantine-color-blue-0);
-  border-color: var(--mantine-color-blue-1);
-  color: var(--mantine-color-blue-8);
-}
-
-.supply-ukraine-orders-command-pagination {
-  align-items: center;
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 6px;
-}
-
-.supply-ukraine-orders-page-size {
-  flex: 0 0 78px;
-  width: 78px;
-}
-
-.supply-ukraine-orders-current-page {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 12px;
-  font-weight: 680;
-  height: 30px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 34px;
 }
 
 .supply-ukraine-orders-table {
@@ -873,22 +800,22 @@
 }
 
 @media (max-width: 1320px) {
-  .supply-ukraine-orders-command-bar {
+  .supply-ukraine-orders-filter-bar {
     grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) 150px 180px;
   }
 
-  .supply-ukraine-orders-command-actions {
+  .supply-ukraine-orders-filter-bar .app-filter-actions {
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
 }
 
 @media (max-width: 780px) {
-  .supply-ukraine-orders-command-bar {
+  .supply-ukraine-orders-filter-bar {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .supply-ukraine-orders-command-actions {
+  .supply-ukraine-orders-filter-bar .app-filter-actions {
     align-items: flex-start;
     flex-wrap: wrap;
   }

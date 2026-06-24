@@ -10,21 +10,15 @@
   min-height: 0;
 }
 
-.act-services-command-bar {
+.act-services-filter-row {
   --act-services-command-control-height: 36px;
   --act-services-command-label-gap: 4px;
   --act-services-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 34%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
-  height: 85px;
-  padding: 12px;
+  grid-template-columns: minmax(340px, 430px) minmax(280px, 1fr) auto;
 }
 
 .act-services-period-filter {
@@ -81,9 +75,7 @@
 .act-services-date-input .mantine-Input-wrapper,
 .act-services-date-input .mantine-Input-input,
 .act-services-search-input .mantine-Input-wrapper,
-.act-services-search-input .mantine-TextInput-input,
-.act-services-page-size .mantine-Input-wrapper,
-.act-services-page-size .mantine-Input-input {
+.act-services-search-input .mantine-TextInput-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
@@ -94,9 +86,7 @@
 }
 
 .act-services-date-input .mantine-Input-wrapper,
-.act-services-date-input .mantine-Input-input,
-.act-services-page-size .mantine-Input-wrapper,
-.act-services-page-size .mantine-Input-input {
+.act-services-date-input .mantine-Input-input {
   font-size: 12.5px;
   font-weight: 520;
 }
@@ -105,35 +95,6 @@
 .act-services-search-input .mantine-TextInput-input {
   font-size: 13px;
   font-weight: 500;
-}
-
-.act-services-command-actions {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.act-services-page-size {
-  flex: 0 0 84px;
-  width: 84px;
-}
-
-.act-services-current-page {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 12px;
-  font-weight: 680;
-  height: 30px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 34px;
 }
 
 .act-services-list {
@@ -400,12 +361,12 @@
 }
 
 @media (max-width: 980px) {
-  .act-services-command-bar {
+  .act-services-filter-row {
     align-items: stretch;
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .act-services-command-actions {
+  .act-services-filter-row .app-filter-actions {
     justify-content: flex-start;
     overflow-x: auto;
   }

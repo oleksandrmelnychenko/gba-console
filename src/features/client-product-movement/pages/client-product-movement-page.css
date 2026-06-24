@@ -1,0 +1,32 @@
+/* Rendered inside SalesDashboardShell (pill-tabs above), so fill the height the
+   shell gives us — same model as the reference .sales-ukraine-page — rather than
+   a fixed 100vh calc that ignores the tab bar and overflows the frame. */
+.client-product-movement-page {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.client-product-movement-page__alert {
+  margin: 12px 12px 0;
+}
+
+.client-product-movement-page__table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Direct-child selectors so the nested detail-row table keeps its own
+   maxHeight scroll and is not stretched by the page fill-height model. */
+.client-product-movement-page__table > .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.client-product-movement-page__table > .data-table > .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

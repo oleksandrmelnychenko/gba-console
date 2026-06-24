@@ -8,7 +8,6 @@ import {
   Card,
   Divider,
   Group,
-  Select,
   Stack,
   Text,
   TextInput,
@@ -21,7 +20,6 @@ import {
   IconDownload,
   IconEye,
   IconFileTypePdf,
-  IconRefresh,
   IconRestore,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -33,20 +31,22 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportSupplyReturnDocument,
   getSupplyReturnByNetId,
   getSupplyReturns,
 } from '../api/supplyReturnsApi'
 import type { SupplyReturn, SupplyReturnExportDocument, SupplyReturnItem } from '../types'
+import './supply-returns-page.css'
 
 type FilterDraft = {
   from: string
   to: string
 }
 
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = ['20', '40', '60', '100']
+const SUPPLY_RETURNS_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:supply-returns:page-size'
 
 const SUPPLY_RETURNS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -94,23 +94,22 @@ function useSupplyReturnsPageModel() {
   const [isDownloading, setDownloading] = useValueState(false)
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
-  const [isLoadingMore, setLoadingMore] = useValueState(false)
-  const [pageSize, setPageSize] = useValueState(DEFAULT_PAGE_SIZE)
-  const [hasMore, setHasMore] = useValueState(false)
-  const [, setTotalQty] = useValueState(0)
+  const [page, setPage] = useValueState(1)
+  const [pageSize, setPageSize] = useValueState(readSupplyReturnsPageSize)
+  const [totalQty, setTotalQty] = useValueState(0)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const detailRequestRef = useRef(0)
   const downloadRequestRef = useRef(0)
   const filterError = getFilterError(activeFilters.from, activeFilters.to)
-  const listRequestKey = `${activeFilters.from}|${activeFilters.to}|${pageSize}`
-  const listRequestKeyRef = useRef(listRequestKey)
+  const canMoveForward = supplyReturns.length === pageSize
+  const totalPages =
+    totalQty > 0 ? Math.max(1, Math.ceil(totalQty / pageSize)) : page + (canMoveForward ? 1 : 0)
   const resetSupplyReturns = useCallback(() => {
     setSupplyReturns([])
-    setHasMore(false)
     setTotalQty(0)
     setLoading(false)
     setSelectedReturn(null)
-  }, [setHasMore, setLoading, setSelectedReturn, setSupplyReturns, setTotalQty])
+  }, [setLoading, setSelectedReturn, setSupplyReturns, setTotalQty])
 
   const closeDownload = useCallback(() => {
     downloadRequestRef.current += 1
@@ -201,95 +200,44 @@ function useSupplyReturnsPageModel() {
   const returnIndexMap = useMemo(() => buildIndexMap(supplyReturns), [supplyReturns])
   const columns = useSupplyReturnColumns(openDetail, returnIndexMap)
 
-  const toolbarRight = useMemo(
-    () => (
-      <Group gap={6} wrap="nowrap">
-        <Select
-          aria-label={t('Кількість рядків')}
-          data={PAGE_SIZE_OPTIONS}
-          size="xs"
-          value={String(pageSize)}
-          w={88}
-          onChange={(value) => {
-            setPageSize(Number(value || DEFAULT_PAGE_SIZE))
-            reload()
-          }}
-        />
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size="sm"
-            variant="subtle"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={16} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-    ),
-    [isLoading, pageSize, setPageSize, t],
-  )
+  const changePageSize = useCallback(
+    (value: number) => {
+      const nextPageSize = normalizeSupplyReturnsPageSize(String(value))
 
-  useEffect(() => {
-    listRequestKeyRef.current = listRequestKey
-  }, [listRequestKey])
+      setPage(1)
+      setPageSize(nextPageSize)
+      writeSupplyReturnsPageSize(nextPageSize)
+    },
+    [setPage, setPageSize],
+  )
 
   useSupplyReturnsLoader({
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetSupplyReturns,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     setSupplyReturns,
   })
 
   function applyFilters(nextFilters: FilterDraft) {
+    setPage(1)
     setFilterDraft(nextFilters)
     setActiveFilters(nextFilters)
   }
 
   function resetFilters() {
+    setPage(1)
     setFilterDraft(initialFilters)
     setActiveFilters(initialFilters)
   }
 
-  async function loadMoreSupplyReturns() {
-    const requestKey = listRequestKeyRef.current
-    const requestOffset = supplyReturns.length
-    setLoadingMore(true)
-    setError(null)
-
-    try {
-      const result = await getSupplyReturns({
-        from: activeFilters.from,
-        limit: pageSize,
-        offset: requestOffset,
-        to: activeFilters.to,
-      })
-
-      if (listRequestKeyRef.current === requestKey) {
-        setSupplyReturns((current) => (current.length === requestOffset ? [...current, ...result.items] : current))
-        setTotalQty(result.totalQty)
-        setHasMore(requestOffset + result.items.length < result.totalQty && result.items.length > 0)
-      }
-    } catch (loadError) {
-      if (listRequestKeyRef.current === requestKey) {
-        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити наступні повернення'))
-      }
-    } finally {
-      if (listRequestKeyRef.current === requestKey) {
-        setLoadingMore(false)
-      }
-    }
-  }
-
   return {
+    changePageSize,
     columns,
     detailError,
     downloadDocument,
@@ -298,44 +246,44 @@ function useSupplyReturnsPageModel() {
     error,
     filterDraft,
     filterError,
-    hasMore,
     isDetailLoading,
     isDownloading,
     isLoading,
-    isLoadingMore,
+    page,
+    pageSize,
     selectedReturn,
     supplyReturns,
-    toolbarRight,
+    totalPages,
     applyFilters,
     closeDetail,
     closeDownload,
-    loadMoreSupplyReturns,
     openDetail,
     openDownload,
     reload,
     resetFilters,
+    setPage,
   }
 }
 
 function useSupplyReturnsLoader({
   activeFilters,
   filterError,
+  page,
   pageSize,
   reloadKey,
   resetSupplyReturns,
   setError,
-  setHasMore,
   setLoading,
   setTotalQty,
   setSupplyReturns,
 }: {
   activeFilters: FilterDraft
   filterError: string | null
+  page: number
   pageSize: number
   reloadKey: number
   resetSupplyReturns: () => void
   setError: (value: string | null) => void
-  setHasMore: (value: boolean) => void
   setLoading: (value: boolean) => void
   setTotalQty: (value: number) => void
   setSupplyReturns: (value: SupplyReturn[]) => void
@@ -358,19 +306,17 @@ function useSupplyReturnsLoader({
         const result = await getSupplyReturns({
           from: activeFilters.from,
           limit: pageSize,
-          offset: 0,
+          offset: (page - 1) * pageSize,
           to: activeFilters.to,
         })
 
         if (!cancelled) {
           setSupplyReturns(result.items)
           setTotalQty(result.totalQty)
-          setHasMore(result.items.length < result.totalQty && result.items.length > 0)
         }
       } catch (loadError) {
         if (!cancelled) {
           setSupplyReturns([])
-          setHasMore(false)
           setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити повернення постачальникам'))
         }
@@ -389,11 +335,11 @@ function useSupplyReturnsLoader({
   }, [
     activeFilters,
     filterError,
+    page,
     pageSize,
     reloadKey,
     resetSupplyReturns,
     setError,
-    setHasMore,
     setLoading,
     setTotalQty,
     setSupplyReturns,
@@ -409,7 +355,7 @@ export function SupplyReturnsPage() {
 
 function SupplyReturnsPageView({ model }: { model: ReturnType<typeof useSupplyReturnsPageModel> }) {
   return (
-    <Stack gap="lg">
+    <Stack className="supply-returns-page" gap={6}>
       <SupplyReturnsTableCard model={model} />
       <SupplyReturnDetailDrawer model={model} />
     </Stack>
@@ -419,26 +365,27 @@ function SupplyReturnsPageView({ model }: { model: ReturnType<typeof useSupplyRe
 function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyReturnsPageModel> }) {
   const { t } = useI18n()
   const {
+    changePageSize,
     columns,
     error,
     filterDraft,
     filterError,
-    hasMore,
     isLoading,
-    isLoadingMore,
     openDetail,
-    loadMoreSupplyReturns,
+    page,
+    pageSize,
     reload,
     resetFilters,
     applyFilters,
-    toolbarRight,
     supplyReturns,
+    totalPages,
+    setPage,
   } = model
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Card className="app-data-card supply-returns-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar supply-returns-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="supply-returns-filter-row">
           <TextInput
             label={t('Від якої дати')}
             max={filterDraft.to || undefined}
@@ -453,55 +400,52 @@ function SupplyReturnsTableCard({ model }: { model: ReturnType<typeof useSupplyR
             value={filterDraft.to}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={36}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Paginator
+              isLoading={isLoading}
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={changePageSize}
+              onRefresh={reload}
+            />
+          </div>
         </Group>
+      </div>
 
-        {(error || filterError) && (
-          <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-            {filterError || error}
-          </Alert>
-        )}
+      {(error || filterError) && (
+        <Alert
+          className="supply-returns-page__alert"
+          color={filterError ? 'yellow' : 'red'}
+          icon={<IconAlertCircle size={18} />}
+          variant="light"
+        >
+          {filterError || error}
+        </Alert>
+      )}
 
+      <div className="supply-returns-page__table">
         <DataTable
           columns={columns}
           data={supplyReturns}
           defaultLayout={SUPPLY_RETURNS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Повернень не знайдено')}
           getRowId={(supplyReturn, index) => String(supplyReturn.NetUid || supplyReturn.Id || index)}
+          height="100%"
           isLoading={isLoading}
           layoutVersion="supply-returns-table-1"
           loadingText={t('Завантаження повернень')}
-          maxHeight="calc(100vh - 340px)"
           minWidth={1660}
           tableId="supply-returns"
-          toolbarRight={toolbarRight}
           onRowClick={openDetail}
         />
-
-        {hasMore && (
-          <Group justify="center">
-            <Button color="gray" loading={isLoadingMore} variant="light" onClick={loadMoreSupplyReturns}>
-              {t('Завантажити ще')}
-            </Button>
-          </Group>
-        )}
-      </Stack>
+      </div>
     </Card>
   )
 }
@@ -921,6 +865,26 @@ function buildIndexMap(supplyReturns: SupplyReturn[]): Map<SupplyReturn, number>
 
     return indexMap
   }, new Map<SupplyReturn, number>())
+}
+
+function readSupplyReturnsPageSize() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PAGINATOR_PAGE_SIZE
+  }
+
+  return normalizeSupplyReturnsPageSize(window.localStorage.getItem(SUPPLY_RETURNS_PAGE_SIZE_STORAGE_KEY))
+}
+
+function writeSupplyReturnsPageSize(pageSize: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(SUPPLY_RETURNS_PAGE_SIZE_STORAGE_KEY, String(pageSize))
+}
+
+function normalizeSupplyReturnsPageSize(value?: string | null) {
+  return PAGINATOR_PAGE_SIZE_OPTIONS.includes(value ?? '') ? Number(value) : DEFAULT_PAGINATOR_PAGE_SIZE
 }
 
 function getFilterError(from: string, to: string): string | null {

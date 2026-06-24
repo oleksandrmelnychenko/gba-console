@@ -696,8 +696,8 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
   )
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
+    <Card className="app-filter-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar">
         <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
           <Select
             data={organizationOptions}
@@ -732,34 +732,36 @@ function AvailablePaymentsTableCard({ model }: { model: ReturnType<typeof useAva
             style={{ flex: '0 0 auto' }}
             onChange={(event) => applyFilters({ ...filterDraft, to: event.currentTarget.value })}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon
-              aria-label={t('Скинути')}
-              color="gray"
-              size={36}
-              style={{ flex: '0 0 auto' }}
-              variant="light"
-              onClick={resetFilters}
-            >
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={36}
-              style={{ flex: '0 0 auto' }}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+          <div className="app-filter-actions" style={{ marginLeft: 'auto' }}>
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                size={34}
+                variant="light"
+                onClick={resetFilters}
+              >
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+          </div>
         </Group>
+      </div>
 
+      <Stack gap="md" p="md">
         {(error || filterError || organizationsError) && (
           <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
             {filterError || error || organizationsError}

@@ -1,3 +1,8 @@
+/* Body region below the shared filter bar keeps the original card padding. */
+.product-storages-body {
+  padding: 16px;
+}
+
 /* Storages grid styled with the shared SEO roster look (online-shop-seo-page.css). */
 
 /* Keep the header aligned with the body during horizontal scroll and pinned on vertical scroll. */

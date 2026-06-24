@@ -17,15 +17,10 @@
   --protocols-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(320px, 380px) minmax(280px, 1fr) minmax(220px, 270px) auto;
   height: 85px;
-  padding: 12px;
 }
 
 .product-delivery-protocols-period-filter,
@@ -85,9 +80,7 @@
 .product-delivery-protocols-search-input .mantine-Input-wrapper,
 .product-delivery-protocols-search-input .mantine-TextInput-input,
 .product-delivery-protocols-organization-select .mantine-Input-wrapper,
-.product-delivery-protocols-organization-select .mantine-Input-input,
-.product-delivery-protocols-page-size .mantine-Input-wrapper,
-.product-delivery-protocols-page-size .mantine-Input-input {
+.product-delivery-protocols-organization-select .mantine-Input-input {
   border-color: var(--mantine-color-gray-2);
   border-radius: 8px;
   color: var(--mantine-color-gray-8);
@@ -100,9 +93,7 @@
 .product-delivery-protocols-date-input .mantine-Input-wrapper,
 .product-delivery-protocols-date-input .mantine-Input-input,
 .product-delivery-protocols-organization-select .mantine-Input-wrapper,
-.product-delivery-protocols-organization-select .mantine-Input-input,
-.product-delivery-protocols-page-size .mantine-Input-wrapper,
-.product-delivery-protocols-page-size .mantine-Input-input {
+.product-delivery-protocols-organization-select .mantine-Input-input {
   font-size: 12.5px;
   font-weight: 520;
   letter-spacing: 0;
@@ -134,27 +125,6 @@
   gap: 7px;
   justify-content: flex-end;
   min-width: 0;
-}
-
-.product-delivery-protocols-page-size {
-  flex: 0 0 84px;
-  width: 84px;
-}
-
-.product-delivery-protocols-current-page {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 12px;
-  font-weight: 680;
-  height: 30px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 34px;
 }
 
 .product-delivery-protocols-list {

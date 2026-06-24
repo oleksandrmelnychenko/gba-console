@@ -8,136 +8,14 @@
   flex: 1 1 auto;
 }
 
-.suppliers-command-bar {
-  --suppliers-command-control-height: 36px;
-  --suppliers-command-label-gap: 4px;
-  --suppliers-command-label-height: 17px;
-
-  align-items: end;
-  background:
-    radial-gradient(640px 280px at 0% -35%, rgba(232, 120, 46, 0.09), rgba(232, 120, 46, 0) 68%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(260px, 1fr) 190px 122px 180px auto auto auto;
-  padding: 12px;
-}
-
-.suppliers-search-input,
-.suppliers-field-select,
-.suppliers-status-select {
-  min-width: 0;
-}
-
-.suppliers-command-bar .mantine-InputWrapper-label {
-  color: var(--mantine-color-gray-7);
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  height: var(--suppliers-command-label-height);
-  letter-spacing: 0;
-  line-height: 1.2;
-  margin-bottom: var(--suppliers-command-label-gap);
-}
-
-.suppliers-command-bar .mantine-Input-wrapper,
-.suppliers-command-bar .mantine-Input-input,
-.suppliers-command-bar .mantine-Button-root,
-.suppliers-command-bar .mantine-ActionIcon-root {
-  border-color: var(--mantine-color-gray-2);
-  border-radius: 8px;
-  font-family: inherit;
-  height: var(--suppliers-command-control-height);
-  min-height: var(--suppliers-command-control-height);
-}
-
-.suppliers-command-bar .mantine-Input-input,
-.suppliers-command-bar .mantine-Button-label {
-  color: var(--mantine-color-gray-8);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.2;
-}
-
-.suppliers-command-bar .mantine-Button-root {
-  width: 180px;
-}
-
-.suppliers-command-pagination {
-  align-items: center;
-  display: flex;
-  gap: 7px;
-  justify-content: flex-end;
-  min-width: 0;
-}
-
-.suppliers-command-pagination .mantine-Group-root {
-  flex: 0 0 84px;
-  gap: 0;
-  min-width: 84px;
-}
-
-.suppliers-command-pagination .mantine-Text-root {
-  display: none;
-}
-
-.suppliers-page-size,
-.suppliers-page-size .mantine-Input-wrapper,
-.suppliers-page-size .mantine-Input-input {
-  width: 84px;
-}
-
-.suppliers-page-size .mantine-Input-wrapper,
-.suppliers-page-size .mantine-Input-input,
-.suppliers-command-pagination .mantine-ActionIcon-root {
-  height: 38px;
-  min-height: 38px;
-}
-
-.suppliers-page-size .mantine-Input-input {
-  color: var(--mantine-color-gray-8);
-  font-size: 12.5px;
-  font-weight: 520;
-  letter-spacing: 0;
-}
-
-.suppliers-command-pagination .mantine-ActionIcon-root {
-  flex: 0 0 38px;
-  width: 38px;
-}
-
-.suppliers-current-page {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  flex: 0 0 34px;
-  font-size: 12px;
-  font-weight: 680;
-  height: 30px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 34px;
-}
-
-.suppliers-total-count {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-6);
-  display: inline-flex;
+/* Filter strip pinned at the top of the shell; the list below it scrolls.
+   The warm glow, divider and compact input treatment come from .app-filter-bar. */
+.suppliers-filter-bar {
   flex: 0 0 auto;
-  font-size: 11.5px;
-  font-weight: 620;
-  height: 30px;
-  line-height: 1;
-  padding: 0 10px;
-  white-space: nowrap;
+}
+
+.suppliers-filter-bar .suppliers-filter-row {
+  width: 100%;
 }
 
 .suppliers-page__table {
@@ -535,38 +413,4 @@
     border-color 140ms ease,
     color 140ms ease;
   width: 28px;
-}
-
-@media (max-width: 1100px) {
-  .suppliers-command-bar {
-    grid-template-columns: minmax(220px, 1fr) 180px 122px;
-  }
-
-  .suppliers-command-pagination {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-
-  .suppliers-command-bar .mantine-Button-root,
-  .suppliers-command-bar .mantine-ActionIcon-root {
-    width: 100%;
-  }
-
-  .suppliers-command-pagination .mantine-ActionIcon-root {
-    width: 38px;
-  }
-}
-
-@media (max-width: 720px) {
-  .suppliers-command-bar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .suppliers-command-bar .mantine-Button-root {
-    width: 100%;
-  }
-
-  .suppliers-command-pagination .mantine-ActionIcon-root {
-    width: 38px;
-  }
 }

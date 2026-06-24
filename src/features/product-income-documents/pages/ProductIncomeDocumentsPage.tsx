@@ -7,7 +7,6 @@ import {
   Card,
   Divider,
   Group,
-  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -18,14 +17,11 @@ import {
 import {
   IconAlertCircle,
   IconArrowsExchange,
-  IconChevronLeft,
-  IconChevronRight,
   IconDownload,
   IconExternalLink,
   IconEye,
   IconFileTypePdf,
   IconHistory,
-  IconRefresh,
   IconRestore,
   IconSearch,
   IconStack2,
@@ -43,6 +39,8 @@ import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import { Paginator } from '../../../shared/ui/paginator/Paginator'
+import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   ProductMovementHistoryDrawer,
   ProductStorageLocationHistoryDrawer,
@@ -77,11 +75,11 @@ import type {
   ProductIncomeItem,
   RemainingConsignment,
 } from '../types'
+import './product-income-documents-page.css'
 
 const FILTER_STORAGE_KEY = 'documentsFilters'
 const PRODUCT_MOVEMENT_PERMISSION = 'Product_Entire_Assortment_Product_Movement_Btn_PKEY'
-const PAGE_SIZE = 20
-const pageSizeOptions = ['20', '40', '60', '100']
+const PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 const DOCUMENTS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -168,19 +166,12 @@ function useProductIncomeDocumentsPageModel() {
   const { documents, isLoading, total } = documentsState
   const offset = (page - 1) * pageSize
   const filterError = getFilterError(dateFrom, dateTo)
-  const canMoveBackward = page > 1
   const canMoveForward = typeof total === 'number' ? page * pageSize < total : documents.length === pageSize
+  const totalPages =
+    typeof total === 'number' && total > 0
+      ? Math.max(1, Math.ceil(total / pageSize))
+      : page + (canMoveForward ? 1 : 0)
   const canOpenProductMovement = hasPermission(PRODUCT_MOVEMENT_PERMISSION)
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Сторінка')} {page}
-        {typeof total === 'number' ? `, ${t('усього')}: ${total}` : ''}
-        {searchValue ? `, ${t('пошук')}: ${searchValue}` : ''}
-      </Text>
-    ),
-    [page, searchValue, t, total],
-  )
 
   const openOptions = useCallback(
     (document: ProductIncomeDocument) => {
@@ -534,8 +525,6 @@ function useProductIncomeDocumentsPageModel() {
   }
 
   return {
-    canMoveBackward,
-    canMoveForward,
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
@@ -566,7 +555,7 @@ function useProductIncomeDocumentsPageModel() {
     searchDraft,
     selectedDocument,
     storageLocationHistoryProduct,
-    toolbarLeft,
+    totalPages,
     clearTransientSelection,
     closeDetails,
     handleExport,
@@ -597,8 +586,6 @@ export function ProductIncomeDocumentsPage() {
 function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof useProductIncomeDocumentsPageModel> }) {
   const { t } = useI18n()
   const {
-    canMoveBackward,
-    canMoveForward,
     capitalization,
     capitalizationError,
     capitalizationItemColumns,
@@ -629,7 +616,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
     searchDraft,
     selectedDocument,
     storageLocationHistoryProduct,
-    toolbarLeft,
+    totalPages,
     clearTransientSelection,
     closeDetails,
     handleExport,
@@ -651,30 +638,12 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
   } = model
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            disabled={isLoading}
-            loading={isLoading}
-            size={38}
-            variant="light"
-            onClick={() => {
-              clearTransientSelection()
-              reload()
-            }}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack className="product-income-documents-page" gap={6}>
+      <Card className="app-data-card product-income-documents-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-income-documents-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-income-documents-filter-row">
             <TextInput
+              size="sm"
               label={t('Від')}
               type="date"
               value={dateFrom}
@@ -686,6 +655,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               }}
             />
             <TextInput
+              size="sm"
               label={t('До')}
               type="date"
               value={dateTo}
@@ -697,6 +667,7 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               }}
             />
             <TextInput
+              size="sm"
               leftSection={<IconSearch size={16} />}
               label={t('Пошук')}
               placeholder={t('Номер, постачальник або коментар')}
@@ -704,65 +675,48 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
               style={{ flex: '1 1 260px' }}
               onChange={(event) => updateSearch(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-
-          {(error || filterError) && (
-            <Alert color={filterError ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError || error}
-            </Alert>
-          )}
-
-          <Group justify="flex-end" gap="sm">
-            <Group gap="xs">
-              <Select
-                aria-label={t('Розмір сторінки')}
-                data={pageSizeOptions}
-                value={String(pageSize)}
-                w={84}
-                onChange={(value) => {
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+              <Paginator
+                isLoading={isLoading}
+                page={page}
+                pageSize={pageSize}
+                totalPages={totalPages}
+                onPageChange={(nextPage) => {
+                  clearTransientSelection()
+                  setPage(nextPage)
+                }}
+                onPageSizeChange={(nextPageSize) => {
                   clearTransientSelection()
                   setPage(1)
-                  setPageSize(Number(value || PAGE_SIZE))
+                  setPageSize(nextPageSize)
+                }}
+                onRefresh={() => {
+                  clearTransientSelection()
+                  reload()
                 }}
               />
-              <ActionIcon
-                aria-label={t('Попередня сторінка')}
-                color="gray"
-                disabled={!canMoveBackward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => {
-                  clearTransientSelection()
-                  setPage((currentPage) => Math.max(1, currentPage - 1))
-                }}
-              >
-                <IconChevronLeft size={18} />
-              </ActionIcon>
-              <Text size="sm" w={34} ta="center">
-                {page}
-              </Text>
-              <ActionIcon
-                aria-label={t('Наступна сторінка')}
-                color="gray"
-                disabled={!canMoveForward || isLoading}
-                size={36}
-                variant="light"
-                onClick={() => {
-                  clearTransientSelection()
-                  setPage((currentPage) => currentPage + 1)
-                }}
-              >
-                <IconChevronRight size={18} />
-              </ActionIcon>
-              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
-            </Group>
+            </div>
           </Group>
+        </div>
 
+        {(error || filterError) && (
+          <Alert
+            className="product-income-documents-page__alert"
+            color={filterError ? 'yellow' : 'red'}
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {filterError || error}
+          </Alert>
+        )}
+
+        <div className="product-income-documents-page__table">
           <DataTable
             columns={columns}
             data={rows}
@@ -770,16 +724,15 @@ function ProductIncomeDocumentsPageView({ model }: { model: ReturnType<typeof us
             density={density}
             emptyText={t('Документів не знайдено')}
             getRowId={(row, index) => String(row.document.NetUid || row.document.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="product-income-documents-table-2"
             loadingText={t('Завантаження документів')}
-            maxHeight="calc(100vh - 330px)"
             minWidth={1440}
             tableId="product-income-documents"
-            toolbarLeft={toolbarLeft}
             onRowClick={(row) => openOptions(row.document)}
           />
-        </Stack>
+        </div>
       </Card>
 
       <ProductIncomeOptionsModal
