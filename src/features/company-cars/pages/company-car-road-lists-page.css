@@ -1,35 +1,36 @@
-.organization-clients-page {
+.company-car-road-lists-page {
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
 }
 
 /* Filter strip pinned at the top of the card; the table below it scrolls. */
-.organization-clients-filter-bar {
+.company-car-road-lists-filter-bar {
   flex: 0 0 auto;
 }
 
-.organization-clients-filter-bar .clients-filter-row {
+.company-car-road-lists-filter-row {
   width: 100%;
 }
 
-.organization-clients-page__alert {
-  margin: 10px 10px 0;
+/* Keep the car identity on the left; push the date filters + actions cluster to the trailing edge. */
+.company-car-road-lists-identity {
+  margin-right: auto;
 }
 
-.organization-clients-page__table {
+.company-car-road-lists-page__table {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.organization-clients-page__table .data-table {
+.company-car-road-lists-page__table .data-table {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
 }
 
-.organization-clients-page__table .data-table-scroll {
+.company-car-road-lists-page__table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
 }

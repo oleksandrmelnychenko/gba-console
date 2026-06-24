@@ -159,7 +159,7 @@ export function ConsumableOrdersPage() {
       </PageHeaderActions>
 
       <div className="console-table-shell">
-        <div className="consumable-orders-command-bar">
+        <div className="app-filter-bar consumable-orders-command-bar">
           <div className="consumable-orders-period-filter">
             <span className="consumable-orders-filter-label">{t('Період')}</span>
             <div className="consumable-orders-period-fields">
@@ -189,22 +189,22 @@ export function ConsumableOrdersPage() {
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-          <div className="consumable-orders-command-actions">
+          <div className="app-filter-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}
                 color="gray"
                 disabled={!hasActiveFilters}
-                size={38}
+                size={34}
                 variant="light"
                 onClick={resetFilters}
               >
-                <IconRestore size={18} />
+                <IconRestore size={17} />
               </ActionIcon>
             </Tooltip>
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={() => void loadOrders()}>
-                <IconRefresh size={18} />
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={() => void loadOrders()}>
+                <IconRefresh size={17} />
               </ActionIcon>
             </Tooltip>
           </div>

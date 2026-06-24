@@ -26,6 +26,7 @@ import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui
 import { getProductSpecifications, uploadSpecificationCodesFile } from '../api/productSpecificationCodesApi'
 import { ChangeProductSpecificationPanel } from '../components/ChangeProductSpecificationPanel'
 import type { ProductSpecification, ProductSpecificationRegion, SpecificationCodeUploadResult } from '../types'
+import './product-specification-codes-page.css'
 
 const BATCH_SIZE = 30
 const SEARCH_DEBOUNCE_MS = 250
@@ -202,42 +203,17 @@ export function ProductSpecificationCodesPage() {
 
   return (
     <Stack gap="lg">
-      <Group justify="space-between" align="end">
-        <SegmentedControl
-          data={[
-            { label: t('Україна'), value: 'uk' },
-            { label: t('Польща'), value: 'pl' },
-          ]}
-          value={model.region}
-          onChange={(value) => model.setRegion(value as ProductSpecificationRegion)}
-        />
-        <Group gap="sm">
-          <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
-            {(props) => (
-              <Button {...props} leftSection={<IconUpload size={16} />} loading={isUploading} variant="light">
-                {t('Завантажити Excel')}
-              </Button>
-            )}
-          </FileButton>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={model.isLoading}
-              size={38}
-              variant="light"
-              onClick={() => model.reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="product-specification-codes-filter-row">
+            <SegmentedControl
+              data={[
+                { label: t('Україна'), value: 'uk' },
+                { label: t('Польща'), value: 'pl' },
+              ]}
+              value={model.region}
+              onChange={(value) => model.setRegion(value as ProductSpecificationRegion)}
+            />
             <TextInput
               label={t('Код товару')}
               leftSection={<IconSearch size={16} />}
@@ -254,13 +230,37 @@ export function ProductSpecificationCodesPage() {
               value={model.specificationCodeDraft}
               onChange={(event) => model.setSpecificationCodeDraft(event.currentTarget.value)}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={model.resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <div className="app-filter-actions">
+              <FileButton accept=".xlsx,.xls,.csv" onChange={handleUpload}>
+                {(props) => (
+                  <Button {...props} leftSection={<IconUpload size={16} />} loading={isUploading} variant="light">
+                    {t('Завантажити Excel')}
+                  </Button>
+                )}
+              </FileButton>
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={model.resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={model.isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => model.reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
+            </div>
           </Group>
+        </div>
 
+        <Stack gap="md" className="product-specification-codes-body">
           {model.error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {model.error}

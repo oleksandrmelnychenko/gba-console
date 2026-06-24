@@ -4,6 +4,7 @@ import {
   Anchor,
   Box,
   Button,
+  Card,
   Group,
   Stack,
   Text,
@@ -41,6 +42,7 @@ import {
 } from '../api/taxFreeCarriersApi'
 import { TAX_FREE_CARRIER_MANAGE_PERMISSION, TAX_FREE_CARRIER_PRINT_PERMISSION } from '../permissions'
 import type { TaxFreeCarrier, TaxFreeCarrierExportColumn, TaxFreeCarrierExportDocument } from '../types'
+import './tax-free-carriers-page.css'
 
 const CARRIERS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -233,25 +235,13 @@ export function TaxFreeCarriersPage() {
 
   return (
     <Stack gap={6}>
-      <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={model.isLoading}
-            size={38}
-            variant="light"
-            onClick={() => model.reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
-        {model.canManage && (
+      {model.canManage && (
+        <PageHeaderActions>
           <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={model.openCreate}>
             {t('Додати')}
           </Button>
-        )}
-      </PageHeaderActions>
+        </PageHeaderActions>
+      )}
       <CarriersTableCard model={model} />
       <CarriersDeleteModal model={model} />
       <CarriersDownloadModal model={model} />
@@ -263,13 +253,15 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
   const { t } = useI18n()
   const {
     canPrint, columns, carriers, error, exportDocument, isDownloading, isLoading,
-    openEdit, resetSearch, searchDraft, updateSearchDraft,
+    openEdit, reload, resetSearch, searchDraft, updateSearchDraft,
   } = model
 
   return (
-    <Stack gap="xs">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Card className="app-data-card tax-free-carriers-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar tax-free-carriers-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="tax-free-carriers-filter-row">
           <TextInput
+            size="sm"
             label={t('Пошук')}
             leftSection={<IconSearch size={16} />}
             placeholder={t('Прізвище')}
@@ -277,23 +269,42 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
             style={{ flex: '1 1 auto', minWidth: 180 }}
             onChange={(event) => updateSearchDraft(event.currentTarget.value)}
           />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon variant="light" color="violet" size={36} aria-label={t('Скинути')} onClick={resetSearch}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          {canPrint && (
-            <Button
-              leftSection={<IconDownload size={16} />}
-              loading={isDownloading}
-              variant="light"
-              onClick={exportDocument}
-            >
-              {t('Завантажити')}
-            </Button>
-          )}
+          <div className="app-filter-actions">
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetSearch}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={reload}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            {canPrint && (
+              <Tooltip label={t('Завантажити')}>
+                <ActionIcon
+                  aria-label={t('Завантажити')}
+                  variant="default"
+                  size={34}
+                  loading={isDownloading}
+                  onClick={exportDocument}
+                >
+                  <IconDownload size={17} />
+                </ActionIcon>
+              </Tooltip>
+            )}
+          </div>
         </Group>
+      </div>
 
+      <Stack className="tax-free-carriers-card__body" gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
@@ -315,6 +326,7 @@ function CarriersTableCard({ model }: { model: ReturnType<typeof useTaxFreeCarri
           onRowClick={openEdit}
         />
       </Stack>
+    </Card>
   )
 }
 

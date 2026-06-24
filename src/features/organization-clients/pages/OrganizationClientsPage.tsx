@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Card,
   Group,
   Stack,
   Text,
@@ -147,16 +148,6 @@ export function OrganizationClientsPage() {
     ],
     [openClient, t],
   )
-  const toolbarLeft = useMemo(
-    () =>
-      searchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {searchValue}
-        </Text>
-      ) : null,
-    [searchValue, t],
-  )
-
   useEffect(() => {
     const state = location.state as { mutated?: boolean } | null
 
@@ -211,19 +202,6 @@ export function OrganizationClientsPage() {
   return (
     <Stack className="organization-clients-page" gap={6}>
       <PageHeaderActions>
-        <Tooltip label={t('Оновити')}>
-          <ActionIcon
-            aria-label={t('Оновити')}
-            color="gray"
-            loading={isLoading}
-            size={38}
-            type="button"
-            variant="light"
-            onClick={() => reload()}
-          >
-            <IconRefresh size={18} />
-          </ActionIcon>
-        </Tooltip>
         <Button
           color={CREATE_ACTION_COLOR}
           size="sm"
@@ -241,32 +219,54 @@ export function OrganizationClientsPage() {
           {t('Нова організація')}
         </Button>
       </PageHeaderActions>
-      <Stack gap={6}>
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-          <TextInput
-            leftSection={<IconSearch size={16} />}
-            label={t('Пошук')}
-            placeholder={t('Назва організації')}
-            value={searchDraft}
-            onChange={(event) => updateSearch(event.currentTarget.value)}
-            style={{ flex: '1 1 auto', minWidth: 160 }}
-          />
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon
-              aria-label={t('Скинути')}
-              color="violet"
-              size={36}
-              style={{ flex: '0 0 auto' }}
-              variant="light"
-              onClick={resetSearch}
-            >
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+
+      <Card className="app-data-card organization-clients-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar organization-clients-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+            <TextInput
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Назва організації')}
+              value={searchDraft}
+              onChange={(event) => updateSearch(event.currentTarget.value)}
+              style={{ flex: '1 1 auto', minWidth: 160 }}
+            />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  type="button"
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={resetSearch}
+                >
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
+          </Group>
+        </div>
 
         {error && (
-          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert
+            className="organization-clients-page__alert"
+            color="red"
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
             {error}
           </Alert>
         )}
@@ -286,11 +286,10 @@ export function OrganizationClientsPage() {
             minWidth={1120}
             showDensityToggle={false}
             tableId="organization-clients"
-            toolbarLeft={toolbarLeft}
             onRowClick={openClient}
           />
         </div>
-      </Stack>
+      </Card>
     </Stack>
   )
 }

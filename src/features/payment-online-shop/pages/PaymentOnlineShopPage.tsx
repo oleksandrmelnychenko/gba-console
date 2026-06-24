@@ -29,6 +29,7 @@ import type {
   PaymentShopItem,
   RetailClientPaymentImageItem,
 } from '../types'
+import './payment-online-shop-page.css'
 
 const EMPTY_FILTERS: PaymentShopFilters = {
   saleDateFrom: '',
@@ -157,19 +158,10 @@ function usePaymentOnlineShopModel() {
 
   const columns = usePaymentShopColumns(openDetail, createIncomeOrder)
 
-  const toolbarLeft = useMemo(
-    () => (
-      <Text size="xs" c="dimmed">
-        {t('Завантажених')} {items.length}
-      </Text>
-    ),
-    [items.length, t],
-  )
-
   return {
     activeFilters, applyFilters, closeDetail, columns, createError, density, editError, editItem, error, filterDraft,
     handleAddPayment, handleEditPayment, isCreating, isLoading, isSaving, items, openDetail, reload, resetFilters,
-    selectedItem, setEditItem, setFilterDraft, toggleDensity, toolbarLeft,
+    selectedItem, setEditItem, setFilterDraft, toggleDensity,
   }
 }
 
@@ -268,14 +260,15 @@ export function PaymentOnlineShopPage() {
 function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOnlineShopModel> }) {
   const { t } = useI18n()
   const {
-    applyFilters, columns, density, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toggleDensity, toolbarLeft,
+    applyFilters, columns, density, error, filterDraft, isLoading, items, openDetail, reload, resetFilters, setFilterDraft, toggleDensity,
   } = model
 
   return (
-    <Card withBorder radius="md" padding="md">
-      <Stack gap="md">
-        <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Card className="app-data-card payment-online-shop-card" withBorder radius="md" padding={0}>
+      <div className="app-filter-bar payment-online-shop-filter-bar">
+        <Group align="end" gap="sm" wrap="nowrap" className="payment-online-shop-filter-row">
           <TextInput
+            size="sm"
             label={t('Продажа')}
             placeholder={t('Номер')}
             value={filterDraft.saleNumber}
@@ -283,6 +276,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             style={{ flex: '1 1 auto', minWidth: 180 }}
           />
           <TextInput
+            size="sm"
             label={t('Від якої дати')}
             max={filterDraft.saleDateTo || undefined}
             type="date"
@@ -290,6 +284,7 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             onChange={(event) => setFilterDraft({ ...filterDraft, saleDateFrom: event.currentTarget.value })}
           />
           <TextInput
+            size="sm"
             label={t('До якої дати')}
             min={filterDraft.saleDateFrom || undefined}
             type="date"
@@ -297,36 +292,41 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
             onChange={(event) => setFilterDraft({ ...filterDraft, saleDateTo: event.currentTarget.value })}
           />
           <TextInput
+            size="sm"
             label={t('Клієнт')}
             placeholder={t('Телефон')}
             value={filterDraft.phoneNumber}
             onChange={(event) => setFilterDraft({ ...filterDraft, phoneNumber: event.currentTarget.value })}
           />
-          <Tooltip label={t('Пошук')}>
-            <ActionIcon aria-label={t('Пошук')} color="violet" size={36} variant="light" onClick={applyFilters}>
-              <IconSearch size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Скинути')}>
-            <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-              <IconRestore size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isLoading}
-              size={36}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+          <div className="app-filter-actions">
+            <Tooltip label={t('Пошук')}>
+              <ActionIcon aria-label={t('Пошук')} color="violet" size={34} variant="light" onClick={applyFilters}>
+                <IconSearch size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                <IconRestore size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Оновити')}>
+              <ActionIcon
+                aria-label={t('Оновити')}
+                color="gray"
+                loading={isLoading}
+                size={34}
+                variant="light"
+                onClick={() => reload()}
+              >
+                <IconRefresh size={17} />
+              </ActionIcon>
+            </Tooltip>
+            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+          </div>
         </Group>
+      </div>
 
+      <Stack className="payment-online-shop-card__body" gap="md">
         {error && (
           <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
@@ -346,7 +346,6 @@ function PaymentShopTableCard({ model }: { model: ReturnType<typeof usePaymentOn
           maxHeight="calc(100vh - 320px)"
           minWidth={1620}
           tableId="payment-online-shop"
-          toolbarLeft={toolbarLeft}
           onRowClick={openDetail}
         />
       </Stack>

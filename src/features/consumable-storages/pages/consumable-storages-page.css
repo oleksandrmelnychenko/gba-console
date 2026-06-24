@@ -1,0 +1,18 @@
+/* Consumable storages list — chrome aligned with the «Продажі» reference.
+   The page loads all storages and filters them client-side (no pagination),
+   so only the filter strip + card shell are aligned; the table keeps its own
+   natural scroll model. */
+.consumable-storages-filter-row {
+  width: 100%;
+}
+
+/* Pin the refresh action to the trailing edge of the wrapping filter row. */
+.consumable-storages-filter-actions {
+  margin-left: auto;
+}
+
+/* Body below the flush filter strip carries its own padding (the card is
+   padding={0} so the strip can sit flush). */
+.consumable-storages-card__body {
+  padding: 12px;
+}

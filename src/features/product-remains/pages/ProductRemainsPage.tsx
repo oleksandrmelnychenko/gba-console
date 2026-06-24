@@ -66,6 +66,7 @@ import {
   getSupplierDisplayName,
   getVendorCode,
 } from '../utils'
+import './product-remains-page.css'
 
 type ProductRemainsTab = 'batches' | 'products'
 
@@ -715,45 +716,10 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
   const isWarningAlert = Boolean(filterError || (!resourceError && activeTab === 'products' && productStorageError))
 
   return (
-    <Stack gap="lg">
-      <Group justify="flex-end" align="end">
-        <Group gap="xs">
-          <Tooltip label={t('Експорт')}>
-              <ActionIcon
-                aria-label={t('Експорт')}
-                color="gray"
-                disabled={Boolean(exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid))}
-                loading={exportingTab === activeTab}
-                size={38}
-              variant="light"
-              onClick={handleExport}
-            >
-              <IconDownload size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isActiveLoading || isLoadingStorages}
-              size={38}
-              variant="light"
-              onClick={refreshData}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle
-            density={activeTab === 'batches' ? batchDensity : productDensity}
-            onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
-            size={38}
-          />
-        </Group>
-      </Group>
-
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
+    <Stack gap="md">
+      <Card className="app-data-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row product-remains-filter-row">
             <Select
               searchable
               allowDeselect={false}
@@ -814,13 +780,47 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
                 setPageSize(Number(value || PAGE_SIZE))
               }}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon aria-label={t('Скинути')} color="gray" size={34} variant="light" onClick={resetFilters}>
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Експорт')}>
+                <ActionIcon
+                  aria-label={t('Експорт')}
+                  color="gray"
+                  disabled={Boolean(exportingTab || filterError || (activeTab === 'products' && isProductStorageSelectionInvalid))}
+                  loading={exportingTab === activeTab}
+                  size={34}
+                  variant="light"
+                  onClick={handleExport}
+                >
+                  <IconDownload size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isActiveLoading || isLoadingStorages}
+                  size={34}
+                  variant="light"
+                  onClick={refreshData}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle
+                density={activeTab === 'batches' ? batchDensity : productDensity}
+                onToggle={activeTab === 'batches' ? toggleBatchDensity : toggleProductDensity}
+                size={34}
+              />
+            </div>
           </Group>
+        </div>
 
+        <Stack className="product-remains-body" gap="md">
           {alertMessage && (
             <Alert color={isWarningAlert ? 'yellow' : 'red'} icon={<IconAlertCircle size={18} />} variant="light">
               {alertMessage}

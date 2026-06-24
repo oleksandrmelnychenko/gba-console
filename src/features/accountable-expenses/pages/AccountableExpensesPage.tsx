@@ -200,7 +200,7 @@ export function AccountableExpensesPage() {
   return (
     <Stack className="accountable-expenses-page console-table-page" gap="md">
       <div className="console-table-shell">
-        <div className="accountable-expenses-command-bar">
+        <div className="app-filter-bar accountable-expenses-command-bar">
           <div className="accountable-expenses-period-filter">
             <span className="accountable-expenses-filter-label">{t('Період')}</span>
             <div className="accountable-expenses-period-fields">
@@ -240,7 +240,7 @@ export function AccountableExpensesPage() {
             }}
           />
 
-          <div className="accountable-expenses-command-actions">
+          <div className="app-filter-actions accountable-expenses-command-actions">
             <Tooltip label={t('Скинути')}>
               <ActionIcon
                 aria-label={t('Скинути')}

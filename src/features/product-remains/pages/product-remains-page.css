@@ -1,0 +1,20 @@
+/* Page-specific layout only. The card shell, filter strip chrome (corner glow /
+   divider / control sizing) and the right-hand actions cluster all come from the
+   canonical .app-data-card / .app-filter-bar / .app-filter-actions rules in
+   shared/ui/filter-bar.css. */
+
+/* Let the filter strip span the full card width so the actions cluster pins to
+   the trailing edge while the fixed-width controls sit at the leading edge. */
+.product-remains-filter-row {
+  width: 100%;
+}
+
+.product-remains-filter-row .app-filter-actions {
+  margin-left: auto;
+}
+
+/* The card is padding-0 (so the filter strip is flush); the tabbed body below
+   the strip carries its own padding. */
+.product-remains-body {
+  padding: 16px;
+}

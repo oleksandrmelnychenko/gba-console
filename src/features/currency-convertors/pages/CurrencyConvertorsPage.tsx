@@ -21,6 +21,7 @@ import { CurrencyTraderExchangeRatesDrawer } from '../components/CurrencyTraderE
 import { CURRENCY_CONVERTOR_CREATE_PERMISSION, CURRENCY_CONVERTOR_EDIT_PERMISSION } from '../permissions'
 import { CURRENCY_ORDER } from '../types'
 import type { CurrencyTrader, CurrencyTraderExchangeRate, CurrencyTraderPayload } from '../types'
+import './currency-convertors-page.css'
 
 const CONVERTORS_PATH = '/accounting/currency-convertors'
 
@@ -343,7 +344,7 @@ export function CurrencyConvertorsPage() {
   const { t } = useI18n()
 
   return (
-    <Stack gap="lg">
+    <Stack className="currency-convertors-page" gap={6}>
       {model.canCreate && (
         <PageHeaderActions>
           <Button
@@ -357,47 +358,49 @@ export function CurrencyConvertorsPage() {
         </PageHeaderActions>
       )}
 
-      <Group justify="flex-end" align="center">
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={model.isLoading}
-              size={38}
-              variant="light"
-              onClick={() => model.reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={38} />
-        </Group>
-      </Group>
+      <Card className="app-data-card currency-convertors-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar currency-convertors-filter-bar">
+          <Group align="center" gap="sm" justify="flex-end" wrap="nowrap" className="currency-convertors-filter-row">
+            <div className="app-filter-actions">
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={model.isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={() => model.reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={model.density} onToggle={model.toggleDensity} size={34} />
+            </div>
+          </Group>
+        </div>
 
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
-          {model.error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {model.error}
-            </Alert>
-          )}
+        {model.error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {model.error}
+          </Alert>
+        )}
 
+        <div className="currency-convertors-page__table">
           <DataTable
             columns={model.columns}
             data={model.traders}
             density={model.density}
             emptyText={t('Валютних трейдерів не знайдено')}
             getRowId={(trader, index) => String(trader.NetUid || trader.Id || index)}
+            height="100%"
             isLoading={model.isLoading}
             layoutVersion="currency-convertors-table-1"
             loadingText={t('Завантаження валютних трейдерів')}
-            maxHeight="calc(100vh - 280px)"
             minWidth={900}
             tableId="currency-convertors"
             onRowClick={model.openTrader}
           />
-        </Stack>
+        </div>
       </Card>
 
       <CurrencyTraderExchangeRatesDrawer

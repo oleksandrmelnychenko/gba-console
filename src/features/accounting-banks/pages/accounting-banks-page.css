@@ -1,0 +1,18 @@
+/* Accounting banks registry — chrome aligned with the «Продажі» reference.
+   The page loads all banks and filters client-side (no pagination), so it keeps
+   the table's own maxHeight scroll model; only the filter strip + card shell are
+   converged onto the shared primitives. */
+.accounting-banks-filter-row {
+  width: 100%;
+}
+
+/* Push the reset / refresh / density cluster to the trailing edge of the row. */
+.accounting-banks-filter-row .app-filter-actions {
+  margin-left: auto;
+}
+
+/* Body below the flush filter strip carries its own padding (the card is
+   padding={0} so the strip sits flush). */
+.accounting-banks-card__body {
+  padding: 12px;
+}

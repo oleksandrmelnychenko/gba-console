@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Card,
   Group,
@@ -11,7 +10,7 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRoad, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconRoad, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -23,6 +22,7 @@ import { PermissionGate } from '../../auth/components/PermissionGate'
 import { getCompanyCars, searchCompanyCars } from '../api/companyCarsApi'
 import { COMPANY_CAR_CREATE_PERMISSION } from '../permissions'
 import type { CompanyCar } from '../types'
+import './company-cars-page.css'
 
 const COMPANY_CARS_PATH = '/accounting/company-cars'
 const SEARCH_DEBOUNCE_MS = 350
@@ -127,76 +127,89 @@ export function CompanyCarsPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, t])
 
-  const toolbarLeft = useMemo(
-    () => (
-      <TextInput
-        leftSection={<IconSearch size={16} />}
-        placeholder={t('Місце вводу для пошуку')}
-        value={searchValue}
-        w={{ base: '100%', sm: 360 }}
-        onChange={(event) => setSearchValue(event.currentTarget.value)}
-      />
-    ),
-    [searchValue, setSearchValue, t],
-  )
-
   return (
-    <Stack gap="md">
+    <Stack className="company-cars-page" gap={6}>
       <PageHeaderActions>
-        <Group gap="xs" wrap="nowrap">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
-            <Button
-              color={CREATE_ACTION_COLOR}
-              size="sm"
-              leftSection={<IconPlus size={16} />}
-              onClick={() =>
-                navigate(`${COMPANY_CARS_PATH}/new`, {
-                  state: {
-                    backgroundLocation: location,
-                    returnPath: `${location.pathname}${location.search}`,
-                  },
-                })
-              }
-            >
-              {t('Завести нову машину компанії')}
-            </Button>
-          </PermissionGate>
-        </Group>
+        <PermissionGate permissionKey={COMPANY_CAR_CREATE_PERMISSION}>
+          <Button
+            color={CREATE_ACTION_COLOR}
+            size="sm"
+            leftSection={<IconPlus size={16} />}
+            onClick={() =>
+              navigate(`${COMPANY_CARS_PATH}/new`, {
+                state: {
+                  backgroundLocation: location,
+                  returnPath: `${location.pathname}${location.search}`,
+                },
+              })
+            }
+          >
+            {t('Завести нову машину компанії')}
+          </Button>
+        </PermissionGate>
       </PageHeaderActions>
 
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          <Group gap="xs">
-            <Badge color="blue" variant="light">
-              {t('Автомобілів')}: {companyCars.length}
-            </Badge>
+      <Card className="app-data-card company-cars-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar company-cars-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="company-cars-filter-row">
+            <TextInput
+              size="sm"
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Місце вводу для пошуку')}
+              value={searchValue}
+              style={{ flex: '1 1 auto', minWidth: 240 }}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+            />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={() => setSearchValue('')}
+                >
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={reload}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </div>
           </Group>
+        </div>
 
+        {error && (
+          <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
+
+        <div className="company-cars-page__table">
           <DataTable
             columns={columns}
             data={companyCars}
             defaultLayout={TABLE_DEFAULT_LAYOUT}
             emptyText={t('Автомобілів не знайдено')}
             getRowId={(companyCar, index) => String(companyCar.NetUid || companyCar.Id || index)}
+            height="100%"
             isLoading={isTableBusy}
             layoutVersion="company-cars-1"
             minWidth={1180}
             tableId="company-cars"
-            toolbarLeft={toolbarLeft}
             onRowClick={openEditor}
           />
-        </Stack>
+        </div>
       </Card>
     </Stack>
   )

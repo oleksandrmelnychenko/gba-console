@@ -1,0 +1,26 @@
+/* Rendered inside SalesDashboardShell (pill-tabs above), so fill the height the
+   shell gives us — same model as the reference .sales-ukraine-page — rather than
+   a fixed 100vh calc that ignores the tab bar and overflows the frame. */
+.preorders-interest-page {
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.preorders-interest-page__table {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.preorders-interest-page__table .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.preorders-interest-page__table .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

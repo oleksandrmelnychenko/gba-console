@@ -10,17 +10,20 @@ import {
   Tooltip,
 } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
+import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { useAuth } from '../../auth/useAuth'
 import { getPaymentCashflowArticles, searchPaymentCashflowArticles } from '../api/paymentCashflowArticlesApi'
 import type { PaymentCashflowArticle } from '../types'
+import './payment-cashflow-articles-page.css'
 
 const PERMISSION_CREATE_CASHFLOW_ARTICLE = 'Accounting_Payment_Cashflow_Articles_AddBtn_PKEY'
 
@@ -49,6 +52,7 @@ export function PaymentCashflowArticlesPage() {
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isSearchSettling
   const canCreate = hasPermission(PERMISSION_CREATE_CASHFLOW_ARTICLE)
+  const { density, toggleDensity } = useDataTableDensity('payment-cashflow-articles', 'normal')
 
   const openArticle = useCallback(
     (article: PaymentCashflowArticle) => {
@@ -152,19 +156,6 @@ export function PaymentCashflowArticlesPage() {
     return () => controller.abort()
   }, [normalizedSearchValue, reloadKey, setArticles, setError, setLoading, t])
 
-  const toolbarLeft = useMemo(
-    () => (
-      <TextInput
-        leftSection={<IconSearch size={16} />}
-        placeholder={t('Пошук')}
-        value={searchValue}
-        w={{ base: '100%', sm: 360 }}
-        onChange={(event) => setSearchValue(event.currentTarget.value)}
-      />
-    ),
-    [searchValue, setSearchValue, t],
-  )
-
   return (
     <Stack gap="md">
       {canCreate && (
@@ -186,18 +177,48 @@ export function PaymentCashflowArticlesPage() {
           </Button>
         </PageHeaderActions>
       )}
-      <Card withBorder radius="md" shadow="sm">
-        <Stack gap="md">
-          <Group justify="flex-end" wrap="wrap">
-            <Group gap="xs">
-              <Tooltip label={t('Оновити')}>
-                <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="light" onClick={reload}>
-                  <IconRefresh size={18} />
+      <Card className="app-data-card payment-cashflow-articles-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar payment-cashflow-articles-filter-bar">
+          <Group align="end" gap="sm" wrap="nowrap" className="payment-cashflow-articles-filter-row">
+            <TextInput
+              size="sm"
+              leftSection={<IconSearch size={16} />}
+              label={t('Пошук')}
+              placeholder={t('Пошук')}
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.currentTarget.value)}
+              style={{ flex: '1 1 auto', minWidth: 180 }}
+            />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={() => setSearchValue('')}
+                >
+                  <IconRestore size={17} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  variant="light"
+                  onClick={reload}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            </div>
           </Group>
+        </div>
 
+        <Stack className="payment-cashflow-articles-card__body" gap="md">
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {error}
@@ -208,6 +229,7 @@ export function PaymentCashflowArticlesPage() {
             columns={columns}
             data={articles}
             defaultLayout={PAYMENT_CASHFLOW_ARTICLES_TABLE_DEFAULT_LAYOUT}
+            density={density}
             emptyText={t('Статей руху коштів не знайдено')}
             getRowId={(article, index) => String(article.NetUid || article.Id || index)}
             isLoading={isTableBusy}
@@ -216,7 +238,6 @@ export function PaymentCashflowArticlesPage() {
             maxHeight="calc(100vh - 260px)"
             minWidth={720}
             tableId="payment-cashflow-articles"
-            toolbarLeft={toolbarLeft}
             onRowClick={openArticle}
           />
         </Stack>

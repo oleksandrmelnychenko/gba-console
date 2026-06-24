@@ -181,10 +181,9 @@ export function PaymentExpenseArticlesPage() {
             value={searchValue}
             onChange={(event) => setSearchValue(event.currentTarget.value)}
           />
-          <div className="console-table-actions">
-            <span className="console-table-summary">{t('Статей')}: {articles.length}</span>
+          <div className="console-table-actions app-filter-actions">
             <Tooltip label={t('Оновити')}>
-              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={38} variant="light" onClick={reload}>
+              <ActionIcon aria-label={t('Оновити')} color="gray" loading={isLoading} size={34} variant="light" onClick={reload}>
                 <IconRefresh size={18} />
               </ActionIcon>
             </Tooltip>

@@ -17,15 +17,10 @@
   --accountable-expenses-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(232, 120, 46, 0.06), transparent 32%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(360px, 430px) minmax(320px, 1fr) auto;
   height: 85px;
-  padding: 12px;
 }
 
 .accountable-expenses-period-filter {

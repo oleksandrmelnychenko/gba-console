@@ -39,6 +39,7 @@ import {
   normalizeProductGroupForSave,
   validateProductGroup,
 } from '../utils'
+import './product-groups-page.css'
 
 const PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT = {
   columnPinning: {
@@ -62,8 +63,6 @@ export function ProductGroupsPage() {
   const [selectedRootNetUid, setSelectedRootNetUid] = useValueState<string | null>(null)
   const [searchDraft, setSearchDraft] = useValueState('')
   const [searchValue] = useDebouncedValue(searchDraft.trim(), PRODUCT_GROUP_SEARCH_DEBOUNCE_MS)
-  const [totalFilteredQty, setTotalFilteredQty] = useValueState(0)
-  const [totalQty, setTotalQty] = useValueState(0)
   const [error, setError] = useValueState<string | null>(null)
   const [createError, setCreateError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
@@ -92,15 +91,6 @@ export function ProductGroupsPage() {
     'product-groups',
     PRODUCT_GROUPS_TABLE_DEFAULT_LAYOUT.density,
   )
-  const toolbarLeft = useMemo(
-    () =>
-      searchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {searchValue}
-        </Text>
-      ) : null,
-    [searchValue, t],
-  )
 
   useEffect(() => {
     let cancelled = false
@@ -114,14 +104,10 @@ export function ProductGroupsPage() {
 
         if (!cancelled) {
           setProductGroups(response.ProductGroups)
-          setTotalFilteredQty(response.TotalFilteredQty)
-          setTotalQty(response.TotalQty)
         }
       } catch (loadError) {
         if (!cancelled) {
           setProductGroups([])
-          setTotalFilteredQty(0)
-          setTotalQty(0)
           setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити групи товарів'))
         }
       } finally {
@@ -136,7 +122,7 @@ export function ProductGroupsPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey, searchValue, setError, setLoading, setProductGroups, setTotalFilteredQty, setTotalQty, t])
+  }, [reloadKey, searchValue, setError, setLoading, setProductGroups, t])
 
   useEffect(() => {
     if (!createModalOpened) {
@@ -240,7 +226,7 @@ export function ProductGroupsPage() {
   }
 
   return (
-    <Stack gap="lg">
+    <Stack className="product-groups-page" gap={6}>
       <PermissionGate permissionKey={PRODUCT_GROUPS_ADD_PERMISSION}>
         <PageHeaderActions>
           <Button
@@ -254,8 +240,8 @@ export function ProductGroupsPage() {
           </Button>
         </PageHeaderActions>
       </PermissionGate>
-      <Card withBorder radius="md" padding="md">
-        <Stack gap="md">
+      <Card className="app-data-card product-groups-card" withBorder radius="md" padding={0}>
+        <div className="app-filter-bar product-groups-filter-bar">
           <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
             <TextInput
               leftSection={<IconSearch size={16} />}
@@ -265,40 +251,48 @@ export function ProductGroupsPage() {
               onChange={(event) => updateSearch(event.currentTarget.value)}
               style={{ flex: '1 1 auto', minWidth: 160 }}
             />
-            <Tooltip label={t('Скинути')}>
-              <ActionIcon
-                aria-label={t('Скинути')}
-                color="gray"
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={resetSearch}
-              >
-                <IconRestore size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label={t('Оновити')}>
-              <ActionIcon
-                aria-label={t('Оновити')}
-                color="gray"
-                loading={isLoading}
-                size={36}
-                style={{ flex: '0 0 auto' }}
-                variant="light"
-                onClick={() => reload()}
-              >
-                <IconRefresh size={18} />
-              </ActionIcon>
-            </Tooltip>
-            <DataTableDensityToggle density={density} onToggle={toggleDensity} size={36} />
+            <div className="app-filter-actions">
+              <Tooltip label={t('Скинути')}>
+                <ActionIcon
+                  aria-label={t('Скинути')}
+                  color="gray"
+                  size={34}
+                  variant="light"
+                  onClick={resetSearch}
+                >
+                  <IconRestore size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  color="gray"
+                  loading={isLoading}
+                  size={34}
+                  type="button"
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <IconRefresh size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <DataTableDensityToggle density={density} onToggle={toggleDensity} size={34} />
+            </div>
           </Group>
+        </div>
 
-          {error && (
-            <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
+        {error && (
+          <Alert
+            className="product-groups-page__alert"
+            color="red"
+            icon={<IconAlertCircle size={18} />}
+            variant="light"
+          >
+            {error}
+          </Alert>
+        )}
 
+        <div className="product-groups-page__table">
           <DataTable
             columns={columns}
             data={productGroups}
@@ -306,25 +300,15 @@ export function ProductGroupsPage() {
             density={density}
             emptyText="Груп товарів не знайдено"
             getRowId={(productGroup, index) => String(productGroup.NetUid || productGroup.Id || index)}
+            height="100%"
             isLoading={isLoading}
             layoutVersion="product-groups-table-2"
             loadingText="Завантаження груп товарів"
-            maxHeight="calc(100vh - 260px)"
             minWidth={1660}
             tableId="product-groups"
-            toolbarLeft={toolbarLeft}
             onRowClick={openProductGroup}
           />
-
-          <Group justify="flex-end" gap="lg">
-            <Text size="xs" c="dimmed">
-              {t('Відфільтрована кількість')}: {totalFilteredQty}
-            </Text>
-            <Text size="xs" c="dimmed">
-              {t('Загальна к-сть')}: {totalQty}
-            </Text>
-          </Group>
-        </Stack>
+        </div>
       </Card>
 
       <ProductGroupCreateModal
