@@ -15,7 +15,7 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import { IconAlertCircle, IconCheck, IconChevronRight, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -53,6 +53,7 @@ import {
   EDIT_CLIENT_TYPE_PERMISSION,
 } from '../permissions'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
+import './client-edit-page.css'
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -864,18 +865,26 @@ function ClientEditBody({
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
           <Card withBorder radius="md" padding="md">
-            <Stack gap="xs">
-              {steps.map((item) => (
-                <Button
-                  key={item.value}
-                  color={item.value === selectedStep ? 'violet' : 'gray'}
-                  justify="flex-start"
-                  variant={item.value === selectedStep ? 'light' : 'subtle'}
-                  onClick={() => onGoToStep(item.value)}
-                >
-                  {item.label}
-                </Button>
-              ))}
+            <Stack gap={5} className="client-edit-nav" component="nav">
+              {steps.map((item) => {
+                const isActive = item.value === selectedStep
+
+                return (
+                  <Button
+                    key={item.value}
+                    className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
+                    color="gray"
+                    fullWidth
+                    justify="space-between"
+                    rightSection={<IconChevronRight size={16} stroke={2} />}
+                    size="sm"
+                    variant="subtle"
+                    onClick={() => onGoToStep(item.value)}
+                  >
+                    {item.label}
+                  </Button>
+                )
+              })}
             </Stack>
           </Card>
         </Grid.Col>

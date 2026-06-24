@@ -306,7 +306,7 @@ export function SupplierOrganizationEditPage() {
         </Alert>
       )}
 
-      <Tabs value={activeTab} onChange={setActiveTab}>
+      <Tabs color={CREATE_ACTION_COLOR} value={activeTab} onChange={setActiveTab}>
         <Tabs.List>
           <Tabs.Tab value="general">{t('Загальна інформація')}</Tabs.Tab>
           <Tabs.Tab value="agreements" disabled={tabsDisabled}>
