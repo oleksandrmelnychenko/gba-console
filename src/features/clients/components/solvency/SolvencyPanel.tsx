@@ -229,7 +229,7 @@ function ForwardRiskBadge({ forwardRisk }: { forwardRisk: ForwardRisk }) {
 
   return (
     <Badge color={color} size="lg" variant="filled">
-      {t(label)} · {formatPercent(forwardRisk.pd)}
+      {t(label)} · PD {formatPercent1(forwardRisk.pd)}
     </Badge>
   )
 }
@@ -250,6 +250,8 @@ const CONTRIBUTION_LABELS: Record<string, string> = {
   overdue_eur_31_60: 'Прострочено 31-60 днів',
   overdue_eur_61_90: 'Прострочено 61-90 днів',
   overdue_eur_91_180: 'Прострочено 91-180 днів',
+  overdue_eur_180plus: 'Прострочено 180+ днів',
+  pct_debt_180plus: 'Частка боргу 180+ днів',
   recency_days: 'Днів від останньої покупки',
   return_rate_12mo: 'Частка повернень (12 міс.)',
   tenure_months: 'Тривалість співпраці (міс.)',
@@ -330,8 +332,8 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
           </Text>
         )}
         {score.pd != null && (
-          <Text c="dimmed" size="sm">
-            {t('Ймовірність дефолту')}: {formatPercent(score.pd)}
+          <Text c="dimmed" fw={600} size="sm">
+            PD {formatPercent1(score.pd)}
           </Text>
         )}
         <Text c="dimmed" size="xs">
@@ -573,6 +575,14 @@ function formatPercent(value: number): string {
   }
 
   return `${(value * 100).toFixed(0)}%`
+}
+
+function formatPercent1(value: number): string {
+  if (!Number.isFinite(value)) {
+    return '-'
+  }
+
+  return `${(value * 100).toFixed(1)}%`
 }
 
 function formatNumber(value: number): string {
