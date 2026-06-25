@@ -17,6 +17,10 @@
   --protocols-command-label-height: 17px;
 
   align-items: end;
+  background:
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
+    var(--mantine-color-white);
+  border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(320px, 380px) minmax(280px, 1fr) minmax(220px, 270px) auto;

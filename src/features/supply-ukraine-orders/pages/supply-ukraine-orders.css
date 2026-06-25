@@ -1,7 +1,9 @@
 .supply-ukraine-orders-page {
+  box-sizing: border-box;
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
+  padding: 10px;
 }
 
 .supply-ukraine-orders-card {
@@ -10,8 +12,21 @@
   --supply-orders-label-height: 17px;
 }
 
+.console-frame .supply-ukraine-orders-card.mantine-Card-root {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  box-shadow: var(--app-card-shadow);
+  min-width: 0;
+  overflow: hidden;
+}
+
 .supply-ukraine-orders-filter-bar {
   align-items: end;
+  background:
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
+    var(--mantine-color-white);
+  border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
   gap: 10px;
