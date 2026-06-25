@@ -1,15 +1,10 @@
 .supply-ukraine-orders-page {
-  box-sizing: border-box;
-  /* Fill the console frame exactly rather than guessing viewport offsets — the
-     frame is already a bounded flex column, so a hard 100vh calc could overshoot
-     it and push the table bottom out of view (clipped, unscrollable). */
-  flex: 1 1 auto;
-  height: 100%;
+  height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
 }
 
-.supply-ukraine-orders-shell {
+.supply-ukraine-orders-card {
   --supply-orders-control-height: 36px;
   --supply-orders-label-gap: 4px;
   --supply-orders-label-height: 17px;
@@ -18,6 +13,7 @@
 .supply-ukraine-orders-filter-bar {
   align-items: end;
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   grid-template-columns:
     minmax(310px, 380px)
@@ -117,191 +113,20 @@
 }
 
 .supply-ukraine-orders-table {
-  display: flex;
   flex: 1 1 auto;
+  min-height: 0;
+}
+
+.supply-ukraine-orders-table .data-table {
+  display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
-  min-width: 0;
 }
 
-.supply-orders-grid {
-  --supply-orders-grid-columns:
-    minmax(570px, 1.35fr)
-    118px
-    96px
-    94px
-    minmax(230px, 0.78fr)
-    156px
-    112px
-    124px
-    74px;
+.supply-ukraine-orders-table .data-table-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  min-width: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 10px 12px 12px;
-  scrollbar-color: var(--mantine-color-gray-4) transparent;
-  scrollbar-gutter: stable both-edges;
-  scrollbar-width: thin;
-}
-
-.supply-orders-grid::-webkit-scrollbar {
-  height: 6px;
-  width: 6px;
-}
-
-.supply-orders-grid::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.supply-orders-grid::-webkit-scrollbar-thumb {
-  background: var(--mantine-color-gray-4);
-  border-radius: 999px;
-}
-
-.supply-orders-grid-head,
-.supply-orders-grid-row {
-  align-items: center;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: var(--supply-orders-grid-columns);
-  min-width: 1280px;
-}
-
-.supply-orders-grid-head {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.86)),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.2;
-  min-height: 34px;
-  padding: 8px 12px 7px 6px;
-  position: sticky;
-  text-transform: uppercase;
-  top: 0;
-  z-index: 4;
-}
-
-.supply-orders-grid-head span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supply-orders-grid-head span:nth-child(2),
-.supply-orders-grid-head span:nth-child(3),
-.supply-orders-grid-head span:nth-child(4) {
-  text-align: right;
-}
-
-.supply-orders-grid-head span:nth-child(3) {
-  text-align: left;
-}
-
-.supply-orders-grid-head span:nth-child(7),
-.supply-orders-grid-head span:nth-child(8),
-.supply-orders-grid-head span:nth-child(9) {
-  text-align: center;
-}
-
-.supply-orders-grid-row {
-  background: var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-1);
-  cursor: pointer;
-  isolation: isolate;
-  min-height: 68px;
-  padding: 9px 12px 9px 6px;
-  position: relative;
-  transition:
-    background-color 140ms var(--tx-ease-smooth),
-    box-shadow 140ms var(--tx-ease-smooth),
-    transform 140ms var(--tx-ease-smooth);
-}
-
-.supply-orders-grid-row::before {
-  background: var(--brand-orange);
-  border-radius: 999px;
-  bottom: 10px;
-  content: '';
-  left: 0;
-  opacity: 0;
-  position: absolute;
-  top: 10px;
-  transform: scaleY(0.72);
-  transition:
-    opacity 140ms var(--tx-ease-smooth),
-    transform 140ms var(--tx-ease-smooth);
-  width: 2px;
-  z-index: 2;
-}
-
-.supply-orders-grid-row::after {
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.055), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.74), transparent);
-  content: '';
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transition: opacity 140ms var(--tx-ease-smooth);
-  z-index: 0;
-}
-
-.supply-orders-grid-row > * {
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-}
-
-.supply-orders-grid-row:hover,
-.supply-orders-grid-row.is-expanded {
-  background: #fffdfb;
-  box-shadow:
-    inset 0 1px 0 rgba(var(--brand-orange-rgb), 0.08),
-    inset 0 -1px 0 rgba(var(--brand-orange-rgb), 0.08);
-}
-
-.supply-orders-grid-row:hover {
-  transform: translateX(2px);
-}
-
-.supply-orders-grid-row:hover::before,
-.supply-orders-grid-row.is-expanded::before,
-.supply-orders-grid-row:hover::after,
-.supply-orders-grid-row.is-expanded::after {
-  opacity: 1;
-}
-
-.supply-orders-grid-row:hover::before,
-.supply-orders-grid-row.is-expanded::before {
-  transform: scaleY(1);
-}
-
-.supply-orders-grid-state {
-  align-items: center;
-  color: var(--mantine-color-gray-6);
-  display: flex;
-  flex: 1 1 auto;
-  font-size: 12px;
-  justify-content: center;
-  min-height: 220px;
-  padding: 32px;
-  text-align: center;
-}
-
-.supply-orders-grid-expand {
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.03), transparent 34%),
-    var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  min-width: 1280px;
-  padding: 7px 12px 9px 68px;
 }
 
 .supply-invoices-expand {
@@ -533,35 +358,6 @@
   color: var(--mantine-color-blue-7);
 }
 
-.supply-order-actions {
-  align-items: center;
-  display: grid;
-  gap: 4px;
-  grid-template-columns: 30px 30px;
-  justify-content: end;
-  min-width: 64px;
-}
-
-.supply-order-action-button {
-  color: var(--mantine-color-gray-5);
-}
-
-.supply-order-action-button:hover {
-  background: var(--mantine-color-orange-0);
-  color: var(--mantine-color-orange-8);
-}
-
-.supply-order-action-button.is-danger:hover {
-  background: var(--mantine-color-red-0);
-  color: var(--mantine-color-red-7);
-}
-
-.supply-order-action-placeholder {
-  display: block;
-  height: 30px;
-  width: 30px;
-}
-
 .supply-order-main-cell {
   align-items: flex-start;
   display: flex;
@@ -694,16 +490,6 @@
   text-align: right;
 }
 
-.supply-orders-grid-row > .supply-order-money-cell,
-.supply-orders-grid-row > .supply-order-metric-value {
-  border-left: 1px dashed var(--mantine-color-gray-2);
-  padding-left: 10px;
-}
-
-.supply-orders-grid-row > .supply-order-metric-value:nth-child(3) {
-  justify-content: flex-start;
-}
-
 .supply-order-money-amount {
   color: var(--mantine-color-gray-9);
   display: block;
@@ -728,11 +514,6 @@
   gap: 8px;
   justify-content: flex-end;
   min-width: 0;
-}
-
-.supply-orders-grid-row > .supply-order-status-tag,
-.supply-orders-grid-row > .supply-order-actions {
-  justify-self: center;
 }
 
 .supply-order-metric-label {

@@ -2,10 +2,11 @@ import {
   ActionIcon,
   Alert,
   Anchor,
+  Box,
   Button,
+  Card,
   FileInput,
   Group,
-  Loader,
   NumberInput,
   Select,
   SimpleGrid,
@@ -18,8 +19,6 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
-  IconChevronDown,
-  IconChevronRight,
   IconDownload,
   IconEye,
   IconFileInvoice,
@@ -35,7 +34,7 @@ import {
   IconSearch,
   IconTrash,
 } from '@tabler/icons-react'
-import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState, type MouseEvent } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/useAuth'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -46,6 +45,7 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createSupplyOrderUkraineDeliveryExpense,
@@ -74,6 +74,7 @@ import type {
   SupplyUkraineOrdersFilter,
   SupplyUkraineOrdersResponse,
 } from '../types'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
@@ -158,7 +159,6 @@ type OrdersUiState = {
   downloadDocument: SupplyOrderPrintDocument | null
   downloadError: string | null
   downloadOpened: boolean
-  expandedDirectOrders: Set<string>
   filterDraft: SupplyUkraineOrdersFilter
   isDeleting: boolean
   isDownloading: boolean
@@ -174,7 +174,6 @@ type OrdersUiAction =
   | { filters: SupplyUkraineOrdersFilter; type: 'resetFilters' }
   | { page: number; type: 'setPage' }
   | { pageSize: number; type: 'setPageSize' }
-  | { orderKey: string; type: 'toggleDirectOrder' }
   | { row: SupplyUkraineOrderRow | null; type: 'setSelectedRow' }
   | { row: SupplyUkraineOrderRow | null; type: 'setDeleteCandidate' }
   | { row: SupplyUkraineOrderRow | null; type: 'setOfficialCostsRow' }
@@ -242,7 +241,6 @@ function createInitialOrdersUiState(defaultFilters: SupplyUkraineOrdersFilter): 
     downloadDocument: null,
     downloadError: null,
     downloadOpened: false,
-    expandedDirectOrders: new Set(),
     filterDraft: savedFilters,
     isDeleting: false,
     isDownloading: false,
@@ -261,13 +259,11 @@ function ordersUiReducer(state: OrdersUiState, action: OrdersUiAction): OrdersUi
       return {
         ...state,
         activeFilters: action.filters,
-        expandedDirectOrders: new Set(),
       }
     case 'resetFilters':
       return {
         ...state,
         activeFilters: action.filters,
-        expandedDirectOrders: new Set(),
         filterDraft: action.filters,
         page: 1,
       }
@@ -275,17 +271,6 @@ function ordersUiReducer(state: OrdersUiState, action: OrdersUiAction): OrdersUi
       return { ...state, page: action.page }
     case 'setPageSize':
       return { ...state, page: 1, pageSize: action.pageSize }
-    case 'toggleDirectOrder': {
-      const expandedDirectOrders = new Set(state.expandedDirectOrders)
-
-      if (expandedDirectOrders.has(action.orderKey)) {
-        expandedDirectOrders.delete(action.orderKey)
-      } else {
-        expandedDirectOrders.add(action.orderKey)
-      }
-
-      return { ...state, expandedDirectOrders }
-    }
     case 'setSelectedRow':
       return { ...state, selectedRow: action.row }
     case 'setDeleteCandidate':
@@ -335,7 +320,6 @@ function useSupplyUkraineOrdersPageController() {
     downloadDocument,
     downloadError,
     downloadOpened,
-    expandedDirectOrders,
     filterDraft,
     isDeleting,
     isDownloading,
@@ -503,16 +487,6 @@ function useSupplyUkraineOrdersPageController() {
     })
   }
 
-  function toggleDirectOrder(order: DirectSupplyOrder) {
-    const key = getOrderKey(order)
-
-    if (!key) {
-      return
-    }
-
-    dispatchUi({ orderKey: key, type: 'toggleDirectOrder' })
-  }
-
   function openRow(row: SupplyUkraineOrderRow) {
     if (row.kind !== 'invoice') {
       dispatchUi({ row, type: 'setSelectedRow' })
@@ -631,9 +605,7 @@ function useSupplyUkraineOrdersPageController() {
     totalPages,
     updateFilterDraft,
     canDeleteOrder,
-    expandedDirectOrders,
     requestDelete: (row: SupplyUkraineOrderRow) => dispatchUi({ row, type: 'setDeleteCandidate' }),
-    toggleDirectOrder,
   }
 }
 
@@ -677,13 +649,11 @@ export function SupplyUkraineOrdersPage() {
     totalPages,
     updateFilterDraft,
     canDeleteOrder,
-    expandedDirectOrders,
     requestDelete,
-    toggleDirectOrder,
   } = useSupplyUkraineOrdersPageController()
 
   return (
-    <Stack gap="md" className="supply-ukraine-orders-page console-table-page">
+    <Stack className="supply-ukraine-orders-page" gap={6}>
       <PageHeaderActions>
         <Group gap={8} wrap="nowrap">
           {createPermissions.canCreateToUkraine && (
@@ -704,7 +674,6 @@ export function SupplyUkraineOrdersPage() {
         canDeleteOrder={canDeleteOrder}
         currenciesError={currenciesState.error}
         currencyOptions={currencyOptions}
-        expandedDirectOrders={expandedDirectOrders}
         filterDraft={filterDraft}
         filterError={filterError}
         isDownloading={isDownloading}
@@ -722,7 +691,6 @@ export function SupplyUkraineOrdersPage() {
         onDelete={requestDelete}
         onResetFilters={resetFilters}
         onRowClick={openRow}
-        onToggleDirectOrder={toggleDirectOrder}
       />
 
       <OrdersPageModals
@@ -753,7 +721,6 @@ function OrdersListCard({
   canDeleteOrder,
   currenciesError,
   currencyOptions,
-  expandedDirectOrders,
   filterDraft,
   filterError,
   isDownloading,
@@ -771,13 +738,11 @@ function OrdersListCard({
   onRefresh,
   onResetFilters,
   onRowClick,
-  onToggleDirectOrder,
 }: {
   canPrint: boolean
   canDeleteOrder: boolean
   currenciesError: string | null
   currencyOptions: Array<{ label: string, value: string }>
-  expandedDirectOrders: Set<string>
   filterDraft: SupplyUkraineOrdersFilter
   filterError: string | null
   isDownloading: boolean
@@ -795,12 +760,12 @@ function OrdersListCard({
   onRefresh: () => void
   onResetFilters: () => void
   onRowClick: (row: SupplyUkraineOrderRow) => void
-  onToggleDirectOrder: (order: DirectSupplyOrder) => void
 }) {
   const { t } = useI18n()
+  const orderColumns = useOrderColumns({ canDeleteOrder, onDelete })
 
   return (
-    <div className="supply-ukraine-orders-shell console-table-shell">
+    <Card className="app-data-card supply-ukraine-orders-card" withBorder radius="md" padding={0}>
       <OrdersFilterToolbar
         canPrint={canPrint}
         currencyOptions={currencyOptions}
@@ -830,151 +795,129 @@ function OrdersListCard({
         </Alert>
       )}
 
-      <div className="supply-ukraine-orders-table console-table-body">
-        <SupplyOrdersGrid
-          canDeleteOrder={canDeleteOrder}
-          emptyText={t('Замовлень не знайдено')}
-          expandedDirectOrders={expandedDirectOrders}
+      <div className="supply-ukraine-orders-table">
+        <DataTable
+          columns={orderColumns}
+          data={rows}
+          getRowId={(row, index) => String(row.netUid || index)}
           isLoading={state.isLoading}
           loadingText={t('Завантаження замовлень')}
-          rows={rows}
-          onDelete={onDelete}
+          emptyText={t('Замовлень не знайдено')}
+          minWidth={1180}
+          showDensityToggle={false}
+          showLayoutControls={false}
+          tableId="supply-ukraine-orders"
+          layoutVersion="supply-ukraine-orders-1"
           onRowClick={onRowClick}
-          onToggleDirectOrder={onToggleDirectOrder}
+          getRowCanExpand={(row) => row.kind === 'direct' && (row.directOrder?.SupplyInvoices?.length ?? 0) > 0}
+          renderExpandedRow={(row) => (row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} /> : null)}
         />
       </div>
-    </div>
+    </Card>
   )
 }
 
-function SupplyOrdersGrid({
+function useOrderColumns({
   canDeleteOrder,
-  emptyText,
-  expandedDirectOrders,
-  isLoading,
-  loadingText,
-  rows,
   onDelete,
-  onRowClick,
-  onToggleDirectOrder,
 }: {
   canDeleteOrder: boolean
-  emptyText: string
-  expandedDirectOrders: Set<string>
-  isLoading: boolean
-  loadingText: string
-  rows: SupplyUkraineOrderRow[]
   onDelete: (row: SupplyUkraineOrderRow) => void
-  onRowClick: (row: SupplyUkraineOrderRow) => void
-  onToggleDirectOrder: (order: DirectSupplyOrder) => void
-}) {
+}): DataTableColumn<SupplyUkraineOrderRow>[] {
   const { t } = useI18n()
 
-  if (isLoading) {
-    return (
-      <div className="supply-orders-grid-state">
-        <Group justify="center" gap="xs">
-          <Loader size="sm" />
-          {loadingText}
-        </Group>
-      </div>
-    )
-  }
-
-  if (rows.length === 0) {
-    return <div className="supply-orders-grid-state">{emptyText}</div>
-  }
-
-  return (
-    <div className="supply-orders-grid" role="table">
-      <div className="supply-orders-grid-head" role="row">
-        <span>{t('Замовлення / постачальник')}</span>
-        <span>{t('Сума')}</span>
-        <span>{t('К-сть')}</span>
-        <span>{t('% дод.')}</span>
-        <span>{t('Організація / договір')}</span>
-        <span>{t('Відповідальний')}</span>
-        <span>{t('Розміщено')}</span>
-        <span>{t('Тип')}</span>
-        <span>{t('Дії')}</span>
-      </div>
-      {rows.map((row) => {
-        const isExpanded = Boolean(row.directOrder && expandedDirectOrders.has(getOrderKey(row.directOrder)))
-
-        return (
-          <Fragment key={getRowId(row)}>
-            <SupplyOrderGridRow
-              canDeleteOrder={canDeleteOrder}
-              expandedDirectOrders={expandedDirectOrders}
-              row={row}
-              onDelete={onDelete}
-              onRowClick={onRowClick}
-              onToggleDirectOrder={onToggleDirectOrder}
-            />
-            {isExpanded && row.directOrder ? (
-              <div className="supply-orders-grid-expand">
-                <SupplyOrderInvoicesExpand order={row.directOrder} />
-              </div>
-            ) : null}
-          </Fragment>
-        )
-      })}
-    </div>
-  )
-}
-
-function SupplyOrderGridRow({
-  canDeleteOrder,
-  expandedDirectOrders,
-  row,
-  onDelete,
-  onRowClick,
-  onToggleDirectOrder,
-}: {
-  canDeleteOrder: boolean
-  expandedDirectOrders: Set<string>
-  row: SupplyUkraineOrderRow
-  onDelete: (row: SupplyUkraineOrderRow) => void
-  onRowClick: (row: SupplyUkraineOrderRow) => void
-  onToggleDirectOrder: (order: DirectSupplyOrder) => void
-}) {
-  const { t } = useI18n()
-  const isExpanded = Boolean(row.directOrder && expandedDirectOrders.has(getOrderKey(row.directOrder)))
-  const isInteractive = row.kind !== 'invoice'
-
-  return (
-    <div
-      className={`supply-orders-grid-row is-${row.kind}${isExpanded ? ' is-expanded' : ''}`}
-      role="row"
-      tabIndex={isInteractive ? 0 : -1}
-      onClick={() => {
-        if (isInteractive) {
-          onRowClick(row)
-        }
-      }}
-      onKeyDown={(event) => {
-        if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault()
-          onRowClick(row)
-        }
-      }}
-    >
-      <OrderMainGridCell row={row} />
-      <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
-      <OrderMetricValue label="#" value={formatAmount(row.qty)} />
-      <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />
-      <OrderOrganizationGridCell row={row} />
-      <OrderResponsibleGridCell value={displayValue(row.responsible)} />
-      {placedBadge(row.isPlaced, t)}
-      {getKindBadge(row, t)}
-      <OrderActionsCell
-        canDelete={canDeleteOrder && canDeleteRow(row)}
-        isExpanded={isExpanded}
-        row={row}
-        onDelete={onDelete}
-        onToggleDirectOrder={onToggleDirectOrder}
-      />
-    </div>
+  return useMemo<DataTableColumn<SupplyUkraineOrderRow>[]>(
+    () => [
+      {
+        id: 'order',
+        header: t('Замовлення / постачальник'),
+        fill: true,
+        minWidth: 260,
+        enableSorting: false,
+        cell: (row) => <OrderMainGridCell row={row} />,
+      },
+      {
+        id: 'sum',
+        header: t('Сума'),
+        align: 'right',
+        minWidth: 120,
+        enableSorting: false,
+        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
+      },
+      {
+        id: 'qty',
+        header: t('К-сть'),
+        align: 'right',
+        minWidth: 90,
+        enableSorting: false,
+        cell: (row) => <OrderMetricValue label="#" value={formatAmount(row.qty)} />,
+      },
+      {
+        id: 'percent',
+        header: t('% дод.'),
+        align: 'right',
+        minWidth: 90,
+        enableSorting: false,
+        cell: (row) => <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />,
+      },
+      {
+        id: 'org',
+        header: t('Організація / договір'),
+        minWidth: 200,
+        enableSorting: false,
+        cell: (row) => <OrderOrganizationGridCell row={row} />,
+      },
+      {
+        id: 'responsible',
+        header: t('Відповідальний'),
+        minWidth: 150,
+        enableSorting: false,
+        cell: (row) => <OrderResponsibleGridCell value={displayValue(row.responsible)} />,
+      },
+      {
+        id: 'placed',
+        header: t('Розміщено'),
+        align: 'center',
+        minWidth: 110,
+        enableSorting: false,
+        cell: (row) => placedBadge(row.isPlaced, t),
+      },
+      {
+        id: 'type',
+        header: t('Тип'),
+        minWidth: 120,
+        enableSorting: false,
+        cell: (row) => getKindBadge(row, t),
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 60,
+        minWidth: 60,
+        maxWidth: 60,
+        align: 'center',
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (row) =>
+          canDeleteOrder && canDeleteRow(row) ? (
+            <Box onClick={(event) => event.stopPropagation()}>
+              <Tooltip label={t('Видалити')}>
+                <ActionIcon
+                  aria-label={t('Видалити')}
+                  color="red"
+                  variant="subtle"
+                  onClick={() => onDelete(row)}
+                >
+                  <IconTrash size={16} />
+                </ActionIcon>
+              </Tooltip>
+            </Box>
+          ) : null,
+      },
+    ],
+    [canDeleteOrder, onDelete, t],
   )
 }
 
@@ -1456,65 +1399,6 @@ function OrderIndexCell({ row }: { row: SupplyUkraineOrderRow }) {
       <span className="supply-order-control-icon" aria-hidden>
         {getOrderKindIcon(row, 15)}
       </span>
-    </span>
-  )
-}
-
-function OrderActionsCell({
-  canDelete,
-  isExpanded,
-  row,
-  onDelete,
-  onToggleDirectOrder,
-}: {
-  canDelete: boolean
-  isExpanded: boolean
-  row: SupplyUkraineOrderRow
-  onDelete: (row: SupplyUkraineOrderRow) => void
-  onToggleDirectOrder: (order: DirectSupplyOrder) => void
-}) {
-  const { t } = useI18n()
-  const canToggleInvoices = row.kind === 'direct' && row.directOrder && (row.directOrder.SupplyInvoices?.length || 0) > 0
-
-  return (
-    <span className="supply-order-actions">
-      {canToggleInvoices ? (
-        <Tooltip label={isExpanded ? t('Згорнути інвойси') : t('Показати інвойси')}>
-          <ActionIcon
-            aria-label={t('Показати інвойси')}
-            className="supply-order-action-button"
-            size={30}
-            variant="subtle"
-            onClick={(event: MouseEvent<HTMLButtonElement>) => {
-              event.stopPropagation()
-              onToggleDirectOrder(row.directOrder as DirectSupplyOrder)
-            }}
-          >
-            {isExpanded ? <IconChevronDown size={16} /> : <IconChevronRight size={16} />}
-          </ActionIcon>
-        </Tooltip>
-      ) : (
-        <span className="supply-order-action-placeholder" aria-hidden />
-      )}
-      {canDelete ? (
-        <Tooltip label={t('Видалити')}>
-          <ActionIcon
-            aria-label={t('Видалити')}
-            className="supply-order-action-button is-danger"
-            color="red"
-            size={30}
-            variant="subtle"
-            onClick={(event: MouseEvent<HTMLButtonElement>) => {
-              event.stopPropagation()
-              onDelete(row)
-            }}
-          >
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Tooltip>
-      ) : (
-        <span className="supply-order-action-placeholder" aria-hidden />
-      )}
     </span>
   )
 }
@@ -2116,14 +2000,6 @@ function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefin
 
 function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
   return getSupplyUkraineOrderDisplayNumber(order)
-}
-
-function getRowId(row: SupplyUkraineOrderRow): string {
-  return `${row.kind}:${row.netUid || row.invoiceNumber || row.number || row.index}`
-}
-
-function getOrderKey(order: DirectSupplyOrder): string {
-  return order.NetUid || String(order.Id || '')
 }
 
 function canDeleteRow(row: SupplyUkraineOrderRow): boolean {
