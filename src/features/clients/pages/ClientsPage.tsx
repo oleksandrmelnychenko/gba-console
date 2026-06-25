@@ -856,7 +856,7 @@ function ClientsFilterToolbar({
         label={t('Поле')}
         data={searchFieldOptions}
         value={searchField}
-        style={{ flex: '0 0 150px' }}
+        style={{ flex: '0 0 240px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetSearchField(value || CLIENT_SEARCH_SQL)

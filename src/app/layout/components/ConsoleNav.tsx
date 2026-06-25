@@ -6,6 +6,47 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 
 type ConsoleNavMode = 'all' | 'items' | 'modules'
 
+// When a top-level module is opened, prefer landing on one of these routes if the
+// module contains it (e.g. «Продажі» → Продажі Україна, «Замовлення» → Замовлення
+// на Україну), instead of the alphabetically-first child. Route-keyed so it does
+// not depend on backend menu labels; falls back to the first child otherwise.
+const PREFERRED_MODULE_DEFAULT_ROUTES = ['/sales/ukraine/all', '/orders/ukraine/all']
+
+function findNodeByPath(
+  nodes: NavigationNode[],
+  targetPath: string,
+  resolvePath: (node: NavigationNode) => string,
+): NavigationNode | null {
+  for (const node of nodes) {
+    if (resolvePath(node) === targetPath) {
+      return node
+    }
+
+    const child = findNodeByPath(node.Children ?? [], targetPath, resolvePath)
+
+    if (child) {
+      return child
+    }
+  }
+
+  return null
+}
+
+function findPreferredDefaultNode(
+  nodes: NavigationNode[],
+  resolvePath: (node: NavigationNode) => string,
+): NavigationNode | null {
+  for (const path of PREFERRED_MODULE_DEFAULT_ROUTES) {
+    const match = findNodeByPath(nodes, path, resolvePath)
+
+    if (match) {
+      return match
+    }
+  }
+
+  return null
+}
+
 type ConsoleNavProps = {
   mode?: ConsoleNavMode
 }
@@ -36,10 +77,10 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
   }
 
   function openModule(module: NavigationModule) {
-    const firstChild = module.Children[0]
+    const target = findPreferredDefaultNode(module.Children, getNodePath) ?? module.Children[0]
 
-    if (firstChild) {
-      navigate(getNodePath(firstChild), { state: { nodeTitle: firstChild.Module, moduleTitle: module.Module } })
+    if (target) {
+      navigate(getNodePath(target), { state: { nodeTitle: target.Module, moduleTitle: module.Module } })
     }
   }
 
