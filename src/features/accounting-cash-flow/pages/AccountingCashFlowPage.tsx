@@ -9,6 +9,8 @@ import {
   Divider,
   Group,
   ScrollArea,
+  SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Text,
@@ -27,6 +29,7 @@ import {
   IconPencil,
   IconRefresh,
   IconRestore,
+  IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -210,8 +213,56 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
   const filterError = getFilterError(filterDraft.from, filterDraft.to)
   const locationNodeTitle = getLocationNodeTitle(location.state)
   const counterpartyName = getCounterpartyDisplayName(counterparty) || locationNodeTitle
-  const items = cashFlow?.AccountingCashFlowHeadItems || []
+  const items = useMemo(() => cashFlow?.AccountingCashFlowHeadItems || [], [cashFlow])
   const lastItem = items.at(-1)
+  const [flowFilter, setFlowFilter] = useState<'all' | 'debit' | 'credit'>('all')
+  const [docTypeFilter, setDocTypeFilter] = useState<string | null>(null)
+  const [itemSearch, setItemSearch] = useState('')
+  const docTypeOptions = useMemo(() => {
+    const seen = new Map<string, string>()
+
+    for (const item of items) {
+      if (item.Type == null) {
+        continue
+      }
+
+      const value = String(item.Type)
+
+      if (!seen.has(value)) {
+        seen.set(value, getCashFlowTypeLabel(item.Type))
+      }
+    }
+
+    return Array.from(seen, ([value, label]) => ({ label, value }))
+  }, [items])
+  const normalizedItemSearch = itemSearch.trim().toLowerCase()
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        if (flowFilter === 'debit' && item.IsCreditValue) {
+          return false
+        }
+
+        if (flowFilter === 'credit' && !item.IsCreditValue) {
+          return false
+        }
+
+        if (docTypeFilter != null && String(item.Type) !== docTypeFilter) {
+          return false
+        }
+
+        if (normalizedItemSearch) {
+          const haystack = `${item.Name ?? ''} ${item.Number ?? ''}`.toLowerCase()
+
+          if (!haystack.includes(normalizedItemSearch)) {
+            return false
+          }
+        }
+
+        return true
+      }),
+    [items, flowFilter, docTypeFilter, normalizedItemSearch],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -336,13 +387,18 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     counterpartyError,
     counterpartyName,
     document,
+    docTypeFilter,
+    docTypeOptions,
     downloadModalOpened,
     filterDraft,
     filterError,
+    filteredItems,
+    flowFilter,
     isCashFlowLoading,
     isCounterpartyLoading,
     isExporting,
     items,
+    itemSearch,
     lastItem,
     mode,
     selectedAgreement,
@@ -351,8 +407,11 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     handleExport,
     reload,
     resetFilters,
+    setDocTypeFilter,
     setDownloadModalOpened,
     setFilterDraft,
+    setFlowFilter,
+    setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
     submitFilters,
@@ -369,13 +428,18 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     counterpartyError,
     counterpartyName,
     document,
+    docTypeFilter,
+    docTypeOptions,
     downloadModalOpened,
     filterDraft,
     filterError,
+    filteredItems,
+    flowFilter,
     isCashFlowLoading,
     isCounterpartyLoading,
     isExporting,
     items,
+    itemSearch,
     lastItem,
     mode,
     selectedAgreement,
@@ -384,8 +448,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     handleExport,
     reload,
     resetFilters,
+    setDocTypeFilter,
     setDownloadModalOpened,
     setFilterDraft,
+    setFlowFilter,
+    setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
     submitFilters,
@@ -541,6 +608,37 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
             </Alert>
           )}
 
+          <Group gap="sm" wrap="wrap" align="end">
+            <SegmentedControl
+              data={[
+                { label: t('Усі'), value: 'all' },
+                { label: t('Дебет'), value: 'debit' },
+                { label: t('Кредит'), value: 'credit' },
+              ]}
+              size="xs"
+              value={flowFilter}
+              onChange={(value) => setFlowFilter(value as 'all' | 'debit' | 'credit')}
+            />
+            <Select
+              clearable
+              searchable
+              data={docTypeOptions}
+              placeholder={t('Тип документа')}
+              size="xs"
+              value={docTypeFilter}
+              w={240}
+              onChange={setDocTypeFilter}
+            />
+            <TextInput
+              leftSection={<IconSearch size={14} />}
+              placeholder={t('Пошук за номером')}
+              size="xs"
+              style={{ flex: '1 1 220px' }}
+              value={itemSearch}
+              onChange={(event) => setItemSearch(event.currentTarget.value)}
+            />
+          </Group>
+
           <Divider />
 
           <AgreementScopePicker
@@ -556,7 +654,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       <Card withBorder radius="md" padding="xs" className="app-section-card cash-flow-page__grid-card">
         <CashFlowGrid
-          items={items}
+          items={filteredItems}
           leadColumns={leadColumns}
           summary={summary}
           emptyText={t('Взаєморозрахунків не знайдено')}
