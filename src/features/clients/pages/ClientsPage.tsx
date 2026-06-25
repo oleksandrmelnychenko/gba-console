@@ -163,6 +163,26 @@ function useClientsPageModel() {
   const urlActiveFilter = useMemo(() => parseActiveFilterSearchParams(urlSearchParams), [urlSearchParams])
   const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>(() => urlActiveFilter)
   const [roleFilter, setRoleFilter] = useValueState<string[]>(() => parseRoleFilterSearchParam(urlSearchParams.get('roleIds')))
+  const hasDefaultedRoleRef = useRef(false)
+  useEffect(() => {
+    if (hasDefaultedRoleRef.current || clientTypes.length === 0) {
+      return
+    }
+
+    hasDefaultedRoleRef.current = true
+
+    // Default «Всі клієнти» to the «Покупці Україна» role when the URL didn't
+    // pin a role filter, so the registry opens already scoped to buyers.
+    if (roleFilter.length > 0) {
+      return
+    }
+
+    const buyersUkraineRoleId = findBuyersUkraineRoleId(clientTypes)
+
+    if (buyersUkraineRoleId) {
+      setRoleFilter([buyersUkraineRoleId])
+    }
+  }, [clientTypes, roleFilter, setRoleFilter])
   const [searchField, setSearchField] = useValueState(CLIENT_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, CLIENT_SEARCH_DEBOUNCE_MS)
@@ -1295,6 +1315,20 @@ function ClientTableValue({ fw, value }: { fw?: number; value: string }) {
       </Text>
     </Tooltip>
   )
+}
+
+const BUYERS_UKRAINE_ROLE_NAME = 'Покупці Україна'
+
+function findBuyersUkraineRoleId(clientTypes: ClientType[]): string | null {
+  for (const clientType of clientTypes) {
+    for (const role of clientType.ClientTypeRoles ?? []) {
+      if (typeof role.Id === 'number' && role.Name?.trim() === BUYERS_UKRAINE_ROLE_NAME) {
+        return String(role.Id)
+      }
+    }
+  }
+
+  return null
 }
 
 function parseRoleFilterSearchParam(value: string | null): string[] {
