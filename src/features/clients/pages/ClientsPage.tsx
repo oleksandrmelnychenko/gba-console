@@ -116,7 +116,7 @@ const CLIENT_TABLE_DEFAULT_LAYOUT = {
     'actions',
   ],
   columnPinning: {
-    left: ['status', 'regionCode', 'client'],
+    left: ['status', 'regionCode', 'client', 'solvency'],
   },
   columnVisibility: {
     actions: false,
@@ -685,7 +685,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-9"
+            layoutVersion="clients-table-10"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1450}
