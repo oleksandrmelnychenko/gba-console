@@ -74,7 +74,7 @@ export async function updateConsumableOrder(order: ConsumablesOrder, documents: 
 export async function calculateConsumableOrder(order: ConsumablesOrder): Promise<ConsumableOrderCalculation> {
   const result = await apiRequest<unknown>('/consumables/orders/calculate', {
     method: 'POST',
-    body: [order],
+    body: [sanitizeConsumableOrderPayload(order)],
   })
 
   return normalizeConsumableOrderCalculation(result)
