@@ -1,3 +1,4 @@
+import { Skeleton } from '@mantine/core'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNavigation } from '../../../features/navigation/hooks/useNavigation'
@@ -11,6 +12,10 @@ type ConsoleNavMode = 'all' | 'items' | 'modules'
 // на Україну), instead of the alphabetically-first child. Route-keyed so it does
 // not depend on backend menu labels; falls back to the first child otherwise.
 const PREFERRED_MODULE_DEFAULT_ROUTES = ['/sales/ukraine/all', '/orders/ukraine/all']
+
+// Pill-width pattern for the loading shimmer (varied so it reads as real nav).
+const MODULE_SKELETON_WIDTHS = [109, 132, 92, 123, 101, 140]
+const ITEM_SKELETON_WIDTHS = [123, 98, 146, 115, 132]
 
 function findNodeByPath(
   nodes: NavigationNode[],
@@ -65,7 +70,24 @@ export function ConsoleNav({ mode = 'all' }: ConsoleNavProps) {
   }
 
   if (isLoading) {
-    return <div className="console-subnav console-subnav-state">{t('Меню завантажується')}</div>
+    return (
+      <nav className={`console-subnav console-subnav-mode-${mode}`} aria-busy="true" aria-label={t('Навігація')}>
+        {mode !== 'items' && (
+          <div className="console-subnav-row console-subnav-modules">
+            {MODULE_SKELETON_WIDTHS.map((width, index) => (
+              <Skeleton key={index} className="console-subnav-skeleton" height={20} radius="xl" width={width} />
+            ))}
+          </div>
+        )}
+        {mode !== 'modules' && (
+          <div className="console-subnav-row console-subnav-items">
+            {ITEM_SKELETON_WIDTHS.map((width, index) => (
+              <Skeleton key={index} className="console-subnav-skeleton" height={20} radius="xl" width={width} />
+            ))}
+          </div>
+        )}
+      </nav>
+    )
   }
 
   if (error) {

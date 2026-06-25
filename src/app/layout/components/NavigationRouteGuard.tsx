@@ -26,15 +26,10 @@ export function NavigationRouteGuard({ children }: { children: ReactNode }) {
     return children
   }
 
+  // While the menu loads, render the shell optimistically (the nav shows its own
+  // shimmer) instead of a blocking banner; the access check runs once it's ready.
   if (isLoading) {
-    return (
-      <NavigationRouteState
-        color="blue"
-        description={t('Перевіряємо маршрут у меню консолі.')}
-        icon={<IconAlertTriangle size={20} stroke={1.8} />}
-        title={t('Меню завантажується')}
-      />
-    )
+    return children
   }
 
   if (error) {
