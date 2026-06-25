@@ -55,14 +55,14 @@ export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCe
     <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
       <RingProgress
         label={
-          <Text fw={700} size="xs" ta="center">
+          <Text fw={500} fz={10} ta="center">
             {score.score}
           </Text>
         }
         roundCaps
         sections={[{ color: solvencyScoreColor(score), value }]}
         size={36}
-        thickness={4}
+        thickness={3}
       />
     </Tooltip>
   )

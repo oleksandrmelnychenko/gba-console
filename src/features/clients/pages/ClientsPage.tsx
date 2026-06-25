@@ -100,8 +100,23 @@ const CLIENT_SORT_COLUMNS: Record<string, string> = {
 }
 
 const CLIENT_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: [
+    'status',
+    'regionCode',
+    'client',
+    'solvency',
+    'tin',
+    'sroi',
+    'usreou',
+    'reserve',
+    'location',
+    'phone',
+    'email',
+    'role',
+    'actions',
+  ],
   columnPinning: {
-    left: ['status', 'regionCode', 'client'],
+    left: ['status', 'regionCode', 'client', 'solvency'],
   },
   columnVisibility: {
     actions: false,
@@ -670,7 +685,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-7"
+            layoutVersion="clients-table-10"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1450}
