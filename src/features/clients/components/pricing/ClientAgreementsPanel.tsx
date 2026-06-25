@@ -444,6 +444,11 @@ function BuyerAgreementItem({
             <Text fw={600} size="sm" truncate>
               {agreementName}
             </Text>
+            {agreement.IsActive && (
+              <Badge color="green" size="xs" variant="light">
+                {t('Активний')}
+              </Badge>
+            )}
             {originalClientName && (
               <Tooltip label={originalClientName} position="top">
                 <Group gap={2} align="center" wrap="nowrap">
@@ -552,9 +557,16 @@ function ProviderAgreementItem({
     >
       <Group justify="space-between" align="center" wrap="nowrap">
         <Stack gap={2} style={{ minWidth: 0 }}>
-          <Text fw={600} size="sm" truncate>
-            {agreement.Name}
-          </Text>
+          <Group gap={6} align="center" wrap="nowrap">
+            <Text fw={600} size="sm" truncate>
+              {agreement.Name}
+            </Text>
+            {agreement.IsActive && (
+              <Badge color="green" size="xs" variant="light">
+                {t('Активний')}
+              </Badge>
+            )}
+          </Group>
           <Text size="xs" truncate>
             {[agreement.ProviderPricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
           </Text>
