@@ -34,7 +34,7 @@ export function OnlineShopOrderItemsList({ emptyText, items }: OnlineShopOrderIt
   }
 
   return (
-    <Stack gap="sm">
+    <Stack className="online-shop-order-items-list" gap="sm">
       {items.map((item, index) => (
         <CartItemRow key={getRetailItemKey(item, index)} item={item} />
       ))}
@@ -51,31 +51,31 @@ function CartItemRow({ item }: { item: RetailCartItem }) {
   const total = getRetailItemTotal(item)
 
   return (
-    <Group align="flex-start" gap="sm" wrap="nowrap">
+    <Group className="online-shop-order-item-row" align="flex-start" gap="sm" wrap="nowrap">
       {image ? (
-        <Image h={56} radius="sm" src={image} w={56} />
+        <Image className="online-shop-order-item-image" h={56} radius="sm" src={image} w={56} />
       ) : (
-        <ThemeIcon color="gray" h={56} radius="sm" variant="light" w={56}>
+        <ThemeIcon className="online-shop-order-item-image" color="gray" h={56} radius="sm" variant="light" w={56}>
           <IconPhoto size={22} />
         </ThemeIcon>
       )}
-      <Box flex={1}>
-        <Text fw={600} lineClamp={2} size="sm">
+      <Box className="online-shop-order-item-copy" flex={1}>
+        <Text className="online-shop-order-item-title" fw={600} lineClamp={2} size="sm">
           {displayValue(getRetailItemProductName(item, product))}
         </Text>
-        <Text c="dimmed" size="xs">
+        <Text className="online-shop-order-item-code" c="dimmed" size="xs">
           {displayValue(getRetailItemVendorCode(item, product))}
         </Text>
-        <Group gap="xs" mt={4}>
-          <Badge color="gray" variant="light">
+        <Group className="online-shop-order-item-meta" gap="xs" mt={4}>
+          <Badge className="online-shop-order-item-quantity" color="gray" variant="light">
             {quantity} {t('шт.')}
           </Badge>
-          <Text c="dimmed" size="xs">
+          <Text className="online-shop-order-item-unit-price" c="dimmed" size="xs">
             {formatAmount(unitPrice)}
           </Text>
         </Group>
       </Box>
-      <Text fw={700} size="sm">
+      <Text className="online-shop-order-item-total" fw={700} size="sm">
         {formatAmount(total)}
       </Text>
     </Group>

@@ -1,9 +1,9 @@
 import {
   ActionIcon,
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
   Group,
   Loader,
   ScrollArea,
@@ -14,17 +14,14 @@ import {
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconAlertCircle, IconReceipt, IconRestore, IconSearch } from '@tabler/icons-react'
+import { IconAlertCircle, IconMail, IconMapPin, IconPhone, IconReceipt, IconRestore, IconSearch, IconShoppingCart } from '@tabler/icons-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
 import { OnlineShopOrderItemsList } from '../components/OnlineShopOrderItemsList'
-import { OnlineShopSalesFilter } from '../components/OnlineShopSalesFilter'
 import { OnlineShopSalesPanel } from '../components/OnlineShopSalesPanel'
 import { getRetailItemTotal } from '../onlineShopDisplay'
 import type { RetailCartItem, RetailClient } from '../onlineShopTypes'
@@ -35,21 +32,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS = 350
-const ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT = {
-  columnPinning: {
-    left: ['client'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-
-const ONLINE_SHOP_CLIENT_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
 
 export function OnlineShopClientsPage() {
   const { t } = useI18n()
@@ -74,16 +56,9 @@ export function OnlineShopClientsPage() {
   const offset = (page - 1) * pageSize
   const totalPages = totalClients > 0 ? Math.max(1, Math.ceil(totalClients / pageSize)) : page
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
-  const clientColumns = useRetailClientColumns()
-  const tableToolbarLeft = useMemo(
-    () =>
-      normalizedSearchValue ? (
-        <Text size="xs" c="dimmed">
-          {t('пошук')}: {normalizedSearchValue}
-        </Text>
-      ) : null,
-    [normalizedSearchValue, t],
-  )
+  const hasActiveSearch = Boolean(searchValue.trim())
+  const visibleFrom = totalClients === 0 ? 0 : offset + 1
+  const visibleTo = totalClients === 0 ? 0 : offset + clients.length
 
   useEffect(() => {
     setPage(1)
@@ -180,132 +155,157 @@ export function OnlineShopClientsPage() {
     }
   }
 
-  function selectFastClient(client: RetailClient) {
-    void selectClient(client)
-
-    if (getRetailClientNetId(client)) {
-      setSalesOpen(true)
-    }
-  }
-
   return (
-    <Stack className="online-shop-clients-page" gap={6}>
-      <Box
-        className="online-shop-clients-page__layout"
-      >
-        <Card className="app-data-card online-shop-clients-page__left" withBorder radius="md" padding={0}>
-          <div className="app-filter-bar">
-            <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row">
-              <TextInput
-                leftSection={<IconSearch size={16} />}
-                label={t('Пошук')}
-                placeholder={t('Клієнт, телефон або email')}
-                value={searchValue}
-                onChange={(event) => {
-                  setPage(1)
-                  setSearchValue(event.currentTarget.value)
-                }}
-                style={{ flex: 1 }}
-              />
-              <div className="app-filter-actions">
-                <Tooltip label={t('Скинути')}>
-                  <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={resetSearch}>
-                    <IconRestore size={17} />
-                  </ActionIcon>
-                </Tooltip>
-                <Paginator
-                  isLoading={isTableBusy}
-                  page={page}
-                  pageSize={pageSize}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  onPageSizeChange={(nextPageSize) => {
-                    setPage(1)
-                    setPageSize(nextPageSize)
-                  }}
-                />
-              </div>
-            </Group>
-          </div>
+    <Stack className="online-shop-clients-page" gap="md">
+      <Box className="online-shop-clients-shell">
+        <div className="online-shop-clients-command-bar">
+          <TextInput
+            className="online-shop-clients-search"
+            leftSection={<IconSearch size={16} />}
+            label={t('Пошук клієнта')}
+            placeholder={t('Клієнт, телефон або email')}
+            value={searchValue}
+            onChange={(event) => {
+              setPage(1)
+              setSearchValue(event.currentTarget.value)
+            }}
+          />
 
-          {error && (
-            <Alert className="online-shop-clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
-              {error}
-            </Alert>
-          )}
-
-          <div className="online-shop-clients-page__table">
-            <DataTable
-              columns={clientColumns}
-              data={clients}
-              defaultLayout={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT}
-              density={ONLINE_SHOP_CLIENT_TABLE_DEFAULT_LAYOUT.density}
-              emptyText={t('Клієнтів інтернет-магазину не знайдено')}
-              getRowId={(client, index) => getRetailClientRowKey(client, index)}
-              height="100%"
+          <div className="online-shop-clients-command-meta">
+            <span className="online-shop-clients-summary">
+              {visibleFrom}-{visibleTo} / {totalClients}
+            </span>
+            <Tooltip label={t('Скинути')}>
+              <ActionIcon
+                aria-label={t('Скинути')}
+                color="gray"
+                disabled={!hasActiveSearch}
+                size={38}
+                variant="light"
+                onClick={resetSearch}
+              >
+                <IconRestore size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Paginator
               isLoading={isTableBusy}
-              layoutVersion="online-shop-clients-table-default-freeze-2"
-              loadingText={isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
-              minWidth={880}
-              rowClassName={(client) => (isSameRetailClient(client, selectedClient) ? 'is-selected' : undefined)}
-              showDensityToggle={false}
-              showLayoutControls={false}
-              tableId="online-shop-clients"
-              toolbarLeft={tableToolbarLeft}
-              onRowClick={(client) => {
-                void selectClient(client)
+              page={page}
+              pageSize={pageSize}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              onPageSizeChange={(nextPageSize) => {
+                setPage(1)
+                setPageSize(nextPageSize)
               }}
             />
           </div>
-        </Card>
+        </div>
 
-        <Card withBorder radius="md" padding="md" style={{ minWidth: 0, paddingTop: 0 }}>
-          <Stack gap="md">
-            <OnlineShopSalesFilter onSelectFastClient={selectFastClient} />
+        {error && (
+          <Alert className="online-shop-clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        )}
 
-            {cartError && (
-              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
-                {cartError}
-              </Alert>
-            )}
+        <Box className="online-shop-clients-page__layout">
+          <section className="online-shop-clients-roster">
+            <div className="online-shop-clients-roster-head">
+              <span>{t('Клієнт')}</span>
+              <span>{t('Контакти')}</span>
+              <span>{t('Місто')}</span>
+            </div>
 
-            {selectedClient && (
-              <Button
-                fullWidth
-                disabled={!selectedClientNetId}
-                leftSection={<IconReceipt size={16} />}
-                variant="light"
-                onClick={openSalesDrawer}
-              >
-                {t('Продажі клієнта')}
-              </Button>
-            )}
-
-            <ScrollArea.Autosize mah="calc(100vh - 390px)" type="auto">
-              {isCartLoading ? (
-                <Group justify="center" py="xl">
-                  <Loader color="violet" size="sm" />
-                  <Text size="sm" c="dimmed">
-                    {t('Завантаження кошика')}
-                  </Text>
-                </Group>
-              ) : cartItems.length > 0 ? (
-                <OnlineShopOrderItemsList emptyText={t('Кошик порожній')} items={cartItems} />
-              ) : (
-                <Text ta="center" c="dimmed" py="xl">
-                  {selectedClient ? t('Кошик порожній') : t('Вибери клієнта в таблиці')}
-                </Text>
-              )}
+            <ScrollArea.Autosize mah="calc(100vh - 300px)" type="auto">
+              <div className="online-shop-clients-roster-body">
+                {isTableBusy ? (
+                  <div className="online-shop-clients-empty-state">
+                    {isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
+                  </div>
+                ) : clients.length > 0 ? (
+                  clients.map((client, index) => (
+                    <OnlineShopClientRow
+                      key={getRetailClientRowKey(client, index)}
+                      client={client}
+                      isSelected={isSameRetailClient(client, selectedClient)}
+                      onSelect={selectClient}
+                    />
+                  ))
+                ) : (
+                  <div className="online-shop-clients-empty-state">
+                    {t('Клієнтів інтернет-магазину не знайдено')}
+                  </div>
+                )}
+              </div>
             </ScrollArea.Autosize>
+          </section>
 
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">
-                {t('Разом')}
-              </Text>
-              <Text fw={700}>{formatAmount(cartTotal)}</Text>
-            </Group>
-          </Stack>
-        </Card>
+          <aside className="online-shop-clients-side-panel">
+            <section className="online-shop-clients-cart-card">
+              <div className="online-shop-clients-cart-header">
+                <div className="online-shop-clients-cart-heading">
+                  <span className="online-shop-clients-cart-icon" aria-hidden>
+                    <IconShoppingCart size={16} />
+                  </span>
+                  <div>
+                    <Text className="online-shop-clients-cart-eyebrow">{t('Кошик')}</Text>
+                    <Text className="online-shop-clients-cart-title">
+                      {selectedClient ? displayValue(getRetailClientName(selectedClient)) : t('Клієнта не вибрано')}
+                    </Text>
+                  </div>
+                </div>
+                <span className="online-shop-clients-cart-count">
+                  {cartItems.length}
+                </span>
+              </div>
+
+              {cartError && (
+                <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                  {cartError}
+                </Alert>
+              )}
+
+              {selectedClient && (
+                <Button
+                  className="online-shop-clients-sales-button"
+                  fullWidth
+                  disabled={!selectedClientNetId}
+                  leftSection={<IconReceipt size={16} />}
+                  variant="light"
+                  onClick={openSalesDrawer}
+                >
+                  {t('Продажі клієнта')}
+                </Button>
+              )}
+
+              <ScrollArea.Autosize mah="calc(100vh - 462px)" type="auto">
+                <div className="online-shop-clients-cart-body">
+                  {isCartLoading ? (
+                    <Group justify="center" py="xl">
+                      <Loader color="orange" size="sm" />
+                      <Text size="sm" c="dimmed">
+                        {t('Завантаження кошика')}
+                      </Text>
+                    </Group>
+                  ) : cartItems.length > 0 ? (
+                    <OnlineShopOrderItemsList emptyText={t('Кошик порожній')} items={cartItems} />
+                  ) : (
+                    <div className="online-shop-clients-cart-empty">
+                      <IconShoppingCart size={22} />
+                      <Text>
+                        {selectedClient ? t('Кошик порожній') : t('Вибери клієнта в таблиці')}
+                      </Text>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea.Autosize>
+
+              <div className="online-shop-clients-cart-total">
+                <Text>{t('Разом')}</Text>
+                <strong>{formatAmount(cartTotal)}</strong>
+              </div>
+            </section>
+          </aside>
+        </Box>
       </Box>
 
       <AppDrawer
@@ -321,53 +321,69 @@ export function OnlineShopClientsPage() {
   )
 }
 
-function useRetailClientColumns(): DataTableColumn<RetailClient>[] {
-  return useMemo(
-    () => [
-      {
-        id: 'client',
-        header: 'Клієнт',
-        accessor: getRetailClientName,
-        cell: (client) => <OnlineShopClientTableValue fw={600} value={displayValue(getRetailClientName(client))} />,
-        minWidth: 220,
-        width: 260,
-      },
-      {
-        id: 'phone',
-        header: 'Телефон',
-        accessor: getRetailClientPhone,
-        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientPhone(client))} />,
-        minWidth: 140,
-        width: 160,
-      },
-      {
-        id: 'email',
-        header: 'Email',
-        accessor: getRetailClientEmail,
-        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientEmail(client))} />,
-        minWidth: 180,
-        width: 240,
-      },
-      {
-        id: 'city',
-        header: 'Місто',
-        accessor: getRetailClientCity,
-        cell: (client) => <OnlineShopClientTableValue value={displayValue(getRetailClientCity(client))} />,
-        minWidth: 150,
-        width: 180,
-      },
-    ],
-    [],
-  )
-}
+function OnlineShopClientRow({
+  client,
+  isSelected,
+  onSelect,
+}: {
+  client: RetailClient
+  isSelected: boolean
+  onSelect: (client: RetailClient) => void
+}) {
+  const name = displayValue(getRetailClientName(client))
+  const phone = displayValue(getRetailClientPhone(client))
+  const email = displayValue(getRetailClientEmail(client))
+  const city = displayValue(getRetailClientCity(client))
 
-function OnlineShopClientTableValue({ fw, value }: { fw?: number; value: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={ONLINE_SHOP_CLIENT_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
-    </Tooltip>
+    <div
+      className={`online-shop-clients-row${isSelected ? ' is-selected' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        void onSelect(client)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          void onSelect(client)
+        }
+      }}
+    >
+      <div className="online-shop-clients-profile-cell">
+        <Avatar className="online-shop-clients-avatar" radius="xl" size={34}>
+          {getRetailClientInitials(client)}
+        </Avatar>
+        <div className="online-shop-clients-profile-copy">
+          <Tooltip label={name} openDelay={350} withArrow>
+            <Text className="online-shop-clients-profile-name">{name}</Text>
+          </Tooltip>
+          <Text className="online-shop-clients-profile-subtitle">{getRetailClientSourceLabel(client)}</Text>
+        </div>
+      </div>
+
+      <div className="online-shop-clients-contact-cell">
+        <span>
+          <IconPhone size={13} />
+          <Tooltip label={phone} openDelay={350} withArrow>
+            <Text>{phone}</Text>
+          </Tooltip>
+        </span>
+        <span>
+          <IconMail size={13} />
+          <Tooltip label={email} openDelay={350} withArrow>
+            <Text>{email}</Text>
+          </Tooltip>
+        </span>
+      </div>
+
+      <div className="online-shop-clients-city-cell">
+        <IconMapPin size={14} />
+        <Tooltip label={city} openDelay={350} withArrow>
+          <Text>{city}</Text>
+        </Tooltip>
+      </div>
+    </div>
   )
 }
 
@@ -430,6 +446,19 @@ function getRetailClientEmail(client: RetailClient): string {
 
 function getRetailClientCity(client: RetailClient): string {
   return client.City?.trim() || client.EcommerceRegion?.NameUa?.trim() || client.Client?.RegionCode?.City?.trim() || ''
+}
+
+function getRetailClientInitials(client: RetailClient): string {
+  const nameParts = getRetailClientName(client)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+
+  return nameParts.map((part) => part[0]).join('').toUpperCase() || 'IM'
+}
+
+function getRetailClientSourceLabel(client: RetailClient): string {
+  return client.Client ? 'Інтернет магазин / клієнт' : 'Інтернет магазин'
 }
 
 function formatAmount(value: number): string {
