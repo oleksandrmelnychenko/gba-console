@@ -65,7 +65,7 @@ const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
-type SupplierSortId = 'balance' | 'email' | 'notResident' | 'phone' | 'purchaseVolume' | 'regionCode' | 'role' | 'status' | 'supplier'
+type SupplierSortId = 'purchaseVolume'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -81,15 +81,7 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
 ]
 
 const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
-  balance: 'TotalCurrentAmount',
   purchaseVolume: 'PurchaseVolumeEur',
-  email: 'EmailAddress',
-  notResident: 'IsNotResident',
-  phone: 'MobileNumber',
-  regionCode: 'RegionCode.Value',
-  role: '[ClientInRole.ClientTypeRole].Name',
-  status: 'IsActive',
-  supplier: 'FullName',
 }
 
 function useSuppliersPageModel() {
@@ -879,6 +871,7 @@ function useSupplierColumns() {
         header: t('Статус'),
         width: 110,
         minWidth: 96,
+        enableSorting: false,
         accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
         cell: (supplier) => (
           <Badge color={supplier.IsActive === false ? 'gray' : 'green'} variant="light">
@@ -891,6 +884,7 @@ function useSupplierColumns() {
         header: t('Код'),
         width: 90,
         minWidth: 80,
+        enableSorting: false,
         accessor: (supplier) => supplier.RegionCode?.Value,
         cell: (supplier) => <Text size="sm">{displayValue(supplier.RegionCode?.Value)}</Text>,
       },
@@ -900,6 +894,7 @@ function useSupplierColumns() {
         width: 280,
         minWidth: 220,
         fill: true,
+        enableSorting: false,
         accessor: getSupplierDisplayName,
         cell: (supplier) => (
           <Tooltip label={getSupplierDisplayName(supplier)} openDelay={350} withArrow>
@@ -937,6 +932,7 @@ function useSupplierColumns() {
         header: t('Роль'),
         width: 220,
         minWidth: 200,
+        enableSorting: false,
         accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
         cell: (supplier) => {
           const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
@@ -954,6 +950,7 @@ function useSupplierColumns() {
         header: t('Резидентність'),
         width: 130,
         minWidth: 110,
+        enableSorting: false,
         accessor: (supplier) => supplier.IsNotResident,
         cell: (supplier) => <Text size="sm">{supplier.IsNotResident ? t('Нерезидент') : t('Резидент')}</Text>,
       },
@@ -962,6 +959,7 @@ function useSupplierColumns() {
         header: t('Телефон'),
         width: 130,
         minWidth: 110,
+        enableSorting: false,
         accessor: getSupplierPhone,
         cell: (supplier) => <SupplierContactValue value={displayValue(getSupplierPhone(supplier))} />,
       },
@@ -970,6 +968,7 @@ function useSupplierColumns() {
         header: 'Email',
         width: 180,
         minWidth: 150,
+        enableSorting: false,
         accessor: (supplier) => supplier.EmailAddress,
         cell: (supplier) => <SupplierContactValue value={displayValue(supplier.EmailAddress)} />,
       },
@@ -988,6 +987,7 @@ function useSupplierColumns() {
         width: 150,
         minWidth: 130,
         align: 'right',
+        enableSorting: false,
         accessor: (supplier) => supplier.TotalCurrentAmount,
         cell: (supplier) => (
           <SupplierBalanceCell currency={getSupplierCurrencies(supplier)} value={supplier.TotalCurrentAmount} />
@@ -1146,7 +1146,11 @@ function displayValue(value?: number | string | null): string {
 }
 
 function compactStrings(values: Array<string | null | undefined>): string[] {
-  return values.map((value) => value?.trim()).filter(Boolean) as string[]
+  return values.flatMap((value) => {
+    const normalizedValue = value?.trim()
+
+    return normalizedValue ? [normalizedValue] : []
+  })
 }
 
 function uniqueStrings(values: Array<string | null | undefined>): string[] {
