@@ -22,9 +22,7 @@
    (e.g. Delete + Save). */
 .app-sheet-footer {
   align-items: center;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.05), transparent 42%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-top: 1px solid var(--mantine-color-gray-2);
   box-shadow: 0 -8px 24px rgba(20, 28, 38, 0.05);
   display: flex;
