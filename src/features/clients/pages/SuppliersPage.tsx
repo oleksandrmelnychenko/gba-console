@@ -67,10 +67,6 @@ type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
 type SupplierSortId = 'purchaseVolume'
 
-const amountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
 
 const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: SUPPLIER_SEARCH_SQL, label: 'Код або назва' },
@@ -972,27 +968,6 @@ function useSupplierColumns() {
         accessor: (supplier) => supplier.EmailAddress,
         cell: (supplier) => <SupplierContactValue value={displayValue(supplier.EmailAddress)} />,
       },
-      {
-        id: 'purchaseVolume',
-        header: t('Обсяг замовлень, €'),
-        width: 160,
-        minWidth: 140,
-        align: 'right',
-        accessor: (supplier) => supplier.PurchaseVolumeEur,
-        cell: (supplier) => <SupplierPurchaseVolumeCell value={supplier.PurchaseVolumeEur} />,
-      },
-      {
-        id: 'balance',
-        header: t('Поточний баланс'),
-        width: 150,
-        minWidth: 130,
-        align: 'right',
-        enableSorting: false,
-        accessor: (supplier) => supplier.TotalCurrentAmount,
-        cell: (supplier) => (
-          <SupplierBalanceCell currency={getSupplierCurrencies(supplier)} value={supplier.TotalCurrentAmount} />
-        ),
-      },
     ],
     [t],
   )
@@ -1024,30 +999,6 @@ function SupplierContactValue({ value }: { value: string }) {
         {value}
       </span>
     </Tooltip>
-  )
-}
-
-function SupplierBalanceCell({ currency, value }: { currency: string; value?: number | null }) {
-  const formatted = formatAmount(value)
-  const isNegative = typeof value === 'number' && value < 0
-  const tooltip = compactStrings([formatted, currency]).join('\n')
-
-  return (
-    <Tooltip label={tooltip || formatted} multiline={Boolean(currency)} openDelay={350} withArrow>
-      <span className={`suppliers-balance-cell${isNegative ? ' is-negative' : ''}`}>
-        <strong>{formatted}</strong>
-        {currency ? <small>{currency}</small> : null}
-      </span>
-    </Tooltip>
-  )
-}
-
-function SupplierPurchaseVolumeCell({ value }: { value?: number | null }) {
-  return (
-    <span className="suppliers-balance-cell">
-      <strong>{formatAmount(value)}</strong>
-      <small>€</small>
-    </span>
   )
 }
 
@@ -1124,18 +1075,6 @@ function getSupplierPhone(supplier: Client): string | undefined {
   return supplier.MobileNumber || supplier.ClientNumber
 }
 
-function formatAmount(value?: number | null): string {
-  return typeof value === 'number' ? amountFormatter.format(value) : '-'
-}
-
-function getSupplierCurrencies(supplier: Client): string {
-  return uniqueStrings(
-    (supplier.ClientAgreements || []).map((clientAgreement) =>
-      clientAgreement.Agreement?.Currency?.Code || clientAgreement.Agreement?.Currency?.Name,
-    ),
-  ).join(' · ')
-}
-
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
     return String(value)
@@ -1143,18 +1082,6 @@ function displayValue(value?: number | string | null): string {
 
   const normalized = value?.trim()
   return normalized || '-'
-}
-
-function compactStrings(values: Array<string | null | undefined>): string[] {
-  return values.flatMap((value) => {
-    const normalizedValue = value?.trim()
-
-    return normalizedValue ? [normalizedValue] : []
-  })
-}
-
-function uniqueStrings(values: Array<string | null | undefined>): string[] {
-  return [...new Set(compactStrings(values))]
 }
 
 const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
