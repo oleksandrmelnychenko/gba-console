@@ -70,7 +70,7 @@
 
 .client-edit-nav-index {
   border-right: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-9);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -80,7 +80,7 @@
 
 .client-edit-nav-icon {
   display: inline-flex;
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-gray-9);
 }
 
 .client-edit-nav-label {
