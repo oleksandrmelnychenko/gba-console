@@ -36,6 +36,26 @@ describe('consumable order payment payload', () => {
 
     expect(payload.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder?.IsPayed).toBe(true)
   })
+
+  it('passes supplier and agreement from the order to the payment order', () => {
+    const supplier = { NetUid: 'supplier-1', Name: 'Supplier' }
+    const agreement = { NetUid: 'agreement-1', Name: 'Main agreement', SupplyOrganization: supplier }
+    const order = createOrder({
+      ConsumableProductOrganization: supplier,
+      SupplyOrganizationAgreement: agreement,
+      TotalAmount: 100,
+      TotalPaidAmount: 0,
+    })
+
+    const payload = buildPaymentPayload({
+      ...basePaymentInput,
+      amount: 100,
+      order,
+    })
+
+    expect(payload.ConsumableProductOrganization).toBe(supplier)
+    expect(payload.SupplyOrganizationAgreement).toBe(agreement)
+  })
 })
 
 function createOrder(patch: ConsumablesOrder): ConsumablesOrder {

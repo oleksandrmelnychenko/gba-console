@@ -116,6 +116,7 @@ export type OutcomePaymentOrder = EntityFields & {
   Amount?: number
   Colleague?: NamedEntity | null
   Comment?: string
+  ConsumableProductOrganization?: NamedEntity | null
   DifferenceAmount?: number
   FromDate?: string
   IsCanceled?: boolean
@@ -127,6 +128,7 @@ export type OutcomePaymentOrder = EntityFields & {
   PaymentCurrencyRegister?: PaymentCurrencyRegister | null
   PaymentMovementOperation?: PaymentMovementOperation | null
   PaymentRegister?: PaymentRegister | null
+  SupplyOrganizationAgreement?: SupplyOrganizationAgreement | null
   User?: NamedEntity | null
 }
 

@@ -3,21 +3,32 @@ import {
   Autocomplete,
   Badge,
   Button,
-  Card,
-  Group,
   NumberInput,
   Select,
-  SimpleGrid,
   Stack,
-  Table,
   Text,
   TextInput,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconDeviceFloppy, IconPlus } from '@tabler/icons-react'
-import { type FormEvent, useEffect, useMemo } from 'react'
+import {
+  IconAlertCircle,
+  IconBuildingBank,
+  IconCalendar,
+  IconClock,
+  IconCoins,
+  IconDeviceFloppy,
+  IconFileInvoice,
+  IconHash,
+  IconNotes,
+  IconPackage,
+  IconPlus,
+  IconReceipt,
+  IconWallet,
+} from '@tabler/icons-react'
+import { type FormEvent, type ReactNode, useEffect, useMemo } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -38,6 +49,7 @@ import {
   calculateLocalTotal,
   getPaidAmount,
   getPaymentTotalAmount,
+  getPaymentSupplyOrganization,
   getRemainingPaymentAmount,
   isPaymentCoveringOutstandingAmount,
 } from '../paymentPayload'
@@ -50,6 +62,7 @@ import type {
   PaymentMovement,
   PaymentRegister,
 } from '../types'
+import './consumable-order-pay-page.css'
 
 type LocationState = {
   returnPath?: string
@@ -84,6 +97,12 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
+const dateFormatter = new Intl.DateTimeFormat('uk-UA', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+})
+
 export function ConsumableOrderPayPage() {
   const { t } = useI18n()
   const { id } = useParams<{ id?: string }>()
@@ -96,6 +115,8 @@ export function ConsumableOrderPayPage() {
   const [paymentRegisters, setPaymentRegisters] = useValueState<PaymentRegister[]>([])
   const [paymentMovements, setPaymentMovements] = useValueState<PaymentMovement[]>([])
   const [form, setForm] = useValueState<PayFormState>(() => createInitialForm())
+  const [movementModalOpened, setMovementModalOpened] = useValueState(false)
+  const [movementDraft, setMovementDraft] = useValueState('')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(true)
   const [isSaving, setSaving] = useValueState(false)
@@ -115,8 +136,11 @@ export function ConsumableOrderPayPage() {
     [form.selectedCurrencyRegisterValue, selectedRegister],
   )
   const selectedMovement = useMemo(
-    () => paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) || null,
-    [form.selectedMovementValue, paymentMovements],
+    () =>
+      paymentMovements.find((movement) => getEntityValue(movement) === form.selectedMovementValue) ||
+      findPaymentMovementByName(paymentMovements, form.movementSearch) ||
+      null,
+    [form.movementSearch, form.selectedMovementValue, paymentMovements],
   )
   const organizationOptions = useMemo(() => toEntityOptions(organizations), [organizations])
   const registerOptions = useMemo(() => toEntityOptions(paymentRegisters), [paymentRegisters])
@@ -127,6 +151,20 @@ export function ConsumableOrderPayPage() {
   const paidAmount = order ? getPaidAmount(order) : 0
   const remainingAmount = order ? getRemainingPaymentAmount(order) : 0
   const isOrderPaid = Boolean(order?.IsPayed) || Boolean(order && isPaymentCoveringOutstandingAmount(order, 0))
+  const currencyLabel =
+    selectedCurrencyRegister?.Currency?.Code ||
+    selectedCurrencyRegister?.Currency?.Name ||
+    order?.SupplyOrganizationAgreement?.Currency?.Code ||
+    order?.SupplyOrganizationAgreement?.Currency?.Name ||
+    ''
+  const supplierLabel = displayValue(
+    getEntityLabel(order?.SupplyOrganizationAgreement?.SupplyOrganization) ||
+      getEntityLabel(order?.ConsumableProductOrganization) ||
+      getEntityLabel(order?.SupplyOrganizationAgreement?.Organization),
+  )
+  const agreementLabel = displayValue(order?.SupplyOrganizationAgreement?.Name || order?.SupplyOrganizationAgreement?.Number)
+  const orderNumberLabel = order?.Number ? `№ ${order.Number}` : t('Накладна без внутрішнього номера')
+  const sourceNumberLabel = order?.OrganizationNumber ? `№ ${order.OrganizationNumber}` : t('Без номера постачальника')
 
   useEffect(() => {
     if (!id) {
@@ -212,6 +250,7 @@ export function ConsumableOrderPayPage() {
     const value = form.movementSearch.trim()
     const timeoutId = window.setTimeout(() => {
       if (!value) {
+        void getPaymentMovements().then(setPaymentMovements).catch(() => undefined)
         return
       }
 
@@ -240,7 +279,7 @@ export function ConsumableOrderPayPage() {
   }
 
   function handleMovementSubmit(value: string) {
-    const movement = paymentMovements.find((item) => getEntityValue(item) === value)
+    const movement = paymentMovements.find((item) => getEntityValue(item) === value) || findPaymentMovementByName(paymentMovements, value)
 
     if (!movement) {
       return
@@ -252,8 +291,15 @@ export function ConsumableOrderPayPage() {
     })
   }
 
-  async function handleCreateMovement() {
-    const operationName = form.movementSearch.trim()
+  function openMovementModal() {
+    setMovementDraft(selectedMovement ? '' : form.movementSearch.trim())
+    setMovementModalOpened(true)
+  }
+
+  async function handleCreateMovement(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault()
+
+    const operationName = movementDraft.trim()
 
     if (!operationName) {
       return
@@ -271,6 +317,8 @@ export function ConsumableOrderPayPage() {
           movementSearch: createdMovement.OperationName || operationName,
           selectedMovementValue: getEntityValue(createdMovement),
         })
+        setMovementDraft('')
+        setMovementModalOpened(false)
       }
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : t('Не вдалося створити статтю руху коштів'))
@@ -356,20 +404,38 @@ export function ConsumableOrderPayPage() {
         </Button>
       }
     >
-      <form id="consumable-order-pay-form" onSubmit={handleSubmit}>
+      <form className="consumable-order-pay" id="consumable-order-pay-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <div>
-            <Group gap="xs">
-              {order?.IsPayed && (
-                <Badge color="green" variant="light">
-                  {t('Вже оплачено')}
-                </Badge>
-              )}
-            </Group>
-            <Text c="dimmed" size="sm">
-              {order?.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна без внутрішнього номера')}
-            </Text>
-          </div>
+          <section className="consumable-order-pay-hero">
+            <div className="consumable-order-pay-hero__main">
+              <span className="consumable-order-pay-eyebrow">{t('Накладна до оплати')}</span>
+              <div className="consumable-order-pay-title">
+                <span className="consumable-order-pay-title__icon" aria-hidden>
+                  <IconFileInvoice size={18} />
+                </span>
+                <div className="consumable-order-pay-title__copy">
+                  <strong>{orderNumberLabel}</strong>
+                  <span>{sourceNumberLabel}</span>
+                </div>
+              </div>
+              <div className="consumable-order-pay-meta">
+                <span>{supplierLabel}</span>
+                <span>{agreementLabel}</span>
+                <span>{formatDisplayDate(order?.OrganizationFromDate)}</span>
+              </div>
+            </div>
+
+            <div className="consumable-order-pay-metrics">
+              <PaymentMetric label={t('Разом')} meta={currencyLabel} tone="neutral" value={formatMoney(paymentTotalAmount)} />
+              <PaymentMetric label={t('Оплачено')} meta={currencyLabel} tone="green" value={formatMoney(paidAmount)} />
+              <PaymentMetric
+                label={t('До оплати')}
+                meta={currencyLabel}
+                tone={remainingAmount > MONEY_EPSILON ? 'orange' : 'green'}
+                value={formatMoney(remainingAmount)}
+              />
+            </div>
+          </section>
 
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -383,140 +449,279 @@ export function ConsumableOrderPayPage() {
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <section className="consumable-order-pay-section">
+            <PaySectionHeader
+              action={
+                <Button
+                  className="consumable-order-pay-add-movement"
+                  disabled={isLoading || isSaving || isOrderPaid}
+                  leftSection={<IconPlus size={14} />}
+                  size="xs"
+                  type="button"
+                  variant="light"
+                  onClick={openMovementModal}
+                >
+                  {t('Додати статтю')}
+                </Button>
+              }
+              icon={<IconWallet size={16} />}
+              label={t('Параметри')}
+              title={t('Оплата')}
+            />
+            <div className="consumable-order-pay-form-grid">
             <TextInput
+              className="consumable-order-pay-control is-compact"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Дата')}
+              leftSection={<IconCalendar size={15} />}
               type="date"
               value={form.date}
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
             />
             <TextInput
+              className="consumable-order-pay-control is-compact"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Час')}
+              leftSection={<IconClock size={15} />}
               type="time"
               value={form.time}
               onChange={(event) => updateForm({ time: event.currentTarget.value })}
             />
             <NumberInput
               allowNegative={false}
+              className="consumable-order-pay-control is-amount"
               decimalScale={2}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Сума')}
+              leftSection={<IconCoins size={15} />}
               min={0}
               value={form.amount}
               onChange={(value) => updateForm({ amount: toNumber(value) })}
             />
             <Select
+              className="consumable-order-pay-control"
               data={organizationOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Організація')}
+              leftSection={<IconReceipt size={15} />}
               searchable
               value={form.organizationValue || null}
               onChange={(value) => updateForm({ organizationValue: value || '' })}
             />
             <Select
+              className="consumable-order-pay-control"
               data={registerOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Каса / рахунок')}
+              leftSection={<IconBuildingBank size={15} />}
               searchable
               value={form.paymentRegisterValue || null}
               onChange={handleRegisterChanged}
             />
             <Select
+              className="consumable-order-pay-control is-compact"
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
               label={t('Валюта')}
+              leftSection={<IconWallet size={15} />}
               searchable
               value={form.selectedCurrencyRegisterValue || null}
               onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
             />
             <Autocomplete
+              className="consumable-order-pay-control"
               data={movementOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Стаття руху коштів')}
+              leftSection={<IconReceipt size={15} />}
               value={form.movementSearch}
               onChange={(value) => updateForm({ movementSearch: value, selectedMovementValue: '' })}
               onOptionSubmit={handleMovementSubmit}
             />
-            <Button
-              disabled={Boolean(selectedMovement) || !form.movementSearch.trim() || isLoading || isSaving || isOrderPaid}
-              leftSection={<IconPlus size={16} />}
-              mt={24}
-              type="button"
-              variant="default"
-              onClick={() => void handleCreateMovement()}
-            >
-              {t('Створити статтю')}
-            </Button>
             <TextInput
+              className="consumable-order-pay-control"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Коментар')}
+              leftSection={<IconNotes size={15} />}
               value={form.comment}
               onChange={(event) => updateForm({ comment: event.currentTarget.value })}
             />
-          </SimpleGrid>
+            </div>
+          </section>
 
-          <Card withBorder radius="md" shadow="sm">
-            <Stack gap="sm">
-              <Group justify="space-between">
-                <Text fw={700}>{t('Позиції накладної')}</Text>
-                <Group gap="xs" wrap="wrap">
-                  <Badge color="blue" variant="light">
-                    {t('Разом')}: {formatMoney(paymentTotalAmount)}
-                  </Badge>
-                  {paidAmount > 0 ? (
-                    <Badge color="teal" variant="light">
-                      {t('Оплачено')}: {formatMoney(paidAmount)}
-                    </Badge>
-                  ) : null}
-                  {remainingAmount > 0 ? (
-                    <Badge color="yellow" variant="light">
-                      {t('Залишок')}: {formatMoney(remainingAmount)}
-                    </Badge>
-                  ) : null}
-                </Group>
-              </Group>
-
-              <Table.ScrollContainer minWidth={820}>
-                <Table highlightOnHover verticalSpacing="xs">
-                  <Table.Thead>
-                    <Table.Tr>
-                      <Table.Th>{t('Артикул')}</Table.Th>
-                      <Table.Th>{t('Назва')}</Table.Th>
-                      <Table.Th>{t('Кількість')}</Table.Th>
-                      <Table.Th>{t('Ціна')}</Table.Th>
-                      <Table.Th>{t('Разом')}</Table.Th>
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    {items.length > 0 ? (
-                      items.map((item, index) => (
-                        <Table.Tr key={getItemKey(item, index)}>
-                          <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
-                          <Table.Td>{displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)}</Table.Td>
-                          <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
-                          <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                          <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
-                        </Table.Tr>
-                      ))
-                    ) : (
-                      <Table.Tr>
-                        <Table.Td colSpan={5}>
-                          <Text c="dimmed" ta="center">
-                            {t('Позицій немає')}
-                          </Text>
-                        </Table.Td>
-                      </Table.Tr>
-                    )}
-                  </Table.Tbody>
-                </Table>
-              </Table.ScrollContainer>
-            </Stack>
-          </Card>
+          <section className="consumable-order-pay-section">
+            <PaySectionHeader
+              action={
+                <Badge color="gray" variant="light">
+                  {items.length}
+                </Badge>
+              }
+              icon={<IconPackage size={16} />}
+              label={t('Склад накладної')}
+              title={t('Позиції')}
+            />
+            <div className="consumable-order-pay-items">
+              <div className="consumable-order-pay-items__head">
+                <span>{t('Артикул')}</span>
+                <span>{t('Назва')}</span>
+                <span>{t('К-сть')}</span>
+                <span>{t('Ціна')}</span>
+                <span>{t('Разом')}</span>
+              </div>
+              <div className="consumable-order-pay-items__body">
+                {items.length > 0 ? (
+                  items.map((item, index) => <PaymentItemRow key={getItemKey(item, index)} item={item} />)
+                ) : (
+                  <div className="consumable-order-pay-empty">
+                    <Text c="dimmed" size="sm" ta="center">
+                      {t('Позицій немає')}
+                    </Text>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
         </Stack>
       </form>
+      <PaymentMovementModal
+        isSaving={isSaving}
+        opened={movementModalOpened}
+        value={movementDraft}
+        onChange={setMovementDraft}
+        onClose={() => setMovementModalOpened(false)}
+        onSubmit={handleCreateMovement}
+      />
     </AppDrawer>
+  )
+}
+
+function PaymentMovementModal({
+  isSaving,
+  opened,
+  value,
+  onChange,
+  onClose,
+  onSubmit,
+}: {
+  isSaving: boolean
+  opened: boolean
+  value: string
+  onChange: (value: string) => void
+  onClose: () => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  const { t } = useI18n()
+
+  return (
+    <AppModal centered opened={opened} title={t('Нова стаття руху коштів')} onClose={onClose}>
+      <form className="consumable-order-pay-movement-modal" onSubmit={onSubmit}>
+        <Stack gap="md">
+          <TextInput
+            autoFocus
+            className="consumable-order-pay-control"
+            disabled={isSaving}
+            label={t('Назва')}
+            leftSection={<IconReceipt size={15} />}
+            value={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
+          />
+          <div className="consumable-order-pay-modal-actions">
+            <Button color="gray" disabled={isSaving} type="button" variant="subtle" onClick={onClose}>
+              {t('Скасувати')}
+            </Button>
+            <Button color={CREATE_ACTION_COLOR} disabled={!value.trim()} leftSection={<IconPlus size={15} />} loading={isSaving} type="submit">
+              {t('Створити')}
+            </Button>
+          </div>
+        </Stack>
+      </form>
+    </AppModal>
+  )
+}
+
+function PaymentMetric({
+  label,
+  meta,
+  tone,
+  value,
+}: {
+  label: string
+  meta?: string
+  tone: 'green' | 'neutral' | 'orange'
+  value: string
+}) {
+  return (
+    <div className={`consumable-order-pay-metric is-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {meta ? <small>{meta}</small> : null}
+    </div>
+  )
+}
+
+function PaySectionHeader({
+  action,
+  icon,
+  label,
+  title,
+}: {
+  action?: ReactNode
+  icon: ReactNode
+  label: string
+  title: string
+}) {
+  return (
+    <div className="consumable-order-pay-section-header">
+      <div className="consumable-order-pay-section-header__main">
+        <span className="consumable-order-pay-section-header__icon" aria-hidden>
+          {icon}
+        </span>
+        <div>
+          <span className="consumable-order-pay-section-header__label">{label}</span>
+          <strong>{title}</strong>
+        </div>
+      </div>
+      {action ? <div className="consumable-order-pay-section-header__action">{action}</div> : null}
+    </div>
+  )
+}
+
+function PaymentItemRow({ item }: { item: ConsumablesOrderItem }) {
+  const productName = displayValue(item.ConsumableProduct?.Name || item.ConsumableProductCategory?.Name)
+  const categoryName = displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)
+  const unitName = item.ConsumableProduct?.MeasureUnit?.Name || ''
+
+  return (
+    <div className="consumable-order-pay-item-row">
+      <div className="consumable-order-pay-item-code">
+        <span aria-hidden>
+          <IconHash size={13} />
+        </span>
+        <strong>{displayValue(item.ConsumableProduct?.VendorCode)}</strong>
+      </div>
+      <div className="consumable-order-pay-item-product">
+        <span className="consumable-order-pay-item-product__icon" aria-hidden>
+          <IconPackage size={15} />
+        </span>
+        <span className="consumable-order-pay-item-product__copy">
+          <strong>{productName}</strong>
+          <small>{categoryName}</small>
+        </span>
+      </div>
+      <div className="consumable-order-pay-item-qty">
+        <span aria-hidden>
+          <IconHash size={13} />
+        </span>
+        <strong>{formatAmount(item.Qty)}</strong>
+        {unitName ? <small>{unitName}</small> : null}
+      </div>
+      <div className="consumable-order-pay-item-money">
+        <strong>{formatMoney(item.PricePerItem)}</strong>
+      </div>
+      <div className="consumable-order-pay-item-money is-total">
+        <strong>{formatMoney(item.TotalPriceWithVAT)}</strong>
+      </div>
+    </div>
   )
 }
 
@@ -555,6 +760,10 @@ function validatePaymentForm({
 }): string | null {
   if (!order.ConsumablesOrderItems?.length) {
     return t('У накладній немає позицій для оплати')
+  }
+
+  if (!getPaymentSupplyOrganization(order)) {
+    return t('У накладній не вказано постачальника')
   }
 
   if (!selectedOrganization) {
@@ -636,6 +845,20 @@ function includeEntity<T extends NamedEntity>(entities: T[], entity: T | null): 
   return [entity, ...entities]
 }
 
+function findPaymentMovementByName(movements: PaymentMovement[], value: string): PaymentMovement | null {
+  const normalizedValue = normalizeSearchValue(value)
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  return movements.find((movement) => normalizeSearchValue(movement.OperationName) === normalizedValue) || null
+}
+
+function normalizeSearchValue(value?: string | null): string {
+  return (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk')
+}
+
 function getEntityValue(entity?: NamedEntity | null): string {
   return String(entity?.NetUid || entity?.Id || '')
 }
@@ -667,6 +890,16 @@ function formatAmount(value?: number): string {
 
 function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+}
+
+function formatDisplayDate(value?: string | null): string {
+  if (!value) {
+    return '—'
+  }
+
+  const date = new Date(value)
+
+  return Number.isNaN(date.getTime()) ? value : dateFormatter.format(date)
 }
 
 function displayValue(value?: string | number | null): string {
