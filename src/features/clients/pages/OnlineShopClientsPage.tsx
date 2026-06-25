@@ -213,6 +213,7 @@ export function OnlineShopClientsPage() {
               <span>{t('Клієнт')}</span>
               <span>{t('Контакти')}</span>
               <span>{t('Місто')}</span>
+              <span>{t('Створено')}</span>
             </div>
 
             <ScrollArea.Autosize mah="calc(100vh - 300px)" type="auto">
@@ -334,6 +335,7 @@ function OnlineShopClientRow({
   const phone = displayValue(getRetailClientPhone(client))
   const email = displayValue(getRetailClientEmail(client))
   const city = displayValue(getRetailClientCity(client))
+  const created = formatRetailClientCreated(client.Created)
 
   return (
     <div
@@ -383,6 +385,13 @@ function OnlineShopClientRow({
           <Text>{city}</Text>
         </Tooltip>
       </div>
+
+      <Tooltip label={created.tooltip} openDelay={350} withArrow>
+        <div className="online-shop-clients-created-cell">
+          <span>{created.date}</span>
+          <small>{created.time}</small>
+        </div>
+      </Tooltip>
     </div>
   )
 }
@@ -459,6 +468,36 @@ function getRetailClientInitials(client: RetailClient): string {
 
 function getRetailClientSourceLabel(client: RetailClient): string {
   return client.Client ? 'Інтернет магазин / клієнт' : 'Інтернет магазин'
+}
+
+function formatRetailClientCreated(value?: Date | string): { date: string; time: string; tooltip: string } {
+  if (!value) {
+    return { date: '-', time: '-', tooltip: '-' }
+  }
+
+  const date = value instanceof Date ? value : new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    const fallback = String(value)
+
+    return { date: fallback, time: '-', tooltip: fallback }
+  }
+
+  const datePart = date.toLocaleDateString('uk-UA', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  })
+  const timePart = date.toLocaleTimeString('uk-UA', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  return {
+    date: datePart,
+    time: timePart,
+    tooltip: `${datePart}, ${timePart}`,
+  }
 }
 
 function formatAmount(value: number): string {
