@@ -177,7 +177,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
       ) : (
         <Box
           style={{
-            maxHeight: 'min(430px, calc(100vh - 450px))',
+            maxHeight: 'calc(100vh - 320px)',
             overflowX: 'hidden',
             overflowY: 'auto',
             paddingRight: 8,
