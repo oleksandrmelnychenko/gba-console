@@ -320,7 +320,7 @@ export function PerfectClientPanel({ client, onChange }: PerfectClientPanelProps
           ) : (
             <Box
               style={{
-                maxHeight: 'min(560px, calc(100vh - 380px))',
+                maxHeight: 'calc(100vh - 320px)',
                 overflowX: 'hidden',
                 overflowY: 'auto',
                 paddingRight: 8,

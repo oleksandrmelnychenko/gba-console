@@ -462,7 +462,7 @@ export function DiscountsTree({
       ) : (
         <Box
           style={{
-            maxHeight: 'min(420px, calc(100vh - 560px))',
+            maxHeight: 'calc(100vh - 320px)',
             overflowX: 'hidden',
             overflowY: 'auto',
             paddingRight: 8,
