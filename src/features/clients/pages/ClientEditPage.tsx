@@ -9,7 +9,6 @@ import {
   Stack,
   Switch,
   Text,
-  Title,
 } from '@mantine/core'
 import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
@@ -631,8 +630,10 @@ export function ClientEditPage() {
       title={
         client ? (
           <ClientEditTitle
+            canEditActive={hasPermission(EDIT_CLIENT_ACTIVE_PERMISSION)}
             canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
             client={client}
+            onToggleActive={(active) => setField('IsActive', active)}
             onTypeClick={() => setTypePanelOpened(true)}
           />
         ) : undefined
@@ -656,9 +657,6 @@ export function ClientEditPage() {
       )}
 
       <ClientEditBody
-        activeStep={activeStep}
-        canEditActive={hasPermission(EDIT_CLIENT_ACTIVE_PERMISSION)}
-        canViewType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
         client={client}
         errors={formErrors}
         firstStep={firstStep}
@@ -750,12 +748,16 @@ function ClientEditActions({
 }
 
 function ClientEditTitle({
+  canEditActive,
   canEditType,
   client,
+  onToggleActive,
   onTypeClick,
 }: {
+  canEditActive: boolean
   canEditType: boolean
   client: Client | null
+  onToggleActive: (active: boolean) => void
   onTypeClick: () => void
 }) {
   const { t } = useI18n()
@@ -767,7 +769,7 @@ function ClientEditTitle({
 
   return (
     <div className="client-edit-title">
-      <Group gap="sm" align="baseline" wrap="nowrap">
+      <Group gap="sm" align="center" wrap="nowrap">
         {regionCodeValue && (
           <Text className="client-edit-title-code" fw={700} size="sm">
             {regionCodeValue}
@@ -778,11 +780,21 @@ function ClientEditTitle({
             {client.FullName}
           </Text>
         )}
+        {canEditActive ? (
+          <Switch
+            checked={client.IsActive !== false}
+            color="green"
+            label={t('Активний')}
+            size="sm"
+            onChange={(event) => onToggleActive(event.currentTarget.checked)}
+          />
+        ) : (
+          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
+            {client.IsActive === false ? t('Неактивний') : t('Активний')}
+          </Badge>
+        )}
       </Group>
       <Group gap="xs" mt={4}>
-        <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
-          {client.IsActive === false ? t('Неактивний') : t('Активний')}
-        </Badge>
         {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
           <Badge
             color="orange"
@@ -804,9 +816,6 @@ function ClientEditTitle({
 }
 
 function ClientEditBody({
-  activeStep,
-  canEditActive,
-  canViewType,
   client,
   errors,
   firstStep,
@@ -837,9 +846,6 @@ function ClientEditBody({
   onSaveDocuments,
   onSubmit,
 }: {
-  activeStep?: EditStep
-  canEditActive: boolean
-  canViewType: boolean
   client: Client | null
   errors: ClientFormErrors
   firstStep?: EditStep
@@ -934,25 +940,6 @@ function ClientEditBody({
         <Grid.Col span={{ base: 12, lg: 9 }}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
             <Stack gap="md">
-              <Group justify="space-between" align="center">
-                <Title order={3} size="h4" fw={600}>
-                  {activeStep?.label || firstStep?.label}
-                </Title>
-                {canEditActive && (
-                  <Switch
-                    checked={client.IsActive !== false}
-                    label={t('Активний')}
-                    onChange={(event) => setField('IsActive', event.currentTarget.checked)}
-                  />
-                )}
-              </Group>
-
-              {canViewType && (
-                <Text size="sm" c="dimmed">
-                  {displayValue(client.ClientInRole?.ClientType?.Name)} / {displayValue(client.ClientInRole?.ClientTypeRole?.Name)}
-                </Text>
-              )}
-
               <EditStepContent
                 client={client}
                 errors={errors}
