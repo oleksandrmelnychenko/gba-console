@@ -45,6 +45,7 @@ import {
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
+import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
 import type {
   AccountingCashFlow,
@@ -268,7 +269,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
       } catch (loadError) {
         if (!cancelled) {
           setCashFlow(null)
-          setCashFlowError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити рух коштів'))
+          setCashFlowError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити взаєморозрахунки'))
         }
       } finally {
         if (!cancelled) {
@@ -319,7 +320,7 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
       setDocument(exportedDocument)
       setDownloadModalOpened(true)
     } catch (exportError) {
-      setCashFlowError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ руху коштів'))
+      setCashFlowError(exportError instanceof Error ? exportError.message : t('Не вдалося сформувати документ взаєморозрахунків'))
     } finally {
       setExporting(false)
     }
@@ -403,11 +404,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     [navigate, setSelectedItem],
   )
   const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
-    () => [
+    () => {
+      const columns: CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[] = [
       {
         id: 'name',
         isLabel: true,
-        header: t('Документ'),
         cell: (item) => (
           <Text fw={600} lineClamp={1}>
             {displayValue(item.Name)}
@@ -417,11 +418,27 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       {
         id: 'organization',
         header: t('Організація'),
-        width: 220,
+        width: 160,
         cell: (item) => displayValue(item.OrganizationName),
       },
-    ],
-    [t],
+      {
+        id: 'spacer',
+        width: 160,
+        cell: () => '',
+      },
+    ]
+
+      if (mode === 'supplier') {
+        columns.push({
+          id: 'supplier-spacer',
+          width: 160,
+          cell: () => '',
+        })
+      }
+
+      return columns
+    },
+    [mode, t],
   )
   const summary = useMemo(
     () => ({
@@ -430,7 +447,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       beforeBalance: cashFlow?.BeforeRangeBalance,
       beforeInAmount: cashFlow?.BeforeRangeInAmount,
       beforeOutAmount: cashFlow?.BeforeRangeOutAmount,
-      closingBalance: lastItem?.CurrentBalance,
+      closingBalance: getAccountingCashFlowClosingBalance(cashFlow, lastItem),
     }),
     [cashFlow, lastItem],
   )
@@ -451,10 +468,15 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
   return (
     <Stack className="cash-flow-page" gap="sm">
-      <Group justify="space-between" align="end" gap="sm">
-        <Text c="dimmed" size="sm">
-          {counterpartyName || t('Завантаження контрагента')}
-        </Text>
+      <Group justify="space-between" align="center" gap="sm">
+        <Stack gap={0}>
+          <Text fw={700} size="lg">
+            {t('Взаєморозрахунки')}
+          </Text>
+          <Text c="dimmed" size="sm">
+            {counterpartyName || t('Завантаження контрагента')}
+          </Text>
+        </Stack>
         <Group gap="xs">
           <Tooltip label={t('Оновити')}>
             <ActionIcon
@@ -550,12 +572,12 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           items={items}
           leadColumns={leadColumns}
           summary={summary}
-          emptyText={t('Рухів коштів не знайдено')}
+          emptyText={t('Взаєморозрахунків не знайдено')}
           formatMoney={formatMoney}
-          getRowKey={(item, index) => `${item.Number || item.Name || 'row'}-${index}`}
+          getRowKey={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
           isLoading={isCashFlowLoading}
           isRowActive={(item) => item === selectedItem}
-          loadingText={t('Завантаження руху коштів')}
+          loadingText={t('Завантаження взаєморозрахунків')}
           maxHeight="100%"
           renderRowBadge={renderRowBadge}
           onRowClick={handleCashFlowRowClick}
@@ -571,7 +593,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       <DownloadDocumentModal
         document={document}
         opened={downloadModalOpened}
-        title={t('Експорт руху коштів')}
+        title={t('Експорт взаєморозрахунків')}
         onClose={() => setDownloadModalOpened(false)}
       />
     </Stack>
@@ -753,7 +775,7 @@ function AccountingCashFlowDetailDrawer({
       padding="lg"
       position="right"
       size="min(980px, 100vw)"
-      title={item?.Name || t('Деталі руху коштів')}
+      title={item?.Name || t('Деталі взаєморозрахунку')}
       onClose={onClose}
     >
       {item && (

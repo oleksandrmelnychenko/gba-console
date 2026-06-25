@@ -824,7 +824,7 @@ function ClientActionsModal({
                 variant="light"
                 onClick={() => onCashFlow(client)}
               >
-                {t('Рух коштів')}
+                {t('Взаєморозрахунки')}
               </Button>
             )}
           </Stack>

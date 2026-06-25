@@ -23,6 +23,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { exportAccountingCashFlowDocument } from '../../accounting-cash-flow/api/accountingCashFlowApi'
+import { getAccountingCashFlowClosingBalance } from '../../accounting-cash-flow/cashFlowTotals'
 import { CashFlowDetailContent } from '../../accounting-cash-flow/components/CashFlowDetailContent'
 import { CashFlowSummary } from '../../accounting-cash-flow/components/CashFlowSummary'
 import type {
@@ -225,7 +226,7 @@ export function SupplierOrganizationCashFlowPage() {
       beforeBalance: cashFlow?.BeforeRangeBalance,
       beforeInAmount: cashFlow?.BeforeRangeInAmount,
       beforeOutAmount: cashFlow?.BeforeRangeOutAmount,
-      closingBalance: lastItem?.CurrentBalance,
+      closingBalance: getAccountingCashFlowClosingBalance(cashFlow, lastItem),
     }),
     [cashFlow, lastItem],
   )

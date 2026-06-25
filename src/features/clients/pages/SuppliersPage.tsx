@@ -650,7 +650,7 @@ function SupplierActionsModal({
               variant="light"
               onClick={() => onCashFlow(supplier)}
             >
-              {t('Рух коштів')}
+              {t('Взаєморозрахунки')}
             </Button>
             <Button
               fullWidth

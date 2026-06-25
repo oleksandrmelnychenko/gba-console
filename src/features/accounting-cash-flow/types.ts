@@ -135,6 +135,7 @@ export type AccountingCashFlowHeadItem = {
   CustomAgencyService?: unknown
   CustomService?: unknown
   FromDate?: string
+  Id?: number
   IncomePaymentOrder?: unknown
   IsAccounting?: boolean
   IsCreditValue?: boolean

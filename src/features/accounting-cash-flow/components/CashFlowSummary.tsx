@@ -1,5 +1,6 @@
 import { Card, SimpleGrid, Text } from '@mantine/core'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import type { AccountingCashFlow, AccountingCashFlowHeadItem } from '../types'
 
 export function CashFlowSummary({
@@ -10,7 +11,7 @@ export function CashFlowSummary({
   lastItem?: AccountingCashFlowHeadItem
 }) {
   const { t } = useI18n()
-  const closingBalance = typeof lastItem?.CurrentBalance === 'number' ? lastItem.CurrentBalance : 0
+  const closingBalance = getAccountingCashFlowClosingBalance(cashFlow, lastItem)
 
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, lg: 6 }} spacing="sm">
@@ -19,7 +20,7 @@ export function CashFlowSummary({
       <SummaryValue label={t('Вхідний баланс')} value={cashFlow?.BeforeRangeBalance} />
       <SummaryValue label={t('Дебет за період')} value={cashFlow?.AfterRangeInAmount} />
       <SummaryValue label={t('Кредит за період')} value={cashFlow?.AfterRangeOutAmount} />
-      <SummaryValue label={t('Баланс після періоду')} value={closingBalance} />
+      <SummaryValue label={t('Кінцевий баланс')} value={closingBalance} />
     </SimpleGrid>
   )
 }
