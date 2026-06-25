@@ -934,8 +934,8 @@ function useSupplierColumns() {
       {
         id: 'role',
         header: t('Роль'),
-        width: 140,
-        minWidth: 120,
+        width: 220,
+        minWidth: 200,
         accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
         cell: (supplier) => {
           const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
