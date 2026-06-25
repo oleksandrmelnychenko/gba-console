@@ -34,36 +34,42 @@ type SolvencyGaugeCellProps = {
 }
 
 export function SolvencyGaugeCell({ notApplicableLabel, score }: SolvencyGaugeCellProps) {
-  if (!score || score.applicable === false || score.score == null) {
-    return (
-      <Tooltip
-        disabled={!score || score.applicable !== false}
-        label={notApplicableLabel}
-        openDelay={300}
-        withArrow
-      >
-        <Text c="dimmed" size="xs">
-          —
-        </Text>
-      </Tooltip>
-    )
-  }
-
-  const value = Math.min(100, Math.max(0, score.score))
-
+  const notApplicable = score?.applicable === false
+  const hasScore = Boolean(score) && !notApplicable && score?.score != null
+  const value = hasScore ? Math.min(100, Math.max(0, score?.score ?? 0)) : 0
+  const tooltipLabel = hasScore ? `${score?.score} / 100 · ${score?.rating}` : notApplicableLabel
+  // Keep the Tooltip target a single stable <div> so the cell never swaps its
+  // root element type as scores load in (which crashed React's reconciler with
+  // a removeChild error in the pinned column).
   return (
-    <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
-      <RingProgress
-        label={
-          <Text fw={500} fz={10} ta="center">
-            {score.score}
+    <Tooltip disabled={!hasScore && !notApplicable} label={tooltipLabel} openDelay={300} withArrow>
+      <div
+        style={{
+          alignItems: 'center',
+          display: 'inline-flex',
+          height: 36,
+          justifyContent: 'center',
+          width: 36,
+        }}
+      >
+        {hasScore && score ? (
+          <RingProgress
+            label={
+              <Text fw={500} fz={10} ta="center">
+                {score.score}
+              </Text>
+            }
+            roundCaps
+            sections={[{ color: solvencyScoreColor(score), value }]}
+            size={36}
+            thickness={3}
+          />
+        ) : (
+          <Text c="dimmed" size="xs">
+            —
           </Text>
-        }
-        roundCaps
-        sections={[{ color: solvencyScoreColor(score), value }]}
-        size={36}
-        thickness={3}
-      />
+        )}
+      </div>
     </Tooltip>
   )
 }
