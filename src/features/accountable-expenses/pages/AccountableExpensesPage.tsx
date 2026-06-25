@@ -3,9 +3,7 @@ import {
   Alert,
   Badge,
   Button,
-  Divider,
   Group,
-  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -18,13 +16,18 @@ import {
   IconCreditCard,
   IconEye,
   IconExternalLink,
+  IconFileInvoice,
   IconFileText,
+  IconNotes,
+  IconPackage,
   IconPencil,
   IconRefresh,
+  IconReceipt,
   IconRestore,
   IconSearch,
+  IconUserCheck,
 } from '@tabler/icons-react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -564,60 +567,137 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
   const outcome = getOutcomePaymentOrder(row?.order)
   const outcomeOrders = getOutcomePaymentOrders(row?.order)
   const advanceReportLink = getAdvanceReportLink(outcome)
+  const paymentLabel = row ? formatPaymentStatus(row.paymentStatus, t) : ''
+  const underReportLabel = row ? formatUnderReportStatus(row.underReportStatus, t) : ''
+  const typeLabel = row?.item.IsService ? t('Послуга') : t('Товар')
+  const heroMeta = row
+    ? compactStrings([
+        row.advanceNumber,
+        row.created ? formatDateTime(row.created) : undefined,
+        row.organization,
+      ]).join(' / ')
+    : ''
 
   return (
-    <AppDrawer opened={Boolean(row)} padding="md" size="xl" title={t('Підзвітна витрата')} onClose={onClose}>
+    <AppDrawer
+      classNames={{
+        body: 'accountable-expense-detail-drawer__body',
+        content: 'accountable-expense-detail-drawer__content',
+      }}
+      className="accountable-expense-detail-drawer"
+      opened={Boolean(row)}
+      padding="md"
+      size="xl"
+      title={t('Підзвітна витрата')}
+      onClose={onClose}
+    >
       {row && (
-        <Stack gap="md">
-          <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <DetailItem label={t('Створено')} value={formatDateTime(row.created)} />
-            <DetailItem label={t('Номер документа')} value={displayValue(row.order.Number)} />
-            <DetailItem label={t('Номер організації')} value={displayValue(row.order.OrganizationNumber)} />
-            <DetailItem label={t('Дата організації')} value={formatDateTime(row.order.OrganizationFromDate)} />
-            <DetailItem label={t('Авансовий звіт')} value={displayValue(row.advanceNumber)} />
-            <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
-            <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
-            <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
-            <DetailItem label={t('Артикул')} value={displayValue(row.vendorCode)} />
-            <DetailItem label={t('Товар/послуга')} value={displayValue(row.productName)} />
-            <DetailItem label={t('Тип')} value={row.item.IsService ? t('Послуга') : t('Товар')} />
-            <DetailItem label={t('Кількість')} value={formatAmount(row.qty)} />
-            <DetailItem label={t('Ціна')} value={formatMoney(row.pricePerItem)} />
-            <DetailItem label={t('Сума з ПДВ')} value={formatMoney(row.amount)} />
-            <DetailItem label={t('Сума без ПДВ')} value={formatMoney(row.item.TotalPrice)} />
-            <DetailItem label={t('ПДВ')} value={formatMoney(row.item.VAT)} />
-            <DetailItem label={t('ПДВ %')} value={formatAmount(row.item.VatPercent)} />
-            <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
-            <DetailItem label={t('Оплата')} value={formatPaymentStatus(row.paymentStatus, t)} />
-            <DetailItem label={t('Підзвіт закрито')} value={formatUnderReportStatus(row.underReportStatus, t)} />
-            <DetailItem label={t('Оплачено сумарно')} value={formatMoney(row.paidAmount)} />
-          </SimpleGrid>
-          <Stack gap={2}>
-            <Text c="dimmed" size="xs" tt="uppercase">
-              {t('Коментар')}
-            </Text>
-            <Text size="sm">{displayValue(row.comment)}</Text>
-          </Stack>
+        <div className="accountable-expense-detail">
+          <section className="accountable-expense-detail-hero">
+            <div>
+              <span className="accountable-expense-detail-eyebrow">{t('Підзвітна витрата')}</span>
+              <div className="accountable-expense-detail-title">
+                <span className="accountable-expense-detail-title__icon">
+                  <IconFileText size={18} />
+                </span>
+                <div className="accountable-expense-detail-title__copy">
+                  <strong>{displayValue(row.productName || row.advanceNumber || row.order.Number)}</strong>
+                  <span>{heroMeta || displayValue(undefined)}</span>
+                </div>
+              </div>
+              <div className="accountable-expense-detail-badges">
+                <Badge color={getPaymentStatusColor(row.paymentStatus)} variant="light">
+                  {paymentLabel}
+                </Badge>
+                <Badge color={row.underReportStatus === 'closed' ? 'green' : 'gray'} variant="light">
+                  {underReportLabel}
+                </Badge>
+                <Badge color="orange" variant="light">
+                  {typeLabel}
+                </Badge>
+              </div>
+            </div>
+            <div className="accountable-expense-detail-metrics">
+              <ExpenseDetailMetric label={t('Сума з ПДВ')} meta={displayValue(row.currency)} tone="orange" value={formatMoney(row.amount)} />
+              <ExpenseDetailMetric label={t('Оплачено')} meta={displayValue(row.currency)} value={formatMoney(row.paidAmount)} />
+              <ExpenseDetailMetric label={t('Кількість')} meta={typeLabel} value={formatAmount(row.qty)} />
+            </div>
+          </section>
 
-          <Divider />
+          <ExpenseDetailSection icon={<IconFileInvoice size={16} />} label={t('Документ')} title={t('Реквізити')}>
+            <div className="accountable-expense-detail-grid">
+              <DetailItem label={t('Створено')} value={formatDateTime(row.created)} />
+              <DetailItem label={t('Номер документа')} value={displayValue(row.order.Number)} />
+              <DetailItem label={t('Номер організації')} value={displayValue(row.order.OrganizationNumber)} />
+              <DetailItem label={t('Дата організації')} value={formatDateTime(row.order.OrganizationFromDate)} />
+              <DetailItem label={t('Авансовий звіт')} value={displayValue(row.advanceNumber)} />
+              <DetailItem label={t('Організація')} value={displayValue(row.organization)} />
+              <DetailItem label={t('Кому видано')} value={displayValue(row.payedTo)} />
+              <DetailItem label={t('Відповідальний')} value={displayValue(row.responsible)} />
+            </div>
+          </ExpenseDetailSection>
 
-          <Stack gap="xs">
-            <Group justify="space-between" align="center" gap="sm">
-              <Text fw={700}>{t('Повʼязаний видатковий документ')}</Text>
-              {advanceReportLink && (
+          <ExpenseDetailSection icon={<IconPackage size={16} />} label={t('Позиція')} title={t('Товар або послуга')}>
+            <div className="accountable-expense-detail-product">
+              <div className="accountable-expense-detail-product__main">
+                <span className="accountable-expense-detail-product__icon">
+                  <IconPackage size={16} />
+                </span>
+                <div>
+                  <strong>{displayValue(row.productName)}</strong>
+                  <span>{displayValue(row.vendorCode)}</span>
+                </div>
+              </div>
+              <Badge color="orange" variant="light">
+                {typeLabel}
+              </Badge>
+            </div>
+            <div className="accountable-expense-detail-grid is-compact">
+              <DetailItem label={t('Артикул')} value={displayValue(row.vendorCode)} />
+              <DetailItem label={t('Тип')} value={typeLabel} />
+              <DetailItem label={t('Кількість')} value={formatAmount(row.qty)} />
+              <DetailItem label={t('Ціна')} value={formatMoney(row.pricePerItem)} />
+              <DetailItem label={t('Сума без ПДВ')} value={formatMoney(row.item.TotalPrice)} />
+              <DetailItem label={t('ПДВ')} value={formatMoney(row.item.VAT)} />
+              <DetailItem label={t('ПДВ %')} value={formatAmount(row.item.VatPercent)} />
+              <DetailItem label={t('Валюта')} value={displayValue(row.currency)} />
+            </div>
+          </ExpenseDetailSection>
+
+          <ExpenseDetailSection icon={<IconCreditCard size={16} />} label={t('Оплата')} title={t('Стан розрахунків')}>
+            <div className="accountable-expense-detail-grid is-compact">
+              <DetailItem label={t('Оплата')} value={paymentLabel} />
+              <DetailItem label={t('Підзвіт закрито')} value={underReportLabel} />
+              <DetailItem label={t('Оплачено сумарно')} value={formatMoney(row.paidAmount)} />
+              <DetailItem label={t('Сума з ПДВ')} value={formatMoney(row.amount)} />
+            </div>
+          </ExpenseDetailSection>
+
+          <ExpenseDetailSection icon={<IconNotes size={16} />} label={t('Коментар')} title={t('Примітка')}>
+            <p className="accountable-expense-detail-comment">{displayValue(row.comment)}</p>
+          </ExpenseDetailSection>
+
+          <ExpenseDetailSection
+            action={
+              advanceReportLink ? (
                 <Button
+                  className="accountable-expense-detail-open-button"
                   component={Link}
-                  leftSection={<IconExternalLink size={16} />}
+                  leftSection={<IconExternalLink size={14} />}
                   size="xs"
                   to={advanceReportLink}
                   variant="light"
                 >
-                  {t('Відкрити авансовий звіт')}
+                  {t('Відкрити')}
                 </Button>
-              )}
-            </Group>
+              ) : null
+            }
+            icon={<IconReceipt size={16} />}
+            label={t('Авансовий звіт')}
+            title={t('Повʼязаний видатковий документ')}
+          >
             {outcome ? (
-              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+              <div className="accountable-expense-detail-grid">
                 <DetailItem label={t('Видатковий ордер')} value={displayValue(outcome.Number || outcome.CustomNumber)} />
                 <DetailItem label={t('Дата')} value={formatDateTime(outcome.FromDate)} />
                 <DetailItem label={t('Сума')} value={formatMoney(outcome.Amount)} />
@@ -626,69 +706,114 @@ function ExpenseDetailDrawer({ row, onClose }: { row: AccountableExpenseRow | nu
                 <DetailItem label={t('Стаття руху')} value={displayValue(outcome.PaymentMovementOperation?.PaymentMovement?.OperationName)} />
                 <DetailItem label={t('Призначення платежу')} value={displayValue(outcome.PaymentPurpose)} />
                 <DetailItem label={t('Коментар ордера')} value={displayValue(outcome.Comment)} />
-              </SimpleGrid>
+              </div>
             ) : (
-              <Text c="dimmed" size="sm">
+              <Text className="accountable-expense-detail-empty" c="dimmed" size="sm">
                 {t('Повʼязаний видатковий документ не завантажено')}
               </Text>
             )}
-          </Stack>
+          </ExpenseDetailSection>
 
           {outcomeOrders.length > 1 && (
-            <>
-              <Divider />
-              <Stack gap="xs">
-                <Text fw={700}>{t('Усі привʼязки до авансових звітів')}</Text>
+            <ExpenseDetailSection icon={<IconUserCheck size={16} />} label={t('Привʼязки')} title={t('Усі привʼязки до авансових звітів')}>
+              <div className="accountable-expense-detail-links">
                 {outcomeOrders.map((item, index) => {
                   const itemOutcome = item.OutcomePaymentOrder
                   const itemAdvanceReportLink = getAdvanceReportLink(itemOutcome)
 
                   return (
-                    <Stack key={getOutcomeOrderLinkKey(item, index)} gap="xs">
-                      <Group justify="space-between" gap="sm">
-                        <Text fw={600} size="sm">
-                          {displayValue(itemOutcome?.AdvanceNumber)}
-                        </Text>
+                    <div className="accountable-expense-detail-link-card" key={getOutcomeOrderLinkKey(item, index)}>
+                      <Group className="accountable-expense-detail-link-card__head" justify="space-between" gap="sm">
+                        <strong>{displayValue(itemOutcome?.AdvanceNumber)}</strong>
                         {itemAdvanceReportLink && (
                           <Button
+                            className="accountable-expense-detail-open-button"
                             component={Link}
-                            leftSection={<IconExternalLink size={16} />}
+                            leftSection={<IconExternalLink size={14} />}
                             size="xs"
                             to={itemAdvanceReportLink}
                             variant="light"
                           >
-                            {t('Відкрити авансовий звіт')}
+                            {t('Відкрити')}
                           </Button>
                         )}
                       </Group>
-                      <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                      <div className="accountable-expense-detail-grid">
                         <DetailItem label={t('Авансовий звіт')} value={displayValue(itemOutcome?.AdvanceNumber)} />
                         <DetailItem label={t('Видатковий ордер')} value={displayValue(itemOutcome?.Number || itemOutcome?.CustomNumber)} />
                         <DetailItem label={t('Дата')} value={formatDateTime(itemOutcome?.FromDate)} />
                         <DetailItem label={t('Сума')} value={formatMoney(itemOutcome?.Amount)} />
                         <DetailItem label={t('Валюта')} value={displayValue(itemOutcome?.PaymentCurrencyRegister?.Currency?.Code || itemOutcome?.PaymentCurrencyRegister?.Currency?.Name)} />
                         <DetailItem label={t('Закрито')} value={itemOutcome?.IsUnderReportDone ? t('Так') : t('Ні')} />
-                      </SimpleGrid>
-                    </Stack>
+                      </div>
+                    </div>
                   )
                 })}
-              </Stack>
-            </>
+              </div>
+            </ExpenseDetailSection>
           )}
-        </Stack>
+        </div>
       )}
     </AppDrawer>
   )
 }
 
+function ExpenseDetailMetric({
+  label,
+  meta,
+  tone = 'neutral',
+  value,
+}: {
+  label: string
+  meta?: string
+  tone?: 'neutral' | 'orange'
+  value: string
+}) {
+  return (
+    <div className={`accountable-expense-detail-metric is-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {meta && <small>{meta}</small>}
+    </div>
+  )
+}
+
+function ExpenseDetailSection({
+  action,
+  children,
+  icon,
+  label,
+  title,
+}: {
+  action?: ReactNode
+  children: ReactNode
+  icon: ReactNode
+  label: string
+  title: string
+}) {
+  return (
+    <section className="accountable-expense-detail-section">
+      <div className="accountable-expense-detail-section__header">
+        <div className="accountable-expense-detail-section__main">
+          <span className="accountable-expense-detail-section__icon">{icon}</span>
+          <div className="accountable-expense-detail-section__copy">
+            <span>{label}</span>
+            <strong>{title}</strong>
+          </div>
+        </div>
+        {action && <div className="accountable-expense-detail-section__action">{action}</div>}
+      </div>
+      <div className="accountable-expense-detail-section__body">{children}</div>
+    </section>
+  )
+}
+
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <Stack gap={2}>
-      <Text c="dimmed" size="xs" tt="uppercase">
-        {label}
-      </Text>
-      <Text size="sm">{value}</Text>
-    </Stack>
+    <div className="accountable-expense-detail-field">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 

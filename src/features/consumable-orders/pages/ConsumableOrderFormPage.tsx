@@ -6,14 +6,12 @@ import {
   Badge,
   Button,
   Checkbox,
-  Divider,
   FileInput,
   Group,
   NumberInput,
   Select,
   SimpleGrid,
   Stack,
-  Table,
   Text,
   Textarea,
   TextInput,
@@ -22,15 +20,27 @@ import {
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconBuildingBank,
+  IconBuildingWarehouse,
+  IconCalendar,
+  IconClock,
   IconDeviceFloppy,
+  IconFileInvoice,
+  IconFileText,
+  IconHash,
+  IconNotes,
+  IconPackage,
   IconPencil,
   IconPlus,
+  IconReceipt,
   IconRestore,
+  IconScale,
   IconTrash,
   IconUpload,
+  IconUserCheck,
   IconX,
 } from '@tabler/icons-react'
-import { type FormEvent, useCallback, useEffect, useMemo, useRef } from 'react'
+import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -65,6 +75,7 @@ import type {
   SupplyOrganizationAgreement,
   User,
 } from '../types'
+import './consumable-order-form-page.css'
 
 type LocationState = {
   returnPath?: string
@@ -264,10 +275,6 @@ export function ConsumableOrderFormPage() {
     const requestId = (searchRequestRef.current.productName || 0) + 1
     searchRequestRef.current.productName = requestId
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
-
       void searchConsumableProductCategories(value).then((categories) => {
         if (searchRequestRef.current.productName === requestId) {
           setProductOptions(flattenConsumableProducts(categories))
@@ -310,10 +317,6 @@ export function ConsumableOrderFormPage() {
     const requestId = (searchRequestRef.current.costMovement || 0) + 1
     searchRequestRef.current.costMovement = requestId
     const timeoutId = window.setTimeout(() => {
-      if (!value) {
-        return
-      }
-
       void searchPaymentCostMovements(value).then((nextMovements) => {
         if (searchRequestRef.current.costMovement === requestId) {
           setCostMovements(nextMovements)
@@ -476,14 +479,15 @@ export function ConsumableOrderFormPage() {
       return
     }
 
-    const validationError = validateItem(itemEditor.item, t)
+    const resolvedItem = resolveEditorItemSelections(itemEditor, productOptions, costMovements)
+    const validationError = validateItem(resolvedItem, t)
 
     if (validationError) {
-      setItemEditor((current) => ({ ...current, error: validationError }))
+      setItemEditor((current) => ({ ...current, error: validationError, item: resolvedItem }))
       return
     }
 
-    const item = normalizeCalculatedItem(itemEditor.item)
+    const item = normalizeCalculatedItem(resolvedItem)
     const nextItems = [...activeItems]
 
     if (itemEditor.mode === 'edit' && itemEditor.index !== null) {
@@ -545,7 +549,7 @@ export function ConsumableOrderFormPage() {
   }
 
   function handleProductSubmit(value: string) {
-    const product = productOptions.find((item) => getEntityValue(item) === value)
+    const product = findProductBySelection(productOptions, value)
 
     if (!product) {
       return
@@ -555,17 +559,13 @@ export function ConsumableOrderFormPage() {
       ...current,
       articleSearch: product.VendorCode || '',
       error: null,
-      item: normalizeCalculatedItem({
-        ...current.item,
-        ConsumableProduct: product,
-        ConsumableProductCategory: product.ConsumableProductCategory || current.item.ConsumableProductCategory,
-      }),
+      item: applyProductToItem(current.item, product),
       productSearch: product.Name || '',
     }))
   }
 
   function handleCostMovementSubmit(value: string) {
-    const movement = costMovements.find((item) => getEntityValue(item) === value)
+    const movement = findCostMovementBySelection(costMovements, value)
 
     if (!movement) {
       return
@@ -575,13 +575,7 @@ export function ConsumableOrderFormPage() {
       ...current,
       costMovementSearch: movement.OperationName || '',
       error: null,
-      item: {
-        ...current.item,
-        PaymentCostMovementOperation: {
-          ...(current.item.PaymentCostMovementOperation || {}),
-          PaymentCostMovement: movement,
-        },
-      },
+      item: applyCostMovementToItem(current.item, movement),
     }))
   }
 
@@ -641,9 +635,20 @@ export function ConsumableOrderFormPage() {
   const supplierOptions = useMemo(() => toEntityOptions(suppliers), [suppliers])
   const storageOptions = useMemo(() => toEntityOptions(storages), [storages])
   const responsibleOptions = useMemo(() => toEntityOptions(responsibleUsers), [responsibleUsers])
-  const productAutocompleteOptions = useMemo(() => toProductOptions(productOptions), [productOptions])
+  const productSelectOptions = useMemo(() => toProductOptions(productOptions), [productOptions])
+  const productArticleOptions = useMemo(() => toProductArticleOptions(productOptions), [productOptions])
   const costMovementOptions = useMemo(() => toEntityOptions(costMovements, (item) => item?.OperationName || ''), [costMovements])
   const documentRows = order.ConsumablesOrderDocuments || []
+  const currencyLabel = selectedAgreement?.Currency?.Code || selectedAgreement?.Currency?.Name || ''
+  const supplierLabel = displayValue(getEntityLabel(selectedSupplier))
+  const agreementLabel = displayValue(selectedAgreement?.Name || selectedAgreement?.Number)
+  const organizationLabel = displayValue(getEntityLabel(selectedAgreement?.Organization))
+  const storageLabel = displayValue(getEntityLabel(selectedStorage))
+  const internalNumberLabel = order.Number ? `№ ${order.Number}` : t('Накладна ще без внутрішнього номера')
+  const invoiceNumberLabel = form.invoiceNumber ? `№ ${form.invoiceNumber}` : t('Без номера постачальника')
+  const invoiceDateLabel = formatInputDate(form.invoiceDate)
+  const totalWithoutVat = order.TotalAmountWithoutVAT ?? totals.totalWithoutVat
+  const totalWithVat = order.TotalAmount ?? totals.totalWithVat
 
   return (
     <AppDrawer
@@ -665,18 +670,39 @@ export function ConsumableOrderFormPage() {
         </Button>
       }
     >
-      <form id="consumable-order-form" onSubmit={handleSubmit}>
+      <form className="consumable-order-form" id="consumable-order-form" onSubmit={handleSubmit}>
         <Stack gap="md">
-          <Group gap="xs" wrap="wrap">
-            {isPaid && (
-              <Badge color="green" variant="light">
-                {t('Оплачено')}
-              </Badge>
-            )}
-            <Text c="dimmed" size="sm">
-              {order.Number ? `${t('Номер')}: ${order.Number}` : t('Накладна ще не має внутрішнього номера')}
-            </Text>
-          </Group>
+          <section className="consumable-order-form-hero">
+            <div className="consumable-order-form-hero__main">
+              <span className="consumable-order-form-eyebrow">{isEditMode ? t('Редагування') : t('Створення')}</span>
+              <div className="consumable-order-form-title">
+                <span className="consumable-order-form-title__icon" aria-hidden>
+                  <IconFileInvoice size={18} />
+                </span>
+                <div className="consumable-order-form-title__copy">
+                  <strong>{invoiceNumberLabel}</strong>
+                  <span>{internalNumberLabel}</span>
+                </div>
+                {isPaid ? (
+                  <Badge color="green" variant="light">
+                    {t('Оплачено')}
+                  </Badge>
+                ) : null}
+              </div>
+              <div className="consumable-order-form-meta">
+                <span>{supplierLabel}</span>
+                <span>{agreementLabel}</span>
+                <span>{storageLabel}</span>
+                <span>{invoiceDateLabel}</span>
+              </div>
+            </div>
+
+            <div className="consumable-order-form-metrics">
+              <OrderFormMetric label={t('Позиції')} value={String(visibleItems.length)} />
+              <OrderFormMetric label={t('ПДВ')} meta={currencyLabel} value={formatMoney(totals.vat)} />
+              <OrderFormMetric label={t('Разом')} meta={currencyLabel} tone="orange" value={formatMoney(totalWithVat)} />
+            </div>
+          </section>
 
           {error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -684,231 +710,220 @@ export function ConsumableOrderFormPage() {
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 3 }}>
-            <Autocomplete
-              data={supplierOptions}
-              disabled={isFormLocked}
-              label={t('Постачальник послуг')}
-              placeholder={t('Почніть вводити назву')}
-              value={form.supplierSearch}
-              onChange={(value) => updateForm({ selectedSupplierValue: '', supplierSearch: value })}
-              onOptionSubmit={handleSupplierSubmit}
-            />
-            <Select
-              data={agreementOptions}
-              disabled={!selectedSupplier || isFormLocked}
-              label={t('Договір')}
-              placeholder={t('Оберіть договір')}
-              searchable
-              value={form.selectedAgreementValue || null}
-              onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
-            />
-            <TextInput
-              disabled
-              label={t('Організація')}
-              value={getEntityLabel(selectedAgreement?.Organization) || ''}
-            />
-            <TextInput
-              disabled={isFormLocked}
-              label={t('Номер накладної')}
-              value={form.invoiceNumber}
-              onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isFormLocked}
-              label={t('Дата входу')}
-              type="date"
-              value={form.invoiceDate}
-              onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
-            />
-            <TextInput
-              disabled={isFormLocked}
-              label={t('Час')}
-              type="time"
-              value={form.invoiceTime}
-              onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
-            />
-            <Autocomplete
-              data={storageOptions}
-              disabled={isFormLocked}
-              label={t('Склад')}
-              placeholder={t('Почніть вводити склад')}
-              value={form.storageSearch}
-              onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
-              onOptionSubmit={handleStorageSubmit}
-            />
-            <FileInput
-              clearable
-              disabled={isFormLocked}
-              label={t('Файли')}
-              leftSection={<IconUpload size={16} />}
-              multiple
-              placeholder={t('Додати документи')}
-              onChange={handleFilesAdded}
-            />
-            <Textarea
-              autosize
-              disabled={isFormLocked}
-              label={t('Коментар')}
-              minRows={1}
-              value={form.comment}
-              onChange={(event) => updateForm({ comment: event.currentTarget.value })}
-            />
-          </SimpleGrid>
-
-          <Checkbox
-            checked={form.paymentTaskEnabled}
-            disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
-            label={t('Новий платіжний протокол')}
-            onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
-          />
-
-          {form.paymentTaskEnabled && (
-            <SimpleGrid cols={{ base: 1, md: 3 }}>
+          <section className="consumable-order-form-section">
+            <OrderFormSectionHeader icon={<IconFileInvoice size={16} />} label={t('Документ')} title={t('Реквізити накладної')} />
+            <div className="consumable-order-form-grid">
+              <Autocomplete
+                className="consumable-order-form-control is-wide"
+                data={supplierOptions}
+                disabled={isFormLocked}
+                label={t('Постачальник послуг')}
+                leftSection={<IconReceipt size={15} />}
+                placeholder={t('Почніть вводити назву')}
+                value={form.supplierSearch}
+                onChange={(value) => updateForm({ selectedSupplierValue: '', supplierSearch: value })}
+                onOptionSubmit={handleSupplierSubmit}
+              />
+              <Select
+                className="consumable-order-form-control"
+                data={agreementOptions}
+                disabled={!selectedSupplier || isFormLocked}
+                label={t('Договір')}
+                leftSection={<IconFileText size={15} />}
+                placeholder={t('Оберіть договір')}
+                searchable
+                value={form.selectedAgreementValue || null}
+                onChange={(value) => updateForm({ selectedAgreementValue: value || '' })}
+              />
               <TextInput
+                className="consumable-order-form-control"
+                disabled
+                label={t('Організація')}
+                leftSection={<IconBuildingBank size={15} />}
+                value={organizationLabel === '—' ? '' : organizationLabel}
+              />
+              <TextInput
+                className="consumable-order-form-control is-compact"
+                disabled={isFormLocked}
+                label={t('Номер накладної')}
+                leftSection={<IconHash size={15} />}
+                value={form.invoiceNumber}
+                onChange={(event) => updateForm({ invoiceNumber: event.currentTarget.value })}
+              />
+              <TextInput
+                className="consumable-order-form-control is-compact"
+                disabled={isFormLocked}
+                label={t('Дата входу')}
+                leftSection={<IconCalendar size={15} />}
+                type="date"
+                value={form.invoiceDate}
+                onChange={(event) => updateForm({ invoiceDate: event.currentTarget.value })}
+              />
+              <TextInput
+                className="consumable-order-form-control is-compact"
+                disabled={isFormLocked}
+                label={t('Час')}
+                leftSection={<IconClock size={15} />}
+                type="time"
+                value={form.invoiceTime}
+                onChange={(event) => updateForm({ invoiceTime: event.currentTarget.value })}
+              />
+              <Autocomplete
+                className="consumable-order-form-control"
+                data={storageOptions}
+                disabled={isFormLocked}
+                label={t('Склад')}
+                leftSection={<IconBuildingWarehouse size={15} />}
+                placeholder={t('Почніть вводити склад')}
+                value={form.storageSearch}
+                onChange={(value) => updateForm({ selectedStorageValue: '', storageSearch: value })}
+                onOptionSubmit={handleStorageSubmit}
+              />
+              <Textarea
+                autosize
+                className="consumable-order-form-control is-comment"
+                disabled={isFormLocked}
+                label={t('Коментар')}
+                minRows={1}
+                value={form.comment}
+                onChange={(event) => updateForm({ comment: event.currentTarget.value })}
+              />
+            </div>
+          </section>
+
+          <section className={`consumable-order-form-section${form.paymentTaskEnabled ? ' is-enabled' : ''}`}>
+            <OrderFormSectionHeader
+              action={
+                <Checkbox
+                  checked={form.paymentTaskEnabled}
+                  className="consumable-order-form-toggle"
+                  disabled={isFormLocked || Boolean(isEditMode && order.SupplyPaymentTask?.Id)}
+                  label={t('Новий')}
+                  onChange={(event) => updateForm({ paymentTaskEnabled: event.currentTarget.checked })}
+                />
+              }
+              icon={<IconReceipt size={16} />}
+              label={t('Оплата')}
+              title={t('Платіжний протокол')}
+            />
+            {form.paymentTaskEnabled ? (
+              <div className="consumable-order-form-grid">
+              <TextInput
+                className="consumable-order-form-control is-compact"
                 disabled={isFormLocked}
                 label={t('Сплатити до')}
+                leftSection={<IconCalendar size={15} />}
                 type="date"
                 value={form.paymentTaskPayToDate}
                 onChange={(event) => updateForm({ paymentTaskPayToDate: event.currentTarget.value })}
               />
               <Select
+                className="consumable-order-form-control"
                 data={responsibleOptions}
                 disabled={isFormLocked}
                 label={t('Відповідальний')}
+                leftSection={<IconUserCheck size={15} />}
                 searchable
                 value={form.responsibleUserValue || null}
                 onChange={(value) => updateForm({ responsibleUserValue: value || '' })}
               />
               <TextInput
+                className="consumable-order-form-control is-wide"
                 disabled={isFormLocked}
                 label={t('Коментар до платежу')}
+                leftSection={<IconNotes size={15} />}
                 value={form.paymentTaskComment}
                 onChange={(event) => updateForm({ paymentTaskComment: event.currentTarget.value })}
               />
-            </SimpleGrid>
-          )}
+              </div>
+            ) : (
+              <div className="consumable-order-form-muted-panel">
+                <span>{t('Платіжний протокол не створюється для цієї накладної')}</span>
+              </div>
+            )}
+          </section>
 
-          <Divider />
-
-          <Group justify="space-between">
-            <Group gap="xs">
-              <Text fw={700}>{t('Позиції')}</Text>
-              <Badge color="gray" variant="light">
-                {visibleItems.length}
-              </Badge>
-            </Group>
-            <Button disabled={isPaid || isFormLocked} leftSection={<IconPlus size={16} />} type="button" variant="default" onClick={openNewItemEditor}>
-              {t('Додати')}
-            </Button>
-          </Group>
-
-          <Table.ScrollContainer minWidth={980}>
-            <Table highlightOnHover verticalSpacing="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>{t('Артикул')}</Table.Th>
-                  <Table.Th>{t('Назва')}</Table.Th>
-                  <Table.Th>{t('Категорія')}</Table.Th>
-                  <Table.Th>{t('Кількість')}</Table.Th>
-                  <Table.Th>{t('Ціна')}</Table.Th>
-                  <Table.Th>{t('Сума')}</Table.Th>
-                  <Table.Th>{t('ПДВ %')}</Table.Th>
-                  <Table.Th>{t('ПДВ')}</Table.Th>
-                  <Table.Th>{t('Разом')}</Table.Th>
-                  <Table.Th />
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
+          <section className="consumable-order-form-section">
+            <OrderFormSectionHeader
+              action={
+                <Button
+                  className="consumable-order-form-add-button"
+                  disabled={isPaid || isFormLocked}
+                  leftSection={<IconPlus size={15} />}
+                  type="button"
+                  variant="light"
+                  onClick={openNewItemEditor}
+                >
+                  {t('Додати')}
+                </Button>
+              }
+              icon={<IconPackage size={16} />}
+              label={t('Склад накладної')}
+              title={t('Позиції')}
+            />
+            <div className="consumable-order-form-items">
+              <div className="consumable-order-form-items__body">
                 {activeItems.length > 0 ? (
                   activeItems.map((item, index) => (
-                    <Table.Tr key={getItemKey(item, index)} opacity={item.Deleted ? 0.45 : 1}>
-                      <Table.Td>{displayValue(item.ConsumableProduct?.VendorCode)}</Table.Td>
-                      <Table.Td>
-                        <Group gap="xs">
-                          <Text size="sm">{displayValue(item.ConsumableProduct?.Name)}</Text>
-                          {item.Deleted && (
-                            <Badge color="red" size="xs" variant="light">
-                              {t('Буде видалено')}
-                            </Badge>
-                          )}
-                        </Group>
-                      </Table.Td>
-                      <Table.Td>{displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)}</Table.Td>
-                      <Table.Td>{formatAmount(item.Qty)} {item.ConsumableProduct?.MeasureUnit?.Name || ''}</Table.Td>
-                      <Table.Td>{formatMoney(item.PricePerItem)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPrice)}</Table.Td>
-                      <Table.Td>{formatAmount(item.VatPercent)}</Table.Td>
-                      <Table.Td>{formatMoney(item.VAT)}</Table.Td>
-                      <Table.Td>{formatMoney(item.TotalPriceWithVAT)}</Table.Td>
-                      <Table.Td>
-                        <Group gap={4} justify="flex-end" wrap="nowrap">
-                          {!item.Deleted && (
-                            <Tooltip label={t('Редагувати')}>
-                              <ActionIcon
-                                aria-label={t('Редагувати')}
-                                disabled={isPaid || isMutationLocked}
-                                size="sm"
-                                variant="subtle"
-                                onClick={() => openEditItemEditor(item, index)}
-                              >
-                                <IconPencil size={16} />
-                              </ActionIcon>
-                            </Tooltip>
-                          )}
-                          <Tooltip label={item.Deleted ? t('Відновити') : t('Видалити')}>
-                            <ActionIcon
-                              aria-label={item.Deleted ? t('Відновити') : t('Видалити')}
-                              color={item.Deleted ? 'green' : 'red'}
-                              disabled={isPaid || isMutationLocked}
-                              size="sm"
-                              variant="subtle"
-                              onClick={() => void toggleItemDeleted(item, index)}
-                            >
-                              {item.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
-                            </ActionIcon>
-                          </Tooltip>
-                        </Group>
-                      </Table.Td>
-                    </Table.Tr>
+                    <OrderFormItemRow
+                      key={getItemKey(item, index)}
+                      disabled={isPaid || isMutationLocked}
+                      item={item}
+                      onEdit={() => openEditItemEditor(item, index)}
+                      onToggleDeleted={() => void toggleItemDeleted(item, index)}
+                    />
                   ))
                 ) : (
-                  <Table.Tr>
-                    <Table.Td colSpan={10}>
-                      <Text c="dimmed" ta="center">
-                        {t('Позицій немає')}
-                      </Text>
-                    </Table.Td>
-                  </Table.Tr>
+                  <div className="consumable-order-form-empty">
+                    <Text c="dimmed" size="sm" ta="center">
+                      {t('Позицій немає')}
+                    </Text>
+                  </div>
                 )}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+              </div>
+            </div>
+            <div className="consumable-order-form-totals">
+              <OrderFormMetric label={t('Сума')} meta={currencyLabel} value={formatMoney(totalWithoutVat)} />
+              <OrderFormMetric label={t('ПДВ')} meta={currencyLabel} value={formatMoney(totals.vat)} />
+              <OrderFormMetric label={t('Разом')} meta={currencyLabel} tone="orange" value={formatMoney(totalWithVat)} />
+            </div>
+          </section>
 
-          <Divider />
-
-          <Group justify="flex-end" gap="xs">
-            <Badge color="gray" variant="light">
-              {t('Сума')}: {formatMoney(order.TotalAmountWithoutVAT ?? totals.totalWithoutVat)}
-            </Badge>
-            <Badge color="gray" variant="light">
-              {t('ПДВ')}: {formatMoney(totals.vat)}
-            </Badge>
-            <Badge color="blue" variant="light">
-              {t('Разом')}: {formatMoney(order.TotalAmount ?? totals.totalWithVat)}
-            </Badge>
-          </Group>
-
-          {documentRows.length > 0 && (
-            <>
-              <Divider />
-              <Text fw={700}>{t('Документи')}</Text>
-              {documentRows.map((document, index) => {
+          <section className="consumable-order-form-section">
+            <OrderFormSectionHeader
+              action={
+                <Badge color="gray" variant="light">
+                  {documentRows.length}
+                </Badge>
+              }
+              icon={<IconFileText size={16} />}
+              label={t('Файли')}
+              title={t('Документи')}
+            />
+            <div className="consumable-order-form-documents">
+              <FileInput
+                clearable
+                className="consumable-order-form-control consumable-order-form-upload"
+                disabled={isFormLocked}
+                label={t('Додати документи')}
+                leftSection={<IconUpload size={16} />}
+                multiple
+                placeholder={t('Оберіть файли')}
+                onChange={handleFilesAdded}
+              />
+              <div className="consumable-order-form-document-list">
+              {documentRows.length > 0 ? documentRows.map((document, index) => {
                 const documentUrl = getDocumentUrl(document)
 
                 return (
-                  <Group key={getDocumentKey(document, index)} justify="space-between" opacity={document.Deleted ? 0.45 : 1}>
-                    <div>
+                  <div
+                    key={getDocumentKey(document, index)}
+                    className={`consumable-order-form-document-row${document.Deleted ? ' is-deleted' : ''}`}
+                  >
+                    <span className="consumable-order-form-document-icon" aria-hidden>
+                      <IconFileText size={15} />
+                    </span>
+                    <div className="consumable-order-form-document-copy">
                       {documentUrl && !document.Deleted ? (
                         <Anchor href={upgradeHttpToHttps(documentUrl)} rel="noreferrer" size="sm" target="_blank">
                           {displayValue(document.FileName || document.Name)}
@@ -929,80 +944,138 @@ export function ConsumableOrderFormPage() {
                     >
                       {document.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
                     </ActionIcon>
-                  </Group>
+                  </div>
                 )
-              })}
-            </>
-          )}
+              }) : (
+                <div className="consumable-order-form-empty is-compact">
+                  <Text c="dimmed" size="sm" ta="center">
+                    {t('Документів немає')}
+                  </Text>
+                </div>
+              )}
+              </div>
+            </div>
+          </section>
         </Stack>
       </form>
 
       <AppModal centered opened={itemEditor.opened} size="xl" title={itemEditor.mode === 'edit' ? t('Редагувати позицію') : t('Додати позицію')} onClose={closeItemEditor}>
-        <Stack gap="md">
+        <Stack className="consumable-order-item-modal" gap="md">
           {itemEditor.error && (
             <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
               {itemEditor.error}
             </Alert>
           )}
 
-          <SimpleGrid cols={{ base: 1, md: 2 }}>
-            <Autocomplete
-              data={productAutocompleteOptions}
+          <SimpleGrid className="consumable-order-item-modal__grid" cols={{ base: 1, md: 2 }}>
+            <Select
+              clearable
+              data={productSelectOptions}
               disabled={isMutationLocked}
               label={t('Назва товару / послуги')}
-              value={itemEditor.productSearch}
+              nothingFoundMessage={t('Нічого не знайдено')}
+              searchable
+              searchValue={itemEditor.productSearch}
+              value={getEntityValue(itemEditor.item.ConsumableProduct) || null}
               onChange={(value) => {
+                if (value) {
+                  handleProductSubmit(value)
+                  return
+                }
+
                 setItemEditor((current) => ({
                   ...current,
+                  articleSearch: '',
                   item: clearEditorProduct(current.item),
+                  productSearch: '',
+                }))
+              }}
+              onSearchChange={(value) => {
+                setItemEditor((current) => ({
+                  ...current,
+                  item: shouldKeepEditorProduct(current.item, value) ? current.item : clearEditorProduct(current.item),
                   productSearch: value,
                 }))
               }}
-              onOptionSubmit={handleProductSubmit}
             />
-            <Autocomplete
-              data={productAutocompleteOptions}
+            <Select
+              clearable
+              data={productArticleOptions}
               disabled={isMutationLocked}
               label={t('Артикул')}
-              value={itemEditor.articleSearch}
+              nothingFoundMessage={t('Нічого не знайдено')}
+              searchable
+              searchValue={itemEditor.articleSearch}
+              value={getEntityValue(itemEditor.item.ConsumableProduct) || null}
               onChange={(value) => {
+                if (value) {
+                  handleProductSubmit(value)
+                  return
+                }
+
+                setItemEditor((current) => ({
+                  ...current,
+                  articleSearch: '',
+                  item: clearEditorProduct(current.item),
+                  productSearch: '',
+                }))
+              }}
+              onSearchChange={(value) => {
                 setItemEditor((current) => ({
                   ...current,
                   articleSearch: value,
-                  item: clearEditorProduct(current.item),
+                  item: shouldKeepEditorProduct(current.item, value) ? current.item : clearEditorProduct(current.item),
                 }))
               }}
-              onOptionSubmit={handleProductSubmit}
             />
             <TextInput
               disabled
               label={t('Категорія')}
               value={itemEditor.item.ConsumableProductCategory?.Name || itemEditor.item.ConsumableProduct?.ConsumableProductCategory?.Name || ''}
             />
-            <Autocomplete
+            <Select
+              clearable
               data={costMovementOptions}
               disabled={isMutationLocked}
               label={t('Стаття витрат')}
-              value={itemEditor.costMovementSearch}
+              nothingFoundMessage={t('Нічого не знайдено')}
+              searchable
+              searchValue={itemEditor.costMovementSearch}
+              value={getEntityValue(itemEditor.item.PaymentCostMovementOperation?.PaymentCostMovement) || null}
               onChange={(value) => {
+                if (value) {
+                  handleCostMovementSubmit(value)
+                  return
+                }
+
+                setItemEditor((current) => ({
+                  ...current,
+                  costMovementSearch: '',
+                  item: clearEditorCostMovement(current.item),
+                }))
+              }}
+              onSearchChange={(value) => {
                 setItemEditor((current) => ({
                   ...current,
                   costMovementSearch: value,
-                  item: {
-                    ...current.item,
-                    PaymentCostMovementOperation: null,
-                  },
+                  item: shouldKeepEditorCostMovement(current.item, value) ? current.item : clearEditorCostMovement(current.item),
                 }))
               }}
-              onOptionSubmit={handleCostMovementSubmit}
             />
             <NumberInput
               allowNegative={false}
+              className="consumable-order-item-quantity-input"
               decimalScale={3}
               disabled={isMutationLocked}
               label={t('Кількість')}
               min={0}
-              rightSection={<Text c="dimmed" size="xs">{itemEditor.item.ConsumableProduct?.MeasureUnit?.Name}</Text>}
+              rightSection={
+                itemEditor.item.ConsumableProduct?.MeasureUnit?.Name ? (
+                  <span className="consumable-order-item-unit-suffix">{itemEditor.item.ConsumableProduct.MeasureUnit.Name}</span>
+                ) : null
+              }
+              rightSectionPointerEvents="none"
+              rightSectionWidth={92}
               value={itemEditor.item.Qty || 0}
               onChange={(value) => updateEditorItem({ Qty: toNumber(value) })}
             />
@@ -1044,7 +1117,7 @@ export function ConsumableOrderFormPage() {
             />
           </SimpleGrid>
 
-          <Group justify="flex-end">
+          <Group className="consumable-order-item-modal__actions" justify="flex-end">
             <Button disabled={isMutationLocked} leftSection={<IconX size={16} />} variant="default" onClick={closeItemEditor}>
               {t('Скасувати')}
             </Button>
@@ -1055,6 +1128,154 @@ export function ConsumableOrderFormPage() {
         </Stack>
       </AppModal>
     </AppDrawer>
+  )
+}
+
+function OrderFormMetric({
+  label,
+  meta,
+  tone = 'neutral',
+  value,
+}: {
+  label: string
+  meta?: string
+  tone?: 'neutral' | 'orange'
+  value: string
+}) {
+  return (
+    <div className={`consumable-order-form-metric is-${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {meta ? <small>{meta}</small> : null}
+    </div>
+  )
+}
+
+function OrderFormSectionHeader({
+  action,
+  icon,
+  label,
+  title,
+}: {
+  action?: ReactNode
+  icon: ReactNode
+  label: string
+  title: string
+}) {
+  return (
+    <div className="consumable-order-form-section-header">
+      <div className="consumable-order-form-section-header__main">
+        <span className="consumable-order-form-section-header__icon" aria-hidden>
+          {icon}
+        </span>
+        <div>
+          <span className="consumable-order-form-section-header__label">{label}</span>
+          <strong>{title}</strong>
+        </div>
+      </div>
+      {action ? <div className="consumable-order-form-section-header__action">{action}</div> : null}
+    </div>
+  )
+}
+
+function OrderFormItemRow({
+  disabled,
+  item,
+  onEdit,
+  onToggleDeleted,
+}: {
+  disabled: boolean
+  item: ConsumablesOrderItem
+  onEdit: () => void
+  onToggleDeleted: () => void
+}) {
+  const { t } = useI18n()
+  const productName = displayValue(item.ConsumableProduct?.Name)
+  const article = displayValue(item.ConsumableProduct?.VendorCode)
+  const category = displayValue(item.ConsumableProductCategory?.Name || item.ConsumableProduct?.ConsumableProductCategory?.Name)
+  const costMovement = displayValue(item.PaymentCostMovementOperation?.PaymentCostMovement?.OperationName)
+  const unitName = item.ConsumableProduct?.MeasureUnit?.Name || ''
+
+  return (
+    <div className={`consumable-order-form-item-row${item.Deleted ? ' is-deleted' : ''}`}>
+      <div className="consumable-order-form-item-top">
+        <div className="consumable-order-form-product-cell">
+          <span className="consumable-order-form-product-icon" aria-hidden>
+            <IconPackage size={15} />
+          </span>
+          <span className="consumable-order-form-product-copy">
+            <span>
+              <strong>{productName}</strong>
+              {item.Deleted ? (
+                <Badge color="red" size="xs" variant="light">
+                  {t('Буде видалено')}
+                </Badge>
+              ) : null}
+            </span>
+            <small>{article}</small>
+          </span>
+        </div>
+        <div className="consumable-order-form-row-actions">
+          {!item.Deleted ? (
+            <Tooltip label={t('Редагувати')}>
+              <ActionIcon aria-label={t('Редагувати')} disabled={disabled} size="sm" variant="subtle" onClick={onEdit}>
+                <IconPencil size={16} />
+              </ActionIcon>
+            </Tooltip>
+          ) : null}
+          <Tooltip label={item.Deleted ? t('Відновити') : t('Видалити')}>
+            <ActionIcon
+              aria-label={item.Deleted ? t('Відновити') : t('Видалити')}
+              color={item.Deleted ? 'green' : 'red'}
+              disabled={disabled}
+              size="sm"
+              variant="subtle"
+              onClick={onToggleDeleted}
+            >
+              {item.Deleted ? <IconRestore size={16} /> : <IconTrash size={16} />}
+            </ActionIcon>
+          </Tooltip>
+        </div>
+      </div>
+      <div className="consumable-order-form-item-details">
+        <div className="consumable-order-form-detail-line">
+          <OrderFormMetaPill label={t('Категорія')} value={category} />
+          <OrderFormMetaPill label={t('Стаття витрат')} value={costMovement} />
+          <div className="consumable-order-form-qty-cell">
+            <span aria-hidden>
+              <IconScale size={13} />
+            </span>
+            <strong>{formatAmount(item.Qty)}</strong>
+            {unitName ? <small>{unitName}</small> : null}
+          </div>
+        </div>
+        <div className="consumable-order-form-amounts-cell">
+          <OrderFormAmountPill label={t('Ціна')} value={formatMoney(item.PricePerItem)} />
+          <OrderFormAmountPill label={t('Сума')} value={formatMoney(item.TotalPrice)} />
+          <OrderFormAmountPill label={t('ПДВ %')} value={formatAmount(item.VatPercent)} />
+          <OrderFormAmountPill label={t('ПДВ')} value={formatMoney(item.VAT)} />
+          <OrderFormAmountPill isTotal label={t('Разом')} value={formatMoney(item.TotalPriceWithVAT)} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderFormMetaPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="consumable-order-form-meta-pill">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  )
+}
+
+function OrderFormAmountPill({ isTotal = false, label, value }: { isTotal?: boolean; label: string; value: string }) {
+  return (
+    <div className={`consumable-order-form-amount-pill${isTotal ? ' is-total' : ''}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   )
 }
 
@@ -1280,6 +1501,118 @@ function normalizeCalculatedItem(item: ConsumablesOrderItem): ConsumablesOrderIt
   }
 }
 
+function resolveEditorItemSelections(
+  editor: ItemEditorState,
+  products: ConsumableProduct[],
+  costMovements: PaymentCostMovement[],
+): ConsumablesOrderItem {
+  const itemWithProduct = resolveEditorProductSelection(editor, products)
+
+  return resolveEditorCostMovementSelection(editor, itemWithProduct, costMovements)
+}
+
+function resolveEditorProductSelection(editor: ItemEditorState, products: ConsumableProduct[]): ConsumablesOrderItem {
+  if (editor.item.ConsumableProduct) {
+    return editor.item
+  }
+
+  const product =
+    findProductBySelection(products, editor.productSearch) ||
+    findProductBySelection(products, editor.articleSearch)
+
+  return product ? applyProductToItem(editor.item, product) : editor.item
+}
+
+function applyProductToItem(item: ConsumablesOrderItem, product: ConsumableProduct): ConsumablesOrderItem {
+  return normalizeCalculatedItem({
+    ...item,
+    ConsumableProduct: product,
+    ConsumableProductCategory: product.ConsumableProductCategory || item.ConsumableProductCategory,
+  })
+}
+
+function findProductBySelection(products: ConsumableProduct[], value: string): ConsumableProduct | null {
+  const normalizedValue = normalizeSearchValue(value)
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  return products.find((product) => productSelectionValues(product).some((candidate) => normalizeSearchValue(candidate) === normalizedValue)) || null
+}
+
+function productSelectionValues(product: ConsumableProduct): string[] {
+  return [
+    getEntityValue(product),
+    product.Name || '',
+    product.VendorCode || '',
+    joinTruthyParts([product.VendorCode, product.Name], ' - '),
+  ]
+}
+
+function shouldKeepEditorProduct(item: ConsumablesOrderItem, value: string): boolean {
+  const product = item.ConsumableProduct
+  const normalizedValue = normalizeSearchValue(value)
+
+  if (!product || !normalizedValue) {
+    return false
+  }
+
+  return productSelectionValues(product).some((candidate) => normalizeSearchValue(candidate) === normalizedValue)
+}
+
+function resolveEditorCostMovementSelection(
+  editor: ItemEditorState,
+  item: ConsumablesOrderItem,
+  movements: PaymentCostMovement[],
+): ConsumablesOrderItem {
+  if (item.PaymentCostMovementOperation?.PaymentCostMovement) {
+    return item
+  }
+
+  const movement = findCostMovementBySelection(movements, editor.costMovementSearch)
+
+  return movement ? applyCostMovementToItem(item, movement) : item
+}
+
+function applyCostMovementToItem(item: ConsumablesOrderItem, movement: PaymentCostMovement): ConsumablesOrderItem {
+  return {
+    ...item,
+    PaymentCostMovementOperation: {
+      ...(item.PaymentCostMovementOperation || {}),
+      PaymentCostMovement: movement,
+    },
+  }
+}
+
+function findCostMovementBySelection(movements: PaymentCostMovement[], value: string): PaymentCostMovement | null {
+  const normalizedValue = normalizeSearchValue(value)
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  return movements.find((movement) => costMovementSelectionValues(movement).some((candidate) => normalizeSearchValue(candidate) === normalizedValue)) || null
+}
+
+function costMovementSelectionValues(movement: PaymentCostMovement): string[] {
+  return [
+    getEntityValue(movement),
+    movement.OperationName || '',
+  ]
+}
+
+function shouldKeepEditorCostMovement(item: ConsumablesOrderItem, value: string): boolean {
+  const movement = item.PaymentCostMovementOperation?.PaymentCostMovement
+  const normalizedValue = normalizeSearchValue(value)
+
+  if (!movement || !normalizedValue) {
+    return false
+  }
+
+  return costMovementSelectionValues(movement).some((candidate) => normalizeSearchValue(candidate) === normalizedValue)
+}
+
 function calculateLocalTotals(items: ConsumablesOrderItem[]) {
   return items.reduce(
     (total, item) => ({
@@ -1325,6 +1658,21 @@ function toEntityOptions<T extends NamedEntity>(entities: T[], labelGetter = get
 }
 
 function toProductOptions(products: ConsumableProduct[]): SelectOption[] {
+  const options: SelectOption[] = []
+
+  for (const product of products) {
+    const value = getEntityValue(product)
+    const label = joinTruthyParts([product.VendorCode, product.Name], ' - ') || value
+
+    if (value) {
+      options.push({ label, value })
+    }
+  }
+
+  return options
+}
+
+function toProductArticleOptions(products: ConsumableProduct[]): SelectOption[] {
   const options: SelectOption[] = []
 
   for (const product of products) {
@@ -1461,6 +1809,17 @@ function clearEditorProduct(item: ConsumablesOrderItem): ConsumablesOrderItem {
   }
 }
 
+function clearEditorCostMovement(item: ConsumablesOrderItem): ConsumablesOrderItem {
+  return {
+    ...item,
+    PaymentCostMovementOperation: null,
+  }
+}
+
+function normalizeSearchValue(value?: string | null): string {
+  return (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('uk')
+}
+
 function getEntityValue(entity?: NamedEntity | null): string {
   return String(entity?.NetUid || entity?.Id || '')
 }
@@ -1572,6 +1931,16 @@ function formatAmount(value?: number): string {
 
 function formatMoney(value?: number): string {
   return typeof value === 'number' && Number.isFinite(value) ? moneyFormatter.format(value) : '—'
+}
+
+function formatInputDate(value: string): string {
+  if (!value) {
+    return '—'
+  }
+
+  const [year, month, day] = value.split('-')
+
+  return year && month && day ? `${day}.${month}.${year.slice(2)}` : value
 }
 
 function displayValue(value?: string | number | null): string {

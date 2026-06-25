@@ -443,6 +443,397 @@
   min-height: 240px;
 }
 
+.accountable-expense-detail-drawer__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.accountable-expense-detail-drawer__body {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.accountable-expense-detail {
+  display: grid;
+  gap: var(--mantine-spacing-md);
+  height: calc(100vh - 112px);
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  padding-right: 8px;
+  scrollbar-gutter: stable;
+  width: 100%;
+}
+
+.accountable-expense-detail::-webkit-scrollbar {
+  width: 8px;
+}
+
+.accountable-expense-detail::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.accountable-expense-detail::-webkit-scrollbar-thumb {
+  background: var(--mantine-color-gray-4);
+  border: 2px solid var(--mantine-color-white);
+  border-radius: 999px;
+}
+
+.accountable-expense-detail-hero,
+.accountable-expense-detail-section {
+  background:
+    linear-gradient(90deg, rgba(255, 247, 237, 0.38), rgba(255, 255, 255, 0.96) 40%, rgba(248, 250, 252, 0.72)),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
+  min-width: 0;
+}
+
+.accountable-expense-detail-hero {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 0.78fr);
+  padding: 14px;
+}
+
+.accountable-expense-detail-eyebrow,
+.accountable-expense-detail-section__copy > span {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.accountable-expense-detail-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-top: 7px;
+  min-width: 0;
+}
+
+.accountable-expense-detail-title__icon,
+.accountable-expense-detail-section__icon,
+.accountable-expense-detail-product__icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.accountable-expense-detail-title__icon {
+  border-radius: 999px;
+  height: 36px;
+  width: 36px;
+}
+
+.accountable-expense-detail-title__copy {
+  display: grid;
+  min-width: 0;
+}
+
+.accountable-expense-detail-title__copy strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expense-detail-title__copy span {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expense-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.accountable-expense-detail-badges .mantine-Badge-root,
+.accountable-expense-detail-product .mantine-Badge-root {
+  font-size: 10px;
+  height: 22px;
+  padding: 0 8px;
+}
+
+.accountable-expense-detail-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(118px, 1fr));
+  min-width: 0;
+}
+
+.accountable-expense-detail-metric {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 10px 11px;
+  position: relative;
+}
+
+.accountable-expense-detail-metric::before {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  content: "";
+  height: 3px;
+  left: 11px;
+  position: absolute;
+  right: 11px;
+  top: -2px;
+}
+
+.accountable-expense-detail-metric.is-orange::before {
+  background: var(--brand-orange);
+}
+
+.accountable-expense-detail-metric span,
+.accountable-expense-detail-metric small {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accountable-expense-detail-metric strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expense-detail-metric small {
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+.accountable-expense-detail-section__header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 11px 14px 12px;
+  position: relative;
+}
+
+.accountable-expense-detail-section__header::before {
+  background: linear-gradient(90deg, transparent, var(--mantine-color-gray-2) 9%, var(--mantine-color-gray-2) 91%, transparent);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.accountable-expense-detail-section__main {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+
+.accountable-expense-detail-section__icon {
+  border-radius: 999px;
+  box-sizing: border-box;
+  flex: 0 0 30px;
+  height: 30px;
+  line-height: 1;
+  width: 30px;
+}
+
+.accountable-expense-detail-section__icon svg {
+  display: block;
+}
+
+.accountable-expense-detail-section__copy {
+  display: grid;
+  min-width: 0;
+}
+
+.accountable-expense-detail-section__main strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.accountable-expense-detail-section__action {
+  flex: 0 0 auto;
+}
+
+.accountable-expense-detail-section__body {
+  padding: 16px 14px 14px;
+}
+
+.accountable-expense-detail-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.accountable-expense-detail-grid.is-compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.accountable-expense-detail-field {
+  background: rgba(248, 250, 252, 0.74);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 7px 9px;
+}
+
+.accountable-expense-detail-field span {
+  color: var(--mantine-color-gray-5);
+  font-size: 9.5px;
+  font-weight: 650;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.accountable-expense-detail-field strong {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 620;
+  line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.accountable-expense-detail-product {
+  align-items: center;
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+}
+
+.accountable-expense-detail-product__main {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.accountable-expense-detail-product__icon {
+  border-radius: 999px;
+  height: 34px;
+  width: 34px;
+}
+
+.accountable-expense-detail-product__main div {
+  display: grid;
+  min-width: 0;
+}
+
+.accountable-expense-detail-product__main strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountable-expense-detail-product__main span {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+}
+
+.accountable-expense-detail-comment {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.accountable-expense-detail-open-button {
+  height: 28px;
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+.accountable-expense-detail-empty {
+  background: rgba(248, 250, 252, 0.74);
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: 8px;
+  display: block;
+  padding: 12px;
+}
+
+.accountable-expense-detail-links {
+  display: grid;
+  gap: 10px;
+}
+
+.accountable-expense-detail-link-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.accountable-expense-detail-link-card__head {
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+}
+
+.accountable-expense-detail-link-card__head strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+@media (max-width: 920px) {
+  .accountable-expense-detail-hero,
+  .accountable-expense-detail-metrics,
+  .accountable-expense-detail-grid,
+  .accountable-expense-detail-grid.is-compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 980px) {
   .accountable-expenses-command-bar {
     align-items: stretch;

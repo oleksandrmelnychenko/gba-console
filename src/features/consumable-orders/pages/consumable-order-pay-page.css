@@ -1,0 +1,526 @@
+.consumable-order-pay {
+  min-width: 0;
+}
+
+.consumable-order-pay-hero,
+.consumable-order-pay-section {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 247, 237, 0.42),
+      rgba(255, 255, 255, 0.96) 36%,
+      rgba(248, 250, 252, 0.72)
+    ),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.045);
+  min-width: 0;
+}
+
+.consumable-order-pay-hero {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.72fr);
+  padding: 14px;
+}
+
+.consumable-order-pay-hero__main {
+  min-width: 0;
+}
+
+.consumable-order-pay-eyebrow,
+.consumable-order-pay-section-header__label {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.consumable-order-pay-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-top: 7px;
+  min-width: 0;
+}
+
+.consumable-order-pay-title__icon,
+.consumable-order-pay-section-header__icon,
+.consumable-order-pay-item-product__icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 auto;
+  justify-content: center;
+}
+
+.consumable-order-pay-title__icon {
+  border-radius: 999px;
+  height: 36px;
+  width: 36px;
+}
+
+.consumable-order-pay-title__copy {
+  display: grid;
+  min-width: 0;
+}
+
+.consumable-order-pay-title__copy strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 15px;
+  font-weight: 720;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-title__copy span,
+.consumable-order-pay-meta span {
+  color: var(--mantine-color-gray-6);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-meta {
+  display: flex;
+  gap: 9px;
+  margin-top: 9px;
+  min-width: 0;
+}
+
+.consumable-order-pay-meta span {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  max-width: 34%;
+}
+
+.consumable-order-pay-meta span + span::before {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  content: "";
+  flex: 0 0 4px;
+  height: 4px;
+  width: 4px;
+}
+
+.consumable-order-pay-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.consumable-order-pay-metric {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  min-width: 0;
+  padding: 10px 11px;
+  position: relative;
+}
+
+.consumable-order-pay-metric::before {
+  background: var(--mantine-color-gray-4);
+  border-radius: 999px;
+  content: "";
+  height: 3px;
+  left: 11px;
+  position: absolute;
+  right: 11px;
+  top: -2px;
+}
+
+.consumable-order-pay-metric.is-orange::before {
+  background: var(--brand-orange);
+}
+
+.consumable-order-pay-metric.is-green::before {
+  background: var(--mantine-color-green-5);
+}
+
+.consumable-order-pay-metric span,
+.consumable-order-pay-metric small {
+  color: var(--mantine-color-gray-5);
+  display: block;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.consumable-order-pay-metric strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 17px;
+  font-weight: 720;
+  line-height: 1.1;
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-metric small {
+  font-size: 9px;
+  margin-top: 4px;
+}
+
+.consumable-order-pay-section {
+  overflow: hidden;
+}
+
+.consumable-order-pay-section-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 11px 14px 12px;
+  position: relative;
+}
+
+.consumable-order-pay-section-header::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mantine-color-gray-2) 9%,
+    var(--mantine-color-gray-2) 91%,
+    transparent
+  );
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.consumable-order-pay-section-header::after {
+  background: var(--brand-orange);
+  border: 3px solid var(--mantine-color-white);
+  border-radius: 999px;
+  bottom: -4px;
+  box-shadow: 0 0 0 1px var(--mantine-color-gray-2);
+  content: "";
+  height: 8px;
+  left: 40px;
+  position: absolute;
+  width: 8px;
+}
+
+.consumable-order-pay-section-header__main {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+
+.consumable-order-pay-section-header__icon {
+  border-radius: 999px;
+  height: 30px;
+  width: 30px;
+}
+
+.consumable-order-pay-section-header strong {
+  color: var(--mantine-color-gray-9);
+  display: block;
+  font-size: 13px;
+  font-weight: 680;
+  line-height: 1.15;
+  margin-top: 2px;
+}
+
+.consumable-order-pay-section-header__action {
+  flex: 0 0 auto;
+}
+
+.consumable-order-pay-form-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  padding: 16px 14px 14px;
+}
+
+.consumable-order-pay-control {
+  grid-column: span 3;
+  min-width: 0;
+}
+
+.consumable-order-pay-control.is-compact {
+  grid-column: span 2;
+}
+
+.consumable-order-pay-control.is-amount {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-organization {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-register {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-currency {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-movement {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-comment {
+  grid-column: 1 / -1;
+}
+
+.consumable-order-pay-add-movement {
+  height: 28px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.consumable-order-pay-control .mantine-InputWrapper-label,
+.consumable-order-pay-movement-modal .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-6);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+
+.consumable-order-pay-control .mantine-Input-input,
+.consumable-order-pay-movement-modal .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  height: 36px;
+  min-height: 36px;
+}
+
+.consumable-order-pay-control.is-amount .mantine-Input-input {
+  color: var(--mantine-color-gray-9);
+  font-weight: 680;
+}
+
+.consumable-order-pay-control .mantine-Input-section {
+  color: var(--mantine-color-gray-5);
+}
+
+.consumable-order-pay-movement-modal {
+  min-width: 0;
+}
+
+.consumable-order-pay-modal-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.consumable-order-pay-items {
+  overflow-x: auto;
+  padding: 12px 14px 14px;
+}
+
+.consumable-order-pay-items__head,
+.consumable-order-pay-item-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 130px minmax(280px, 1fr) 112px 128px 140px;
+  min-width: 790px;
+}
+
+.consumable-order-pay-items__head {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0 10px 8px;
+  text-transform: uppercase;
+}
+
+.consumable-order-pay-items__head span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.consumable-order-pay-items__body {
+  min-width: 790px;
+}
+
+.consumable-order-pay-item-row {
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(248, 249, 250, 0.7) 48%,
+      transparent
+    ),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-1);
+  min-height: 60px;
+  padding: 8px 10px;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.consumable-order-pay-item-row:hover {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 250, 245, 0.92),
+      rgba(255, 250, 245, 0.42) 42%,
+      transparent
+    ),
+    var(--mantine-color-white);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
+  transform: translateX(2px);
+}
+
+.consumable-order-pay-item-row:last-child {
+  border-bottom: 0;
+}
+
+.consumable-order-pay-item-code,
+.consumable-order-pay-item-qty {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.consumable-order-pay-item-code > span,
+.consumable-order-pay-item-qty > span {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 24px;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+
+.consumable-order-pay-item-code strong,
+.consumable-order-pay-item-qty strong {
+  color: var(--mantine-color-gray-8);
+  font-size: 12px;
+  font-weight: 620;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-item-product {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.consumable-order-pay-item-product__icon {
+  border-radius: 999px;
+  height: 30px;
+  width: 30px;
+}
+
+.consumable-order-pay-item-product__copy {
+  display: grid;
+  min-width: 0;
+}
+
+.consumable-order-pay-item-product__copy strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 720;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-item-product__copy small,
+.consumable-order-pay-item-qty small {
+  color: var(--mantine-color-gray-6);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.consumable-order-pay-item-qty {
+  justify-content: flex-end;
+}
+
+.consumable-order-pay-item-money {
+  min-width: 0;
+  text-align: right;
+}
+
+.consumable-order-pay-item-money strong {
+  color: var(--mantine-color-gray-8);
+  font-size: 12.5px;
+  font-weight: 680;
+  line-height: 1.15;
+}
+
+.consumable-order-pay-item-money.is-total strong {
+  color: var(--mantine-color-gray-9);
+  font-weight: 720;
+}
+
+.consumable-order-pay-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 112px;
+}
+
+@media (max-width: 1040px) {
+  .consumable-order-pay-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 820px) {
+  .consumable-order-pay-metrics,
+  .consumable-order-pay-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .consumable-order-pay-control,
+  .consumable-order-pay-control.is-compact,
+  .consumable-order-pay-control.is-amount,
+  .consumable-order-pay-control.is-organization,
+  .consumable-order-pay-control.is-register,
+  .consumable-order-pay-control.is-currency,
+  .consumable-order-pay-control.is-movement,
+  .consumable-order-pay-control.is-comment {
+    grid-column: auto;
+  }
+}

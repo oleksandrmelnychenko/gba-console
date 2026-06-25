@@ -31,6 +31,8 @@ export function buildPaymentPayload({
   selectedRegister: PaymentRegister
   time: string
 }): OutcomePaymentOrder {
+  const supplyOrganization = getPaymentSupplyOrganization(order)
+  const supplyAgreement = order.SupplyOrganizationAgreement || null
   const paidOrder = {
     ...order,
     ConsumablesOrderItems: (order.ConsumablesOrderItems || []).map((item) => ({
@@ -43,6 +45,7 @@ export function buildPaymentPayload({
   return {
     Amount: amount,
     Comment: comment.trim(),
+    ConsumableProductOrganization: supplyOrganization,
     FromDate: toIsoDateTime(date, time),
     Organization: selectedOrganization,
     OutcomePaymentOrderConsumablesOrders: [
@@ -55,6 +58,7 @@ export function buildPaymentPayload({
       PaymentMovement: selectedMovement,
     },
     PaymentRegister: selectedRegister,
+    SupplyOrganizationAgreement: supplyAgreement,
   }
 }
 
@@ -72,6 +76,10 @@ export function getPaidAmount(order: ConsumablesOrder): number {
 
 export function getRemainingPaymentAmount(order: ConsumablesOrder): number {
   return Math.max(getPaymentTotalAmount(order) - getPaidAmount(order), 0)
+}
+
+export function getPaymentSupplyOrganization(order: ConsumablesOrder) {
+  return order.ConsumableProductOrganization || order.SupplyOrganizationAgreement?.SupplyOrganization || null
 }
 
 export function isPaymentCoveringOutstandingAmount(order: ConsumablesOrder, amount: number): boolean {
