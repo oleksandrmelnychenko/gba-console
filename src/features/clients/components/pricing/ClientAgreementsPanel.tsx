@@ -2,6 +2,7 @@ import {
   ActionIcon,
   Alert,
   Anchor,
+  Avatar,
   Badge,
   Button,
   Card,
@@ -406,6 +407,22 @@ export function ClientAgreementsPanel({
   )
 }
 
+function agreementInitials(value?: string | null): string {
+  const text = value?.trim()
+
+  if (!text) {
+    return '—'
+  }
+
+  const words = text.split(/\s+/).filter(Boolean)
+
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase()
+  }
+
+  return text.slice(0, 2).toUpperCase()
+}
+
 function BuyerAgreementItem({
   agreement,
   canEdit,
@@ -442,28 +459,32 @@ function BuyerAgreementItem({
       }}
       onClick={onClick}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={2}>
-          <Text fw={600} size="sm">
-            {agreement.Pricing?.Name}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {agreement.Organization?.Name}
-          </Text>
-          <Group gap={6} align="center">
-            <Text size="sm">{agreementName}</Text>
-            {originalClientName && (
-              <Tooltip label={originalClientName} position="top">
-                <Group gap={2} align="center">
-                  <IconHelpCircle size={12} />
-                  <Text c="dimmed" size="xs">
-                    {originalClientName}
-                  </Text>
-                </Group>
-              </Tooltip>
-            )}
-          </Group>
-        </Stack>
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
+          <Avatar color="gray" radius="xl" size={44}>
+            {agreementInitials(agreement.Pricing?.Name)}
+          </Avatar>
+          <Stack gap={2} style={{ minWidth: 0 }}>
+            <Group gap={6} align="center" wrap="nowrap">
+              <Text fw={600} size="sm" truncate>
+                {agreementName}
+              </Text>
+              {originalClientName && (
+                <Tooltip label={originalClientName} position="top">
+                  <Group gap={2} align="center" wrap="nowrap">
+                    <IconHelpCircle size={12} />
+                    <Text c="dimmed" size="xs" truncate>
+                      {originalClientName}
+                    </Text>
+                  </Group>
+                </Tooltip>
+              )}
+            </Group>
+            <Text c="dimmed" size="xs" truncate>
+              {[agreement.Pricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
+            </Text>
+          </Stack>
+        </Group>
 
         <Group gap="xs" align="center" wrap="nowrap">
           {canExport && (
@@ -517,7 +538,7 @@ function BuyerAgreementItem({
           {canEdit && (
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()
@@ -560,16 +581,20 @@ function ProviderAgreementItem({
       }}
       onClick={onClick}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={2}>
-          <Text fw={600} size="sm">
-            {agreement.ProviderPricing?.Name}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {agreement.Organization?.Name}
-          </Text>
-          <Text size="sm">{agreement.Name}</Text>
-        </Stack>
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Group gap="sm" align="center" wrap="nowrap" style={{ minWidth: 0 }}>
+          <Avatar color="gray" radius="xl" size={44}>
+            {agreementInitials(agreement.ProviderPricing?.Name)}
+          </Avatar>
+          <Stack gap={2} style={{ minWidth: 0 }}>
+            <Text fw={600} size="sm" truncate>
+              {agreement.Name}
+            </Text>
+            <Text c="dimmed" size="xs" truncate>
+              {[agreement.ProviderPricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
+            </Text>
+          </Stack>
+        </Group>
 
         <Group gap="xs" align="center" wrap="nowrap">
           {agreement.Currency?.Name && (
@@ -590,7 +615,7 @@ function ProviderAgreementItem({
           {canEdit && (
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()

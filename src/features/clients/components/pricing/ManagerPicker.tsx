@@ -212,7 +212,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                   >
                     <Group gap="sm" align="flex-start" wrap="nowrap">
                       <Avatar
-                        color={manager.IsActive ? 'teal' : 'gray'}
+                        color="gray"
                         fw={600}
                         fz="sm"
                         radius="xl"
