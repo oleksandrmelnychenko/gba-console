@@ -670,7 +670,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-7"
+            layoutVersion="clients-table-8"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1450}
@@ -1308,14 +1308,14 @@ function SolvencyGaugeCell({ score }: { score?: SolvencyScore }) {
     <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
       <RingProgress
         label={
-          <Text fw={700} size="xs" ta="center">
+          <Text fw={500} size="xs" ta="center">
             {score.score}
           </Text>
         }
         roundCaps
         sections={[{ color: solvencyScoreColor(score), value }]}
         size={36}
-        thickness={4}
+        thickness={3}
       />
     </Tooltip>
   )
