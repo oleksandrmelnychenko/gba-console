@@ -42,6 +42,7 @@ import {
   getAccountingCashFlow,
   getAccountingCashFlowCounterparty,
 } from '../api/accountingCashFlowApi'
+import { CashFlowBalanceChart } from '../components/CashFlowBalanceChart'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
 import { CashFlowSummary } from '../components/CashFlowSummary'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
@@ -550,6 +551,8 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
           />
         </Stack>
       </Card>
+
+      <CashFlowBalanceChart formatMoney={formatMoney} items={items} />
 
       <Card withBorder radius="md" padding="xs" className="app-section-card cash-flow-page__grid-card">
         <CashFlowGrid
