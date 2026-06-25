@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconUsersGroup } from '@tabler/icons-react'
+import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -133,31 +133,13 @@ export function HeadDashboardPage() {
 
   return (
     <Stack className="cockpit-page" gap="md">
-      <header className="cockpit-hero">
-        <div className="cockpit-hero-main">
-          <span className="cockpit-hero-icon">
-            <IconUsersGroup size={24} stroke={1.8} />
-          </span>
-          <div className="cockpit-hero-copy">
-            <h1 className="cockpit-hero-title">{t('Дашборд керівника відділу продажів')}</h1>
-            <p className="cockpit-hero-subtitle">{t('Виконання плану та активність команди')}</p>
-          </div>
-        </div>
-
-        <div className="cockpit-hero-actions">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              className="cockpit-hero-action"
-              loading={isLoading}
-              variant="subtle"
-              onClick={handleReload}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </div>
-      </header>
+      <Group gap="xs" justify="flex-end">
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       {forbidden ? (
         <Card className="app-section-card" withBorder radius="md" padding="xl">

@@ -1,5 +1,5 @@
 import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh, IconSparkles, IconTargetArrow } from '@tabler/icons-react'
+import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -255,45 +255,26 @@ export function SalesCockpitPage() {
 
   return (
     <Stack className="cockpit-page" gap="md">
-      <header className="cockpit-hero">
-        <div className="cockpit-hero-main">
-          <span className="cockpit-hero-icon">
-            <IconTargetArrow size={24} stroke={1.8} />
-          </span>
-          <div className="cockpit-hero-copy">
-            <h1 className="cockpit-hero-title">{t('Завдання продажів')}</h1>
-            <p className="cockpit-hero-subtitle">{t('Пріоритетна черга завдань на сьогодні')}</p>
-          </div>
-        </div>
-
-        <div className="cockpit-hero-actions">
-          <span className="cockpit-hero-chip">
-            {t('Завдань')}: <strong>{visibleTasks.length}</strong>
-          </span>
-          <Tooltip label={t('Згенерувати завдання')}>
-            <ActionIcon
-              aria-label={t('Згенерувати завдання')}
-              className="cockpit-hero-action"
-              loading={isRegenerating}
-              variant="subtle"
-              onClick={handleRegenerate}
-            >
-              <IconSparkles size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              className="cockpit-hero-action"
-              loading={isLoading}
-              variant="subtle"
-              onClick={handleReload}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-        </div>
-      </header>
+      <Group gap="sm" justify="flex-end">
+        <Text c="dimmed" size="sm">
+          {t('Завдань')}: <strong>{visibleTasks.length}</strong>
+        </Text>
+        <Tooltip label={t('Згенерувати завдання')}>
+          <ActionIcon
+            aria-label={t('Згенерувати завдання')}
+            loading={isRegenerating}
+            variant="subtle"
+            onClick={handleRegenerate}
+          >
+            <IconSparkles size={18} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label={t('Оновити')}>
+          <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
 
       {error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
