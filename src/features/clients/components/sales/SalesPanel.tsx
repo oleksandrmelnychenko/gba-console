@@ -221,7 +221,7 @@ export function SalesPanel({ netId }: SalesPanelProps) {
           </Text>
         </Card>
       ) : (
-        <ScrollArea.Autosize mah="calc(100vh - 260px)" type="auto">
+        <ScrollArea.Autosize mah="calc(100vh - 320px)" type="auto">
           <Stack gap="sm">
             {sales.map((statistic, index) => (
               <SaleAccordionItem

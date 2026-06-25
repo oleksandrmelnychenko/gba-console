@@ -32,6 +32,7 @@ import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
 import { organizationHasVat } from './organizationVat'
 import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
+import './client-agreements.css'
 import type {
   Agreement,
   ClientAgreement,
@@ -432,37 +433,36 @@ function BuyerAgreementItem({
 
   return (
     <Card
-      withBorder
+      className={`agreement-item${isHighlighted || agreement.IsActive ? ' is-selected' : ''}`}
       padding="sm"
       radius="md"
-      style={{
-        cursor: 'pointer',
-        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
-      }}
       onClick={onClick}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={2}>
-          <Text fw={600} size="sm">
-            {agreement.Pricing?.Name}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {agreement.Organization?.Name}
-          </Text>
-          <Group gap={6} align="center">
-            <Text size="sm">{agreementName}</Text>
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Stack gap={2} style={{ minWidth: 0 }}>
+          <Group gap={6} align="center" wrap="nowrap">
+            <Text fw={600} size="sm" truncate>
+              {agreementName}
+            </Text>
+            {agreement.IsActive && (
+              <Badge color="green" size="xs" variant="light">
+                {t('Активний')}
+              </Badge>
+            )}
             {originalClientName && (
               <Tooltip label={originalClientName} position="top">
-                <Group gap={2} align="center">
+                <Group gap={2} align="center" wrap="nowrap">
                   <IconHelpCircle size={12} />
-                  <Text c="dimmed" size="xs">
+                  <Text c="dimmed" size="xs" truncate>
                     {originalClientName}
                   </Text>
                 </Group>
               </Tooltip>
             )}
           </Group>
+          <Text size="xs" truncate>
+            {[agreement.Pricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
+          </Text>
         </Stack>
 
         <Group gap="xs" align="center" wrap="nowrap">
@@ -517,7 +517,7 @@ function BuyerAgreementItem({
           {canEdit && (
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()
@@ -550,25 +550,26 @@ function ProviderAgreementItem({
 
   return (
     <Card
-      withBorder
+      className={`agreement-item${isHighlighted || agreement.IsActive ? ' is-selected' : ''}`}
       padding="sm"
       radius="md"
-      style={{
-        cursor: 'pointer',
-        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
-      }}
       onClick={onClick}
     >
-      <Group justify="space-between" align="flex-start" wrap="nowrap">
-        <Stack gap={2}>
-          <Text fw={600} size="sm">
-            {agreement.ProviderPricing?.Name}
+      <Group justify="space-between" align="center" wrap="nowrap">
+        <Stack gap={2} style={{ minWidth: 0 }}>
+          <Group gap={6} align="center" wrap="nowrap">
+            <Text fw={600} size="sm" truncate>
+              {agreement.Name}
+            </Text>
+            {agreement.IsActive && (
+              <Badge color="green" size="xs" variant="light">
+                {t('Активний')}
+              </Badge>
+            )}
+          </Group>
+          <Text size="xs" truncate>
+            {[agreement.ProviderPricing?.Name, agreement.Organization?.Name].filter(Boolean).join(' · ')}
           </Text>
-          <Text c="dimmed" size="xs">
-            {agreement.Organization?.Name}
-          </Text>
-          <Text size="sm">{agreement.Name}</Text>
         </Stack>
 
         <Group gap="xs" align="center" wrap="nowrap">
@@ -590,7 +591,7 @@ function ProviderAgreementItem({
           {canEdit && (
             <ActionIcon
               aria-label={t('Редагувати')}
-              color="violet"
+              color="gray"
               variant="subtle"
               onClick={(event) => {
                 event.stopPropagation()

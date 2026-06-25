@@ -1,0 +1,30 @@
+/* Analyst picker rows — the shared «main list» item look: a bordered surface
+   with a hover lift and an orange-tinted selected state (mirrors .list-tree-item
+   via the central tokens). */
+.manager-pick-item {
+  align-items: center;
+  background: var(--app-surface-gradient), var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  display: flex;
+  min-height: 56px;
+  padding: 10px 12px;
+  transition:
+    border-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+  width: 100%;
+}
+
+.manager-pick-item:hover {
+  border-color: var(--mantine-color-gray-4);
+  box-shadow: var(--app-row-hover-shadow);
+  transform: translateX(4px);
+}
+
+.manager-pick-item.is-selected {
+  background: var(--app-surface-selected), var(--mantine-color-white);
+  border-color: var(--mantine-color-orange-2);
+  box-shadow: var(--app-selected-shadow);
+}

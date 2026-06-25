@@ -20,18 +20,10 @@ import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
-  IconBuildingFactory2,
   IconCash,
-  IconChevronDown,
-  IconChevronUp,
-  IconDotsVertical,
   IconExternalLink,
   IconFileTypePdf,
-  IconHash,
   IconId,
-  IconMail,
-  IconMapPin,
-  IconPhone,
   IconPlus,
   IconRestore,
   IconSearch,
@@ -39,9 +31,10 @@ import {
   IconToggleRight,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -57,7 +50,7 @@ import {
   getSuppliers,
   switchClientActiveState,
 } from '../api/clientsApi'
-import type { DataTableSortingState } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn, DataTableSortingState } from '../../../shared/ui/data-table/types'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
 import '../../../shared/ui/console-table-page.css'
 import './suppliers-page.css'
@@ -72,13 +65,8 @@ const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
-type SupplierSortId =
-  | 'email'
-  | 'location'
-  | 'phone'
-  | 'regionCode'
-  | 'status'
-  | 'supplier'
+type SupplierSortId = 'purchaseVolume'
+
 
 const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: SUPPLIER_SEARCH_SQL, label: 'Код або назва' },
@@ -89,12 +77,7 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
 ]
 
 const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
-  email: 'EmailAddress',
-  location: 'RegionCode.City',
-  phone: 'MobileNumber',
-  regionCode: 'RegionCode.Value',
-  status: 'IsActive',
-  supplier: 'FullName',
+  purchaseVolume: 'PurchaseVolumeEur',
 }
 
 function useSuppliersPageModel() {
@@ -122,7 +105,7 @@ function useSuppliersPageModel() {
   const [searchField, setSearchField] = useValueState(SUPPLIER_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SUPPLIER_SEARCH_DEBOUNCE_MS)
-  const [sorting, setSorting] = useValueState<DataTableSortingState>([])
+  const [sorting, setSorting] = useValueState<DataTableSortingState>([{ id: 'purchaseVolume', desc: true }])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const canMoveForward = suppliers.length === pageSize
@@ -510,6 +493,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     setSearchValue,
     setSorting,
   } = model
+  const supplierColumns = useSupplierColumns()
 
   return (
     <Stack className="suppliers-page" gap={6}>
@@ -553,14 +537,23 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         )}
 
         <div className="suppliers-page__table">
-          <SuppliersRoster
-            emptyText={t('Постачальників не знайдено')}
+          <DataTable
+            columns={supplierColumns}
+            data={suppliers}
+            getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
+            height="100%"
             isLoading={isLoading}
+            layoutVersion="suppliers-table-1"
             loadingText={t('Завантаження постачальників')}
-            suppliers={suppliers}
+            emptyText={t('Постачальників не знайдено')}
+            manualSorting
+            minWidth={1320}
+            showDensityToggle={false}
+            showLayoutControls={false}
+            tableId="suppliers"
             sorting={sorting}
-            onOpenActions={setSelectedSupplier}
-            onSort={(nextSorting) => {
+            onRowClick={setSelectedSupplier}
+            onSortingChange={(nextSorting) => {
               setPage(1)
               setSorting(nextSorting)
             }}
@@ -864,242 +857,119 @@ function SupplierDocumentModal({
   )
 }
 
-function SuppliersRoster({
-  emptyText,
-  isLoading,
-  loadingText,
-  suppliers,
-  sorting,
-  onOpenActions,
-  onSort,
-}: {
-  emptyText: string
-  isLoading: boolean
-  loadingText: string
-  suppliers: Client[]
-  sorting: DataTableSortingState
-  onOpenActions: (supplier: Client) => void
-  onSort: (sorting: DataTableSortingState) => void
-}) {
+function useSupplierColumns() {
   const { t } = useI18n()
 
-  return (
-    <div className="suppliers-roster">
-      <div className="suppliers-roster-head">
-        <SupplierRosterSortHeader id="supplier" label={t('Постачальник')} sorting={sorting} onSort={onSort} />
-        <SupplierRosterSortHeader id="regionCode" label={t('Код')} sorting={sorting} onSort={onSort} />
-        <SupplierRosterSortHeader id="location" label={t('Місто / район')} sorting={sorting} onSort={onSort} />
-        <div className="suppliers-roster-head-stack">
-          <SupplierRosterSortHeader id="phone" label={t('Телефон')} sorting={sorting} onSort={onSort} />
-          <SupplierRosterSortHeader id="email" label="Email" sorting={sorting} onSort={onSort} />
-        </div>
-        <span aria-hidden />
-      </div>
-
-      <div className="suppliers-roster-body">
-        {isLoading ? (
-          <div className="suppliers-roster-state">{loadingText}</div>
-        ) : suppliers.length === 0 ? (
-          <div className="suppliers-roster-state">{emptyText}</div>
-        ) : (
-          suppliers.map((supplier, index) => (
-            <SupplierRosterRow
-              key={String(supplier.NetUid || supplier.Id || index)}
-              supplier={supplier}
-              onOpenActions={onOpenActions}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function SupplierRosterSortHeader({
-  align = 'left',
-  id,
-  label,
-  sorting,
-  onSort,
-}: {
-  align?: 'left' | 'right'
-  id: SupplierSortId
-  label: string
-  sorting: DataTableSortingState
-  onSort: (sorting: DataTableSortingState) => void
-}) {
-  const currentSort = sorting[0]
-  const isActive = currentSort?.id === id
-  const isDesc = Boolean(isActive && currentSort?.desc)
-
-  return (
-    <button
-      className={`suppliers-roster-sort${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort([{ id, desc: isActive ? !isDesc : false }])}
-    >
-      <span>{label}</span>
-      <span className="suppliers-roster-sort-icon" aria-hidden>
-        {isActive ? (
-          isDesc ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />
-        ) : null}
-      </span>
-    </button>
-  )
-}
-
-function SupplierRosterRow({
-  supplier,
-  onOpenActions,
-}: {
-  supplier: Client
-  onOpenActions: (supplier: Client) => void
-}) {
-  return (
-    <div
-      className={`suppliers-roster-row${supplier.IsActive === false ? ' is-inactive' : ''}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenActions(supplier)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpenActions(supplier)
-        }
-      }}
-    >
-      <SupplierMainCell supplier={supplier} />
-      <SupplierCodeCell supplier={supplier} />
-      <SupplierLocationCell supplier={supplier} />
-      <SupplierContactsCell supplier={supplier} />
-      <SupplierActionsCell supplier={supplier} onOpenActions={onOpenActions} />
-    </div>
-  )
-}
-
-function SupplierMainCell({ supplier }: { supplier: Client }) {
-  const { t } = useI18n()
-  const title = getSupplierDisplayName(supplier)
-  const isActive = supplier.IsActive !== false
-  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
-  const typeName = supplier.ClientInRole?.ClientType?.Name?.trim()
-  const residencyName = supplier.IsNotResident ? t('Нерезидент') : ''
-  const displayType = displayValue(typeName)
-  const displayRole = displayValue(roleName)
-  const meta = compactStrings([residencyName, typeName, roleName]).join(' · ') || '-'
-
-  return (
-    <span className="suppliers-main-cell">
-      <span className="suppliers-main-icon" aria-hidden>
-        <IconBuildingFactory2 size={15} />
-      </span>
-      <span className="suppliers-main-copy">
-        <span className="suppliers-main-title-row">
-          <span className={`suppliers-status-pill suppliers-main-status${isActive ? ' is-active' : ' is-inactive'}`}>
-            {isActive ? t('Активний') : t('Неактивний')}
-          </span>
-          <Tooltip label={title} disabled={!title} openDelay={350} withArrow>
-            <span className="suppliers-main-title">{title}</span>
+  return useMemo<DataTableColumn<Client>[]>(
+    () => [
+      {
+        id: 'status',
+        header: t('Статус'),
+        width: 110,
+        minWidth: 96,
+        enableSorting: false,
+        accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
+        cell: (supplier) => (
+          <Badge color={supplier.IsActive === false ? 'gray' : 'green'} variant="light">
+            {supplier.IsActive === false ? t('Неактивний') : t('Активний')}
+          </Badge>
+        ),
+      },
+      {
+        id: 'regionCode',
+        header: t('Код'),
+        width: 90,
+        minWidth: 80,
+        enableSorting: false,
+        accessor: (supplier) => supplier.RegionCode?.Value,
+        cell: (supplier) => <Text size="sm">{displayValue(supplier.RegionCode?.Value)}</Text>,
+      },
+      {
+        id: 'supplier',
+        header: t('Постачальник'),
+        width: 280,
+        minWidth: 220,
+        fill: true,
+        enableSorting: false,
+        accessor: getSupplierDisplayName,
+        cell: (supplier) => (
+          <Tooltip label={getSupplierDisplayName(supplier)} openDelay={350} withArrow>
+            <Text
+              component="span"
+              fw={600}
+              style={{ display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
+              {getSupplierDisplayName(supplier)}
+            </Text>
           </Tooltip>
-        </span>
-        <Tooltip label={meta} disabled={meta === '-'} openDelay={350} withArrow>
-          <span className="suppliers-main-meta">
-            {supplier.IsNotResident ? (
-              <span className="suppliers-main-residency is-not-resident">
-                {residencyName}
-              </span>
+        ),
+      },
+      {
+        id: 'location',
+        header: t('Місто / район'),
+        width: 180,
+        minWidth: 150,
+        enableSorting: false,
+        accessor: (supplier) => [supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' '),
+        cell: (supplier) => (
+          <Text size="sm">
+            {displayValue(supplier.RegionCode?.City)}
+            {supplier.RegionCode?.District ? (
+              <Text component="span" inherit c="dimmed">
+                {' · '}
+                {supplier.RegionCode.District}
+              </Text>
             ) : null}
-            {displayType !== '-' ? <span className="suppliers-main-type">{displayType}</span> : null}
-            {displayRole !== '-' ? (
-              <>
-                {displayType !== '-' ? <span className="suppliers-main-meta-separator">·</span> : null}
-                <span className="suppliers-main-role">{displayRole}</span>
-              </>
-            ) : null}
-          </span>
-        </Tooltip>
-      </span>
-    </span>
-  )
-}
-
-function SupplierCodeCell({ supplier }: { supplier: Client }) {
-  return (
-    <span className="suppliers-code-status-cell">
-      <span className="suppliers-code-pill">
-        <IconHash size={12} />
-        {displayValue(supplier.RegionCode?.Value)}
-      </span>
-    </span>
-  )
-}
-
-function SupplierLocationCell({ supplier }: { supplier: Client }) {
-  const city = displayValue(supplier.RegionCode?.City)
-  const district = displayValue(supplier.RegionCode?.District)
-
-  return (
-    <span className="suppliers-icon-text-cell">
-      <span className="suppliers-small-icon" aria-hidden>
-        <IconMapPin size={14} />
-      </span>
-      <span className="suppliers-two-line-cell">
-        <Tooltip label={city} disabled={city === '-'} openDelay={350} withArrow>
-          <span>{city}</span>
-        </Tooltip>
-        <Tooltip label={district} disabled={district === '-'} openDelay={350} withArrow>
-          <small>{district}</small>
-        </Tooltip>
-      </span>
-    </span>
-  )
-}
-
-function SupplierContactsCell({ supplier }: { supplier: Client }) {
-  return (
-    <span className="suppliers-contact-cell">
-      <SupplierContactLine icon={<IconPhone size={13} />} value={displayValue(getSupplierPhone(supplier))} />
-      <SupplierContactLine icon={<IconMail size={13} />} value={displayValue(supplier.EmailAddress)} />
-    </span>
-  )
-}
-
-function SupplierContactLine({ icon, value }: { icon: ReactNode; value: string }) {
-  const isEmpty = value === '-'
-
-  return (
-    <Tooltip label={value} disabled={isEmpty} openDelay={350} withArrow>
-      <span className={`suppliers-contact-line${isEmpty ? ' is-empty' : ''}`}>
-        <span aria-hidden>{icon}</span>
-        <span>{value}</span>
-      </span>
-    </Tooltip>
-  )
-}
-
-function SupplierActionsCell({
-  supplier,
-  onOpenActions,
-}: {
-  supplier: Client
-  onOpenActions: (supplier: Client) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <span className="suppliers-row-actions" onClick={(event) => event.stopPropagation()}>
-      <Tooltip label={t('Дії')}>
-        <ActionIcon
-          aria-label={t('Дії')}
-          color="gray"
-          size="sm"
-          variant="subtle"
-          onClick={() => onOpenActions(supplier)}
-        >
-          <IconDotsVertical size={16} />
-        </ActionIcon>
-      </Tooltip>
-    </span>
+          </Text>
+        ),
+      },
+      {
+        id: 'role',
+        header: t('Роль'),
+        width: 220,
+        minWidth: 200,
+        enableSorting: false,
+        accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
+        cell: (supplier) => {
+          const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+          return name ? (
+            <Badge color={roleBadgeColor(name)} variant="light">
+              {name}
+            </Badge>
+          ) : (
+            <Text c="dimmed">-</Text>
+          )
+        },
+      },
+      {
+        id: 'notResident',
+        header: t('Резидентність'),
+        width: 130,
+        minWidth: 110,
+        enableSorting: false,
+        accessor: (supplier) => supplier.IsNotResident,
+        cell: (supplier) => <Text size="sm">{supplier.IsNotResident ? t('Нерезидент') : t('Резидент')}</Text>,
+      },
+      {
+        id: 'phone',
+        header: t('Телефон'),
+        width: 130,
+        minWidth: 110,
+        enableSorting: false,
+        accessor: getSupplierPhone,
+        cell: (supplier) => <SupplierContactValue value={displayValue(getSupplierPhone(supplier))} />,
+      },
+      {
+        id: 'email',
+        header: 'Email',
+        width: 180,
+        minWidth: 150,
+        enableSorting: false,
+        accessor: (supplier) => supplier.EmailAddress,
+        cell: (supplier) => <SupplierContactValue value={displayValue(supplier.EmailAddress)} />,
+      },
+    ],
+    [t],
   )
 }
 
@@ -1118,6 +988,18 @@ function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
   return dynamicOptions.length > 0
     ? dynamicOptions
     : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
+}
+
+function SupplierContactValue({ value }: { value: string }) {
+  const isEmpty = value === '-'
+
+  return (
+    <Tooltip label={value} openDelay={350} withArrow>
+      <span className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`}>
+        {value}
+      </span>
+    </Tooltip>
+  )
 }
 
 function buildSupplierSortDescriptors(sorting: DataTableSortingState) {
@@ -1202,10 +1084,29 @@ function displayValue(value?: number | string | null): string {
   return normalized || '-'
 }
 
-function compactStrings(values: Array<string | null | undefined>): string[] {
-  return values.flatMap((value) => {
-    const normalizedValue = value?.trim()
+const ROLE_BADGE_PALETTE = ['violet', 'indigo', 'teal', 'cyan', 'blue', 'grape', 'pink', 'lime'] as const
 
-    return normalizedValue ? [normalizedValue] : []
-  })
+function roleHash(value: string): number {
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index)
+    hash |= 0
+  }
+
+  return Math.abs(hash)
+}
+
+function roleBadgeColor(name: string): (typeof ROLE_BADGE_PALETTE)[number] {
+  const key = name.trim().toLowerCase()
+
+  if (key.includes('постач')) {
+    return 'teal'
+  }
+
+  if (key.includes('покуп')) {
+    return 'indigo'
+  }
+
+  return ROLE_BADGE_PALETTE[roleHash(key) % ROLE_BADGE_PALETTE.length]
 }
