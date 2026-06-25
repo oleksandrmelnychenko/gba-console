@@ -100,6 +100,21 @@ const CLIENT_SORT_COLUMNS: Record<string, string> = {
 }
 
 const CLIENT_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: [
+    'status',
+    'regionCode',
+    'client',
+    'solvency',
+    'tin',
+    'sroi',
+    'usreou',
+    'reserve',
+    'location',
+    'phone',
+    'email',
+    'role',
+    'actions',
+  ],
   columnPinning: {
     left: ['status', 'regionCode', 'client'],
   },
@@ -670,7 +685,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             getRowId={(client, index) => String(client.NetUid || client.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="clients-table-8"
+            layoutVersion="clients-table-9"
             loadingText={t('Завантаження клієнтів')}
             manualSorting
             minWidth={1450}
@@ -1308,7 +1323,7 @@ function SolvencyGaugeCell({ score }: { score?: SolvencyScore }) {
     <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
       <RingProgress
         label={
-          <Text fw={500} size="xs" ta="center">
+          <Text fw={500} fz={10} ta="center">
             {score.score}
           </Text>
         }
