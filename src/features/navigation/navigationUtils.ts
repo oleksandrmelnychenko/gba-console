@@ -70,6 +70,12 @@ const navigationRouteAliasRules: Array<{ source: string; targets: RegExp[] }> = 
       /^\/accounting\/outgoing-cashflow\/[^/]+\/advanced-report\/view$/i,
     ],
   },
+  {
+    source: '/basket-supply-ukraine-order/cockpit',
+    targets: [
+      /^\/basket-supply-ukraine-order(?:\/.*)?$/i,
+    ],
+  },
 ]
 
 export function normalizeNavigation(modules: NavigationModule[] | null | undefined): NavigationModule[] {
