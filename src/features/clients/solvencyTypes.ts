@@ -24,12 +24,13 @@ export type CurrencyExposure = {
 
 export type SolvencyScore = {
   client_id: number
-  score: number
-  rating: SolvencyRating
-  sub_factors: SubFactors
+  applicable: boolean
+  score: number | null
+  rating: SolvencyRating | null
+  sub_factors: SubFactors | null
   caps_applied: string[]
   debt_load_source: SolvencyDebtLoadSource
-  raw_score: number
+  raw_score: number | null
   currency_breakdown: CurrencyExposure[] | null
   as_of_date: string | null
   window_months: number

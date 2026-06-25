@@ -13,7 +13,7 @@ import {
   Text,
   Title,
 } from '@mantine/core'
-import { IconAlertCircle } from '@tabler/icons-react'
+import { IconAlertCircle, IconInfoCircle } from '@tabler/icons-react'
 import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
@@ -104,13 +104,15 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 
         let loadedCharts: SolvencyCharts | null = null
 
-        try {
-          loadedCharts = await getClientSolvencyCharts(loadedScore.client_id, controller.signal)
-        } catch {
-          if (controller.signal.aborted) {
-            return
+        if (loadedScore.applicable !== false && loadedScore.score != null) {
+          try {
+            loadedCharts = await getClientSolvencyCharts(loadedScore.client_id, controller.signal)
+          } catch {
+            if (controller.signal.aborted) {
+              return
+            }
+            loadedCharts = null
           }
-          loadedCharts = null
         }
 
         if (!cancelled) {
@@ -165,6 +167,14 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
     )
   }
 
+  if (score.applicable === false || score.score == null || !score.sub_factors) {
+    return (
+      <Alert color="gray" icon={<IconInfoCircle size={18} />} variant="light">
+        {t('не покупець — оцінка платоспроможності незастосовна')}
+      </Alert>
+    )
+  }
+
   return (
     <Stack gap="lg">
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
@@ -183,13 +193,16 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 function ScoreHeader({ score }: { score: SolvencyScore }) {
   const { t } = useI18n()
 
+  const ratingColor = score.rating ? RATING_COLOR[score.rating] : 'gray'
+  const scoreValue = score.score ?? 0
+
   return (
     <Group align="center" gap="lg" wrap="wrap">
       <RingProgress
         label={
           <Stack align="center" gap={0}>
             <Text fw={700} size="xl">
-              {score.score}
+              {scoreValue}
             </Text>
             <Text c="dimmed" size="xs">
               {t('зі 100')}
@@ -197,7 +210,7 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
           </Stack>
         }
         roundCaps
-        sections={[{ color: RATING_COLOR[score.rating], value: clampPercent(score.score) }]}
+        sections={[{ color: ratingColor, value: clampPercent(scoreValue) }]}
         size={120}
         thickness={12}
       />
@@ -206,12 +219,12 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
           <Title order={4} size="h4">
             {t('Платоспроможність')}
           </Title>
-          <Badge color={RATING_COLOR[score.rating]} size="lg" variant="filled">
+          <Badge color={ratingColor} size="lg" variant="filled">
             {score.rating}
           </Badge>
         </Group>
         <Text c="dimmed" size="sm">
-          {t('Базова оцінка')}: {formatNumber(score.raw_score)}
+          {t('Базова оцінка')}: {formatNumber(score.raw_score ?? Number.NaN)}
         </Text>
         <Text c="dimmed" size="xs">
           {t('Версія моделі')}: {score.model_version}

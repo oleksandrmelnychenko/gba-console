@@ -10,7 +10,6 @@ import {
   Group,
   Loader,
   NumberInput,
-  RingProgress,
   Select,
   Stack,
   Text,
@@ -63,6 +62,7 @@ import {
 } from '../api/clientsApi'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
 import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
+import { SolvencyGaugeCell } from '../components/solvency/SolvencyGaugeCell'
 import type { SolvencyScore } from '../solvencyTypes'
 import './clients-page.css'
 
@@ -1151,7 +1151,10 @@ function useClientColumns(
         align: 'center',
         enableSorting: false,
         cell: (client) => (
-          <SolvencyGaugeCell score={typeof client.Id === 'number' ? solvencyScores.get(client.Id) : undefined} />
+          <SolvencyGaugeCell
+            notApplicableLabel={t('Оцінка незастосовна — не покупець')}
+            score={typeof client.Id === 'number' ? solvencyScores.get(client.Id) : undefined}
+          />
         ),
       },
       {
@@ -1266,58 +1269,6 @@ function useClientColumns(
       },
     ],
     [onOpenActions, solvencyScores, t],
-  )
-}
-
-const SOLVENCY_RATING_COLOR: Record<string, string> = {
-  A: 'green',
-  B: 'teal',
-  C: 'yellow',
-  D: 'red',
-}
-
-function solvencyScoreColor(score: SolvencyScore): string {
-  const ratingColor = SOLVENCY_RATING_COLOR[score.rating]
-  if (ratingColor) {
-    return ratingColor
-  }
-
-  if (score.score >= 70) {
-    return 'green'
-  }
-
-  if (score.score >= 40) {
-    return 'yellow'
-  }
-
-  return 'red'
-}
-
-function SolvencyGaugeCell({ score }: { score?: SolvencyScore }) {
-  if (!score) {
-    return (
-      <Text c="dimmed" size="xs">
-        —
-      </Text>
-    )
-  }
-
-  const value = Math.min(100, Math.max(0, score.score))
-
-  return (
-    <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
-      <RingProgress
-        label={
-          <Text fw={700} size="xs" ta="center">
-            {score.score}
-          </Text>
-        }
-        roundCaps
-        sections={[{ color: solvencyScoreColor(score), value }]}
-        size={36}
-        thickness={4}
-      />
-    </Tooltip>
   )
 }
 
