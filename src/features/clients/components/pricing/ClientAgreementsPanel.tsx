@@ -33,6 +33,7 @@ import { useAuth } from '../../../auth/useAuth'
 import { AgreementForm } from './AgreementForm'
 import { organizationHasVat } from './organizationVat'
 import { PRICING_NAME_BULK_TWO, PRICING_NAME_BULK_TWO_VAT } from './pricingNames'
+import './client-agreements.css'
 import type {
   Agreement,
   ClientAgreement,
@@ -449,14 +450,9 @@ function BuyerAgreementItem({
 
   return (
     <Card
-      withBorder
+      className={`agreement-item${isHighlighted || agreement.IsActive ? ' is-selected' : ''}`}
       padding="sm"
       radius="md"
-      style={{
-        cursor: 'pointer',
-        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
-      }}
       onClick={onClick}
     >
       <Group justify="space-between" align="center" wrap="nowrap">
@@ -571,14 +567,9 @@ function ProviderAgreementItem({
 
   return (
     <Card
-      withBorder
+      className={`agreement-item${isHighlighted || agreement.IsActive ? ' is-selected' : ''}`}
       padding="sm"
       radius="md"
-      style={{
-        cursor: 'pointer',
-        borderColor: isHighlighted ? CREATE_ACTION_COLOR : undefined,
-        backgroundColor: agreement.IsActive ? 'var(--mantine-color-orange-0)' : undefined,
-      }}
       onClick={onClick}
     >
       <Group justify="space-between" align="center" wrap="nowrap">

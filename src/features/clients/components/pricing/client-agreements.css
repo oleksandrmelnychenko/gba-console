@@ -1,0 +1,25 @@
+/* Agreement (contract) cards — the shared «main list» item look: a bordered
+   surface with a hover lift and an orange-tinted selected state (mirrors
+   .list-tree-item / the analyst picker via the central tokens). */
+.mantine-Card-root.agreement-item {
+  background: var(--app-surface-gradient), var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  transition:
+    border-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.mantine-Card-root.agreement-item:hover {
+  border-color: var(--mantine-color-gray-4);
+  box-shadow: var(--app-row-hover-shadow);
+  transform: translateX(4px);
+}
+
+.mantine-Card-root.agreement-item.is-selected {
+  background: var(--app-surface-selected), var(--mantine-color-white);
+  border-color: var(--mantine-color-orange-2);
+  box-shadow: var(--app-selected-shadow);
+}
