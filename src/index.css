@@ -50,6 +50,13 @@ body {
   margin: 0;
 }
 
+/* Tables: keep body text solidly readable. Inside every table body the Mantine
+   "dimmed" colour is remapped to near-black, so faint-grey cell text becomes
+   legible. Semantic colours (green/red/violet …) use their own vars and stay. */
+.mantine-Table-tbody {
+  --mantine-color-dimmed: var(--mantine-color-gray-9);
+}
+
 button,
 input,
 textarea,
