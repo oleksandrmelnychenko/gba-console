@@ -39,11 +39,9 @@
     minmax(545px, 1.9fr)
     minmax(104px, 0.24fr)
     minmax(170px, 0.48fr)
-    minmax(170px, 0.44fr)
-    minmax(124px, 0.32fr)
-    minmax(124px, 0.32fr)
+    minmax(220px, 0.68fr)
     36px;
-  --suppliers-roster-min-width: 1180px;
+  --suppliers-roster-min-width: 980px;
 
   display: flex;
   flex-direction: column;

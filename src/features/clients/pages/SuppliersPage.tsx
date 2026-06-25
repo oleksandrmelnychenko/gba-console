@@ -73,19 +73,12 @@ const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
 type SupplierSortId =
-  | 'balance'
   | 'email'
   | 'location'
   | 'phone'
-  | 'purchaseVolume'
   | 'regionCode'
   | 'status'
   | 'supplier'
-
-const amountFormatter = new Intl.NumberFormat('uk-UA', {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-})
 
 const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: SUPPLIER_SEARCH_SQL, label: 'Код або назва' },
@@ -96,8 +89,6 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
 ]
 
 const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
-  balance: 'TotalCurrentAmount',
-  purchaseVolume: 'PurchaseVolumeEur',
   email: 'EmailAddress',
   location: 'RegionCode.City',
   phone: 'MobileNumber',
@@ -131,7 +122,7 @@ function useSuppliersPageModel() {
   const [searchField, setSearchField] = useValueState(SUPPLIER_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SUPPLIER_SEARCH_DEBOUNCE_MS)
-  const [sorting, setSorting] = useValueState<DataTableSortingState>([{ id: 'purchaseVolume', desc: true }])
+  const [sorting, setSorting] = useValueState<DataTableSortingState>([])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const canMoveForward = suppliers.length === pageSize
@@ -902,8 +893,6 @@ function SuppliersRoster({
           <SupplierRosterSortHeader id="phone" label={t('Телефон')} sorting={sorting} onSort={onSort} />
           <SupplierRosterSortHeader id="email" label="Email" sorting={sorting} onSort={onSort} />
         </div>
-        <SupplierRosterSortHeader id="purchaseVolume" label={t('Обсяг')} sorting={sorting} onSort={onSort} align="right" />
-        <SupplierRosterSortHeader id="balance" label={t('Баланс')} sorting={sorting} onSort={onSort} align="right" />
         <span aria-hidden />
       </div>
 
@@ -983,8 +972,6 @@ function SupplierRosterRow({
       <SupplierCodeCell supplier={supplier} />
       <SupplierLocationCell supplier={supplier} />
       <SupplierContactsCell supplier={supplier} />
-      <SupplierPurchaseVolumeCell value={supplier.PurchaseVolumeEur} />
-      <SupplierBalanceCell currency={getSupplierCurrencies(supplier)} value={supplier.TotalCurrentAmount} />
       <SupplierActionsCell supplier={supplier} onOpenActions={onOpenActions} />
     </div>
   )
@@ -1133,30 +1120,6 @@ function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
     : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
 }
 
-function SupplierBalanceCell({ currency, value }: { currency: string; value?: number | null }) {
-  const formatted = formatAmount(value)
-  const isNegative = typeof value === 'number' && value < 0
-  const tooltip = compactStrings([formatted, currency]).join('\n')
-
-  return (
-    <Tooltip label={tooltip || formatted} multiline={Boolean(currency)} openDelay={350} withArrow>
-      <span className={`suppliers-balance-cell${isNegative ? ' is-negative' : ''}`}>
-        <strong>{formatted}</strong>
-        {currency ? <small>{currency}</small> : null}
-      </span>
-    </Tooltip>
-  )
-}
-
-function SupplierPurchaseVolumeCell({ value }: { value?: number | null }) {
-  return (
-    <span className="suppliers-balance-cell">
-      <strong>{formatAmount(value)}</strong>
-      <small>€</small>
-    </span>
-  )
-}
-
 function buildSupplierSortDescriptors(sorting: DataTableSortingState) {
   const descriptors: Array<{ Column: string; Dir: 'asc' | 'desc' }> = []
 
@@ -1230,18 +1193,6 @@ function getSupplierPhone(supplier: Client): string | undefined {
   return supplier.MobileNumber || supplier.ClientNumber
 }
 
-function formatAmount(value?: number | null): string {
-  return typeof value === 'number' ? amountFormatter.format(value) : '-'
-}
-
-function getSupplierCurrencies(supplier: Client): string {
-  return uniqueStrings(
-    (supplier.ClientAgreements || []).map((clientAgreement) =>
-      clientAgreement.Agreement?.Currency?.Code || clientAgreement.Agreement?.Currency?.Name,
-    ),
-  ).join(' · ')
-}
-
 function displayValue(value?: number | string | null): string {
   if (typeof value === 'number') {
     return String(value)
@@ -1257,8 +1208,4 @@ function compactStrings(values: Array<string | null | undefined>): string[] {
 
     return normalizedValue ? [normalizedValue] : []
   })
-}
-
-function uniqueStrings(values: Array<string | null | undefined>): string[] {
-  return [...new Set(compactStrings(values))]
 }
