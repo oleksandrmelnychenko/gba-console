@@ -597,6 +597,15 @@ export function ClientEditPage() {
       keepMounted={false}
       position="right"
       size="full"
+      title={
+        client ? (
+          <ClientEditTitle
+            canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
+            client={client}
+            onTypeClick={() => setTypePanelOpened(true)}
+          />
+        ) : undefined
+      }
       onClose={closeSheet}
       footer={
         <ClientEditActions
@@ -608,13 +617,7 @@ export function ClientEditPage() {
         />
       }
     >
-    <Stack gap="lg">
-      <ClientEditHeader
-        canEditType={hasPermission(EDIT_CLIENT_TYPE_PERMISSION)}
-        client={client}
-        onTypeClick={() => setTypePanelOpened(true)}
-      />
-
+    <Stack className="client-edit-sheet" gap="lg">
       {(error || lookupsError) && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {error || lookupsError}
@@ -715,7 +718,7 @@ function ClientEditActions({
   )
 }
 
-function ClientEditHeader({
+function ClientEditTitle({
   canEditType,
   client,
   onTypeClick,
@@ -732,44 +735,40 @@ function ClientEditHeader({
   }
 
   return (
-    <Card className="client-edit-hero app-section-card" withBorder radius="md" padding="md">
-      <Stack gap="xs">
-        {(regionCodeValue || client.FullName) && (
-          <Group gap="sm" align="baseline">
-            {regionCodeValue && (
-              <Text className="client-edit-hero-code" fw={700} size="sm">
-                {regionCodeValue}
-              </Text>
-            )}
-            {client.FullName && (
-              <Text fw={600} size="lg">
-                {client.FullName}
-              </Text>
-            )}
-          </Group>
+    <div className="client-edit-title">
+      <Group gap="sm" align="baseline" wrap="nowrap">
+        {regionCodeValue && (
+          <Text className="client-edit-title-code" fw={700} size="sm">
+            {regionCodeValue}
+          </Text>
         )}
-        <Group gap="xs">
-          <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
-            {client.IsActive === false ? t('Неактивний') : t('Активний')}
+        {client.FullName && (
+          <Text fw={700} size="md" lineClamp={1}>
+            {client.FullName}
+          </Text>
+        )}
+      </Group>
+      <Group gap="xs" mt={4}>
+        <Badge color={client.IsActive === false ? 'gray' : 'green'} variant="light">
+          {client.IsActive === false ? t('Неактивний') : t('Активний')}
+        </Badge>
+        {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
+          <Badge
+            color="orange"
+            variant="light"
+            style={canEditType ? { cursor: 'pointer' } : undefined}
+            onClick={canEditType ? onTypeClick : undefined}
+          >
+            {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
           </Badge>
-          {(client.ClientInRole?.ClientTypeRole?.Name || canEditType) && (
-            <Badge
-              color="orange"
-              variant="light"
-              style={canEditType ? { cursor: 'pointer' } : undefined}
-              onClick={canEditType ? onTypeClick : undefined}
-            >
-              {client.ClientInRole?.ClientTypeRole?.Name || t('Тип клієнта')}
-            </Badge>
-          )}
-          {client.IsTemporaryClient && (
-            <Badge color="violet" variant="light">
-              {t('З інтернет-магазину')}
-            </Badge>
-          )}
-        </Group>
-      </Stack>
-    </Card>
+        )}
+        {client.IsTemporaryClient && (
+          <Badge color="violet" variant="light">
+            {t('З інтернет-магазину')}
+          </Badge>
+        )}
+      </Group>
+    </div>
   )
 }
 
