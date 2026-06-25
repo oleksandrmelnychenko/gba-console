@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Alert,
   Anchor,
-  Box,
   Button,
   Card,
   FileInput,
@@ -19,6 +18,8 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconChevronDown,
+  IconChevronRight,
   IconDownload,
   IconEye,
   IconFileInvoice,
@@ -45,7 +46,6 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { getDocumentHref } from '../../../shared/url/getDocumentHref'
 import {
   createSupplyOrderUkraineDeliveryExpense,
@@ -74,7 +74,6 @@ import type {
   SupplyUkraineOrdersFilter,
   SupplyUkraineOrdersResponse,
 } from '../types'
-import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import '../../../shared/ui/console-table-page.css'
 import './supply-ukraine-orders.css'
 
@@ -762,7 +761,6 @@ function OrdersListCard({
   onRowClick: (row: SupplyUkraineOrderRow) => void
 }) {
   const { t } = useI18n()
-  const orderColumns = useOrderColumns({ canDeleteOrder, onDelete })
 
   return (
     <Card className="app-data-card supply-ukraine-orders-card" withBorder radius="md" padding={0}>
@@ -796,129 +794,201 @@ function OrdersListCard({
       )}
 
       <div className="supply-ukraine-orders-table">
-        <DataTable
-          columns={orderColumns}
-          data={rows}
-          getRowId={(row, index) => String(row.netUid || index)}
+        <SupplyUkraineOrdersRoster
+          canDeleteOrder={canDeleteOrder}
+          emptyText={t('Замовлень не знайдено')}
           isLoading={state.isLoading}
           loadingText={t('Завантаження замовлень')}
-          emptyText={t('Замовлень не знайдено')}
-          minWidth={1180}
-          showDensityToggle={false}
-          showLayoutControls={false}
-          tableId="supply-ukraine-orders"
-          layoutVersion="supply-ukraine-orders-1"
+          rows={rows}
+          onDelete={onDelete}
           onRowClick={onRowClick}
-          getRowCanExpand={(row) => row.kind === 'direct' && (row.directOrder?.SupplyInvoices?.length ?? 0) > 0}
-          renderExpandedRow={(row) => (row.directOrder ? <SupplyOrderInvoicesExpand order={row.directOrder} /> : null)}
         />
       </div>
     </Card>
   )
 }
 
-function useOrderColumns({
+function SupplyUkraineOrdersRoster({
   canDeleteOrder,
+  emptyText,
+  isLoading,
+  loadingText,
+  rows,
   onDelete,
+  onRowClick,
 }: {
   canDeleteOrder: boolean
+  emptyText: string
+  isLoading: boolean
+  loadingText: string
+  rows: SupplyUkraineOrderRow[]
   onDelete: (row: SupplyUkraineOrderRow) => void
-}): DataTableColumn<SupplyUkraineOrderRow>[] {
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+}) {
+  const { t } = useI18n()
+  const [expandedRowIds, setExpandedRowIds] = useState<ReadonlySet<string>>(() => new Set())
+
+  const toggleExpanded = useCallback((rowId: string) => {
+    setExpandedRowIds((current) => {
+      const next = new Set(current)
+
+      if (next.has(rowId)) {
+        next.delete(rowId)
+      } else {
+        next.add(rowId)
+      }
+
+      return next
+    })
+  }, [])
+
+  return (
+    <div className="supply-orders-roster">
+      <div className="supply-orders-roster-head">
+        <span />
+        <span>{t('Замовлення / постачальник')}</span>
+        <span>{t('Сума')}</span>
+        <span>{t('К-сть')}</span>
+        <span>{t('% дод.')}</span>
+        <span>{t('Організація / договір')}</span>
+        <span>{t('Відповідальний')}</span>
+        <span>{t('Розміщено')}</span>
+        <span>{t('Тип')}</span>
+        <span />
+      </div>
+
+      <div className="supply-orders-roster-body">
+        {isLoading ? (
+          <div className="supply-orders-roster-empty">{loadingText}</div>
+        ) : rows.length === 0 ? (
+          <div className="supply-orders-roster-empty">{emptyText}</div>
+        ) : (
+          rows.map((row, index) => {
+            const rowId = getSupplyOrderRosterRowId(row, index)
+            const canExpand = row.kind === 'direct' && (row.directOrder?.SupplyInvoices?.length ?? 0) > 0
+            const isExpanded = canExpand && expandedRowIds.has(rowId)
+
+            return (
+              <Fragment key={rowId}>
+                <SupplyUkraineOrderRosterRow
+                  canDeleteOrder={canDeleteOrder}
+                  canExpand={canExpand}
+                  isExpanded={isExpanded}
+                  row={row}
+                  onDelete={onDelete}
+                  onRowClick={onRowClick}
+                  onToggleExpanded={() => toggleExpanded(rowId)}
+                />
+                {isExpanded && row.directOrder ? (
+                  <div className="supply-orders-roster-expanded">
+                    <SupplyOrderInvoicesExpand order={row.directOrder} />
+                  </div>
+                ) : null}
+              </Fragment>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SupplyUkraineOrderRosterRow({
+  canDeleteOrder,
+  canExpand,
+  isExpanded,
+  row,
+  onDelete,
+  onRowClick,
+  onToggleExpanded,
+}: {
+  canDeleteOrder: boolean
+  canExpand: boolean
+  isExpanded: boolean
+  row: SupplyUkraineOrderRow
+  onDelete: (row: SupplyUkraineOrderRow) => void
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+  onToggleExpanded: () => void
+}) {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<SupplyUkraineOrderRow>[]>(
-    () => [
-      {
-        id: 'order',
-        header: t('Замовлення / постачальник'),
-        fill: true,
-        minWidth: 260,
-        enableSorting: false,
-        cell: (row) => <OrderMainGridCell row={row} />,
-      },
-      {
-        id: 'sum',
-        header: t('Сума'),
-        align: 'right',
-        minWidth: 120,
-        enableSorting: false,
-        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
-      },
-      {
-        id: 'qty',
-        header: t('К-сть'),
-        align: 'right',
-        minWidth: 90,
-        enableSorting: false,
-        cell: (row) => <OrderMetricValue label="#" value={formatAmount(row.qty)} />,
-      },
-      {
-        id: 'percent',
-        header: t('% дод.'),
-        align: 'right',
-        minWidth: 90,
-        enableSorting: false,
-        cell: (row) => <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />,
-      },
-      {
-        id: 'org',
-        header: t('Організація / договір'),
-        minWidth: 200,
-        enableSorting: false,
-        cell: (row) => <OrderOrganizationGridCell row={row} />,
-      },
-      {
-        id: 'responsible',
-        header: t('Відповідальний'),
-        minWidth: 150,
-        enableSorting: false,
-        cell: (row) => <OrderResponsibleGridCell value={displayValue(row.responsible)} />,
-      },
-      {
-        id: 'placed',
-        header: t('Розміщено'),
-        align: 'center',
-        minWidth: 110,
-        enableSorting: false,
-        cell: (row) => placedBadge(row.isPlaced, t),
-      },
-      {
-        id: 'type',
-        header: t('Тип'),
-        minWidth: 120,
-        enableSorting: false,
-        cell: (row) => getKindBadge(row, t),
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 60,
-        minWidth: 60,
-        maxWidth: 60,
-        align: 'center',
-        enableHiding: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (row) =>
-          canDeleteOrder && canDeleteRow(row) ? (
-            <Box onClick={(event) => event.stopPropagation()}>
-              <Tooltip label={t('Видалити')}>
-                <ActionIcon
-                  aria-label={t('Видалити')}
-                  color="red"
-                  variant="subtle"
-                  onClick={() => onDelete(row)}
-                >
-                  <IconTrash size={16} />
-                </ActionIcon>
-              </Tooltip>
-            </Box>
-          ) : null,
-      },
-    ],
-    [canDeleteOrder, onDelete, t],
+  return (
+    <div
+      className={`supply-orders-roster-row is-${row.kind}${isExpanded ? ' is-expanded' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={(event) => {
+        const target = event.target as HTMLElement
+
+        if (!event.currentTarget.contains(target)) {
+          return
+        }
+
+        if (!target.closest('[data-order-row-stop]')) {
+          onRowClick(row)
+        }
+      }}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+          event.preventDefault()
+          onRowClick(row)
+        }
+      }}
+    >
+      <div className="supply-order-row-controls" data-order-row-stop="true">
+        <OrderIndexCell row={row} />
+        <span className="supply-order-expand-slot">
+          {canExpand ? (
+            <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
+              <ActionIcon
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={onToggleExpanded}
+              >
+                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+              </ActionIcon>
+            </Tooltip>
+          ) : (
+            <span className="supply-order-expand-placeholder" aria-hidden />
+          )}
+        </span>
+      </div>
+      <OrderMainGridCell row={row} />
+      <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
+      <div className="supply-order-metric-cell is-qty">
+        <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+      </div>
+      <div className="supply-order-metric-cell is-percent">
+        <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />
+      </div>
+      <OrderOrganizationGridCell row={row} />
+      <OrderResponsibleGridCell value={displayValue(row.responsible)} />
+      <div className="supply-order-status-cell">{placedBadge(row.isPlaced, t)}</div>
+      <div className="supply-order-status-cell">{getKindBadge(row, t)}</div>
+      <div className="supply-order-actions-cell" data-order-row-stop="true">
+        {canDeleteOrder && canDeleteRow(row) ? (
+          <Tooltip label={t('Видалити')}>
+            <ActionIcon
+              aria-label={t('Видалити')}
+              color="gray"
+              size="sm"
+              variant="subtle"
+              onClick={() => onDelete(row)}
+            >
+              <IconTrash size={15} />
+            </ActionIcon>
+          </Tooltip>
+        ) : null}
+      </div>
+    </div>
   )
+}
+
+function getSupplyOrderRosterRowId(row: SupplyUkraineOrderRow, index: number): string {
+  return String(row.netUid || `${row.kind}-${row.number || ''}-${index}`)
 }
 
 function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
@@ -927,7 +997,6 @@ function OrderMainGridCell({ row }: { row: SupplyUkraineOrderRow }) {
 
   return (
     <div className="supply-order-main-cell">
-      <OrderIndexCell row={row} />
       <div className="supply-order-main-body">
         <div className="supply-order-main-title-row">
           <Tooltip label={supplier} disabled={supplier === '-'} openDelay={350} withArrow>
