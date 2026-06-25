@@ -470,7 +470,7 @@ export function ConsumableOrderPayPage() {
             />
             <div className="consumable-order-pay-form-grid">
             <TextInput
-              className="consumable-order-pay-control is-compact"
+              className="consumable-order-pay-control is-compact is-date"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Дата')}
               leftSection={<IconCalendar size={15} />}
@@ -479,7 +479,7 @@ export function ConsumableOrderPayPage() {
               onChange={(event) => updateForm({ date: event.currentTarget.value })}
             />
             <TextInput
-              className="consumable-order-pay-control is-compact"
+              className="consumable-order-pay-control is-compact is-time"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Час')}
               leftSection={<IconClock size={15} />}
@@ -499,7 +499,7 @@ export function ConsumableOrderPayPage() {
               onChange={(value) => updateForm({ amount: toNumber(value) })}
             />
             <Select
-              className="consumable-order-pay-control"
+              className="consumable-order-pay-control is-organization"
               data={organizationOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Організація')}
@@ -509,7 +509,7 @@ export function ConsumableOrderPayPage() {
               onChange={(value) => updateForm({ organizationValue: value || '' })}
             />
             <Select
-              className="consumable-order-pay-control"
+              className="consumable-order-pay-control is-register"
               data={registerOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Каса / рахунок')}
@@ -519,7 +519,7 @@ export function ConsumableOrderPayPage() {
               onChange={handleRegisterChanged}
             />
             <Select
-              className="consumable-order-pay-control is-compact"
+              className="consumable-order-pay-control is-compact is-currency"
               data={currencyOptions}
               disabled={!selectedRegister || isLoading || isSaving || isOrderPaid}
               label={t('Валюта')}
@@ -529,7 +529,7 @@ export function ConsumableOrderPayPage() {
               onChange={(value) => updateForm({ selectedCurrencyRegisterValue: value || '' })}
             />
             <Autocomplete
-              className="consumable-order-pay-control"
+              className="consumable-order-pay-control is-movement"
               data={movementOptions}
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Стаття руху коштів')}
@@ -539,7 +539,7 @@ export function ConsumableOrderPayPage() {
               onOptionSubmit={handleMovementSubmit}
             />
             <TextInput
-              className="consumable-order-pay-control"
+              className="consumable-order-pay-control is-comment"
               disabled={isLoading || isSaving || isOrderPaid}
               label={t('Коментар')}
               leftSection={<IconNotes size={15} />}

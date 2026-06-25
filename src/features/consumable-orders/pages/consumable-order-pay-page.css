@@ -249,21 +249,41 @@
 .consumable-order-pay-form-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   padding: 16px 14px 14px;
 }
 
 .consumable-order-pay-control {
-  grid-column: span 2;
+  grid-column: span 3;
   min-width: 0;
 }
 
 .consumable-order-pay-control.is-compact {
-  grid-column: span 1;
+  grid-column: span 2;
 }
 
 .consumable-order-pay-control.is-amount {
-  grid-column: span 2;
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-organization {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-register {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-currency {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-movement {
+  grid-column: span 4;
+}
+
+.consumable-order-pay-control.is-comment {
+  grid-column: 1 / -1;
 }
 
 .consumable-order-pay-add-movement {
@@ -495,7 +515,12 @@
 
   .consumable-order-pay-control,
   .consumable-order-pay-control.is-compact,
-  .consumable-order-pay-control.is-amount {
+  .consumable-order-pay-control.is-amount,
+  .consumable-order-pay-control.is-organization,
+  .consumable-order-pay-control.is-register,
+  .consumable-order-pay-control.is-currency,
+  .consumable-order-pay-control.is-movement,
+  .consumable-order-pay-control.is-comment {
     grid-column: auto;
   }
 }
