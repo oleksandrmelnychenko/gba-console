@@ -404,11 +404,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     [navigate, setSelectedItem],
   )
   const leadColumns = useMemo<CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[]>(
-    () => {
-      const columns: CashFlowGridLeadColumn<AccountingCashFlowHeadItem>[] = [
+    () => [
       {
         id: 'name',
         isLabel: true,
+        header: t('Документ'),
         cell: (item) => (
           <Text fw={600} lineClamp={1}>
             {displayValue(item.Name)}
@@ -418,27 +418,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
       {
         id: 'organization',
         header: t('Організація'),
-        width: 160,
+        width: 220,
         cell: (item) => displayValue(item.OrganizationName),
       },
-      {
-        id: 'spacer',
-        width: 160,
-        cell: () => '',
-      },
-    ]
-
-      if (mode === 'supplier') {
-        columns.push({
-          id: 'supplier-spacer',
-          width: 160,
-          cell: () => '',
-        })
-      }
-
-      return columns
-    },
-    [mode, t],
+    ],
+    [t],
   )
   const summary = useMemo(
     () => ({
