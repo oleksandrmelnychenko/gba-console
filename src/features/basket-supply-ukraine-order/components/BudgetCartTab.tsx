@@ -20,6 +20,7 @@ import { Fragment, useEffect, useMemo, useReducer, useState } from 'react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import type { TranslateFunction } from '../../../shared/i18n/types'
 import { UrgencyDonut, type UrgencySliceInput } from '../../../shared/ui/charts'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import { getBudgetCartPlan } from '../api/procurementApi'
@@ -246,7 +247,7 @@ export function BudgetCartTab() {
             value={method}
           />
         </Stack>
-        <Button disabled={!isBudgetValid} loading={isLoading} onClick={triggerOptimize}>
+        <Button color={CREATE_ACTION_COLOR} disabled={!isBudgetValid} loading={isLoading} onClick={triggerOptimize}>
           {t('Оптимізувати')}
         </Button>
         {hasRequested && (
@@ -272,7 +273,7 @@ export function BudgetCartTab() {
       )}
 
       {!hasRequested && !error && (
-        <Card padding="lg" radius="md" withBorder>
+        <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Text c="dimmed" size="sm" ta="center">
             {t('Введіть бюджет та натисніть «Оптимізувати»')}
           </Text>
@@ -280,7 +281,7 @@ export function BudgetCartTab() {
       )}
 
       {hasRequested && isLoading && (
-        <Card padding="lg" radius="md" withBorder>
+        <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Group justify="center">
             <Loader size="sm" />
             <Text c="dimmed" size="sm">
@@ -291,7 +292,7 @@ export function BudgetCartTab() {
       )}
 
       {hasPlan && plan && (
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
             <Stack gap="md">
               <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="sm">
@@ -346,7 +347,7 @@ export function BudgetCartTab() {
       )}
 
       {hasPlan && !isEmpty && (
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <BudgetCartTable
             firstDeferredIndex={firstDeferredIndex}
             items={sortedItems}
@@ -357,7 +358,7 @@ export function BudgetCartTab() {
       )}
 
       {isEmpty && (
-        <Card padding="lg" radius="md" withBorder>
+        <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Text c="dimmed" size="sm" ta="center">
             {t('Немає позицій')}
           </Text>

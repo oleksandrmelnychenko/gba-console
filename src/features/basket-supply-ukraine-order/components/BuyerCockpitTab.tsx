@@ -33,6 +33,7 @@ import type { TranslateFunction } from '../../../shared/i18n/types'
 import { AppModal } from '../../../shared/ui/AppModal'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import type { DataTableColumn } from '../../../shared/ui/data-table/types'
+import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { getSupplyOrderSuppliers } from '../../supply-ukraine-orders/api/supplyUkraineOrdersApi'
 import type { Client } from '../../supply-ukraine-orders/types'
 import {
@@ -800,7 +801,7 @@ export function BuyerCockpitTab() {
       )}
 
       {!hasSelection && !error && (
-        <Card padding="lg" radius="md" withBorder>
+        <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Text c="dimmed" size="sm" ta="center">
             {t('Оберіть виробника')}
           </Text>
@@ -808,7 +809,7 @@ export function BuyerCockpitTab() {
       )}
 
       {hasSelection && isLoading && (
-        <Card padding="lg" radius="md" withBorder>
+        <Card className="app-section-card" padding="lg" radius="md" withBorder>
           <Group justify="center">
             <Loader size="sm" />
             <Text c="dimmed" size="sm">
@@ -819,7 +820,7 @@ export function BuyerCockpitTab() {
       )}
 
       {hasSelection && hasPlan && plan && (
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="sm">
             <Group justify="space-between" wrap="wrap">
               <Stack gap={2}>
@@ -882,7 +883,7 @@ export function BuyerCockpitTab() {
                       />
                       <Divider />
                       <Group justify="flex-end">
-                        <Button loading={isProfileSaving} onClick={() => void saveProfile()} size="xs">
+                        <Button color={CREATE_ACTION_COLOR} loading={isProfileSaving} onClick={() => void saveProfile()} size="xs">
                           {t('Зберегти')}
                         </Button>
                       </Group>
@@ -919,7 +920,7 @@ export function BuyerCockpitTab() {
       )}
 
       {hasSelection && hasPlan && (
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="md">
             <DataTable
               columns={columns}
@@ -935,6 +936,7 @@ export function BuyerCockpitTab() {
 
             <Group justify="flex-end">
               <Button
+                color={CREATE_ACTION_COLOR}
                 disabled={orderableItems.length === 0}
                 loading={isCreatingOrder}
                 onClick={openConfirm}
@@ -976,6 +978,7 @@ export function BuyerCockpitTab() {
               {t('Скасувати')}
             </Button>
             <Button
+              color={CREATE_ACTION_COLOR}
               data-autofocus
               disabled={orderableItems.length === 0}
               loading={isCreatingOrder}

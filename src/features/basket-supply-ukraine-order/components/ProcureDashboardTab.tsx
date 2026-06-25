@@ -268,7 +268,7 @@ export function ProcureDashboardTab() {
       )}
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack align="center" gap="xs">
             <Text fw={600} size="sm">
               {t('Терміновість поповнення')}
@@ -284,7 +284,7 @@ export function ProcureDashboardTab() {
           </Stack>
         </Card>
 
-        <Card padding="md" radius="md" withBorder>
+        <Card className="app-section-card" padding="md" radius="md" withBorder>
           <Stack gap="xs">
             <Group justify="space-between">
               <Text fw={600} size="sm">
@@ -304,7 +304,7 @@ export function ProcureDashboardTab() {
         </Card>
       </SimpleGrid>
 
-      <Card padding="md" radius="md" withBorder>
+      <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="md">
           <Text fw={600} size="sm">
             {t('Прогноз попиту')}
@@ -334,7 +334,7 @@ export function ProcureDashboardTab() {
         </Stack>
       </Card>
 
-      <Card padding="md" radius="md" withBorder>
+      <Card className="app-section-card" padding="md" radius="md" withBorder>
         <Stack gap="xs">
           <Group justify="space-between">
             <Text fw={600} size="sm">
