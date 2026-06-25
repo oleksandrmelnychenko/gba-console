@@ -208,7 +208,7 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
             </Tooltip>
           </Group>
 
-          <Tabs color="violet" defaultValue="subClients" keepMounted={false} variant="pills">
+          <Tabs color="violet" defaultValue="subClients" keepMounted={false} radius="xl" variant="pills">
             <Tabs.List justify="center">
               <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
               <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
