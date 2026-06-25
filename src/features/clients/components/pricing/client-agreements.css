@@ -2,7 +2,7 @@
    surface with a hover lift and an orange-tinted selected state (mirrors
    .list-tree-item / the analyst picker via the central tokens). */
 .mantine-Card-root.agreement-item {
-  background: rgba(var(--brand-orange-rgb), 0.022);
+  background: rgba(var(--brand-orange-rgb), 0.01);
   border: 1px solid var(--mantine-color-gray-2);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   cursor: pointer;
@@ -20,7 +20,7 @@
 }
 
 .mantine-Card-root.agreement-item.is-selected {
-  background: rgba(var(--brand-orange-rgb), 0.055);
+  background: rgba(var(--brand-orange-rgb), 0.032);
   border-color: var(--mantine-color-orange-2);
   box-shadow: var(--app-selected-shadow);
 }
