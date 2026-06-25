@@ -3,7 +3,6 @@ import {
   Avatar,
   Badge,
   Box,
-  Card,
   Group,
   Loader,
   Stack,
@@ -17,6 +16,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getPurchaseManagers, getSaleManagers } from '../../api/clientLookupsApi'
 import type { Client, ClientUserProfile, Manager } from '../../types'
+import './manager-picker.css'
 
 export type ManagerPickerRole = 'buyer' | 'provider'
 
@@ -188,12 +188,6 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
               const isSelected = Boolean(selectedNetUid && manager.NetUid === selectedNetUid)
               const isMainManager =
                 typeof client.MainManagerId === 'number' && client.MainManagerId === manager.Id
-              const cardBorder = isSelected
-                ? '2px solid var(--mantine-color-violet-6)'
-                : isMainManager
-                  ? '2px solid var(--mantine-color-yellow-5)'
-                  : undefined
-              const cardBackground = isSelected ? 'var(--mantine-color-violet-light)' : undefined
 
               return (
                 <UnstyledButton
@@ -203,14 +197,8 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                   style={{ display: 'block', width: '100%' }}
                   onClick={() => handleSelect(manager)}
                 >
-                  <Card
-                    bd={cardBorder}
-                    bg={cardBackground}
-                    padding="md"
-                    radius="md"
-                    withBorder
-                  >
-                    <Group gap="sm" align="flex-start" wrap="nowrap">
+                  <div className={`manager-pick-item${isSelected ? ' is-selected' : ''}`}>
+                    <Group gap="sm" align="center" wrap="nowrap" w="100%">
                       <Avatar
                         color="gray"
                         fw={600}
@@ -222,7 +210,7 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                         {manager.Abbreviation}
                       </Avatar>
 
-                      <Stack flex={1} gap={2} miw={0}>
+                      <Stack flex={1} gap={4} miw={0}>
                         <Group gap="xs" miw={0} wrap="nowrap">
                           <Text fw={600} size="sm" truncate>
                             {getManagerFullName(manager)}
@@ -234,13 +222,13 @@ export function ManagerPicker({ client, role, onChange, disabled = false }: Mana
                           )}
                         </Group>
                         {manager.UserRole?.Name && (
-                          <Text c="dimmed" size="xs" truncate>
+                          <Badge color="gray" radius="sm" size="sm" variant="light" style={{ maxWidth: '100%' }}>
                             {manager.UserRole.Name}
-                          </Text>
+                          </Badge>
                         )}
                       </Stack>
                     </Group>
-                  </Card>
+                  </div>
                 </UnstyledButton>
               )
             })}
