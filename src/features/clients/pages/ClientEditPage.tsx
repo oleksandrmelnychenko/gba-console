@@ -23,6 +23,7 @@ import {
   IconChevronRight,
   IconCircleDot,
   IconDeviceFloppy,
+  IconGauge,
   IconInfoCircle,
   IconSitemap,
   IconStar,
@@ -82,6 +83,7 @@ const STEP_ICON: Record<string, ComponentType<IconProps>> = {
   'client-types': IconSitemap,
   'e-commerce': IconWorld,
   'most-purchased-products': IconStar,
+  solvency: IconGauge,
   'bank-details': IconBuildingBank,
 }
 
@@ -1028,6 +1030,7 @@ function buildEditSteps(client: Client | null, hasPermission: (permissionKey: st
     }
 
     steps.push({ value: 'most-purchased-products', label: translate('Рекомендації') })
+    steps.push({ value: 'solvency', label: translate('Платоспроможність') })
   }
 
   if (getClientType(client) === CLIENT_TYPE_PROVIDER) {
@@ -1110,13 +1113,14 @@ function EditStepContent({
   }
 
   if (step === 'most-purchased-products') {
+    return <RecommendationsPanel client={client} productNetId={productNetId} />
+  }
+
+  if (step === 'solvency') {
     return (
-      <Stack gap="lg">
-        <RecommendationsPanel client={client} productNetId={productNetId} />
-        <Card className="app-section-card" withBorder radius="md" padding="md">
-          <SolvencyPanel clientNetId={client.NetUid} />
-        </Card>
-      </Stack>
+      <Card className="app-section-card" withBorder radius="md" padding="md">
+        <SolvencyPanel clientNetId={client.NetUid} />
+      </Card>
     )
   }
 
