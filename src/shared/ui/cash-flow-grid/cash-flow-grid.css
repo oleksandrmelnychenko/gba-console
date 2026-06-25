@@ -190,3 +190,12 @@
   min-height: 0;
   max-height: none !important;
 }
+
+/* Summary KPI tiles need to read as distinct cards even inside .console-frame,
+   which otherwise strips every card's border/shadow. Restore a light fill +
+   hairline so the «Взаєморозрахунки» totals band looks structured. */
+.console-frame .cash-flow-summary-tile.mantine-Card-root {
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  box-shadow: var(--app-card-shadow);
+}

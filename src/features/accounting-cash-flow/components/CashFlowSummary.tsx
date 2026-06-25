@@ -29,7 +29,7 @@ function SummaryValue({ label, value }: { label: string; value?: number }) {
   const isNegative = typeof value === 'number' && value < 0
 
   return (
-    <Card withBorder radius="md" padding="sm">
+    <Card className="cash-flow-summary-tile" withBorder radius="md" padding="sm">
       <Text size="xs" c="dimmed">
         {label}
       </Text>
