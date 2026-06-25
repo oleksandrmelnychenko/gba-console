@@ -14,8 +14,8 @@ type ConsoleNavMode = 'all' | 'items' | 'modules'
 const PREFERRED_MODULE_DEFAULT_ROUTES = ['/sales/ukraine/all', '/orders/ukraine/all']
 
 // Pill-width pattern for the loading shimmer (varied so it reads as real nav).
-const MODULE_SKELETON_WIDTHS = [78, 94, 66, 88, 72, 100]
-const ITEM_SKELETON_WIDTHS = [88, 70, 104, 82, 94]
+const MODULE_SKELETON_WIDTHS = [109, 132, 92, 123, 101, 140]
+const ITEM_SKELETON_WIDTHS = [123, 98, 146, 115, 132]
 
 function findNodeByPath(
   nodes: NavigationNode[],
