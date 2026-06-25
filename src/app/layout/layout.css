@@ -1440,7 +1440,9 @@
   font-size: 13px;
 }
 
-/* Loading shimmer pills — sit inline like real nav pills, never stretch. */
+/* Loading shimmer pills — sit inline like real nav pills, vertically centred
+   in the header row (the row itself stretches, so centre each pill). */
 .console-subnav-skeleton {
   flex: 0 0 auto;
+  align-self: center;
 }
