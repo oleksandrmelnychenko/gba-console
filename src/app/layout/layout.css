@@ -1439,3 +1439,8 @@
   color: var(--mantine-color-dimmed);
   font-size: 13px;
 }
+
+/* Loading shimmer pills — sit inline like real nav pills, never stretch. */
+.console-subnav-skeleton {
+  flex: 0 0 auto;
+}
