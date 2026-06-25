@@ -24,3 +24,14 @@ export async function getClientSolvencyCharts(
     ...(signal ? { signal } : {}),
   })
 }
+
+export async function getClientSolvencyScoresBatch(
+  clientIds: number[],
+  signal?: AbortSignal,
+): Promise<{ results: SolvencyScore[] }> {
+  return apiRequest<{ results: SolvencyScore[] }>('/solvency/scores/batch', {
+    method: 'POST',
+    body: clientIds,
+    ...(signal ? { signal } : {}),
+  })
+}

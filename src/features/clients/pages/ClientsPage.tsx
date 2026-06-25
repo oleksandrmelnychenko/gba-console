@@ -10,6 +10,7 @@ import {
   Group,
   Loader,
   NumberInput,
+  RingProgress,
   Select,
   Stack,
   Text,
@@ -61,6 +62,8 @@ import {
   updateClientOrderExpireDays,
 } from '../api/clientsApi'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientType } from '../types'
+import { getClientSolvencyScoresBatch } from '../api/clientSolvencyApi'
+import type { SolvencyScore } from '../solvencyTypes'
 import './clients-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -126,6 +129,7 @@ function useClientsPageModel() {
   const hasLoadedClientsRef = useRef(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [clients, setClients] = useValueState<Client[]>([])
+  const [solvencyScores, setSolvencyScores] = useValueState<Map<number, SolvencyScore>>(() => new Map())
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
   const [totalCount, setTotalCount] = useValueState<number | null>(null)
@@ -180,7 +184,12 @@ function useClientsPageModel() {
     [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
   )
   const openClientActions = useCallback((client: Client) => setSelectedClient(client), [setSelectedClient])
-  const clientColumns = useClientColumns(openClientActions)
+  const clientColumns = useClientColumns(openClientActions, solvencyScores)
+  const solvencyClientIds = useMemo(
+    () => clients.map((client) => client.Id).filter((id): id is number => typeof id === 'number'),
+    [clients],
+  )
+  const solvencyClientIdsKey = solvencyClientIds.join(',')
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeClientTablePageSize(value)
 
@@ -206,6 +215,44 @@ function useClientsPageModel() {
       return nextParams
     }, { replace: true, state: location.state })
   }, [location.state, setActiveFilter, setUrlSearchParams])
+  useEffect(() => {
+    if (solvencyClientIds.length === 0) {
+      setSolvencyScores(new Map())
+      return
+    }
+
+    const controller = new AbortController()
+    let cancelled = false
+
+    async function loadSolvencyScores() {
+      try {
+        const { results } = await getClientSolvencyScoresBatch(solvencyClientIds, controller.signal)
+
+        if (cancelled) {
+          return
+        }
+
+        const nextScores = new Map<number, SolvencyScore>()
+        for (const result of results) {
+          nextScores.set(result.client_id, result)
+        }
+
+        setSolvencyScores(nextScores)
+      } catch {
+        if (!cancelled) {
+          setSolvencyScores(new Map())
+        }
+      }
+    }
+
+    void loadSolvencyScores()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solvencyClientIdsKey])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -1058,7 +1105,10 @@ function ClientStructureModal({
   )
 }
 
-function useClientColumns(onOpenActions: (client: Client) => void) {
+function useClientColumns(
+  onOpenActions: (client: Client) => void,
+  solvencyScores: Map<number, SolvencyScore>,
+) {
   const { t } = useI18n()
 
   return useMemo<DataTableColumn<Client>[]>(
@@ -1091,6 +1141,18 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         fill: true,
         accessor: getClientDisplayName,
         cell: (client) => <ClientTableValue fw={600} value={getClientDisplayName(client)} />,
+      },
+      {
+        id: 'solvency',
+        header: t('Оцінка'),
+        width: 96,
+        minWidth: 88,
+        maxWidth: 110,
+        align: 'center',
+        enableSorting: false,
+        cell: (client) => (
+          <SolvencyGaugeCell score={typeof client.Id === 'number' ? solvencyScores.get(client.Id) : undefined} />
+        ),
       },
       {
         id: 'tin',
@@ -1203,7 +1265,59 @@ function useClientColumns(onOpenActions: (client: Client) => void) {
         ),
       },
     ],
-    [onOpenActions, t],
+    [onOpenActions, solvencyScores, t],
+  )
+}
+
+const SOLVENCY_RATING_COLOR: Record<string, string> = {
+  A: 'green',
+  B: 'teal',
+  C: 'yellow',
+  D: 'red',
+}
+
+function solvencyScoreColor(score: SolvencyScore): string {
+  const ratingColor = SOLVENCY_RATING_COLOR[score.rating]
+  if (ratingColor) {
+    return ratingColor
+  }
+
+  if (score.score >= 70) {
+    return 'green'
+  }
+
+  if (score.score >= 40) {
+    return 'yellow'
+  }
+
+  return 'red'
+}
+
+function SolvencyGaugeCell({ score }: { score?: SolvencyScore }) {
+  if (!score) {
+    return (
+      <Text c="dimmed" size="xs">
+        —
+      </Text>
+    )
+  }
+
+  const value = Math.min(100, Math.max(0, score.score))
+
+  return (
+    <Tooltip label={`${score.score} / 100 · ${score.rating}`} openDelay={300} withArrow>
+      <RingProgress
+        label={
+          <Text fw={700} size="xs" ta="center">
+            {score.score}
+          </Text>
+        }
+        roundCaps
+        sections={[{ color: solvencyScoreColor(score), value }]}
+        size={36}
+        thickness={4}
+      />
+    </Tooltip>
   )
 }
 
