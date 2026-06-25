@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { sanitizeConsumableOrderPayload } from '../consumableOrderPayload'
 import type {
   ConsumableOrderCalculation,
   ConsumableOrdersSearchParams,
@@ -203,7 +204,7 @@ export async function getFinanceDirectorUsers(): Promise<User[]> {
 
 function buildConsumableOrderFormData(order: ConsumablesOrder, documents: File[]): FormData {
   const formData = new FormData()
-  formData.append('order', JSON.stringify(order))
+  formData.append('order', JSON.stringify(sanitizeConsumableOrderPayload(order)))
   documents.forEach((document) => formData.append('documents', document))
 
   return formData
