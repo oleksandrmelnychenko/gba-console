@@ -1,0 +1,373 @@
+/* ── Assortment intelligence dashboard ──────────────────────────────────────
+   Professional dashboard layout: KPI tiles, a segmented stock-state bar, a
+   health gauge, ranked lists and a detail table. Cards reuse .app-section-card
+   so their shadow resolves from --app-card-shadow (central token). */
+
+.assort-dash {
+  padding: 16px;
+}
+
+/* Header ------------------------------------------------------------------- */
+.assort-dash__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.assort-dash__title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--mantine-color-gray-9);
+}
+
+.assort-dash__subtitle {
+  font-size: 13px;
+  color: var(--mantine-color-gray-6);
+}
+
+.assort-dash__controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* KPI tiles ---------------------------------------------------------------- */
+.kpi-tile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+}
+
+.kpi-tile__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+}
+
+.kpi-tile__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kpi-tile__label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-gray-6);
+}
+
+.kpi-tile__value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--mantine-color-gray-9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kpi-tile__sub {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+}
+
+/* Section card scaffolding ------------------------------------------------- */
+.assort-card {
+  padding: 18px;
+}
+
+.assort-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.assort-card__title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--mantine-color-gray-9);
+}
+
+.assort-card__hint {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+}
+
+/* Segmented stock-state bar ------------------------------------------------ */
+.band-bar {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--mantine-color-gray-1);
+}
+
+.band-bar__seg {
+  height: 100%;
+  min-width: 2px;
+  transition: opacity 120ms ease;
+}
+
+.band-bar__seg:hover {
+  opacity: 0.82;
+}
+
+.band-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 14px;
+}
+
+.band-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 8px;
+}
+
+.band-legend__row + .band-legend__row {
+  border-top: 1px solid var(--mantine-color-gray-1);
+}
+
+.band-legend__swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.band-legend__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--mantine-color-gray-8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.band-legend__count {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mantine-color-gray-9);
+  font-variant-numeric: tabular-nums;
+}
+
+.band-legend__value {
+  flex: 0 0 96px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Health gauge + ABC/XYZ mix ---------------------------------------------- */
+.assort-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.assort-gauge__caption {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+}
+
+.assort-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.assort-mix__group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assort-mix__title {
+  flex: 0 0 42px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mantine-color-gray-6);
+}
+
+.assort-mix__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.assort-mix__chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--mantine-color-gray-1);
+  font-size: 12px;
+  color: var(--mantine-color-gray-7);
+}
+
+.assort-mix__chip b {
+  color: var(--mantine-color-gray-9);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ranked lists ------------------------------------------------------------- */
+.rank-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.rank-list__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.rank-list__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mantine-color-gray-9);
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.rank-row + .rank-row {
+  border-top: 1px solid var(--mantine-color-gray-1);
+}
+
+.rank-row:hover {
+  background: rgba(var(--brand-orange-rgb), 0.06);
+}
+
+.rank-row__rank {
+  flex: 0 0 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mantine-color-gray-5);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.rank-row__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.rank-row__code {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mantine-color-gray-9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row__name {
+  font-size: 11.5px;
+  color: var(--mantine-color-gray-6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row__metric {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mantine-color-gray-9);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.rank-empty {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+}
+
+/* Detail table card -------------------------------------------------------- */
+.assort-table-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.assort-filter {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.assort-cell-product {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.assort-cell-product b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mantine-color-gray-9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assort-cell-product span {
+  font-size: 11.5px;
+  color: var(--mantine-color-gray-6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
