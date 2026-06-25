@@ -211,8 +211,8 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
             </Group>
           </Group>
 
-          <Tabs defaultValue="subClients" keepMounted={false}>
-            <Tabs.List>
+          <Tabs color="violet" defaultValue="subClients" keepMounted={false}>
+            <Tabs.List justify="center">
               <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
               <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
             </Tabs.List>

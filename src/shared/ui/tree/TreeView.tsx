@@ -170,11 +170,7 @@ function TreeRow({ node, depth, expanded, onToggleExpand, t }: TreeRowProps) {
               children.map((child) => (
                 <TreeRow key={child.id} depth={depth + 1} expanded={expanded} node={child} onToggleExpand={onToggleExpand} t={t} />
               ))
-            ) : (
-              <div className="app-tree-empty-children" style={{ '--app-tree-indent': `${(depth + 1) * 18}px` } as CSSProperties}>
-                {t('Немає вкладень')}
-              </div>
-            )}
+            ) : null}
           </div>
         </Collapse>
       ) : null}

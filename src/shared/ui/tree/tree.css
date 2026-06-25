@@ -123,7 +123,7 @@
 
 .app-tree-node-meta {
   align-items: center;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-gray-8);
   display: flex;
   font-size: 11px;
   gap: 8px;
