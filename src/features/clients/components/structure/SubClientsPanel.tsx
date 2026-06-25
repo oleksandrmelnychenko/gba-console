@@ -137,8 +137,7 @@ export function SubClientsPanel({ client }: SubClientsPanelProps) {
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Text fw={600}>{t('Субклієнти')}</Text>
+      <Group justify="flex-end" align="center">
         <Button color={CREATE_ACTION_COLOR} leftSection={<IconPlus size={16} />} size="xs" onClick={openNewUser}>
           {t('Новий користувач')}
         </Button>

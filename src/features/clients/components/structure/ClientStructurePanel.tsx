@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Card, Grid, Group, Stack, Tabs, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Card, Grid, Group, Stack, Tabs, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconUserPlus, IconUsersGroup } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -185,33 +185,30 @@ export function ClientStructurePanel({ client, onChange }: ClientStructurePanelP
 
       <Card className="app-section-card" withBorder padding="md" radius="md">
         <Stack gap="md">
-          <Group justify="space-between" align="center">
-            <Text fw={600}>{t('Структура клієнта')}</Text>
-            <Group gap="xs">
-              <Tooltip label={t('Підгрупи')}>
-                <ActionIcon
-                  color="violet"
-                  size="lg"
-                  variant="light"
-                  onClick={() => setGroupsModalOpened(true)}
-                >
-                  <IconUsersGroup size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label={t('Новий користувач')}>
-                <ActionIcon
-                  color={CREATE_ACTION_COLOR}
-                  size="lg"
-                  variant="light"
-                  onClick={openNewUser}
-                >
-                  <IconUserPlus size={18} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
+          <Group justify="flex-end" align="center">
+            <Tooltip label={t('Підгрупи')}>
+              <ActionIcon
+                color="violet"
+                size="lg"
+                variant="light"
+                onClick={() => setGroupsModalOpened(true)}
+              >
+                <IconUsersGroup size={18} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={t('Новий користувач')}>
+              <ActionIcon
+                color={CREATE_ACTION_COLOR}
+                size="lg"
+                variant="light"
+                onClick={openNewUser}
+              >
+                <IconUserPlus size={18} />
+              </ActionIcon>
+            </Tooltip>
           </Group>
 
-          <Tabs color="violet" defaultValue="subClients" keepMounted={false}>
+          <Tabs color="violet" defaultValue="subClients" keepMounted={false} variant="pills">
             <Tabs.List justify="center">
               <Tabs.Tab value="subClients">{t('Субклієнти')}</Tabs.Tab>
               <Tabs.Tab value="workplaces">{t('Робочі місця')}</Tabs.Tab>
