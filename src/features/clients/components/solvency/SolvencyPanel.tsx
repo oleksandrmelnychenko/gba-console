@@ -18,6 +18,9 @@ import { useEffect, useReducer } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getClientSolvencyCharts, getClientSolvencyScore } from '../../api/clientSolvencyApi'
 import type {
+  Contribution,
+  ForwardRisk,
+  ForwardRiskBand,
   SolvencyCharts,
   SolvencyRating,
   SolvencyScore,
@@ -167,7 +170,7 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
     )
   }
 
-  if (score.applicable === false || score.score == null || !score.sub_factors) {
+  if (score.applicable === false || score.score == null) {
     return (
       <Alert color="gray" icon={<IconInfoCircle size={18} />} variant="light">
         {t('не покупець — оцінка платоспроможності незастосовна')}
@@ -180,12 +183,110 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
       <Card className="app-section-card" padding="lg" radius="md" withBorder>
         <Stack gap="lg">
           <ScoreHeader score={score} />
+          {score.forward_risk && (
+            <Group gap="xs">
+              <Text c="dimmed" fw={600} size="sm">
+                {t('Прогноз ризику (6 міс.)')}:
+              </Text>
+              <ForwardRiskBadge forwardRisk={score.forward_risk} />
+            </Group>
+          )}
           <Divider />
-          <SubFactorBars subFactors={score.sub_factors} />
+          {score.sub_factors ? (
+            <SubFactorBars subFactors={score.sub_factors} />
+          ) : (
+            score.contributions &&
+            score.contributions.length > 0 && (
+              <ContributionsList contributions={score.contributions} />
+            )
+          )}
           <ScoreNotes score={score} />
         </Stack>
       </Card>
       {charts && <SolvencyChartsView charts={charts} />}
+    </Stack>
+  )
+}
+
+const FORWARD_RISK_COLOR: Record<ForwardRiskBand, string> = {
+  high: 'orange',
+  low: 'green',
+  medium: 'yellow',
+  very_high: 'red',
+}
+
+const FORWARD_RISK_LABEL: Record<ForwardRiskBand, string> = {
+  high: 'високий',
+  low: 'низький',
+  medium: 'середній',
+  very_high: 'дуже високий',
+}
+
+function ForwardRiskBadge({ forwardRisk }: { forwardRisk: ForwardRisk }) {
+  const { t } = useI18n()
+  const color = FORWARD_RISK_COLOR[forwardRisk.band] ?? 'gray'
+  const label = FORWARD_RISK_LABEL[forwardRisk.band] ?? forwardRisk.band
+
+  return (
+    <Badge color={color} size="lg" variant="filled">
+      {t(label)} · {formatPercent(forwardRisk.pd)}
+    </Badge>
+  )
+}
+
+const CONTRIBUTION_LABELS: Record<string, string> = {
+  credit_limit_eur: 'Кредитний ліміт',
+  current_debt_eur: 'Поточний борг',
+  debt_growth_3mo: 'Зростання боргу (3 міс.)',
+  grace_days: 'Пільгові дні',
+  has_credit_control: 'Кредитний контроль',
+  limit_utilization: 'Використання ліміту',
+  max_overdue_days: 'Макс. прострочення (днів)',
+  months_with_debt_last12: 'Місяців з боргом (12 міс.)',
+  n_open_debt_lines: 'Відкритих боргових позицій',
+  new_debt_eur_3mo: 'Новий борг (3 міс.)',
+  order_count_12mo: 'Кількість замовлень (12 міс.)',
+  overdue_eur_1_30: 'Прострочено 1-30 днів',
+  overdue_eur_31_60: 'Прострочено 31-60 днів',
+  overdue_eur_61_90: 'Прострочено 61-90 днів',
+  overdue_eur_91_180: 'Прострочено 91-180 днів',
+  recency_days: 'Днів від останньої покупки',
+  return_rate_12mo: 'Частка повернень (12 міс.)',
+  tenure_months: 'Тривалість співпраці (міс.)',
+  total_debt_eur: 'Загальний борг',
+  turnover_eur_12mo: 'Оборот (12 міс.)',
+}
+
+function ContributionsList({ contributions }: { contributions: Contribution[] }) {
+  const { t } = useI18n()
+
+  const top = [...contributions]
+    .filter((item) => Number.isFinite(item.points) && item.points !== 0)
+    .sort((left, right) => Math.abs(right.points) - Math.abs(left.points))
+    .slice(0, 6)
+
+  if (top.length === 0) {
+    return null
+  }
+
+  return (
+    <Stack gap="sm">
+      <Text fw={600} size="sm">
+        {t('Чинники оцінки')}
+      </Text>
+      {top.map((item) => {
+        const label = CONTRIBUTION_LABELS[item.feature] ?? item.feature
+        const raisesRisk = item.points > 0
+        return (
+          <Group gap="xs" justify="space-between" key={item.feature} wrap="nowrap">
+            <Text size="sm">{t(label)}</Text>
+            <Badge color={raisesRisk ? 'red' : 'green'} size="sm" variant="light">
+              {raisesRisk ? '+' : ''}
+              {formatNumber(item.points)}
+            </Badge>
+          </Group>
+        )
+      })}
     </Stack>
   )
 }
@@ -223,9 +324,16 @@ function ScoreHeader({ score }: { score: SolvencyScore }) {
             {score.rating}
           </Badge>
         </Group>
-        <Text c="dimmed" size="sm">
-          {t('Базова оцінка')}: {formatNumber(score.raw_score ?? Number.NaN)}
-        </Text>
+        {score.raw_score != null && (
+          <Text c="dimmed" size="sm">
+            {t('Базова оцінка')}: {formatNumber(score.raw_score)}
+          </Text>
+        )}
+        {score.pd != null && (
+          <Text c="dimmed" size="sm">
+            {t('Ймовірність дефолту')}: {formatPercent(score.pd)}
+          </Text>
+        )}
         <Text c="dimmed" size="xs">
           {t('Версія моделі')}: {score.model_version}
         </Text>
@@ -270,9 +378,11 @@ function ScoreNotes({ score }: { score: SolvencyScore }) {
 
   return (
     <Group gap="xs" wrap="wrap">
-      <Badge color="gray" size="sm" variant="light">
-        {t('Джерело боргу')}: {translateDebtSource(t, score.debt_load_source)}
-      </Badge>
+      {score.debt_load_source && (
+        <Badge color="gray" size="sm" variant="light">
+          {t('Джерело боргу')}: {translateDebtSource(t, score.debt_load_source)}
+        </Badge>
+      )}
       {score.window_months > 0 && (
         <Badge color="gray" size="sm" variant="light">
           {t('Вікно')}: {score.window_months} {t('міс.')}

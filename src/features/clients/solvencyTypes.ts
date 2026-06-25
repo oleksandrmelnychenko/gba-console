@@ -22,14 +22,30 @@ export type CurrencyExposure = {
   exposure_eur?: number
 }
 
+export type ForwardRiskBand = 'low' | 'medium' | 'high' | 'very_high'
+
+export type Contribution = {
+  feature: string
+  value?: number | null
+  points: number
+}
+
+export type ForwardRisk = {
+  band: ForwardRiskBand
+  pd: number
+}
+
 export type SolvencyScore = {
   client_id: number
   applicable: boolean
   score: number | null
   rating: SolvencyRating | null
+  pd?: number | null
+  contributions?: Contribution[] | null
+  forward_risk?: ForwardRisk | null
   sub_factors: SubFactors | null
   caps_applied: string[]
-  debt_load_source: SolvencyDebtLoadSource
+  debt_load_source: SolvencyDebtLoadSource | null
   raw_score: number | null
   currency_breakdown: CurrencyExposure[] | null
   as_of_date: string | null

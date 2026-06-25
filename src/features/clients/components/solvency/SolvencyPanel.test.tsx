@@ -41,6 +41,27 @@ const notApplicableScore: SolvencyScore = {
   model_version: 'v1',
 }
 
+const v3Score: SolvencyScore = {
+  client_id: 411780,
+  applicable: true,
+  score: 46,
+  rating: 'D',
+  pd: 0.649,
+  contributions: [
+    { feature: 'n_open_debt_lines', value: 3, points: 3.77 },
+    { feature: 'months_with_debt_last12', value: 12, points: 1.02 },
+  ],
+  forward_risk: { band: 'very_high', pd: 0.997 },
+  sub_factors: null,
+  caps_applied: [],
+  debt_load_source: null,
+  raw_score: null,
+  currency_breakdown: null,
+  as_of_date: '2026-06-25',
+  window_months: 12,
+  model_version: 'creditscore-v3',
+}
+
 afterEach(() => {
   getClientSolvencyScore.mockReset()
   getClientSolvencyCharts.mockReset()
@@ -59,5 +80,19 @@ describe('SolvencyPanel', () => {
       expect(container.querySelector('.mantine-RingProgress-root')).toBeNull()
     })
     expect(getClientSolvencyCharts).not.toHaveBeenCalled()
+  })
+
+  it('renders the v3 score, contributions and forward badge when sub_factors is null', async () => {
+    getClientSolvencyScore.mockResolvedValue(v3Score)
+    getClientSolvencyCharts.mockRejectedValue(new Error('no charts'))
+
+    const { findByText, queryByText } = renderPanel(<SolvencyPanel clientNetId="abc" />)
+
+    // does NOT fall into the not-a-buyer N/A state
+    expect(queryByText(/не покупець/i)).toBeNull()
+    // score gauge value, band, a contribution label and the forward-risk badge are present
+    expect(await findByText('46')).toBeTruthy()
+    expect(await findByText(/Відкритих боргових позицій/i)).toBeTruthy()
+    expect(await findByText(/дуже високий/i)).toBeTruthy()
   })
 })
