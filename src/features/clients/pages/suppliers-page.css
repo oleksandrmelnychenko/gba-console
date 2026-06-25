@@ -41,22 +41,6 @@
 
 /* --- Cell components reused by the DataTable columns --- */
 
-.suppliers-code-pill {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-8);
-  display: inline-flex;
-  font-size: 11px;
-  font-weight: 680;
-  height: 24px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 42px;
-  padding: 0 9px;
-}
-
 .suppliers-contact-value {
   color: var(--mantine-color-gray-7);
   display: block;

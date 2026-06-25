@@ -892,7 +892,7 @@ function useSupplierColumns() {
         width: 90,
         minWidth: 80,
         accessor: (supplier) => supplier.RegionCode?.Value,
-        cell: (supplier) => <SupplierCodeCell value={displayValue(supplier.RegionCode?.Value)} />,
+        cell: (supplier) => <Text size="sm">{displayValue(supplier.RegionCode?.Value)}</Text>,
       },
       {
         id: 'supplier',
@@ -1023,14 +1023,6 @@ function SupplierContactValue({ value }: { value: string }) {
       <span className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`}>
         {value}
       </span>
-    </Tooltip>
-  )
-}
-
-function SupplierCodeCell({ value }: { value: string }) {
-  return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className="suppliers-code-pill">{value}</span>
     </Tooltip>
   )
 }
