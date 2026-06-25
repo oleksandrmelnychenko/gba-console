@@ -15,48 +15,111 @@
   border: 0;
 }
 
-/* Left step-nav (rail): flat list items — no gradients, no borders. A subtle
-   gray hover and an orange-tinted selected state. */
+/* Left step-nav (rail) styled as the «Ролі» list: numbered list items with a
+   per-step icon, a hover lift and an orange-accented selected state. */
 .client-edit-nav {
   background: transparent;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .client-edit-nav-item {
-  background: transparent;
-  border: 0 !important;
+  position: relative;
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2) !important;
   border-radius: 8px;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   color: var(--mantine-color-gray-8) !important;
   font-weight: 500;
-  min-height: 44px;
+  min-height: 52px;
+  overflow: hidden;
   transition:
-    background-color 110ms var(--tx-ease-smooth),
-    color 110ms var(--tx-ease-smooth);
+    border-color 110ms var(--tx-ease-smooth),
+    box-shadow 110ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.client-edit-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: transparent;
+  transition: background-color 120ms var(--tx-ease-smooth);
 }
 
 .client-edit-nav-item:hover {
-  background: var(--mantine-color-gray-1);
-  color: var(--mantine-color-gray-9) !important;
+  border-color: var(--mantine-color-gray-4) !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.07);
+  transform: translateX(3px);
 }
 
-.client-edit-nav-item .mantine-Button-section[data-position='right'] {
+.client-edit-nav-item .mantine-Button-label {
+  flex: 1 1 auto;
+}
+
+.client-edit-nav-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.client-edit-nav-index {
+  border-right: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding-right: 9px;
+}
+
+.client-edit-nav-icon {
+  display: inline-flex;
+  color: var(--mantine-color-gray-5);
+}
+
+.client-edit-nav-label {
+  display: block;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-edit-nav-chevron {
   color: var(--mantine-color-gray-4);
   opacity: 0;
   transition: opacity 110ms var(--tx-ease-smooth);
 }
 
+.client-edit-nav-item:hover .client-edit-nav-chevron {
+  opacity: 1;
+}
+
 .client-edit-nav-item.is-active {
-  background: rgba(var(--brand-orange-rgb), 0.1);
+  background: rgba(var(--brand-orange-rgb), 0.06);
+  border-color: var(--mantine-color-orange-2) !important;
+  box-shadow: 0 5px 16px rgba(var(--brand-orange-rgb), 0.14);
   color: var(--mantine-color-orange-9) !important;
 }
 
-.client-edit-nav-item.is-active .mantine-Button-section {
-  color: var(--mantine-color-orange-6);
+.client-edit-nav-item.is-active::before {
+  background: var(--mantine-color-orange-6);
 }
 
-.client-edit-nav-item.is-active .mantine-Button-section[data-position='right'] {
+.client-edit-nav-item.is-active .client-edit-nav-index {
+  border-right-color: var(--mantine-color-orange-2);
+  color: var(--mantine-color-orange-7);
+}
+
+.client-edit-nav-item.is-active .client-edit-nav-icon,
+.client-edit-nav-item.is-active .client-edit-nav-chevron {
+  color: var(--mantine-color-orange-6);
   opacity: 1;
 }

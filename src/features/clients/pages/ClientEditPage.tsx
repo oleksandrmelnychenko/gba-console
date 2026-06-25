@@ -15,7 +15,25 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { CREATE_ACTION_COLOR } from "../../../shared/ui/page-header-actions/PageHeaderActions"
 import { notifications } from '@mantine/notifications'
-import { IconAlertCircle, IconCheck, IconChevronRight, IconDeviceFloppy, IconTrash } from '@tabler/icons-react'
+import {
+  IconAddressBook,
+  IconAlertCircle,
+  IconBuildingBank,
+  IconChartBar,
+  IconCheck,
+  IconChevronRight,
+  IconCircleDot,
+  IconDeviceFloppy,
+  IconInfoCircle,
+  IconSitemap,
+  IconStar,
+  IconTag,
+  IconTarget,
+  IconTrash,
+  IconWorld,
+  type IconProps,
+} from '@tabler/icons-react'
+import type { ComponentType } from 'react'
 import { type FormEvent, useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
@@ -54,6 +72,19 @@ import {
 } from '../permissions'
 import type { Client, ClientContractDocument, ClientType, ClientTypeRole, Currency, Region } from '../types'
 import './client-edit-page.css'
+
+// Per-step icon for the edit-sheet side nav (Roles-style numbered list).
+const STEP_ICON: Record<string, ComponentType<IconProps>> = {
+  'general-information': IconInfoCircle,
+  'contact-information': IconAddressBook,
+  pricing: IconTag,
+  sales: IconChartBar,
+  'perfect-client': IconTarget,
+  'client-types': IconSitemap,
+  'e-commerce': IconWorld,
+  'most-purchased-products': IconStar,
+  'bank-details': IconBuildingBank,
+}
 
 const CLIENT_TYPE_BUYER = 0
 const CLIENT_TYPE_PROVIDER = 1
@@ -868,9 +899,10 @@ function ClientEditBody({
       <Grid gap="md">
         <Grid.Col span={{ base: 12, lg: 3 }}>
           <Card className="app-section-card" withBorder radius="md" padding="md">
-            <Stack gap={5} className="client-edit-nav" component="nav">
-              {steps.map((item) => {
+            <Stack gap={6} className="client-edit-nav" component="nav">
+              {steps.map((item, index) => {
                 const isActive = item.value === selectedStep
+                const StepIcon = STEP_ICON[item.value] ?? IconCircleDot
 
                 return (
                   <Button
@@ -878,13 +910,21 @@ function ClientEditBody({
                     className={`client-edit-nav-item${isActive ? ' is-active' : ''}`}
                     color="gray"
                     fullWidth
-                    justify="space-between"
-                    rightSection={<IconChevronRight size={16} stroke={2} />}
+                    justify="flex-start"
+                    leftSection={
+                      <span className="client-edit-nav-lead">
+                        <span className="client-edit-nav-index">{String(index + 1).padStart(2, '0')}</span>
+                        <span className="client-edit-nav-icon">
+                          <StepIcon size={17} stroke={1.8} />
+                        </span>
+                      </span>
+                    }
+                    rightSection={<IconChevronRight className="client-edit-nav-chevron" size={16} stroke={2} />}
                     size="sm"
                     variant="subtle"
                     onClick={() => onGoToStep(item.value)}
                   >
-                    {item.label}
+                    <span className="client-edit-nav-label">{item.label}</span>
                   </Button>
                 )
               })}
