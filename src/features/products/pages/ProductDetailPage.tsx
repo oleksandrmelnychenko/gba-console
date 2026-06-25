@@ -696,6 +696,7 @@ function ProductAvailabilityPlacementRow({
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
         cursor: hasPlacements ? 'pointer' : 'default',
+        height: '100%',
         minWidth: 0,
         padding: '5px 8px',
       }}
@@ -716,7 +717,7 @@ function ProductAvailabilityPlacementRow({
   return (
     <Popover opened={opened} position="bottom-start" shadow="md" width={760} withinPortal onChange={setOpened}>
       <Popover.Target>
-        <Box role="button" tabIndex={0} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
+        <Box role="button" tabIndex={0} style={{ height: '100%' }} onClick={() => setOpened((currentOpened) => !currentOpened)} onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
             setOpened((currentOpened) => !currentOpened)
@@ -961,6 +962,7 @@ function TotalQtyTile({ label, value }: { label: string; value?: number | null }
         background: 'var(--mantine-color-gray-0)',
         border: '1px solid var(--mantine-color-gray-2)',
         borderRadius: 6,
+        height: '100%',
         padding: '5px 8px',
       }}
     >

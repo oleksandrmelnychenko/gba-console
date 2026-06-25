@@ -138,6 +138,7 @@ const VIRTUAL_PAGE_SIZE = 10
 // product deep-link (which would fail with «Товар не знайдено»).
 const ROUTE_ASSORTMENT_SENTINEL = 'assortment'
 const SEARCH_DEBOUNCE_MS = 250
+const DETAIL_LOAD_DEBOUNCE_MS = 250
 const DEFAULT_SEARCH_MODE: ProductSearchMode = '5'
 const DEFAULT_SORT_MODE: ProductSortMode = '2'
 
@@ -533,7 +534,9 @@ export function ProductsPage() {
             setHasRequestedProducts(false)
             setSearchDraft('')
             setSearchValue('')
-            setError(t('Товар не знайдено'))
+            // Unknown/invalid netId (e.g. ?netId=assortment) is not an error — just show the
+            // empty "pick a product" state instead of a red "Товар не знайдено" alert.
+            setError(null)
           } else {
             const nextSearchedProducts = getNextSearchedProducts(nextProduct)
 
@@ -592,19 +595,26 @@ export function ProductsPage() {
   ])
 
   useEffect(() => {
+    // Invalidate any in-flight load FIRST so clearing the selection (emptying the drum) discards a
+    // late response instead of loading a product card that is no longer needed.
+    const requestId = ++detailRequestRef.current
+
     if (!selectedProductNetUid) {
       return
     }
 
-    const requestId = ++detailRequestRef.current
-
     dispatchDetail({ type: 'loading' })
+
+    // Abort the in-flight detail + reservation requests when the selection changes or is cleared —
+    // the legacy carousel does this via RxJS switchMap. Without it, stale requests keep running on
+    // the (slow) server and pile up, which is what made the card loading "hang".
+    const controller = new AbortController()
 
     async function loadProductDetails() {
       try {
         const [nextProduct, nextReservationResult] = await Promise.all([
-          getProductByNetId(selectedProductNetUid),
-          getProductReservationByNetId(selectedProductNetUid)
+          getProductByNetId(selectedProductNetUid, controller.signal),
+          getProductReservationByNetId(selectedProductNetUid, controller.signal)
             .then((value) => ({ error: null, value }))
             .catch((reservationLoadError: unknown) => ({
               error: reservationLoadError instanceof Error ? reservationLoadError.message : t('Не вдалося завантажити резерви товару'),
@@ -621,6 +631,10 @@ export function ProductsPage() {
           })
         }
       } catch (loadError) {
+        if (controller.signal.aborted) {
+          return
+        }
+
         if (requestId === detailRequestRef.current) {
           dispatchDetail({
             error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'),
@@ -631,7 +645,16 @@ export function ProductsPage() {
       }
     }
 
-    void loadProductDetails()
+    // Debounce the actual fetch so rapid drum navigation doesn't queue a request per product:
+    // each new selection clears the pending one and only the product you stop on is loaded.
+    const timeoutId = window.setTimeout(() => {
+      void loadProductDetails()
+    }, DETAIL_LOAD_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      controller.abort()
+    }
   }, [
     detailReloadKey,
     selectedProduct,
@@ -774,36 +797,90 @@ export function ProductsPage() {
   }
 
   function returnToSearchMode() {
-    clearRouteProductParam()
-    hasRouteSeededProductsRef.current = false
-    setCarouselMode('search')
-    setSearchDraft('')
-    setSelectedProduct(null)
-    dispatchDetail({ type: 'clear' })
-    setActivePanel(null)
+    // Esc returns to a clean, ready search row — reuse the proven reset path so the search and
+    // the product-detail loading stay consistent (a partial reset left the next selection's
+    // detail fetch stuck loading).
+    resetSearch()
   }
 
   function handleCarouselKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      selectPreviousProduct()
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      selectNextProduct()
-    }
-
-    if (event.key === 'Escape' && carouselMode === 'selection') {
-      event.preventDefault()
-      returnToSearchMode()
-    }
-
+    // ↑/↓ and Esc are handled by the single global key listener below so they work regardless of
+    // focus and never double-fire when the search input unmounts on the first product select.
     if (event.key === 'Enter' && event.target instanceof HTMLInputElement) {
       event.preventDefault()
       commitSearch()
     }
   }
+
+  // Arrow ↑/↓ switch the selected product with priority over the page scroll — even when the
+  // carousel itself isn't focused. The carousel column has its own handler, so skip it there
+  // (no double-fire) and skip real text fields/selects so arrows still move the caret/options.
+  const selectPreviousProductRef = useRef(selectPreviousProduct)
+  const selectNextProductRef = useRef(selectNextProduct)
+  const returnToSearchModeRef = useRef(returnToSearchMode)
+  const carouselModeRef = useRef(carouselMode)
+
+  useEffect(() => {
+    selectPreviousProductRef.current = selectPreviousProduct
+    selectNextProductRef.current = selectNextProduct
+    returnToSearchModeRef.current = returnToSearchMode
+    carouselModeRef.current = carouselMode
+  })
+
+  useEffect(() => {
+    const handleGlobalProductKeys = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Escape') {
+        return
+      }
+
+      // Decide from the key's ORIGIN (event.target), not document.activeElement: on the first arrow
+      // the search input unmounts (search → selection) and focus jumps to <body>, which made an
+      // activeElement-based check fire a second time and skip a product.
+      const origin = event.target instanceof HTMLElement ? event.target : null
+      const isSearchInput = origin ? Boolean(origin.closest('.product-assortment-search-input')) : false
+
+      // Let text fields and Select dropdowns keep arrows/Esc for caret/options — except the carousel
+      // search input, which navigates the product drum.
+      if (!isSearchInput && isTextLikeKeyboardTarget(origin)) {
+        return
+      }
+
+      if (event.key === 'Escape') {
+        // Already in the search input: keep the caret/focus there. Chrome blurs focused inputs on
+        // Escape by default, so preventDefault to stop the focus from flying off.
+        if (isSearchInput) {
+          event.preventDefault()
+          return
+        }
+
+        // Esc returns to the search row — only from selection mode, and never while a modal/drawer
+        // is open (there Esc must close the dialog instead).
+        if (carouselModeRef.current !== 'selection') {
+          return
+        }
+
+        if (document.querySelector('[role="dialog"]')) {
+          return
+        }
+
+        event.preventDefault()
+        returnToSearchModeRef.current()
+        return
+      }
+
+      event.preventDefault()
+
+      if (event.key === 'ArrowUp') {
+        selectPreviousProductRef.current()
+      } else {
+        selectNextProductRef.current()
+      }
+    }
+
+    document.addEventListener('keydown', handleGlobalProductKeys)
+
+    return () => document.removeEventListener('keydown', handleGlobalProductKeys)
+  }, [])
 
   function handleProductSaved(nextProduct: Product | null) {
     if (nextProduct) {
@@ -930,7 +1007,7 @@ function ProductAssortmentCarousel({
   const { t } = useI18n()
 
   return (
-    <Box className="product-assortment-column" role="region" tabIndex={0} onKeyDown={onKeyDown}>
+    <Box className="product-assortment-column" role="region" onKeyDown={onKeyDown}>
       <Group justify="space-between" className="product-assortment-carousel-header">
         <Text size="xs" c="dimmed" fw={600}>
           {t('Весь асортимент')}
@@ -2846,6 +2923,18 @@ function isEditableKeyboardTarget(target: EventTarget | null): boolean {
   const tagName = target.tagName.toLowerCase()
 
   return target.isContentEditable || tagName === 'button' || tagName === 'input' || tagName === 'select' || tagName === 'textarea'
+}
+
+// Like isEditableKeyboardTarget but excludes buttons — used to let arrow keys move the caret/options
+// inside real text fields and selects while still hijacking arrows everywhere else for product switching.
+function isTextLikeKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = target.tagName.toLowerCase()
+
+  return target.isContentEditable || tagName === 'input' || tagName === 'select' || tagName === 'textarea'
 }
 
 function ProductInlineMovementsTab({

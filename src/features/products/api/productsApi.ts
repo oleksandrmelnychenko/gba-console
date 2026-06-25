@@ -75,11 +75,12 @@ export async function uploadProductsFromFile(configuration: ProductFileUploadCon
   })
 }
 
-export async function getProductByNetId(netId: string): Promise<Product | null> {
+export async function getProductByNetId(netId: string, signal?: AbortSignal): Promise<Product | null> {
   const result = await apiRequest<unknown>('/products/get', {
     query: {
       netId,
     },
+    signal,
   })
 
   return normalizeProduct(result)
@@ -100,11 +101,12 @@ export async function getProductAuditEntities(netId: string, fieldName: ProductA
   return normalizeArray(result) as AuditEntity[]
 }
 
-export async function getProductReservationByNetId(netId: string): Promise<ProductReservation> {
+export async function getProductReservationByNetId(netId: string, signal?: AbortSignal): Promise<ProductReservation> {
   const result = await apiRequest<unknown>('/products/reservations/get/info', {
     query: {
       netId,
     },
+    signal,
     errorMessages: {
       default: 'Не вдалося завантажити резерви товару',
       network: 'Сервер резервів недоступний',

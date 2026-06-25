@@ -25,6 +25,7 @@
   position: sticky; /* stays in view while the detail panel scrolls past */
   top: 0;
   align-self: start; /* don't stretch to the tall workspace — sticky needs travel room */
+  outline: none; /* it's a keyboard-handling wrapper, not a control — no focus ring stripe */
 }
 
 .product-assortment-controls {
@@ -418,11 +419,12 @@
   background: #f8faf9;
 }
 
-/* Legacy stock bar = a single horizontal row of counters (no wrapping). */
+/* Legacy stock bar = a single horizontal row of equal-height counters (no wrapping). */
 .product-inline-stock-bar .mantine-SimpleGrid-root {
   grid-template-columns: none !important;
   grid-auto-flow: column !important;
   grid-auto-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
   gap: 6px !important;
 }
 
