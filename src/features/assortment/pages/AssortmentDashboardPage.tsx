@@ -124,7 +124,7 @@ export function AssortmentDashboardPage() {
 
   return (
     <Stack gap="md">
-      <Card withBorder radius="md" shadow="sm">
+      <Card className="app-section-card" withBorder radius="md">
         <Group justify="space-between" wrap="wrap">
           <Text fw={700} size="xl">
             {t('Асортимент')}
@@ -154,7 +154,7 @@ export function AssortmentDashboardPage() {
         <StatCard label={t('Середній % повернень')} value={pct(overallReturnRate)} />
       </SimpleGrid>
 
-      <Card radius="md" withBorder>
+      <Card className="app-section-card" radius="md" withBorder>
         <Stack gap="xs">
           <Text fw={600} size="sm">
             {t('Розподіл за бендом')}
@@ -170,7 +170,7 @@ export function AssortmentDashboardPage() {
         </Stack>
       </Card>
 
-      <Card radius="md" withBorder>
+      <Card className="app-section-card" radius="md" withBorder>
         <Stack gap="md">
           <Group justify="space-between" wrap="wrap">
             <Stack gap={2}>
@@ -206,7 +206,7 @@ export function AssortmentDashboardPage() {
         </Stack>
       </Card>
 
-      <Card radius="md" withBorder>
+      <Card className="app-section-card" radius="md" withBorder>
         <Stack gap="md">
           <Group gap="sm">
             <Select
@@ -462,7 +462,7 @@ function EmptyTableRow({ colSpan }: { colSpan: number }) {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <Card padding="md" radius="md" withBorder>
+    <Card className="app-section-card" padding="md" radius="md" withBorder>
       <Text c="dimmed" size="xs" tt="uppercase">
         {label}
       </Text>
