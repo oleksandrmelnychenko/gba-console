@@ -65,7 +65,7 @@ const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
-type SupplierSortId = 'balance' | 'email' | 'notResident' | 'phone' | 'regionCode' | 'role' | 'status' | 'supplier'
+type SupplierSortId = 'balance' | 'email' | 'notResident' | 'phone' | 'purchaseVolume' | 'regionCode' | 'role' | 'status' | 'supplier'
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 2,
@@ -82,6 +82,7 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
 
 const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
   balance: 'TotalCurrentAmount',
+  purchaseVolume: 'PurchaseVolumeEur',
   email: 'EmailAddress',
   notResident: 'IsNotResident',
   phone: 'MobileNumber',
@@ -116,7 +117,7 @@ function useSuppliersPageModel() {
   const [searchField, setSearchField] = useValueState(SUPPLIER_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SUPPLIER_SEARCH_DEBOUNCE_MS)
-  const [sorting, setSorting] = useValueState<DataTableSortingState>([])
+  const [sorting, setSorting] = useValueState<DataTableSortingState>([{ id: 'purchaseVolume', desc: true }])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const canMoveForward = suppliers.length === pageSize
@@ -973,6 +974,15 @@ function useSupplierColumns() {
         cell: (supplier) => <SupplierContactValue value={displayValue(supplier.EmailAddress)} />,
       },
       {
+        id: 'purchaseVolume',
+        header: t('Обсяг замовлень, €'),
+        width: 160,
+        minWidth: 140,
+        align: 'right',
+        accessor: (supplier) => supplier.PurchaseVolumeEur,
+        cell: (supplier) => <SupplierPurchaseVolumeCell value={supplier.PurchaseVolumeEur} />,
+      },
+      {
         id: 'balance',
         header: t('Поточний баланс'),
         width: 150,
@@ -1037,6 +1047,15 @@ function SupplierBalanceCell({ currency, value }: { currency: string; value?: nu
         {currency ? <small>{currency}</small> : null}
       </span>
     </Tooltip>
+  )
+}
+
+function SupplierPurchaseVolumeCell({ value }: { value?: number | null }) {
+  return (
+    <span className="suppliers-balance-cell">
+      <strong>{formatAmount(value)}</strong>
+      <small>€</small>
+    </span>
   )
 }
 

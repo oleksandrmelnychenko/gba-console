@@ -497,6 +497,7 @@ export type Client = {
   TIN?: string
   TermsOfDelivery?: TermsOfDelivery
   TotalCurrentAmount?: number
+  PurchaseVolumeEur?: number
   USREOU?: string
   Updated?: Date | string
 }
