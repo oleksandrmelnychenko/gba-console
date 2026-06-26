@@ -1,6 +1,7 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { ActionIcon, Alert, Badge, Button, Card, Group, Loader, SimpleGrid, Stack, Table, Text, Tooltip } from '@mantine/core'
+import { IconAlertCircle, IconMap2, IconRefresh } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/api/apiClient'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -71,6 +72,7 @@ const EMPTY_ESCALATED: EscalatedResponse = {
 
 export function HeadDashboardPage() {
   const { t } = useI18n()
+  const navigate = useNavigate()
   const [team, setTeam] = useValueState<HeadTeam>(EMPTY_TEAM)
   const [escalated, setEscalated] = useValueState<EscalatedResponse>(EMPTY_ESCALATED)
   const [error, setError] = useValueState<string | null>(null)
@@ -135,6 +137,14 @@ export function HeadDashboardPage() {
   return (
     <Stack className="cockpit-page" gap="md">
       <Group gap="xs" justify="flex-end">
+        <Button
+          leftSection={<IconMap2 size={16} />}
+          size="xs"
+          variant="light"
+          onClick={() => navigate('/sales/geography')}
+        >
+          {t('Карта продажів/боргу')}
+        </Button>
         <Tooltip label={t('Оновити')}>
           <ActionIcon aria-label={t('Оновити')} loading={isLoading} variant="subtle" onClick={handleReload}>
             <IconRefresh size={18} />

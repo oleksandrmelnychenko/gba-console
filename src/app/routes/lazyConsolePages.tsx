@@ -129,4 +129,5 @@ export const AdvanceReportViewPage = lazy(() => import('../../features/outgoing-
 export const DashboardPage = lazy(() => import('../../pages/dashboard/DashboardPage').then((module) => ({ default: module.DashboardPage })))
 export const SalesCockpitPage = lazy(() => import('../../features/sales-cockpit').then((module) => ({ default: module.SalesCockpitPage })))
 export const HeadDashboardPage = lazy(() => import('../../features/sales-cockpit').then((module) => ({ default: module.HeadDashboardPage })))
+export const SalesGeographyPage = lazy(() => import('../../features/sales-geography').then((module) => ({ default: module.SalesGeographyPage })))
 export const AssortmentDashboardPage = lazy(() => import('../../features/assortment').then((module) => ({ default: module.AssortmentDashboardPage })))

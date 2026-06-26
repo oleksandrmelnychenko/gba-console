@@ -86,6 +86,7 @@ import {
   SadSpecificationsPage,
   SalesCockpitPage,
   HeadDashboardPage,
+  SalesGeographyPage,
   AssortmentDashboardPage,
   SalesReturnClientPage,
   RetailClientSalesPage,
@@ -187,6 +188,7 @@ const migratedConsoleRoutes: ConsoleRoute[] = [
   { path: '/warehouse/ukraine/orders/:id/placements', element: lazyRoute(<WarehouseUkraineOrderPlacementsPage />) },
   { path: '/sales/cockpit', element: lazyRoute(<SalesCockpitPage />) },
   { path: '/sales/cockpit/head', element: lazyRoute(<HeadDashboardPage />) },
+  { path: '/sales/geography', element: lazyRoute(<SalesGeographyPage />) },
 ]
 
 const clientMigrationRoutes: ConsoleRoute[] = [
