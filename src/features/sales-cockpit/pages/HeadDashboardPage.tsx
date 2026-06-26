@@ -158,11 +158,11 @@ export function HeadDashboardPage() {
           <SimpleGrid cols={{ base: 1, sm: 2, lg: 5 }} spacing="md">
             <TotalCard
               label={t('Відвантаження (план / факт)')}
-              value={`${formatMoney(team.totals.shipped_mtd)} / ${formatMoney(team.totals.shipped_target)}`}
+              value={`${formatMoney(team.totals.shipped_target)} / ${formatMoney(team.totals.shipped_mtd)}`}
             />
             <TotalCard
               label={t('Оплати (план / факт)')}
-              value={`${formatMoney(team.totals.paid_mtd)} / ${formatMoney(team.totals.paid_target)}`}
+              value={`${formatMoney(team.totals.paid_target)} / ${formatMoney(team.totals.paid_mtd)}`}
             />
             <TotalCard
               accent="success"
