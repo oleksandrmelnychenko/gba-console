@@ -102,6 +102,7 @@ export type ProductSpecification = EntityFields & {
   } | null
   CustomsValue?: number | string
   Duty?: number | string
+  DutyPercent?: number | string
   Name?: string
   ProductId?: number
   SpecificationCode?: string

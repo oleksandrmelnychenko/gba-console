@@ -111,18 +111,20 @@ export function AppDrawer({ position = 'right', size, children, footer, ...props
           maxWidth: 'calc(100vw - 8px)',
           borderRadius: 14,
           overflow: 'hidden',
-          // A footer needs the content to be a flex column so the body can grow
-          // to full height and the footer stays pinned to the bottom.
-          ...(hasFooter ? { display: 'flex', flexDirection: 'column' } : {}),
+          // Always a flex column so the body owns the available height and can scroll its own
+          // content — a tall form/panel would otherwise overflow the fixed-height sheet and clip
+          // (e.g. the save button at the bottom of the edit form would be cut off).
+          display: 'flex',
+          flexDirection: 'column',
         },
         // Tighten the header so the title sits close to the content (no tall
         // fixed header bar and no large bottom gap).
         header: { minHeight: 'auto', paddingBottom: 'var(--mantine-spacing-xs)' },
-        // With a footer, the body becomes a flex column that owns the scroll so
-        // the footer can stay pinned; otherwise keep the uniform inner padding.
+        // The body grows to fill the sheet and owns the scroll. With a footer it has no padding
+        // (the inner scroll/footer divs handle it); without one it keeps the uniform inner padding.
         body: hasFooter
           ? { display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, padding: 0, overflow: 'hidden' }
-          : { padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
+          : { flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: 'var(--mantine-spacing-lg)', paddingTop: 'var(--mantine-spacing-xs)' },
       }}
     >
       {hasFooter ? (

@@ -995,7 +995,9 @@ export function ProductActionDrawer({
     <AppDrawer
       opened={Boolean(activePanel)}
       position="right"
-      size="min(1180px, 100vw)"
+      // The edit form is a narrow single/two-column form — give it a compact sheet (~half width);
+      // the grid panels (movement / remains / write-off) keep the wide sheet.
+      size={activePanel === 'edit' ? 'compact' : 'min(1180px, 100vw)'}
       title={activePanel ? getPanelTitle(activePanel, t) : ''}
       onClose={onClose}
     >
@@ -1107,7 +1109,17 @@ function ProductEditPanel({ onProductSaved, product }: { onProductSaved: (produc
           <Switch checked={form.IsForZeroSale} label={t('Нульовий продаж')} onChange={(event) => setField('IsForZeroSale', event.currentTarget.checked)} />
           <Switch checked={form.IsForSale} label={t('Для продажу')} onChange={(event) => setField('IsForSale', event.currentTarget.checked)} />
         </Group>
-        <Group justify="flex-end">
+        <Group
+          justify="flex-end"
+          style={{
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 1,
+            background: 'var(--mantine-color-body)',
+            borderTop: '1px solid var(--mantine-color-gray-2)',
+            paddingTop: 'var(--mantine-spacing-sm)',
+          }}
+        >
           <Button type="submit" color={CREATE_ACTION_COLOR} loading={isSaving} leftSection={<IconDeviceFloppy size={18} />}>
             {t('Зберегти')}
           </Button>
@@ -1414,7 +1426,10 @@ function ProductSpecificationPanel({
 }) {
   const { t } = useI18n()
   const { user } = useAuth()
-  const specifications = useMemo(() => sortSpecificationsByCreatedDesc(product.ProductSpecifications || []), [product])
+  const specifications = useMemo(
+    () => dedupeSpecificationsByCodeAndRate(sortSpecificationsByCreatedDesc(product.ProductSpecifications || [])),
+    [product],
+  )
   const currentSpecification = specifications[0] || null
   const historySpecifications = specifications.slice(1)
   const [draft, setDraft] = useState<ProductSpecificationDraft>({
@@ -1482,8 +1497,7 @@ function ProductSpecificationPanel({
             <Title order={5}>{t('Поточний')}</Title>
             {currentSpecification ? (
               <Stack gap={4}>
-                <Text fw={700} size="sm">{displayValue(currentSpecification.SpecificationCode)}</Text>
-                {currentSpecification.Name ? <Text c="dimmed" size="sm">{currentSpecification.Name}</Text> : null}
+                <Text fw={700} size="sm">{displayValue(formatSpecificationCodeWithRate(currentSpecification))}</Text>
                 <SimpleGrid cols={3} spacing={6} mt={4}>
                   <InfoBlock label="Митна вартість" value={displayValue(currentSpecification.CustomsValue)} />
                   <InfoBlock label="Мито" value={displayValue(currentSpecification.Duty)} />
@@ -1565,7 +1579,7 @@ function ProductSpecificationPanel({
                     }}
                   >
                     <Group justify="space-between" gap="xs" wrap="nowrap">
-                      <Text fw={600} size="sm">{displayValue(specification.SpecificationCode)}</Text>
+                      <Text fw={600} size="sm">{displayValue(formatSpecificationCodeWithRate(specification))}</Text>
                       <Text c="dimmed" size="xs">{formatDate(specification.Created)}</Text>
                     </Group>
                     <Text c="dimmed" size="xs">{formatSpecificationAuthor(specification)}</Text>
@@ -2347,6 +2361,54 @@ function sortSpecificationsByCreatedDesc(specifications: ProductSpecification[])
 
     return secondTime - firstTime
   })
+}
+
+// Duty as a % of the customs value — prefer the backend value, fall back to the legacy formula
+// (Duty / CustomsValue * 100) used when adding a specification.
+function getSpecificationDutyPercent(specification: ProductSpecification): number {
+  const stored = Number(specification.DutyPercent)
+
+  if (Number.isFinite(stored)) {
+    return stored
+  }
+
+  const customsValue = Number(specification.CustomsValue) || 0
+  const duty = Number(specification.Duty) || 0
+
+  return customsValue > 0 ? (duty / customsValue) * 100 : 0
+}
+
+function roundSpecificationPercent(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+// "{code} - {rate}%" like the legacy customs-code history line (e.g. "4016995290 - 10%").
+function formatSpecificationCodeWithRate(specification: ProductSpecification): string {
+  const code = (specification.SpecificationCode || '').trim()
+
+  if (!code) {
+    return ''
+  }
+
+  return `${code} - ${roundSpecificationPercent(getSpecificationDutyPercent(specification))}%`
+}
+
+// The legacy history keeps only the latest entry per distinct (code, duty %) pair. The input is
+// already newest-first, so the first occurrence we keep for each key is the most recent.
+function dedupeSpecificationsByCodeAndRate(specifications: ProductSpecification[]): ProductSpecification[] {
+  const seen = new Set<string>()
+  const result: ProductSpecification[] = []
+
+  specifications.forEach((specification) => {
+    const key = `${(specification.SpecificationCode || '').trim()}|${roundSpecificationPercent(getSpecificationDutyPercent(specification))}`
+
+    if (!seen.has(key)) {
+      seen.add(key)
+      result.push(specification)
+    }
+  })
+
+  return result
 }
 
 function formatSpecificationAuthor(specification: ProductSpecification): string {
