@@ -33,7 +33,7 @@ import {
   IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { CREATE_ACTION_COLOR } from '../../../shared/ui/page-header-actions/PageHeaderActions'
+import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
@@ -530,6 +530,25 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
   return (
     <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
+      <PageHeaderActions>
+        <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
+          <Box>
+            <Button
+              className="accounting-cash-flow-export"
+              color={CREATE_ACTION_COLOR}
+              disabled={!canExport}
+              leftSection={<IconDownload size={15} />}
+              loading={isExporting}
+              size="sm"
+              variant="light"
+              onClick={handleExport}
+            >
+              {t('Експорт / друк')}
+            </Button>
+          </Box>
+        </Tooltip>
+      </PageHeaderActions>
+
       {(counterpartyError || cashFlowError) && (
         <Alert className="accounting-cash-flow-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {counterpartyError || cashFlowError}
@@ -614,22 +633,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                 >
                   <IconRefresh size={17} />
                 </ActionIcon>
-              </Tooltip>
-              <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
-                <Box>
-                  <Button
-                    className="accounting-cash-flow-export"
-                    color={CREATE_ACTION_COLOR}
-                    disabled={!canExport}
-                    leftSection={<IconDownload size={15} />}
-                    loading={isExporting}
-                    size="sm"
-                    variant="light"
-                    onClick={handleExport}
-                  >
-                    {t('Експорт / друк')}
-                  </Button>
-                </Box>
               </Tooltip>
             </div>
           </form>
