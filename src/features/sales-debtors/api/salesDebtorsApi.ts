@@ -1,6 +1,8 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type {
   ClientDebtors,
+  DebtorDebtItem,
+  DebtorDebtTotal,
   ClientInDebt,
   DebtorsDocumentResult,
   DebtorsFilters,
@@ -37,6 +39,24 @@ export async function exportDebtorsDocument(
   })
 
   return extractDocumentResult(result)
+}
+
+export async function getDebtorGroupedDebts(clientNetId: string, signal?: AbortSignal): Promise<DebtorDebtItem[]> {
+  const result = await apiRequest<unknown>('/clients/get/debt/grouped', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return normalizeArray(result) as DebtorDebtItem[]
+}
+
+export async function getDebtorDebtTotal(clientNetId: string, signal?: AbortSignal): Promise<DebtorDebtTotal | null> {
+  const result = await apiRequest<unknown>('/clients/get/debt/total', {
+    query: { netId: clientNetId },
+    ...(signal ? { signal } : {}),
+  })
+
+  return result && typeof result === 'object' ? (result as DebtorDebtTotal) : null
 }
 
 export async function getDebtorsManagers(): Promise<DebtorsManagerOption[]> {

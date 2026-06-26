@@ -1,14 +1,19 @@
-import { Alert, Avatar, Button, Select, Stack, Text, Tooltip } from '@mantine/core'
+import { Alert, Avatar, Badge, Button, Select, Stack, Text, Tooltip } from '@mantine/core'
 import {
   IconAlertCircle,
+  IconBuildingBank,
+  IconCalendar,
   IconChevronDown,
   IconChevronUp,
   IconFileDownload,
+  IconFileInvoice,
+  IconReceipt,
   IconUserDollar,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer, type KeyboardEvent } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
+import { AppDrawer } from '../../../shared/ui/AppDrawer'
 import { DataTableDensityToggle } from '../../../shared/ui/data-table/DataTableDensityToggle'
 import { useDataTableDensity } from '../../../shared/ui/data-table/useDataTableDensity'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
@@ -16,6 +21,8 @@ import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import {
   exportDebtorsDocument,
+  getDebtorDebtTotal,
+  getDebtorGroupedDebts,
   getDebtorsManagers,
   getDebtorsOrganizations,
   getFilteredDebtors,
@@ -24,6 +31,9 @@ import { DownloadDocumentModal } from '../components/DownloadDocumentModal'
 import { TypeOfClientAgreement, TypeOfCurrencyOfAgreement } from '../types'
 import type {
   ClientDebtors,
+  DebtorDebtItem,
+  DebtorDebtSale,
+  DebtorDebtTotal,
   ClientInDebt,
   DebtorsDocumentResult,
   DebtorsManagerOption,
@@ -86,6 +96,7 @@ export function SalesDebtorsPage() {
   const [downloadDocument, setDownloadDocument] = useValueState<DebtorsDocumentResult | null>(null)
   const [downloadModalOpened, setDownloadModalOpened] = useValueState(false)
   const [sortState, setSortState] = useValueState<DebtorsSortState>(null)
+  const [selectedDebtor, setSelectedDebtor] = useValueState<ClientInDebt | null>(null)
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const { density, toggleDensity } = useDataTableDensity('sales-debtors', 'compact')
 
@@ -329,6 +340,7 @@ export function SalesDebtorsPage() {
             isLoading={isLoading}
             rows={sortedDebtors}
             sortState={sortState}
+            onOpen={setSelectedDebtor}
             onSort={toggleSort}
           />
         </div>
@@ -341,6 +353,7 @@ export function SalesDebtorsPage() {
         opened={downloadModalOpened}
         onClose={() => setDownloadModalOpened(false)}
       />
+      <DebtorDetailDrawer currencyCode={currencyCode} debtor={selectedDebtor} onClose={() => setSelectedDebtor(null)} />
     </Stack>
   )
 }
@@ -352,6 +365,7 @@ function DebtorsList({
   isLoading,
   rows,
   sortState,
+  onOpen,
   onSort,
 }: {
   currencyCode: string
@@ -360,6 +374,7 @@ function DebtorsList({
   isLoading: boolean
   rows: ClientInDebt[]
   sortState: DebtorsSortState
+  onOpen: (row: ClientInDebt) => void
   onSort: (id: DebtorsSortId) => void
 }) {
   const { t } = useI18n()
@@ -387,6 +402,7 @@ function DebtorsList({
               key={row.ClientNetId || `${row.ClientName || 'debtor'}-${index}`}
               currencyCode={currencyCode}
               row={row}
+              onOpen={onOpen}
             />
           ))
         )}
@@ -423,9 +439,20 @@ function DebtorsSortHeader({
   )
 }
 
-function DebtorRow({ currencyCode, row }: { currencyCode: string; row: ClientInDebt }) {
+function DebtorRow({ currencyCode, row, onOpen }: { currencyCode: string; row: ClientInDebt; onOpen: (row: ClientInDebt) => void }) {
+  function openRow() {
+    onOpen(row)
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      openRow()
+    }
+  }
+
   return (
-    <div className="sales-debtors-row">
+    <div className="sales-debtors-row" role="button" tabIndex={0} onClick={openRow} onKeyDown={handleKeyDown}>
       <DebtorRegionCell value={displayValue(row.RegionCode)} />
       <DebtorClientCell debtor={row} />
       <DebtorManagerCell value={displayValue(row.UserName)} />
@@ -543,6 +570,209 @@ function SalesDebtorsSummary({ currencyCode, debtors }: { currencyCode: string; 
   )
 }
 
+function DebtorDetailDrawer({
+  currencyCode,
+  debtor,
+  onClose,
+}: {
+  currencyCode: string
+  debtor: ClientInDebt | null
+  onClose: () => void
+}) {
+  const { t } = useI18n()
+  const [items, setItems] = useValueState<DebtorDebtItem[]>([])
+  const [total, setTotal] = useValueState<DebtorDebtTotal | null>(null)
+  const [isLoading, setLoading] = useValueState(false)
+  const [error, setError] = useValueState<string | null>(null)
+
+  useEffect(() => {
+    const clientNetId = debtor?.ClientNetId
+
+    if (!clientNetId) {
+      setItems([])
+      setTotal(null)
+      setLoading(false)
+      setError(null)
+
+      return
+    }
+
+    const controller = new AbortController()
+    const debtorClientNetId = clientNetId
+
+    async function loadDetails() {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const [nextItems, nextTotal] = await Promise.all([
+          getDebtorGroupedDebts(debtorClientNetId, controller.signal),
+          getDebtorDebtTotal(debtorClientNetId, controller.signal),
+        ])
+
+        setItems(nextItems)
+        setTotal(nextTotal)
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setItems([])
+          setTotal(null)
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити деталі боржника'))
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadDetails()
+
+    return () => {
+      controller.abort()
+    }
+  }, [debtor?.ClientNetId, setError, setItems, setLoading, setTotal, t])
+
+  return (
+    <AppDrawer opened={Boolean(debtor)} position="right" size="standard" title={t('Деталі боржника')} onClose={onClose}>
+      {debtor ? (
+        <div className="sales-debtor-detail">
+          <section className="sales-debtor-detail-hero">
+            <div className="sales-debtor-detail-hero__main">
+              <span className="sales-debtor-detail-hero__icon" aria-hidden>
+                <IconUserDollar size={20} stroke={1.8} />
+              </span>
+              <div className="sales-debtor-detail-hero__copy">
+                <span className="sales-debtor-detail-eyebrow">{t('Клієнт')}</span>
+                <strong>{displayValue(debtor.ClientName)}</strong>
+                <span>
+                  {displayValue(debtor.RegionCode)} · {displayValue(debtor.UserName)}
+                </span>
+              </div>
+            </div>
+            <div className="sales-debtor-detail-metrics">
+              <DebtorDetailMetric label={t('Залишок')} tone="neutral" unit={currencyCode} value={debtor.RemainderDebt} />
+              <DebtorDetailMetric label={t('Прострочено')} tone="danger" unit={currencyCode} value={debtor.OverdueDebt} />
+              <DebtorDetailMetric format="integer" label={t('Днів')} tone={(debtor.MissedDays ?? 0) < 0 ? 'danger' : 'neutral'} value={debtor.MissedDays} />
+            </div>
+          </section>
+
+          <section className="sales-debtor-detail-section">
+            <div className="sales-debtor-detail-section__head">
+              <span className="sales-debtor-detail-section__icon" aria-hidden>
+                <IconReceipt size={16} />
+              </span>
+              <div>
+                <span className="sales-debtor-detail-eyebrow">{t('Підсумок')}</span>
+                <strong>{t('Загальна заборгованість')}</strong>
+              </div>
+            </div>
+            <div className="sales-debtor-detail-total-grid">
+              <DebtorDetailMetric label="EUR" unit="EUR" value={total?.TotalEuro} />
+              <DebtorDetailMetric label="UAH" unit="UAH" value={total?.TotalLocal} />
+              <DebtorDetailMetric label={t('По структурі')} unit="UAH" value={total?.TotalSubClientDebt} />
+            </div>
+          </section>
+
+          <section className="sales-debtor-detail-section">
+            <div className="sales-debtor-detail-section__head">
+              <span className="sales-debtor-detail-section__icon" aria-hidden>
+                <IconFileInvoice size={16} />
+              </span>
+              <div>
+                <span className="sales-debtor-detail-eyebrow">{t('Документи')}</span>
+                <strong>{t('Борги по клієнту')}</strong>
+              </div>
+              <Badge className="sales-debtor-detail-count" variant="light">
+                {items.length}
+              </Badge>
+            </div>
+
+            {isLoading ? (
+              <div className="sales-debtor-detail-state">{t('Завантаження деталей')}</div>
+            ) : error ? (
+              <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+                {error}
+              </Alert>
+            ) : items.length === 0 ? (
+              <div className="sales-debtor-detail-state">{t('Боргових документів не знайдено')}</div>
+            ) : (
+              <div className="sales-debtor-detail-debts">
+                {items.map((item, index) => (
+                  <DebtorDebtCard key={item.NetUid || `${item.Id || 'debt'}-${index}`} currencyCode={currencyCode} item={item} />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      ) : null}
+    </AppDrawer>
+  )
+}
+
+function DebtorDetailMetric({
+  label,
+  format = 'money',
+  tone,
+  unit,
+  value,
+}: {
+  format?: 'integer' | 'money'
+  label: string
+  tone?: 'danger' | 'neutral'
+  unit?: string
+  value: number | undefined
+}) {
+  const formattedValue = format === 'integer' ? String(value ?? 0) : moneyFormatter.format(value ?? 0)
+
+  return (
+    <span className={`sales-debtor-detail-metric${tone === 'danger' ? ' is-danger' : ''}`}>
+      <span>{label}</span>
+      <strong>{formattedValue}</strong>
+      {unit ? <small>{unit}</small> : null}
+    </span>
+  )
+}
+
+function DebtorDebtCard({ currencyCode: fallbackCurrencyCode, item }: { currencyCode: string; item: DebtorDebtItem }) {
+  const sale = item.Sale || item.ReSale || null
+  const documentNumber = getDebtDocumentNumber(item, sale)
+  const documentDate = getDebtDocumentDate(item, sale)
+  const agreement = getDebtAgreementLabel(item)
+  const status = getDebtStatusLabel(sale)
+  const currencyCode = item.Agreement?.Currency?.Code || fallbackCurrencyCode
+  const amount = item.Debt?.Total ?? sale?.TotalAmount ?? sale?.TotalAmountLocal ?? 0
+  const days = item.Debt?.Days ?? 0
+
+  return (
+    <article className="sales-debtor-detail-debt">
+      <span className="sales-debtor-detail-debt__icon" aria-hidden>
+        <IconFileInvoice size={16} />
+      </span>
+      <div className="sales-debtor-detail-debt__main">
+        <Tooltip label={documentNumber}>
+          <strong>{documentNumber}</strong>
+        </Tooltip>
+        <div className="sales-debtor-detail-debt__meta">
+          <span>
+            <IconCalendar size={13} />
+            {documentDate}
+          </span>
+          <span>
+            <IconBuildingBank size={13} />
+            {agreement}
+          </span>
+        </div>
+        {status !== '—' ? <span className="sales-debtor-detail-debt__status">{status}</span> : null}
+      </div>
+      <div className="sales-debtor-detail-debt__amount">
+        <strong>{moneyFormatter.format(amount)}</strong>
+        {currencyCode ? <small>{currencyCode}</small> : null}
+      </div>
+      <DebtorDaysCell value={days} />
+    </article>
+  )
+}
+
 function sortDebtors(rows: ClientInDebt[], sortState: DebtorsSortState): ClientInDebt[] {
   if (!sortState) {
     return rows
@@ -583,12 +813,52 @@ function getDebtorSortValue(row: ClientInDebt, id: DebtorsSortId): number | stri
   }
 }
 
+function getDebtDocumentNumber(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
+  return displayValue(
+    sale?.SaleNumber?.Value ||
+    sale?.SaleNumber?.Name ||
+    sale?.SaleNumber?.Number ||
+    sale?.Number ||
+    sale?.Name ||
+    item.Debt?.Name,
+  )
+}
+
+function getDebtDocumentDate(item: DebtorDebtItem, sale: DebtorDebtSale | null): string {
+  return formatDateTime(sale?.ChangedToInvoice || sale?.Created || item.Created)
+}
+
+function getDebtAgreementLabel(item: DebtorDebtItem): string {
+  const agreement = item.Agreement
+  const organization = agreement?.Organization?.Name
+  const agreementName = agreement?.Name || agreement?.Number
+
+  if (organization && agreementName) {
+    return `${organization} · ${agreementName}`
+  }
+
+  return displayValue(agreementName || organization)
+}
+
+function getDebtStatusLabel(sale: DebtorDebtSale | null): string {
+  return displayValue(
+    sale?.BaseSalePaymentStatus?.Name ||
+    sale?.BaseSalePaymentStatus?.Value ||
+    sale?.BaseLifeCycleStatus?.Name ||
+    sale?.BaseLifeCycleStatus?.Value,
+  )
+}
+
 function displayValue(value: number | string | undefined | null): string {
-  if (value === null || value === undefined || value === '') {
+  if (value === null || value === undefined || value === '' || isUuidLike(value)) {
     return '—'
   }
 
   return String(value)
+}
+
+function isUuidLike(value: number | string): boolean {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim())
 }
 
 function formatDateTime(value?: string): string {

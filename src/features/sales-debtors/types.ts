@@ -38,6 +38,62 @@ export type ClientInDebt = {
   TotalDebtInDays?: number
 }
 
+export type DebtorDebtTotal = {
+  TotalEuro?: number
+  TotalLocal?: number
+  TotalSubClientDebt?: number
+}
+
+export type DebtorDebtEntity = {
+  Code?: string
+  Created?: string
+  Id?: number
+  Name?: string
+  NetUid?: string
+  Number?: string
+  Updated?: string
+  Value?: string
+}
+
+export type DebtorDebtCurrency = DebtorDebtEntity
+
+export type DebtorDebtOrganization = DebtorDebtEntity
+
+export type DebtorDebtStatus = DebtorDebtEntity & {
+  SaleLifeCycleType?: number | string
+  SalePaymentStatusType?: number | string
+}
+
+export type DebtorDebtSale = DebtorDebtEntity & {
+  BaseLifeCycleStatus?: DebtorDebtStatus | null
+  BaseSalePaymentStatus?: DebtorDebtStatus | null
+  ChangedToInvoice?: string
+  SaleNumber?: DebtorDebtEntity | null
+  TotalAmount?: number
+  TotalAmountLocal?: number
+}
+
+export type DebtorDebtAgreement = DebtorDebtEntity & {
+  Currency?: DebtorDebtCurrency | null
+  Organization?: DebtorDebtOrganization | null
+}
+
+export type DebtorDebt = DebtorDebtEntity & {
+  Days?: number
+  Total?: number
+}
+
+export type DebtorDebtItem = DebtorDebtEntity & {
+  Agreement?: DebtorDebtAgreement | null
+  AgreementId?: number
+  Debt?: DebtorDebt | null
+  DebtId?: number
+  ReSale?: DebtorDebtSale | null
+  ReSaleId?: number
+  Sale?: DebtorDebtSale | null
+  SaleId?: number
+}
+
 export type ClientDebtors = {
   ClientInDebtors: ClientInDebt[]
   TotalQtyClients: number
