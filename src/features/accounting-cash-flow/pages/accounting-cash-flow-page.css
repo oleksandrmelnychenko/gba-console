@@ -14,6 +14,221 @@
   min-height: 34px;
 }
 
+.accounting-cash-flow-export-modal-content {
+  background:
+    linear-gradient(135deg, rgba(var(--brand-orange-rgb), 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(248, 249, 250, 0.86), transparent 160px),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 14px;
+  box-shadow: 0 24px 58px rgba(20, 28, 38, 0.18);
+  overflow: hidden;
+}
+
+.accounting-cash-flow-export-modal-header {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  min-height: 64px;
+  padding: 14px 16px 12px;
+}
+
+.accounting-cash-flow-export-modal-title > div {
+  display: grid;
+  gap: 3px;
+}
+
+.accounting-cash-flow-export-modal-title span {
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accounting-cash-flow-export-modal-title strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.accounting-cash-flow-export-modal-body {
+  padding: 14px 16px 16px;
+}
+
+.accounting-cash-flow-export-modal {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-export-hero {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.08), transparent 52%),
+    linear-gradient(90deg, rgba(20, 28, 38, 0.035) 1px, transparent 1px),
+    var(--mantine-color-white);
+  background-size: auto, 28px 28px, auto;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.accounting-cash-flow-export-hero-icon {
+  border: 1px solid rgba(var(--brand-orange-rgb), 0.18);
+  flex: 0 0 auto;
+}
+
+.accounting-cash-flow-export-hero > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-export-hero span {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accounting-cash-flow-export-hero strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.16;
+}
+
+.accounting-cash-flow-export-hero small {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.accounting-cash-flow-export-options {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.accounting-cash-flow-export-card {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(248, 249, 250, 0.72), transparent 64%),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  color: inherit;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 76px;
+  min-width: 0;
+  padding: 11px;
+  text-decoration: none;
+  transition:
+    border-color 140ms var(--tx-ease-smooth),
+    box-shadow 140ms var(--tx-ease-smooth),
+    transform 140ms var(--tx-ease-smooth);
+}
+
+.accounting-cash-flow-export-card:hover {
+  border-color: rgba(var(--brand-orange-rgb), 0.42);
+  box-shadow: 0 16px 32px rgba(20, 28, 38, 0.08);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.accounting-cash-flow-export-card-icon {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.accounting-cash-flow-export-card.is-excel .accounting-cash-flow-export-card-icon {
+  background: rgba(39, 174, 96, 0.08);
+  border-color: rgba(39, 174, 96, 0.18);
+}
+
+.accounting-cash-flow-export-card.is-pdf .accounting-cash-flow-export-card-icon {
+  background: rgba(var(--brand-orange-rgb), 0.08);
+  border-color: rgba(var(--brand-orange-rgb), 0.18);
+  color: var(--brand-orange);
+}
+
+.accounting-cash-flow-export-card-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-export-card-text strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.accounting-cash-flow-export-card-text small {
+  color: var(--mantine-color-gray-5);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.22;
+}
+
+.accounting-cash-flow-export-card-action {
+  align-items: center;
+  background: #fff5ed;
+  border: 1px solid #ffd8bd;
+  border-radius: 999px;
+  color: #c95716;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  height: 25px;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.accounting-cash-flow-export-empty {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px dashed var(--mantine-color-gray-3);
+  border-radius: 12px;
+  display: flex;
+  gap: 11px;
+  min-height: 82px;
+  padding: 13px;
+}
+
+.accounting-cash-flow-export-empty > div {
+  display: grid;
+  gap: 3px;
+}
+
+.accounting-cash-flow-export-empty strong {
+  color: var(--mantine-color-gray-8);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.accounting-cash-flow-export-empty span {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .accounting-cash-flow-alert {
   flex: 0 0 auto;
 }
@@ -980,6 +1195,19 @@
 @media (max-width: 640px) {
   .accounting-cash-flow-page {
     padding: 6px;
+  }
+
+  .accounting-cash-flow-export-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accounting-cash-flow-export-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .accounting-cash-flow-export-card-action {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .accounting-cash-flow-filter-form {

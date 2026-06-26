@@ -1075,35 +1075,94 @@ function DownloadDocumentModal({
   onClose: () => void
 }) {
   const { t } = useI18n()
+  const hasExcel = Boolean(document?.DocumentURL)
+  const hasPdf = Boolean(document?.PdfDocumentURL)
+  const hasDocument = hasExcel || hasPdf
 
   return (
-    <AppModal centered opened={opened} title={title} onClose={onClose}>
-      <Stack gap="sm">
-        {document?.DocumentURL || document?.PdfDocumentURL ? (
-          <>
-            {document.DocumentURL && (
-              <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-excel">
+    <AppModal
+      centered
+      classNames={{
+        body: 'accounting-cash-flow-export-modal-body',
+        content: 'accounting-cash-flow-export-modal-content',
+        header: 'accounting-cash-flow-export-modal-header',
+        title: 'accounting-cash-flow-export-modal-title',
+      }}
+      opened={opened}
+      size="lg"
+      title={
+        <div>
+          <span>{t('Документ')}</span>
+          <strong>{title}</strong>
+        </div>
+      }
+      onClose={onClose}
+    >
+      <div className="accounting-cash-flow-export-modal">
+        <div className="accounting-cash-flow-export-hero">
+          <ThemeIcon className="accounting-cash-flow-export-hero-icon" color="orange" radius="xl" size={42} variant="light">
+            <IconDownload size={20} />
+          </ThemeIcon>
+          <div>
+            <span>{hasDocument ? t('Готово до завантаження') : t('Документ недоступний')}</span>
+            <strong>{hasDocument ? t('Виберіть формат файлу') : t('Файл не сформовано')}</strong>
+            <small>
+              {hasDocument
+                ? t('Посилання відкриються у новій вкладці.')
+                : t('Сервер не повернув посилання для завантаження.')}
+            </small>
+          </div>
+        </div>
+
+        {hasDocument ? (
+          <div className="accounting-cash-flow-export-options">
+            {document?.DocumentURL && (
+              <Anchor
+                className="accounting-cash-flow-export-card is-excel"
+                href={getDocumentHref(document.DocumentURL)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="accounting-cash-flow-export-card-icon">
                   <ExcelIcon size={24} />
                 </span>
-                <span>{t('Excel документ')}</span>
+                <span className="accounting-cash-flow-export-card-text">
+                  <strong>{t('Excel')}</strong>
+                  <small>{t('Табличний файл для роботи з даними')}</small>
+                </span>
+                <span className="accounting-cash-flow-export-card-action">{t('Відкрити')}</span>
               </Anchor>
             )}
-            {document.PdfDocumentURL && (
-              <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
-                <span className="document-link-badge document-link-badge-pdf">
+            {document?.PdfDocumentURL && (
+              <Anchor
+                className="accounting-cash-flow-export-card is-pdf"
+                href={getDocumentHref(document.PdfDocumentURL)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span className="accounting-cash-flow-export-card-icon">
                   <IconFileTypePdf size={24} stroke={1.8} />
                 </span>
-                <span>{t('PDF документ')}</span>
+                <span className="accounting-cash-flow-export-card-text">
+                  <strong>{t('PDF')}</strong>
+                  <small>{t('Документ для друку або перегляду')}</small>
+                </span>
+                <span className="accounting-cash-flow-export-card-action">{t('Відкрити')}</span>
               </Anchor>
             )}
-          </>
+          </div>
         ) : (
-          <Text c="dimmed" size="sm">
-            {t('Документ недоступний для завантаження')}
-          </Text>
+          <div className="accounting-cash-flow-export-empty">
+            <ThemeIcon color="gray" radius="xl" size={38} variant="light">
+              <IconAlertCircle size={18} />
+            </ThemeIcon>
+            <div>
+              <strong>{t('Документ недоступний для завантаження')}</strong>
+              <span>{t('Спробуйте сформувати експорт ще раз.')}</span>
+            </div>
+          </div>
         )}
-      </Stack>
+      </div>
     </AppModal>
   )
 }
