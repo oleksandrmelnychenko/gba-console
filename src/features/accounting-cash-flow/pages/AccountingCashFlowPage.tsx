@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   Group,
-  ScrollArea,
   SegmentedControl,
   Select,
   SimpleGrid,
@@ -34,7 +33,7 @@ import {
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { type FormEvent, type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -347,16 +346,17 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     }
   }, [activeFilters.from, activeFilters.to, effectiveNetId, mode, reloadKey, t])
 
-  function submitFilters(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
+  useEffect(() => {
     if (filterError) {
-      notifications.show({ color: 'red', message: filterError })
       return
     }
 
-    setActiveFilters(filterDraft)
-  }
+    setActiveFilters((current) => (
+      current.from === filterDraft.from && current.to === filterDraft.to
+        ? current
+        : filterDraft
+    ))
+  }, [filterDraft, filterError])
 
   function resetFilters() {
     setFilterDraft(initialFilters)
@@ -424,7 +424,6 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
-    submitFilters,
   }
 }
 
@@ -465,7 +464,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
-    submitFilters,
   } = model
   const canExport = Boolean(selectedAgreement?.NetUid)
   const handleCashFlowRowClick = useCallback(
@@ -557,7 +555,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
 
       <div className="accounting-cash-flow-shell">
         <div className="app-filter-bar accounting-cash-flow-filter-bar">
-          <form className="accounting-cash-flow-filter-form" onSubmit={submitFilters}>
+          <form className="accounting-cash-flow-filter-form" onSubmit={(event) => event.preventDefault()}>
             <div className="accounting-cash-flow-period-filter">
               <span className="accounting-cash-flow-filter-label">{t('Період')}</span>
               <div className="accounting-cash-flow-period-fields">
@@ -613,9 +611,6 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
               onChange={(value) => setFlowFilter(value as 'all' | 'debit' | 'credit')}
             />
             <div className="app-filter-actions accounting-cash-flow-filter-actions">
-              <Button color={CREATE_ACTION_COLOR} size="sm" type="submit">
-                {t('Застосувати')}
-              </Button>
               <Tooltip label={t('Скинути')}>
                 <ActionIcon aria-label={t('Скинути')} color="gray" size={36} variant="light" onClick={resetFilters}>
                   <IconRestore size={18} />
@@ -801,26 +796,26 @@ function AgreementScopePicker({
 
   return (
     <div className="accounting-cash-flow-agreement-picker">
-      <ScrollArea className="accounting-cash-flow-agreement-scroll" type="auto" offsetScrollbars>
-        <div className="accounting-cash-flow-agreement-list">
-          <button
-            className={`accounting-cash-flow-agreement-card is-general${!selectedAgreementNetUid ? ' is-selected' : ''}`}
-            type="button"
-            onClick={() => onSelectAgreement(null)}
-          >
+      <div className="accounting-cash-flow-agreement-list">
+        <button
+          className={`accounting-cash-flow-agreement-card is-general${!selectedAgreementNetUid ? ' is-selected' : ''}`}
+          type="button"
+          onClick={() => onSelectAgreement(null)}
+        >
+          <span className="accounting-cash-flow-agreement-card__body">
             <span className="accounting-cash-flow-agreement-card__label">{t('Загальні взаєморозрахунки')}</span>
             <span className="accounting-cash-flow-agreement-card__meta">{t('Всі договори')}</span>
-          </button>
-          {agreements.map((agreement, index) => (
-            <AgreementDebtTile
-              key={agreement.NetUid || index}
-              agreement={agreement}
-              isSelected={agreement.NetUid === selectedAgreementNetUid}
-              onSelect={() => onSelectAgreement(agreement.NetUid || null)}
-            />
-          ))}
-        </div>
-      </ScrollArea>
+          </span>
+        </button>
+        {agreements.map((agreement, index) => (
+          <AgreementDebtTile
+            key={agreement.NetUid || index}
+            agreement={agreement}
+            isSelected={agreement.NetUid === selectedAgreementNetUid}
+            onSelect={() => onSelectAgreement(agreement.NetUid || null)}
+          />
+        ))}
+      </div>
       {!isLoading && agreements.length === 0 && (
         <Text className="accounting-cash-flow-empty-note">
           {t('Договори не знайдено')}
@@ -851,14 +846,16 @@ function AgreementDebtTile({
         type="button"
         onClick={onSelect}
       >
-        <span className="accounting-cash-flow-agreement-card__top">
-          <span className="accounting-cash-flow-agreement-card__label">
-            {stringValue(agreement.Agreement?.Name) || '-'}
+        <span className="accounting-cash-flow-agreement-card__body">
+          <span className="accounting-cash-flow-agreement-card__top">
+            <span className="accounting-cash-flow-agreement-card__label">
+              {stringValue(agreement.Agreement?.Name) || '-'}
+            </span>
+            {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
           </span>
-          {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
-        </span>
-        <span className="accounting-cash-flow-agreement-card__meta">
-          {stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'}
+          <span className="accounting-cash-flow-agreement-card__meta">
+            {stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'}
+          </span>
         </span>
         <span className="accounting-cash-flow-agreement-card__stats">
           {debt.isControlAmountDebt ? (
