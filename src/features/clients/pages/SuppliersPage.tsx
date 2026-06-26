@@ -20,10 +20,14 @@ import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconBuildingFactory2,
   IconCash,
   IconExternalLink,
   IconFileTypePdf,
   IconId,
+  IconMail,
+  IconMapPin,
+  IconPhone,
   IconPlus,
   IconRestore,
   IconSearch,
@@ -34,7 +38,7 @@ import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { DataTable } from '../../../shared/ui/data-table/DataTable'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { ClientTypeRoleFilter } from '../components/ClientTypeRoleFilter'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
@@ -62,6 +66,10 @@ const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const SUPPLIER_SEARCH_DEBOUNCE_MS = 350
 const SUPPLIER_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:suppliers:page-size'
 const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
+const supplierAmountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+})
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
@@ -494,7 +502,6 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     setSorting,
   } = model
   const supplierColumns = useSupplierColumns()
-
   return (
     <Stack className="suppliers-page" gap={6}>
       <PageHeaderActions>
@@ -543,14 +550,15 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
             getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
             height="100%"
             isLoading={isLoading}
-            layoutVersion="suppliers-table-1"
             loadingText={t('Завантаження постачальників')}
             emptyText={t('Постачальників не знайдено')}
             manualSorting
-            minWidth={1320}
+            minWidth={1120}
             showDensityToggle={false}
             showLayoutControls={false}
             tableId="suppliers"
+            layoutVersion="suppliers-table-main-2026-1"
+            rowClassName={(supplier) => `suppliers-row${supplier.IsActive === false ? ' is-inactive' : ''}${supplier.IsNotResident ? ' is-nonresident' : ''}`}
             sorting={sorting}
             onRowClick={setSelectedSupplier}
             onSortingChange={(nextSorting) => {
@@ -737,30 +745,31 @@ function SuppliersFilterToolbar({
     <Group align="end" gap="sm" wrap="nowrap" className="suppliers-filter-row">
       <TextInput
         ref={searchInputRef}
+        className="suppliers-filter-search-input"
         size="sm"
         leftSection={<IconSearch size={16} />}
-        label={t('Пошук')}
-        placeholder={t('Введіть значення')}
+        label={t('Виробник')}
+        placeholder={t('Назва або код')}
         rightSection={isTableBusy ? <Loader color="violet" size={14} /> : undefined}
         value={searchValue}
         onChange={(event) => {
           onSetPage(1)
           onSetSearchValue(event.currentTarget.value)
         }}
-        style={{ flex: '1 1 auto', minWidth: 200 }}
       />
       <Select
+        className="suppliers-filter-field"
         size="sm"
         label={t('Поле')}
         data={searchFieldOptions}
         value={searchField}
-        style={{ flex: '0 0 190px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetSearchField(value || SUPPLIER_SEARCH_SQL)
         }}
       />
       <Select
+        className="suppliers-filter-status"
         size="sm"
         label={t('Статус')}
         data={[
@@ -769,20 +778,22 @@ function SuppliersFilterToolbar({
           { value: 'inactive', label: t('Неактивні') },
         ]}
         value={activeFilter}
-        style={{ flex: '0 0 122px' }}
         onChange={(value) => {
           onSetPage(1)
           onSetActiveFilter((value as ActiveFilter | null) || 'all')
         }}
       />
-      <ClientTypeRoleFilter
-        clientTypes={supplierClientTypes}
-        value={roleFilter}
-        onChange={(value) => {
-          onSetPage(1)
-          onSetRoleFilter(value)
-        }}
-      />
+      <div className="suppliers-filter-role">
+        <span className="suppliers-filter-label">{t('Ролі')}</span>
+        <ClientTypeRoleFilter
+          clientTypes={supplierClientTypes}
+          value={roleFilter}
+          onChange={(value) => {
+            onSetPage(1)
+            onSetRoleFilter(value)
+          }}
+        />
+      </div>
       <div className="app-filter-actions">
         <Tooltip label={t('Скинути')}>
           <ActionIcon variant="light" color="gray" size={34} aria-label={t('Скинути')} onClick={onReset}>
@@ -863,113 +874,159 @@ function useSupplierColumns() {
   return useMemo<DataTableColumn<Client>[]>(
     () => [
       {
-        id: 'status',
-        header: t('Статус'),
-        width: 110,
-        minWidth: 96,
-        enableSorting: false,
-        accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
-        cell: (supplier) => (
-          <Badge color={supplier.IsActive === false ? 'gray' : 'green'} variant="light">
-            {supplier.IsActive === false ? t('Неактивний') : t('Активний')}
-          </Badge>
-        ),
-      },
-      {
-        id: 'regionCode',
-        header: t('Код'),
-        width: 90,
-        minWidth: 80,
-        enableSorting: false,
-        accessor: (supplier) => supplier.RegionCode?.Value,
-        cell: (supplier) => <Text size="sm">{displayValue(supplier.RegionCode?.Value)}</Text>,
-      },
-      {
         id: 'supplier',
         header: t('Постачальник'),
-        width: 280,
-        minWidth: 220,
+        width: 440,
+        minWidth: 360,
         fill: true,
         enableSorting: false,
+        className: 'suppliers-table-cell--supplier',
         accessor: getSupplierDisplayName,
-        cell: (supplier) => (
-          <Tooltip label={getSupplierDisplayName(supplier)} openDelay={350} withArrow>
-            <Text
-              component="span"
-              fw={600}
-              style={{ display: 'block', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            >
-              {getSupplierDisplayName(supplier)}
-            </Text>
-          </Tooltip>
-        ),
+        cell: (supplier) => <SupplierProfileCell supplier={supplier} />,
       },
       {
         id: 'location',
-        header: t('Місто / район'),
+        header: t('Код / регіон'),
+        width: 210,
+        minWidth: 180,
+        enableSorting: false,
+        className: 'suppliers-table-cell--location',
+        accessor: (supplier) => [supplier.RegionCode?.Value, supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' '),
+        cell: (supplier) => <SupplierLocationCell supplier={supplier} />,
+      },
+      {
+        id: 'contacts',
+        header: t('Контакти'),
+        width: 260,
+        minWidth: 220,
+        enableSorting: false,
+        className: 'suppliers-table-cell--contacts',
+        accessor: (supplier) => [getSupplierPhone(supplier), supplier.EmailAddress].filter(Boolean).join(' '),
+        cell: (supplier) => <SupplierContactCell supplier={supplier} />,
+      },
+      {
+        id: 'purchaseVolume',
+        header: t('Обсяг / баланс'),
         width: 180,
-        minWidth: 150,
-        enableSorting: false,
-        accessor: (supplier) => [supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' '),
-        cell: (supplier) => (
-          <Text size="sm">
-            {displayValue(supplier.RegionCode?.City)}
-            {supplier.RegionCode?.District ? (
-              <Text component="span" inherit c="dimmed">
-                {' · '}
-                {supplier.RegionCode.District}
-              </Text>
-            ) : null}
-          </Text>
-        ),
-      },
-      {
-        id: 'role',
-        header: t('Роль'),
-        width: 220,
-        minWidth: 200,
-        enableSorting: false,
-        accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
-        cell: (supplier) => {
-          const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
-          return name ? (
-            <Badge color={roleBadgeColor(name)} variant="light">
-              {name}
-            </Badge>
-          ) : (
-            <Text c="dimmed">-</Text>
-          )
-        },
-      },
-      {
-        id: 'notResident',
-        header: t('Резидентність'),
-        width: 130,
-        minWidth: 110,
-        enableSorting: false,
-        accessor: (supplier) => supplier.IsNotResident,
-        cell: (supplier) => <Text size="sm">{supplier.IsNotResident ? t('Нерезидент') : t('Резидент')}</Text>,
-      },
-      {
-        id: 'phone',
-        header: t('Телефон'),
-        width: 130,
-        minWidth: 110,
-        enableSorting: false,
-        accessor: getSupplierPhone,
-        cell: (supplier) => <SupplierContactValue value={displayValue(getSupplierPhone(supplier))} />,
-      },
-      {
-        id: 'email',
-        header: 'Email',
-        width: 180,
-        minWidth: 150,
-        enableSorting: false,
-        accessor: (supplier) => supplier.EmailAddress,
-        cell: (supplier) => <SupplierContactValue value={displayValue(supplier.EmailAddress)} />,
+        minWidth: 160,
+        align: 'right',
+        className: 'suppliers-table-cell--finance',
+        accessor: (supplier) => supplier.PurchaseVolumeEur,
+        cell: (supplier) => <SupplierFinanceCell supplier={supplier} />,
       },
     ],
     [t],
+  )
+}
+
+function SupplierProfileCell({ supplier }: { supplier: Client }) {
+  const { t } = useI18n()
+  const name = getSupplierDisplayName(supplier)
+  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+  const isActive = supplier.IsActive !== false
+
+  return (
+    <Group gap={12} wrap="nowrap" align="center" className="suppliers-profile-cell" style={{ minWidth: 0 }}>
+      <span
+        className={`suppliers-profile-icon${isActive ? '' : ' is-muted'}`}
+        style={{
+          alignItems: 'center',
+          border: '1px solid var(--mantine-color-gray-2)',
+          borderRadius: 999,
+          color: isActive ? 'var(--brand-orange, #f97316)' : 'var(--mantine-color-gray-5)',
+          display: 'inline-flex',
+          flex: '0 0 38px',
+          height: 38,
+          justifyContent: 'center',
+          width: 38,
+        }}
+      >
+        <IconBuildingFactory2 size={17} />
+      </span>
+      <Stack gap={4} className="suppliers-profile-copy" style={{ minWidth: 0 }}>
+        <Group gap={8} wrap="nowrap" className="suppliers-profile-title-row" style={{ minWidth: 0 }}>
+          <Tooltip label={name} openDelay={350} withArrow>
+            <Text
+              component="span"
+              className="suppliers-profile-name"
+              fw={700}
+              size="sm"
+              style={{ lineHeight: 1.16, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
+              {name}
+            </Text>
+          </Tooltip>
+        </Group>
+        <Group gap={6} wrap="nowrap" className="suppliers-profile-meta" style={{ minWidth: 0 }}>
+          <span className={`suppliers-profile-status${isActive ? ' is-active' : ' is-inactive'}`}>
+            {isActive ? t('Активний') : t('Неактивний')}
+          </span>
+          {supplier.IsNotResident && (
+            <span className="suppliers-profile-resident">
+              {t('Нерезидент')}
+            </span>
+          )}
+          {roleName ? (
+            <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>
+              {roleName}
+            </span>
+          ) : (
+            <Text c="dimmed" size="xs">-</Text>
+          )}
+        </Group>
+      </Stack>
+    </Group>
+  )
+}
+
+function SupplierLocationCell({ supplier }: { supplier: Client }) {
+  const location = [supplier.RegionCode?.City, supplier.RegionCode?.District].filter(Boolean).join(' · ')
+  const displayLocation = displayValue(location)
+  const code = displayValue(supplier.RegionCode?.Value)
+
+  return (
+    <div className="suppliers-location-cell">
+      <div className="suppliers-location-code-row">
+        <span className="suppliers-location-icon">
+          <IconMapPin size={12} />
+        </span>
+        <span className="suppliers-location-code">{code}</span>
+      </div>
+      <div className="suppliers-location-copy">
+        <Tooltip label={displayLocation} openDelay={350} withArrow>
+          <span className={`suppliers-location-place${displayLocation === '-' ? ' is-empty' : ''}`}>{displayLocation}</span>
+        </Tooltip>
+        <span className="suppliers-location-region">{displayValue(supplier.Region?.Name)}</span>
+      </div>
+    </div>
+  )
+}
+
+function SupplierContactCell({ supplier }: { supplier: Client }) {
+  return (
+    <Stack gap={5} className="suppliers-contact-cell" style={{ minWidth: 0 }}>
+      <SupplierContactValue icon={<IconPhone size={12} />} value={displayValue(getSupplierPhone(supplier))} />
+      <SupplierContactValue icon={<IconMail size={12} />} value={displayValue(supplier.EmailAddress)} />
+    </Stack>
+  )
+}
+
+function SupplierFinanceCell({ supplier }: { supplier: Client }) {
+  const balance = supplier.TotalCurrentAmount || 0
+
+  return (
+    <Stack gap={5} align="flex-end" className="suppliers-finance-cell" style={{ minWidth: 0 }}>
+      <Group gap={7} wrap="nowrap" justify="flex-end" className="suppliers-finance-line">
+        <span className="suppliers-finance-label">EUR</span>
+        <Text component="strong" fw={690} size="xs">{formatSupplierAmount(supplier.PurchaseVolumeEur)}</Text>
+      </Group>
+      <Group gap={7} wrap="nowrap" justify="flex-end" className={`suppliers-finance-line is-balance${balance < 0 ? ' is-negative' : ''}`}>
+        <span className="suppliers-finance-label">баланс</span>
+        <Text c={balance < 0 ? 'red.6' : 'gray.6'} component="strong" fw={620} size="xs">
+          {formatSupplierAmount(supplier.TotalCurrentAmount)}
+        </Text>
+      </Group>
+    </Stack>
   )
 }
 
@@ -990,16 +1047,48 @@ function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
     : DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
 }
 
-function SupplierContactValue({ value }: { value: string }) {
+function SupplierContactValue({ icon, value }: { icon: ReactNode; value: string }) {
   const isEmpty = value === '-'
 
   return (
     <Tooltip label={value} openDelay={350} withArrow>
-      <span className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`}>
-        {value}
-      </span>
+      <Group gap={6} wrap="nowrap" className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`} style={{ minWidth: 0 }}>
+        <span
+          className="suppliers-contact-icon"
+          style={{
+            alignItems: 'center',
+            border: '1px solid var(--mantine-color-gray-2)',
+            borderRadius: 7,
+            color: 'var(--mantine-color-gray-5)',
+            display: 'inline-flex',
+            flex: '0 0 22px',
+            height: 22,
+            justifyContent: 'center',
+            width: 22,
+          }}
+        >
+          {icon}
+        </span>
+        <Text
+          c={isEmpty ? 'gray.5' : 'gray.7'}
+          component="span"
+          fw={isEmpty ? 520 : 560}
+          size="xs"
+          style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {value}
+        </Text>
+      </Group>
     </Tooltip>
   )
+}
+
+function formatSupplierAmount(value?: number | null): string {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '-'
+  }
+
+  return supplierAmountFormatter.format(value)
 }
 
 function buildSupplierSortDescriptors(sorting: DataTableSortingState) {
