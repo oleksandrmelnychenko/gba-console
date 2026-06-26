@@ -56,6 +56,10 @@ export type CockpitTask = {
   ab_variant?: string | null
   generated_at?: string | null
   updated_at?: string | null
+  in_progress_since?: string | null
+  p_outcome?: number | null
+  expected_value?: number | null
+  ev_score?: number | null
   [key: string]: unknown
 }
 
@@ -223,4 +227,55 @@ export type HeadDashboard = {
   teams: HeadDashboardTeam[]
   escalated_count: number
   total_value_at_risk_eur: number
+}
+
+// Live team task board (GET sales/cockpit/head/tasks). Served by gba-server (.NET),
+// so the DTO is PascalCase with NO JsonPropertyName — mirror SalesCockpitHeadTasksResponseDto.cs
+// field-for-field. This is intentionally different from the snake_case gba-nba cockpit endpoints above.
+export type HeadTask = {
+  TaskKey: string
+  ManagerId: number
+  ManagerName: string | null
+  ClientId: number
+  ClientName: string | null
+  TaskType: string | null
+  Title: string | null
+  Status: string | null
+  Urgency: string | null
+  Priority: number
+  POutcome: number | null
+  ExpectedValue: number | null
+  EvScore: number | null
+  InProgressSince: string | null
+  GeneratedAt: string | null
+  UpdatedAt: string | null
+  SlaBreached: boolean
+}
+
+export type HeadTaskByStatus = {
+  Open: number
+  InProgress: number
+  Done: number
+  Snoozed: number
+  Dismissed: number
+}
+
+export type HeadTaskManager = {
+  ManagerId: number
+  Name: string | null
+}
+
+export type HeadTasksResponse = {
+  Total: number
+  Tasks: HeadTask[]
+  ByStatus: HeadTaskByStatus
+  Managers: HeadTaskManager[]
+}
+
+export type HeadTasksParams = {
+  statuses?: string
+  managerId?: number
+  urgency?: string
+  skip?: number
+  limit?: number
 }

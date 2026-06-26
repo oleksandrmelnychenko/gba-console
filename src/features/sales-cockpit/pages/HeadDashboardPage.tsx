@@ -6,6 +6,7 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { getEscalated, getHeadTeam } from '../api/salesCockpitApi'
 import { HeadDashboardChartsPanel } from '../components/HeadDashboardChartsPanel'
+import { HeadTaskBoard } from '../components/HeadTaskBoard'
 import type { CockpitUrgency, EscalatedResponse, EscalatedTask, HeadPaceStatus, HeadTeam, HeadTeamRow } from '../types'
 import './sales-cockpit-page.css'
 
@@ -244,6 +245,8 @@ export function HeadDashboardPage() {
               </Table.ScrollContainer>
             </Card>
           )}
+
+          <HeadTaskBoard />
 
           <Card className="app-section-card" withBorder radius="md">
             <Stack gap="sm">

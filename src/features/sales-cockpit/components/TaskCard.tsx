@@ -6,11 +6,17 @@ import {
   IconMessageCircle,
   IconMessagePlus,
   IconPhone,
+  IconPlayerPlay,
+  IconProgress,
   IconX,
 } from '@tabler/icons-react'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { WhyThisTask } from './WhyThisTask'
 import type { CockpitTask, CockpitTaskType, CockpitUrgency } from '../types'
+
+const moneyFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 0,
+})
 
 const URGENCY_COLOR: Record<CockpitUrgency, string> = {
   critical: 'red',
@@ -36,22 +42,31 @@ const TASK_TYPE_LABEL: Record<CockpitTaskType, string> = {
 
 export function TaskCard({
   task,
+  onTakeInProgress,
   onDone,
   onSnooze,
   onDismiss,
   onAddNote,
+  pending = false,
 }: {
   task: CockpitTask
+  onTakeInProgress: (task: CockpitTask) => void
   onDone: (task: CockpitTask) => void
   onSnooze: (task: CockpitTask) => void
   onDismiss: (task: CockpitTask) => void
   onAddNote: (task: CockpitTask) => void
+  pending?: boolean
 }) {
   const { t } = useI18n()
   const phone = task.contact?.phone?.trim()
   const email = task.contact?.email?.trim()
   const viber = task.contact?.viber?.trim()
   const notesCount = task.notes?.length ?? 0
+  const isInProgress = task.status === 'in_progress'
+  const canTakeInProgress = task.status === 'open' || task.status === 'snoozed'
+  const inProgressLabel = isInProgress ? inProgressBadgeLabel(task.in_progress_since, t) : ''
+  const expectedValue = typeof task.expected_value === 'number' ? task.expected_value : null
+  const pOutcome = typeof task.p_outcome === 'number' ? task.p_outcome : null
 
   return (
     <Card className={`cockpit-task is-${task.urgency ?? 'normal'}`} padding="md" radius="md" withBorder>
@@ -70,6 +85,11 @@ export function TaskCard({
               {task.sla_breached && (
                 <Badge color="red" variant="light">
                   {t('Прострочено SLA')}
+                </Badge>
+              )}
+              {isInProgress && (
+                <Badge color="indigo" leftSection={<IconProgress size={12} />} variant="light">
+                  {inProgressLabel}
                 </Badge>
               )}
             </Group>
@@ -104,6 +124,21 @@ export function TaskCard({
 
         {task.reason && <Text className="cockpit-task-reason">{task.reason}</Text>}
 
+        {(expectedValue !== null || pOutcome !== null) && (
+          <Group gap="xs" wrap="nowrap">
+            {expectedValue !== null && (
+              <Text className="cockpit-task-ev" size="xs">
+                {t('Очікувана цінність')}: {formatMoney(expectedValue)}
+              </Text>
+            )}
+            {pOutcome !== null && (
+              <Badge color="teal" size="sm" variant="light">
+                {t('шанс')} {formatPercent(pOutcome)}
+              </Badge>
+            )}
+          </Group>
+        )}
+
         <WhyThisTask task={task} />
 
         {notesCount > 0 && (
@@ -113,7 +148,18 @@ export function TaskCard({
         )}
 
         <Group gap="xs" justify="flex-end">
-          <Button color="green" leftSection={<IconCheck size={16} />} size="xs" onClick={() => onDone(task)}>
+          {canTakeInProgress && (
+            <Button
+              color="indigo"
+              disabled={pending}
+              leftSection={<IconPlayerPlay size={16} />}
+              size="xs"
+              onClick={() => onTakeInProgress(task)}
+            >
+              {t('Взяти в роботу')}
+            </Button>
+          )}
+          <Button color="green" leftSection={<IconCheck size={16} />} size="xs" variant={canTakeInProgress ? 'light' : 'filled'} onClick={() => onDone(task)}>
             {t('Виконано')}
           </Button>
           <Button color="gray" leftSection={<IconClock size={16} />} size="xs" variant="light" onClick={() => onSnooze(task)}>
@@ -141,4 +187,48 @@ function urgencyLabel(urgency: CockpitUrgency | undefined, t: (key: string) => s
 
 function taskTypeLabel(taskType: CockpitTaskType, t: (key: string) => string): string {
   return t(TASK_TYPE_LABEL[taskType])
+}
+
+function inProgressBadgeLabel(since: string | null | undefined, t: (key: string) => string): string {
+  const elapsed = formatElapsed(since)
+  return elapsed ? `${t('в роботі')} ${elapsed}` : t('В роботі')
+}
+
+// Reads in_progress_since defensively — the backend field may be absent for now,
+// in which case we just show "В роботі" without an elapsed counter.
+function formatElapsed(since: string | null | undefined): string | null {
+  if (!since) {
+    return null
+  }
+
+  const start = Date.parse(since)
+  if (Number.isNaN(start)) {
+    return null
+  }
+
+  const diffMs = Date.now() - start
+  if (diffMs < 0) {
+    return null
+  }
+
+  const minutes = Math.floor(diffMs / 60_000)
+  if (minutes < 60) {
+    return `${minutes} хв`
+  }
+
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) {
+    return `${hours} год`
+  }
+
+  const days = Math.floor(hours / 24)
+  return `${days} дн`
+}
+
+function formatMoney(value: number): string {
+  return `€${moneyFormatter.format(value)}`
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`
 }

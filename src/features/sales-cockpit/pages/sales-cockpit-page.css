@@ -355,6 +355,12 @@
   line-height: 1.4;
 }
 
+.cockpit-task-ev {
+  color: var(--mantine-color-teal-7);
+  font-weight: 650;
+  line-height: 1.2;
+}
+
 /* ---- Escalated rows ---------------------------------------------------- */
 .cockpit-escalated-row {
   align-items: center;

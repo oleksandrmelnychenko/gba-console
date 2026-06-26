@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, Alert, Badge, Card, Group, Loader, SegmentedControl, SimpleGrid, Stack, Text, Tooltip } from '@mantine/core'
 import { IconAlertCircle, IconRefresh, IconSparkles } from '@tabler/icons-react'
 import { notifications } from '@mantine/notifications'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
@@ -21,7 +21,7 @@ import type { CockpitTarget, CockpitTask, CockpitTaskType, CockpitUrgency, HeadP
 import './sales-cockpit-page.css'
 
 const INBOX_LIMIT = 50
-const POLL_INTERVAL_MS = 60_000
+const POLL_INTERVAL_MS = 20_000
 
 // Inbox ordering: triage by urgency band, then business tier (debt = cash at risk first), then score.
 // Mirrors the gba-nba inbox ordering so the cockpit shows the same queue order.
@@ -60,6 +60,39 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   maximumFractionDigits: 0,
 })
 
+type DayFilter = 'all' | 'today'
+
+const KYIV_TZ = 'Europe/Kyiv'
+
+// Compares two instants by their calendar day in Europe/Kyiv, so "Сьогодні"
+// means "today in Kyiv" regardless of the viewer's local timezone.
+const kyivDayFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: KYIV_TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+function kyivDayKey(value: Date): string {
+  return kyivDayFormatter.format(value)
+}
+
+// A task is "today" when its due_date (preferred when present) or generated_at
+// falls on today's Kyiv calendar day. Tasks without a usable date are excluded.
+function isTaskToday(task: CockpitTask, todayKey: string): boolean {
+  const raw = task.due_date ?? task.generated_at
+  if (!raw) {
+    return false
+  }
+
+  const parsed = Date.parse(raw)
+  if (Number.isNaN(parsed)) {
+    return false
+  }
+
+  return kyivDayKey(new Date(parsed)) === todayKey
+}
+
 function inboxOrder(left: CockpitTask, right: CockpitTask): number {
   return (
     getUrgencyRank(left.urgency) - getUrgencyRank(right.urgency) ||
@@ -82,6 +115,7 @@ export function SalesCockpitPage() {
   const [target, setTarget] = useValueState<CockpitTarget | null>(null)
   const [taskTypeFilter, setTaskTypeFilter] = useValueState<CockpitTaskType | null>(null)
   const [urgencyFilter, setUrgencyFilter] = useValueState<CockpitUrgency | null>(null)
+  const [dayFilter, setDayFilter] = useValueState<DayFilter>('all')
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useState(true)
   const [isRegenerating, setRegenerating] = useState(false)
@@ -134,15 +168,25 @@ export function SalesCockpitPage() {
     }
   }, [reloadKey, setError, setTarget, setTasks, t])
 
+  // Recomputed each render (a single cheap formatter call) so the "today" window
+  // stays current across a midnight boundary without an extra dependency.
+  const todayKey = kyivDayKey(new Date())
+
+  const todayCount = useMemo(
+    () => tasks.reduce((count, task) => (isTaskToday(task, todayKey) ? count + 1 : count), 0),
+    [tasks, todayKey],
+  )
+
   const visibleTasks = useMemo(() => {
     const filtered = tasks.filter(
       (task) =>
         (!taskTypeFilter || task.task_type === taskTypeFilter) &&
-        (!urgencyFilter || task.urgency === urgencyFilter),
+        (!urgencyFilter || task.urgency === urgencyFilter) &&
+        (dayFilter === 'all' || isTaskToday(task, todayKey)),
     )
 
     return filtered.toSorted(inboxOrder)
-  }, [tasks, taskTypeFilter, urgencyFilter])
+  }, [tasks, taskTypeFilter, urgencyFilter, dayFilter, todayKey])
 
   const handleDoneSubmit = useCallback(
     async (task: CockpitTask, outcome: { sold: boolean; amount: number | null }) => {
@@ -176,6 +220,26 @@ export function SalesCockpitPage() {
       try {
         await setTaskStatus(task.task_key, { To: 'dismissed' })
         notifications.show({ color: 'green', message: t('Завдання відхилено') })
+        reload()
+      } catch (actionError) {
+        notifications.show({
+          color: 'red',
+          message: actionError instanceof Error ? actionError.message : t('Не вдалося оновити завдання'),
+        })
+      } finally {
+        setPendingTaskKey(null)
+      }
+    },
+    [t],
+  )
+
+  const handleTakeInProgress = useCallback(
+    async (task: CockpitTask) => {
+      setPendingTaskKey(task.task_key)
+
+      try {
+        await setTaskStatus(task.task_key, { To: 'in_progress' })
+        notifications.show({ color: 'green', message: t('Завдання взято в роботу') })
         reload()
       } catch (actionError) {
         notifications.show({
@@ -283,12 +347,23 @@ export function SalesCockpitPage() {
       )}
 
       <div className="cockpit-filter">
-        <TaskFilters
-          taskType={taskTypeFilter}
-          urgency={urgencyFilter}
-          onTaskTypeChange={setTaskTypeFilter}
-          onUrgencyChange={setUrgencyFilter}
-        />
+        <Group align="flex-end" gap="md" justify="space-between" wrap="wrap">
+          <TaskFilters
+            taskType={taskTypeFilter}
+            urgency={urgencyFilter}
+            onTaskTypeChange={setTaskTypeFilter}
+            onUrgencyChange={setUrgencyFilter}
+          />
+          <SegmentedControl
+            data={[
+              { label: t('Усі'), value: 'all' },
+              { label: `${t('Сьогодні')} (${todayCount})`, value: 'today' },
+            ]}
+            size="sm"
+            value={dayFilter}
+            onChange={(value) => setDayFilter(value as DayFilter)}
+          />
+        </Group>
       </div>
 
       {target && <TargetCard target={target} />}
@@ -313,11 +388,13 @@ export function SalesCockpitPage() {
           {visibleTasks.map((task) => (
             <TaskCard
               key={task.task_key}
+              pending={pendingTaskKey === task.task_key}
               task={task}
               onAddNote={setNoteTask}
               onDismiss={handleDismiss}
               onDone={setDoneTask}
               onSnooze={setSnoozeTask}
+              onTakeInProgress={handleTakeInProgress}
             />
           ))}
         </Stack>

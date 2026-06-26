@@ -23,6 +23,11 @@ import type {
   HeadRowTarget,
   HeadRowTasks,
   HeadTargetMetric,
+  HeadTask,
+  HeadTaskByStatus,
+  HeadTaskManager,
+  HeadTasksParams,
+  HeadTasksResponse,
   HeadTeam,
   HeadTeamRow,
   HeadTeamTotals,
@@ -80,6 +85,20 @@ export async function getHeadTeam(asOfDate?: string): Promise<HeadTeam> {
   })
 
   return normalizeHeadTeam(result)
+}
+
+export async function getHeadTasks(params: HeadTasksParams = {}): Promise<HeadTasksResponse> {
+  const result = await apiRequest<unknown>('/sales/cockpit/head/tasks', {
+    query: {
+      statuses: params.statuses,
+      managerId: params.managerId,
+      urgency: params.urgency,
+      skip: params.skip,
+      limit: params.limit,
+    },
+  })
+
+  return normalizeHeadTasksResponse(result)
 }
 
 export async function getDashboard(asOfDate?: string): Promise<CockpitDashboard> {
@@ -434,6 +453,88 @@ function normalizeHeadDashboardTeam(value: unknown): HeadDashboardTeam | null {
     critical: toNumber(row.critical),
     value_at_risk_eur: toNumber(row.value_at_risk_eur),
   }
+}
+
+function normalizeHeadTasksResponse(result: unknown): HeadTasksResponse {
+  const payload = result && typeof result === 'object' ? (result as Partial<HeadTasksResponse>) : {}
+  const tasks = Array.isArray(payload.Tasks)
+    ? payload.Tasks.reduce<HeadTask[]>((acc, value) => {
+        const task = normalizeHeadTask(value)
+        if (task) acc.push(task)
+        return acc
+      }, [])
+    : []
+  const managers = Array.isArray(payload.Managers)
+    ? payload.Managers.reduce<HeadTaskManager[]>((acc, value) => {
+        const manager = normalizeHeadTaskManager(value)
+        if (manager) acc.push(manager)
+        return acc
+      }, [])
+    : []
+
+  return {
+    Total: typeof payload.Total === 'number' ? payload.Total : tasks.length,
+    Tasks: tasks,
+    ByStatus: normalizeHeadTaskByStatus(payload.ByStatus),
+    Managers: managers,
+  }
+}
+
+function normalizeHeadTask(value: unknown): HeadTask | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<HeadTask>
+
+  return {
+    TaskKey: typeof row.TaskKey === 'string' ? row.TaskKey : '',
+    ManagerId: typeof row.ManagerId === 'number' ? row.ManagerId : 0,
+    ManagerName: typeof row.ManagerName === 'string' ? row.ManagerName : null,
+    ClientId: typeof row.ClientId === 'number' ? row.ClientId : 0,
+    ClientName: typeof row.ClientName === 'string' ? row.ClientName : null,
+    TaskType: typeof row.TaskType === 'string' ? row.TaskType : null,
+    Title: typeof row.Title === 'string' ? row.Title : null,
+    Status: typeof row.Status === 'string' ? row.Status : null,
+    Urgency: typeof row.Urgency === 'string' ? row.Urgency : null,
+    Priority: typeof row.Priority === 'number' ? row.Priority : 0,
+    POutcome: toNullableNumber(row.POutcome),
+    ExpectedValue: toNullableNumber(row.ExpectedValue),
+    EvScore: toNullableNumber(row.EvScore),
+    InProgressSince: typeof row.InProgressSince === 'string' ? row.InProgressSince : null,
+    GeneratedAt: typeof row.GeneratedAt === 'string' ? row.GeneratedAt : null,
+    UpdatedAt: typeof row.UpdatedAt === 'string' ? row.UpdatedAt : null,
+    SlaBreached: row.SlaBreached === true,
+  }
+}
+
+function normalizeHeadTaskByStatus(value: unknown): HeadTaskByStatus {
+  const status = value && typeof value === 'object' ? (value as Partial<HeadTaskByStatus>) : {}
+
+  return {
+    Open: toNumber(status.Open),
+    InProgress: toNumber(status.InProgress),
+    Done: toNumber(status.Done),
+    Snoozed: toNumber(status.Snoozed),
+    Dismissed: toNumber(status.Dismissed),
+  }
+}
+
+function normalizeHeadTaskManager(value: unknown): HeadTaskManager | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const row = value as Partial<HeadTaskManager>
+
+  return {
+    ManagerId: typeof row.ManagerId === 'number' ? row.ManagerId : 0,
+    Name: typeof row.Name === 'string' ? row.Name : null,
+  }
+}
+
+function toNullableNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
 function toNumber(value: unknown): number {
