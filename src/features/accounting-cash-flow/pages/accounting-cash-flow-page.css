@@ -1,0 +1,1001 @@
+.accounting-cash-flow-page {
+  min-width: 0;
+  padding: 10px;
+}
+
+.accounting-cash-flow-icon-action {
+  border-radius: 8px;
+}
+
+.accounting-cash-flow-export {
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  min-height: 34px;
+}
+
+.accounting-cash-flow-alert {
+  flex: 0 0 auto;
+}
+
+.accounting-cash-flow-shell {
+  background:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.88), transparent 120px),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  box-shadow: var(--app-card-shadow);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.accounting-cash-flow-filter-bar {
+  --accounting-cash-flow-control-height: 36px;
+  --accounting-cash-flow-label-gap: 4px;
+  --accounting-cash-flow-label-height: 17px;
+  align-items: end;
+  background:
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
+    var(--mantine-color-white);
+  flex: 0 0 auto;
+}
+
+.accounting-cash-flow-filter-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(310px, 380px)
+    minmax(260px, 1fr)
+    minmax(210px, 260px)
+    minmax(180px, 220px)
+    auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.accounting-cash-flow-period-filter,
+.accounting-cash-flow-date-input,
+.accounting-cash-flow-search,
+.accounting-cash-flow-type-select {
+  min-width: 0;
+}
+
+.accounting-cash-flow-filter-label,
+.accounting-cash-flow-search .mantine-InputWrapper-label,
+.accounting-cash-flow-type-select .mantine-InputWrapper-label {
+  color: var(--mantine-color-gray-6);
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  height: var(--accounting-cash-flow-label-height);
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin-bottom: var(--accounting-cash-flow-label-gap);
+}
+
+.accounting-cash-flow-period-filter {
+  display: grid;
+  gap: 3px;
+}
+
+.accounting-cash-flow-period-fields {
+  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+}
+
+.accounting-cash-flow-period-separator {
+  background: var(--mantine-color-gray-3);
+  border-radius: 999px;
+  display: block;
+  height: 1px;
+  justify-self: center;
+  width: 10px;
+}
+
+.accounting-cash-flow-date-input .mantine-Input-wrapper,
+.accounting-cash-flow-date-input .mantine-Input-input,
+.accounting-cash-flow-search .mantine-Input-wrapper,
+.accounting-cash-flow-search .mantine-TextInput-input,
+.accounting-cash-flow-type-select .mantine-Input-wrapper,
+.accounting-cash-flow-type-select .mantine-Input-input {
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  color: var(--mantine-color-gray-8);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  height: var(--accounting-cash-flow-control-height);
+  line-height: 1.2;
+  min-height: var(--accounting-cash-flow-control-height);
+}
+
+.accounting-cash-flow-search .mantine-Input-wrapper,
+.accounting-cash-flow-search .mantine-TextInput-input {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit,
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit-fields-wrapper,
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit-text,
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit-month-field,
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit-day-field,
+.accounting-cash-flow-date-input .mantine-TextInput-input::-webkit-datetime-edit-year-field {
+  color: inherit;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 520;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+.accounting-cash-flow-kind-toggle {
+  align-self: end;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  min-height: var(--accounting-cash-flow-control-height);
+  padding: 3px;
+}
+
+.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-label {
+  color: var(--mantine-color-gray-6);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 28px;
+}
+
+.accounting-cash-flow-kind-toggle .mantine-SegmentedControl-label[data-active='true'] {
+  color: var(--mantine-color-gray-9);
+}
+
+.accounting-cash-flow-filter-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.accounting-cash-flow-filter-actions .mantine-Button-root {
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  min-height: var(--accounting-cash-flow-control-height);
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-filter-alert {
+  border-radius: 0;
+  flex: 0 0 auto;
+}
+
+.accounting-cash-flow-command {
+  background:
+    linear-gradient(180deg, rgba(248, 249, 250, 0.88), transparent 220px),
+    var(--mantine-color-white);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+  min-width: 0;
+}
+
+.accounting-cash-flow-agreements {
+  background:
+    linear-gradient(180deg, rgba(255, 122, 24, 0.09), transparent 34%),
+    linear-gradient(90deg, rgba(20, 28, 38, 0.035) 1px, transparent 1px),
+    #fbfcfd;
+  background-size: auto, 28px 28px, auto;
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 12px;
+  max-height: 312px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.accounting-cash-flow-stage {
+  align-items: stretch;
+  background:
+    linear-gradient(90deg, rgba(16, 24, 40, 0.03), rgba(var(--brand-orange-rgb), 0.045) 52%, transparent),
+    var(--mantine-color-white);
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  display: grid;
+  flex: 0 0 auto;
+  gap: 12px;
+  grid-template-columns: minmax(318px, 1fr) minmax(0, 1.85fr);
+  min-width: 0;
+  padding: 12px;
+}
+
+.accounting-cash-flow-stage-main {
+  display: grid;
+  gap: 12px;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.accounting-cash-flow-stage > .accounting-cash-flow-agreements {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.accounting-cash-flow-agreement-picker {
+  display: grid;
+  gap: 12px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  min-width: 0;
+}
+
+.accounting-cash-flow-empty-note {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.accounting-cash-flow-agreements .accounting-cash-flow-empty-note {
+  color: var(--mantine-color-gray-5);
+}
+
+.accounting-cash-flow-agreement-scroll {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.accounting-cash-flow-agreement-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 6px 6px 0;
+}
+
+.accounting-cash-flow-agreement-card {
+  background:
+    linear-gradient(135deg, rgba(255, 247, 240, 0.78), transparent 46%),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  min-height: 64px;
+  padding: 11px 12px 12px;
+  position: relative;
+  text-align: left;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.accounting-cash-flow-agreement-card::after {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(20, 28, 38, 0.12) 0,
+    rgba(20, 28, 38, 0.12) 4px,
+    transparent 4px,
+    transparent 9px
+  );
+  bottom: 7px;
+  content: '';
+  height: 1px;
+  left: 12px;
+  opacity: 0.65;
+  position: absolute;
+  right: 12px;
+}
+
+.accounting-cash-flow-agreement-card:hover {
+  border-color: #ffd4b3;
+  box-shadow: 0 14px 30px rgba(20, 28, 38, 0.08);
+  transform: translateY(-2px);
+}
+
+.accounting-cash-flow-agreement-card.is-selected {
+  background:
+    linear-gradient(135deg, rgba(255, 122, 24, 0.14), transparent 40%),
+    linear-gradient(90deg, rgba(240, 253, 250, 0.76), transparent 72%),
+    var(--mantine-color-white);
+  border-color: #ffc59a;
+  box-shadow: 0 0 0 1px rgba(var(--brand-orange-rgb), 0.14), 0 16px 32px rgba(20, 28, 38, 0.08);
+  transform: translateY(-2px);
+}
+
+.accounting-cash-flow-agreement-card.is-selected::before {
+  background: linear-gradient(180deg, var(--brand-orange), var(--mantine-color-teal-5));
+  border-radius: 999px;
+  bottom: 12px;
+  content: '';
+  left: 0;
+  position: absolute;
+  top: 12px;
+  width: 3px;
+}
+
+.accounting-cash-flow-agreement-card.is-overdue {
+  border-color: #ffc9c9;
+}
+
+.accounting-cash-flow-agreement-card.is-general {
+  min-height: 64px;
+}
+
+.accounting-cash-flow-agreement-card__top {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.accounting-cash-flow-agreement-card__label {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-agreement-card.is-selected .accounting-cash-flow-agreement-card__label {
+  padding-left: 6px;
+}
+
+.accounting-cash-flow-agreement-card__meta {
+  color: var(--mantine-color-gray-5);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-currency {
+  align-items: center;
+  background: var(--mantine-color-orange-0);
+  border: 1px solid #ffd6b7;
+  border-radius: 999px;
+  color: var(--brand-orange);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 34px;
+  padding: 0 8px;
+}
+
+.accounting-cash-flow-agreement-card__stats {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.accounting-cash-flow-agreement-card__stats span,
+.accounting-cash-flow-agreement-card__stats strong {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-8);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 4px;
+  height: 24px;
+  line-height: 1;
+  padding: 0 8px;
+}
+
+.accounting-cash-flow-agreement-card__stats small {
+  color: var(--mantine-color-gray-5);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.accounting-cash-flow-agreement-card__stats .is-danger,
+.accounting-cash-flow-agreement-card__stats strong {
+  background: var(--mantine-color-red-0);
+  border-color: #ffc9c9;
+  color: var(--mantine-color-red-7);
+}
+
+.accounting-cash-flow-statement-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 122, 24, 0.16), transparent 30%),
+    linear-gradient(90deg, rgba(20, 28, 38, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, #ffffff, #f7fafc);
+  background-size: auto, 28px 28px, auto;
+  border: 1px solid #ffd8bd;
+  border-radius: 12px;
+  box-shadow: 0 18px 36px rgba(20, 28, 38, 0.09);
+  color: var(--mantine-color-gray-9);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.58fr);
+  min-width: 0;
+  overflow: hidden;
+  padding: 14px;
+  position: relative;
+}
+
+.accounting-cash-flow-statement-hero::after {
+  background: linear-gradient(90deg, var(--brand-orange), var(--mantine-color-teal-5));
+  bottom: 0;
+  content: '';
+  height: 3px;
+  left: 14px;
+  position: absolute;
+  right: 14px;
+}
+
+.accounting-cash-flow-statement-hero__identity {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-column: 1;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__icon {
+  background: rgba(255, 247, 240, 0.9);
+  border: 1px solid #ffd8bd;
+  color: var(--brand-orange);
+}
+
+.accounting-cash-flow-statement-hero__title {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__title span,
+.accounting-cash-flow-statement-hero__balance span,
+.accounting-cash-flow-statement-hero__flow span {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accounting-cash-flow-statement-hero__title strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-statement-hero__title small {
+  color: var(--mantine-color-gray-5);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-statement-hero__balance {
+  align-self: center;
+  display: grid;
+  gap: 4px;
+  grid-column: 1;
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__balance strong {
+  color: var(--mantine-color-gray-9);
+  font-size: clamp(28px, 3vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.95;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-statement-hero__balance strong.is-positive {
+  color: var(--mantine-color-teal-7);
+}
+
+.accounting-cash-flow-statement-hero__balance strong.is-negative {
+  color: var(--mantine-color-red-7);
+}
+
+.accounting-cash-flow-statement-hero__balance small {
+  color: var(--mantine-color-gray-5);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.accounting-cash-flow-statement-hero__balance small.is-positive {
+  color: var(--mantine-color-teal-7);
+}
+
+.accounting-cash-flow-statement-hero__balance small.is-negative {
+  color: var(--mantine-color-red-7);
+}
+
+.accounting-cash-flow-statement-hero__meter {
+  align-self: stretch;
+  display: grid;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  grid-template-columns: 1fr 1fr;
+  min-height: 96px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__meter span,
+.accounting-cash-flow-statement-hero__meter strong {
+  align-self: end;
+  border-radius: 999px 999px 0 0;
+  display: block;
+  justify-self: center;
+  max-height: 100%;
+  min-height: 18px;
+  width: 34px !important;
+}
+
+.accounting-cash-flow-statement-hero__meter span {
+  background: linear-gradient(180deg, #77e2c0, rgba(119, 226, 192, 0.22));
+  height: 66%;
+}
+
+.accounting-cash-flow-statement-hero__meter strong {
+  background: linear-gradient(180deg, #ff9a4a, rgba(255, 154, 74, 0.22));
+  height: 48%;
+}
+
+.accounting-cash-flow-statement-hero__flow {
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__flow div {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 9px;
+  display: grid;
+  gap: 3px 7px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 8px 9px;
+}
+
+.accounting-cash-flow-statement-hero__flow svg {
+  color: var(--mantine-color-gray-5);
+  grid-row: 1 / span 2;
+}
+
+.accounting-cash-flow-statement-hero__flow strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounting-cash-flow-statement-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.accounting-cash-flow-statement-hero__chips span,
+.accounting-cash-flow-statement-hero__chips strong {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-7);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 600;
+  height: 24px;
+  line-height: 1;
+  padding: 0 9px;
+}
+
+.accounting-cash-flow-statement-hero__chips strong {
+  background: var(--mantine-color-red-0);
+  border-color: #ffc9c9;
+  color: var(--mantine-color-red-7);
+}
+
+.accounting-cash-flow-summary {
+  background:
+    linear-gradient(90deg, rgba(248, 249, 250, 0.86), transparent 54%),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 10px;
+  min-width: 0;
+  padding: 11px;
+}
+
+.accounting-cash-flow-summary .mantine-SimpleGrid-root {
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  margin-top: 9px;
+}
+
+.accounting-cash-flow-page .cash-flow-summary-tile.mantine-Card-root {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.74) 48%, transparent),
+    var(--mantine-color-white);
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 8px;
+  box-shadow: none;
+  min-height: 56px;
+  padding: 8px 9px;
+}
+
+.accounting-cash-flow-page .cash-flow-summary-tile .mantine-Text-root:first-child {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accounting-cash-flow-page .cash-flow-summary-tile .mantine-Text-root:last-child {
+  color: var(--mantine-color-gray-9);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.1;
+  margin-top: 5px;
+}
+
+.accounting-cash-flow-chart {
+  min-width: 0;
+}
+
+.accounting-cash-flow-chart:empty {
+  display: none;
+}
+
+.accounting-cash-flow-chart .mantine-Card-root {
+  background:
+    linear-gradient(135deg, rgba(124, 229, 195, 0.18), transparent 36%),
+    linear-gradient(90deg, rgba(20, 28, 38, 0.04) 1px, transparent 1px),
+    var(--mantine-color-white);
+  background-size: auto, 28px 28px, auto;
+  border-color: var(--mantine-color-gray-2);
+  border-radius: 12px;
+  box-shadow: 0 18px 36px rgba(20, 28, 38, 0.08);
+  height: 100%;
+  padding: 10px;
+}
+
+.accounting-cash-flow-chart .mantine-Text-root {
+  color: var(--mantine-color-gray-9);
+}
+
+.accounting-cash-flow-chart .mantine-Group-root .mantine-Text-root:last-child {
+  color: var(--mantine-color-teal-7);
+}
+
+.accounting-cash-flow-chart .mantine-AreaChart-root {
+  min-height: 126px;
+}
+
+.accounting-cash-flow-grid-card {
+  background:
+    linear-gradient(180deg, rgba(32, 36, 43, 0.06), transparent 140px),
+    var(--mantine-color-white);
+  padding: 12px;
+}
+
+.accounting-cash-flow-ledger-head {
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(255, 122, 24, 0.11), transparent 36%),
+    linear-gradient(90deg, rgba(124, 229, 195, 0.11), transparent 86%),
+    var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+  justify-content: space-between;
+  min-height: 52px;
+  min-width: 0;
+  padding: 0 13px;
+  position: relative;
+}
+
+.accounting-cash-flow-ledger-head::after {
+  background: linear-gradient(90deg, var(--brand-orange), var(--mantine-color-teal-5));
+  bottom: 0;
+  content: '';
+  height: 2px;
+  left: 13px;
+  position: absolute;
+  right: 13px;
+}
+
+.accounting-cash-flow-ledger-head div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.accounting-cash-flow-ledger-head span {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.accounting-cash-flow-ledger-head strong {
+  color: var(--mantine-color-gray-9);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.accounting-cash-flow-ledger-head small {
+  align-items: center;
+  background: var(--mantine-color-gray-0);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 999px;
+  color: var(--mantine-color-gray-6);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  height: 24px;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.accounting-cash-flow-page .cfg-grid {
+  background: var(--mantine-color-white);
+  border: 1px solid var(--mantine-color-gray-2);
+  border-radius: 0 0 12px 12px;
+  font-size: 12.5px;
+  overflow: hidden;
+}
+
+.accounting-cash-flow-page .cfg-row {
+  min-height: 48px;
+}
+
+.accounting-cash-flow-page .cfg-top,
+.accounting-cash-flow-page .cfg-bottom {
+  background:
+    linear-gradient(90deg, rgba(248, 249, 250, 0.96), rgba(255, 250, 245, 0.58) 46%, rgba(248, 249, 250, 0.88)),
+    var(--mantine-color-white);
+  color: var(--mantine-color-gray-5);
+}
+
+.accounting-cash-flow-page .cfg-top {
+  border-bottom: 1px solid var(--mantine-color-gray-2);
+  padding-right: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.accounting-cash-flow-page .cfg-bottom {
+  border-top: 1px solid var(--mantine-color-gray-2);
+  color: var(--mantine-color-gray-8);
+  padding-right: 8px;
+}
+
+.accounting-cash-flow-page .cfg-cell {
+  padding: 7px 10px;
+}
+
+.accounting-cash-flow-page .cfg-sub {
+  color: var(--mantine-color-gray-5);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.accounting-cash-flow-page .cfg-data-row {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.58) 46%, transparent),
+    var(--mantine-color-white);
+  border-bottom: 1px solid #edf0f3;
+  box-shadow: none;
+  min-height: 56px;
+  position: relative;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
+}
+
+.accounting-cash-flow-page .cfg-data-row:nth-child(even) {
+  background:
+    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.72) 46%, transparent),
+    var(--mantine-color-white);
+}
+
+.accounting-cash-flow-page .cfg-data-row:hover,
+.accounting-cash-flow-page .cfg-data-row.cfg-active,
+.accounting-cash-flow-page .cfg-data-row.cfg-active:hover {
+  background:
+    linear-gradient(90deg, rgba(255, 247, 240, 0.96), rgba(255, 250, 245, 0.54) 42%, rgba(240, 253, 250, 0.3)),
+    var(--mantine-color-white);
+  box-shadow: inset 0 0 0 1px rgba(var(--brand-orange-rgb), 0.16), 0 12px 24px rgba(20, 28, 38, 0.06);
+  transform: translateX(3px);
+}
+
+.accounting-cash-flow-page .cfg-data-row.cfg-debit:not(:hover):not(.cfg-active),
+.accounting-cash-flow-page .cfg-data-row.cfg-credit:not(:hover):not(.cfg-active) {
+  box-shadow: none;
+}
+
+.accounting-cash-flow-page .cfg-data-row.cfg-debit::before,
+.accounting-cash-flow-page .cfg-data-row.cfg-credit::before {
+  align-self: center;
+  border-radius: 999px;
+  content: '';
+  flex: 0 0 5px;
+  height: 30px;
+  margin-left: 9px;
+  margin-right: -1px;
+}
+
+.accounting-cash-flow-page .cfg-data-row.cfg-debit::before {
+  background: linear-gradient(180deg, #7ce5c3, var(--mantine-color-teal-6));
+}
+
+.accounting-cash-flow-page .cfg-data-row.cfg-credit::before {
+  background: linear-gradient(180deg, #ffb47a, var(--brand-orange));
+}
+
+.accounting-cash-flow-page .cfg-cell-value {
+  color: var(--mantine-color-gray-8);
+  font-weight: 600;
+}
+
+.accounting-cash-flow-page .cfg-top .cfg-cell:nth-last-child(3),
+.accounting-cash-flow-page .cfg-bottom .cfg-cell:nth-last-child(3),
+.accounting-cash-flow-page .cfg-data-row .cfg-cell:nth-last-child(3) {
+  border-left: 1px dashed var(--mantine-color-gray-2);
+}
+
+.accounting-cash-flow-page .cfg-label-name .mantine-Text-root {
+  color: var(--mantine-color-gray-9);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.accounting-cash-flow-page .cfg-positive {
+  color: var(--mantine-color-teal-7);
+}
+
+.accounting-cash-flow-page .cfg-negative {
+  color: var(--mantine-color-red-7);
+}
+
+@media (max-width: 1320px) {
+  .accounting-cash-flow-filter-form {
+    grid-template-columns: minmax(300px, 1fr) minmax(260px, 1fr) minmax(190px, 230px) minmax(180px, 220px);
+  }
+
+  .accounting-cash-flow-filter-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .accounting-cash-flow-stage {
+    grid-template-columns: minmax(300px, 1fr) minmax(0, 1.55fr);
+  }
+
+  .accounting-cash-flow-summary .mantine-SimpleGrid-root {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 980px) {
+  .accounting-cash-flow-filter-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .accounting-cash-flow-period-filter,
+  .accounting-cash-flow-search,
+  .accounting-cash-flow-type-select,
+  .accounting-cash-flow-kind-toggle,
+  .accounting-cash-flow-filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .accounting-cash-flow-agreements {
+    border-bottom: 1px solid var(--mantine-color-gray-2);
+  }
+
+  .accounting-cash-flow-agreement-list {
+    display: flex;
+    min-width: max-content;
+  }
+
+  .accounting-cash-flow-agreement-card {
+    flex: 0 0 260px;
+  }
+
+  .accounting-cash-flow-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accounting-cash-flow-stage-main,
+  .accounting-cash-flow-stage > .accounting-cash-flow-agreements {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .accounting-cash-flow-chart {
+    grid-column: auto;
+  }
+
+  .accounting-cash-flow-summary .mantine-SimpleGrid-root {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .accounting-cash-flow-page {
+    padding: 6px;
+  }
+
+  .accounting-cash-flow-filter-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accounting-cash-flow-filter-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .accounting-cash-flow-summary .mantine-SimpleGrid-root {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .accounting-cash-flow-agreement-card {
+    flex-basis: 236px;
+  }
+}

@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   Card,
-  Divider,
   Group,
   ScrollArea,
   SegmentedControl,
@@ -22,13 +21,15 @@ import { AppDrawer } from "../../../shared/ui/AppDrawer"
 import { AppModal } from "../../../shared/ui/AppModal"
 import { notifications } from '@mantine/notifications'
 import {
+  IconArrowDownLeft,
+  IconArrowUpRight,
   IconAlertCircle,
   IconDownload,
   IconFileTypePdf,
-  IconHelpCircle,
   IconPencil,
   IconRefresh,
   IconRestore,
+  IconScale,
   IconSearch,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
@@ -47,10 +48,10 @@ import {
 } from '../api/accountingCashFlowApi'
 import { CashFlowBalanceChart } from '../components/CashFlowBalanceChart'
 import { CashFlowDetailContent } from '../components/CashFlowDetailContent'
-import { CashFlowSummary } from '../components/CashFlowSummary'
 import { getAccountingCashFlowPaymentStatus } from '../accountingCashFlowPaymentStatus'
 import { getAccountingCashFlowClosingBalance } from '../cashFlowTotals'
 import { getAccountingCashFlowDrilldownRoute } from '../cashFlowDrilldown'
+import './accounting-cash-flow-page.css'
 import type {
   AccountingCashFlow,
   AccountingCashFlowAgreement,
@@ -73,6 +74,15 @@ type FilterDraft = {
 type DetailField = {
   label: string
   value: ReactNode
+}
+
+type CashFlowViewSummary = {
+  afterInAmount?: number
+  afterOutAmount?: number
+  beforeBalance?: number
+  beforeInAmount?: number
+  beforeOutAmount?: number
+  closingBalance?: number
 }
 
 const amountFormatter = new Intl.NumberFormat('uk-UA', {
@@ -519,78 +529,72 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   )
 
   return (
-    <Stack className="cash-flow-page" gap="sm">
-      <Group justify="space-between" align="center" gap="sm">
-        <Stack gap={0}>
-          <Text fw={700} size="lg">
-            {t('Взаєморозрахунки')}
-          </Text>
-          <Text c="dimmed" size="sm">
-            {counterpartyName || t('Завантаження контрагента')}
-          </Text>
-        </Stack>
-        <Group gap="xs">
-          <Tooltip label={t('Оновити')}>
-            <ActionIcon
-              aria-label={t('Оновити')}
-              color="gray"
-              loading={isCashFlowLoading || isCounterpartyLoading}
-              size={38}
-              variant="light"
-              onClick={() => reload()}
-            >
-              <IconRefresh size={18} />
-            </ActionIcon>
-          </Tooltip>
-          <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
-            <Box>
-              <Button
-                color="gray"
-                disabled={!canExport}
-                leftSection={<IconDownload size={16} />}
-                loading={isExporting}
-                variant="light"
-                onClick={handleExport}
-              >
-                {t('Експорт / друк')}
-              </Button>
-            </Box>
-          </Tooltip>
-        </Group>
-      </Group>
-
+    <Stack className="cash-flow-page accounting-cash-flow-page" gap={10}>
       {(counterpartyError || cashFlowError) && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert className="accounting-cash-flow-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
           {counterpartyError || cashFlowError}
         </Alert>
       )}
 
-      <CashFlowSummary cashFlow={cashFlow} lastItem={lastItem} />
-
-      <Card withBorder radius="md" padding={0} className="app-filter-card app-section-card">
-        <form onSubmit={submitFilters}>
-          <Group align="end" gap="sm" wrap="nowrap" className="clients-filter-row app-filter-bar">
-              <TextInput
-                label={t('З')}
-                type="date"
-                value={filterDraft.from}
-                w={150}
-                onChange={(event) => {
-                  const value = event.currentTarget.value
-                  setFilterDraft((current) => ({ ...current, from: value }))
-                }}
-              />
-              <TextInput
-                label={t('По')}
-                type="date"
-                value={filterDraft.to}
-                w={150}
-                onChange={(event) => {
-                  const value = event.currentTarget.value
-                  setFilterDraft((current) => ({ ...current, to: value }))
-                }}
-              />
-              <Button color={CREATE_ACTION_COLOR} type="submit">
+      <div className="accounting-cash-flow-shell">
+        <div className="app-filter-bar accounting-cash-flow-filter-bar">
+          <form className="accounting-cash-flow-filter-form" onSubmit={submitFilters}>
+            <div className="accounting-cash-flow-period-filter">
+              <span className="accounting-cash-flow-filter-label">{t('Період')}</span>
+              <div className="accounting-cash-flow-period-fields">
+                <TextInput
+                  className="accounting-cash-flow-date-input"
+                  aria-label={t('З')}
+                  type="date"
+                  value={filterDraft.from}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    setFilterDraft((current) => ({ ...current, from: value }))
+                  }}
+                />
+                <span className="accounting-cash-flow-period-separator" />
+                <TextInput
+                  className="accounting-cash-flow-date-input"
+                  aria-label={t('По')}
+                  type="date"
+                  value={filterDraft.to}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    setFilterDraft((current) => ({ ...current, to: value }))
+                  }}
+                />
+              </div>
+            </div>
+            <TextInput
+              className="accounting-cash-flow-search"
+              label={t('Пошук')}
+              leftSection={<IconSearch size={14} />}
+              placeholder={t('Номер або документ')}
+              value={itemSearch}
+              onChange={(event) => setItemSearch(event.currentTarget.value)}
+            />
+            <Select
+              clearable
+              searchable
+              className="accounting-cash-flow-type-select"
+              data={docTypeOptions}
+              label={t('Тип документа')}
+              placeholder={t('Усі типи')}
+              value={docTypeFilter}
+              onChange={setDocTypeFilter}
+            />
+            <SegmentedControl
+              className="accounting-cash-flow-kind-toggle"
+              data={[
+                { label: t('Усі'), value: 'all' },
+                { label: t('Дебет'), value: 'debit' },
+                { label: t('Кредит'), value: 'credit' },
+              ]}
+              value={flowFilter}
+              onChange={(value) => setFlowFilter(value as 'all' | 'debit' | 'credit')}
+            />
+            <div className="app-filter-actions accounting-cash-flow-filter-actions">
+              <Button color={CREATE_ACTION_COLOR} size="sm" type="submit">
                 {t('Застосувати')}
               </Button>
               <Tooltip label={t('Скинути')}>
@@ -598,76 +602,94 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   <IconRestore size={18} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
+              <Tooltip label={t('Оновити')}>
+                <ActionIcon
+                  aria-label={t('Оновити')}
+                  className="accounting-cash-flow-icon-action"
+                  color="gray"
+                  loading={isCashFlowLoading || isCounterpartyLoading}
+                  size={36}
+                  variant="light"
+                  onClick={() => reload()}
+                >
+                  <IconRefresh size={17} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip disabled={canExport} label={t('Експорт доступний після вибору договору')}>
+                <Box>
+                  <Button
+                    className="accounting-cash-flow-export"
+                    color={CREATE_ACTION_COLOR}
+                    disabled={!canExport}
+                    leftSection={<IconDownload size={15} />}
+                    loading={isExporting}
+                    size="sm"
+                    variant="light"
+                    onClick={handleExport}
+                  >
+                    {t('Експорт / друк')}
+                  </Button>
+                </Box>
+              </Tooltip>
+            </div>
           </form>
+        </div>
 
-          <Stack gap="md" p="md">
-            {filterError && (
-            <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
-              {filterError}
-            </Alert>
-          )}
+        {filterError && (
+          <Alert className="accounting-cash-flow-filter-alert" color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+            {filterError}
+          </Alert>
+        )}
 
-          <Group gap="sm" wrap="wrap" align="end">
-            <SegmentedControl
-              data={[
-                { label: t('Усі'), value: 'all' },
-                { label: t('Дебет'), value: 'debit' },
-                { label: t('Кредит'), value: 'credit' },
-              ]}
-              size="xs"
-              value={flowFilter}
-              onChange={(value) => setFlowFilter(value as 'all' | 'debit' | 'credit')}
+        <div className="accounting-cash-flow-command">
+          <div className="accounting-cash-flow-stage">
+            <div className="accounting-cash-flow-stage-main">
+              <CashFlowStatementHero
+                counterpartyName={counterpartyName}
+                selectedAgreement={selectedAgreement}
+                summary={summary}
+              />
+
+              <div className="accounting-cash-flow-chart">
+                <CashFlowBalanceChart formatMoney={formatMoney} items={items} />
+              </div>
+            </div>
+
+            <div className="accounting-cash-flow-agreements">
+              <AgreementScopePicker
+                agreements={agreements}
+                isLoading={isCounterpartyLoading}
+                selectedAgreementNetUid={selectedAgreementNetUid}
+                onSelectAgreement={setSelectedAgreementNetUid}
+              />
+            </div>
+          </div>
+
+          <div className="cash-flow-page__grid-card accounting-cash-flow-grid-card">
+            <div className="accounting-cash-flow-ledger-head">
+              <div>
+                <span>{t('Взаєморозрахунки')}</span>
+                <strong>{t('Фінансова стрічка')}</strong>
+              </div>
+              <small>{filteredItems.length} {t('операцій')}</small>
+            </div>
+            <CashFlowGrid
+              items={filteredItems}
+              leadColumns={leadColumns}
+              summary={summary}
+              emptyText={t('Взаєморозрахунків не знайдено')}
+              formatMoney={formatMoney}
+              getRowKey={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
+              isLoading={isCashFlowLoading}
+              isRowActive={(item) => item === selectedItem}
+              loadingText={t('Завантаження взаєморозрахунків')}
+              maxHeight="100%"
+              renderRowBadge={renderRowBadge}
+              onRowClick={handleCashFlowRowClick}
             />
-            <Select
-              clearable
-              searchable
-              data={docTypeOptions}
-              placeholder={t('Тип документа')}
-              size="xs"
-              value={docTypeFilter}
-              w={240}
-              onChange={setDocTypeFilter}
-            />
-            <TextInput
-              leftSection={<IconSearch size={14} />}
-              placeholder={t('Пошук за номером')}
-              size="xs"
-              style={{ flex: '1 1 220px' }}
-              value={itemSearch}
-              onChange={(event) => setItemSearch(event.currentTarget.value)}
-            />
-          </Group>
-
-          <Divider />
-
-          <AgreementScopePicker
-            agreements={agreements}
-            isLoading={isCounterpartyLoading}
-            selectedAgreementNetUid={selectedAgreementNetUid}
-            onSelectAgreement={setSelectedAgreementNetUid}
-          />
-        </Stack>
-      </Card>
-
-      <CashFlowBalanceChart formatMoney={formatMoney} items={items} />
-
-      <Card withBorder radius="md" padding="xs" className="app-section-card cash-flow-page__grid-card">
-        <CashFlowGrid
-          items={filteredItems}
-          leadColumns={leadColumns}
-          summary={summary}
-          emptyText={t('Взаєморозрахунків не знайдено')}
-          formatMoney={formatMoney}
-          getRowKey={(item, index) => `${item.Type || 'type'}-${item.Id || item.Number || item.Name || 'row'}-${item.FromDate || index}`}
-          isLoading={isCashFlowLoading}
-          isRowActive={(item) => item === selectedItem}
-          loadingText={t('Завантаження взаєморозрахунків')}
-          maxHeight="100%"
-          renderRowBadge={renderRowBadge}
-          onRowClick={handleCashFlowRowClick}
-        />
-      </Card>
+          </div>
+        </div>
+      </div>
 
       <AccountingCashFlowDetailDrawer
         item={selectedItem}
@@ -685,6 +707,82 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
   )
 }
 
+function CashFlowStatementHero({
+  counterpartyName,
+  selectedAgreement,
+  summary,
+}: {
+  counterpartyName?: string
+  selectedAgreement: AccountingCashFlowClientAgreement | null
+  summary: CashFlowViewSummary
+}) {
+  const { t } = useI18n()
+  const debt = useMemo(() => (selectedAgreement ? getAgreementDebtSummary(selectedAgreement) : null), [selectedAgreement])
+  const currency = selectedAgreement ? getAgreementCurrency(selectedAgreement) : null
+  const title = selectedAgreement
+    ? stringValue(selectedAgreement.Agreement?.Name) || t('Договір')
+    : t('Усі договори')
+  const meta = selectedAgreement
+    ? stringValue(selectedAgreement.Agreement?.Organization?.Name) || stringValue(selectedAgreement.OriginalClientName) || counterpartyName || '—'
+    : counterpartyName || t('Контрагент')
+  const closingBalance = summary.closingBalance ?? 0
+  const openingBalance = summary.beforeBalance ?? 0
+  const periodDelta = closingBalance - openingBalance
+  const debit = summary.afterInAmount ?? 0
+  const credit = summary.afterOutAmount ?? 0
+  const flowTotal = Math.max(Math.abs(debit) + Math.abs(credit), 1)
+  const debitPercent = Math.max(6, Math.min(94, (Math.abs(debit) / flowTotal) * 100))
+  const creditPercent = Math.max(6, Math.min(94, (Math.abs(credit) / flowTotal) * 100))
+  const balanceClassName = closingBalance < 0 ? ' is-negative' : ' is-positive'
+
+  return (
+    <div className="accounting-cash-flow-statement-hero">
+      <div className="accounting-cash-flow-statement-hero__identity">
+        <ThemeIcon className="accounting-cash-flow-statement-hero__icon" color="gray" radius="xl" size={36} variant="light">
+          <IconScale size={18} />
+        </ThemeIcon>
+        <div className="accounting-cash-flow-statement-hero__title">
+          <span>{t('Активний фокус')}</span>
+          <strong>{title}</strong>
+          <small>{meta}</small>
+        </div>
+      </div>
+
+      <div className="accounting-cash-flow-statement-hero__balance">
+        <span>{t('Кінцевий баланс')}</span>
+        <strong className={balanceClassName}>{formatMoney(closingBalance)}</strong>
+        <small className={periodDelta < 0 ? 'is-negative' : 'is-positive'}>
+          {periodDelta >= 0 ? '+' : ''}{formatMoney(periodDelta)} {t('за період')}
+        </small>
+      </div>
+
+      <div className="accounting-cash-flow-statement-hero__meter" aria-hidden="true">
+        <span style={{ height: `${debitPercent}%` }} />
+        <strong style={{ height: `${creditPercent}%` }} />
+      </div>
+
+      <div className="accounting-cash-flow-statement-hero__flow">
+        <div>
+          <IconArrowDownLeft size={15} />
+          <span>{t('Дебет')}</span>
+          <strong>{formatMoney(summary.afterInAmount)}</strong>
+        </div>
+        <div>
+          <IconArrowUpRight size={15} />
+          <span>{t('Кредит')}</span>
+          <strong>{formatMoney(summary.afterOutAmount)}</strong>
+        </div>
+      </div>
+
+      <div className="accounting-cash-flow-statement-hero__chips">
+        <span>{currency || t('Всі валюти')}</span>
+        {debt?.isOverdue ? <strong>{t('Прострочено')}</strong> : <span>{t('Без прострочки')}</span>}
+        <span>{t('Вхідний баланс')}: {formatMoney(openingBalance)}</span>
+      </div>
+    </div>
+  )
+}
+
 function AgreementScopePicker({
   agreements,
   isLoading,
@@ -699,28 +797,17 @@ function AgreementScopePicker({
   const { t } = useI18n()
 
   return (
-    <Stack gap={6}>
-      <Group justify="space-between" gap="sm">
-        <Text size="sm" fw={600}>
-          {t('Договори')}
-        </Text>
-        {isLoading && (
-          <Text size="xs" c="dimmed">
-            {t('Завантаження')}
-          </Text>
-        )}
-      </Group>
-      <ScrollArea type="auto" offsetScrollbars>
-        <Group gap="xs" wrap="nowrap" pb={4}>
-          <Button
-            color="violet"
-            size="xs"
-            style={{ flex: '0 0 auto' }}
-            variant={!selectedAgreementNetUid ? 'filled' : 'light'}
+    <div className="accounting-cash-flow-agreement-picker">
+      <ScrollArea className="accounting-cash-flow-agreement-scroll" type="auto" offsetScrollbars>
+        <div className="accounting-cash-flow-agreement-list">
+          <button
+            className={`accounting-cash-flow-agreement-card is-general${!selectedAgreementNetUid ? ' is-selected' : ''}`}
+            type="button"
             onClick={() => onSelectAgreement(null)}
           >
-            {t('Загальні взаєморозрахунки')}
-          </Button>
+            <span className="accounting-cash-flow-agreement-card__label">{t('Загальні взаєморозрахунки')}</span>
+            <span className="accounting-cash-flow-agreement-card__meta">{t('Всі договори')}</span>
+          </button>
           {agreements.map((agreement, index) => (
             <AgreementDebtTile
               key={agreement.NetUid || index}
@@ -729,14 +816,14 @@ function AgreementScopePicker({
               onSelect={() => onSelectAgreement(agreement.NetUid || null)}
             />
           ))}
-        </Group>
+        </div>
       </ScrollArea>
       {!isLoading && agreements.length === 0 && (
-        <Text size="sm" c="dimmed">
+        <Text className="accounting-cash-flow-empty-note">
           {t('Договори не знайдено')}
         </Text>
       )}
-    </Stack>
+    </div>
   )
 }
 
@@ -756,83 +843,36 @@ function AgreementDebtTile({
 
   return (
     <Tooltip label={tooltip} disabled={!tooltip}>
-      <Card
-        withBorder
-        padding="xs"
-        radius="md"
-        style={{
-          cursor: 'pointer',
-          flex: '0 0 auto',
-          minWidth: 220,
-          borderColor: debt.isOverdue
-            ? 'var(--mantine-color-red-5)'
-            : isSelected
-              ? 'var(--mantine-color-violet-5)'
-              : undefined,
-          backgroundColor: debt.isOverdue
-            ? 'var(--mantine-color-red-0)'
-            : isSelected
-              ? 'var(--mantine-color-violet-0)'
-              : undefined,
-        }}
+      <button
+        className={`accounting-cash-flow-agreement-card${isSelected ? ' is-selected' : ''}${debt.isOverdue ? ' is-overdue' : ''}`}
+        type="button"
         onClick={onSelect}
       >
-        <Stack gap={4}>
-          <Group justify="space-between" gap="xs" wrap="nowrap" align="flex-start">
-            <Stack gap={0}>
-              <Text c="dimmed" size="xs">
-                {stringValue(agreement.Agreement?.Organization?.Name)}
-              </Text>
-              <Text fw={600} size="sm" lineClamp={1} maw={200}>
-                {stringValue(agreement.Agreement?.Name) || stringValue(agreement.NetUid) || '-'}
-              </Text>
-            </Stack>
-            {currency && (
-              <Badge size="xs" variant="light">
-                {currency}
-              </Badge>
-            )}
-          </Group>
-
-          {stringValue(agreement.OriginalClientName) && (
-            <Group gap={4} align="center" wrap="nowrap">
-              <IconHelpCircle size={12} />
-              <Text c="dimmed" size="xs" lineClamp={1} maw={200}>
-                {stringValue(agreement.OriginalClientName)}
-              </Text>
-            </Group>
-          )}
-
-          <Group gap="md" wrap="nowrap">
-            {debt.isControlAmountDebt && (
-              <Group gap={4} align="baseline" wrap="nowrap">
-                <Text c={debt.totalOverdueDebt > 0 ? 'red' : undefined} fw={600} size="sm">
-                  {formatMoney(debt.totalOverdueDebt)}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  / {formatMoney(debt.accountBalance)}
-                </Text>
-              </Group>
-            )}
-            {debt.isControlNumberDaysDebt && (
-              <Group gap={4} align="baseline" wrap="nowrap">
-                <Text c={debt.overdueDays > 0 ? 'red' : undefined} fw={600} size="sm">
-                  {debt.overdueDays}
-                </Text>
-                <Text c="dimmed" size="xs">
-                  / {debt.allowedDays} {t('днів')}
-                </Text>
-              </Group>
-            )}
-          </Group>
-
-          {debt.isOverdue && (
-            <Badge color="red" size="xs" variant="filled">
-              {t('Прострочено')}
-            </Badge>
-          )}
-        </Stack>
-      </Card>
+        <span className="accounting-cash-flow-agreement-card__top">
+          <span className="accounting-cash-flow-agreement-card__label">
+            {stringValue(agreement.Agreement?.Name) || '-'}
+          </span>
+          {currency ? <span className="accounting-cash-flow-currency">{currency}</span> : null}
+        </span>
+        <span className="accounting-cash-flow-agreement-card__meta">
+          {stringValue(agreement.Agreement?.Organization?.Name) || stringValue(agreement.OriginalClientName) || '—'}
+        </span>
+        <span className="accounting-cash-flow-agreement-card__stats">
+          {debt.isControlAmountDebt ? (
+            <span className={debt.totalOverdueDebt > 0 ? 'is-danger' : undefined}>
+              {formatMoney(debt.totalOverdueDebt)}
+              <small>/ {formatMoney(debt.accountBalance)}</small>
+            </span>
+          ) : null}
+          {debt.isControlNumberDaysDebt ? (
+            <span className={debt.overdueDays > 0 ? 'is-danger' : undefined}>
+              {debt.overdueDays}
+              <small>/ {debt.allowedDays} {t('днів')}</small>
+            </span>
+          ) : null}
+          {debt.isOverdue ? <strong>{t('Прострочено')}</strong> : null}
+        </span>
+      </button>
     </Tooltip>
   )
 }
@@ -1041,7 +1081,7 @@ function DownloadDocumentModal({
             {document.DocumentURL && (
               <Anchor href={getDocumentHref(document.DocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-excel">
-                  <ExcelIcon size={22} />
+                  <ExcelIcon size={24} />
                 </span>
                 <span>{t('Excel документ')}</span>
               </Anchor>
@@ -1049,7 +1089,7 @@ function DownloadDocumentModal({
             {document.PdfDocumentURL && (
               <Anchor href={getDocumentHref(document.PdfDocumentURL)} target="_blank" rel="noreferrer" className="document-link">
                 <span className="document-link-badge document-link-badge-pdf">
-                  <IconFileTypePdf size={22} stroke={1.8} />
+                  <IconFileTypePdf size={24} stroke={1.8} />
                 </span>
                 <span>{t('PDF документ')}</span>
               </Anchor>
