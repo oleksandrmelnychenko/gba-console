@@ -486,16 +486,29 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
         isLabel: true,
         header: t('Документ'),
         cell: (item) => (
-          <Text fw={600} lineClamp={1}>
-            {displayValue(item.Name)}
-          </Text>
+          <span className={`accounting-cash-flow-document-cell${item.IsCreditValue ? ' is-credit' : ' is-debit'}`}>
+            <span className="accounting-cash-flow-document-cell__icon">
+              {item.IsCreditValue ? <IconArrowUpRight size={14} /> : <IconArrowDownLeft size={14} />}
+            </span>
+            <span className="accounting-cash-flow-document-cell__content">
+              <span className="accounting-cash-flow-document-cell__title">{displayValue(item.Name)}</span>
+              <span className="accounting-cash-flow-document-cell__meta">
+                <span>{formatDateTime(item.FromDate)}</span>
+                <span>{getCashFlowTypeLabel(item.Type)}</span>
+              </span>
+            </span>
+          </span>
         ),
       },
       {
         id: 'organization',
         header: t('Організація'),
-        width: 220,
-        cell: (item) => displayValue(item.OrganizationName),
+        width: 250,
+        cell: (item) => (
+          <span className="accounting-cash-flow-organization-cell">
+            {displayValue(item.OrganizationName)}
+          </span>
+        ),
       },
     ],
     [t],
@@ -681,6 +694,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
               isLoading={isCashFlowLoading}
               isRowActive={(item) => item === selectedItem}
               loadingText={t('Завантаження взаєморозрахунків')}
+              columnWidth={132}
               maxHeight="100%"
               renderRowBadge={renderRowBadge}
               onRowClick={handleCashFlowRowClick}
