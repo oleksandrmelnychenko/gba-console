@@ -41,7 +41,7 @@ import {
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -65,6 +65,7 @@ const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const SUPPLIER_SEARCH_DEBOUNCE_MS = 350
 const SUPPLIER_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:suppliers:page-size'
 const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
+const SHOW_SUPPLIER_ROLE_IN_BALANCE = false
 const SUPPLIERS_FILTER_COMBOBOX_PROPS = {
   classNames: {
     dropdown: 'suppliers-filter-dropdown',
@@ -1110,6 +1111,7 @@ function SupplierRegistryRow({ supplier, onOpen }: { supplier: Client; onOpen: (
       <SupplierAmountCell
         tone={balance < 0 ? 'danger' : 'muted'}
         value={formatSupplierAmount(supplier.TotalCurrentAmount)}
+        footer={SHOW_SUPPLIER_ROLE_IN_BALANCE ? <SupplierRoleCell supplier={supplier} /> : undefined}
       />
     </button>
   )
@@ -1118,7 +1120,6 @@ function SupplierRegistryRow({ supplier, onOpen }: { supplier: Client; onOpen: (
 function SupplierProfileCell({ supplier }: { supplier: Client }) {
   const { t } = useI18n()
   const name = getSupplierDisplayName(supplier)
-  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
   const isActive = supplier.IsActive !== false
   const code = displayValue(supplier.SupplierCode)
   const iconColor = !isActive ? 'gray' : supplier.IsNotResident ? 'orange' : 'teal'
@@ -1135,19 +1136,28 @@ function SupplierProfileCell({ supplier }: { supplier: Client }) {
           </Tooltip>
         </div>
         <div className="suppliers-profile-meta">
-          <span className={`suppliers-profile-code${code === '-' ? ' is-empty' : ''}`}>
-            {`${t('Код')} ${code}`}
-          </span>
           <span className={`suppliers-profile-status${isActive ? ' is-active' : ' is-inactive'}`}>
             {isActive ? t('Активний') : t('Неактивний')}
           </span>
+          <span className={`suppliers-profile-code${code === '-' ? ' is-empty' : ''}`}>{code}</span>
           {supplier.IsNotResident && <span className="suppliers-profile-resident">{t('Нерезидент')}</span>}
-          {roleName ? (
-            <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>{roleName}</span>
-          ) : null}
         </div>
       </div>
     </div>
+  )
+}
+
+function SupplierRoleCell({ supplier }: { supplier: Client }) {
+  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+
+  if (!roleName) {
+    return null
+  }
+
+  return (
+    <Tooltip label={roleName} openDelay={350} withArrow>
+      <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>{roleName}</span>
+    </Tooltip>
   )
 }
 
@@ -1207,11 +1217,22 @@ function SupplierContactCell({ supplier }: { supplier: Client }) {
   )
 }
 
-function SupplierAmountCell({ label, tone, value }: { label?: string; tone?: 'danger' | 'muted'; value: string }) {
+function SupplierAmountCell({
+  footer,
+  label,
+  tone,
+  value,
+}: {
+  footer?: ReactNode
+  label?: string
+  tone?: 'danger' | 'muted'
+  value: string
+}) {
   return (
     <span className={`suppliers-amount-cell${tone ? ` is-${tone}` : ''}`}>
       <strong>{value}</strong>
       {label ? <small>{label}</small> : null}
+      {footer ? <span className="suppliers-amount-footer">{footer}</span> : null}
     </span>
   )
 }
