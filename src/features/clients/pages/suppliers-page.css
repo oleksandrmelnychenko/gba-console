@@ -205,13 +205,25 @@
 }
 
 .suppliers-profile-icon {
+  align-items: center;
   background:
     linear-gradient(135deg, rgba(255, 237, 213, 0.95), rgba(255, 255, 255, 0.96)),
     var(--mantine-color-white);
   border: 1px solid #fed7aa !important;
+  border-radius: 999px;
   box-shadow:
     inset 0 0 0 3px rgba(255, 247, 237, 0.9),
     0 4px 10px rgba(251, 146, 60, 0.12);
+  color: var(--brand-orange, #f97316);
+  display: inline-flex;
+  flex: 0 0 38px;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.suppliers-profile-icon.is-muted {
+  color: var(--mantine-color-gray-5);
 }
 
 .suppliers-profile-copy,
@@ -338,9 +350,17 @@
 }
 
 .suppliers-contact-icon {
+  align-items: center;
   background: var(--mantine-color-white);
   border: 1px solid var(--mantine-color-gray-2) !important;
+  border-radius: 7px;
   box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03);
+  color: var(--mantine-color-gray-5);
+  display: inline-flex;
+  flex: 0 0 22px;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
 }
 
 .suppliers-finance-cell {

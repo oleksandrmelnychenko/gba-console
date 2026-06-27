@@ -73,7 +73,6 @@ const supplierAmountFormatter = new Intl.NumberFormat('uk-UA', {
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
-type SupplierSortId = 'purchaseVolume'
 
 
 const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
@@ -83,10 +82,6 @@ const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: 'Client.ClientNumber/Client.MobileNumber', label: 'Телефон' },
   { value: 'Client.EmailAddress', label: 'Email' },
 ]
-
-const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
-  purchaseVolume: 'PurchaseVolumeEur',
-}
 
 function useSuppliersPageModel() {
   const { t } = useI18n()
@@ -113,7 +108,7 @@ function useSuppliersPageModel() {
   const [searchField, setSearchField] = useValueState(SUPPLIER_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SUPPLIER_SEARCH_DEBOUNCE_MS)
-  const [sorting, setSorting] = useValueState<DataTableSortingState>([{ id: 'purchaseVolume', desc: true }])
+  const [sorting, setSorting] = useValueState<DataTableSortingState>([])
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
   const offset = (page - 1) * pageSize
   const canMoveForward = suppliers.length === pageSize
@@ -133,7 +128,6 @@ function useSuppliersPageModel() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isRefreshing || isSearchSettling
-  const sortDescriptors = useMemo(() => buildSupplierSortDescriptors(sorting), [sorting])
   const searchParams = useMemo(
     () => ({
       active,
@@ -142,11 +136,10 @@ function useSuppliersPageModel() {
       filterSql: searchField,
       limit: pageSize,
       offset,
-      sortDescriptors,
       typeRoleFilter,
       value: normalizedSearchValue,
     }),
-    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
+    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, typeRoleFilter],
   )
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeSupplierTablePageSize(value)
@@ -911,6 +904,7 @@ function useSupplierColumns() {
         minWidth: 160,
         align: 'right',
         className: 'suppliers-table-cell--finance',
+        enableSorting: false,
         accessor: (supplier) => supplier.PurchaseVolumeEur,
         cell: (supplier) => <SupplierFinanceCell supplier={supplier} />,
       },
@@ -929,17 +923,6 @@ function SupplierProfileCell({ supplier }: { supplier: Client }) {
     <Group gap={12} wrap="nowrap" align="center" className="suppliers-profile-cell" style={{ minWidth: 0 }}>
       <span
         className={`suppliers-profile-icon${isActive ? '' : ' is-muted'}`}
-        style={{
-          alignItems: 'center',
-          border: '1px solid var(--mantine-color-gray-2)',
-          borderRadius: 999,
-          color: isActive ? 'var(--brand-orange, #f97316)' : 'var(--mantine-color-gray-5)',
-          display: 'inline-flex',
-          flex: '0 0 38px',
-          height: 38,
-          justifyContent: 'center',
-          width: 38,
-        }}
       >
         <IconBuildingFactory2 size={17} />
       </span>
@@ -1055,17 +1038,6 @@ function SupplierContactValue({ icon, value }: { icon: ReactNode; value: string 
       <Group gap={6} wrap="nowrap" className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`} style={{ minWidth: 0 }}>
         <span
           className="suppliers-contact-icon"
-          style={{
-            alignItems: 'center',
-            border: '1px solid var(--mantine-color-gray-2)',
-            borderRadius: 7,
-            color: 'var(--mantine-color-gray-5)',
-            display: 'inline-flex',
-            flex: '0 0 22px',
-            height: 22,
-            justifyContent: 'center',
-            width: 22,
-          }}
         >
           {icon}
         </span>
@@ -1089,29 +1061,6 @@ function formatSupplierAmount(value?: number | null): string {
   }
 
   return supplierAmountFormatter.format(value)
-}
-
-function buildSupplierSortDescriptors(sorting: DataTableSortingState) {
-  const descriptors: Array<{ Column: string; Dir: 'asc' | 'desc' }> = []
-
-  sorting.forEach((sortItem) => {
-    if (!isSupplierSortId(sortItem.id)) {
-      return
-    }
-
-    const column = SUPPLIER_SORT_COLUMNS[sortItem.id]
-
-    descriptors.push({
-      Column: column,
-      Dir: sortItem.desc ? 'desc' as const : 'asc' as const,
-    })
-  })
-
-  return descriptors
-}
-
-function isSupplierSortId(id: string): id is SupplierSortId {
-  return id in SUPPLIER_SORT_COLUMNS
 }
 
 function readSupplierTablePageSize() {
