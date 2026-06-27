@@ -197,7 +197,7 @@ describe('clients API query contracts', () => {
     })
   })
 
-  it('keeps resale clients on the generic search endpoint', async () => {
+  it('requests resale clients through the targeted clients endpoint', async () => {
     const client: Client = { NetUid: 'client-1', FullName: 'Ivanenko' }
     const params: ClientSearchParams = {
       active: true,
@@ -210,9 +210,15 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce([client])
 
     await expect(getClients(params)).resolves.toEqual([client])
-    expect(apiRequestMock).toHaveBeenCalledWith('/search/by/query', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
       query: {
-        filter: buildClientsSearchFilter(params),
+        active: true,
+        filterSql: undefined,
+        forReSale: true,
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: undefined,
+        value: 'Ivanenko',
       },
     })
   })

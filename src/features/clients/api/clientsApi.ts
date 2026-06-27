@@ -13,14 +13,13 @@ export async function getClients(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  if (shouldUseGenericClientsSearch(params)) {
-    return getClientsFromGenericSearch(params, signal)
-  }
-
   const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
       active: params.active,
       filterSql: params.filterSql,
+      ...(params.forReSale !== null && typeof params.forReSale !== 'undefined'
+        ? { forReSale: params.forReSale }
+        : {}),
       limit: params.limit,
       offset: params.offset,
       typeRoleFilter: params.typeRoleFilter,
@@ -30,24 +29,6 @@ export async function getClients(
   })
 
   return normalizeClients(result)
-}
-
-async function getClientsFromGenericSearch(
-  params: ClientSearchParams,
-  signal?: AbortSignal,
-): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/search/by/query', {
-    query: {
-      filter: buildClientsSearchFilter(params),
-    },
-    ...(signal ? { signal } : {}),
-  })
-
-  return normalizeClients(result)
-}
-
-function shouldUseGenericClientsSearch(params: ClientSearchParams): boolean {
-  return params.forReSale !== null && typeof params.forReSale !== 'undefined'
 }
 
 export async function getSuppliers(
