@@ -4,6 +4,7 @@ import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type { Client, ClientFilterItem, ClientPrintDocument, ClientSearchParams, ClientType } from '../types'
 
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
+const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_FILTER_ENTITY_TYPE_SUPPLIER = 7
 const CLIENT_TYPE_BUYER = 0
@@ -35,12 +36,14 @@ export async function getSuppliers(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/suppliers/all/filtered', {
     query: {
-      filter: buildClientsSearchFilter({
-        ...params,
-        filterEntityType: params.filterEntityType ?? CLIENT_FILTER_ENTITY_TYPE_SUPPLIER,
-      }),
+      active: params.active,
+      filterSql: params.filterSql || SUPPLIER_SEARCH_SQL,
+      limit: params.limit,
+      offset: params.offset,
+      typeRoleFilter: params.typeRoleFilter,
+      value: params.value?.trim() || '',
     },
     ...(signal ? { signal } : {}),
   })

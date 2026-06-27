@@ -24,8 +24,6 @@ import {
   IconAddressBook,
   IconBuildingFactory2,
   IconCash,
-  IconChevronDown,
-  IconChevronUp,
   IconExternalLink,
   IconFileDescription,
   IconFileTypePdf,
@@ -90,19 +88,6 @@ const supplierDateFormatter = new Intl.DateTimeFormat('uk-UA', {
 
 type ActiveFilter = 'all' | 'active' | 'inactive'
 type SupplierAction = 'active' | 'export' | null
-type SupplierSortId = 'supplier' | 'contacts' | 'volume' | 'balance'
-type SupplierSortState = {
-  direction: 'asc' | 'desc'
-  id: SupplierSortId
-}
-
-const DEFAULT_SUPPLIER_SORT_STATE: SupplierSortState = { direction: 'desc', id: 'volume' }
-const SUPPLIER_SORT_COLUMNS: Record<SupplierSortId, string> = {
-  balance: 'TotalCurrentAmount',
-  contacts: 'EmailAddress',
-  supplier: 'FullName',
-  volume: 'PurchaseVolumeEur',
-}
 
 const DEFAULT_SUPPLIER_SEARCH_FIELD_OPTIONS = [
   { value: SUPPLIER_SEARCH_SQL, label: 'Код або назва' },
@@ -171,7 +156,6 @@ function useSuppliersPageModel() {
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(readSupplierTablePageSize)
   const [activeFilter, setActiveFilter] = useValueState<ActiveFilter>('all')
-  const [sortState, setSortState] = useValueState<SupplierSortState>(DEFAULT_SUPPLIER_SORT_STATE)
   const [searchField, setSearchField] = useValueState(SUPPLIER_SEARCH_SQL)
   const [searchValue, setSearchValue] = useValueState('')
   const [debouncedSearchValue] = useDebouncedValue(searchValue, SUPPLIER_SEARCH_DEBOUNCE_MS)
@@ -193,10 +177,6 @@ function useSuppliersPageModel() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isRefreshing || isSearchSettling
-  const sortDescriptors = useMemo(
-    () => [{ Column: SUPPLIER_SORT_COLUMNS[sortState.id], Dir: sortState.direction }],
-    [sortState.direction, sortState.id],
-  )
   const searchParams = useMemo(
     () => ({
       active,
@@ -205,10 +185,9 @@ function useSuppliersPageModel() {
       filterSql: searchField,
       limit: pageSize,
       offset,
-      sortDescriptors,
       value: normalizedSearchValue,
     }),
-    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors],
+    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem],
   )
   const changePageSize = useCallback((value: string | null) => {
     const nextPageSize = normalizeSupplierTablePageSize(value)
@@ -240,14 +219,6 @@ function useSuppliersPageModel() {
     setActiveFilter('all')
     setSearchField(SUPPLIER_SEARCH_SQL)
     setSearchValue('')
-  }
-
-  function changeSort(id: SupplierSortId) {
-    setPage(1)
-    setSortState((currentSort) => ({
-      direction: currentSort.id === id && currentSort.direction === 'asc' ? 'desc' : 'asc',
-      id,
-    }))
   }
 
   function openNewSupplier() {
@@ -379,11 +350,9 @@ function useSuppliersPageModel() {
     searchInputRef,
     searchValue,
     selectedSupplier,
-    sortState,
     supplierAction,
     suppliers,
     totalPages,
-    changeSort,
     changePageSize,
     reload,
     handleExport,
@@ -534,13 +503,11 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
     searchInputRef,
     searchValue,
     selectedSupplier,
-    sortState,
     supplierAction,
     suppliers,
     totalPages,
     page,
     pageSize,
-    changeSort,
     changePageSize,
     reload,
     handleExport,
@@ -601,9 +568,7 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
           <SupplierRegistryList
             isBusy={isTableBusy}
             isLoading={isLoading}
-            sortState={sortState}
             suppliers={suppliers}
-            onSort={changeSort}
             onOpen={setSelectedSupplier}
           />
         </div>
@@ -1005,17 +970,13 @@ function SupplierDocumentModal({
 function SupplierRegistryList({
   isBusy,
   isLoading,
-  sortState,
   suppliers,
   onOpen,
-  onSort,
 }: {
   isBusy: boolean
   isLoading: boolean
-  sortState: SupplierSortState
   suppliers: Client[]
   onOpen: (supplier: Client) => void
-  onSort: (id: SupplierSortId) => void
 }) {
   const { t } = useI18n()
 
@@ -1035,11 +996,11 @@ function SupplierRegistryList({
         </div>
       )}
       <div className="suppliers-registry-head">
-        <SupplierRegistrySortHeader id="supplier" label={t('Постачальник')} sortState={sortState} onSort={onSort} />
+        <SupplierRegistryHeadLabel label={t('Постачальник')} />
         <SupplierRegistryHeadLabel label={t('Договір')} />
-        <SupplierRegistrySortHeader id="contacts" label={t('Контакти')} sortState={sortState} onSort={onSort} />
-        <SupplierRegistrySortHeader align="right" id="volume" label={t('Обсяг')} sortState={sortState} onSort={onSort} />
-        <SupplierRegistrySortHeader align="right" id="balance" label={t('Баланс')} sortState={sortState} onSort={onSort} />
+        <SupplierRegistryHeadLabel label={t('Контакти')} />
+        <SupplierRegistryHeadLabel align="right" label={t('Обсяг')} />
+        <SupplierRegistryHeadLabel align="right" label={t('Баланс')} />
       </div>
       <div className="suppliers-registry-body">
         {suppliers.map((supplier, index) => (
@@ -1054,35 +1015,8 @@ function SupplierRegistryList({
   )
 }
 
-function SupplierRegistrySortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: SupplierSortId
-  label: string
-  sortState: SupplierSortState
-  onSort: (id: SupplierSortId) => void
-}) {
-  const isActive = sortState.id === id
-
-  return (
-    <button
-      className={`suppliers-registry-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      {isActive && sortState.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function SupplierRegistryHeadLabel({ label }: { label: string }) {
-  return <span className="suppliers-registry-head-label">{label}</span>
+function SupplierRegistryHeadLabel({ align, label }: { align?: 'right'; label: string }) {
+  return <span className={`suppliers-registry-head-label${align === 'right' ? ' is-right' : ''}`}>{label}</span>
 }
 
 function SupplierRegistryState({ isLoading = false, text }: { isLoading?: boolean; text: string }) {
@@ -1266,16 +1200,16 @@ function SupplierDetailRow({ label, value }: { label: string; value?: number | s
 function buildSupplierSearchFieldOptions(filterItems: ClientFilterItem[]) {
   const dynamicOptions: Array<{ label: string; value: string }> = []
 
-  filterItems
-    .map((filterItem) => ({ ...filterItem, Name: getSupplierSearchFieldLabel(filterItem) }))
-    .forEach((filterItem) => {
-      if (filterItem.SQL) {
-        dynamicOptions.push({
-        label: filterItem.Name?.trim() || filterItem.Description?.trim() || filterItem.SQL || translate('Поле'),
-          value: filterItem.SQL,
-        })
-      }
-    })
+  filterItems.forEach((filterItem) => {
+    if (filterItem.SQL) {
+      const label = getSupplierSearchFieldLabel(filterItem)
+
+      dynamicOptions.push({
+        label: label.trim() || filterItem.Description?.trim() || filterItem.SQL || translate('Поле'),
+        value: filterItem.SQL,
+      })
+    }
+  })
 
   return dynamicOptions.length > 0
     ? dynamicOptions

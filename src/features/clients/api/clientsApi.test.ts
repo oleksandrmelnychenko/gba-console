@@ -250,7 +250,7 @@ describe('clients API query contracts', () => {
     })
   })
 
-  it('requests suppliers through the generic search endpoint with supplier filter entity type', async () => {
+  it('requests suppliers through the targeted suppliers endpoint', async () => {
     const supplier: Client = { NetUid: 'supplier-1', FullName: 'Provider' }
     const params: ClientSearchParams = {
       offset: 0,
@@ -266,12 +266,14 @@ describe('clients API query contracts', () => {
     apiRequestMock.mockResolvedValueOnce([supplier])
 
     await expect(getSuppliers(params)).resolves.toEqual([supplier])
-    expect(apiRequestMock).toHaveBeenCalledWith('/search/by/query', {
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/suppliers/all/filtered', {
       query: {
-        filter: buildClientsSearchFilter({
-          ...params,
-          filterEntityType: 7,
-        }),
+        active: null,
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: '7',
+        value: 'Provider',
       },
     })
   })
