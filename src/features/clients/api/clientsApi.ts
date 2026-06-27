@@ -54,14 +54,12 @@ export async function getSuppliers(
   params: ClientSearchParams,
   signal?: AbortSignal,
 ): Promise<Client[]> {
-  const result = await apiRequest<unknown>('/clients/suppliers/all/filtered', {
+  const result = await apiRequest<unknown>('/search/by/query', {
     query: {
-      active: params.active,
-      filterSql: params.filterSql,
-      limit: params.limit,
-      offset: params.offset,
-      typeRoleFilter: params.typeRoleFilter,
-      value: params.value?.trim() || '',
+      filter: buildClientsSearchFilter({
+        ...params,
+        filterEntityType: params.filterEntityType ?? CLIENT_FILTER_ENTITY_TYPE_SUPPLIER,
+      }),
     },
     ...(signal ? { signal } : {}),
   })
