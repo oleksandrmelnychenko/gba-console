@@ -21,6 +21,7 @@ import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconAddressBook,
   IconBuildingFactory2,
   IconCash,
   IconChevronDown,
@@ -1179,13 +1180,25 @@ function SupplierAgreementCell({ supplier }: { supplier: Client }) {
 }
 
 function SupplierContactCell({ supplier }: { supplier: Client }) {
-  const { t } = useI18n()
+  const phone = getSupplierPhone(supplier)?.trim()
+  const email = supplier.EmailAddress?.trim()
+  const tooltip = [phone, email].filter(Boolean).join(' / ')
+  const hasContacts = Boolean(tooltip)
 
   return (
-    <div className="suppliers-contact-cell">
-      <SupplierContactValue label={t('Тел')} value={displayValue(getSupplierPhone(supplier))} />
-      <SupplierContactValue label="Email" value={displayValue(supplier.EmailAddress)} />
-    </div>
+    <Tooltip disabled={!hasContacts} label={tooltip} openDelay={350} withArrow>
+      <span className={`suppliers-contact-cell${hasContacts ? '' : ' is-empty'}`}>
+        <span className="suppliers-contact-icon" aria-hidden>
+          <IconAddressBook size={14} stroke={1.8} />
+        </span>
+        {hasContacts ? (
+          <span className="suppliers-contact-copy">
+            {phone ? <span className="suppliers-contact-text">{phone}</span> : null}
+            {email ? <span className="suppliers-contact-text is-secondary">{email}</span> : null}
+          </span>
+        ) : null}
+      </span>
+    </Tooltip>
   )
 }
 
@@ -1262,19 +1275,6 @@ function getSupplierSearchFieldLabel(filterItem: ClientFilterItem): string {
 
 function normalizeSupplierSearchFieldLabelKey(value: string): string {
   return value.replace(/[\s._/-]+/g, '').toLowerCase()
-}
-
-function SupplierContactValue({ label, value }: { label: string; value: string }) {
-  const isEmpty = value === '-'
-
-  return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <span className={`suppliers-contact-value${isEmpty ? ' is-empty' : ''}`}>
-        <span className="suppliers-contact-label">{label}</span>
-        <span className="suppliers-contact-text">{value}</span>
-      </span>
-    </Tooltip>
-  )
 }
 
 function formatSupplierAmount(value?: number | null): string {
