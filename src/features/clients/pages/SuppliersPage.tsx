@@ -25,7 +25,6 @@ import {
   IconBuildingFactory2,
   IconCash,
   IconChevronDown,
-  IconChevronRight,
   IconChevronUp,
   IconExternalLink,
   IconFileDescription,
@@ -1040,7 +1039,6 @@ function SupplierRegistryList({
         <SupplierRegistrySortHeader id="contacts" label={t('Контакти')} sortState={sortState} onSort={onSort} />
         <SupplierRegistrySortHeader align="right" id="volume" label={t('Обсяг')} sortState={sortState} onSort={onSort} />
         <SupplierRegistrySortHeader align="right" id="balance" label={t('Баланс')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
       </div>
       <div className="suppliers-registry-body">
         {suppliers.map((supplier, index) => (
@@ -1110,13 +1108,9 @@ function SupplierRegistryRow({ supplier, onOpen }: { supplier: Client; onOpen: (
       <SupplierContactCell supplier={supplier} />
       <SupplierAmountCell label="EUR" value={formatSupplierAmount(supplier.PurchaseVolumeEur)} />
       <SupplierAmountCell
-        label="баланс"
         tone={balance < 0 ? 'danger' : 'muted'}
         value={formatSupplierAmount(supplier.TotalCurrentAmount)}
       />
-      <span className="suppliers-registry-open" aria-hidden>
-        <IconChevronRight size={18} stroke={1.9} />
-      </span>
     </button>
   )
 }
@@ -1202,11 +1196,11 @@ function SupplierContactCell({ supplier }: { supplier: Client }) {
   )
 }
 
-function SupplierAmountCell({ label, tone, value }: { label: string; tone?: 'danger' | 'muted'; value: string }) {
+function SupplierAmountCell({ label, tone, value }: { label?: string; tone?: 'danger' | 'muted'; value: string }) {
   return (
     <span className={`suppliers-amount-cell${tone ? ` is-${tone}` : ''}`}>
       <strong>{value}</strong>
-      <small>{label}</small>
+      {label ? <small>{label}</small> : null}
     </span>
   )
 }

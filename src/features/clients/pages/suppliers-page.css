@@ -176,8 +176,7 @@
     minmax(230px, 0.68fr)
     minmax(190px, 0.52fr)
     minmax(92px, 0.25fr)
-    minmax(92px, 0.25fr)
-    32px;
+    minmax(92px, 0.25fr);
 
   display: flex;
   flex: 1 1 auto;
@@ -373,26 +372,6 @@
 .suppliers-registry-row:hover::after,
 .suppliers-registry-row:focus-visible::after {
   opacity: 1;
-}
-
-.suppliers-registry-open {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  height: 30px;
-  justify-content: center;
-  justify-self: end;
-  width: 30px;
-}
-
-.suppliers-registry-row:hover .suppliers-registry-open,
-.suppliers-registry-row:focus-visible .suppliers-registry-open {
-  background: var(--mantine-color-orange-0);
-  border-color: rgba(var(--brand-orange-rgb), 0.35);
-  color: var(--brand-orange);
 }
 
 .suppliers-registry-state {
@@ -996,8 +975,7 @@
       minmax(210px, 0.7fr)
       minmax(170px, 0.56fr)
       minmax(84px, 0.28fr)
-      minmax(84px, 0.28fr)
-      30px;
+      minmax(84px, 0.28fr);
 
     padding-left: 8px;
     padding-right: 8px;
