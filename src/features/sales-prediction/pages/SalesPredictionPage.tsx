@@ -1,5 +1,5 @@
-import { Card, Grid, Loader, Select, Stack, Text } from '@mantine/core'
-import { IconSearch } from '@tabler/icons-react'
+import { Alert, Card, Grid, Loader, Select, Stack, Text } from '@mantine/core'
+import { IconAlertCircle, IconSearch } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -58,6 +58,9 @@ export function SalesPredictionPage() {
   const [byClient, setByClient] = useValueState<SalesPredictionChartPoint[]>([])
   const [byProduct, setByProduct] = useValueState<SalesPredictionChartPoint[]>([])
   const [combined, setCombined] = useValueState<SalesPredictionChartPoint[]>([])
+  const [clientPredictionError, setClientPredictionError] = useValueState<string | null>(null)
+  const [productPredictionError, setProductPredictionError] = useValueState<string | null>(null)
+  const [combinedPredictionError, setCombinedPredictionError] = useValueState<string | null>(null)
 
   const [isLoadingClient, setLoadingClient] = useValueState(false)
   const [isLoadingProduct, setLoadingProduct] = useValueState(false)
@@ -128,6 +131,7 @@ export function SalesPredictionPage() {
 
     async function load(id: string) {
       setLoadingClient(true)
+      setClientPredictionError(null)
 
       try {
         const next = await getPredictionByClient(id)
@@ -135,9 +139,12 @@ export function SalesPredictionPage() {
         if (!cancelled) {
           setByClient(toChartPoints(next))
         }
-      } catch {
+      } catch (loadError) {
         if (!cancelled) {
           setByClient([])
+          setClientPredictionError(
+            loadError instanceof Error ? loadError.message : t('Прогноз по клієнту недоступний'),
+          )
         }
       } finally {
         if (!cancelled) {
@@ -151,7 +158,7 @@ export function SalesPredictionPage() {
     return () => {
       cancelled = true
     }
-  }, [clientNetId, setByClient, setLoadingClient])
+  }, [clientNetId, setByClient, setClientPredictionError, setLoadingClient, t])
 
   useEffect(() => {
     if (!productNetId) {
@@ -162,6 +169,7 @@ export function SalesPredictionPage() {
 
     async function load(id: string) {
       setLoadingProduct(true)
+      setProductPredictionError(null)
 
       try {
         const next = await getPredictionByProduct(id)
@@ -169,9 +177,12 @@ export function SalesPredictionPage() {
         if (!cancelled) {
           setByProduct(toChartPoints(next))
         }
-      } catch {
+      } catch (loadError) {
         if (!cancelled) {
           setByProduct([])
+          setProductPredictionError(
+            loadError instanceof Error ? loadError.message : t('Прогноз по товару недоступний'),
+          )
         }
       } finally {
         if (!cancelled) {
@@ -185,7 +196,7 @@ export function SalesPredictionPage() {
     return () => {
       cancelled = true
     }
-  }, [productNetId, setByProduct, setLoadingProduct])
+  }, [productNetId, setByProduct, setLoadingProduct, setProductPredictionError, t])
 
   useEffect(() => {
     if (!clientNetId || !productNetId) {
@@ -196,6 +207,7 @@ export function SalesPredictionPage() {
 
     async function load(client: string, product: string) {
       setLoadingCombined(true)
+      setCombinedPredictionError(null)
 
       try {
         const next = await getPredictionByClientAndProduct(client, product)
@@ -203,9 +215,12 @@ export function SalesPredictionPage() {
         if (!cancelled) {
           setCombined(toChartPoints(next))
         }
-      } catch {
+      } catch (loadError) {
         if (!cancelled) {
           setCombined([])
+          setCombinedPredictionError(
+            loadError instanceof Error ? loadError.message : t('Прогноз по клієнту і товару недоступний'),
+          )
         }
       } finally {
         if (!cancelled) {
@@ -219,7 +234,7 @@ export function SalesPredictionPage() {
     return () => {
       cancelled = true
     }
-  }, [clientNetId, productNetId, setCombined, setLoadingCombined])
+  }, [clientNetId, productNetId, setCombined, setCombinedPredictionError, setLoadingCombined, t])
 
   const clientData = clientOptions.reduce<{ label: string; value: string }[]>((acc, client) => {
     if (client.NetUid) {
@@ -240,6 +255,8 @@ export function SalesPredictionPage() {
     setClientNetId(value)
     setByClient([])
     setCombined([])
+    setClientPredictionError(null)
+    setCombinedPredictionError(null)
 
     if (!value) {
       setClientFullName('')
@@ -256,6 +273,8 @@ export function SalesPredictionPage() {
     setProductNetId(value)
     setByProduct([])
     setCombined([])
+    setProductPredictionError(null)
+    setCombinedPredictionError(null)
 
     if (!value) {
       setProductVendorCode('')
@@ -293,11 +312,14 @@ export function SalesPredictionPage() {
         byClient={byClient}
         byProduct={byProduct}
         clientFullName={clientFullName}
+        clientPredictionError={clientPredictionError}
         clientNetId={clientNetId}
+        combinedPredictionError={combinedPredictionError}
         combined={combined}
         isLoadingClient={isLoadingClient}
         isLoadingCombined={isLoadingCombined}
         isLoadingProduct={isLoadingProduct}
+        productPredictionError={productPredictionError}
         productNetId={productNetId}
         productVendorCode={productVendorCode}
       />
@@ -385,22 +407,28 @@ function PredictionCharts({
   byClient,
   byProduct,
   clientFullName,
+  clientPredictionError,
   clientNetId,
   combined,
+  combinedPredictionError,
   isLoadingClient,
   isLoadingCombined,
   isLoadingProduct,
+  productPredictionError,
   productNetId,
   productVendorCode,
 }: {
   byClient: SalesPredictionChartPoint[]
   byProduct: SalesPredictionChartPoint[]
   clientFullName: string
+  clientPredictionError: string | null
   clientNetId: string | null
   combined: SalesPredictionChartPoint[]
+  combinedPredictionError: string | null
   isLoadingClient: boolean
   isLoadingCombined: boolean
   isLoadingProduct: boolean
+  productPredictionError: string | null
   productNetId: string | null
   productVendorCode: string
 }) {
@@ -417,6 +445,22 @@ function PredictionCharts({
 
   return (
     <>
+      {clientNetId && clientPredictionError && (
+        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          {clientPredictionError}
+        </Alert>
+      )}
+      {productNetId && productPredictionError && (
+        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          {productPredictionError}
+        </Alert>
+      )}
+      {clientNetId && productNetId && combinedPredictionError && (
+        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          {combinedPredictionError}
+        </Alert>
+      )}
+
       <SalesPredictionComparisonChart
         isLoading={isLoadingPrediction}
         series={[

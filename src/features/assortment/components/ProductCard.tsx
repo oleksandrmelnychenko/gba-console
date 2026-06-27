@@ -1,4 +1,5 @@
-import { Badge, Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Card, Group, Loader, SimpleGrid, Stack, Text } from '@mantine/core'
+import { IconAlertCircle } from '@tabler/icons-react'
 import { useEffect } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -27,6 +28,9 @@ export function ProductCard({
   const [detail, setDetail] = useValueState<ProductDetail | null>(null)
   const [subs, setSubs] = useValueState<ProductSubstitutes | null>(null)
   const [productRegions, setProductRegions] = useValueState<ProductRegions | null>(null)
+  const [error, setError] = useValueState<string | null>(null)
+  const [subsError, setSubsError] = useValueState<string | null>(null)
+  const [regionsError, setRegionsError] = useValueState<string | null>(null)
   const [loading, setLoading] = useValueState<boolean>(true)
 
   useEffect(() => {
@@ -34,16 +38,47 @@ export function ProductCard({
 
     async function load() {
       setLoading(true)
+      setError(null)
+      setSubsError(null)
+      setRegionsError(null)
+      setDetail(null)
+      setSubs(null)
+      setProductRegions(null)
+
       try {
-        const [d, s, r] = await Promise.all([
-          getProduct(productId, asOfDate),
-          getProductSubstitutes(productId, asOfDate),
-          getProductRegions(productId, asOfDate, regionWindowDays, 8),
-        ])
+        const d = await getProduct(productId, asOfDate)
+
         if (!controller.signal.aborted) {
           setDetail(d)
-          setSubs(s)
-          setProductRegions(r)
+        }
+
+        if (d.found && !controller.signal.aborted) {
+          const [substitutesResult, regionsResult] = await Promise.allSettled([
+            getProductSubstitutes(productId, asOfDate),
+            getProductRegions(productId, asOfDate, regionWindowDays, 8),
+          ])
+
+          if (!controller.signal.aborted) {
+            if (substitutesResult.status === 'fulfilled') {
+              setSubs(substitutesResult.value)
+            } else {
+              setSubsError(
+                substitutesResult.reason instanceof Error ? substitutesResult.reason.message : t('Замінники недоступні'),
+              )
+            }
+
+            if (regionsResult.status === 'fulfilled') {
+              setProductRegions(regionsResult.value)
+            } else {
+              setRegionsError(
+                regionsResult.reason instanceof Error ? regionsResult.reason.message : t('Регіональний попит недоступний'),
+              )
+            }
+          }
+        }
+      } catch (loadError) {
+        if (!controller.signal.aborted) {
+          setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити товар'))
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -54,7 +89,19 @@ export function ProductCard({
 
     void load()
     return () => controller.abort()
-  }, [productId, asOfDate, regionWindowDays, setDetail, setProductRegions, setSubs, setLoading])
+  }, [
+    productId,
+    asOfDate,
+    regionWindowDays,
+    setDetail,
+    setError,
+    setLoading,
+    setProductRegions,
+    setRegionsError,
+    setSubs,
+    setSubsError,
+    t,
+  ])
 
   if (loading) {
     return (
@@ -66,7 +113,13 @@ export function ProductCard({
   if (!detail?.found) {
     return (
       <Card withBorder>
-        <Text c="dimmed">{t('Товар не знайдено')}</Text>
+        {error ? (
+          <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+            {error}
+          </Alert>
+        ) : (
+          <Text c="dimmed">{t('Товар не знайдено')}</Text>
+        )}
       </Card>
     )
   }
@@ -101,12 +154,18 @@ export function ProductCard({
           <Text fw={600} size="sm">
             {t('Замінники')} ({subs?.in_stock_count ?? 0} {t('в наявності')})
           </Text>
-          {(subs?.candidates ?? []).map((c) => (
-            <Group key={c.product_id} justify="space-between">
-              <Text size="sm">{c.name ?? c.product_id}</Text>
-              <Badge variant="light">{Math.round(c.health)}</Badge>
-            </Group>
-          ))}
+          {subsError ? (
+            <Alert color="orange" icon={<IconAlertCircle size={16} />} variant="light">
+              {subsError}
+            </Alert>
+          ) : (
+            (subs?.candidates ?? []).map((c) => (
+              <Group key={c.product_id} justify="space-between">
+                <Text size="sm">{c.name ?? c.product_id}</Text>
+                <Badge variant="light">{Math.round(c.health)}</Badge>
+              </Group>
+            ))
+          )}
         </Stack>
       </Card>
 
@@ -115,7 +174,11 @@ export function ProductCard({
           <Text fw={600} size="sm">
             {t('Попит за регіонами')}
           </Text>
-          {(productRegions?.regions ?? []).length === 0 ? (
+          {regionsError ? (
+            <Alert color="orange" icon={<IconAlertCircle size={16} />} variant="light">
+              {regionsError}
+            </Alert>
+          ) : (productRegions?.regions ?? []).length === 0 ? (
             <Text c="dimmed" size="sm">
               {t('Немає даних')}
             </Text>

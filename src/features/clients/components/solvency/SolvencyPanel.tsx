@@ -34,6 +34,7 @@ type SolvencyPanelProps = {
 
 type SolvencyState = {
   charts: SolvencyCharts | null
+  chartsError: string | null
   error: string | null
   isLoading: boolean
   score: SolvencyScore | null
@@ -41,11 +42,12 @@ type SolvencyState = {
 
 type SolvencyAction =
   | { type: 'failed'; error: string }
-  | { type: 'loaded'; charts: SolvencyCharts | null; score: SolvencyScore }
+  | { type: 'loaded'; charts: SolvencyCharts | null; chartsError: string | null; score: SolvencyScore }
   | { type: 'loading' }
 
 const initialSolvencyState: SolvencyState = {
   charts: null,
+  chartsError: null,
   error: null,
   isLoading: true,
   score: null,
@@ -54,11 +56,18 @@ const initialSolvencyState: SolvencyState = {
 function solvencyReducer(state: SolvencyState, action: SolvencyAction): SolvencyState {
   switch (action.type) {
     case 'failed':
-      return { ...state, charts: null, error: action.error, isLoading: false, score: null }
+      return { ...state, charts: null, chartsError: null, error: action.error, isLoading: false, score: null }
     case 'loaded':
-      return { ...state, charts: action.charts, error: null, isLoading: false, score: action.score }
+      return {
+        ...state,
+        charts: action.charts,
+        chartsError: action.chartsError,
+        error: null,
+        isLoading: false,
+        score: action.score,
+      }
     case 'loading':
-      return { ...state, error: null, isLoading: true }
+      return { ...state, chartsError: null, error: null, isLoading: true }
   }
 }
 
@@ -87,7 +96,7 @@ const GAUGE_ZONE_COLOR: Record<string, string> = {
 export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
   const { t } = useI18n()
   const [state, dispatch] = useReducer(solvencyReducer, initialSolvencyState)
-  const { charts, error, isLoading, score } = state
+  const { charts, chartsError, error, isLoading, score } = state
 
   const netId = clientNetId || ''
 
@@ -106,20 +115,23 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
         const loadedScore = await getClientSolvencyScore(netId, controller.signal)
 
         let loadedCharts: SolvencyCharts | null = null
+        let loadedChartsError: string | null = null
 
         if (loadedScore.applicable !== false && loadedScore.score != null) {
           try {
             loadedCharts = await getClientSolvencyCharts(loadedScore.client_id, controller.signal)
-          } catch {
+          } catch (chartsLoadError) {
             if (controller.signal.aborted) {
               return
             }
             loadedCharts = null
+            loadedChartsError =
+              chartsLoadError instanceof Error ? chartsLoadError.message : t('Графіки платоспроможності недоступні')
           }
         }
 
         if (!cancelled) {
-          dispatch({ charts: loadedCharts, score: loadedScore, type: 'loaded' })
+          dispatch({ charts: loadedCharts, chartsError: loadedChartsError, score: loadedScore, type: 'loaded' })
         }
       } catch (loadError) {
         if (!cancelled && controller.signal.aborted) {
@@ -164,8 +176,8 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
 
   if (error || !score) {
     return (
-      <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
-        {t('Оцінка платоспроможності недоступна')}
+      <Alert color="orange" icon={<IconAlertCircle size={18} />} title={t('Оцінка платоспроможності недоступна')} variant="light">
+        {error || t('Дані недоступні')}
       </Alert>
     )
   }
@@ -203,6 +215,11 @@ export function SolvencyPanel({ clientNetId }: SolvencyPanelProps) {
           <ScoreNotes score={score} />
         </Stack>
       </Card>
+      {chartsError && (
+        <Alert color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+          {chartsError}
+        </Alert>
+      )}
       {charts && <SolvencyChartsView charts={charts} />}
     </Stack>
   )
@@ -406,13 +423,20 @@ function SolvencyChartsView({ charts }: { charts: SolvencyCharts }) {
   const utilizationPercent = Number.isFinite(gauge.value) ? clampPercent(gauge.value * 100) : 0
   const gaugeZone = utilizationZone(gauge.value, gauge.threshold_soft, gauge.threshold_hard)
 
-  const donutData = charts.payment_discipline_donut
-    .filter((slice) => slice.count > 0)
-    .map((slice, index) => ({
-      color: DONUT_COLORS[index % DONUT_COLORS.length],
-      name: t(slice.label),
-      value: slice.count,
-    }))
+  const donutData = charts.payment_discipline_donut.reduce<Array<{ color: string; name: string; value: number }>>(
+    (items, slice, index) => {
+      if (slice.count > 0) {
+        items.push({
+          color: DONUT_COLORS[index % DONUT_COLORS.length],
+          name: t(slice.label),
+          value: slice.count,
+        })
+      }
+
+      return items
+    },
+    [],
+  )
 
   const agingData = charts.open_invoice_aging_bars.map((bar) => ({
     бакет: bar.bucket,

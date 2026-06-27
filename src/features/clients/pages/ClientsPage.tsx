@@ -131,6 +131,7 @@ function useClientsPageModel() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [clients, setClients] = useValueState<Client[]>([])
   const [solvencyScores, setSolvencyScores] = useValueState<Map<number, SolvencyScore>>(() => new Map())
+  const [solvencyScoresError, setSolvencyScoresError] = useValueState<string | null>(null)
   const [clientTypes, setClientTypes] = useValueState<ClientType[]>([])
   const [clientFilterItems, setClientFilterItems] = useValueState<ClientFilterItem[]>([])
   const [totalCount, setTotalCount] = useValueState<number | null>(null)
@@ -237,6 +238,7 @@ function useClientsPageModel() {
   useEffect(() => {
     if (!solvencyClientIdsKey) {
       setSolvencyScores(new Map())
+      setSolvencyScoresError(null)
       return
     }
 
@@ -261,9 +263,13 @@ function useClientsPageModel() {
         }
 
         setSolvencyScores(nextScores)
-      } catch {
+        setSolvencyScoresError(null)
+      } catch (loadError) {
         if (!cancelled) {
           setSolvencyScores(new Map())
+          setSolvencyScoresError(
+            loadError instanceof Error ? loadError.message : t('Оцінки платоспроможності недоступні'),
+          )
         }
       }
     }
@@ -274,7 +280,7 @@ function useClientsPageModel() {
       cancelled = true
       controller.abort()
     }
-  }, [setSolvencyScores, solvencyClientIdsKey])
+  }, [setSolvencyScores, setSolvencyScoresError, solvencyClientIdsKey, t])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -554,6 +560,7 @@ function useClientsPageModel() {
     searchInputRef,
     searchValue,
     selectedClient,
+    solvencyScoresError,
     sorting,
     structureClient,
     handleExport,
@@ -614,6 +621,7 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
     searchInputRef,
     searchValue,
     selectedClient,
+    solvencyScoresError,
     sorting,
     structureClient,
     handleExport,
@@ -678,6 +686,11 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
         {error && (
           <Alert className="clients-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
+          </Alert>
+        )}
+        {solvencyScoresError && (
+          <Alert className="clients-page__alert" color="orange" icon={<IconAlertCircle size={18} />} variant="light">
+            {solvencyScoresError}
           </Alert>
         )}
 
