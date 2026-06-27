@@ -217,6 +217,33 @@ describe('clients API query contracts', () => {
     })
   })
 
+  it('keeps sorted client table loads on the targeted clients endpoint', async () => {
+    const client: Client = { NetUid: 'client-1', FullName: 'Ivanenko' }
+    const params: ClientSearchParams = {
+      active: true,
+      filterSql: 'RegionCode.Value/Client.FullName',
+      forReSale: null,
+      limit: 20,
+      offset: 0,
+      sortDescriptors: [{ Column: 'FullName', Dir: 'desc' }],
+      value: 'Ivanenko',
+    }
+
+    apiRequestMock.mockResolvedValueOnce([client])
+
+    await expect(getClients(params)).resolves.toEqual([client])
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        active: true,
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 20,
+        offset: 0,
+        typeRoleFilter: undefined,
+        value: 'Ivanenko',
+      },
+    })
+  })
+
   it('requests suppliers through the targeted suppliers endpoint', async () => {
     const supplier: Client = { NetUid: 'supplier-1', FullName: 'Provider' }
     const params: ClientSearchParams = {

@@ -85,20 +85,6 @@ const DEFAULT_SEARCH_FIELD_OPTIONS = [
   { value: 'Client.EmailAddress', label: 'Email' },
 ]
 
-const CLIENT_SORT_COLUMNS: Record<string, string> = {
-  client: 'FullName',
-  email: 'EmailAddress',
-  location: 'RegionCode.City',
-  phone: 'ClientNumber',
-  regionCode: 'RegionCode.Value',
-  reserve: 'OrderExpireDays',
-  role: '[ClientInRole.ClientTypeRole].Name',
-  sroi: 'SROI',
-  status: 'IsActive',
-  tin: 'TIN',
-  usreou: 'USREOU',
-}
-
 const CLIENT_TABLE_DEFAULT_LAYOUT = {
   columnOrder: [
     'status',
@@ -204,7 +190,6 @@ function useClientsPageModel() {
   const normalizedSearchValue = debouncedSearchValue.trim()
   const isSearchSettling = searchValue.trim() !== normalizedSearchValue
   const isTableBusy = isLoading || isRefreshing || isSearchSettling
-  const sortDescriptors = useMemo(() => buildClientSortDescriptors(sorting), [sorting])
   const searchParams = useMemo(
     () => ({
       active,
@@ -212,11 +197,10 @@ function useClientsPageModel() {
       filterSql: searchField,
       limit: pageSize,
       offset,
-      sortDescriptors,
       typeRoleFilter,
       value: normalizedSearchValue,
     }),
-    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, sortDescriptors, typeRoleFilter],
+    [active, normalizedSearchValue, offset, pageSize, searchField, selectedFilterItem, typeRoleFilter],
   )
   const openClientActions = useCallback((client: Client) => setSelectedClient(client), [setSelectedClient])
   const clientColumns = useClientColumns(openClientActions, solvencyScores)
@@ -251,17 +235,21 @@ function useClientsPageModel() {
     }, { replace: true, state: location.state })
   }, [location.state, setActiveFilter, setUrlSearchParams])
   useEffect(() => {
-    if (solvencyClientIds.length === 0) {
+    if (!solvencyClientIdsKey) {
       setSolvencyScores(new Map())
       return
     }
 
+    const ids = solvencyClientIdsKey
+      .split(',')
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value))
     const controller = new AbortController()
     let cancelled = false
 
     async function loadSolvencyScores() {
       try {
-        const { results } = await getClientSolvencyScoresBatch(solvencyClientIds, controller.signal)
+        const { results } = await getClientSolvencyScoresBatch(ids, controller.signal)
 
         if (cancelled) {
           return
@@ -286,8 +274,7 @@ function useClientsPageModel() {
       cancelled = true
       controller.abort()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [solvencyClientIdsKey])
+  }, [setSolvencyScores, solvencyClientIdsKey])
   useEffect(() => {
     const controller = new AbortController()
     let cancelled = false
@@ -707,7 +694,6 @@ function ClientsPageView({ model }: { model: ReturnType<typeof useClientsPageMod
             isLoading={isLoading}
             layoutVersion="clients-table-10"
             loadingText={t('Завантаження клієнтів')}
-            manualSorting
             minWidth={1450}
             showLayoutControls={false}
             tableId="clients"
@@ -1360,23 +1346,6 @@ function buildSearchFieldOptions(filterItems: ClientFilterItem[]) {
   return dynamicOptions.length > 0
     ? dynamicOptions
     : DEFAULT_SEARCH_FIELD_OPTIONS.map((option) => ({ ...option, label: translate(option.label) }))
-}
-
-function buildClientSortDescriptors(sorting: DataTableSortingState) {
-  return sorting
-    .map((sortItem) => {
-      const column = CLIENT_SORT_COLUMNS[sortItem.id]
-
-      if (!column) {
-        return null
-      }
-
-      return {
-        Column: column,
-        Dir: sortItem.desc ? 'desc' as const : 'asc' as const,
-      }
-    })
-    .filter((descriptor): descriptor is { Column: string; Dir: 'asc' | 'desc' } => Boolean(descriptor))
 }
 
 function readClientTablePageSize() {

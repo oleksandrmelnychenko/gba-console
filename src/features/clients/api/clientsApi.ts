@@ -47,10 +47,7 @@ async function getClientsFromGenericSearch(
 }
 
 function shouldUseGenericClientsSearch(params: ClientSearchParams): boolean {
-  return Boolean(
-    params.forReSale !== null && typeof params.forReSale !== 'undefined'
-      || params.sortDescriptors?.length,
-  )
+  return params.forReSale !== null && typeof params.forReSale !== 'undefined'
 }
 
 export async function getSuppliers(
