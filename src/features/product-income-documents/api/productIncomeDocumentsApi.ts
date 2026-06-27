@@ -40,7 +40,7 @@ export async function exportProductIncomeDocument(
 }
 
 export async function getProductIncomeInfo(netId: string): Promise<ProductIncomeInfo | null> {
-  const result = await apiRequest<unknown>('/products/income/info/get', {
+  const result = await apiRequest<unknown>('/products/incomes/get', {
     query: {
       netId,
     },

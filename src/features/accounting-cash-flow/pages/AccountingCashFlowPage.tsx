@@ -346,21 +346,23 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     }
   }, [activeFilters.from, activeFilters.to, effectiveNetId, mode, reloadKey, t])
 
-  useEffect(() => {
-    if (filterError) {
+  function resetFilters() {
+    setFilterDraft(initialFilters)
+    setActiveFilters(initialFilters)
+  }
+
+  function updateFilterDraft(nextFilterDraft: FilterDraft) {
+    setFilterDraft(nextFilterDraft)
+
+    if (getFilterError(nextFilterDraft.from, nextFilterDraft.to)) {
       return
     }
 
     setActiveFilters((current) => (
-      current.from === filterDraft.from && current.to === filterDraft.to
+      current.from === nextFilterDraft.from && current.to === nextFilterDraft.to
         ? current
-        : filterDraft
+        : nextFilterDraft
     ))
-  }, [filterDraft, filterError])
-
-  function resetFilters() {
-    setFilterDraft(initialFilters)
-    setActiveFilters(initialFilters)
   }
 
   const handleExport = useCallback(async () => {
@@ -419,11 +421,11 @@ function useAccountingCashFlowPageModel(mode: AccountingCashFlowMode, routeNetId
     resetFilters,
     setDocTypeFilter,
     setDownloadModalOpened,
-    setFilterDraft,
     setFlowFilter,
     setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
+    updateFilterDraft,
   }
 }
 
@@ -459,11 +461,11 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
     resetFilters,
     setDocTypeFilter,
     setDownloadModalOpened,
-    setFilterDraft,
     setFlowFilter,
     setItemSearch,
     setSelectedAgreementNetUid,
     setSelectedItem,
+    updateFilterDraft,
   } = model
   const canExport = Boolean(selectedAgreement?.NetUid)
   const handleCashFlowRowClick = useCallback(
@@ -579,7 +581,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   value={filterDraft.from}
                   onChange={(event) => {
                     const value = event.currentTarget.value
-                    setFilterDraft((current) => ({ ...current, from: value }))
+                    updateFilterDraft({ ...filterDraft, from: value })
                   }}
                 />
                 <span className="accounting-cash-flow-period-separator" />
@@ -590,7 +592,7 @@ function AccountingCashFlowPageView({ model }: { model: ReturnType<typeof useAcc
                   value={filterDraft.to}
                   onChange={(event) => {
                     const value = event.currentTarget.value
-                    setFilterDraft((current) => ({ ...current, to: value }))
+                    updateFilterDraft({ ...filterDraft, to: value })
                   }}
                 />
               </div>
