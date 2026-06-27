@@ -186,9 +186,10 @@ type PaymentAccountActivityStateAction =
   | { type: 'reset' }
   | {
       type: 'succeeded'
-      currencyActivity: PaymentCurrencyRegister | null
-      exchanges: PaymentRegisterCurrencyExchange[]
-      transfers: PaymentRegisterTransfer[]
+      currencyActivity?: PaymentCurrencyRegister | null
+      error?: string | null
+      exchanges?: PaymentRegisterCurrencyExchange[]
+      transfers?: PaymentRegisterTransfer[]
     }
 
 function pageStateReducer(
@@ -212,11 +213,9 @@ function activityStateReducer(
   switch (action.type) {
     case 'failed':
       return {
-        currencyActivity: null,
+        ...state,
         error: action.error,
-        exchanges: [],
         isLoading: false,
-        transfers: [],
       }
     case 'loading':
       return {
@@ -228,11 +227,11 @@ function activityStateReducer(
       return EMPTY_ACTIVITY_STATE
     case 'succeeded':
       return {
-        currencyActivity: action.currencyActivity,
-        error: null,
-        exchanges: action.exchanges,
+        currencyActivity: 'currencyActivity' in action ? action.currencyActivity || null : state.currencyActivity,
+        error: action.error || null,
+        exchanges: action.exchanges || state.exchanges,
         isLoading: false,
-        transfers: action.transfers,
+        transfers: action.transfers || state.transfers,
       }
     default:
       return state
@@ -618,52 +617,75 @@ function usePaymentAccountActivity({
 
     let isActive = true
 
+    if (activeActivityTab === 'balances') {
+      dispatchActivityState({ type: 'succeeded' })
+      return () => {
+        isActive = false
+      }
+    }
+
     dispatchActivityState({ type: 'loading' })
 
-    void Promise.all([
-      getPaymentAccountTransfers({
-        from: activityFrom,
-        netId: accountNetId,
-        to: activityTo,
-        type: PaymentRegisterTransferType.All,
-      }),
-      getPaymentAccountExchanges({
-        from: activityFrom,
-        netId: accountNetId,
-        to: activityTo,
-      }),
-      selectedCurrencyRegister?.NetUid
-        ? getPaymentAccountCurrencyActivity({
-            currencyRegisterNetId: selectedCurrencyRegister.NetUid,
+    async function loadActivity() {
+      try {
+        if (activeActivityTab === 'transfers') {
+          const transfers = await getPaymentAccountTransfers({
             from: activityFrom,
+            netId: accountNetId,
+            to: activityTo,
+            type: PaymentRegisterTransferType.All,
+          })
+
+          if (isActive) {
+            dispatchActivityState({ transfers, type: 'succeeded' })
+          }
+
+          return
+        }
+
+        if (activeActivityTab === 'exchanges') {
+          const exchanges = await getPaymentAccountExchanges({
+            from: activityFrom,
+            netId: accountNetId,
             to: activityTo,
           })
-        : Promise.resolve(null),
-    ])
-      .then(([transfers, exchanges, currencyActivity]) => {
-        if (isActive) {
-          dispatchActivityState({
-            currencyActivity,
-            exchanges,
-            transfers,
-            type: 'succeeded',
-          })
+
+          if (isActive) {
+            dispatchActivityState({ exchanges, type: 'succeeded' })
+          }
+
+          return
         }
-      })
-      .catch((activityError: unknown) => {
+
+        const currencyActivity = selectedCurrencyRegister?.NetUid
+          ? await getPaymentAccountCurrencyActivity({
+              currencyRegisterNetId: selectedCurrencyRegister.NetUid,
+              from: activityFrom,
+              to: activityTo,
+            })
+          : null
+
+        if (isActive) {
+          dispatchActivityState({ currencyActivity, type: 'succeeded' })
+        }
+      } catch (activityError) {
         if (isActive) {
           dispatchActivityState({
             error: activityError instanceof Error ? activityError.message : t('Не вдалося завантажити активність рахунку'),
             type: 'failed',
           })
         }
-      })
+      }
+    }
+
+    void loadActivity()
 
     return () => {
       isActive = false
     }
   }, [
     account.NetUid,
+    activeActivityTab,
     activityFrom,
     activityReloadKey,
     activityTo,
