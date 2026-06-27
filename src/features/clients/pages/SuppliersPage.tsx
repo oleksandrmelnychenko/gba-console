@@ -1153,21 +1153,32 @@ function SupplierProfileCell({ supplier }: { supplier: Client }) {
 
 function SupplierAgreementCell({ supplier }: { supplier: Client }) {
   const agreement = getPrimarySupplierAgreement(supplier)
-  const name = displayValue(getSupplierAgreementName(agreement))
-  const organization = displayValue(getSupplierAgreementOrganization(agreement))
-  const currency = getSupplierAgreementCurrency(agreement)
-  const isEmpty = name === '-'
+  const name = getSupplierAgreementName(agreement)?.trim()
+  const organization = getSupplierAgreementOrganization(agreement)?.trim()
+  const currency = getSupplierAgreementCurrency(agreement)?.trim()
+  const period = getSupplierAgreementPeriod(agreement)?.trim()
+  const payment = getSupplierAgreementPaymentSummary(agreement)?.trim()
+  const hasAgreementInfo = Boolean(name || organization || currency || period || payment)
+  const title = name || organization || translate('Без договору')
+  const meta = name ? organization || period || payment : period || payment
   const isActive = agreement?.Agreement?.IsActive === true
-  const tooltip = [name, currency, organization].filter((value) => value && value !== '-').join(' · ') || '-'
+  const tooltipDetails = [name, currency, organization, period, payment].filter(Boolean).join(' / ')
 
   return (
-    <Tooltip label={tooltip} openDelay={350} withArrow>
-      <div className={`suppliers-agreement-cell${isEmpty ? ' is-empty' : ''}${isActive ? ' is-active' : ''}`}>
-        <span className={`suppliers-agreement-title${isEmpty ? ' is-empty' : ''}`}>{name}</span>
-        <span className="suppliers-agreement-meta">
-          {currency ? <span className="suppliers-agreement-currency">{currency}</span> : null}
-          <span>{organization}</span>
+    <Tooltip disabled={!tooltipDetails} label={tooltipDetails} openDelay={350} withArrow>
+      <div
+        className={`suppliers-agreement-cell${hasAgreementInfo ? '' : ' is-empty'}${isActive ? ' is-active' : ''}`}
+      >
+        <span className="suppliers-agreement-title-row">
+          {hasAgreementInfo ? <span className="suppliers-agreement-state" aria-hidden /> : null}
+          <span className={`suppliers-agreement-title${hasAgreementInfo ? '' : ' is-empty'}`}>{title}</span>
         </span>
+        {hasAgreementInfo && (currency || meta) ? (
+          <span className="suppliers-agreement-meta">
+            {currency ? <span className="suppliers-agreement-currency">{currency}</span> : null}
+            {meta ? <span className="suppliers-agreement-meta-text">{meta}</span> : null}
+          </span>
+        ) : null}
       </div>
     </Tooltip>
   )
