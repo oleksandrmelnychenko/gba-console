@@ -17,9 +17,7 @@
   --accountable-expenses-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom-color: var(--mantine-color-gray-2);
   box-sizing: border-box;
   display: grid;
@@ -850,4 +848,22 @@
   .accountable-expenses-command-actions {
     justify-content: flex-start;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/8). */
+.accountable-expenses-filter-label,
+.accountable-expenses-search-input .mantine-InputWrapper-label,
+.accountable-expenses-date-input .mantine-Input-wrapper,
+.accountable-expenses-date-input .mantine-Input-input,
+.accountable-expenses-search-input .mantine-Input-wrapper,
+.accountable-expenses-search-input .mantine-TextInput-input,
+.accountable-expenses-list-head,
+.accountable-expenses-document-meta,
+.accountable-expenses-product-code,
+.accountable-expenses-money-cell small,
+.accountable-expenses-responsible-cell > span,
+.accountable-expenses-responsible-cell > small,
+.accountable-expenses-status-cell small,
+.accountable-expenses-list-state {
+  color: var(--mantine-color-gray-9);
 }

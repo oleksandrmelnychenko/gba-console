@@ -1,7 +1,7 @@
 .online-shop-clients-page {
   min-height: 0;
   min-width: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .online-shop-clients-shell {
@@ -16,9 +16,7 @@
 
 .online-shop-clients-command-bar {
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
@@ -557,4 +555,18 @@
     align-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/7). */
+.online-shop-clients-command-bar .mantine-InputWrapper-label,
+.online-shop-clients-roster-head,
+.online-shop-clients-profile-subtitle,
+.online-shop-clients-contact-cell span,
+.online-shop-clients-city-cell,
+.online-shop-clients-contact-cell .mantine-Text-root,
+.online-shop-clients-city-cell .mantine-Text-root,
+.online-shop-clients-created-cell span,
+.online-shop-clients-created-cell small,
+.online-shop-clients-empty-state {
+  color: var(--mantine-color-gray-9);
 }

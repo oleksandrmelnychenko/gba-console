@@ -3,7 +3,7 @@
   height: calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 24px);
   min-height: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 0;
 }
 
 .supply-ukraine-orders-card {
@@ -23,9 +23,7 @@
 
 .supply-ukraine-orders-filter-bar {
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   flex: 0 0 auto;
@@ -143,9 +141,8 @@
     minmax(220px, 0.62fr)
     minmax(158px, 0.42fr)
     112px
-    118px
-    44px;
-  --supply-orders-roster-min-width: 1320px;
+    118px;
+  --supply-orders-roster-min-width: 1276px;
 
   display: flex;
   flex-direction: column;
@@ -814,4 +811,21 @@
     align-items: flex-start;
     flex-wrap: wrap;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/7/8). */
+.supply-ukraine-orders-filter-label,
+.supply-ukraine-orders-filter-bar .mantine-InputWrapper-label,
+.supply-ukraine-orders-filter-bar .mantine-Input-input,
+.supply-orders-roster-head,
+.supply-order-meta-value,
+.supply-order-meta-value.is-strong,
+.supply-order-meta-value strong,
+.supply-order-two-line-secondary,
+.supply-order-money-currency,
+.supply-order-responsible-cell,
+.supply-invoices-expand-head,
+.supply-invoice-meta,
+.supply-invoice-date {
+  color: var(--mantine-color-gray-9);
 }

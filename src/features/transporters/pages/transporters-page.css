@@ -4,7 +4,7 @@
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  padding: 10px;
+  padding: 0;
 }
 
 .transporters-shell {
@@ -163,9 +163,7 @@
 
 .transporters-command-bar {
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 10px;
@@ -542,4 +540,16 @@
   .transporters-status-filter {
     width: 100%;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-4/5/6/7/8). */
+.transporters-command-label,
+.transporters-search-input .mantine-InputWrapper-label,
+.transporters-status-filter .mantine-InputWrapper-label,
+.transporters-list-head,
+.transporters-profile-type,
+.transporters-setting-copy span,
+.transporters-setting-copy strong,
+.transporters-empty-state {
+  color: var(--mantine-color-gray-9);
 }

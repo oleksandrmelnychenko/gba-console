@@ -1,6 +1,6 @@
 .accounting-cash-flow-page {
   min-width: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .accounting-cash-flow-icon-action {
@@ -253,9 +253,7 @@
   --accounting-cash-flow-label-gap: 4px;
   --accounting-cash-flow-label-height: 17px;
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   flex: 0 0 auto;
 }
 

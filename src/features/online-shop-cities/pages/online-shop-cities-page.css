@@ -1,6 +1,6 @@
 .online-shop-cities-page {
   min-width: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .online-shop-cities-shell {
@@ -415,4 +415,15 @@
   .online-shop-cities-page {
     padding: 6px;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/7/8). */
+.online-shop-cities-rail-header,
+.online-shop-cities-filter-option,
+.online-shop-cities-roster-head,
+.online-shop-cities-name-secondary,
+.online-shop-cities-payment-cell strong,
+.online-shop-cities-date-secondary,
+.online-shop-cities-empty-state {
+  color: var(--mantine-color-gray-9);
 }

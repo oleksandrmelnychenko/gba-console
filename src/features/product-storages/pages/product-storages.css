@@ -29,3 +29,9 @@
     linear-gradient(90deg, transparent, rgba(231, 243, 255, 0.85) 48%, transparent),
     #eef6ff;
 }
+
+/* Solid-black text across the roster headers + empty state (was gray-5/6). */
+.product-storages-roster .seo-roster-head,
+.product-storages-roster .seo-roster-empty {
+  color: var(--mantine-color-gray-9);
+}

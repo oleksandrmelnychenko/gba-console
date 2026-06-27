@@ -1,6 +1,6 @@
 .seo-page {
   min-width: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .seo-page-shell {
@@ -21,9 +21,7 @@
   );
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-1);
   display: grid;
   gap: 10px;
@@ -1999,4 +1997,31 @@
   .seo-settings-tree-field-line {
     display: none;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/7/8). */
+.seo-page-command-bar .mantine-InputWrapper-label,
+.seo-page-command-combo-label,
+.seo-page-command-combo-filter .mantine-Input-input,
+.seo-page-command-combo-input .mantine-Input-input,
+.seo-page-command-summary-title,
+.seo-page-command-summary-description,
+.seo-page-panel .clients-filter-row .mantine-InputWrapper-label,
+.seo-shop-data-section-count,
+.seo-shop-client-tile-detail-label,
+.seo-shop-client-tile-detail-value,
+.seo-shop-bank-card-organization,
+.seo-shop-data-list-subline,
+.seo-shop-data-list-empty,
+.seo-roster-head,
+.seo-roster-empty,
+.seo-table-contact-first-name,
+.seo-table-primary-subtitle,
+.seo-table-date-secondary,
+.seo-table-muted-cell,
+.seo-table-muted-cell.is-url,
+.seo-table-muted-cell.is-date,
+.seo-table-muted-cell.is-strong,
+.seo-table-role-like-cell .seo-table-muted-cell.is-default {
+  color: var(--mantine-color-gray-9);
 }

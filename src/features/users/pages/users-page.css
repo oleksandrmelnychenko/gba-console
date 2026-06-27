@@ -1,6 +1,6 @@
 .users-page {
   min-width: 0;
-  padding: 10px;
+  padding: 0;
 }
 
 .users-shell {
@@ -14,9 +14,7 @@
 
 .users-command-bar {
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom: 1px solid var(--mantine-color-gray-2);
   display: grid;
   gap: 10px;
@@ -467,4 +465,17 @@
   .users-roles-action {
     width: 100%;
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-4/5/6/7/8). */
+.users-command-bar .mantine-InputWrapper-label,
+.users-rail-header,
+.users-role-option,
+.users-roster-head,
+.users-profile-first-name,
+.users-role-cell strong,
+.users-contact-primary,
+.users-contact-secondary,
+.users-empty-state {
+  color: var(--mantine-color-gray-9);
 }
