@@ -8,6 +8,7 @@ export async function getSalesOnlineShop(filters: SalesOnlineShopFilters): Promi
       forEcommerce: true,
       from: filters.from,
       fromShipments: false,
+      includeDetails: false,
       limit: filters.limit,
       offset: filters.offset,
       status: filters.status === 'all' ? 'All' : filters.status,

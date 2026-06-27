@@ -64,7 +64,7 @@ import { UserRoleType } from '../../../shared/auth/types'
 import '../../sales-ukraine/pages/sales-grid.css'
 import '../../sales-ukraine/pages/sale-detail-sheet.css'
 import { useAuth } from '../../auth/useAuth'
-import { unlockSale, updateSale } from '../../sales-ukraine/api/salesUkraineApi'
+import { getSaleById, unlockSale, updateSale } from '../../sales-ukraine/api/salesUkraineApi'
 import { ConsignmentNoteSettingsDrawer } from '../../sales-ukraine/components/ConsignmentNoteSettingsDrawer'
 import { SaleDetailsDrawer } from '../../sales-ukraine/components/SaleDetailsDrawer'
 import { SaleDiscountModal } from '../../sales-ukraine/components/SaleDiscountModal'
@@ -224,21 +224,85 @@ export function SalesOnlineShopPage() {
     [activeDraft, offset, pageSize],
   )
 
-  const toggleExpand = useCallback(
-    (key: string) => {
+  const ensureSaleDetails = useCallback(
+    async (sale: SalesOnlineShopSale): Promise<SalesOnlineShopSale | null> => {
+      if (!needsSaleDetails(sale)) {
+        return sale
+      }
+
+      if (!sale.NetUid) {
+        return sale
+      }
+
+      try {
+        const next = await getSaleById(sale.NetUid)
+
+        if (!next) {
+          return sale
+        }
+
+        const onlineSale = next as unknown as SalesOnlineShopSale
+        setSales((current) => replaceSaleInList(current, onlineSale))
+
+        return onlineSale
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'))
+
+        return null
+      }
+    },
+    [setError, setSales, t],
+  )
+
+  const openSaleSheet = useCallback(
+    async (sale: SalesOnlineShopSale) => {
+      const next = await ensureSaleDetails(sale)
+
+      if (next) {
+        setSelectedSale(next)
+      }
+    },
+    [ensureSaleDetails, setSelectedSale],
+  )
+
+  const openSaleDiscount = useCallback(
+    async (sale: SalesOnlineShopSale) => {
+      const next = await ensureSaleDetails(sale)
+
+      if (next) {
+        setDiscountSale(next)
+      }
+    },
+    [ensureSaleDetails, setDiscountSale],
+  )
+
+  const toggleSaleExpand = useCallback(
+    async (key: string, sale: SalesOnlineShopSale) => {
+      if (expandedKeys.has(key)) {
+        setExpandedKeys((current) => {
+          const next = new Set(current)
+          next.delete(key)
+
+          return next
+        })
+
+        return
+      }
+
+      const nextSale = await ensureSaleDetails(sale)
+
+      if (!nextSale) {
+        return
+      }
+
       setExpandedKeys((current) => {
         const next = new Set(current)
-
-        if (next.has(key)) {
-          next.delete(key)
-        } else {
-          next.add(key)
-        }
+        next.add(key)
 
         return next
       })
     },
-    [setExpandedKeys],
+    [ensureSaleDetails, expandedKeys, setExpandedKeys],
   )
 
   const openAudit = useCallback(
@@ -587,21 +651,23 @@ export function SalesOnlineShopPage() {
                         isAdmin={isAdmin}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
-                        onToggleExpand={() => toggleExpand(key)}
-                        onOpenSale={setSelectedSale}
+                        onToggleExpand={() => void toggleSaleExpand(key, sale)}
+                        onOpenSale={(target) => void openSaleSheet(target)}
                         onOpenEditor={setEditorSale}
                         onOpenDetails={setDetailsSale}
                         onOpenConsignment={setConsignmentSale}
                         onOpenAudit={openAudit}
                         onUnlock={requestUnlock}
                         onWillNotShip={requestWillNotShip}
-                        onOpenDiscount={setDiscountSale}
+                        onOpenDiscount={(target) => void openSaleDiscount(target)}
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
                           <SaleExpandContent
                             sale={asUkraineSale(sale)}
-                            onOpenItemDiscount={(targetSale) => setDiscountSale(targetSale as unknown as SalesOnlineShopSale)}
+                            onOpenItemDiscount={(targetSale) =>
+                              void openSaleDiscount(targetSale as unknown as SalesOnlineShopSale)
+                            }
                           />
                         </div>
                       )}
@@ -1432,6 +1498,22 @@ function isStatusType(value: number | string | null | undefined, expected: numbe
 
 function getOrderItemCount(sale: SalesOnlineShopSale): number {
   return sale.Order?.OrderItems?.length || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
+}
+
+function needsSaleDetails(sale: SalesOnlineShopSale): boolean {
+  return sale.HasDetails === false
+}
+
+function replaceSaleInList(sales: SalesOnlineShopSale[], nextSale: SalesOnlineShopSale): SalesOnlineShopSale[] {
+  return sales.map((sale) => (isSameSale(sale, nextSale) ? nextSale : sale))
+}
+
+function isSameSale(left: SalesOnlineShopSale, right: SalesOnlineShopSale): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  return Boolean(left.Id && right.Id && left.Id === right.Id)
 }
 
 function getOrderItemProductName(item: SalesOnlineShopOrderItem): string {

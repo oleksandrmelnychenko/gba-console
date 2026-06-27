@@ -25,6 +25,7 @@ export async function getWarehouseUkraineSales(params: SalesSearchParams): Promi
       limit: params.limit,
       offset: params.offset,
       forEcommerce: false,
+      includeDetails: false,
     },
   })
 

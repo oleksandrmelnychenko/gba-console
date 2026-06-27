@@ -253,6 +253,7 @@ export type SalesUkraineSale = SalesUkraineEntity & {
   DeliveryRecipientAddressId?: number
   FromDate?: Date | string
   HasDocuments?: boolean
+  HasDetails?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
   InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean

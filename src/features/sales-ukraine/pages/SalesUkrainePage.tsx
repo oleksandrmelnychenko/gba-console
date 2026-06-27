@@ -243,20 +243,6 @@ export function SalesUkrainePage() {
   const [expandedKeys, setExpandedKeys] = useValueState<Set<string>>(() => new Set())
   const [reloadKey, reload] = useReducer((key: number) => key + 1, 0)
 
-  function toggleExpand(key: string) {
-    setExpandedKeys((current) => {
-      const next = new Set(current)
-
-      if (next.has(key)) {
-        next.delete(key)
-      } else {
-        next.add(key)
-      }
-
-      return next
-    })
-  }
-
   const offset = (page - 1) * pageSize
   const totalRows = getTotalRows(sales)
   const totalPages = Math.max(1, Math.ceil(totalRows / pageSize))
@@ -347,6 +333,86 @@ export function SalesUkrainePage() {
     salesRef.current = sales
   }, [sales])
 
+  const ensureSaleDetails = useCallback(
+    async (sale: SalesUkraineSale): Promise<SalesUkraineSale | null> => {
+      if (!needsSaleDetails(sale)) {
+        return sale
+      }
+
+      if (!sale.NetUid) {
+        return sale
+      }
+
+      try {
+        const next = await getSaleById(sale.NetUid)
+
+        if (!next) {
+          return sale
+        }
+
+        setSales((current) => replaceSaleInList(current, next))
+
+        return next
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : t('Не вдалося завантажити продаж'))
+
+        return null
+      }
+    },
+    [setError, setSales, t],
+  )
+
+  const openSaleSheet = useCallback(
+    async (sale: SalesUkraineSale) => {
+      const next = await ensureSaleDetails(sale)
+
+      if (next) {
+        setSelectedSale(next)
+      }
+    },
+    [ensureSaleDetails, setSelectedSale],
+  )
+
+  const openSaleDiscount = useCallback(
+    async (sale: SalesUkraineSale, orderItem?: SalesUkraineOrderItem) => {
+      const next = await ensureSaleDetails(sale)
+
+      if (next) {
+        setDiscountTarget({ orderItem, sale: next })
+      }
+    },
+    [ensureSaleDetails, setDiscountTarget],
+  )
+
+  const toggleSaleExpand = useCallback(
+    async (key: string, sale: SalesUkraineSale) => {
+      if (expandedKeys.has(key)) {
+        setExpandedKeys((current) => {
+          const next = new Set(current)
+          next.delete(key)
+
+          return next
+        })
+
+        return
+      }
+
+      const nextSale = await ensureSaleDetails(sale)
+
+      if (!nextSale) {
+        return
+      }
+
+      setExpandedKeys((current) => {
+        const next = new Set(current)
+        next.add(key)
+
+        return next
+      })
+    },
+    [ensureSaleDetails, expandedKeys, setExpandedKeys],
+  )
+
   useEffect(() => {
     if (
       !focusedSaleNetId ||
@@ -359,7 +425,7 @@ export function SalesUkrainePage() {
     const currentSale = salesRef.current.find((sale) => sale.NetUid === focusedSaleNetId)
 
     if (currentSale) {
-      setSelectedSale(currentSale)
+      void openSaleSheet(currentSale)
       return
     }
 
@@ -377,7 +443,7 @@ export function SalesUkrainePage() {
           setError(focusedSaleError instanceof Error ? focusedSaleError.message : t('Не вдалося завантажити продаж'))
         }
       })
-  }, [focusedSaleNetId, sales, selectedSale?.NetUid, setError, setSelectedSale, t])
+  }, [focusedSaleNetId, openSaleSheet, sales, selectedSale?.NetUid, setError, setSelectedSale, t])
 
   const scheduleRealtimeReload = useCallback(() => {
     if (realtimeReloadRef.current !== null) {
@@ -874,8 +940,8 @@ export function SalesUkrainePage() {
                         isAdmin={isAdmin}
                         canExpand={canExpand}
                         isExpanded={isExpanded}
-                        onToggleExpand={() => toggleExpand(key)}
-                        onOpenSale={setSelectedSale}
+                        onToggleExpand={() => void toggleSaleExpand(key, sale)}
+                        onOpenSale={(target) => void openSaleSheet(target)}
                         onOpenEditor={setWizardEditSale}
                         onOpenEditShift={setEditShiftSale}
                         onOpenDetails={setDetailsSale}
@@ -883,13 +949,13 @@ export function SalesUkrainePage() {
                         onOpenAudit={openAudit}
                         onUnlock={requestUnlock}
                         onWillNotShip={requestWillNotShip}
-                        onOpenDiscount={(target) => setDiscountTarget({ sale: target })}
+                        onOpenDiscount={(target) => void openSaleDiscount(target)}
                       />
                       {isExpanded && (
                         <div className="sales-grid-expand">
                           <SaleExpandContent
                             sale={sale}
-                            onOpenItemDiscount={(targetSale, orderItem) => setDiscountTarget({ orderItem, sale: targetSale })}
+                            onOpenItemDiscount={(targetSale, orderItem) => void openSaleDiscount(targetSale, orderItem)}
                           />
                         </div>
                       )}
@@ -1754,6 +1820,22 @@ function isNewOrPackagingStatus(sale: SalesUkraineSale): boolean {
 
 function getOrderItemCount(sale: SalesUkraineSale): number {
   return sale.Order?.OrderItems?.length || getNumber(sale.Order?.TotalCount) || getNumber(sale.TotalCount) || 0
+}
+
+function needsSaleDetails(sale: SalesUkraineSale): boolean {
+  return sale.HasDetails === false
+}
+
+function replaceSaleInList(sales: SalesUkraineSale[], nextSale: SalesUkraineSale): SalesUkraineSale[] {
+  return sales.map((sale) => (isSameSale(sale, nextSale) ? nextSale : sale))
+}
+
+function isSameSale(left: SalesUkraineSale, right: SalesUkraineSale): boolean {
+  if (left.NetUid && right.NetUid) {
+    return left.NetUid === right.NetUid
+  }
+
+  return Boolean(left.Id && right.Id && left.Id === right.Id)
 }
 
 function getOrderItemProductName(item: SalesUkraineOrderItem): string {

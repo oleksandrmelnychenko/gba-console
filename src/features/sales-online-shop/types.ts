@@ -134,6 +134,7 @@ export type SalesOnlineShopSale = SalesOnlineShopEntity & {
   ClientAgreement?: SalesOnlineShopClientAgreement
   Comment?: string
   FromDate?: Date | string
+  HasDetails?: boolean
   HistoryInvoiceEdit?: SalesUkraineHistoryInvoiceEdit[]
   InputSaleMerges?: SalesUkraineSaleMerged[]
   IsAcceptedToPacking?: boolean
