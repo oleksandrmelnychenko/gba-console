@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type {
   ReportEntity,
   ReportRequestBody,
@@ -12,7 +11,6 @@ import { normalizeReportResult } from '../utils'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_FILTER_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
-const USER_FILTER_SQL = 'FirstName/LastName/FullName/Email/Name'
 
 export async function createStockReport(body: ReportRequestBody): Promise<ReportResult> {
   const result = await apiRequest<unknown>('/report/get/all/filtered', {
@@ -122,24 +120,23 @@ export async function getReportClientAgreements(netId: string): Promise<ReportEn
   }))
 }
 
-export async function searchReportUsers(params: ReportSearchParams): Promise<ReportEntity[]> {
+export async function searchReportUsers(
+  params: ReportSearchParams,
+  signal?: AbortSignal,
+): Promise<ReportEntity[]> {
   const searchValue = params.value.trim()
 
   if (!searchValue) {
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/usermanagement/profiles/search/lookup', {
     query: {
-      filter: buildServerSearchFilter({
-        table: 'User',
-        limit: params.limit,
-        offset: params.offset,
-        value: searchValue,
-        filterEntityType: 1,
-        filterSql: USER_FILTER_SQL,
-      }),
+      limit: params.limit,
+      offset: params.offset,
+      value: searchValue,
     },
+    signal,
   })
 
   return normalizeCollection(result, ['Items', 'Users', 'Data']).map((user) => ({
