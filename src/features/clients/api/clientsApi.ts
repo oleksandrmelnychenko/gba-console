@@ -16,7 +16,7 @@ export async function getClients(
   const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
       active: params.active,
-      filterSql: params.filterSql,
+      filterSql: params.filterSql || CLIENT_SEARCH_SQL,
       ...(params.forReSale !== null && typeof params.forReSale !== 'undefined'
         ? { forReSale: params.forReSale }
         : {}),

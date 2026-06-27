@@ -213,7 +213,7 @@ describe('clients API query contracts', () => {
     expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
       query: {
         active: true,
-        filterSql: undefined,
+        filterSql: 'RegionCode.Value/Client.FullName/Client.USREOU',
         forReSale: true,
         limit: 20,
         offset: 0,
