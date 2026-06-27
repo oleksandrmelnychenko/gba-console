@@ -85,6 +85,75 @@
   color: var(--mantine-color-gray-6);
 }
 
+/* Regional lens ------------------------------------------------------------- */
+.assort-region {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.assort-region__title {
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.assort-region__title div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.assort-region__title span {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mantine-color-gray-9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assort-region__title small {
+  font-size: 12px;
+  color: var(--mantine-color-gray-6);
+}
+
+.assort-region__metrics {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.assort-region__metric {
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid var(--mantine-color-gray-2);
+}
+
+.assort-region__metric span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mantine-color-gray-6);
+  text-transform: uppercase;
+}
+
+.assort-region__metric b {
+  display: block;
+  font-size: 16px;
+  color: var(--mantine-color-gray-9);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Section card scaffolding ------------------------------------------------- */
 .assort-card {
   padding: 18px;
@@ -362,6 +431,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .assort-region {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .assort-region__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .assort-cell-product span {

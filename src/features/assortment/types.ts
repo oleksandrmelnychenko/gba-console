@@ -29,6 +29,12 @@ export type AssortmentRow = {
   health_components?: Record<string, number>
   abc: AssortmentAbc
   name?: string | null
+  region_id?: number | null
+  region_name?: string | null
+  regional_client_count?: number
+  regional_order_count?: number
+  regional_revenue_eur?: number
+  regional_units?: number
   vendor_code?: string | null
   [key: string]: unknown
 }
@@ -81,13 +87,34 @@ export type AssortmentHealthParams = {
   sort?: string
   limit?: number
   stockedOnly?: boolean
+  regionId?: number
+  regionWindowDays?: number
 }
 
 export type AssortmentHealth = {
   as_of?: string | null
   sort?: string
+  region_id?: number | null
+  region_window_days?: number | null
   count: number
   tasks: AssortmentRow[]
+}
+
+export type AssortmentRegionRow = {
+  region_id: number
+  region_name?: string | null
+  client_count: number
+  order_count: number
+  product_count: number
+  units: number
+  revenue_eur: number
+}
+
+export type AssortmentRegions = {
+  as_of?: string | null
+  window_days: number
+  count: number
+  regions: AssortmentRegionRow[]
 }
 
 export type AssortmentMarginRow = Pick<
@@ -126,4 +153,22 @@ export type ProductSubstitutes = {
   count: number
   in_stock_count: number
   candidates: AssortmentRow[]
+}
+
+export type ProductRegionRow = {
+  product_id: number
+  region_id: number
+  region_name?: string | null
+  regional_units: number
+  regional_revenue_eur: number
+  regional_order_count: number
+  regional_client_count: number
+}
+
+export type ProductRegions = {
+  as_of?: string | null
+  window_days: number
+  product_id: number
+  count: number
+  regions: ProductRegionRow[]
 }

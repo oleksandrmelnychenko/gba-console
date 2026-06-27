@@ -4,9 +4,11 @@ import type {
   AssortmentHealthParams,
   AssortmentMargin,
   AssortmentOverview,
+  AssortmentRegions,
   AssortmentReturns,
   AssortmentStock,
   ProductDetail,
+  ProductRegions,
   ProductSubstitutes,
 } from '../types'
 
@@ -27,8 +29,18 @@ export async function getAssortmentHealth(params: AssortmentHealthParams = {}): 
       sort: params.sort ?? 'health_asc',
       limit: params.limit ?? 100,
       stockedOnly: params.stockedOnly ?? true,
+      regionId: params.regionId,
+      regionWindowDays: params.regionWindowDays,
     },
   })
+}
+
+export async function getAssortmentRegions(
+  asOfDate?: string,
+  windowDays = 365,
+  limit = 50,
+): Promise<AssortmentRegions> {
+  return apiRequest<AssortmentRegions>(`${PREFIX}/assortment/regions`, { query: { asOfDate, windowDays, limit } })
 }
 
 export async function getAssortmentStock(asOfDate?: string, limit = 20): Promise<AssortmentStock> {
@@ -49,6 +61,17 @@ export async function getAssortmentReturns(
 
 export async function getProduct(productId: number, asOfDate?: string): Promise<ProductDetail> {
   return apiRequest<ProductDetail>(`${PREFIX}/product/${productId}`, { query: { asOfDate } })
+}
+
+export async function getProductRegions(
+  productId: number,
+  asOfDate?: string,
+  windowDays = 365,
+  limit = 20,
+): Promise<ProductRegions> {
+  return apiRequest<ProductRegions>(`${PREFIX}/product/${productId}/regions`, {
+    query: { asOfDate, windowDays, limit },
+  })
 }
 
 export async function getProductSubstitutes(
