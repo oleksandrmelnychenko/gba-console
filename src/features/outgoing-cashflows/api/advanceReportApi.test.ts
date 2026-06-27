@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
 import {
+  calculateAdvanceReportConsumableOrder,
   calculateAdvanceReportOrder,
   searchAdvanceReportSupplyOrganizations,
   updateAdvanceReportOrder,
 } from './advanceReportApi'
-import type { AdvanceReportOrder } from '../advanceReportTypes'
+import type { AdvanceReportConsumablesOrder, AdvanceReportOrder } from '../advanceReportTypes'
 
 vi.mock('../../../shared/api/apiClient', () => ({
   apiRequest: vi.fn(),
@@ -107,6 +108,40 @@ describe('advanceReportApi', () => {
     expect(payload.OutcomePaymentOrderConsumablesOrders?.[0]?.ConsumablesOrder?.ConsumablesOrderItems?.[0]?.NetUid)
       .toBeUndefined()
     expect(payload.CompanyCarFuelings?.[0]?.NetUid).toBeUndefined()
+  })
+
+  it('strips invalid local NetUid values before calculating a consumable order', async () => {
+    const order: AdvanceReportConsumablesOrder = {
+      ConsumablesOrderItems: [
+        {
+          NetUid: 'local-consumable-item',
+          Qty: 2,
+        },
+      ],
+      NetUid: 'local-consumable-order',
+    }
+
+    apiRequestMock.mockResolvedValueOnce({
+      Collection: [
+        {
+          ConsumablesOrderItems: [{ NetUid: '2d11197c-d74e-4d15-b87a-4074750d79c9', Qty: 2 }],
+          NetUid: 'd19db17c-9829-439d-afd7-b30c1a7525c0',
+        },
+      ],
+    })
+
+    await calculateAdvanceReportConsumableOrder(order)
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/consumables/orders/calculate', {
+      body: [
+        {
+          ConsumablesOrderItems: [{ Qty: 2 }],
+        },
+      ],
+      method: 'POST',
+    })
+    expect(order.NetUid).toBe('local-consumable-order')
+    expect(order.ConsumablesOrderItems?.[0]?.NetUid).toBe('local-consumable-item')
   })
 
   it('searches supply organizations with bounded trimmed lookup params', async () => {

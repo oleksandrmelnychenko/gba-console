@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { sanitizeConsumableOrderPayload } from '../../consumable-orders/consumableOrderPayload'
 import type {
   AdvanceReportConsumablesOrder,
   AdvanceReportConsumablesOrderItem,
@@ -66,7 +67,7 @@ export async function calculateAdvanceReportConsumableOrder(
   order: AdvanceReportConsumablesOrder,
 ): Promise<AdvanceReportConsumablesOrder | null> {
   const result = await apiRequest<unknown>('/consumables/orders/calculate', {
-    body: [order],
+    body: [sanitizeConsumableOrderPayload(order)],
     method: 'POST',
   })
   const calculated = readArrayPayload(result, ['Collection', 'Items', 'ConsumablesOrders', 'Data'])[0]
