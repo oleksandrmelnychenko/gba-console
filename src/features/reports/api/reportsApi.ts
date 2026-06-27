@@ -92,16 +92,12 @@ export async function searchReportClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filter: buildServerSearchFilter({
-        table: 'Client',
-        limit: params.limit,
-        offset: params.offset,
-        value: searchValue,
-        filterEntityType: 0,
-        filterSql: CLIENT_FILTER_SQL,
-      }),
+      filterSql: CLIENT_FILTER_SQL,
+      limit: params.limit,
+      offset: params.offset,
+      value: searchValue,
     },
     signal,
   })

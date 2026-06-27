@@ -119,6 +119,22 @@ describe('sales Ukraine document request contracts', () => {
     expect(apiRequestMock).not.toHaveBeenCalled()
   })
 
+  it('searches clients through the targeted clients endpoint', async () => {
+    apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
+
+    await expect(searchSalesUkraineClients(' конкорд ')).resolves.toEqual([{ NetUid: 'client-1' }])
+
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 50,
+        offset: 0,
+        value: 'конкорд',
+      },
+      signal: undefined,
+    })
+  })
+
   it('posts edit-shift payload to the current shift endpoint', async () => {
     const sale = { NetUid: 'sale-net-id' }
 

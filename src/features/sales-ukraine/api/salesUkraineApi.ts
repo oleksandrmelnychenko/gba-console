@@ -59,29 +59,12 @@ export async function searchSalesUkraineClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filter: JSON.stringify({
-        Table: 'Client',
-        Offset: 0,
-        Limit: 50,
-        BooleanFilter: '',
-        TypeRoleFilter: '',
-        SortDescriptors: [],
-        Filter: JSON.stringify({
-          Value: searchValue,
-          FilterItem: {
-            Name: '',
-            SQL: 'RegionCode.Value/Client.FullName',
-            Description: '',
-            Type: 0,
-            FilterOperationItem: {
-              Name: '',
-              SQL: 'Contains',
-            },
-          },
-        }),
-      }),
+      filterSql: 'RegionCode.Value/Client.FullName',
+      limit: 50,
+      offset: 0,
+      value: searchValue,
     },
     signal,
   })

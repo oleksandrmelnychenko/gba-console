@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import { toDateTimeQuery } from '../../../shared/date/dateTime'
 import type {
   CreateDirectSalesReturnPayload,
@@ -19,7 +18,6 @@ import type {
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 const CLIENT_SEARCH_LIMIT = 20
-const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 export async function getSaleReturns(params: SalesReturnsSearchParams): Promise<SalesReturn[]> {
@@ -114,9 +112,12 @@ export async function searchSalesReturnClients(value: string, signal?: AbortSign
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filter: buildClientSearchFilter(searchValue),
+      filterSql: CLIENT_SEARCH_SQL,
+      limit: CLIENT_SEARCH_LIMIT,
+      offset: 0,
+      value: searchValue,
     },
     ...(signal ? { signal } : {}),
   })
@@ -281,15 +282,4 @@ function readArrayPayload(result: unknown, keys: string[]): unknown[] {
 
 function readString(value: unknown): string | undefined {
   return typeof value === 'string' && value ? value : undefined
-}
-
-function buildClientSearchFilter(value: string): string {
-  return buildServerSearchFilter({
-    filterEntityType: CLIENT_FILTER_ENTITY_TYPE_CLIENT,
-    filterSql: CLIENT_SEARCH_SQL,
-    limit: CLIENT_SEARCH_LIMIT,
-    offset: 0,
-    table: 'Client',
-    value: value.trim(),
-  })
 }

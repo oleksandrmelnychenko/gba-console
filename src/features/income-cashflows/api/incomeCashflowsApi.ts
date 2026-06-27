@@ -121,11 +121,9 @@ export async function searchIncomeCashflowCounterparties(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
-    query: {
-      filter: JSON.stringify(buildCounterpartySearchQuery(searchValue, type)),
-    },
-    signal,
+  const result = await apiRequest<unknown>(getCounterpartySearchPath(type), {
+    query: getCounterpartySearchQuery(searchValue, type),
+    ...(signal ? { signal } : {}),
   })
 
   return readArrayPayload(result, ['Items', 'Clients', 'SupplyOrganizations', 'Organizations', 'Data', 'Collection']) as Client[]
@@ -316,30 +314,34 @@ function normalizePaymentRegister(result: unknown): PaymentRegister | null {
   }
 }
 
-function buildCounterpartySearchQuery(value: string, type: IncomeCounterpartySearchType) {
-  return {
-    Table: getCounterpartySearchTable(type),
-    Offset: 0,
-    Limit: 20,
-    BooleanFilter: '',
-    Filter: JSON.stringify({
-      Value: value,
-      FilterItem: {
-        Type: type,
-        FilterOperationItem: {},
-      },
-    }),
-    TypeRoleFilter: '',
-    SortDescriptors: [],
+function getCounterpartySearchPath(type: IncomeCounterpartySearchType): string {
+  if (type === IncomeCounterpartySearchType.Supplier) {
+    return '/supplies/organizations/all/search'
   }
+
+  if (type === IncomeCounterpartySearchType.Manufacturer) {
+    return '/clients/suppliers/all/filtered'
+  }
+
+  return '/clients/all/filtered'
 }
 
-function getCounterpartySearchTable(type: IncomeCounterpartySearchType): string {
+function getCounterpartySearchQuery(value: string, type: IncomeCounterpartySearchType) {
   if (type === IncomeCounterpartySearchType.Supplier) {
-    return 'SupplyOrganization'
+    return {
+      limit: 20,
+      offset: 0,
+      value,
+    }
   }
 
-  return 'Client'
+  return {
+    filterSql: 'RegionCode.Value/Client.FullName',
+    limit: 20,
+    offset: 0,
+    typeRoleFilter: type === IncomeCounterpartySearchType.Manufacturer ? String(IncomeCounterpartySearchType.Manufacturer) : '',
+    value,
+  }
 }
 
 function readArrayPayload(result: unknown, keys: string[]): unknown[] {

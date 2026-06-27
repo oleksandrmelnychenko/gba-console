@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type {
   CollectionWithTotals,
   GroupedConsignment,
@@ -16,7 +15,6 @@ import type {
 } from '../types'
 
 const REMAINING_BASE = '/consignments/remaining'
-const SUPPLIER_FILTER_ENTITY_TYPE = 7
 const SUPPLIER_FILTER_SQL = 'RegionCode.Value/Client.FullName'
 
 export async function getProductRemainStorages(): Promise<ProductRemainStorage[]> {
@@ -33,9 +31,12 @@ export async function getProductRemainSuppliers(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/suppliers/all/filtered', {
     query: {
-      filter: buildSupplierSearchFilter(params),
+      filterSql: SUPPLIER_FILTER_SQL,
+      limit: params.limit,
+      offset: params.offset,
+      value: params.value.trim(),
     },
     ...(signal ? { signal } : {}),
   })
@@ -125,17 +126,6 @@ export async function exportProductRemains(
   })
 
   return normalizeExportDocument(result)
-}
-
-function buildSupplierSearchFilter(params: ProductRemainSupplierSearchParams): string {
-  return buildServerSearchFilter({
-    table: 'Client',
-    offset: params.offset,
-    limit: params.limit,
-    value: params.value.trim(),
-    filterEntityType: SUPPLIER_FILTER_ENTITY_TYPE,
-    filterSql: SUPPLIER_FILTER_SQL,
-  })
 }
 
 function normalizeCollectionWithTotals<TItem>(

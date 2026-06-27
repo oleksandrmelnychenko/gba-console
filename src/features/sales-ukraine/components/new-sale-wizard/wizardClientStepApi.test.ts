@@ -19,29 +19,20 @@ describe('wizard client step API contracts', () => {
     apiRequestMock.mockReset()
   })
 
-  it('searches clients via the legacy search query with limit and offset', async () => {
+  it('searches clients through the targeted clients endpoint with limit and offset', async () => {
     apiRequestMock.mockResolvedValueOnce([{ NetUid: 'client-1' }])
 
     await expect(searchWizardClients('конкорд', 10, 20)).resolves.toEqual([{ NetUid: 'client-1' }])
 
-    expect(apiRequestMock).toHaveBeenCalledTimes(1)
-    const [path, options] = apiRequestMock.mock.calls[0]
-    expect(path).toBe('/search/by/query')
-
-    const filter = JSON.parse(String((options as { query: { filter: string } }).query.filter)) as {
-      Filter: string
-      Limit: number
-      Offset: number
-      Table: string
-    }
-    expect(filter.Table).toBe('Client')
-    expect(filter.Limit).toBe(10)
-    expect(filter.Offset).toBe(20)
-
-    const innerFilter = JSON.parse(filter.Filter) as { FilterItem: { SQL: string; Type?: number }; Value: string }
-    expect(innerFilter.Value).toBe('конкорд')
-    expect(innerFilter.FilterItem.SQL).toBe('RegionCode.Value/Client.FullName')
-    expect(innerFilter.FilterItem.Type).toBeUndefined()
+    expect(apiRequestMock).toHaveBeenCalledWith('/clients/all/filtered', {
+      query: {
+        filterSql: 'RegionCode.Value/Client.FullName',
+        limit: 10,
+        offset: 20,
+        value: 'конкорд',
+      },
+      signal: undefined,
+    })
   })
 
   it('does not call the client search endpoint for blank wizard search values', async () => {

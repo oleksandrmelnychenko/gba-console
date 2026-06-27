@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { buildServerSearchFilter } from '../../../shared/api/searchQuery'
 import type {
   ClientProductMovementClientOption,
   ClientProductMovementDocument,
@@ -9,7 +8,6 @@ import type {
 } from '../types'
 
 export const CLIENT_SEARCH_PAGE_SIZE = 20
-const CLIENT_FILTER_ENTITY_TYPE_CLIENT = 0
 const CLIENT_SEARCH_SQL = 'RegionCode.Value/Client.FullName/Client.USREOU'
 
 function buildMovementQuery(filters: ClientProductMovementFilters) {
@@ -61,25 +59,17 @@ export async function searchClientProductMovementClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filter: buildClientSearchFilter(searchValue, offset),
+      filterSql: CLIENT_SEARCH_SQL,
+      limit: CLIENT_SEARCH_PAGE_SIZE,
+      offset,
+      value: searchValue,
     },
     signal,
   })
 
   return normalizeArray(result) as ClientProductMovementClientOption[]
-}
-
-function buildClientSearchFilter(value: string, offset: number): string {
-  return buildServerSearchFilter({
-    filterEntityType: CLIENT_FILTER_ENTITY_TYPE_CLIENT,
-    filterSql: CLIENT_SEARCH_SQL,
-    limit: CLIENT_SEARCH_PAGE_SIZE,
-    offset,
-    table: 'Client',
-    value: value.trim(),
-  })
 }
 
 function extractDocumentResult(result: unknown): ClientProductMovementDocumentResult {

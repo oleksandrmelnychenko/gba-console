@@ -40,28 +40,12 @@ export async function searchWizardClients(
     return []
   }
 
-  const result = await apiRequest<unknown>('/search/by/query', {
+  const result = await apiRequest<unknown>('/clients/all/filtered', {
     query: {
-      filter: JSON.stringify({
-        Table: 'Client',
-        Offset: offset,
-        Limit: limit,
-        BooleanFilter: '',
-        TypeRoleFilter: '',
-        SortDescriptors: [],
-        Filter: JSON.stringify({
-          Value: searchValue,
-          FilterItem: {
-            Name: '',
-            SQL: 'RegionCode.Value/Client.FullName',
-            Description: '',
-            FilterOperationItem: {
-              Name: '',
-              SQL: 'Contains',
-            },
-          },
-        }),
-      }),
+      filterSql: 'RegionCode.Value/Client.FullName',
+      limit,
+      offset,
+      value: searchValue,
     },
     signal,
   })
