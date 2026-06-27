@@ -107,6 +107,13 @@ const SUPPLIER_SEARCH_FIELD_LABELS_BY_SQL: Record<string, string> = {
   'Client.USREOU': 'ЄДРПОУ',
   'Client.ClientNumber/Client.MobileNumber': 'Телефон',
   'Client.EmailAddress': 'Email',
+  ProductVendorCode: 'Артикул постачальника',
+  'Product.VendorCode': 'Артикул постачальника',
+  SupplyInvoiceNumber: 'Номер інвойсу',
+  'SupplyInvoice.Number': 'Номер інвойсу',
+  SupplyOrderNumber: 'Номер замовлення',
+  SupplyProFormNumber: 'Номер проформи',
+  'SupplyProForm.Number': 'Номер проформи',
 }
 
 const SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME: Record<string, string> = {
@@ -122,6 +129,10 @@ const SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME: Record<string, string> = {
   supplier: 'Постачальник',
   'supplier code': 'Код постачальника',
   'supplier name': 'Назва постачальника',
+  productvendorcode: 'Артикул постачальника',
+  supplyinvoicenumber: 'Номер інвойсу',
+  supplyordernumber: 'Номер замовлення',
+  supplyproformnumber: 'Номер проформи',
   title: 'Назва',
 }
 
@@ -1176,9 +1187,16 @@ function getSupplierSearchFieldLabel(filterItem: ClientFilterItem): string {
   }
 
   const rawLabel = filterItem.Name?.trim() || filterItem.Description?.trim()
-  const mappedRawLabel = rawLabel ? SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME[rawLabel.toLowerCase()] : undefined
+  const mappedRawLabel = rawLabel
+    ? SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME[rawLabel.toLowerCase()]
+      || SUPPLIER_SEARCH_FIELD_LABELS_BY_NAME[normalizeSupplierSearchFieldLabelKey(rawLabel)]
+    : undefined
 
   return translate(mappedRawLabel || rawLabel || 'Поле')
+}
+
+function normalizeSupplierSearchFieldLabelKey(value: string): string {
+  return value.replace(/[\s._/-]+/g, '').toLowerCase()
 }
 
 function SupplierContactValue({ label, value }: { label: string; value: string }) {
