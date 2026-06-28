@@ -385,7 +385,7 @@ function useProductRemainsPageModel() {
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedStorageValue: storageSelectValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
@@ -538,6 +538,7 @@ function useProductRemainBatchesLoader({
       try {
         const response = await getGroupedProductRemains({
           from: dateFrom,
+          includeItems: false,
           limit: pageSize,
           offset: currentOffset,
           storageNetId,
@@ -683,10 +684,10 @@ function hasMoreCollectionPage<TItem>(
   response: CollectionWithTotals<TItem>,
   pageSize: number,
 ): boolean {
-  const totalQty = response.TotalQtyFiltered ?? response.TotalQty
+  const totalRowsQty = response.TotalRowsQtyFiltered ?? response.TotalRowsQty
 
-  if (typeof totalQty === 'number') {
-    return offset + response.Collection.length < totalQty
+  if (typeof totalRowsQty === 'number') {
+    return offset + response.Collection.length < totalRowsQty
   }
 
   return response.Collection.length === pageSize
@@ -706,7 +707,7 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
     isProductStorageSelectionInvalid,
     isLoadingBatches, isLoadingProducts, isLoadingStorages, isLoadingSuppliers, openMovement, pageSize, productColumns,
     productDensity, productHasMore, productRows, productSearchDraft, productStorageError, productToolbarLeft, productTotals, resourceError,
-    selectedBatch, selectedMovementRow, selectedStorageValue, storageOptions, supplierNetId,
+    selectedBatch, selectedMovementRow, selectedStorageValue, selectedSupplierNetId, storageNetId, storageOptions, supplierNetId,
     supplierSearch, supplierSelectOptions, handleExport, refreshData, resetAllData, resetFilters, selectActiveTab,
     toggleBatchDensity, toggleProductDensity, setBatchOffset, setDateFrom, setDateTo, setDownloadModalOpened, setPageSize,
     setProductOffset, setSelectedBatch, setSelectedMovementRow, setSelectedStorageValue,
@@ -929,7 +930,15 @@ function ProductRemainsPageView({ model }: { model: ReturnType<typeof useProduct
         onClose={() => setSelectedBatch(null)}
       >
         {selectedBatch && (
-          <BatchDetails batch={selectedBatch} columns={batchDetailColumns} />
+          <BatchDetails
+            key={getBatchRowId(selectedBatch, 0)}
+            batch={selectedBatch}
+            columns={batchDetailColumns}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            storageNetId={storageNetId}
+            supplierNetId={selectedSupplierNetId}
+          />
         )}
       </AppDrawer>
 
@@ -1092,8 +1101,8 @@ function useProductRemainBatchColumns() {
       width: 100,
       minWidth: 92,
       align: 'right',
-      accessor: (batch) => batch.GroupedConsignmentItems?.length || 0,
-      cell: (batch) => formatAmount(batch.GroupedConsignmentItems?.length || 0),
+      accessor: (batch) => getBatchItemsCount(batch),
+      cell: (batch) => formatAmount(getBatchItemsCount(batch)),
     },
     ],
     [],
@@ -1425,34 +1434,99 @@ function RemainsTotalsFooter<TItem>({ totals, kind }: { totals: CollectionWithTo
 function BatchDetails({
   batch,
   columns,
+  dateFrom,
+  dateTo,
+  storageNetId,
+  supplierNetId,
 }: {
   batch: GroupedConsignment
   columns: DataTableColumn<GroupedConsignmentItem>[]
+  dateFrom: string
+  dateTo: string
+  storageNetId?: string
+  supplierNetId?: string
 }) {
   const { t } = useI18n()
-  const items = batch.GroupedConsignmentItems || []
+  const [state, dispatch] = useReducer(batchDetailsReducer, batch, createInitialBatchDetailsState)
+  const { detailBatch, error, isLoading } = state
+  const visibleBatch = detailBatch || batch
+  const items = detailBatch?.GroupedConsignmentItems || []
+
+  useEffect(() => {
+    if (batch.GroupedConsignmentItems?.length) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadBatchDetails() {
+      dispatch({ type: 'loadStarted' })
+
+      try {
+        const rowOffset = Math.max(0, (batch.RowNumber || 1) - 1)
+        const response = await getGroupedProductRemains({
+          from: dateFrom,
+          includeItems: true,
+          limit: 1,
+          offset: rowOffset,
+          storageNetId,
+          supplierNetId,
+          to: dateTo,
+        })
+        const loadedBatch = response.Collection[0]
+
+        if (!cancelled) {
+          dispatch({
+            batch: loadedBatch ? { ...batch, ...loadedBatch } : { ...batch, GroupedConsignmentItems: [] },
+            type: 'loadSucceeded',
+          })
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          dispatch({
+            batch: { ...batch, GroupedConsignmentItems: [] },
+            error: loadError instanceof Error ? loadError.message : t('Не вдалося завантажити позиції партії'),
+            type: 'loadFailed',
+          })
+        }
+      }
+    }
+
+    void loadBatchDetails()
+
+    return () => {
+      cancelled = true
+    }
+  }, [batch, dateFrom, dateTo, storageNetId, supplierNetId, t])
 
   return (
     <Stack gap="md">
       <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-        <DetailItem label="Дата" value={formatDate(batch.FromDate)} />
-        <DetailItem label="Постачальник" value={displayValue(batch.SupplierName)} />
-        <DetailItem label="Номер приходу" value={displayValue(batch.ProductIncomeNumber)} />
-        <DetailItem label="Інвойс" value={displayValue(batch.InvoiceNumber)} />
-        <DetailItem label="Організація" value={displayValue(batch.OrganizationName)} />
-        <DetailItem label="Сума gross" value={formatMoney(batch.TotalGrossPrice)} />
-        <DetailItem label="Облік gross" value={formatMoney(batch.AccountingTotalGrossPrice)} />
-        <DetailItem label="Вага" value={formatAmount(batch.TotalWeight)} />
+        <DetailItem label="Дата" value={formatDate(visibleBatch.FromDate)} />
+        <DetailItem label="Постачальник" value={displayValue(visibleBatch.SupplierName)} />
+        <DetailItem label="Номер приходу" value={displayValue(visibleBatch.ProductIncomeNumber)} />
+        <DetailItem label="Інвойс" value={displayValue(visibleBatch.InvoiceNumber)} />
+        <DetailItem label="Організація" value={displayValue(visibleBatch.OrganizationName)} />
+        <DetailItem label="Сума gross" value={formatMoney(visibleBatch.TotalGrossPrice)} />
+        <DetailItem label="Облік gross" value={formatMoney(visibleBatch.AccountingTotalGrossPrice)} />
+        <DetailItem label="Вага" value={formatAmount(visibleBatch.TotalWeight)} />
       </SimpleGrid>
       <Divider />
-      {items.length ? (
+      {error && (
+        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          {error}
+        </Alert>
+      )}
+      {items.length || isLoading ? (
         <DataTable
           columns={columns}
           data={items}
           defaultLayout={BATCH_DETAILS_TABLE_DEFAULT_LAYOUT}
           emptyText={t('Позицій партії не знайдено')}
           getRowId={(item, index) => String(item.NetUid || item.Id || `${getVendorCode(item.Product)}-${index}`)}
+          isLoading={isLoading}
           layoutVersion="product-remains-batch-details-table-1"
+          loadingText={t('Завантаження позицій партії')}
           maxHeight="calc(100vh - 320px)"
           minWidth={1080}
           tableId="product-remains-batch-details"
@@ -1464,6 +1538,38 @@ function BatchDetails({
       )}
     </Stack>
   )
+}
+
+type BatchDetailsState = {
+  detailBatch: GroupedConsignment | null
+  error: string | null
+  isLoading: boolean
+}
+
+type BatchDetailsAction =
+  | { type: 'loadFailed'; batch: GroupedConsignment; error: string }
+  | { type: 'loadStarted' }
+  | { type: 'loadSucceeded'; batch: GroupedConsignment }
+
+function createInitialBatchDetailsState(batch: GroupedConsignment): BatchDetailsState {
+  const hasItems = Boolean(batch.GroupedConsignmentItems?.length)
+
+  return {
+    detailBatch: hasItems ? batch : null,
+    error: null,
+    isLoading: !hasItems,
+  }
+}
+
+function batchDetailsReducer(state: BatchDetailsState, action: BatchDetailsAction): BatchDetailsState {
+  switch (action.type) {
+    case 'loadFailed':
+      return { detailBatch: action.batch, error: action.error, isLoading: false }
+    case 'loadStarted':
+      return { ...state, error: null, isLoading: true }
+    case 'loadSucceeded':
+      return { detailBatch: action.batch, error: null, isLoading: false }
+  }
 }
 
 type ProductRemainMovementsState = {
@@ -1812,6 +1918,10 @@ function buildSupplierOptions(suppliers: ProductRemainSupplier[]): { label: stri
   })
 
   return options
+}
+
+function getBatchItemsCount(batch: GroupedConsignment): number {
+  return batch.ItemsCount ?? batch.GroupedConsignmentItems?.length ?? 0
 }
 
 function getBatchRowId(batch: GroupedConsignment, index: number): string {

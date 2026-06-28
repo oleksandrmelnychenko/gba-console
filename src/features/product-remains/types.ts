@@ -55,6 +55,7 @@ export type GroupedConsignment = EntityFields & {
   FromDate?: Date | string
   GroupedConsignmentItems?: GroupedConsignmentItem[]
   InvoiceNumber?: string
+  ItemsCount?: number
   OrganizationName?: string
   ProductIncomeNumber?: string
   RowNumber?: number
@@ -119,10 +120,13 @@ export type CollectionWithTotals<TItem> = {
   TotalAmountLocalFiltered?: number
   TotalQty?: number
   TotalQtyFiltered?: number
+  TotalRowsQty?: number
+  TotalRowsQtyFiltered?: number
 }
 
 export type ProductRemainsSearchParams = {
   from: string
+  includeItems?: boolean
   limit: number
   offset: number
   storageNetId?: string

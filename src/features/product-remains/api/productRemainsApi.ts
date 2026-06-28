@@ -50,6 +50,7 @@ export async function getGroupedProductRemains(
   const result = await apiRequest<unknown>(`${REMAINING_BASE}/grouped/storage/filtered`, {
     query: {
       from: params.from,
+      includeItems: params.includeItems,
       limit: params.limit,
       offset: params.offset,
       storageNetId: params.storageNetId,
@@ -153,6 +154,8 @@ function normalizeCollectionWithTotals<TItem>(
     TotalAmountLocalFiltered: readNumber(payload.TotalAmountLocalFiltered),
     TotalQty: readNumber(payload.TotalQty),
     TotalQtyFiltered: readNumber(payload.TotalQtyFiltered),
+    TotalRowsQty: readNumber(payload.TotalRowsQty),
+    TotalRowsQtyFiltered: readNumber(payload.TotalRowsQtyFiltered),
   }
 }
 
