@@ -1,11 +1,15 @@
-import { ActionIcon, Badge, Box, Button, Group, Loader, Select, Stack, Table, Text, TextInput, Tooltip } from '@mantine/core'
+import { ActionIcon, Badge, Box, Button, Group, Loader, Select, Stack, Text, TextInput, Tooltip } from '@mantine/core'
 import {
   IconArrowsLeftRight,
+  IconBarcode,
   IconBrandEdge,
+  IconCalendarTime,
   IconChevronDown,
   IconChevronRight,
+  IconCoins,
   IconFileInvoice,
   IconHistory,
+  IconPackage,
   IconPrinter,
   IconReceipt2,
   IconTag,
@@ -418,43 +422,104 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
   const { t } = useI18n()
   const orderItems = Array.isArray(sale.Order?.OrderItems) ? sale.Order.OrderItems : []
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
+  const totalQty = orderItems.reduce((sum, item) => sum + (item.Qty ?? 0), 0)
+  const totalAmount = orderItems.reduce((sum, item) => sum + getOrderItemAmount(item), 0)
 
   return (
     <Box className="new-sale-register-expanded">
-      <Table className="new-sale-register-expanded__table" highlightOnHover verticalSpacing={4} withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w={120}>{t('Код Виробника')}</Table.Th>
-            <Table.Th w={140}>{t('Ориг. номер')}</Table.Th>
-            <Table.Th>{t('Назва товару')}</Table.Th>
-            <Table.Th ta="right" w={120}>
-              {t('Сума')}
-            </Table.Th>
-            <Table.Th ta="right" w={90}>
-              {t('К-сть')}
-            </Table.Th>
-            <Table.Th w={180}>{t('Створено')}</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {orderItems.map((item, index) => (
-            <Table.Tr key={String(item.NetUid || item.Id || index)}>
-              <Table.Td>{item.Product?.VendorCode}</Table.Td>
-              <Table.Td>{item.Product?.MainOriginalNumber}</Table.Td>
-              <Table.Td>{item.Product?.Name}</Table.Td>
-              <Table.Td ta="right">
-                {itemAmountFormatter.format(getOrderItemAmount(item))} {currencyCode}
-              </Table.Td>
-              <Table.Td ta="right">
-                {item.Qty ?? 0} {t('штук')}
-              </Table.Td>
-              <Table.Td>
-                {formatDateTime(item.Created)} {item.User?.LastName || ''}
-              </Table.Td>
-            </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+      <Box className="new-sale-register-expanded__panel">
+        <Box className="new-sale-register-expanded__header">
+          <Group gap={8} wrap="nowrap">
+            <Box className="new-sale-register-expanded__header-icon">
+              <IconPackage size={16} />
+            </Box>
+            <Box className="new-sale-register-expanded__header-copy">
+              <Text>{t('Склад документа')}</Text>
+              <Text>
+                {orderItems.length} {t('позицій')}
+              </Text>
+            </Box>
+          </Group>
+
+          <Group className="new-sale-register-expanded__totals" gap={8} justify="flex-end" wrap="nowrap">
+            <Box>
+              <Text>{t('Сума')}</Text>
+              <Text>
+                {itemAmountFormatter.format(totalAmount)} {currencyCode}
+              </Text>
+            </Box>
+            <Box>
+              <Text>{t('К-сть')}</Text>
+              <Text>
+                {totalQty} {t('штук')}
+              </Text>
+            </Box>
+          </Group>
+        </Box>
+
+        {orderItems.length === 0 ? (
+          <Text className="new-sale-register-expanded__empty">{t('Товарів не знайдено')}</Text>
+        ) : (
+          <Stack className="new-sale-register-expanded__items" gap={0}>
+            {orderItems.map((item, index) => {
+              const vendorCode = item.Product?.VendorCode || ''
+              const originalNumber = item.Product?.MainOriginalNumber || ''
+              const productName = item.Product?.Name || t('Товар без назви')
+              const createdUser = [item.User?.LastName, item.User?.FirstName].filter(Boolean).join(' ')
+
+              return (
+                <Box className="new-sale-register-expanded-item" key={String(item.NetUid || item.Id || index)}>
+                  <Box className="new-sale-register-expanded-item__product">
+                    <Box className="new-sale-register-expanded-item__icon">
+                      <IconPackage size={16} />
+                    </Box>
+                    <Box className="new-sale-register-expanded-item__copy">
+                      <Text className="new-sale-register-expanded-item__name" title={productName}>
+                        {productName}
+                      </Text>
+                      <Group className="new-sale-register-expanded-item__codes" gap={6} wrap="wrap">
+                        {vendorCode && (
+                          <span>
+                            <IconBarcode size={12} />
+                            {t('Код виробника')} {vendorCode}
+                          </span>
+                        )}
+                        {originalNumber && (
+                          <span>
+                            <IconTag size={12} />
+                            {t('Ориг. номер')} {originalNumber}
+                          </span>
+                        )}
+                        {!vendorCode && !originalNumber && <span>{t('Коди не вказані')}</span>}
+                      </Group>
+                    </Box>
+                  </Box>
+
+                  <Box className="new-sale-register-expanded-item__stat">
+                    <IconCoins size={14} />
+                    <Text>{itemAmountFormatter.format(getOrderItemAmount(item))}</Text>
+                    <Text>{currencyCode}</Text>
+                  </Box>
+
+                  <Box className="new-sale-register-expanded-item__stat">
+                    <IconPackage size={14} />
+                    <Text>{item.Qty ?? 0}</Text>
+                    <Text>{t('штук')}</Text>
+                  </Box>
+
+                  <Box className="new-sale-register-expanded-item__date">
+                    <IconCalendarTime size={14} />
+                    <Box>
+                      <Text>{formatDateTime(item.Created)}</Text>
+                      {createdUser && <Text>{createdUser}</Text>}
+                    </Box>
+                  </Box>
+                </Box>
+              )
+            })}
+          </Stack>
+        )}
+      </Box>
     </Box>
   )
 }
