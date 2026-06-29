@@ -1,5 +1,5 @@
-import { Box, Group, Paper, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconHelpCircle } from '@tabler/icons-react'
+import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
+import { IconAlertTriangle, IconCircleCheck, IconHelpCircle } from '@tabler/icons-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
 import {
@@ -18,11 +18,7 @@ export function WizardClientAgreementsStrip({
   onSelect: (agreement: ClientAgreement) => void
 }) {
   return (
-    <Group
-      align="stretch"
-      gap="xs"
-      style={{ flexWrap: 'nowrap', minHeight: 84, overflowX: 'auto', paddingBottom: 4 }}
-    >
+    <Box className="new-sale-agreements-strip">
       {agreements.map((clientAgreement, index) => (
         <WizardAgreementCard
           key={getWizardAgreementKey(clientAgreement) || index}
@@ -31,7 +27,7 @@ export function WizardClientAgreementsStrip({
           onSelect={onSelect}
         />
       ))}
-    </Group>
+    </Box>
   )
 }
 
@@ -50,75 +46,65 @@ function WizardAgreementCard({
   const overdueLimitDays = agreement?.NumberDaysDebt ?? 0
   const totalAgreementDebt = getWizardAgreementOverdueDebtTotal(agreement)
   const daysOwed = getWizardAgreementMaxDaysOwed(agreement)
-  const isOverdue =
-    totalAgreementDebt > 0 ||
-    (agreement?.AmountDebt != null && Math.abs(accountBalance) > agreement.AmountDebt) ||
-    daysOwed > overdueLimitDays
+  const amountLimitExceeded = agreement?.AmountDebt != null && Math.abs(accountBalance) > agreement.AmountDebt
+  const daysLimitExceeded = daysOwed > overdueLimitDays
+  const isOverdue = totalAgreementDebt > 0 || amountLimitExceeded || daysLimitExceeded
+  const agreementName = agreement?.Name || clientAgreement.AgreementName || ''
+  const organizationName = agreement?.Organization?.Name || ''
+  const currencyCode = agreement?.Currency?.Code || ''
 
   return (
-    <UnstyledButton style={{ flexShrink: 0 }} onClick={() => onSelect(clientAgreement)}>
-      <Paper
-        h="100%"
-        miw={230}
-        px="sm"
-        py={6}
-        radius="md"
-        style={{
-          borderColor: isSelected
-            ? 'var(--mantine-color-violet-5)'
-            : isOverdue
-              ? 'var(--mantine-color-red-5)'
-              : undefined,
-          borderWidth: isSelected ? 2 : 1,
-        }}
-        withBorder
-      >
-        {agreement?.Organization?.Name && (
-          <Text c="dimmed" size="xs" truncate>
-            {agreement.Organization.Name}
+    <UnstyledButton
+      className={[
+        'new-sale-agreement-card',
+        isSelected ? 'is-selected' : '',
+        isOverdue ? 'is-overdue' : '',
+      ].filter(Boolean).join(' ')}
+      onClick={() => onSelect(clientAgreement)}
+    >
+      <Box className="new-sale-agreement-card__rail" />
+      <Box className="new-sale-agreement-card__content">
+        <Box className="new-sale-agreement-card__top">
+          <Text className="new-sale-agreement-card__organization" title={organizationName} truncate>
+            {organizationName || t('Організація не вказана')}
           </Text>
-        )}
+          <Box className="new-sale-agreement-card__status">
+            {isOverdue ? <IconAlertTriangle size={14} /> : <IconCircleCheck size={14} />}
+          </Box>
+        </Box>
 
-        <Group gap={6} wrap="nowrap">
-          <Text fw={isSelected ? 700 : 600} size="sm" truncate>
-            {agreement?.Name}
+        <Group gap={8} wrap="nowrap">
+          <Text className="new-sale-agreement-card__name" title={agreementName} truncate>
+            {agreementName}
           </Text>
-          <Text c="dimmed" size="xs" style={{ flexShrink: 0 }}>
-            {agreement?.Currency?.Code}
-          </Text>
+          {currencyCode && <span className="new-sale-agreement-card__currency">{currencyCode}</span>}
         </Group>
 
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
-            <Group gap={4} wrap="nowrap">
-              <IconHelpCircle size={12} style={{ color: 'var(--mantine-color-gray-6)', flexShrink: 0 }} />
-              <Text c="dimmed" size="xs" truncate>
-                {clientAgreement.OriginalClientName}
-              </Text>
+            <Group className="new-sale-agreement-card__origin" gap={4} wrap="nowrap">
+              <IconHelpCircle size={12} />
+              <Text truncate>{clientAgreement.OriginalClientName}</Text>
             </Group>
           </Tooltip>
         )}
 
-        <Group gap="sm" wrap="nowrap">
+        <Group className="new-sale-agreement-card__limits" gap={8} wrap="nowrap">
           {agreement?.IsControlAmountDebt && (
-            <Text c={totalAgreementDebt > 0 ? 'red.7' : 'dimmed'} size="xs" style={{ whiteSpace: 'nowrap' }}>
+            <span className={totalAgreementDebt > 0 || amountLimitExceeded ? 'is-danger' : ''}>
               {totalAgreementDebt}/{accountBalance}
-            </Text>
+            </span>
           )}
           {agreement?.IsControlNumberDaysDebt && (
-            <Text c={daysOwed > overdueLimitDays ? 'red.7' : 'dimmed'} size="xs" style={{ whiteSpace: 'nowrap' }}>
+            <span className={daysLimitExceeded ? 'is-danger' : ''}>
               {daysOwed > overdueLimitDays ? daysOwed - overdueLimitDays : 0}/{overdueLimitDays}
-            </Text>
+            </span>
           )}
           {(agreement?.IsControlAmountDebt || agreement?.IsControlNumberDaysDebt) && (
-            <Box component="span" style={{ flexShrink: 0 }}>
-              <Text c={isOverdue ? 'red.7' : 'dimmed'} size="xs">
-                {t('прострочено')}
-              </Text>
-            </Box>
+            <span className={isOverdue ? 'is-danger' : ''}>{t('прострочено')}</span>
           )}
         </Group>
-      </Paper>
+      </Box>
     </UnstyledButton>
   )
 }

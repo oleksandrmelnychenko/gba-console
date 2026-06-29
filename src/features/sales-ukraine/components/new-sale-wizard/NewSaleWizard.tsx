@@ -34,6 +34,7 @@ import {
 import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
 import { WizardSaleHeader } from './WizardSaleHeader'
+import './new-sale-wizard.css'
 
 const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
 

@@ -103,90 +103,105 @@ export function WizardClientRegistry({
     .sort((a, b) => getTime(b.Created) - getTime(a.Created))
 
   return (
-    <Stack gap="xs" style={{ flex: 1, minHeight: 0 }}>
-      <Group align="end" gap="sm" wrap="wrap">
-        <Select
-          allowDeselect={false}
-          data={[
-            { label: t('Всі'), value: String(WIZARD_SALE_REGISTER_STATUS_ALL) },
-            { label: t('Рахунок'), value: String(WIZARD_SALE_REGISTER_STATUS_NEW) },
-            { label: t('Накладна'), value: String(WIZARD_SALE_REGISTER_STATUS_PACKAGING) },
-          ]}
-          label={t('Статус')}
-          size="xs"
-          value={String(status)}
-          w={130}
-          onChange={(value) => onChangeStatus(Number(value ?? WIZARD_SALE_REGISTER_STATUS_ALL))}
-        />
-        <TextInput
-          label={t('Пошук по товару')}
-          placeholder={t('Пошук по товару')}
-          size="xs"
-          value={saleSearch}
-          w={200}
-          onChange={(event) => onChangeSaleSearch(event.currentTarget.value)}
-        />
-        <TextInput
-          label={t('Початкова дата')}
-          max={dateTo || undefined}
-          size="xs"
-          type="date"
-          value={dateFrom}
-          onChange={(event) => onChangeDateFrom(event.currentTarget.value)}
-        />
-        <TextInput
-          label={t('Кінцева дата')}
-          min={dateFrom || undefined}
-          size="xs"
-          type="date"
-          value={dateTo}
-          onChange={(event) => onChangeDateTo(event.currentTarget.value)}
-        />
-        <Button size="xs" variant="light" onClick={onOpenOrderedProducts}>
-          {t('Замовлені товари')}
-        </Button>
-      </Group>
+    <Stack className="new-sale-register" gap={0}>
+      <Box className="new-sale-register-toolbar">
+        <Group align="end" className="new-sale-register-toolbar__controls" gap={8} wrap="wrap">
+          <Select
+            allowDeselect={false}
+            className="new-sale-register-control"
+            data={[
+              { label: t('Всі'), value: String(WIZARD_SALE_REGISTER_STATUS_ALL) },
+              { label: t('Рахунок'), value: String(WIZARD_SALE_REGISTER_STATUS_NEW) },
+              { label: t('Накладна'), value: String(WIZARD_SALE_REGISTER_STATUS_PACKAGING) },
+            ]}
+            label={t('Статус')}
+            size="xs"
+            value={String(status)}
+            w={130}
+            onChange={(value) => onChangeStatus(Number(value ?? WIZARD_SALE_REGISTER_STATUS_ALL))}
+          />
+          <TextInput
+            className="new-sale-register-search"
+            label={t('Пошук по товару')}
+            placeholder={t('Пошук по товару')}
+            size="xs"
+            value={saleSearch}
+            w={220}
+            onChange={(event) => onChangeSaleSearch(event.currentTarget.value)}
+          />
+          <TextInput
+            label={t('Початкова дата')}
+            max={dateTo || undefined}
+            size="xs"
+            type="date"
+            value={dateFrom}
+            onChange={(event) => onChangeDateFrom(event.currentTarget.value)}
+          />
+          <TextInput
+            label={t('Кінцева дата')}
+            min={dateFrom || undefined}
+            size="xs"
+            type="date"
+            value={dateTo}
+            onChange={(event) => onChangeDateTo(event.currentTarget.value)}
+          />
+          <Button className="new-sale-register-orders-button" size="xs" variant="light" onClick={onOpenOrderedProducts}>
+            {t('Замовлені товари')}
+          </Button>
+        </Group>
 
-      <Text fw={700} size="sm">
-        {t('Реєстр документів')}
-      </Text>
+        <Box className="new-sale-register-toolbar__summary">
+          <Text className="new-sale-register-toolbar__title">{t('Реєстр документів')}</Text>
+          <Text className="new-sale-register-toolbar__count">{visibleSales.length}</Text>
+        </Box>
+      </Box>
 
-      <Box style={{ flex: 1, minHeight: 120, overflowY: 'auto' }}>
+      <Box className="new-sale-register-list">
         {isLoading ? (
-          <Group gap="xs" justify="center" py="md">
+          <Group className="new-sale-register-state" gap="xs" justify="center">
             <Loader size="sm" />
             <Text c="dimmed" size="sm">
               {t('Завантаження')}
             </Text>
           </Group>
         ) : visibleSales.length === 0 ? (
-          <Text c="dimmed" py="md" size="sm" ta="center">
+          <Text className="new-sale-register-state" c="dimmed" size="sm" ta="center">
             {t('Документів не знайдено')}
           </Text>
         ) : (
-          <Stack gap={4}>
-            {visibleSales.map((sale, index) => {
-              const key = String(sale.NetUid || sale.Id || index)
-              const isOpen = expandedKey === key
+          <>
+            <Box className="new-sale-register-head">
+              <Text>{t('Документ')}</Text>
+              <Text>{t('Оплата')}</Text>
+              <Text>{t('Сума')}</Text>
+              <Text>{t('К-сть')}</Text>
+              <Text>{t('Створено')}</Text>
+              <Text>{t('Дії')}</Text>
+            </Box>
+            <Stack className="new-sale-register-rows" gap={0}>
+              {visibleSales.map((sale, index) => {
+                const key = String(sale.NetUid || sale.Id || index)
+                const isOpen = expandedKey === key
 
-              return (
-                <Fragment key={key}>
-                  <WizardSaleRegistryRow
-                    canEdit={canEdit}
-                    isOpen={isOpen}
-                    sale={sale}
-                    onAudit={onAuditRow}
-                    onDelivery={onDeliveryRow}
-                    onEdit={onEditRow}
-                    onOpen={onOpenRow}
-                    onPrint={onPrintRow}
-                    onToggleExpand={() => onToggleExpand(key)}
-                  />
-                  {isOpen && <WizardSaleRegistryRowContent sale={sale} />}
-                </Fragment>
-              )
-            })}
-          </Stack>
+                return (
+                  <Fragment key={key}>
+                    <WizardSaleRegistryRow
+                      canEdit={canEdit}
+                      isOpen={isOpen}
+                      sale={sale}
+                      onAudit={onAuditRow}
+                      onDelivery={onDeliveryRow}
+                      onEdit={onEditRow}
+                      onOpen={onOpenRow}
+                      onPrint={onPrintRow}
+                      onToggleExpand={() => onToggleExpand(key)}
+                    />
+                    {isOpen && <WizardSaleRegistryRowContent sale={sale} />}
+                  </Fragment>
+                )
+              })}
+            </Stack>
+          </>
         )}
       </Box>
     </Stack>
@@ -226,24 +241,17 @@ function WizardSaleRegistryRow({
   const createdDate = sale.ChangedToInvoice || sale.Created
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
   const userName = [sale.User?.LastName, sale.User?.FirstName].filter(Boolean).join(' ')
+  const rowClassName = [
+    'new-sale-register-row',
+    isOpen ? 'is-open' : '',
+    isShift ? 'is-shift' : '',
+  ].filter(Boolean).join(' ')
 
   return (
     <Box
       aria-label={t('Відкрити продаж')}
-      px={8}
-      py={6}
+      className={rowClassName}
       role="button"
-      style={{
-        background: isOpen
-          ? 'var(--mantine-color-violet-light)'
-          : isShift
-            ? 'var(--mantine-color-yellow-light)'
-            : undefined,
-        border: '1px solid var(--mantine-color-gray-3)',
-        borderRadius: 8,
-        cursor: 'pointer',
-        width: '100%',
-      }}
       tabIndex={-1}
       onClick={(event) => {
         if (!(event.target as HTMLElement).closest('button, a')) {
@@ -251,36 +259,45 @@ function WizardSaleRegistryRow({
         }
       }}
     >
-      <Group gap={8} wrap="nowrap">
-        <Box style={{ flexShrink: 0, height: 8, width: 8 }}>
-          {isEdited && (
-            <Tooltip label={t('Рахунок редаговано')}>
-              <Box style={{ background: 'var(--mantine-color-red-6)', borderRadius: '50%', height: 8, width: 8 }} />
-            </Tooltip>
-          )}
+      <Box className="new-sale-register-row__grid">
+        <Box className="new-sale-register-row__document">
+          <Box className="new-sale-register-row__edited">
+            {isEdited && (
+              <Tooltip label={t('Рахунок редаговано')}>
+                <Box />
+              </Tooltip>
+            )}
+          </Box>
+
+          <WizardSaleSourceIcon lifecycleKey={lifecycleKey} sale={sale} />
+
+          <ActionIcon
+            aria-label={isOpen ? t('Згорнути') : t('Розгорнути')}
+            className="new-sale-register-row__expand"
+            color="gray"
+            size="sm"
+            variant="subtle"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              onToggleExpand()
+            }}
+          >
+            {isOpen ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+          </ActionIcon>
+
+          <Box className="new-sale-register-row__document-copy">
+            <Text className="new-sale-register-row__number" title={String(sale.SaleNumber?.Value || '')} truncate>
+              {sale.SaleNumber?.Value}
+            </Text>
+            <Text className="new-sale-register-row__lifecycle" truncate>
+              {sale.IsVatSale ? `(${t('ПДВ')}) ` : ''}
+              {t(LIFECYCLE_LABELS[lifecycleKey] || lifecycleKey)}
+            </Text>
+          </Box>
         </Box>
 
-        <WizardSaleSourceIcon lifecycleKey={lifecycleKey} sale={sale} />
-
-        <ActionIcon
-          aria-label={isOpen ? t('Згорнути') : t('Розгорнути')}
-          color="gray"
-          size="sm"
-          variant="subtle"
-          onClick={(event) => {
-            event.preventDefault()
-            event.stopPropagation()
-            onToggleExpand()
-          }}
-        >
-          {isOpen ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
-        </ActionIcon>
-
-        <Text fw={600} size="sm" style={{ flexShrink: 0, minWidth: 110 }}>
-          {sale.SaleNumber?.Value}
-        </Text>
-
-        <Box style={{ flexShrink: 0, minWidth: 120 }}>
+        <Box className="new-sale-register-row__payment">
           {!isNew && PAYMENT_LABELS[paymentKey] && (
             <Badge color={PAYMENT_COLORS[paymentKey] || 'gray'} size="sm" variant="light">
               {t(PAYMENT_LABELS[paymentKey])}
@@ -288,119 +305,111 @@ function WizardSaleRegistryRow({
           )}
         </Box>
 
-        <Text size="sm" style={{ flexShrink: 0, minWidth: 110 }}>
-          {sale.IsVatSale ? `(${t('ПДВ')}) ` : ''}
-          {t(LIFECYCLE_LABELS[lifecycleKey] || lifecycleKey)}
-        </Text>
-
-        <Group gap={4} style={{ flex: 1, minWidth: 0 }} wrap="nowrap">
-          <Text fw={600} size="sm">
+        <Box className="new-sale-register-row__amount">
+          <Text className="new-sale-register-row__amount-value">
             {amountFormatter.format(sale.TotalAmountLocal ?? 0)}
           </Text>
-          <Text c="dimmed" size="xs">
-            {currencyCode}
-          </Text>
-          <Text fw={600} ml="xs" size="sm">
-            {sale.TotalCount ?? 0}
-          </Text>
-          <Text c="dimmed" size="xs">
-            {t('штук')}
-          </Text>
-        </Group>
-
-        <Box style={{ flexShrink: 0, textAlign: 'right' }}>
-          <Text size="xs">{formatDateTime(createdDate)}</Text>
-          <Text c="dimmed" size="xs">
-            {userName}
-          </Text>
+          <Text className="new-sale-register-row__amount-code">{currencyCode}</Text>
         </Box>
 
-        {!hideActions && (
-          <Group gap={2} style={{ flexShrink: 0 }} wrap="nowrap">
-            {showEdit && (
-              <Tooltip label={isNew ? t('Акт редагування рахунку') : t('Акт редагування накладної')}>
-                <ActionIcon
-                  aria-label={t('Акт редагування')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onEdit(sale)
-                  }}
-                >
-                  <IconArrowsLeftRight size={15} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {!isNew && (
-              <Tooltip label={t('Друк')}>
-                <ActionIcon
-                  aria-label={t('Друк')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onPrint(sale)
-                  }}
-                >
-                  <IconPrinter size={15} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {showAudit && (
-              <Tooltip label={t('Рух товарно-матеріальних цінностей')}>
-                <ActionIcon
-                  aria-label={t('Рух товарно-матеріальних цінностей')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onAudit(sale)
-                  }}
-                >
-                  <IconHistory size={15} />
-                </ActionIcon>
-              </Tooltip>
-            )}
-            {sale.Transporter && (
-              <Tooltip label={t('Перевізник')}>
-                <ActionIcon
-                  aria-label={t('Перевізник')}
-                  color="gray"
-                  size="sm"
-                  variant="subtle"
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    onDelivery(sale)
-                  }}
-                >
-                  {sale.Transporter.ImageUrl ? (
-                    <Box
-                      style={{
-                        backgroundImage: `url(${sale.Transporter.ImageUrl})`,
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: 'contain',
-                        height: 15,
-                        width: 15,
-                      }}
-                    />
-                  ) : (
-                    <IconFileInvoice size={15} />
-                  )}
-                </ActionIcon>
-              </Tooltip>
-            )}
-          </Group>
-        )}
-      </Group>
+        <Box className="new-sale-register-row__qty">
+          <Text className="new-sale-register-row__qty-value">{sale.TotalCount ?? 0}</Text>
+          <Text className="new-sale-register-row__qty-label">{t('штук')}</Text>
+        </Box>
+
+        <Box className="new-sale-register-row__date">
+          <Text>{formatDateTime(createdDate)}</Text>
+          <Text>{userName}</Text>
+        </Box>
+
+        <Box className="new-sale-register-row__actions">
+          {!hideActions && (
+            <Group gap={2} wrap="nowrap">
+              {showEdit && (
+                <Tooltip label={isNew ? t('Акт редагування рахунку') : t('Акт редагування накладної')}>
+                  <ActionIcon
+                    aria-label={t('Акт редагування')}
+                    color="gray"
+                    size="sm"
+                    variant="subtle"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      onEdit(sale)
+                    }}
+                  >
+                    <IconArrowsLeftRight size={15} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {!isNew && (
+                <Tooltip label={t('Друк')}>
+                  <ActionIcon
+                    aria-label={t('Друк')}
+                    color="gray"
+                    size="sm"
+                    variant="subtle"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      onPrint(sale)
+                    }}
+                  >
+                    <IconPrinter size={15} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {showAudit && (
+                <Tooltip label={t('Рух товарно-матеріальних цінностей')}>
+                  <ActionIcon
+                    aria-label={t('Рух товарно-матеріальних цінностей')}
+                    color="gray"
+                    size="sm"
+                    variant="subtle"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      onAudit(sale)
+                    }}
+                  >
+                    <IconHistory size={15} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {sale.Transporter && (
+                <Tooltip label={t('Перевізник')}>
+                  <ActionIcon
+                    aria-label={t('Перевізник')}
+                    color="gray"
+                    size="sm"
+                    variant="subtle"
+                    onClick={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      onDelivery(sale)
+                    }}
+                  >
+                    {sale.Transporter.ImageUrl ? (
+                      <Box
+                        style={{
+                          backgroundImage: `url(${sale.Transporter.ImageUrl})`,
+                          backgroundPosition: 'center',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundSize: 'contain',
+                          height: 15,
+                          width: 15,
+                        }}
+                      />
+                    ) : (
+                      <IconFileInvoice size={15} />
+                    )}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </Group>
+          )}
+        </Box>
+      </Box>
     </Box>
   )
 }
@@ -411,8 +420,8 @@ function WizardSaleRegistryRowContent({ sale }: { sale: SalesUkraineSale }) {
   const currencyCode = sale.ClientAgreement?.Agreement?.Currency?.Code || ''
 
   return (
-    <Box px="md" py={4}>
-      <Table highlightOnHover verticalSpacing={4} withColumnBorders>
+    <Box className="new-sale-register-expanded">
+      <Table className="new-sale-register-expanded__table" highlightOnHover verticalSpacing={4} withColumnBorders>
         <Table.Thead>
           <Table.Tr>
             <Table.Th w={120}>{t('Код Виробника')}</Table.Th>
@@ -465,7 +474,7 @@ function WizardSaleSourceIcon({ lifecycleKey, sale }: { lifecycleKey: string; sa
 
   return (
     <Tooltip label={indicator.label}>
-      <Box c="gray.6" style={{ display: 'inline-flex', flexShrink: 0 }}>
+      <Box className="new-sale-register-row__source">
         {indicator.icon}
       </Box>
     </Tooltip>

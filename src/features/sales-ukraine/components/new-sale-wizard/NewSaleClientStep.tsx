@@ -1,7 +1,19 @@
 import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFileExcel, IconFileTypePdf, IconUserOff } from '@tabler/icons-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  IconAlertTriangle,
+  IconBuildingStore,
+  IconCircleCheck,
+  IconFileExcel,
+  IconFileTypePdf,
+  IconMail,
+  IconMapPin,
+  IconPhone,
+  IconUser,
+  IconUserOff,
+  IconUsers,
+} from '@tabler/icons-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../../shared/realtime/events'
@@ -25,6 +37,7 @@ import { WizardClientCarousel } from './WizardClientCarousel'
 import { WizardClientRegistry } from './WizardClientRegistry'
 import {
   buildWizardClientStacks,
+  getWizardClientDebtTotal,
   getWizardAgreementKey,
   WIZARD_CLIENT_CAROUSEL_INITIAL,
   type WizardClientCarouselState,
@@ -1008,41 +1021,120 @@ export function NewSaleClientStep({
 
   const selectedAgreement = agreements.find((item) => getWizardAgreementKey(item) === selectedAgreementKey) ?? null
   const selectedAgreementClientId = selectedAgreement?.ClientId ?? selectedAgreement?.Client?.Id
+  const selectedClientTitle = selectedClient?.FullName || selectedClient?.Name || ''
+  const selectedClientCode = selectedClient?.RegionCode?.Value || selectedClient?.ClientNumber || selectedClient?.USREOU || ''
+  const selectedClientDebtTotal = groupedDebts.reduce((sum, debt) => sum + getWizardClientDebtTotal(debt), 0)
+  const selectedClientContactCandidates: Array<{ icon: ReactNode; value?: string | null }> = [
+    {
+      icon: <IconPhone size={13} />,
+      value: selectedClient?.MobileNumber || selectedClient?.SMSNumber,
+    },
+    {
+      icon: <IconMail size={13} />,
+      value: selectedClient?.EmailAddress,
+    },
+    {
+      icon: <IconMapPin size={13} />,
+      value: selectedClient?.RegionCode?.City,
+    },
+  ]
+  const selectedClientContacts = selectedClientContactCandidates.filter(
+    (item): item is { icon: ReactNode; value: string } => Boolean(item.value),
+  )
+  const selectedClientKind = selectedClient?.IsTradePoint
+    ? t('Торгова точка')
+    : selectedClient?.IsSubClient
+      ? t('Підклієнт')
+      : t('Клієнт')
+  const SelectedClientIcon = selectedClient?.IsTradePoint ? IconBuildingStore : selectedClient?.IsSubClient ? IconUsers : IconUser
+  const selectedClientIsActive = selectedClient?.IsActive !== false
 
   return (
     <>
-      <Group align="stretch" gap="md" wrap="nowrap" style={{ height: 'calc(100dvh - 330px)', minHeight: 440 }}>
-        <Box
-          style={{
-            borderRight: '1px solid var(--mantine-color-gray-3)',
-            display: 'flex',
-            flexDirection: 'column',
-            flexShrink: 0,
-            paddingRight: 12,
-            width: 300,
-          }}
-        >
-          <WizardClientCarousel
-            carousel={carousel}
-            hasDebt={Boolean(selectedClient) && groupedDebts.length > 0}
-            hideName={false}
-            searchInputRef={searchInputRef}
-            searchMode={keyboardState === 'ClientSearch'}
-            searchValue={query}
-            selectedClientKey={selectedClient ? String(selectedClient.NetUid || selectedClient.Id || '') : ''}
-            onPickClient={pickClient}
-            onSearchChange={handleSearchChange}
-          />
+      <Box className="new-sale-client-step">
+        {selectedClient && (
+          <Box className="new-sale-client-hero">
+            <Box className="new-sale-client-hero__identity">
+              <Box className={`new-sale-client-hero__mark ${selectedClientDebtTotal > 0 ? 'has-debt' : ''}`}>
+                <SelectedClientIcon size={22} />
+              </Box>
+              <Box className="new-sale-client-hero__copy">
+                <Text className="new-sale-client-hero__name" title={selectedClientTitle}>
+                  {selectedClientTitle}
+                </Text>
+                <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
+                  {selectedClientCode && <span>{selectedClientCode}</span>}
+                  <span>{selectedClientKind}</span>
+                  <span className={selectedClientIsActive ? 'is-active' : ''}>
+                    {selectedClientIsActive ? t('Активний') : t('Не активний')}
+                  </span>
+                  {selectedClientDebtTotal > 0 && (
+                    <span className="is-danger">
+                      <IconAlertTriangle size={12} />
+                      {t('Є борг')}
+                    </span>
+                  )}
+                </Group>
+                {selectedClientContacts.length > 0 && (
+                  <Group className="new-sale-client-hero__contacts" gap={8} wrap="nowrap">
+                    {selectedClientContacts.map((item, index) => (
+                      <span key={`${item.value}-${index}`} title={item.value}>
+                        {item.icon}
+                        {item.value}
+                      </span>
+                    ))}
+                  </Group>
+                )}
+              </Box>
+            </Box>
+
+            <Box className="new-sale-client-hero__metrics">
+              <Box className="new-sale-client-metric">
+                <IconCircleCheck size={13} />
+                <strong>{agreements.length}</strong>
+                <span>{t('Договори')}</span>
+              </Box>
+              <Box className="new-sale-client-metric">
+                <IconFileTypePdf size={13} />
+                <strong>{registryItems.length}</strong>
+                <span>{t('Документи')}</span>
+              </Box>
+              <Box className={`new-sale-client-metric ${selectedClientDebtTotal > 0 ? 'is-danger' : ''}`}>
+                <IconAlertTriangle size={13} />
+                <strong>{selectedClientDebtTotal.toLocaleString('uk-UA', { maximumFractionDigits: 0 })}</strong>
+                <span>{t('Борг')}</span>
+              </Box>
+            </Box>
+          </Box>
+        )}
+
+        <Box className="new-sale-client-drum-panel">
+          <Box className="new-sale-client-drum-panel__glow" />
+          <Box className="new-sale-client-drum-panel__body">
+            <WizardClientCarousel
+              carousel={carousel}
+              hasDebt={Boolean(selectedClient) && groupedDebts.length > 0}
+              hideName={false}
+              searchInputRef={searchInputRef}
+              searchMode={keyboardState === 'ClientSearch'}
+              searchValue={query}
+              selectedClientKey={selectedClient ? String(selectedClient.NetUid || selectedClient.Id || '') : ''}
+              onPickClient={pickClient}
+              onSearchChange={handleSearchChange}
+            />
+          </Box>
         </Box>
 
-        <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0 }}>
+        <Box className="new-sale-client-workspace">
           {selectedClient ? (
-            <Stack gap="sm" style={{ flex: 1, minHeight: 0 }}>
-              <WizardClientAgreementsStrip
-                agreements={agreements}
-                selectedKey={selectedAgreementKey}
-                onSelect={selectAgreement}
-              />
+            <>
+              <Box className="new-sale-client-agreements-zone">
+                <WizardClientAgreementsStrip
+                  agreements={agreements}
+                  selectedKey={selectedAgreementKey}
+                  onSelect={selectAgreement}
+                />
+              </Box>
               <WizardClientRegistry
                 canEdit={canEdit}
                 dateFrom={dateFrom}
@@ -1065,15 +1157,15 @@ export function NewSaleClientStep({
                 onPrintRow={(sale) => void printRow(sale)}
                 onToggleExpand={toggleExpand}
               />
-            </Stack>
+            </>
           ) : (
-            <Stack align="center" gap="xs" justify="center" style={{ flex: 1 }}>
+            <Stack align="center" className="new-sale-client-empty" gap="xs" justify="center">
               <IconUserOff size={48} stroke={1.2} style={{ color: 'var(--mantine-color-gray-4)' }} />
               <Text c="dimmed">{t('Не вибраний клієнт')}</Text>
             </Stack>
           )}
         </Box>
-      </Group>
+      </Box>
 
       <WizardOrderedProductsDrawer
         clientNetId={selectedClient?.NetUid ?? null}
