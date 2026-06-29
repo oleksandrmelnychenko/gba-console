@@ -1,4 +1,4 @@
-import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
+import { Anchor, Box, Button, Group, Loader, Popover, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertTriangle,
@@ -35,6 +35,7 @@ import { bumpWizardDebtRefresh } from './newSaleWizardState'
 import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
 import { WizardClientRegistry } from './WizardClientRegistry'
+import { WizardAgreementItem } from './WizardAgreementItem'
 import {
   buildWizardClientStacks,
   getWizardClientDebtTotal,
@@ -67,6 +68,7 @@ const WIZARD_CLIENT_SEARCH_MIN_LENGTH = 3
 
 export function NewSaleClientStep({
   clientNetId,
+  headerClose,
   headerTools,
   initialClient,
   onClientChange,
@@ -79,6 +81,7 @@ export function NewSaleClientStep({
   onRequestClose,
 }: {
   clientNetId: string | null
+  headerClose?: ReactNode
   headerTools?: ReactNode
   initialClient?: Client | null
   onAgreementChange: (agreementNetId: string | null, agreement: SalesUkraineClientAgreement | null) => void
@@ -1056,6 +1059,12 @@ export function NewSaleClientStep({
       <Box className="new-sale-client-step">
         {selectedClient && (
           <Box className="new-sale-client-hero">
+            {headerClose && <Box className="new-sale-client-hero__close">{headerClose}</Box>}
+            {selectedClientCode && (
+              <Box className="new-sale-client-hero__stamp" aria-hidden="true">
+                <span>{selectedClientCode}</span>
+              </Box>
+            )}
             <Box className="new-sale-client-hero__identity">
               <Box className={`new-sale-client-hero__mark ${selectedClientDebtTotal > 0 ? 'has-debt' : ''}`}>
                 <SelectedClientIcon size={22} />
@@ -1065,7 +1074,6 @@ export function NewSaleClientStep({
                   {selectedClientTitle}
                 </Text>
                 <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
-                  {selectedClientCode && <span>{selectedClientCode}</span>}
                   <span>{selectedClientKind}</span>
                   <span className={selectedClientIsActive ? 'is-active' : ''}>
                     {selectedClientIsActive ? t('Активний') : t('Не активний')}
@@ -1092,11 +1100,38 @@ export function NewSaleClientStep({
 
             <Box className="new-sale-client-hero__side">
               <Box className="new-sale-client-hero__metrics">
-                <Box className="new-sale-client-metric">
-                  <IconCircleCheck size={13} />
-                  <strong>{agreements.length}</strong>
-                  <span>{t('Договори')}</span>
-                </Box>
+                {agreements.length > 0 ? (
+                  <Popover position="bottom-end" shadow="md" width={420} withinPortal>
+                    <Popover.Target>
+                      <Box
+                        aria-label={t('Договори')}
+                        className="new-sale-client-metric is-clickable"
+                        component="button"
+                        type="button"
+                      >
+                        <IconCircleCheck size={13} />
+                        <strong>{agreements.length}</strong>
+                        <span>{t('Договори')}</span>
+                      </Box>
+                    </Popover.Target>
+                    <Popover.Dropdown>
+                      <Text fw={600} mb="xs" size="sm">
+                        {t('Договори')}
+                      </Text>
+                      <Stack gap={6} mah={320} style={{ overflowY: 'auto' }}>
+                        {agreements.map((item, index) => (
+                          <WizardAgreementItem key={String(item.NetUid || item.Id || index)} clientAgreement={item} />
+                        ))}
+                      </Stack>
+                    </Popover.Dropdown>
+                  </Popover>
+                ) : (
+                  <Box className="new-sale-client-metric">
+                    <IconCircleCheck size={13} />
+                    <strong>{agreements.length}</strong>
+                    <span>{t('Договори')}</span>
+                  </Box>
+                )}
                 <Box className="new-sale-client-metric">
                   <IconFileTypePdf size={13} />
                   <strong>{registryItems.length}</strong>

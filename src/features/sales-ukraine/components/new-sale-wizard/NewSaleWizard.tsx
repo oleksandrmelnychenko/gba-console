@@ -523,10 +523,18 @@ function NewSaleWizardContent({
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
+            headerClose={
+              <Tooltip label={t('Закрити')} position="left">
+                <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
+                  <IconX size={20} />
+                </ActionIcon>
+              </Tooltip>
+            }
             headerTools={
               <Group gap={6} justify="flex-end" wrap="nowrap">
                 <WizardSaleHeader
                   clientNetId={state.clientNetId}
+                  hideAgreementsAction
                   mode="inline"
                   reassignDisabled={shellBusy || productsBusy}
                   sale={state.sale}
@@ -542,11 +550,6 @@ function NewSaleWizardContent({
                     setActive(0)
                   }}
                 />
-                <Tooltip label={t('Закрити')} position="left">
-                  <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-                    <IconX size={20} />
-                  </ActionIcon>
-                </Tooltip>
               </Group>
             }
             initialClient={selectedClient}

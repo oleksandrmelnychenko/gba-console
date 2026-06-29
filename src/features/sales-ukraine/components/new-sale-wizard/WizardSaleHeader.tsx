@@ -37,6 +37,7 @@ const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
 
 export function WizardSaleHeader({
   clientNetId,
+  hideAgreementsAction = false,
   mode = 'strip',
   reassignDisabled,
   sale,
@@ -45,6 +46,7 @@ export function WizardSaleHeader({
   onSaleReassigned,
 }: {
   clientNetId: string | null
+  hideAgreementsAction?: boolean
   mode?: 'inline' | 'strip'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
@@ -60,6 +62,7 @@ export function WizardSaleHeader({
     <WizardSaleHeaderContent
       key={clientNetId}
       clientNetId={clientNetId}
+      hideAgreementsAction={hideAgreementsAction}
       mode={mode}
       reassignDisabled={reassignDisabled}
       sale={sale}
@@ -72,6 +75,7 @@ export function WizardSaleHeader({
 
 function WizardSaleHeaderContent({
   clientNetId,
+  hideAgreementsAction,
   mode,
   reassignDisabled,
   sale,
@@ -80,6 +84,7 @@ function WizardSaleHeaderContent({
   onSaleReassigned,
 }: {
   clientNetId: string
+  hideAgreementsAction: boolean
   mode: 'inline' | 'strip'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
@@ -240,7 +245,7 @@ function WizardSaleHeaderContent({
         </Group>
       )}
 
-      {subClientCount > 0 && clientAgreements.length > 0 && (
+      {!hideAgreementsAction && subClientCount > 0 && clientAgreements.length > 0 && (
         <Popover position="bottom-start" shadow="md" width={420} withinPortal>
           <Popover.Target>
             <Tooltip label={t('Договори')} position="bottom">
