@@ -615,7 +615,7 @@
   box-shadow: none;
   display: grid;
   gap: 0;
-  grid-template-columns: repeat(3, minmax(64px, 1fr));
+  grid-template-columns: repeat(2, minmax(64px, 1fr));
   min-height: 46px;
   overflow: visible;
   padding-left: 0;
@@ -1256,7 +1256,7 @@
   }
 
   .new-sale-client-hero__metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

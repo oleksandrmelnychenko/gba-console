@@ -1137,11 +1137,6 @@ export function NewSaleClientStep({
                   <strong>{registryItems.length}</strong>
                   <span>{t('Документи')}</span>
                 </Box>
-                <Box className={`new-sale-client-metric ${selectedClientDebtTotal > 0 ? 'is-danger' : ''}`}>
-                  <IconAlertTriangle size={13} />
-                  <strong>{selectedClientDebtTotal.toLocaleString('uk-UA', { maximumFractionDigits: 0 })}</strong>
-                  <span>{t('Борг')}</span>
-                </Box>
               </Box>
               {headerTools && <Box className="new-sale-client-hero__tools">{headerTools}</Box>}
             </Box>
