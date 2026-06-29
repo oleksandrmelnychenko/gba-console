@@ -122,6 +122,30 @@ export async function updatePackingListPlacement(
   return normalizePackingList(result)
 }
 
+/**
+ * Persist a packing list the way the legacy order flow does: POST the whole invoice
+ * (with the updated packing list embedded) to /supplies/packinglists/update. Unlike
+ * the placement-info endpoint, this returns the FULL invoice — its packing lists keep
+ * their PackingListPackageOrderItems — so the grid is not wiped after «Додати»/«Зберегти».
+ */
+export async function updatePackingListInInvoice(invoice: IncomeSupplyInvoice): Promise<IncomeSupplyInvoice> {
+  const result = await apiRequest<unknown>('/supplies/packinglists/update', {
+    method: 'POST',
+    body: invoice,
+  })
+
+  return normalizeInvoiceWithPackingLists(result)
+}
+
+function normalizeInvoiceWithPackingLists(result: unknown): IncomeSupplyInvoice {
+  const invoice = normalizeInvoice(result)
+
+  return {
+    ...invoice,
+    PackingLists: invoice.PackingLists.map((list) => normalizePackingList(list)),
+  }
+}
+
 export async function updateVatOfPackListInvoiceItems(invoice: IncomeSupplyInvoice): Promise<IncomeSupplyInvoice> {
   const result = await apiRequest<unknown>('/supplies/invoices/items/update/vat', {
     method: 'POST',

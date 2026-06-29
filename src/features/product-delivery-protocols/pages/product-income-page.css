@@ -1,0 +1,21 @@
+/* Product-income placement page (direct supply order & delivery protocol).
+   The page lives inside the fixed-height, overflow-hidden console frame, so the
+   non-grid sections keep their natural height (flex-shrink: 0 on each card) and
+   the products grid fills the remaining space and scrolls internally — mirroring
+   the legacy layout where the controls stay put and only the grid scrolls. The
+   container below makes the shared DataTable stretch to fill that flex slot. */
+.income-grid-fill {
+  min-height: 0;
+}
+
+.income-grid-fill > .data-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.income-grid-fill .data-table-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+}

@@ -6,6 +6,18 @@
    header hero, the content cards and the filter/search controls so the detail
    screens read as one family with the orders list. */
 
+/* ---- Page scroll ------------------------------------------------------- */
+/* The detail page lives inside the fixed-height, overflow-hidden console frame;
+   its content (3 blocks + summary + documents) is taller than the viewport, so
+   the page itself owns the vertical scroll instead of being clipped. */
+.supply-detail-page {
+  max-height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-bottom: var(--mantine-spacing-lg);
+}
+
 /* ---- Hero header ------------------------------------------------------- */
 .supply-detail-header {
   align-items: center;

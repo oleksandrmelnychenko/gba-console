@@ -23,6 +23,7 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconCheck,
+  IconClipboardList,
   IconFileInvoice,
   IconListDetails,
   IconPackageImport,
@@ -30,6 +31,7 @@ import {
   IconRefresh,
   IconRoute,
   IconTrash,
+  IconTruck,
   IconUpload,
 } from '@tabler/icons-react'
 import { useEffect, useReducer, useState } from 'react'
@@ -50,12 +52,12 @@ import {
   updateDirectSupplyOrder,
   uploadSupplyOrderDocument,
 } from '../api/supplyUkraineOrdersApi'
+import { DirectOrderPaymentTasksCard } from '../components/DirectOrderPaymentTasksCard'
 import { DirectSupplyOrderProFormCard } from '../components/DirectSupplyOrderProFormCard'
 import type {
   CreditNoteDocument,
   DirectSupplyOrder,
   SupplyOrderDeliveryDocument,
-  SupplyTransportationTypeValue,
 } from '../types'
 
 const TRANSPORTATION_OPTIONS: Array<{ label: string, value: string }> = [
@@ -490,12 +492,6 @@ export function SupplyUkraineDirectOrderDetailPage() {
     }
   }
 
-  function saveTransportationType() {
-    savePatch({
-      TransportationType: Number(transportationType) as SupplyTransportationTypeValue,
-    }, t('Тип доставки збережено'))
-  }
-
   function approveOrder() {
     savePatch({ IsApproved: true }, t('Замовлення погоджено'))
   }
@@ -607,7 +603,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
   ]
 
   return (
-    <Stack gap="lg">
+    <Stack className="supply-detail-page" gap="lg">
       <header className="supply-detail-header">
         <div className="supply-detail-header-main">
           <Tooltip label={t('Назад')}>
@@ -639,7 +635,7 @@ export function SupplyUkraineDirectOrderDetailPage() {
           </Button>
           {order && !order.IsApproved && canApproveOrder && (
             <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
-              {t('Погодити')}
+              {t('Затвердити замовлення')}
             </Button>
           )}
           {order && canOpenCreditNotes && (
@@ -662,54 +658,44 @@ export function SupplyUkraineDirectOrderDetailPage() {
         </Group>
       ) : order ? (
         <Stack gap="lg">
+          <Group gap="xs" wrap="wrap">
+            {statusBadge(t('Погоджено'), order.IsApproved)}
+            {statusBadge(t('Відправлено'), order.IsOrderShipped)}
+            {statusBadge(t('Прибуло'), order.IsOrderArrived)}
+            {statusBadge(t('Завершено'), order.IsCompleted)}
+            {statusBadge(t('Розміщено'), order.IsFullyPlaced)}
+          </Group>
+
+          {/* Block 1 — Вибір постачальника */}
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Stack gap="md">
-              <Group gap="xs" wrap="wrap">
-                {statusBadge(t('Погоджено'), order.IsApproved)}
-                {statusBadge(t('Відправлено'), order.IsOrderShipped)}
-                {statusBadge(t('Прибуло'), order.IsOrderArrived)}
-                {statusBadge(t('Завершено'), order.IsCompleted)}
-                {statusBadge(t('Розміщено'), order.IsFullyPlaced)}
+              <Group gap="xs">
+                <IconTruck size={18} />
+                <Text fw={600}>{t('Вибір постачальника')}</Text>
               </Group>
-
-              <SimpleGrid cols={{ base: 1, md: 2, xl: 4 }} spacing="md">
-                <InfoBlock label={t('Дата')} value={formatDateTime(order.DateFrom)} />
-                <InfoBlock label={t('Організація')} value={getEntityName(order.Organization)} />
-                <InfoBlock label={t('Договір')} value={order.ClientAgreement?.Agreement?.Name || '-'} />
-                <InfoBlock
-                  label={t('Валюта')}
-                  value={order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name || '-'}
-                />
-                <InfoBlock label={t('Кількість')} value={formatNumber(order.TotalQuantity)} />
-                <InfoBlock label={t('Сума нетто')} value={formatMoney(order.TotalNetPrice)} />
-                <InfoBlock label={t('ПДВ')} value={formatMoney(order.TotalVat)} />
-                <InfoBlock label={t('Відповідальний')} value={getUserName(order.Responsible)} />
+              <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+                <InfoBlock label={t('Постачальник')} value={getEntityName(order.Client)} />
+                <InfoBlock label={t('Отримувач товару')} value={getEntityName(order.Organization)} />
               </SimpleGrid>
+              <Stack gap={4} align="flex-start">
+                <Text fw={600} size="sm">{t('Тип доставки')}</Text>
+                <SegmentedControl
+                  data={TRANSPORTATION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+                  disabled
+                  value={transportationType}
+                />
+              </Stack>
+            </Stack>
+          </Card>
 
-              <Group align="flex-end" gap="sm" wrap="wrap">
-                <Stack gap={4}>
-                  <Text fw={600} size="sm">{t('Тип доставки')}</Text>
-                  <SegmentedControl
-                    data={TRANSPORTATION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
-                    disabled={!isEditingAmount || isSaving || Boolean(order.IsOrderShipped)}
-                    value={transportationType}
-                    onChange={(value) => dispatchAmountEdit({ type: 'setTransportationType', value })}
-                  />
-                </Stack>
-                <Button
-                  disabled={
-                    !isEditingAmount ||
-                    transportationType === String(order.TransportationType ?? 0) ||
-                    Boolean(order.IsOrderShipped)
-                  }
-                  color={CREATE_ACTION_COLOR}
-                  loading={isSaving}
-                  onClick={saveTransportationType}
-                >
-                  {t('Зберегти')}
-                </Button>
+          {/* Block 2 — Замовлення */}
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
+            <Stack gap="md">
+              <Group gap="xs">
+                <IconClipboardList size={18} />
+                <Text fw={600}>{t('Замовлення')}</Text>
+                {getOrderNumber(order) && <Text c="dimmed" size="sm">{getOrderNumber(order)}</Text>}
               </Group>
-
               <Group align="flex-end" gap="sm" wrap="wrap">
                 <NumberInput
                   allowNegative={false}
@@ -723,9 +709,22 @@ export function SupplyUkraineDirectOrderDetailPage() {
                 <TextInput
                   disabled={!isEditingAmount || isSaving}
                   label={t('Від якої дати')}
-                  type="datetime-local"
-                  value={dateValue}
-                  onChange={(event) => dispatchAmountEdit({ type: 'setDateValue', value: event.currentTarget.value })}
+                  type="date"
+                  value={dateValue ? dateValue.slice(0, 10) : ''}
+                  onChange={(event) => dispatchAmountEdit({
+                    type: 'setDateValue',
+                    value: combineDateTimeInput(event.currentTarget.value, dateValue.slice(11, 16)),
+                  })}
+                />
+                <TextInput
+                  disabled={!isEditingAmount || isSaving}
+                  label={t('Час')}
+                  type="time"
+                  value={dateValue.length >= 16 ? dateValue.slice(11, 16) : ''}
+                  onChange={(event) => dispatchAmountEdit({
+                    type: 'setDateValue',
+                    value: combineDateTimeInput(dateValue.slice(0, 10), event.currentTarget.value),
+                  })}
                 />
                 {isEditingAmount ? (
                   <Group gap="xs">
@@ -761,6 +760,26 @@ export function SupplyUkraineDirectOrderDetailPage() {
             }}
             onReload={reloadOrder}
           />
+
+          <DirectOrderPaymentTasksCard canEdit={!isLocked} order={order} onError={setError} />
+
+          {/* Order metrics — kept below the three primary blocks */}
+          <Card className="supply-detail-card" withBorder radius="md" padding="lg">
+            <Stack gap="md">
+              <Text fw={600}>{t('Підсумок замовлення')}</Text>
+              <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="md">
+                <InfoBlock label={t('Договір')} value={order.ClientAgreement?.Agreement?.Name || '-'} />
+                <InfoBlock
+                  label={t('Валюта')}
+                  value={order.ClientAgreement?.Agreement?.Currency?.Code || order.ClientAgreement?.Agreement?.Currency?.Name || '-'}
+                />
+                <InfoBlock label={t('Відповідальний')} value={getUserName(order.Responsible)} />
+                <InfoBlock label={t('Кількість')} value={formatNumber(order.TotalQuantity)} />
+                <InfoBlock label={t('Сума нетто')} value={formatMoney(order.TotalNetPrice)} />
+                <InfoBlock label={t('ПДВ')} value={formatMoney(order.TotalVat)} />
+              </SimpleGrid>
+            </Stack>
+          </Card>
 
           <Card className="supply-detail-card" withBorder radius="md" padding="lg">
             <Group gap="xs" wrap="wrap">
@@ -993,6 +1012,15 @@ function toDateTimeInput(value?: Date | string): string {
   const date = value instanceof Date ? value : new Date(value)
 
   return Number.isNaN(date.getTime()) ? '' : formatLocalDateTime(date).slice(0, 16)
+}
+
+/** Recombine the split «Від якої дати» (date) + «Час» (time) inputs into one datetime-local value. */
+function combineDateTimeInput(datePart: string, timePart: string): string {
+  if (!datePart) {
+    return ''
+  }
+
+  return `${datePart}T${timePart || '00:00'}`
 }
 
 function statusBadge(label: string, value?: boolean) {

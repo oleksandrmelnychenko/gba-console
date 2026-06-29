@@ -155,9 +155,6 @@ export function DirectSupplyOrderProFormCard({
           </Group>
           {isEditing ? (
             <Group gap="xs">
-              <Button color="gray" disabled={isSaving} size="xs" variant="light" onClick={() => dispatch({ type: 'cancel', order })}>
-                {t('Скасувати')}
-              </Button>
               <Button leftSection={<IconDeviceFloppy size={16} />} loading={isSaving} size="xs" variant="light" onClick={() => void saveProForm()}>
                 {t('Зберегти')}
               </Button>

@@ -20,7 +20,6 @@ import {
   IconAlertCircle,
   IconArrowLeft,
   IconColumnInsertRight,
-  IconDownload,
   IconFileTypePdf,
   IconHistory,
   IconTrash,
@@ -54,7 +53,7 @@ import {
   markAllItemsReadyToPlace,
   markOrderItemReadyToPlace,
   recordProductIncomeFromPackingListDynamicHistory,
-  updatePackingListPlacement,
+  updatePackingListInInvoice,
   updateVatOfPackListInvoiceItems,
 } from '../api/protocolProductIncomeApi'
 import { NewIncomeDynamicColumnModal } from '../components/NewIncomeDynamicColumnModal'
@@ -73,6 +72,7 @@ import type {
   PackingListPackageOrderItem,
 } from '../productIncomeTypes'
 import { isInvoiceAllNotPlaced } from '../productIncomePlacementState'
+import './product-income-page.css'
 
 const DEFAULT_VAT_PERCENT = 23
 const PERMISSION_ADD_DYNAMIC_INCOME_COLUMN = 'PRODUCT_INCOME_ordersUkraineAllEdit_NewInvoiceBtn_PKEY'
@@ -803,7 +803,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
 
   const persistPackingList = useCallback(
     async (nextPackingList: IncomePackingList) => {
-      if (!canUseIncome || !selectedInvoiceId || isSaving) {
+      if (!canUseIncome || !selectedInvoiceId || !invoice || isSaving) {
         return
       }
 
@@ -811,8 +811,33 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
       setError(null)
 
       try {
-        const saved = await updatePackingListPlacement(selectedInvoiceId, nextPackingList)
-        setPackingList(saved)
+        // Persist exactly like the legacy order flow: POST the whole invoice (with the
+        // updated packing list embedded) to /supplies/packinglists/update. That endpoint
+        // returns the FULL invoice — its packing list keeps PackingListPackageOrderItems —
+        // so the grid is not wiped. (The placement-info endpoint returned a lean list and
+        // cleared the grid on «Додати»/«Зберегти».)
+        const hasMatchingPackList = invoice.PackingLists.some((list) => list.NetUid === nextPackingList.NetUid)
+        const invoicePayload: IncomeSupplyInvoice = {
+          ...invoice,
+          PackingLists: hasMatchingPackList
+            ? invoice.PackingLists.map((list) =>
+                list.NetUid === nextPackingList.NetUid ? nextPackingList : list,
+              )
+            : [...invoice.PackingLists, nextPackingList],
+        }
+
+        const savedInvoice = await updatePackingListInInvoice(invoicePayload)
+        setInvoice(savedInvoice)
+
+        const savedPackingList =
+          savedInvoice.PackingLists.find((list) => list.NetUid === nextPackingList.NetUid) ||
+          savedInvoice.PackingLists[0] ||
+          null
+
+        if (savedPackingList) {
+          setPackingList(savedPackingList)
+        }
+
         setDirty(false)
       } catch (saveError) {
         setError(saveError instanceof Error ? saveError.message : t('Не вдалося зберегти зміни'))
@@ -820,7 +845,7 @@ function useProtocolIncomeModel(source: ProductIncomeSource) {
         setSaving(false)
       }
     },
-    [canUseIncome, isSaving, selectedInvoiceId, setDirty, setError, setPackingList, setSaving, t],
+    [canUseIncome, invoice, isSaving, selectedInvoiceId, setDirty, setError, setInvoice, setPackingList, setSaving, t],
   )
 
   const handleSave = useCallback(() => {
@@ -1726,12 +1751,12 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
   })
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" h="100%" style={{ minHeight: 0 }}>
       <ProductIncomePageHeader model={model} source={source} />
       <ProtocolIncomeSummaryCard model={model} source={source} />
 
       {!model.isLoading && model.protocol && !canUseIncome && (
-        <Alert color="yellow" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="yellow" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
           {t('Оприходування доступне після завершення протоколу')}
         </Alert>
       )}
@@ -1753,7 +1778,7 @@ function PackingListProductIncomePage({ source }: { source: ProductIncomeSource 
       />
 
       {model.error && (
-        <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
+        <Alert color="red" icon={<IconAlertCircle size={18} />} style={{ flexShrink: 0 }} variant="light">
           {model.error}
         </Alert>
       )}
@@ -1791,7 +1816,7 @@ function ProductIncomePageHeader({ model, source }: ProductIncomePageSectionProp
     : t('Прихід товару згідно замовлення')
 
   return (
-    <Group justify="space-between" align="center">
+    <Group justify="space-between" align="center" style={{ flexShrink: 0 }}>
       <Button
         color="gray"
         disabled={model.isSaving}
@@ -1815,7 +1840,7 @@ function ProtocolIncomeSummaryCard({ model, source }: ProductIncomePageSectionPr
   const currencyCode = model.protocol?.ClientAgreement?.Agreement?.Currency?.Code || '-'
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
       <Group gap="xl" wrap="wrap">
         <Stack gap={2}>
           <Text c="dimmed" size="xs">
@@ -1870,7 +1895,7 @@ function PlacedProductIncomeCard({ isPlaced, model }: { isPlaced: boolean; model
   }
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
       <Group gap="xl" wrap="wrap">
         <Stack gap={2}>
           <Text c="dimmed" size="xs">
@@ -1930,9 +1955,10 @@ function ProductIncomeControlsCard({
   const { canUseIncome, hasColumns, hasItemsNotReadyToPlace, isPlaced } = state
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <Group justify="space-between" align="end" wrap="wrap">
-        <Group gap="sm" align="end">
+    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flexShrink: 0 }}>
+      <Group justify="space-between" align="end" wrap="wrap" gap="md">
+        {/* Left: document controls (invoice / packing list / storage / date / VAT) */}
+        <Group gap="sm" align="end" wrap="wrap">
           <Select
             data={(model.protocol?.SupplyInvoices || []).map((supplyInvoice) => ({
               value: supplyInvoice.NetUid || '',
@@ -1941,7 +1967,7 @@ function ProductIncomeControlsCard({
             disabled={model.isLoading || model.isSaving}
             label={t('Накладна')}
             value={model.selectedInvoiceId}
-            w={220}
+            w={180}
             onChange={(value) => model.setSelectedInvoiceId(value)}
           />
           <Select
@@ -1952,7 +1978,7 @@ function ProductIncomeControlsCard({
             disabled={model.isLoading || model.isSaving || !model.invoice}
             label={t('Пакувальний лист')}
             value={model.packingList?.NetUid || null}
-            w={220}
+            w={180}
             onChange={(value) => value && void model.selectPackingList(value)}
           />
           {!isPlaced && (
@@ -1961,7 +1987,7 @@ function ProductIncomeControlsCard({
               disabled={!canUseIncome || model.isDirty || model.isSaving}
               label={t('Склад')}
               value={model.selectedStorageId}
-              w={220}
+              w={180}
               onChange={(value) => model.setSelectedStorageId(value)}
             />
           )}
@@ -1971,6 +1997,7 @@ function ProductIncomeControlsCard({
               label={t('Від якої дати')}
               type="date"
               value={model.fromDate}
+              w={160}
               onChange={(event) => model.setFromDate(event.currentTarget.value)}
             />
           )}
@@ -1980,65 +2007,49 @@ function ProductIncomeControlsCard({
             min={0}
             suffix="%"
             value={model.vatPercent}
-            w={120}
+            w={110}
             onChange={(value) => model.setVatPercent(typeof value === 'number' ? value : Number(value) || 0)}
           />
         </Group>
-      </Group>
 
-      <Group gap="sm" mt="md" wrap="wrap">
-        <Button
-          disabled={!model.invoice?.NetUid || model.pzDownload.isLoading}
-          leftSection={<IconDownload size={16} />}
-          variant="light"
-          onClick={() => void model.handleDownloadPzDocument()}
-        >
-          {t('Документ PZ')}
-        </Button>
-        <Button
-          disabled={!canUseIncome || isPlaced || model.isDirty || model.isSaving}
-          variant="light"
-          onClick={() => void model.handleCalculateVat()}
-        >
-          {t('Розрахувати ПДВ')}
-        </Button>
-        {!isPlaced && hasItemsNotReadyToPlace && (
-          <Button
-            disabled={!canUseIncome || model.isDirty || model.isSaving}
-            variant="light"
-            onClick={() => void model.handleAllReadyToPlace()}
-          >
-            {t('Всі готові до розміщення')}
-          </Button>
-        )}
-        {!isPlaced && canAddDynamicColumn && (
-          <Button
-            disabled={!canUseIncome || model.isDirty || model.isSaving}
-            variant="light"
-            onClick={() => model.setColumnModalOpen(true)}
-          >
-            {t('Додати')}
-          </Button>
-        )}
-        {!isPlaced && canCapitalizeDynamicIncome && (
-          <Button
-            disabled={!canUseIncome || model.isDirty || model.isSaving}
-            variant="light"
-            onClick={() => void model.handleProductIncome()}
-          >
-            {t('Оприходувати')}
-          </Button>
-        )}
-        {!isPlaced && hasColumns && canCarryOutDynamicIncome && (
-          <Button
-            disabled={!canUseIncome || model.isDirty || model.isSaving}
-            variant="light"
-            onClick={() => model.setConfirmCarryOut(true)}
-          >
-            {t('Провести')}
-          </Button>
-        )}
-        <Group gap="sm" ml="auto">
+        {/* Right: actions — secondary tools first, then the green primary actions (legacy look) */}
+        <Group gap="sm" align="end" justify="flex-end" wrap="wrap">
+          {!isPlaced && hasItemsNotReadyToPlace && (
+            <Button
+              disabled={!canUseIncome || model.isDirty || model.isSaving}
+              variant="light"
+              onClick={() => void model.handleAllReadyToPlace()}
+            >
+              {t('Всі готові до розміщення')}
+            </Button>
+          )}
+          {!isPlaced && canAddDynamicColumn && (
+            <Button
+              disabled={!canUseIncome || model.isDirty || model.isSaving}
+              variant="light"
+              onClick={() => model.setColumnModalOpen(true)}
+            >
+              {t('Додати')}
+            </Button>
+          )}
+          {!isPlaced && canCapitalizeDynamicIncome && (
+            <Button
+              disabled={!canUseIncome || model.isDirty || model.isSaving}
+              variant="light"
+              onClick={() => void model.handleProductIncome()}
+            >
+              {t('Оприходувати')}
+            </Button>
+          )}
+          {!isPlaced && hasColumns && canCarryOutDynamicIncome && (
+            <Button
+              disabled={!canUseIncome || model.isDirty || model.isSaving}
+              variant="light"
+              onClick={() => model.setConfirmCarryOut(true)}
+            >
+              {t('Провести')}
+            </Button>
+          )}
           {model.isDirty && (
             <Text c="orange" size="sm">
               {t('Є незбережені зміни')}
@@ -2076,8 +2087,8 @@ function ProductIncomeGridCard({
   const { t } = useI18n()
 
   return (
-    <Card className="app-section-card" withBorder radius="md" padding="md">
-      <Stack gap="md">
+    <Card className="app-section-card" withBorder radius="md" padding="md" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
         <TextInput
           label={t('Пошук')}
           placeholder={t('Код товару')}
@@ -2085,17 +2096,18 @@ function ProductIncomeGridCard({
           w={260}
           onChange={(event) => setVendorCodeFilter(event.currentTarget.value)}
         />
-        <DataTable
-          columns={columns}
-          data={filteredGridRows}
-          emptyText={t('Дані відсутні')}
-          getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
-          isLoading={model.isLoading}
-          layoutVersion="protocol-product-income-1"
-          maxHeight="calc(100vh - 420px)"
-          minWidth={1400}
-          tableId="protocol-product-income"
-        />
+        <Box className="income-grid-fill" style={{ flex: 1, minHeight: 0 }}>
+          <DataTable
+            columns={columns}
+            data={filteredGridRows}
+            emptyText={t('Дані відсутні')}
+            getRowId={(gridRow) => String(gridRow.item.NetUid || gridRow.item.Id || gridRow.index)}
+            isLoading={model.isLoading}
+            layoutVersion="protocol-product-income-1"
+            minWidth={1400}
+            tableId="protocol-product-income"
+          />
+        </Box>
 
         <Group gap="xl" justify="flex-end">
           <Text size="sm">
