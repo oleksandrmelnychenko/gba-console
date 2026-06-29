@@ -128,6 +128,14 @@ function getSummaryNumber(summary: Record<string, unknown> | undefined, key: str
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+function settledErrorMessage(result: PromiseSettledResult<unknown>, fallback: string): string | null {
+  if (result.status === 'fulfilled') {
+    return null
+  }
+
+  return result.reason instanceof Error ? result.reason.message : fallback
+}
+
 function useAssortmentColumns(t: (key: string) => string, hasRegion: boolean) {
   return useMemo<DataTableColumn<AssortmentRow>[]>(
     () => {
@@ -270,21 +278,50 @@ export function AssortmentDashboardPage() {
       setError(null)
       setLoading(true)
       try {
-        const [ov, health, regionSummary, stockRating, marginRating, returnsRating] = await Promise.all([
-          getAssortmentOverview(filters.asOfDate),
-          getAssortmentHealth(filters),
-          getAssortmentRegions(filters.asOfDate, filters.regionWindowDays ?? REGION_WINDOW_DAYS, REGION_LIMIT),
-          getAssortmentStock(filters.asOfDate, RATING_LIMIT),
-          getAssortmentMargin(filters.asOfDate, RATING_LIMIT),
-          getAssortmentReturns(filters.asOfDate, undefined, RATING_LIMIT),
+        const [overviewResult, healthResult, regionsResult, stockResult, marginResult, returnsResult] = await Promise.allSettled([
+          getAssortmentOverview(filters.asOfDate, controller.signal),
+          getAssortmentHealth(filters, controller.signal),
+          getAssortmentRegions(
+            filters.asOfDate,
+            filters.regionWindowDays ?? REGION_WINDOW_DAYS,
+            REGION_LIMIT,
+            controller.signal,
+          ),
+          getAssortmentStock(filters.asOfDate, RATING_LIMIT, controller.signal),
+          getAssortmentMargin(filters.asOfDate, RATING_LIMIT, controller.signal),
+          getAssortmentReturns(filters.asOfDate, undefined, RATING_LIMIT, controller.signal),
         ])
+
         if (!controller.signal.aborted) {
-          setOverview(ov)
-          setRows(health.tasks)
-          setRegions(regionSummary)
-          setStock(stockRating)
-          setMargin(marginRating)
-          setReturns(returnsRating)
+          const failures = [
+            settledErrorMessage(overviewResult, t('Огляд асортименту недоступний')),
+            settledErrorMessage(healthResult, t('Деталізація асортименту недоступна')),
+            settledErrorMessage(regionsResult, t('Регіони недоступні')),
+            settledErrorMessage(stockResult, t('Рейтинг запасів недоступний')),
+            settledErrorMessage(marginResult, t('Рейтинг маржі недоступний')),
+            settledErrorMessage(returnsResult, t('Рейтинг повернень недоступний')),
+          ].filter((message): message is string => Boolean(message))
+
+          if (overviewResult.status === 'fulfilled') {
+            setOverview(overviewResult.value)
+          }
+          if (healthResult.status === 'fulfilled') {
+            setRows(healthResult.value.tasks)
+          }
+          if (regionsResult.status === 'fulfilled') {
+            setRegions(regionsResult.value)
+          }
+          if (stockResult.status === 'fulfilled') {
+            setStock(stockResult.value)
+          }
+          if (marginResult.status === 'fulfilled') {
+            setMargin(marginResult.value)
+          }
+          if (returnsResult.status === 'fulfilled') {
+            setReturns(returnsResult.value)
+          }
+
+          setError(failures.length === 0 ? null : failures.join(' · '))
         }
       } catch (loadError) {
         if (!controller.signal.aborted) {

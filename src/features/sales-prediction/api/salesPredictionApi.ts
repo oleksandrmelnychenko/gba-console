@@ -1,17 +1,19 @@
 import { apiRequest } from '../../../shared/api/apiClient'
 import type { SalesPredictionClientOption, SalesPredictionPoint, SalesPredictionProductOption } from '../types'
 
-export async function getPredictionByClient(clientNetId: string): Promise<SalesPredictionPoint[]> {
+export async function getPredictionByClient(clientNetId: string, signal?: AbortSignal): Promise<SalesPredictionPoint[]> {
   const result = await apiRequest<unknown>('/sales/prediction/get', {
     query: { clientNetId },
+    signal,
   })
 
   return readPredictionArray(result, 'ByClient')
 }
 
-export async function getPredictionByProduct(productNetId: string): Promise<SalesPredictionPoint[]> {
+export async function getPredictionByProduct(productNetId: string, signal?: AbortSignal): Promise<SalesPredictionPoint[]> {
   const result = await apiRequest<unknown>('/sales/prediction/get', {
     query: { productNetId },
+    signal,
   })
 
   return readPredictionArray(result, 'ByProduct')
@@ -20,25 +22,35 @@ export async function getPredictionByProduct(productNetId: string): Promise<Sale
 export async function getPredictionByClientAndProduct(
   clientNetId: string,
   productNetId: string,
+  signal?: AbortSignal,
 ): Promise<SalesPredictionPoint[]> {
   const result = await apiRequest<unknown>('/sales/prediction/get', {
     query: { clientNetId, productNetId },
+    signal,
   })
 
   return readPredictionArray(result, 'ByClientAndProduct')
 }
 
-export async function searchPredictionClients(searchValue: string): Promise<SalesPredictionClientOption[]> {
+export async function searchPredictionClients(
+  searchValue: string,
+  signal?: AbortSignal,
+): Promise<SalesPredictionClientOption[]> {
   const result = await apiRequest<unknown>('/clients/search/all/sales/', {
     query: { searchValue: searchValue.trim() },
+    signal,
   })
 
   return normalizeArray(result) as SalesPredictionClientOption[]
 }
 
-export async function searchPredictionProducts(searchValue: string): Promise<SalesPredictionProductOption[]> {
+export async function searchPredictionProducts(
+  searchValue: string,
+  signal?: AbortSignal,
+): Promise<SalesPredictionProductOption[]> {
   const result = await apiRequest<unknown>('/products/search/vendorcodeandsales', {
     query: { limit: 20, offset: 0, searchValue: searchValue.trim() },
+    signal,
   })
 
   return normalizeArray(result) as SalesPredictionProductOption[]

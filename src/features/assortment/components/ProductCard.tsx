@@ -46,7 +46,7 @@ export function ProductCard({
       setProductRegions(null)
 
       try {
-        const d = await getProduct(productId, asOfDate)
+        const d = await getProduct(productId, asOfDate, controller.signal)
 
         if (!controller.signal.aborted) {
           setDetail(d)
@@ -54,8 +54,8 @@ export function ProductCard({
 
         if (d.found && !controller.signal.aborted) {
           const [substitutesResult, regionsResult] = await Promise.allSettled([
-            getProductSubstitutes(productId, asOfDate),
-            getProductRegions(productId, asOfDate, regionWindowDays, 8),
+            getProductSubstitutes(productId, asOfDate, 20, controller.signal),
+            getProductRegions(productId, asOfDate, regionWindowDays, 8, controller.signal),
           ])
 
           if (!controller.signal.aborted) {

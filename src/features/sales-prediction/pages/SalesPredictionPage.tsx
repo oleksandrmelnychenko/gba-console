@@ -37,6 +37,10 @@ function getProductLabel(product: SalesPredictionProductOption): string {
   )
 }
 
+function isAbortError(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && 'name' in error && error.name === 'AbortError')
+}
+
 type SelectOption = {
   label: string
   value: string
@@ -73,24 +77,24 @@ export function SalesPredictionPage() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchPredictionClients(value)
+        const next = await searchPredictionClients(value, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setClientOptions(next)
         }
-      } catch {
-        if (!cancelled) {
+      } catch (searchError) {
+        if (!controller.signal.aborted && !isAbortError(searchError)) {
           setClientOptions([])
         }
       }
     }, 300)
 
     return () => {
-      cancelled = true
       clearTimeout(handle)
+      controller.abort()
     }
   }, [clientQuery, setClientOptions])
 
@@ -101,24 +105,24 @@ export function SalesPredictionPage() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
     const handle = setTimeout(async () => {
       try {
-        const next = await searchPredictionProducts(value)
+        const next = await searchPredictionProducts(value, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setProductOptions(next)
         }
-      } catch {
-        if (!cancelled) {
+      } catch (searchError) {
+        if (!controller.signal.aborted && !isAbortError(searchError)) {
           setProductOptions([])
         }
       }
     }, 300)
 
     return () => {
-      cancelled = true
       clearTimeout(handle)
+      controller.abort()
     }
   }, [productQuery, setProductOptions])
 
@@ -127,27 +131,27 @@ export function SalesPredictionPage() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
 
     async function load(id: string) {
       setLoadingClient(true)
       setClientPredictionError(null)
 
       try {
-        const next = await getPredictionByClient(id)
+        const next = await getPredictionByClient(id, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setByClient(toChartPoints(next))
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
           setByClient([])
           setClientPredictionError(
             loadError instanceof Error ? loadError.message : t('Прогноз по клієнту недоступний'),
           )
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoadingClient(false)
         }
       }
@@ -156,7 +160,7 @@ export function SalesPredictionPage() {
     void load(clientNetId)
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [clientNetId, setByClient, setClientPredictionError, setLoadingClient, t])
 
@@ -165,27 +169,27 @@ export function SalesPredictionPage() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
 
     async function load(id: string) {
       setLoadingProduct(true)
       setProductPredictionError(null)
 
       try {
-        const next = await getPredictionByProduct(id)
+        const next = await getPredictionByProduct(id, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setByProduct(toChartPoints(next))
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
           setByProduct([])
           setProductPredictionError(
             loadError instanceof Error ? loadError.message : t('Прогноз по товару недоступний'),
           )
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoadingProduct(false)
         }
       }
@@ -194,7 +198,7 @@ export function SalesPredictionPage() {
     void load(productNetId)
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [productNetId, setByProduct, setLoadingProduct, setProductPredictionError, t])
 
@@ -203,27 +207,27 @@ export function SalesPredictionPage() {
       return
     }
 
-    let cancelled = false
+    const controller = new AbortController()
 
     async function load(client: string, product: string) {
       setLoadingCombined(true)
       setCombinedPredictionError(null)
 
       try {
-        const next = await getPredictionByClientAndProduct(client, product)
+        const next = await getPredictionByClientAndProduct(client, product, controller.signal)
 
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setCombined(toChartPoints(next))
         }
       } catch (loadError) {
-        if (!cancelled) {
+        if (!controller.signal.aborted && !isAbortError(loadError)) {
           setCombined([])
           setCombinedPredictionError(
             loadError instanceof Error ? loadError.message : t('Прогноз по клієнту і товару недоступний'),
           )
         }
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoadingCombined(false)
         }
       }
@@ -232,7 +236,7 @@ export function SalesPredictionPage() {
     void load(clientNetId, productNetId)
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [clientNetId, productNetId, setCombined, setCombinedPredictionError, setLoadingCombined, t])
 
