@@ -1,6 +1,6 @@
 import { Alert, Card, Group, Loader, Select, Stack, Text } from '@mantine/core'
 import { IconAlertCircle, IconClipboardList } from '@tabler/icons-react'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -43,7 +43,7 @@ export function DirectOrderPaymentTasksCard({
   order: DirectSupplyOrder
 }) {
   const { t } = useI18n()
-  const invoices = order.SupplyInvoices || []
+  const invoices = useMemo(() => order.SupplyInvoices || [], [order.SupplyInvoices])
   const [selectedInvoiceNetId, setSelectedInvoiceNetId] = useValueState<string | null>(invoices[0]?.NetUid || null)
   const [invoice, setInvoice] = useValueState<SupplyInvoice | null>(null)
   const [protocolKeys, setProtocolKeys] = useValueState<SupplyOrderPaymentDeliveryProtocolKey[]>([])
@@ -52,19 +52,18 @@ export function DirectOrderPaymentTasksCard({
   const [isSaving, setSaving] = useValueState(false)
   const [error, setLocalError] = useValueState<string | null>(null)
 
-  const reportError = (cause: unknown, fallback: string) => {
+  const reportError = useCallback((cause: unknown, fallback: string) => {
     const message = cause instanceof Error ? cause.message : fallback
     setLocalError(message)
     onError?.(message)
-  }
+  }, [onError, setLocalError])
 
   // Keep the selected invoice valid as the order reloads.
   useEffect(() => {
     setSelectedInvoiceNetId((current) =>
       invoices.some((entry) => entry.NetUid === current) ? current : invoices[0]?.NetUid || null,
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order])
+  }, [invoices, setSelectedInvoiceNetId])
 
   // Protocol-type keys + responsible users (loaded once).
   useEffect(() => {
@@ -93,8 +92,7 @@ export function DirectOrderPaymentTasksCard({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [reportError, setProtocolKeys, setUsers, t])
 
   // Full invoice (with its payment protocols) for the selected invoice.
   useEffect(() => {
@@ -131,8 +129,7 @@ export function DirectOrderPaymentTasksCard({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedInvoiceNetId])
+  }, [reportError, selectedInvoiceNetId, setInvoice, setLoading, setLocalError, t])
 
   async function persistInvoice(nextInvoice: SupplyInvoice): Promise<void> {
     if (!order.NetUid) {
@@ -229,9 +226,14 @@ export function DirectOrderPaymentTasksCard({
 
 /** Map the direct-order invoice protocols into the shape PaymentDeliveryProtocolsSection renders. */
 function mapToDisplayProtocols(invoice: SupplyInvoice | null): SupplyOrderUkrainePaymentDeliveryProtocol[] {
-  return (invoice?.PaymentDeliveryProtocols || [])
-    .filter((protocol) => !protocol.Deleted)
-    .map((protocol) => ({
+  const displayProtocols: SupplyOrderUkrainePaymentDeliveryProtocol[] = []
+
+  for (const protocol of invoice?.PaymentDeliveryProtocols || []) {
+    if (protocol.Deleted) {
+      continue
+    }
+
+    displayProtocols.push({
       Deleted: protocol.Deleted,
       Discount: protocol.Discount,
       Id: protocol.Id,
@@ -243,12 +245,15 @@ function mapToDisplayProtocols(invoice: SupplyInvoice | null): SupplyOrderUkrain
       SupplyPaymentTask: protocol.SupplyPaymentTask
         ? {
             Comment: protocol.SupplyPaymentTask.Comment,
-            PayToDate: protocol.SupplyPaymentTask.PayToDate,
+            PayToDate: protocol.SupplyPaymentTask.PayToDate ?? undefined,
             User: protocol.SupplyPaymentTask.User as unknown as ProtocolUser,
           }
         : null,
       Value: protocol.Value,
-    }))
+    })
+  }
+
+  return displayProtocols
 }
 
 function addPaymentProtocol(invoice: SupplyInvoice, values: NewPaymentProtocolFormValues): SupplyInvoice {
