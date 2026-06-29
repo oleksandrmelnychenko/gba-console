@@ -19,11 +19,6 @@ export const syncTypeOptions: Array<{ details: string[]; label: TranslationKey; 
     ],
   },
   {
-    value: String(SyncEntityType.Accounting),
-    label: 'Взаєморозрахунки',
-    details: ['Історія курсів валют', 'Баланси і борги'],
-  },
-  {
     value: String(SyncEntityType.Clients),
     label: 'Клієнти',
     details: [
@@ -43,6 +38,11 @@ export const syncTypeOptions: Array<{ details: string[]; label: TranslationKey; 
     value: String(SyncEntityType.Consignments),
     label: 'Залишки',
     details: ['Податкові', 'Організації', 'Адреси організацій', 'Склади', 'Залишки по партіям', 'Митні коди'],
+  },
+  {
+    value: String(SyncEntityType.Accounting),
+    label: 'Взаєморозрахунки',
+    details: ['Історія курсів валют', 'Баланси і борги'],
   },
   {
     value: String(SyncEntityType.PaymentRegisters),

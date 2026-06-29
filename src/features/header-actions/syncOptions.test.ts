@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { allDailySyncTypes, dailySyncTypeOptions } from './syncOptions'
-import { SyncProductConsignmentType } from './types'
+import { allDailySyncTypes, dailySyncTypeOptions, syncTypeOptions } from './syncOptions'
+import { SyncEntityType, SyncProductConsignmentType } from './types'
+
+describe('full sync type options', () => {
+  it('keeps full sync in data hygiene order', () => {
+    expect(syncTypeOptions.map((option) => option.value)).toEqual([
+      String(SyncEntityType.Products),
+      String(SyncEntityType.Clients),
+      String(SyncEntityType.Consignments),
+      String(SyncEntityType.Accounting),
+      String(SyncEntityType.PaymentRegisters),
+    ])
+  })
+})
 
 describe('daily sync type options', () => {
   it('keeps every daily checkbox mapped to the backend enum value', () => {
