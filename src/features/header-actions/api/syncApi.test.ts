@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiRequest } from '../../../shared/api/apiClient'
-import { SyncProductConsignmentType } from '../types'
+import { DailyDataSyncStockMode, SyncProductConsignmentType } from '../types'
 import { startDailySync } from './syncApi'
 
 vi.mock('../../../shared/api/apiClient', () => ({
@@ -25,7 +25,15 @@ describe('sync API contracts', () => {
 
     apiRequestMock.mockResolvedValueOnce({ Message: 'Синхронізацію запущено' })
 
-    await expect(startDailySync({ forAmg: true, from, to, types })).resolves.toEqual({
+    await expect(
+      startDailySync({
+        forAmg: true,
+        from,
+        stockMode: DailyDataSyncStockMode.DocumentsOnly,
+        to,
+        types,
+      }),
+    ).resolves.toEqual({
       Message: 'Синхронізацію запущено',
     })
 
@@ -33,6 +41,7 @@ describe('sync API contracts', () => {
       query: {
         forAmg: true,
         from,
+        stockMode: DailyDataSyncStockMode.DocumentsOnly,
         to,
         types,
       },

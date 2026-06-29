@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import type { SyncHistoryItem, SyncRunResponse, TypeOfXmlDocument } from '../types'
+import type { DailyDataSyncStockMode, SyncHistoryItem, SyncRunResponse, TypeOfXmlDocument } from '../types'
 
 export type SyncRemnantsRequest = {
   forAmg: boolean
@@ -9,6 +9,7 @@ export type SyncRemnantsRequest = {
 export type SyncDailyRequest = {
   forAmg: boolean
   from: Date
+  stockMode: DailyDataSyncStockMode
   to: Date
   types: string[]
 }

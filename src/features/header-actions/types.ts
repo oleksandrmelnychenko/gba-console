@@ -33,6 +33,13 @@ export const SyncProductConsignmentType = {
 export type SyncProductConsignmentType =
   (typeof SyncProductConsignmentType)[keyof typeof SyncProductConsignmentType]
 
+export const DailyDataSyncStockMode = {
+  DocumentsOnly: 0,
+  OperationalReplay: 1,
+} as const
+
+export type DailyDataSyncStockMode = (typeof DailyDataSyncStockMode)[keyof typeof DailyDataSyncStockMode]
+
 export type SyncHistoryItem = {
   Date?: string | Date
   Type?: number

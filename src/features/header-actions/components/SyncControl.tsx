@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Badge,
   Box,
   Button,
   Group,
@@ -16,7 +17,7 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { markDataSyncStarted, useDataSyncProgress } from '../../../shared/realtime/dataSyncProgressStore'
 import { realtimeEvents, useRealtimeEvent, type DataSyncNotification } from '../../../shared/realtime/events'
 import { getSyncHistory, startDailySync, startGbaToOneCSync, startRemnantsSync } from '../api/syncApi'
-import { TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
+import { DailyDataSyncStockMode, TypeOfXmlDocument, type SyncHistoryItem, type SyncRunResponse } from '../types'
 import {
   getDefaultDailyRange,
   getLastWeekRange,
@@ -301,6 +302,7 @@ export function SyncControl() {
       startDailySync({
         forAmg: state.dailyForAmg === 'true',
         from: state.dailyFrom,
+        stockMode: DailyDataSyncStockMode.DocumentsOnly,
         to: state.dailyTo,
         types: state.selectedDailyTypes,
       }),
@@ -467,6 +469,14 @@ export function SyncControl() {
                         { value: 'false', label: 'FENIX' },
                       ]}
                     />
+                  </Group>
+                  <Group gap="xs">
+                    <Text c="dimmed" size="sm">
+                      {t('Режим')}
+                    </Text>
+                    <Badge color="green" variant="light">
+                      {t('Без зміни залишків')}
+                    </Badge>
                   </Group>
                   <DailySyncTypeChecklist
                     selectedTypes={state.selectedDailyTypes}
