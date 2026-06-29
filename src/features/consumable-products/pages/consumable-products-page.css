@@ -298,3 +298,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Solid-black text across the category-rail header, panel meta + empty state (was gray-5/6). */
+.consumable-products-sidebar__header,
+.consumable-category-panel__meta,
+.consumable-products-empty-state {
+  color: var(--mantine-color-gray-9);
+}

@@ -17,9 +17,7 @@
   --protocols-command-label-height: 17px;
 
   align-items: end;
-  background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.06), transparent 32%),
-    var(--mantine-color-white);
+  background: var(--mantine-color-white);
   border-bottom-color: var(--mantine-color-gray-2);
   display: grid;
   gap: 12px;
@@ -497,4 +495,27 @@
   .product-delivery-protocols-command-bar {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Solid-black text across the filters + roster (was gray-5/6/8). */
+.product-delivery-protocols-filter-label,
+.product-delivery-protocols-search-input .mantine-InputWrapper-label,
+.product-delivery-protocols-organization-select .mantine-InputWrapper-label,
+.product-delivery-protocols-date-input .mantine-Input-wrapper,
+.product-delivery-protocols-date-input .mantine-Input-input,
+.product-delivery-protocols-search-input .mantine-Input-wrapper,
+.product-delivery-protocols-search-input .mantine-TextInput-input,
+.product-delivery-protocols-organization-select .mantine-Input-wrapper,
+.product-delivery-protocols-organization-select .mantine-Input-input,
+.product-delivery-protocols-list-head,
+.product-delivery-protocols-main-subtitle,
+.product-delivery-protocols-two-line-cell > span,
+.product-delivery-protocols-two-line-cell > small,
+.product-delivery-protocols-state-main,
+.product-delivery-protocols-state-sub,
+.product-delivery-protocols-comment-cell,
+.product-delivery-protocols-date-cell > span,
+.product-delivery-protocols-date-cell > small,
+.product-delivery-protocols-list-state {
+  color: var(--mantine-color-gray-9);
 }

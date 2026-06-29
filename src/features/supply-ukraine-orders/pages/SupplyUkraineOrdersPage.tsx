@@ -647,8 +647,6 @@ export function SupplyUkraineOrdersPage() {
     state,
     totalPages,
     updateFilterDraft,
-    canDeleteOrder,
-    requestDelete,
   } = useSupplyUkraineOrdersPageController()
 
   return (
@@ -670,7 +668,6 @@ export function SupplyUkraineOrdersPage() {
 
       <OrdersListCard
         canPrint={createPermissions.canPrint}
-        canDeleteOrder={canDeleteOrder}
         currenciesError={currenciesState.error}
         currencyOptions={currencyOptions}
         filterDraft={filterDraft}
@@ -687,7 +684,6 @@ export function SupplyUkraineOrdersPage() {
         onDownload={downloadPrintDocument}
         onFilterDraftChange={updateFilterDraft}
         onRefresh={refreshOrders}
-        onDelete={requestDelete}
         onResetFilters={resetFilters}
         onRowClick={openRow}
       />
@@ -717,7 +713,6 @@ export function SupplyUkraineOrdersPage() {
 
 function OrdersListCard({
   canPrint,
-  canDeleteOrder,
   currenciesError,
   currencyOptions,
   filterDraft,
@@ -731,7 +726,6 @@ function OrdersListCard({
   totalPages,
   onChangePage,
   onChangePageSize,
-  onDelete,
   onDownload,
   onFilterDraftChange,
   onRefresh,
@@ -739,7 +733,6 @@ function OrdersListCard({
   onRowClick,
 }: {
   canPrint: boolean
-  canDeleteOrder: boolean
   currenciesError: string | null
   currencyOptions: Array<{ label: string, value: string }>
   filterDraft: SupplyUkraineOrdersFilter
@@ -753,7 +746,6 @@ function OrdersListCard({
   totalPages: number
   onChangePage: (page: number) => void
   onChangePageSize: (value: string | null) => void
-  onDelete: (row: SupplyUkraineOrderRow) => void
   onDownload: () => void
   onFilterDraftChange: (patch: Partial<SupplyUkraineOrdersFilter>) => void
   onRefresh: () => void
@@ -795,12 +787,10 @@ function OrdersListCard({
 
       <div className="supply-ukraine-orders-table">
         <SupplyUkraineOrdersRoster
-          canDeleteOrder={canDeleteOrder}
           emptyText={t('Замовлень не знайдено')}
           isLoading={state.isLoading}
           loadingText={t('Завантаження замовлень')}
           rows={rows}
-          onDelete={onDelete}
           onRowClick={onRowClick}
         />
       </div>
@@ -809,20 +799,16 @@ function OrdersListCard({
 }
 
 function SupplyUkraineOrdersRoster({
-  canDeleteOrder,
   emptyText,
   isLoading,
   loadingText,
   rows,
-  onDelete,
   onRowClick,
 }: {
-  canDeleteOrder: boolean
   emptyText: string
   isLoading: boolean
   loadingText: string
   rows: SupplyUkraineOrderRow[]
-  onDelete: (row: SupplyUkraineOrderRow) => void
   onRowClick: (row: SupplyUkraineOrderRow) => void
 }) {
   const { t } = useI18n()
@@ -854,7 +840,6 @@ function SupplyUkraineOrdersRoster({
         <span>{t('Відповідальний')}</span>
         <span>{t('Розміщено')}</span>
         <span>{t('Тип')}</span>
-        <span />
       </div>
 
       <div className="supply-orders-roster-body">
@@ -871,11 +856,9 @@ function SupplyUkraineOrdersRoster({
             return (
               <Fragment key={rowId}>
                 <SupplyUkraineOrderRosterRow
-                  canDeleteOrder={canDeleteOrder}
                   canExpand={canExpand}
                   isExpanded={isExpanded}
                   row={row}
-                  onDelete={onDelete}
                   onRowClick={onRowClick}
                   onToggleExpanded={() => toggleExpanded(rowId)}
                 />
@@ -894,19 +877,15 @@ function SupplyUkraineOrdersRoster({
 }
 
 function SupplyUkraineOrderRosterRow({
-  canDeleteOrder,
   canExpand,
   isExpanded,
   row,
-  onDelete,
   onRowClick,
   onToggleExpanded,
 }: {
-  canDeleteOrder: boolean
   canExpand: boolean
   isExpanded: boolean
   row: SupplyUkraineOrderRow
-  onDelete: (row: SupplyUkraineOrderRow) => void
   onRowClick: (row: SupplyUkraineOrderRow) => void
   onToggleExpanded: () => void
 }) {
@@ -968,21 +947,6 @@ function SupplyUkraineOrderRosterRow({
       <OrderResponsibleGridCell value={displayValue(row.responsible)} />
       <div className="supply-order-status-cell">{placedBadge(row.isPlaced, t)}</div>
       <div className="supply-order-status-cell">{getKindBadge(row, t)}</div>
-      <div className="supply-order-actions-cell" data-order-row-stop="true">
-        {canDeleteOrder && canDeleteRow(row) ? (
-          <Tooltip label={t('Видалити')}>
-            <ActionIcon
-              aria-label={t('Видалити')}
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={() => onDelete(row)}
-            >
-              <IconTrash size={15} />
-            </ActionIcon>
-          </Tooltip>
-        ) : null}
-      </div>
     </div>
   )
 }
@@ -2069,18 +2033,6 @@ function getDirectOrderDisplayNumber(order: DirectSupplyOrder): string | undefin
 
 function getToUkraineOrderDisplayNumber(order: SupplyOrderUkraine): string | undefined {
   return getSupplyUkraineOrderDisplayNumber(order)
-}
-
-function canDeleteRow(row: SupplyUkraineOrderRow): boolean {
-  if (!row.netUid || row.kind === 'invoice') {
-    return false
-  }
-
-  if (row.kind === 'direct') {
-    return true
-  }
-
-  return !row.order?.IsPlaced && Boolean(row.order?.IsDirectFromSupplier)
 }
 
 function getRowTitle(row: SupplyUkraineOrderRow | null): string {
