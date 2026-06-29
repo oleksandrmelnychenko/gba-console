@@ -390,20 +390,18 @@ function WizardSaleHeaderContent({
         )}
       </Group>
 
-      <Group gap={6} ml="auto" wrap="nowrap">
-        {sale && (
+      {sale && (
+        <Group gap={6} ml="auto" wrap="nowrap">
           <Tooltip label={t('Копіювати товари')} position="bottom">
             <ActionIcon aria-label={t('Копіювати товари')} color="gray" size="lg" variant="subtle" onClick={() => void copySaleData(sale)}>
               <IconCopy size={18} />
             </ActionIcon>
           </Tooltip>
-        )}
-        {sale && (
           <Text fw={600} size="sm" style={{ whiteSpace: 'nowrap' }}>
             {`${withVatAccounting ? `(${t('ПДВ')}) ` : ''}${getSaleLifeCycleStatusName(sale)} ${sale.SaleNumber?.Value ?? ''}`.trim()}
           </Text>
-        )}
-      </Group>
+        </Group>
+      )}
 
       {onSaleReassigned && sale && (
         <WizardReassignSaleModal
@@ -437,7 +435,7 @@ function WizardHeaderBadge({
   label: string
 }) {
   return (
-    <Paper px="sm" py={2} radius="md" withBorder>
+    <Paper className="new-sale-wizard-header-badge" radius="md" withBorder>
       <Text c="dimmed" size="xs">
         {label}
       </Text>

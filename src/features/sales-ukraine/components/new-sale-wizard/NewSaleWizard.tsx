@@ -73,8 +73,9 @@ export function NewSaleWizard({
             borderRadius: 14,
             display: 'flex',
             flexDirection: 'column',
+            overflow: 'visible',
           },
-          body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+          body: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'visible' },
         }}
         onClose={() => {
           if (!contentBusy) {
@@ -519,16 +520,14 @@ function NewSaleWizardContent({
         </Group>
       )}
 
-      <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
+      <Box style={{ flex: 1, minHeight: 0, overflowY: active === 0 ? 'visible' : 'auto', paddingRight: 4 }}>
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
             headerClose={
-              <Tooltip label={t('Закрити')} position="left">
-                <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-                  <IconX size={20} />
-                </ActionIcon>
-              </Tooltip>
+              <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
+                <IconX size={20} />
+              </ActionIcon>
             }
             headerTools={
               <Group gap={6} justify="flex-end" wrap="nowrap">
