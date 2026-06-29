@@ -7,6 +7,7 @@ import {
 } from '@microsoft/signalr'
 import { useEffect, type PropsWithChildren } from 'react'
 import { useAuth } from '../../features/auth/useAuth'
+import { apiRequest } from '../api/apiClient'
 import { UserRoleType, type AuthUser } from '../auth/types'
 import { useI18n } from '../i18n/useI18n'
 import {
@@ -18,7 +19,12 @@ import {
 } from './events'
 import { getNumberValue, getStringValue, parseRealtimePayload } from './payload'
 import { realtimeUrl } from './realtimeUrl'
-import { applyDataSyncNotification } from './dataSyncProgressStore'
+import { applyDataSyncNotification, reconcileDataSyncProgress } from './dataSyncProgressStore'
+
+type DataSyncStatus = {
+  IsInProgress?: boolean
+  isInProgress?: boolean
+}
 
 const hubPaths = {
   dataSync: '/hubs/data/sync',
@@ -45,17 +51,19 @@ export function RealtimeProvider({ children }: PropsWithChildren) {
     }
 
     let disposed = false
+    const dataSyncConnection = createDataSyncConnection(t, user)
     const connections = [
       createProductReservationConnection(),
       createSupplyOrdersConnection(t),
       createExchangeRatesConnection(),
       createResaleConnection(),
-      createDataSyncConnection(t, user),
+      dataSyncConnection,
     ]
 
     connections.forEach((connection) => {
       void startConnection(connection, () => disposed)
     })
+    void reconcileDataSyncProgressWithServer()
 
     return () => {
       disposed = true
@@ -153,8 +161,26 @@ function createDataSyncConnection(t: (key: string) => string, user: AuthUser | n
     realtimeBus.emit(realtimeEvents.dataSyncNotification, notification)
     showDataSyncNotification(notification, user, t)
   })
+  connection.onreconnected(() => {
+    void reconcileDataSyncProgressWithServer()
+  })
 
   return connection
+}
+
+async function reconcileDataSyncProgressWithServer(): Promise<void> {
+  try {
+    const status = await apiRequest<DataSyncStatus>('/data/sync/status', {
+      errorMessages: {
+        default: 'Не вдалося перевірити статус синхронізації',
+        network: 'Сервер синхронізації недоступний',
+      },
+    })
+
+    reconcileDataSyncProgress(Boolean(status?.IsInProgress ?? status?.isInProgress))
+  } catch {
+    // Keep the local progress visible when status cannot be verified.
+  }
 }
 
 function createConnection(path: string): HubConnection {

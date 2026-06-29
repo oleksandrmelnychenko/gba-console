@@ -4,6 +4,7 @@ import {
   clearDataSyncProgress,
   getDataSyncProgressSnapshot,
   markDataSyncStarted,
+  reconcileDataSyncProgress,
 } from './dataSyncProgressStore'
 
 describe('dataSyncProgressStore', () => {
@@ -50,6 +51,18 @@ describe('dataSyncProgressStore', () => {
       isError: true,
       message: '1C не відповідає',
       messages: ['1C не відповідає'],
+    })
+  })
+
+  it('clears stale active progress when backend status says sync is not running', () => {
+    markDataSyncStarted('Синхронізацію запущено')
+
+    reconcileDataSyncProgress(false)
+
+    expect(getDataSyncProgressSnapshot()).toMatchObject({
+      isActive: false,
+      isError: false,
+      message: 'Синхронізацію запущено',
     })
   })
 })

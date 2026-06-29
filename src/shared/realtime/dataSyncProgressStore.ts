@@ -57,6 +57,20 @@ export function clearDataSyncProgress(): void {
   updateState(initialState)
 }
 
+export function reconcileDataSyncProgress(isInProgress: boolean): void {
+  if (isInProgress || !state.isActive) {
+    return
+  }
+
+  updateState({
+    ...state,
+    finishedAt: Date.now(),
+    isActive: false,
+    isError: false,
+    updatedAt: Date.now(),
+  })
+}
+
 export function getDataSyncProgressSnapshot(): DataSyncProgressState {
   return state
 }
