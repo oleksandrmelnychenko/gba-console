@@ -491,36 +491,64 @@ function NewSaleWizardContent({
       style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}
       onKeyDown={handleRootKeyDown}
     >
-      <Group align="flex-start" gap="xs" wrap="nowrap">
-        <Box style={{ flex: 1, minWidth: 0 }}>
-          <WizardSaleHeader
-            clientNetId={state.clientNetId}
-            reassignDisabled={shellBusy || productsBusy}
-            sale={state.sale}
-            withVatAccounting={Boolean(
-              state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
-            )}
-            onReassignOpenChange={setReassignOpen}
-            onSaleReassigned={(movedSale) => {
-              clearWizardSplitOrderItems()
-              clearWizardMergedSale()
-              setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
-              bumpWizardDebtRefresh()
-              setActive(0)
-            }}
-          />
-        </Box>
-        <Tooltip label={t('Закрити')} position="left">
-          <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-            <IconX size={20} />
-          </ActionIcon>
-        </Tooltip>
-      </Group>
+      {active !== 0 && (
+        <Group align="flex-start" gap="xs" wrap="nowrap">
+          <Box style={{ flex: 1, minWidth: 0 }}>
+            <WizardSaleHeader
+              clientNetId={state.clientNetId}
+              reassignDisabled={shellBusy || productsBusy}
+              sale={state.sale}
+              withVatAccounting={Boolean(
+                state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
+              )}
+              onReassignOpenChange={setReassignOpen}
+              onSaleReassigned={(movedSale) => {
+                clearWizardSplitOrderItems()
+                clearWizardMergedSale()
+                setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+                bumpWizardDebtRefresh()
+                setActive(0)
+              }}
+            />
+          </Box>
+          <Tooltip label={t('Закрити')} position="left">
+            <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
+              <IconX size={20} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
+      )}
 
       <Box style={{ flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
         {active === 0 && (
           <NewSaleClientStep
             clientNetId={state.clientNetId}
+            headerTools={
+              <Group gap={6} justify="flex-end" wrap="nowrap">
+                <WizardSaleHeader
+                  clientNetId={state.clientNetId}
+                  mode="inline"
+                  reassignDisabled={shellBusy || productsBusy}
+                  sale={state.sale}
+                  withVatAccounting={Boolean(
+                    state.agreement?.Agreement?.WithVATAccounting ?? state.sale?.ClientAgreement?.Agreement?.WithVATAccounting,
+                  )}
+                  onReassignOpenChange={setReassignOpen}
+                  onSaleReassigned={(movedSale) => {
+                    clearWizardSplitOrderItems()
+                    clearWizardMergedSale()
+                    setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
+                    bumpWizardDebtRefresh()
+                    setActive(0)
+                  }}
+                />
+                <Tooltip label={t('Закрити')} position="left">
+                  <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
+                    <IconX size={20} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            }
             initialClient={selectedClient}
             onClientResolved={setSelectedClient}
             onAgreementChange={(agreementNetId, agreement) => {

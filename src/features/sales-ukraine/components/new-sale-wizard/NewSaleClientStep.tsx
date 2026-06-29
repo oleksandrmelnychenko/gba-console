@@ -67,6 +67,7 @@ const WIZARD_CLIENT_SEARCH_MIN_LENGTH = 3
 
 export function NewSaleClientStep({
   clientNetId,
+  headerTools,
   initialClient,
   onClientChange,
   onClientResolved,
@@ -78,6 +79,7 @@ export function NewSaleClientStep({
   onRequestClose,
 }: {
   clientNetId: string | null
+  headerTools?: ReactNode
   initialClient?: Client | null
   onAgreementChange: (agreementNetId: string | null, agreement: SalesUkraineClientAgreement | null) => void
   onClientChange: (clientNetId: string | null) => void
@@ -1088,22 +1090,25 @@ export function NewSaleClientStep({
               </Box>
             </Box>
 
-            <Box className="new-sale-client-hero__metrics">
-              <Box className="new-sale-client-metric">
-                <IconCircleCheck size={13} />
-                <strong>{agreements.length}</strong>
-                <span>{t('Договори')}</span>
+            <Box className="new-sale-client-hero__side">
+              <Box className="new-sale-client-hero__metrics">
+                <Box className="new-sale-client-metric">
+                  <IconCircleCheck size={13} />
+                  <strong>{agreements.length}</strong>
+                  <span>{t('Договори')}</span>
+                </Box>
+                <Box className="new-sale-client-metric">
+                  <IconFileTypePdf size={13} />
+                  <strong>{registryItems.length}</strong>
+                  <span>{t('Документи')}</span>
+                </Box>
+                <Box className={`new-sale-client-metric ${selectedClientDebtTotal > 0 ? 'is-danger' : ''}`}>
+                  <IconAlertTriangle size={13} />
+                  <strong>{selectedClientDebtTotal.toLocaleString('uk-UA', { maximumFractionDigits: 0 })}</strong>
+                  <span>{t('Борг')}</span>
+                </Box>
               </Box>
-              <Box className="new-sale-client-metric">
-                <IconFileTypePdf size={13} />
-                <strong>{registryItems.length}</strong>
-                <span>{t('Документи')}</span>
-              </Box>
-              <Box className={`new-sale-client-metric ${selectedClientDebtTotal > 0 ? 'is-danger' : ''}`}>
-                <IconAlertTriangle size={13} />
-                <strong>{selectedClientDebtTotal.toLocaleString('uk-UA', { maximumFractionDigits: 0 })}</strong>
-                <span>{t('Борг')}</span>
-              </Box>
+              {headerTools && <Box className="new-sale-client-hero__tools">{headerTools}</Box>}
             </Box>
           </Box>
         )}

@@ -37,6 +37,7 @@ const SALE_LIFE_CYCLE_STATUS_NAMES: Record<number, string> = {
 
 export function WizardSaleHeader({
   clientNetId,
+  mode = 'strip',
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -44,6 +45,7 @@ export function WizardSaleHeader({
   onSaleReassigned,
 }: {
   clientNetId: string | null
+  mode?: 'inline' | 'strip'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -51,13 +53,14 @@ export function WizardSaleHeader({
   onSaleReassigned?: (movedSale: SalesUkraineSale | null) => void
 }) {
   if (!clientNetId) {
-    return <WizardHeaderPlaceholder />
+    return mode === 'inline' ? null : <WizardHeaderPlaceholder />
   }
 
   return (
     <WizardSaleHeaderContent
       key={clientNetId}
       clientNetId={clientNetId}
+      mode={mode}
       reassignDisabled={reassignDisabled}
       sale={sale}
       withVatAccounting={withVatAccounting}
@@ -69,6 +72,7 @@ export function WizardSaleHeader({
 
 function WizardSaleHeaderContent({
   clientNetId,
+  mode,
   reassignDisabled,
   sale,
   withVatAccounting,
@@ -76,6 +80,7 @@ function WizardSaleHeaderContent({
   onSaleReassigned,
 }: {
   clientNetId: string
+  mode: 'inline' | 'strip'
   reassignDisabled?: boolean
   sale: SalesUkraineSale | null
   withVatAccounting: boolean
@@ -197,7 +202,7 @@ function WizardSaleHeaderContent({
   }
 
   if (!client) {
-    return <WizardHeaderPlaceholder />
+    return mode === 'inline' ? null : <WizardHeaderPlaceholder />
   }
 
   const clientAgreements = client.ClientAgreements ?? []
@@ -209,27 +214,31 @@ function WizardSaleHeaderContent({
   const showStructureWarning = Boolean(
     structureDebtTotal && ((structureDebtTotal.TotalLocal ?? 0) > 0 || (structureDebtTotal.TotalSubClientDebt ?? 0) > 0),
   )
+  const isInline = mode === 'inline'
 
   return (
     <Group
       align="center"
       gap="sm"
-      mb={8}
-      mih={WIZARD_HEADER_MIN_HEIGHT}
-      pb={4}
+      className={isInline ? 'new-sale-wizard-inline-tools' : undefined}
+      mb={isInline ? 0 : 8}
+      mih={isInline ? undefined : WIZARD_HEADER_MIN_HEIGHT}
+      pb={isInline ? 0 : 4}
       wrap="wrap"
-      style={{ borderBottom: '1px solid var(--mantine-color-gray-3)' }}
+      style={isInline ? undefined : { borderBottom: '1px solid var(--mantine-color-gray-3)' }}
     >
-      <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-        {!client.IsSubClient && !client.IsTradePoint && client.RegionCode?.Value && (
-          <Text c="dimmed" size="sm">
-            {client.RegionCode.Value}
+      {!isInline && (
+        <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
+          {!client.IsSubClient && !client.IsTradePoint && client.RegionCode?.Value && (
+            <Text c="dimmed" size="sm">
+              {client.RegionCode.Value}
+            </Text>
+          )}
+          <Text fw={700} truncate>
+            {client.FullName}
           </Text>
-        )}
-        <Text fw={700} truncate>
-          {client.FullName}
-        </Text>
-      </Group>
+        </Group>
+      )}
 
       {subClientCount > 0 && clientAgreements.length > 0 && (
         <Popover position="bottom-start" shadow="md" width={420} withinPortal>
