@@ -470,10 +470,13 @@
 }
 
 .new-sale-client-hero__copy {
+  align-items: center;
+  column-gap: 10px;
   display: grid;
-  gap: 4px;
+  grid-template-columns: auto minmax(0, 1fr);
   min-width: 0;
   position: relative;
+  row-gap: 4px;
   z-index: 1;
 }
 
@@ -485,6 +488,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  grid-column: 1 / -1;
 }
 
 .new-sale-client-hero__contacts {
@@ -498,6 +502,7 @@
   align-items: center;
   display: flex;
   gap: 5px;
+  grid-column: 1;
   min-width: 0;
 }
 
@@ -533,6 +538,7 @@
 }
 
 .new-sale-client-hero__contacts {
+  grid-column: 2;
   overflow: hidden;
 }
 
@@ -1261,6 +1267,15 @@
 
   .new-sale-client-hero {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-sale-client-hero__copy {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .new-sale-client-hero__chips,
+  .new-sale-client-hero__contacts {
+    grid-column: 1;
   }
 
   .new-sale-client-hero__stamp {
