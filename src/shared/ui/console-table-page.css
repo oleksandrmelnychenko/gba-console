@@ -140,13 +140,7 @@
 }
 
 .console-table-page .data-table-row .data-table-cell:first-child {
-  border-left: 3px solid transparent;
-  border-radius: 8px 0 0 8px;
   padding-left: 11px;
-}
-
-.console-table-page .data-table-row .data-table-cell:last-child {
-  border-radius: 0 8px 8px 0;
 }
 
 .console-table-page .data-table-row {
@@ -158,12 +152,8 @@
     transform 140ms ease;
 }
 
-.console-table-page .data-table-row:nth-child(even) {
-  --data-table-cell-bg: var(--mantine-color-white);
-}
-
 .console-table-page .data-table-row:hover .data-table-cell {
-  --data-table-cell-bg: var(--mantine-color-gray-0);
+  --data-table-cell-bg: var(--mantine-color-gray-1);
 }
 
 .console-table-page .data-table-row:hover {
