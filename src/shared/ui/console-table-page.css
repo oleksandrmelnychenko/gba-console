@@ -117,9 +117,7 @@
 }
 
 .console-table-page .data-table-cell {
-  background:
-    linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
-    var(--data-table-cell-bg, var(--mantine-color-white));
+  background: var(--data-table-cell-bg, var(--mantine-color-white));
   border-bottom: 1px solid var(--mantine-color-gray-1);
   color: var(--mantine-color-gray-8);
   font-weight: 500;
@@ -151,10 +149,6 @@
   border-radius: 0 8px 8px 0;
 }
 
-.console-table-page .data-table-row .data-table-cell:not(:first-child):not(:last-child) {
-  box-shadow: inset 1px 0 0 rgba(206, 212, 218, 0.36);
-}
-
 .console-table-page .data-table-row {
   --data-table-cell-bg: var(--mantine-color-white);
   outline: none;
@@ -169,11 +163,7 @@
 }
 
 .console-table-page .data-table-row:hover .data-table-cell {
-  --data-table-cell-bg: #fffaf5;
-}
-
-.console-table-page .data-table-row:hover .data-table-cell:first-child {
-  border-left-color: var(--brand-orange);
+  --data-table-cell-bg: var(--mantine-color-gray-0);
 }
 
 .console-table-page .data-table-row:hover {
