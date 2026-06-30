@@ -87,27 +87,9 @@
   border-spacing: 0;
 }
 
-.console-table-page .data-table-th {
-  background: var(--mantine-color-white);
-  border-bottom: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-7);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.2;
-  padding-bottom: 9px;
-  padding-top: 10px;
-  text-transform: uppercase;
-}
-
-.console-table-page .data-table-header-button[data-sortable='true'] {
-  border-radius: 6px;
-  color: inherit;
-  padding: 2px 3px;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-
+/* Header (.data-table-th) and sortable header buttons intentionally have NO
+   override here — they fall back to the default DataTable styles so the header
+   row, its bottom border, and padding match ClientsPage exactly. */
 .console-table-page .data-table-cell {
   background: var(--data-table-cell-bg, var(--mantine-color-white));
   transition:
