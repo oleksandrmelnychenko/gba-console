@@ -3,6 +3,7 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
   Group,
   Stack,
   Text,
@@ -11,8 +12,6 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconChevronDown,
-  IconChevronUp,
   IconCreditCard,
   IconEye,
   IconExternalLink,
@@ -33,6 +32,11 @@ import { formatLocalDate } from '../../../shared/date/dateTime'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppDrawer } from '../../../shared/ui/AppDrawer'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type {
+  DataTableColumn,
+  DataTableDefaultLayout,
+} from '../../../shared/ui/data-table/types'
 import {
   getAccountableExpenses,
   searchAccountableExpenses,
@@ -71,12 +75,22 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-type AccountableExpenseSortId = 'amount' | 'document' | 'price' | 'product' | 'qty' | 'responsible' | 'status'
-
-type AccountableExpenseSortState = {
-  direction: 'asc' | 'desc'
-  id: AccountableExpenseSortId
-} | null
+const ACCOUNTABLE_EXPENSES_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: [
+    'document',
+    'product',
+    'qty',
+    'price',
+    'amount',
+    'responsible',
+    'status',
+    'actions',
+  ],
+  columnPinning: {
+    left: ['document'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 export function AccountableExpensesPage() {
   const { t } = useI18n()
@@ -91,7 +105,6 @@ export function AccountableExpensesPage() {
   const [error, setError] = useValueState<string | null>(null)
   const [isLoading, setLoading] = useValueState(false)
   const [selectedRow, setSelectedRow] = useValueState<AccountableExpenseRow | null>(null)
-  const [sortState, setSortState] = useValueState<AccountableExpenseSortState>(null)
   const filterError = getDateRangeError(fromDate, toDate)
   const requestRef = useRef(0)
 
@@ -142,7 +155,6 @@ export function AccountableExpensesPage() {
   }, [fromDate, toDate])
 
   const rows = useMemo(() => buildExpenseRows(orders), [orders])
-  const sortedRows = useMemo(() => sortAccountableExpenseRows(rows, sortState), [rows, sortState])
   const openPayment = useCallback(
     (row: AccountableExpenseRow) => {
       const netId = row.order.NetUid || row.order.Id
@@ -186,23 +198,16 @@ export function AccountableExpensesPage() {
     },
     [defaultFromDate, defaultToDate, setFromDate, setOrders, setSearchValue, setToDate],
   )
-  const toggleSort = useCallback(
-    (id: AccountableExpenseSortId) => {
-      setSortState((current) => {
-        if (current?.id !== id) {
-          return { direction: 'asc', id }
-        }
-
-        return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-      })
-    },
-    [setSortState],
-  )
+  const columns = useAccountableExpenseColumns({
+    onEdit: openOrderEdit,
+    onOpen: setSelectedRow,
+    onPay: openPayment,
+  })
   const hasActiveFilters = Boolean(searchValue.trim()) || fromDate !== defaultFromDate || toDate !== defaultToDate
 
   return (
     <Stack className="accountable-expenses-page console-table-page" gap="md">
-      <div className="console-table-shell">
+      <Card className="app-data-card accountable-expenses-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar accountable-expenses-command-bar">
           <div className="accountable-expenses-period-filter">
             <span className="accountable-expenses-filter-label">{t('Період')}</span>
@@ -277,136 +282,121 @@ export function AccountableExpensesPage() {
         )}
 
         <div className="accountable-expenses-page__table console-table-body">
-          <AccountableExpensesList
+          <DataTable
+            columns={columns}
+            data={rows}
+            defaultLayout={ACCOUNTABLE_EXPENSES_TABLE_DEFAULT_LAYOUT}
+            density="normal"
+            emptyText={t('Підзвітних витрат не знайдено')}
+            getRowId={(row, index) => row.id || String(index)}
+            height="100%"
             isLoading={isLoading}
-            rows={sortedRows}
-            sortState={sortState}
-            onEdit={openOrderEdit}
-            onOpen={setSelectedRow}
-            onPay={openPayment}
-            onSort={toggleSort}
+            layoutVersion="accountable-expenses-table-1"
+            loadingText={t('Завантаження підзвітних витрат')}
+            minWidth={1280}
+            showDensityToggle={false}
+            showLayoutControls={false}
+            tableId="accountable-expenses"
+            onRowClick={setSelectedRow}
           />
         </div>
-      </div>
+      </Card>
 
       <ExpenseDetailDrawer row={selectedRow} onClose={() => setSelectedRow(null)} />
     </Stack>
   )
 }
 
-function AccountableExpensesList({
-  isLoading,
-  rows,
-  sortState,
+function useAccountableExpenseColumns({
   onEdit,
   onOpen,
   onPay,
-  onSort,
 }: {
-  isLoading: boolean
-  rows: AccountableExpenseRow[]
-  sortState: AccountableExpenseSortState
   onEdit: (row: AccountableExpenseRow) => void
   onOpen: (row: AccountableExpenseRow) => void
   onPay: (row: AccountableExpenseRow) => void
-  onSort: (id: AccountableExpenseSortId) => void
 }) {
   const { t } = useI18n()
 
-  return (
-    <div className="accountable-expenses-list">
-      <div className="accountable-expenses-list-head">
-        <AccountableExpenseSortHeader id="document" label={t('Документ / кому видано')} sortState={sortState} onSort={onSort} />
-        <AccountableExpenseSortHeader id="product" label={t('Товар / послуга')} sortState={sortState} onSort={onSort} />
-        <AccountableExpenseSortHeader id="qty" label={t('К-сть')} sortState={sortState} align="right" onSort={onSort} />
-        <AccountableExpenseSortHeader id="price" label={t('Ціна')} sortState={sortState} align="right" onSort={onSort} />
-        <AccountableExpenseSortHeader id="amount" label={t('Сума')} sortState={sortState} align="right" onSort={onSort} />
-        <AccountableExpenseSortHeader id="responsible" label={t('Відповідальний')} sortState={sortState} onSort={onSort} />
-        <AccountableExpenseSortHeader id="status" label={t('Статус')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="accountable-expenses-list-body">
-        {isLoading ? (
-          <div className="accountable-expenses-list-state">{t('Завантаження підзвітних витрат')}</div>
-        ) : rows.length === 0 ? (
-          <div className="accountable-expenses-list-state">{t('Підзвітних витрат не знайдено')}</div>
-        ) : (
-          rows.map((row) => (
-            <AccountableExpenseListRow
-              key={row.id}
-              row={row}
-              onEdit={onEdit}
-              onOpen={onOpen}
-              onPay={onPay}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function AccountableExpenseSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: AccountableExpenseSortId
-  label: string
-  sortState: AccountableExpenseSortState
-  onSort: (id: AccountableExpenseSortId) => void
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`accountable-expenses-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function AccountableExpenseListRow({
-  row,
-  onEdit,
-  onOpen,
-  onPay,
-}: {
-  row: AccountableExpenseRow
-  onEdit: (row: AccountableExpenseRow) => void
-  onOpen: (row: AccountableExpenseRow) => void
-  onPay: (row: AccountableExpenseRow) => void
-}) {
-  return (
-    <div
-      className="accountable-expenses-row"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(row)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpen(row)
-        }
-      }}
-    >
-      <AccountableExpenseDocumentCell row={row} />
-      <AccountableExpenseProductCell row={row} />
-      <AccountableExpenseQuantityCell value={formatAmount(row.qty)} />
-      <AccountableExpenseMoneyCell value={formatMoney(row.pricePerItem)} />
-      <AccountableExpenseMoneyCell currency={displayValue(row.currency)} value={formatMoney(row.amount)} />
-      <AccountableExpenseResponsibleCell row={row} />
-      <AccountableExpenseStatusCell row={row} />
-      <AccountableExpenseActions row={row} onEdit={onEdit} onOpen={onOpen} onPay={onPay} />
-    </div>
+  return useMemo<DataTableColumn<AccountableExpenseRow>[]>(
+    () => [
+      {
+        id: 'document',
+        header: 'Документ / кому видано',
+        width: 300,
+        minWidth: 270,
+        fill: true,
+        accessor: (row) =>
+          compactStrings([row.advanceNumber, row.order.Number, row.created, row.payedTo, row.organization]).join(' '),
+        cell: (row) => <AccountableExpenseDocumentCell row={row} />,
+      },
+      {
+        id: 'product',
+        header: 'Товар / послуга',
+        width: 290,
+        minWidth: 270,
+        accessor: (row) =>
+          compactStrings([row.productName, row.vendorCode, row.item.IsService ? 'service' : 'product']).join(' '),
+        cell: (row) => <AccountableExpenseProductCell row={row} />,
+      },
+      {
+        id: 'qty',
+        header: 'К-сть',
+        width: 92,
+        minWidth: 78,
+        align: 'right',
+        accessor: (row) => row.qty ?? Number.NEGATIVE_INFINITY,
+        cell: (row) => <AccountableExpenseQuantityCell value={formatAmount(row.qty)} />,
+      },
+      {
+        id: 'price',
+        header: 'Ціна',
+        width: 116,
+        minWidth: 108,
+        align: 'right',
+        accessor: (row) => row.pricePerItem ?? Number.NEGATIVE_INFINITY,
+        cell: (row) => <AccountableExpenseMoneyCell value={formatMoney(row.pricePerItem)} />,
+      },
+      {
+        id: 'amount',
+        header: 'Сума',
+        width: 134,
+        minWidth: 126,
+        align: 'right',
+        accessor: (row) => row.amount ?? Number.NEGATIVE_INFINITY,
+        cell: (row) => <AccountableExpenseMoneyCell currency={displayValue(row.currency)} value={formatMoney(row.amount)} />,
+      },
+      {
+        id: 'responsible',
+        header: 'Відповідальний',
+        width: 200,
+        minWidth: 178,
+        accessor: (row) => compactStrings([row.responsible, row.comment]).join(' '),
+        cell: (row) => <AccountableExpenseResponsibleCell row={row} />,
+      },
+      {
+        id: 'status',
+        header: 'Статус',
+        width: 150,
+        minWidth: 138,
+        accessor: (row) => compactStrings([row.paymentStatus, row.underReportStatus]).join(' '),
+        cell: (row) => <AccountableExpenseStatusCell row={row} />,
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 124,
+        minWidth: 104,
+        maxWidth: 140,
+        align: 'right',
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (row) => <AccountableExpenseActions row={row} onEdit={onEdit} onOpen={onOpen} onPay={onPay} />,
+      },
+    ],
+    [onEdit, onOpen, onPay, t],
   )
 }
 
@@ -860,55 +850,6 @@ function getDateRangeError(fromDate: string, toDate: string): string | null {
   }
 
   return null
-}
-
-function sortAccountableExpenseRows(
-  rows: AccountableExpenseRow[],
-  sortState: AccountableExpenseSortState,
-): AccountableExpenseRow[] {
-  if (!sortState) {
-    return rows
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return rows.toSorted(
-    (firstRow, secondRow) =>
-      compareAccountableExpenseSortValues(
-        getAccountableExpenseSortValue(firstRow, sortState.id),
-        getAccountableExpenseSortValue(secondRow, sortState.id),
-      ) * direction,
-  )
-}
-
-function getAccountableExpenseSortValue(row: AccountableExpenseRow, id: AccountableExpenseSortId): number | string {
-  switch (id) {
-    case 'amount':
-      return row.amount ?? Number.NEGATIVE_INFINITY
-    case 'document':
-      return compactStrings([row.advanceNumber, row.order.Number, row.created, row.payedTo, row.organization]).join(' ')
-    case 'price':
-      return row.pricePerItem ?? Number.NEGATIVE_INFINITY
-    case 'product':
-      return compactStrings([row.productName, row.vendorCode, row.item.IsService ? 'service' : 'product']).join(' ')
-    case 'qty':
-      return row.qty ?? Number.NEGATIVE_INFINITY
-    case 'responsible':
-      return compactStrings([row.responsible, row.comment]).join(' ')
-    case 'status':
-      return compactStrings([row.paymentStatus, row.underReportStatus]).join(' ')
-  }
-}
-
-function compareAccountableExpenseSortValues(firstValue: number | string, secondValue: number | string): number {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-    return firstValue - secondValue
-  }
-
-  return String(firstValue).localeCompare(String(secondValue), 'uk', {
-    numeric: true,
-    sensitivity: 'base',
-  })
 }
 
 function compactStrings(values: Array<string | null | undefined>): string[] {

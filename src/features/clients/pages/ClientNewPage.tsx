@@ -248,6 +248,7 @@ export function ClientNewPage() {
   const pendingDocumentsRef = useRef<File[]>([])
   const pendingDiscountDraftRef = useRef<DiscountsTreeDraft | null>(null)
   const regionCodeRequestRef = useRef(0)
+  const submittedRef = useRef(false)
   const requestedStep = normalizeStep(step)
   const visibleSteps = useMemo(() => buildVisibleNewSteps(draft), [draft])
   const currentStep = requestedStep || 'role'
@@ -333,6 +334,13 @@ export function ClientNewPage() {
       }
     })
   }, [lookups.currencies, role.isProvider, setDraft])
+
+  // After a successful create we navigate away from the wizard. Suppress the
+  // redirect guards below so the (now reset) draft cannot bounce the user back
+  // into a fresh "/clients/new/role" form while the closing navigation settles.
+  if (submittedRef.current) {
+    return null
+  }
 
   if (!requestedStep) {
     return <Navigate to="/clients/new/role" replace state={location.state} />
@@ -694,6 +702,7 @@ export function ClientNewPage() {
         color: documentsWereSaved ? 'green' : 'yellow',
         message: documentsWereSaved ? t('Клієнта створено') : t('Клієнта створено без документів'),
       })
+      submittedRef.current = true
       clearNewClientSession()
       setDraft(createEmptyDraft())
       pendingDocumentsRef.current = []
