@@ -12,7 +12,6 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconFileText,
   IconEye,
   IconRestore,
   IconRoute,
@@ -551,9 +550,6 @@ function ActIdentityCell({ row }: { row: ActProvidingServiceRow }) {
   return (
     <Tooltip label={`${title}\n${subtitle}`} multiline openDelay={350} withArrow>
       <span className="act-service-identity-cell">
-        <span className="act-service-identity-icon" aria-hidden>
-          <IconFileText size={16} />
-        </span>
         <span className="act-service-identity-copy">
           <span className="act-service-identity-title">{title}</span>
           <span className="act-service-identity-subtitle">{subtitle}</span>

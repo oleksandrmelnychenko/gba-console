@@ -346,37 +346,16 @@
 .supply-order-control-cell {
   align-items: center;
   color: var(--mantine-color-gray-5);
-  display: grid;
-  flex: 0 0 auto;
-  grid-template-columns: 28px;
-  justify-content: start;
-  line-height: 1;
-  margin-inline: auto;
-  min-height: 28px;
-  width: 28px;
-}
-
-.supply-order-control-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  height: 28px;
+  display: flex;
   justify-content: center;
-  width: 28px;
+  line-height: 1;
 }
 
-.supply-order-control-cell.is-toUkraine .supply-order-control-icon {
-  background: #fff8f2;
-  border-color: #ffd8bd;
+.supply-order-control-cell.is-toUkraine {
   color: var(--brand-orange);
 }
 
-.supply-order-control-cell.is-direct .supply-order-control-icon {
-  background: var(--mantine-color-blue-0);
-  border-color: var(--mantine-color-blue-1);
+.supply-order-control-cell.is-direct {
   color: var(--mantine-color-blue-7);
 }
 
@@ -546,25 +525,8 @@
 .supply-order-metric-value {
   align-items: center;
   display: inline-flex;
-  gap: 8px;
   justify-content: flex-start;
   min-width: 0;
-}
-
-.supply-order-metric-label {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 8px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 26px;
-  font-size: 11px;
-  font-weight: 720;
-  height: 26px;
-  justify-content: center;
-  line-height: 1;
-  width: 26px;
 }
 
 .supply-order-metric-number {

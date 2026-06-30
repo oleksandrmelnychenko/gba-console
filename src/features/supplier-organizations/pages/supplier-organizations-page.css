@@ -113,32 +113,7 @@
 .supplier-organizations-bank-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
   min-width: 0;
-}
-
-.supplier-organizations-name-icon,
-.supplier-organizations-bank-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  justify-content: center;
-}
-
-.supplier-organizations-name-icon {
-  border-radius: 999px;
-  flex: 0 0 34px;
-  height: 34px;
-  width: 34px;
-}
-
-.supplier-organizations-bank-icon {
-  border-radius: 7px;
-  flex: 0 0 24px;
-  height: 24px;
-  width: 24px;
 }
 
 .supplier-organizations-name-copy,
@@ -182,12 +157,6 @@
   font-size: 12px;
   font-weight: 620;
   line-height: 1.15;
-}
-
-.supplier-organizations-two-line-cell.is-separated {
-  border-left: 1px dashed var(--mantine-color-gray-3);
-  min-height: 34px;
-  padding-left: 12px;
 }
 
 .supplier-organizations-date-cell {

@@ -863,7 +863,7 @@ function useSupplyUkraineOrderColumns() {
         minWidth: 104,
         cell: (row) => (
           <div className="supply-order-metric-cell is-qty">
-            <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+            <OrderMetricValue value={formatAmount(row.qty)} />
           </div>
         ),
       },
@@ -875,7 +875,7 @@ function useSupplyUkraineOrderColumns() {
         align: 'right',
         cell: (row) => (
           <div className="supply-order-metric-cell is-percent">
-            <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />
+            <OrderMetricValue value={formatAmount(row.additionalPercent)} />
           </div>
         ),
       },
@@ -1030,7 +1030,7 @@ function SupplyOrderInvoiceExpandItem({
         </div>
       </div>
       <OrderDateInline value={row.invoiceDate} />
-      <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+      <OrderMetricValue value={formatAmount(row.qty)} />
       <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
       {placedBadge(row.isPlaced, t)}
     </div>
@@ -1391,10 +1391,8 @@ function OrderActionsModal({
 
 function OrderIndexCell({ row }: { row: SupplyUkraineOrderRow }) {
   return (
-    <span className={`supply-order-control-cell is-${row.kind}`}>
-      <span className="supply-order-control-icon" aria-hidden>
-        {getOrderKindIcon(row, 15)}
-      </span>
+    <span className={`supply-order-control-cell is-${row.kind}`} aria-hidden>
+      {getOrderKindIcon(row, 15)}
     </span>
   )
 }
@@ -1420,10 +1418,9 @@ function OrderMoneyCell({ currency, value }: { currency?: string; value?: number
   )
 }
 
-function OrderMetricValue({ label, value }: { label: string; value: string }) {
+function OrderMetricValue({ value }: { value: string }) {
   return (
     <span className="supply-order-metric-value">
-      <span className="supply-order-metric-label">{label}</span>
       <span className="supply-order-metric-number">{value}</span>
     </span>
   )

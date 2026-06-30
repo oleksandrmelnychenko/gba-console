@@ -110,27 +110,8 @@
 }
 
 .act-service-identity-cell {
-  align-items: center;
-  display: flex;
-  gap: 10px;
+  display: block;
   min-width: 0;
-}
-
-.act-service-identity-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 999px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 34px;
-  height: 34px;
-  justify-content: center;
-  width: 34px;
-}
-
-.act-service-identity-icon svg {
-  stroke-width: 1.7;
 }
 
 .act-service-identity-copy {
