@@ -84,17 +84,13 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: Sa
             ? await getShiftedSaleDocument(netId, historyNetId)
             : await getShiftedSaleHistoryDocument(netId, historyNetId)
 
-        if (printRequestRef.current !== requestId) {
-          return
+        if (printRequestRef.current === requestId) {
+          setPrintDocument(document)
         }
-
-        setPrintDocument(document)
       } catch (documentError) {
-        if (printRequestRef.current !== requestId) {
-          return
+        if (printRequestRef.current === requestId) {
+          setPrintError(documentError instanceof Error ? documentError.message : t('Документ недоступний для завантаження'))
         }
-
-        setPrintError(documentError instanceof Error ? documentError.message : t('Документ недоступний для завантаження'))
       } finally {
         if (printRequestRef.current === requestId) {
           setPrinting(false)
@@ -131,7 +127,8 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: Sa
     }
   }
 
-  const firstHistoryNetId = (sale?.HistoryInvoiceEdit || []).find((item) => item.NetUid)?.NetUid || null
+  const confirmableHistoryNetId =
+    (sale?.HistoryInvoiceEdit || []).find((item) => item.NetUid && item.ApproveUpdate && !item.IsDevelopment)?.NetUid || null
 
   return (
     <Stack gap="md">
@@ -179,8 +176,8 @@ export function SaleAuditDetail({ error, isLoading, onConfirmed, statistic }: Sa
       <Card withBorder padding="md" radius="md">
         <Group justify="space-between" align="center">
           <Text fw={600}>{t('Переміщено')}</Text>
-          {firstHistoryNetId && (
-            <Button size="xs" variant="light" onClick={() => setConfirmHistoryNetId(firstHistoryNetId)}>
+          {confirmableHistoryNetId && (
+            <Button size="xs" variant="light" onClick={() => setConfirmHistoryNetId(confirmableHistoryNetId)}>
               {t('Підтвердити обробку')}
             </Button>
           )}

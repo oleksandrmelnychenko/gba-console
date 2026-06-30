@@ -54,6 +54,8 @@ export type SaleAuditLifeCycleLineItem = {
 export type SaleAuditHistoryEdit = {
   Id?: number
   NetUid?: string
+  IsDevelopment?: boolean
+  ApproveUpdate?: boolean
 }
 
 export type SaleAuditSale = {
