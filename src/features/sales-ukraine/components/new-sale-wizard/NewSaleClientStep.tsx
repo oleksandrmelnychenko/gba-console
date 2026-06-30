@@ -65,6 +65,7 @@ type WizardPrintState = {
 // Minimum characters before the client search hits the server. 1–2 characters match almost
 // everything and just hammer the (slow) client search, so wait until the query is meaningful.
 const WIZARD_CLIENT_SEARCH_MIN_LENGTH = 3
+const WIZARD_CLIENT_ARROW_LOAD_DEBOUNCE_MS = 220
 
 export function NewSaleClientStep({
   clientNetId,
@@ -127,6 +128,8 @@ export function NewSaleClientStep({
   const searchRequestRef = useRef(0)
   const searchAbortRef = useRef<AbortController | null>(null)
   const virtualSearchAbortRef = useRef<AbortController | null>(null)
+  const clientDetailsTimerRef = useRef<number | null>(null)
+  const clientDetailsRequestRef = useRef(0)
   const isVirtualLoadingRef = useRef(false)
   const loadedCountRef = useRef(0)
   const registryRequestRef = useRef(0)
@@ -201,23 +204,31 @@ export function NewSaleClientStep({
     }
   }, [])
 
-  const loadGroupedDebts = useCallback(async (client: Client) => {
+  const loadGroupedDebts = useCallback(async (client: Client, requestId?: number) => {
     if (!client.NetUid) {
       return
     }
 
     const debts = await getWizardClientGroupedDebts(client.NetUid).catch(() => [])
-    setGroupedDebts(debts)
+
+    if (requestId === undefined || clientDetailsRequestRef.current === requestId) {
+      setGroupedDebts(debts)
+    }
   }, [])
 
   const loadAgreements = useCallback(
-    async (client: Client) => {
+    async (client: Client, requestId?: number) => {
       if (!client.NetUid) {
         return
       }
 
       try {
         const list = await getWizardClientAgreements(client.NetUid)
+
+        if (requestId !== undefined && clientDetailsRequestRef.current !== requestId) {
+          return
+        }
+
         setAgreements(list)
 
         // Prefer the active agreement, otherwise fall back to the first one so a selected
@@ -232,15 +243,27 @@ export function NewSaleClientStep({
           onAgreementChange(null, null)
         }
       } catch {
-        setAgreements([])
-        setSelectedAgreementKey('')
+        if (requestId === undefined || clientDetailsRequestRef.current === requestId) {
+          setAgreements([])
+          setSelectedAgreementKey('')
+          onAgreementChange(null, null)
+        }
       }
     },
     [onAgreementChange],
   )
 
+  const loadClientDetails = useCallback(
+    (client: Client, requestId: number) => {
+      void loadGroupedDebts(client, requestId)
+      void loadAgreements(client, requestId)
+      void fetchRegister({ clientNetId: client.NetUid || '' })
+    },
+    [fetchRegister, loadAgreements, loadGroupedDebts],
+  )
+
   const confirmClient = useCallback(
-    (client: Client) => {
+    (client: Client, { debounceDetails = false }: { debounceDetails?: boolean } = {}) => {
       if ((client.Id ?? 0) <= 0) {
         return
       }
@@ -250,17 +273,43 @@ export function NewSaleClientStep({
       // when confirmClient updates clientNetId — that would wipe the found-clients list.
       bootstrappedRef.current = true
 
+      const requestId = clientDetailsRequestRef.current + 1
+      clientDetailsRequestRef.current = requestId
+
+      if (clientDetailsTimerRef.current !== null) {
+        window.clearTimeout(clientDetailsTimerRef.current)
+        clientDetailsTimerRef.current = null
+      }
+
       setSelectedClient(client)
       onClientResolved?.(client)
+      setGroupedDebts([])
+      setAgreements([])
+      setSelectedAgreementKey('')
       setRegistryItems([])
       setExpandedKey(null)
+      setRegistryLoading(false)
+      registryRequestRef.current += 1
+      registryInFlightKeyRef.current = null
       setKeyboardState('ClientSelection')
+
+      if (debounceDetails) {
+        clientDetailsTimerRef.current = window.setTimeout(() => {
+          clientDetailsTimerRef.current = null
+
+          if (clientDetailsRequestRef.current === requestId) {
+            onClientChange(client.NetUid ?? null)
+            loadClientDetails(client, requestId)
+          }
+        }, WIZARD_CLIENT_ARROW_LOAD_DEBOUNCE_MS)
+
+        return
+      }
+
       onClientChange(client.NetUid ?? null)
-      void loadGroupedDebts(client)
-      void loadAgreements(client)
-      void fetchRegister({ clientNetId: client.NetUid || '' })
+      loadClientDetails(client, requestId)
     },
-    [fetchRegister, loadAgreements, loadGroupedDebts, onClientChange, onClientResolved, setKeyboardState],
+    [loadClientDetails, onClientChange, onClientResolved, setKeyboardState],
   )
 
   // Keep the latest confirmClient and preserved client reachable without making them
@@ -285,6 +334,16 @@ export function NewSaleClientStep({
     setSelectedAgreementKey('')
     setRegistryItems([])
     setExpandedKey(null)
+    setRegistryLoading(false)
+    clientDetailsRequestRef.current += 1
+    registryRequestRef.current += 1
+    registryInFlightKeyRef.current = null
+
+    if (clientDetailsTimerRef.current !== null) {
+      window.clearTimeout(clientDetailsTimerRef.current)
+      clientDetailsTimerRef.current = null
+    }
+
     onClientChange(null)
     onAgreementChange(null, null)
   }
@@ -388,9 +447,9 @@ export function NewSaleClientStep({
       void runVirtualLoad()
     }
 
-    // Auto-load the scrolled-to client (registry, agreements, debts) and mark it selected
-    // so the user can advance to the products step without an extra confirm.
-    confirmClient(item)
+    // Mark the scrolled-to client immediately, but debounce heavy detail requests while
+    // the user is holding Up/Down so the server is not hit for every intermediate row.
+    confirmClient(item, { debounceDetails: true })
   }
 
   function selectFromBottom() {
@@ -407,9 +466,9 @@ export function NewSaleClientStep({
 
     setCarousel({ dataBottom: carousel.dataBottom.slice(1), dataTop, selected: item, showDetails: true })
 
-    // Auto-load the scrolled-to client (registry, agreements, debts) and mark it selected
-    // so the user can advance to the products step without an extra confirm.
-    confirmClient(item)
+    // Mark the scrolled-to client immediately, but debounce heavy detail requests while
+    // the user is holding Up/Down so the server is not hit for every intermediate row.
+    confirmClient(item, { debounceDetails: true })
   }
 
   async function runVirtualLoad() {
@@ -1011,7 +1070,7 @@ export function NewSaleClientStep({
 
   useEffect(
     () => () => {
-      const timers = [searchTimerRef, saleSearchTimerRef, realtimeTimerRef]
+      const timers = [searchTimerRef, saleSearchTimerRef, realtimeTimerRef, clientDetailsTimerRef]
 
       timers.forEach((timer) => {
         if (timer.current !== null) {
