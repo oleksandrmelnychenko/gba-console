@@ -2135,7 +2135,7 @@ export function NewSaleProductsStep({
 
         {/* RIGHT: detail + analogues + components scroll above a pinned cart grid */}
         <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <Box style={{ flex: 1, minHeight: 0, overflowX: 'hidden', overflowY: 'auto' }}>
+          <Box style={{ flex: '0 1 auto', minHeight: 0, overflowX: 'hidden', overflowY: 'auto' }}>
             <Stack gap="md">
               {(selectedMainProductPanel || analoguePanel) && (
                 <Group align="stretch" className="new-sale-products-step__top-row" gap={10} wrap="nowrap">
@@ -2222,7 +2222,7 @@ export function NewSaleProductsStep({
           </Box>
 
           {/* Pinned cart — stays put regardless of how many analogues/components are shown */}
-          <Box style={{ flexShrink: 0, paddingTop: 12 }}>
+          <Box style={{ flexShrink: 0, paddingTop: 10 }}>
             <Stack gap={4}>
               <Text fw={600} size="sm">
                 {t('Кошик')}
