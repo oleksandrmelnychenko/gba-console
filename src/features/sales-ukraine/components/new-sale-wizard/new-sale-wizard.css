@@ -841,6 +841,7 @@
   grid-template-columns: 2px minmax(0, 1fr);
   min-height: 76px;
   overflow: hidden;
+  position: relative;
   text-align: left;
   transition:
     background-color 160ms var(--tx-ease-smooth),
@@ -858,12 +859,12 @@
 
 .new-sale-agreement-card.is-selected {
   background:
-    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.07), transparent 44%),
+    linear-gradient(90deg, rgba(var(--brand-orange-rgb), 0.055), rgba(255, 255, 255, 0.98) 46%),
     var(--mantine-color-white);
-  border-color: rgba(var(--brand-orange-rgb), 0.36);
+  border-color: rgba(var(--brand-orange-rgb), 0.28);
   box-shadow:
-    0 10px 20px rgba(var(--brand-orange-rgb), 0.07),
-    inset 0 0 0 1px rgba(var(--brand-orange-rgb), 0.06);
+    0 9px 18px rgba(20, 28, 38, 0.04),
+    inset 0 0 0 1px rgba(var(--brand-orange-rgb), 0.045);
 }
 
 .new-sale-agreement-card.is-overdue {
@@ -872,10 +873,11 @@
 
 .new-sale-agreement-card__rail {
   background: linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.78), rgba(var(--brand-orange-rgb), 0.2));
+  transition: width 160ms var(--tx-ease-smooth);
 }
 
 .new-sale-agreement-card.is-selected .new-sale-agreement-card__rail {
-  background: linear-gradient(180deg, var(--brand-orange), rgba(var(--brand-orange-rgb), 0.44));
+  background: linear-gradient(180deg, rgba(var(--brand-orange-rgb), 0.9), rgba(var(--brand-orange-rgb), 0.28));
 }
 
 .new-sale-agreement-card.is-overdue .new-sale-agreement-card__rail {
@@ -993,6 +995,14 @@
   min-width: 0;
   overflow: hidden;
   padding-top: 6px;
+}
+
+.new-sale-agreement-card.is-selected .new-sale-agreement-card__limits {
+  border-top-color: rgba(var(--brand-orange-rgb), 0.16);
+}
+
+.new-sale-agreement-card.is-selected .new-sale-agreement-card__name {
+  color: #1f2328;
 }
 
 .new-sale-agreement-card__metric {
