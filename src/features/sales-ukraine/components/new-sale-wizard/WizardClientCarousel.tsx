@@ -1,5 +1,5 @@
 import { Box, Stack, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertTriangle, IconBuildingStore, IconCircleCheck, IconUser, IconUsers } from '@tabler/icons-react'
+import { IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react'
 import type { RefObject } from 'react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { Client } from '../../../clients/types'
@@ -93,69 +93,38 @@ function ClientViewerRow({
     client.IsTradePoint ? 'is-trade-point' : '',
     client.IsSubClient ? 'is-sub-client' : '',
   ].filter(Boolean).join(' ')
+  const code = client.RegionCode?.Value || client.ClientNumber || client.USREOU || ''
 
   return (
     <UnstyledButton className={rowClassName} onClick={() => onPick(client)}>
-      {client.IsTradePoint ? (
-        <Box className="new-sale-client-drum-row__content">
-          <Box className="new-sale-client-drum-row__icon">
-            <IconBuildingStore size={14} />
-          </Box>
-          <Box className="new-sale-client-drum-row__copy">
-            <Text className="new-sale-client-drum-row__code" c="dimmed" size="xs">
-              {client.RegionCode?.Value}
-            </Text>
-            <Text className="new-sale-client-drum-row__name" title={client.FullName} truncate>
-              {client.FullName}
-            </Text>
-          </Box>
+      <Box className="new-sale-client-drum-row__content">
+        <Box className="new-sale-client-drum-row__status">
+          <Box className={`new-sale-client-drum-row__dot ${hasDebt ? 'is-danger' : client.IsActive ? 'is-active' : ''}`} />
         </Box>
-      ) : client.IsSubClient ? (
-        <Box className="new-sale-client-drum-row__content">
-          <Box className="new-sale-client-drum-row__icon">
-            <IconUsers size={14} />
-          </Box>
-          <Box className="new-sale-client-drum-row__copy">
-            <Text className="new-sale-client-drum-row__code" c="dimmed" size="xs">
-              {client.ClientNumber || client.RegionCode?.Value}
+        <Box className="new-sale-client-drum-row__copy">
+          {code && (
+            <Text className="new-sale-client-drum-row__code" title={code} truncate>
+              {code}
             </Text>
-            <Text className="new-sale-client-drum-row__name" title={client.FullName} truncate>
-              {client.FullName}
-            </Text>
-          </Box>
-        </Box>
-      ) : (
-        <Box className="new-sale-client-drum-row__stacked">
-          <Box className="new-sale-client-drum-row__topline">
-            <Box className={`new-sale-client-drum-row__dot ${hasDebt ? 'is-danger' : client.IsActive ? 'is-active' : ''}`} />
-            <Text className="new-sale-client-drum-row__code" fw={600} size="xs">
-              {client.RegionCode?.Value}
-            </Text>
-          </Box>
-          <Text className="new-sale-client-drum-row__name" c={hasDebt ? 'red.7' : 'dimmed'} title={client.FullName} truncate>
+          )}
+          <Text className="new-sale-client-drum-row__name" title={client.FullName} truncate>
             {client.FullName}
           </Text>
         </Box>
-      )}
+      </Box>
     </UnstyledButton>
   )
 }
 
 function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt: boolean; hideName: boolean }) {
-  const { t } = useI18n()
   const isDebt = hasDebt || (client.ClientInDebts?.length ?? 0) > 0
   const color = isDebt ? 'red.7' : 'orange.7'
-  const typeLabel = client.IsTradePoint ? t('Торгова точка') : client.IsSubClient ? t('Підклієнт') : t('Клієнт')
   const code = client.RegionCode?.Value || client.ClientNumber || client.USREOU || ''
 
   return (
     <Box className={`new-sale-client-drum-card ${isDebt ? 'has-debt' : ''}`}>
       <Box className="new-sale-client-drum-card__top">
-        <Box className="new-sale-client-drum-card__avatar">
-          {client.IsTradePoint ? <IconBuildingStore size={17} /> : client.IsSubClient ? <IconUsers size={17} /> : <IconUser size={17} />}
-        </Box>
         <Box className="new-sale-client-drum-card__head">
-          <Text className="new-sale-client-drum-card__type">{typeLabel}</Text>
           {code && (
             <Text className="new-sale-client-drum-card__code" c={color} fw={700}>
               {code}
@@ -168,7 +137,7 @@ function ClientMiniCard({ client, hasDebt, hideName }: { client: Client; hasDebt
       </Box>
       {!hideName && (
         <Tooltip disabled={!client.FullName} label={client.FullName} multiline maw={360}>
-          <Text className="new-sale-client-drum-card__name" c={color}>
+          <Text className="new-sale-client-drum-card__name">
             {client.FullName}
           </Text>
         </Tooltip>
