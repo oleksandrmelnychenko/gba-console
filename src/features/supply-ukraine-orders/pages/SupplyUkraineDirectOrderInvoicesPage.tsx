@@ -12,7 +12,6 @@ import {
   Loader,
   NumberInput,
   SegmentedControl,
-  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -69,7 +68,6 @@ import {
 } from '../api/supplyUkraineOrdersApi'
 import type {
   DirectSupplyOrder,
-  EntityFields,
   PackingList,
   Product,
   PackingListDocumentParseConfiguration,
@@ -134,26 +132,6 @@ type PackListEditorState = {
 }
 type InvoiceEditorState = {
   invoice: SupplyInvoice
-}
-type SelectOption = {
-  label: string
-  value: string
-}
-type PaymentProtocolDraft = {
-  amount: NumberFieldValue
-  comment: string
-  discount: NumberFieldValue
-  isAccounting: boolean
-  keyId: string | null
-  keyText: string
-  payToDate: string
-  userId: string | null
-}
-type InformationProtocolDraft = {
-  keyId: string | null
-  keyText: string
-  userId: string | null
-  value: NumberFieldValue
 }
 type InvoiceMetadataForm = {
   dateFrom: string
@@ -367,15 +345,11 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
   const orderItemColumns = useOrderItemColumns(setProductCardNetId)
   const invoiceItemColumns = useInvoiceItemColumns({
     balanceByOrderItemKey: invoiceBalanceByOrderItemKey,
-    disabled: isBusy || !selectedInvoice || !canEditInvoice,
     onOpenProductCard: setProductCardNetId,
-    onQtyChange: handleInvoiceQtyChange,
   })
   const packListItemColumns = usePackListItemColumns({
     balanceByInvoiceItemKey: packListBalanceByInvoiceItemKey,
-    disabled: isBusy || !selectedPackList || !canAddPackList,
     onOpenProductCard: setProductCardNetId,
-    onQtyChange: handlePackListQtyChange,
   })
   const orderTotalsToolbar = useMemo(() => <TotalsBadges totals={totals} />, [totals])
 
@@ -709,60 +683,6 @@ function useSupplyUkraineDirectOrderInvoicesPageModel() {
     }
   }
 
-  function handleInvoiceQtyChange(item: SupplyInvoiceOrderItem, value: number | string) {
-    if (!canEditInvoice) {
-      return
-    }
-
-    if (!selectedInvoice?.NetUid) {
-      return
-    }
-
-    const qty = toNonNegativeNumber(value)
-
-    setPageState((current) => {
-      const invoice = current.invoiceDetailsByNetId[selectedInvoice.NetUid || ''] || selectedInvoice
-
-      if (!invoice) {
-        return {}
-      }
-
-      return {
-        invoiceDetailsByNetId: {
-          ...current.invoiceDetailsByNetId,
-          [selectedInvoice.NetUid || '']: upsertInvoiceOrderItem(invoice, item, qty),
-        },
-      }
-    })
-  }
-
-  function handlePackListQtyChange(item: PackingListPackageOrderItem, value: number | string) {
-    if (!canAddPackList) {
-      return
-    }
-
-    if (!selectedInvoice?.NetUid || !selectedPackList) {
-      return
-    }
-
-    const qty = toNonNegativeNumber(value)
-
-    setPageState((current) => {
-      const invoice = current.invoiceDetailsByNetId[selectedInvoice.NetUid || ''] || selectedInvoice
-
-      if (!invoice) {
-        return {}
-      }
-
-      return {
-        invoiceDetailsByNetId: {
-          ...current.invoiceDetailsByNetId,
-          [selectedInvoice.NetUid || '']: upsertPackListOrderItem(invoice, selectedPackList, item, qty),
-        },
-      }
-    })
-  }
-
   async function saveInvoiceItems() {
     if (!canEditInvoice) {
       notifications.show({ color: 'red', message: t('Недостатньо прав для цієї дії') })
@@ -1023,7 +943,7 @@ function SupplyUkraineDirectOrderInvoicesView({ model }: { model: DirectOrderInv
   const { t } = useI18n()
 
   return (
-    <Stack gap="lg">
+    <Stack className="supply-detail-page" gap="lg">
       <DirectOrderInvoicesHeader model={model} />
       {model.error && (
         <Alert color="red" icon={<IconAlertCircle size={18} />} variant="light">
@@ -1068,9 +988,6 @@ function DirectOrderInvoicesHeader({ model }: { model: DirectOrderInvoicesPageMo
               <span className="supply-detail-number">{getOrderNumber(model.order)}</span>
             )}
           </h1>
-          <p className="supply-detail-subtitle">
-            {t('Постачальник')}: <strong>{getEntityName(model.order?.Client)}</strong>
-          </p>
         </div>
       </div>
       <div className="supply-detail-header-actions">
@@ -1119,12 +1036,6 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
 
   return (
     <Stack gap="lg">
-      <SimpleGrid cols={{ base: 1, md: 4 }} spacing="md">
-        <TotalCard label={t('Рядків замовлення')} value={String(model.orderItems.length)} />
-        <TotalCard label={t('Інвойсів')} value={String(model.invoices.length)} />
-        <TotalCard label={t('Кількість')} value={formatNumber(model.order.TotalQuantity)} />
-        <TotalCard accent label={t('Сума')} value={formatMoney(model.order.TotalNetPrice)} />
-      </SimpleGrid>
       <Tabs defaultValue="products" keepMounted={false}>
         <Tabs.List>
           <Tabs.Tab value="products">{t('Товари замовлення')}</Tabs.Tab>
@@ -1141,21 +1052,31 @@ function DirectOrderInvoicesBody({ model }: { model: DirectOrderInvoicesPageMode
 
 function ProductsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
   const { t } = useI18n()
+  const totalQuantity = model.orderItems.reduce((sum, item) => sum + (typeof item.Qty === 'number' ? item.Qty : 0), 0)
+  const totalSum = model.orderItems.reduce((sum, item) => sum + (getOrderItemTotal(item) || 0), 0)
 
   return (
     <Tabs.Panel value="products" pt="md">
       <Card className="app-section-card" withBorder radius="md" padding="md">
-        <DataTable
-          columns={model.orderItemColumns}
-          data={model.orderRows}
-          emptyText={t('Товарів немає')}
-          getRowId={(item, index) => item.NetUid || String(item.Id || index)}
-          layoutVersion="supply-direct-order-items-2"
-          minWidth={980}
-          rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
-          tableId="supply-direct-order-items"
-          toolbarLeft={model.orderTotalsToolbar}
-        />
+        <Stack gap="md">
+          <DataTable
+            columns={model.orderItemColumns}
+            data={model.orderRows}
+            emptyText={t('Товарів немає')}
+            getRowId={(item, index) => item.NetUid || String(item.Id || index)}
+            layoutVersion="supply-direct-order-items-2"
+            minWidth={980}
+            rowClassName={(item) => item.IsError ? 'data-table-row-warning' : undefined}
+            tableId="supply-direct-order-items"
+          />
+          <SummaryLine
+            items={[
+              [t('Всього товарів'), formatNumber(model.orderItems.length)],
+              [t('Вся кількість'), formatNumber(totalQuantity)],
+              [t('Вся сума'), formatMoney(totalSum)],
+            ]}
+          />
+        </Stack>
       </Card>
     </Tabs.Panel>
   )
@@ -1169,18 +1090,6 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
       <Card className="app-section-card" withBorder radius="md" padding="md">
         <Stack gap="md">
           <InvoiceSelector model={model} />
-          {model.selectedInvoice && <InvoiceDocumentsSummary invoice={model.selectedInvoice} />}
-          {model.selectedInvoice && (
-            <InvoiceProtocolsSection
-              key={[
-                model.selectedInvoice.NetUid || model.selectedInvoice.Id || 'invoice',
-                model.paymentProtocolKeys.length,
-                model.informationProtocolKeys.length,
-                model.responsibleUsers.length,
-              ].join('-')}
-              model={model}
-            />
-          )}
           {model.isInvoiceLoading ? (
             <Group justify="center" py="md"><Loader size="sm" /></Group>
           ) : (
@@ -1191,22 +1100,6 @@ function InvoicesPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
                 expectedLabel={t('У замовленні')}
                 rows={model.invoiceBalanceRows}
               />
-              <Group justify="flex-end">
-                <Button
-                  color={CREATE_ACTION_COLOR}
-                  disabled={
-                    model.isBusy
-                    || !model.canEditInvoice
-                    || !model.selectedInvoice
-                    || model.invoiceBalanceRows.some((row) => row.isError)
-                  }
-                  leftSection={<IconDeviceFloppy size={16} />}
-                  loading={model.isSaving}
-                  onClick={model.saveInvoiceItems}
-                >
-                  {t('Зберегти інвойси')}
-                </Button>
-              </Group>
               <DataTable
                 columns={model.invoiceItemColumns}
                 data={model.selectedInvoiceItems}
@@ -1252,28 +1145,6 @@ function InvoiceSelector({ model }: { model: DirectOrderInvoicesPageModel }) {
           >
             {invoice.Number || t('Інвойс')} ({formatDate(invoice.DateFrom)})
           </Button>
-          {model.canEditInvoice && (
-            <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                disabled={model.isBusy}
-                size="xs"
-                variant="subtle"
-                onClick={() => {
-                  const invoiceNetId = invoice.NetUid || null
-                  const invoiceForEdit = getSelectedInvoice(invoiceNetId, model.invoiceDetailsByNetId, model.invoices) || invoice
-
-                  model.setPageState({
-                    invoiceEditor: { invoice: invoiceForEdit },
-                    selectedInvoiceNetId: invoiceNetId,
-                    selectedPackListNetId: getValidPackListNetId(model.selectedPackListNetId, invoiceForEdit),
-                  })
-                }}
-              >
-                <IconEdit size={14} />
-              </ActionIcon>
-            </Tooltip>
-          )}
           {model.canRemoveInvoice && (
             <Tooltip label={t('Видалити')}>
               <ActionIcon
@@ -1319,21 +1190,6 @@ function PackListsPanel({ model }: { model: DirectOrderInvoicesPageModel }) {
                 {t('Новий пак лист')}
               </Button>
             )}
-            <Button
-              color={CREATE_ACTION_COLOR}
-              disabled={
-                model.isBusy
-                || !model.canAddPackList
-                || !model.selectedInvoice
-                || !model.selectedPackList
-                || model.packListBalanceRows.some((row) => row.isError)
-              }
-              leftSection={<IconDeviceFloppy size={16} />}
-              loading={model.isSaving}
-              onClick={model.savePackingLists}
-            >
-              {t('Зберегти пак листи')}
-            </Button>
           </Group>
           <DataTable
             columns={model.packListItemColumns}
@@ -2002,14 +1858,10 @@ function useOrderItemColumns(onOpenProductCard: (productNetId: string) => void):
 
 function useInvoiceItemColumns({
   balanceByOrderItemKey,
-  disabled,
   onOpenProductCard,
-  onQtyChange,
 }: {
   balanceByOrderItemKey: Map<string, InvoiceBalanceRow>
-  disabled: boolean
   onOpenProductCard: (productNetId: string) => void
-  onQtyChange: (item: SupplyInvoiceOrderItem, value: number | string) => void
 }): DataTableColumn<SupplyInvoiceOrderItem>[] {
   const { t } = useI18n()
 
@@ -2023,17 +1875,7 @@ function useInvoiceItemColumns({
         width: 150,
         align: 'right',
         accessor: (item) => item.Qty,
-        cell: (item) => (
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            disabled={disabled}
-            hideControls
-            min={0}
-            value={toNumberInputValue(item.Qty)}
-            onChange={(value) => onQtyChange(item, value)}
-          />
-        ),
+        cell: (item) => formatNumber(item.Qty),
       },
       {
         id: 'leftToInvoice',
@@ -2047,20 +1889,16 @@ function useInvoiceItemColumns({
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalAmount, cell: (item) => formatMoney(item.TotalAmount || (item.UnitPrice || 0) * (item.Qty || 0)) },
       { id: 'imported', header: t('Імпорт'), width: 110, accessor: (item) => item.ProductIsImported, cell: (item) => <Badge color={item.ProductIsImported ? 'green' : 'gray'} variant="light">{item.ProductIsImported ? t('Так') : t('Ні')}</Badge> },
     ],
-    [balanceByOrderItemKey, disabled, onOpenProductCard, onQtyChange, t],
+    [balanceByOrderItemKey, onOpenProductCard, t],
   )
 }
 
 function usePackListItemColumns({
   balanceByInvoiceItemKey,
-  disabled,
   onOpenProductCard,
-  onQtyChange,
 }: {
   balanceByInvoiceItemKey: Map<string, PackListBalanceRow>
-  disabled: boolean
   onOpenProductCard: (productNetId: string) => void
-  onQtyChange: (item: PackingListPackageOrderItem, value: number | string) => void
 }): DataTableColumn<PackingListPackageOrderItem>[] {
   const { t } = useI18n()
 
@@ -2076,17 +1914,7 @@ function usePackListItemColumns({
         width: 150,
         align: 'right',
         accessor: (item) => item.Qty,
-        cell: (item) => (
-          <NumberInput
-            allowNegative={false}
-            decimalScale={3}
-            disabled={disabled}
-            hideControls
-            min={0}
-            value={toNumberInputValue(item.Qty)}
-            onChange={(value) => onQtyChange(item, value)}
-          />
-        ),
+        cell: (item) => formatNumber(item.Qty),
       },
       {
         id: 'leftToPack',
@@ -2101,7 +1929,7 @@ function usePackListItemColumns({
       { id: 'price', header: t('Ціна'), width: 120, align: 'right', accessor: (item) => item.UnitPrice, cell: (item) => formatMoney(item.UnitPrice) },
       { id: 'total', header: t('Сума'), width: 130, align: 'right', accessor: (item) => item.TotalGrossPrice, cell: (item) => formatMoney(item.TotalGrossPrice) },
     ],
-    [balanceByInvoiceItemKey, disabled, onOpenProductCard, onQtyChange, t],
+    [balanceByInvoiceItemKey, onOpenProductCard, t],
   )
 }
 
@@ -2156,410 +1984,6 @@ function ProductNameCell({
     </Anchor>
   ) : (
     <Text size="sm">{name}</Text>
-  )
-}
-
-function InvoiceDocumentsSummary({ invoice }: { invoice: SupplyInvoice }) {
-  const { t } = useI18n()
-  const documents = getActiveInvoiceDocuments(invoice.InvoiceDocuments || [])
-
-  if (documents.length === 0) {
-    return null
-  }
-
-  return (
-    <Group gap="xs" wrap="wrap">
-      <Text c="dimmed" size="sm">{t('Документи інвойсу')}:</Text>
-      {documents.map((document, index) => {
-        const documentUrl = getDocumentUrl(document)
-        const label = document.FileName || document.GeneratedName || t('Документ')
-
-        return documentUrl ? (
-          <Anchor
-            key={document.NetUid || document.Id || `${label}-${index}`}
-            href={upgradeHttpToHttps(documentUrl)}
-            rel="noreferrer"
-            size="sm"
-            target="_blank"
-          >
-            {label}
-          </Anchor>
-        ) : (
-          <Badge key={document.NetUid || document.Id || `${label}-${index}`} color="gray" variant="light">
-            {label}
-          </Badge>
-        )
-      })}
-    </Group>
-  )
-}
-
-function InvoiceProtocolsSection({ model }: { model: DirectOrderInvoicesPageModel }) {
-  const { t } = useI18n()
-  const invoice = model.selectedInvoice
-  const [paymentDraft, setPaymentDraft] = useState<PaymentProtocolDraft>(() =>
-    createEmptyPaymentProtocolDraft(model.paymentProtocolKeys, model.responsibleUsers),
-  )
-  const [informationDraft, setInformationDraft] = useState<InformationProtocolDraft>(() =>
-    createEmptyInformationProtocolDraft(model.informationProtocolKeys, model.responsibleUsers),
-  )
-  const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
-  const [editingInformationIndex, setEditingInformationIndex] = useState<number | null>(null)
-
-  const paymentKeyOptions = useMemo(
-    () => toSelectOptions(model.paymentProtocolKeys, (key) => key.Key || t('Форма')),
-    [model.paymentProtocolKeys, t],
-  )
-  const informationKeyOptions = useMemo(
-    () => toSelectOptions(model.informationProtocolKeys, (key) => key.Key || t('Протокол')),
-    [model.informationProtocolKeys, t],
-  )
-  const userOptions = useMemo(
-    () => toSelectOptions(model.responsibleUsers, getUserName),
-    [model.responsibleUsers],
-  )
-  const paymentRows = useMemo(() => getActivePaymentProtocolRows(invoice), [invoice])
-  const informationRows = useMemo(() => getActiveInformationProtocolRows(invoice), [invoice])
-  const isDisabled = model.isBusy || !model.canEditInvoice
-
-  if (!invoice) {
-    return null
-  }
-
-  const currentInvoice = invoice
-
-  function selectPaymentKey(keyId: string | null) {
-    const key = findEntityBySelectValue(model.paymentProtocolKeys, keyId)
-
-    setPaymentDraft((current) => ({
-      ...current,
-      keyId,
-      keyText: key?.Key || current.keyText,
-    }))
-  }
-
-  function selectInformationKey(keyId: string | null) {
-    const key = findEntityBySelectValue(model.informationProtocolKeys, keyId)
-
-    setInformationDraft((current) => ({
-      ...current,
-      keyId,
-      keyText: key?.Key || current.keyText,
-    }))
-  }
-
-  function resetPaymentDraft() {
-    setPaymentDraft(createEmptyPaymentProtocolDraft(model.paymentProtocolKeys, model.responsibleUsers))
-    setEditingPaymentIndex(null)
-  }
-
-  function resetInformationDraft() {
-    setInformationDraft(createEmptyInformationProtocolDraft(model.informationProtocolKeys, model.responsibleUsers))
-    setEditingInformationIndex(null)
-  }
-
-  function editPaymentProtocol(protocol: SupplyOrderPaymentDeliveryProtocol, index: number) {
-    setPaymentDraft(createPaymentProtocolDraft(protocol, model.paymentProtocolKeys, model.responsibleUsers))
-    setEditingPaymentIndex(index)
-  }
-
-  function editInformationProtocol(protocol: SupplyInformationDeliveryProtocol, index: number) {
-    setInformationDraft(createInformationProtocolDraft(protocol, model.informationProtocolKeys, model.responsibleUsers))
-    setEditingInformationIndex(index)
-  }
-
-  function savePaymentProtocol() {
-    const validationMessage = getPaymentProtocolValidationMessage(paymentDraft)
-
-    if (validationMessage) {
-      notifications.show({ color: 'red', message: t(validationMessage) })
-      return
-    }
-
-    const nextInvoice = upsertPaymentProtocol(currentInvoice, paymentDraft, {
-      key: getPaymentProtocolKeyFromDraft(paymentDraft, model.paymentProtocolKeys),
-      protocolIndex: editingPaymentIndex,
-      user: getUserFromDraft(paymentDraft.userId, model.responsibleUsers),
-    })
-
-    resetPaymentDraft()
-    void model.saveInvoiceProtocols(nextInvoice)
-  }
-
-  function saveInformationProtocol() {
-    const validationMessage = getInformationProtocolValidationMessage(informationDraft)
-
-    if (validationMessage) {
-      notifications.show({ color: 'red', message: t(validationMessage) })
-      return
-    }
-
-    const nextInvoice = upsertInformationProtocol(currentInvoice, informationDraft, {
-      key: getInformationProtocolKeyFromDraft(informationDraft, model.informationProtocolKeys),
-      protocolIndex: editingInformationIndex,
-      user: getUserFromDraft(informationDraft.userId, model.responsibleUsers),
-    })
-
-    resetInformationDraft()
-    void model.saveInvoiceProtocols(nextInvoice)
-  }
-
-  return (
-    <Stack gap="md">
-      <Divider />
-      <Group justify="space-between" align="center">
-        <Text fw={700}>{t('Протоколи інвойса')}</Text>
-        {model.isProtocolDictionariesLoading && <Loader size="xs" />}
-      </Group>
-      <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
-        <Stack gap="sm">
-          <Group justify="space-between" align="center">
-            <Text fw={600} size="sm">{t('Платіжні протоколи')}</Text>
-            <Badge color="gray" variant="light">{paymentRows.length}</Badge>
-          </Group>
-          {paymentRows.length === 0 ? (
-            <Text c="dimmed" size="sm">{t('Платіжних протоколів немає')}</Text>
-          ) : (
-            <Stack gap="xs">
-              {paymentRows.map(({ index, protocol }) => (
-                <Group key={getProtocolRowKey(protocol, index)} justify="space-between" align="flex-start" wrap="nowrap">
-                  <Stack gap={2}>
-                    <Group gap="xs" wrap="wrap">
-                      <Badge variant="light">{getPaymentProtocolKeyText(protocol)}</Badge>
-                      <Text fw={700} size="sm">{formatMoney(protocol.Value)}</Text>
-                      {protocol.Discount ? <Text c="dimmed" size="sm">{formatNumber(protocol.Discount)}%</Text> : null}
-                      {protocol.IsAccounting && <Badge color="teal" variant="light">{t('Бухгалтерія')}</Badge>}
-                    </Group>
-                    <Text c="dimmed" size="xs">
-                      {t('Оплатити до')}: {formatDate(protocol.SupplyPaymentTask?.PayToDate)}
-                      {' · '}
-                      {t('Відповідальний')}: {getUserName(protocol.SupplyPaymentTask?.User || protocol.User)}
-                    </Text>
-                    {protocol.SupplyPaymentTask?.Comment && (
-                      <Text size="xs">{protocol.SupplyPaymentTask.Comment}</Text>
-                    )}
-                  </Stack>
-                  {model.canEditInvoice && (
-                    <Group gap={4} wrap="nowrap">
-                      <Tooltip label={t('Редагувати')}>
-                        <ActionIcon
-                          aria-label={t('Редагувати')}
-                          disabled={isDisabled}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => editPaymentProtocol(protocol, index)}
-                        >
-                          <IconEdit size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                      <Tooltip label={t('Видалити')}>
-                        <ActionIcon
-                          aria-label={t('Видалити')}
-                          color="red"
-                          disabled={isDisabled}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => model.saveInvoiceProtocols(markPaymentProtocolDeleted(currentInvoice, index))}
-                        >
-                          <IconTrash size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                    </Group>
-                  )}
-                </Group>
-              ))}
-            </Stack>
-          )}
-          {model.canEditInvoice && (
-            <Stack gap="xs">
-              <Divider />
-              <Text fw={600} size="sm">
-                {editingPaymentIndex === null ? t('Новий платіжний протокол') : t('Редагувати платіжний протокол')}
-              </Text>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-                <Select
-                  clearable
-                  data={paymentKeyOptions}
-                  disabled={isDisabled}
-                  label={t('Шаблон форми')}
-                  searchable
-                  value={paymentDraft.keyId}
-                  onChange={selectPaymentKey}
-                />
-                <TextInput
-                  disabled={isDisabled}
-                  label={t('Форма оплати')}
-                  value={paymentDraft.keyText}
-                  onChange={(event) => setPaymentDraft((current) => ({ ...current, keyText: event.currentTarget.value }))}
-                />
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isDisabled}
-                  label={t('Відсоток')}
-                  min={0}
-                  value={paymentDraft.discount}
-                  onChange={(value) => setPaymentDraft((current) => ({ ...current, discount: toNonNegativeAmount(value) }))}
-                />
-                <NumberInput
-                  allowNegative={false}
-                  decimalScale={2}
-                  disabled={isDisabled}
-                  label={t('Сума')}
-                  min={0}
-                  value={paymentDraft.amount}
-                  onChange={(value) => setPaymentDraft((current) => ({ ...current, amount: toNonNegativeAmount(value) }))}
-                />
-                <TextInput
-                  disabled={isDisabled}
-                  label={t('Оплатити до')}
-                  type="date"
-                  value={paymentDraft.payToDate}
-                  onChange={(event) => setPaymentDraft((current) => ({ ...current, payToDate: event.currentTarget.value }))}
-                />
-                <Select
-                  data={userOptions}
-                  disabled={isDisabled}
-                  label={t('Відповідальний')}
-                  searchable
-                  value={paymentDraft.userId}
-                  onChange={(value) => setPaymentDraft((current) => ({ ...current, userId: value }))}
-                />
-              </SimpleGrid>
-              <Checkbox
-                checked={paymentDraft.isAccounting}
-                disabled={isDisabled}
-                label={t('Бухгалтерський платіж')}
-                onChange={(event) => setPaymentDraft((current) => ({ ...current, isAccounting: event.currentTarget.checked }))}
-              />
-              <Textarea
-                autosize
-                disabled={isDisabled}
-                label={t('Коментар')}
-                minRows={2}
-                value={paymentDraft.comment}
-                onChange={(event) => setPaymentDraft((current) => ({ ...current, comment: event.currentTarget.value }))}
-              />
-              <Group justify="flex-end">
-                {editingPaymentIndex !== null && (
-                  <Button disabled={isDisabled} variant="subtle" onClick={resetPaymentDraft}>{t('Скасувати')}</Button>
-                )}
-                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={savePaymentProtocol}>
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Stack>
-          )}
-        </Stack>
-        <Stack gap="sm">
-          <Group justify="space-between" align="center">
-            <Text fw={600} size="sm">{t('Інформаційні протоколи')}</Text>
-            <Badge color="gray" variant="light">{informationRows.length}</Badge>
-          </Group>
-          {informationRows.length === 0 ? (
-            <Text c="dimmed" size="sm">{t('Інформаційних протоколів немає')}</Text>
-          ) : (
-            <Stack gap="xs">
-              {informationRows.map(({ index, protocol }) => (
-                <Group key={getProtocolRowKey(protocol, index)} justify="space-between" align="flex-start" wrap="nowrap">
-                  <Stack gap={2}>
-                    <Group gap="xs" wrap="wrap">
-                      <Badge variant="light">{getInformationProtocolKeyText(protocol)}</Badge>
-                      <Text fw={700} size="sm">{protocol.Value || 0} {t('днів')}</Text>
-                      {protocol.IsDefault && <Badge color="gray" variant="light">{t('За замовчуванням')}</Badge>}
-                    </Group>
-                    <Text c="dimmed" size="xs">
-                      {t('Початок')}: {formatDate(protocol.Created)}
-                      {' · '}
-                      {t('Відповідальний')}: {getUserName(protocol.User)}
-                    </Text>
-                  </Stack>
-                  {model.canEditInvoice && (
-                    <Group gap={4} wrap="nowrap">
-                      <Tooltip label={t('Редагувати')}>
-                        <ActionIcon
-                          aria-label={t('Редагувати')}
-                          disabled={isDisabled}
-                          size="sm"
-                          variant="subtle"
-                          onClick={() => editInformationProtocol(protocol, index)}
-                        >
-                          <IconEdit size={16} />
-                        </ActionIcon>
-                      </Tooltip>
-                      {!protocol.IsDefault && (
-                        <Tooltip label={t('Видалити')}>
-                          <ActionIcon
-                            aria-label={t('Видалити')}
-                            color="red"
-                            disabled={isDisabled}
-                            size="sm"
-                            variant="subtle"
-                            onClick={() => model.saveInvoiceProtocols(markInformationProtocolDeleted(currentInvoice, index))}
-                          >
-                            <IconTrash size={16} />
-                          </ActionIcon>
-                        </Tooltip>
-                      )}
-                    </Group>
-                  )}
-                </Group>
-              ))}
-            </Stack>
-          )}
-          {model.canEditInvoice && (
-            <Stack gap="xs">
-              <Divider />
-              <Text fw={600} size="sm">
-                {editingInformationIndex === null ? t('Новий інформаційний протокол') : t('Редагувати інформаційний протокол')}
-              </Text>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="xs">
-                <Select
-                  clearable
-                  data={informationKeyOptions}
-                  disabled={isDisabled}
-                  label={t('Шаблон протоколу')}
-                  searchable
-                  value={informationDraft.keyId}
-                  onChange={selectInformationKey}
-                />
-                <TextInput
-                  disabled={isDisabled}
-                  label={t('Назва протоколу')}
-                  value={informationDraft.keyText}
-                  onChange={(event) => setInformationDraft((current) => ({ ...current, keyText: event.currentTarget.value }))}
-                />
-                <NumberInput
-                  allowNegative={false}
-                  allowDecimal={false}
-                  disabled={isDisabled}
-                  label={t('Днів')}
-                  min={0}
-                  value={informationDraft.value}
-                  onChange={(value) => setInformationDraft((current) => ({ ...current, value: toNonNegativeAmount(value) }))}
-                />
-                <Select
-                  data={userOptions}
-                  disabled={isDisabled}
-                  label={t('Відповідальний')}
-                  searchable
-                  value={informationDraft.userId}
-                  onChange={(value) => setInformationDraft((current) => ({ ...current, userId: value }))}
-                />
-              </SimpleGrid>
-              <Group justify="flex-end">
-                {editingInformationIndex !== null && (
-                  <Button disabled={isDisabled} variant="subtle" onClick={resetInformationDraft}>{t('Скасувати')}</Button>
-                )}
-                <Button color={CREATE_ACTION_COLOR} disabled={isDisabled} leftSection={<IconDeviceFloppy size={16} />} loading={model.isSaving} onClick={saveInformationProtocol}>
-                  {t('Зберегти')}
-                </Button>
-              </Group>
-            </Stack>
-          )}
-        </Stack>
-      </SimpleGrid>
-    </Stack>
   )
 }
 
@@ -2813,64 +2237,6 @@ function buildEditablePackListItems(
   return [...rows, ...extraRows]
 }
 
-function upsertInvoiceOrderItem(
-  invoice: SupplyInvoice,
-  sourceItem: SupplyInvoiceOrderItem,
-  qty: number,
-): SupplyInvoice {
-  const sourceKey = getInvoiceOrderItemOrderKey(sourceItem)
-  const existingItems = invoice.SupplyInvoiceOrderItems || []
-  const index = existingItems.findIndex((item) => getInvoiceOrderItemOrderKey(item) === sourceKey)
-  const nextItem = updateInvoiceOrderItemQty(sourceItem, qty)
-  const nextItems = [...existingItems]
-
-  if (index >= 0) {
-    nextItems[index] = nextItem
-  } else {
-    nextItems.push(nextItem)
-  }
-
-  return {
-    ...invoice,
-    SupplyInvoiceOrderItems: nextItems,
-  }
-}
-
-function upsertPackListOrderItem(
-  invoice: SupplyInvoice,
-  targetPackList: PackingList,
-  sourceItem: PackingListPackageOrderItem,
-  qty: number,
-): SupplyInvoice {
-  const sourceKey = getPackingListInvoiceItemKey(sourceItem)
-  const nextPackLists = (invoice.PackingLists || []).map((packList) => {
-    if (!isSameEntity(packList, targetPackList)) {
-      return packList
-    }
-
-    const existingItems = packList.PackingListPackageOrderItems || []
-    const index = existingItems.findIndex((item) => getPackingListInvoiceItemKey(item) === sourceKey)
-    const nextItem = updatePackListOrderItemQty(sourceItem, qty)
-    const nextItems = [...existingItems]
-
-    if (index >= 0) {
-      nextItems[index] = nextItem
-    } else {
-      nextItems.push(nextItem)
-    }
-
-    return {
-      ...packList,
-      PackingListPackageOrderItems: nextItems,
-    }
-  })
-
-  return {
-    ...invoice,
-    PackingLists: nextPackLists,
-  }
-}
-
 function createInvoiceOrderItem(orderItem: SupplyOrderItem, qty: number): SupplyInvoiceOrderItem {
   return {
     Product: orderItem.Product || null,
@@ -2879,19 +2245,6 @@ function createInvoiceOrderItem(orderItem: SupplyOrderItem, qty: number): Supply
     SupplyOrderItem: orderItem,
     TotalAmount: (orderItem.UnitPrice || 0) * qty,
     UnitPrice: orderItem.UnitPrice,
-  }
-}
-
-function updateInvoiceOrderItemQty(item: SupplyInvoiceOrderItem, qty: number): SupplyInvoiceOrderItem {
-  const unitPrice = item.UnitPrice ?? item.SupplyOrderItem?.UnitPrice
-
-  return {
-    ...item,
-    Product: getInvoiceItemProduct(item) || null,
-    Qty: roundQuantity(qty),
-    SupplyOrderItem: item.SupplyOrderItem || null,
-    TotalAmount: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalAmount,
-    UnitPrice: unitPrice,
   }
 }
 
@@ -2997,339 +2350,6 @@ function sanitizeInformationDeliveryProtocols(invoice: SupplyInvoice): SupplyInf
   })
 }
 
-function createEmptyPaymentProtocolDraft(
-  keys: SupplyOrderPaymentDeliveryProtocolKey[],
-  users: User[],
-): PaymentProtocolDraft {
-  const key = keys[0] || null
-  const user = users[0] || null
-
-  return {
-    amount: '',
-    comment: '',
-    discount: '',
-    isAccounting: false,
-    keyId: toSelectValue(key),
-    keyText: key?.Key || '',
-    payToDate: formatDateInput(new Date()),
-    userId: toSelectValue(user),
-  }
-}
-
-function createPaymentProtocolDraft(
-  protocol: SupplyOrderPaymentDeliveryProtocol,
-  keys: SupplyOrderPaymentDeliveryProtocolKey[],
-  users: User[],
-): PaymentProtocolDraft {
-  const key = protocol.SupplyOrderPaymentDeliveryProtocolKey
-  const user = protocol.SupplyPaymentTask?.User || protocol.User || null
-  const keyId = toSelectValue(key)
-  const userId = toSelectValue(user)
-
-  return {
-    amount: toNumberInputValue(protocol.Value),
-    comment: protocol.SupplyPaymentTask?.Comment || '',
-    discount: toNumberInputValue(protocol.Discount),
-    isAccounting: Boolean(protocol.IsAccounting),
-    keyId: keyId && keys.some((item) => toSelectValue(item) === keyId) ? keyId : null,
-    keyText: key?.Key || '',
-    payToDate: formatDateInput(protocol.SupplyPaymentTask?.PayToDate ? new Date(protocol.SupplyPaymentTask.PayToDate) : new Date()),
-    userId: userId && users.some((item) => toSelectValue(item) === userId) ? userId : null,
-  }
-}
-
-function createEmptyInformationProtocolDraft(
-  keys: SupplyInformationDeliveryProtocolKey[],
-  users: User[],
-): InformationProtocolDraft {
-  const key = keys[0] || null
-  const user = users[0] || null
-
-  return {
-    keyId: toSelectValue(key),
-    keyText: key?.Key || '',
-    userId: toSelectValue(user),
-    value: '',
-  }
-}
-
-function createInformationProtocolDraft(
-  protocol: SupplyInformationDeliveryProtocol,
-  keys: SupplyInformationDeliveryProtocolKey[],
-  users: User[],
-): InformationProtocolDraft {
-  const key = protocol.SupplyInformationDeliveryProtocolKey
-  const user = protocol.User || null
-  const keyId = toSelectValue(key)
-  const userId = toSelectValue(user)
-
-  return {
-    keyId: keyId && keys.some((item) => toSelectValue(item) === keyId) ? keyId : null,
-    keyText: key?.Key || '',
-    userId: userId && users.some((item) => toSelectValue(item) === userId) ? userId : null,
-    value: toNumberInputValue(Number(protocol.Value || 0)),
-  }
-}
-
-function upsertPaymentProtocol(
-  invoice: SupplyInvoice,
-  draft: PaymentProtocolDraft,
-  options: {
-    key: SupplyOrderPaymentDeliveryProtocolKey
-    protocolIndex: number | null
-    user: User
-  },
-): SupplyInvoice {
-  const existingProtocols = invoice.PaymentDeliveryProtocols || []
-  const protocol = options.protocolIndex === null ? null : existingProtocols[options.protocolIndex] || null
-  const value = toAmountNumber(draft.amount)
-  const nextProtocol: SupplyOrderPaymentDeliveryProtocol = {
-    ...(protocol || {}),
-    Deleted: false,
-    Discount: toAmountNumber(draft.discount),
-    IsAccounting: draft.isAccounting,
-    SupplyInvoiceId: invoice.Id,
-    SupplyOrderPaymentDeliveryProtocolKey: options.key,
-    SupplyOrderPaymentDeliveryProtocolKeyId: options.key.Id,
-    SupplyPaymentTask: {
-      ...(protocol?.SupplyPaymentTask || {}),
-      Comment: draft.comment.trim(),
-      Deleted: false,
-      GrossPrice: value,
-      IsAccounting: draft.isAccounting,
-      NetPrice: value,
-      PayToDate: normalizeDateInput(draft.payToDate),
-      User: options.user,
-      UserId: options.user.Id,
-    },
-    User: options.user,
-    UserId: options.user.Id,
-    Value: value,
-  }
-  const nextProtocols = [...existingProtocols]
-
-  if (options.protocolIndex === null) {
-    nextProtocols.push(nextProtocol)
-  } else {
-    nextProtocols[options.protocolIndex] = nextProtocol
-  }
-
-  return {
-    ...invoice,
-    PaymentDeliveryProtocols: nextProtocols,
-  }
-}
-
-function upsertInformationProtocol(
-  invoice: SupplyInvoice,
-  draft: InformationProtocolDraft,
-  options: {
-    key: SupplyInformationDeliveryProtocolKey
-    protocolIndex: number | null
-    user: User
-  },
-): SupplyInvoice {
-  const existingProtocols = invoice.InformationDeliveryProtocols || []
-  const protocol = options.protocolIndex === null ? null : existingProtocols[options.protocolIndex] || null
-  const nextProtocol: SupplyInformationDeliveryProtocol = {
-    ...(protocol || {}),
-    Created: protocol?.Created || invoice.DateFrom || new Date().toISOString(),
-    Deleted: false,
-    IsDefault: protocol?.IsDefault || false,
-    SupplyInformationDeliveryProtocolKey: options.key,
-    SupplyInformationDeliveryProtocolKeyId: options.key.Id,
-    SupplyInvoiceId: invoice.Id,
-    User: options.user,
-    UserId: options.user.Id,
-    Value: String(toAmountNumber(draft.value)),
-  }
-  const nextProtocols = [...existingProtocols]
-
-  if (options.protocolIndex === null) {
-    nextProtocols.push(nextProtocol)
-  } else {
-    nextProtocols[options.protocolIndex] = nextProtocol
-  }
-
-  return {
-    ...invoice,
-    InformationDeliveryProtocols: nextProtocols,
-  }
-}
-
-function markPaymentProtocolDeleted(invoice: SupplyInvoice, protocolIndex: number): SupplyInvoice {
-  const nextProtocols = [...(invoice.PaymentDeliveryProtocols || [])]
-  const protocol = nextProtocols[protocolIndex]
-
-  if (!protocol) {
-    return invoice
-  }
-
-  if (!protocol.Id && !protocol.NetUid) {
-    nextProtocols.splice(protocolIndex, 1)
-  } else {
-    nextProtocols[protocolIndex] = {
-      ...protocol,
-      Deleted: true,
-      SupplyPaymentTask: protocol.SupplyPaymentTask
-        ? { ...protocol.SupplyPaymentTask, Deleted: true }
-        : protocol.SupplyPaymentTask,
-    }
-  }
-
-  return {
-    ...invoice,
-    PaymentDeliveryProtocols: nextProtocols,
-  }
-}
-
-function markInformationProtocolDeleted(invoice: SupplyInvoice, protocolIndex: number): SupplyInvoice {
-  const nextProtocols = [...(invoice.InformationDeliveryProtocols || [])]
-  const protocol = nextProtocols[protocolIndex]
-
-  if (!protocol) {
-    return invoice
-  }
-
-  if (!protocol.Id && !protocol.NetUid) {
-    nextProtocols.splice(protocolIndex, 1)
-  } else {
-    nextProtocols[protocolIndex] = { ...protocol, Deleted: true }
-  }
-
-  return {
-    ...invoice,
-    InformationDeliveryProtocols: nextProtocols,
-  }
-}
-
-function getPaymentProtocolValidationMessage(draft: PaymentProtocolDraft): string | null {
-  if (!draft.keyText.trim()) {
-    return 'Вкажіть форму оплати'
-  }
-
-  if (!toAmountNumber(draft.amount)) {
-    return 'Вкажіть суму'
-  }
-
-  if (!draft.payToDate) {
-    return 'Вкажіть дату оплати'
-  }
-
-  if (!draft.userId) {
-    return 'Оберіть відповідального'
-  }
-
-  return null
-}
-
-function getInformationProtocolValidationMessage(draft: InformationProtocolDraft): string | null {
-  if (!draft.keyText.trim()) {
-    return 'Вкажіть назву протоколу'
-  }
-
-  if (!draft.userId) {
-    return 'Оберіть відповідального'
-  }
-
-  return null
-}
-
-function getPaymentProtocolKeyFromDraft(
-  draft: PaymentProtocolDraft,
-  keys: SupplyOrderPaymentDeliveryProtocolKey[],
-): SupplyOrderPaymentDeliveryProtocolKey {
-  const key = findEntityBySelectValue(keys, draft.keyId)
-
-  return key || { Key: draft.keyText.trim() }
-}
-
-function getInformationProtocolKeyFromDraft(
-  draft: InformationProtocolDraft,
-  keys: SupplyInformationDeliveryProtocolKey[],
-): SupplyInformationDeliveryProtocolKey {
-  const key = findEntityBySelectValue(keys, draft.keyId)
-
-  return key || { Key: draft.keyText.trim() }
-}
-
-function getUserFromDraft(userId: string | null, users: User[]): User {
-  return findEntityBySelectValue(users, userId) || {}
-}
-
-function getActivePaymentProtocolRows(invoice: SupplyInvoice | null): Array<{ index: number, protocol: SupplyOrderPaymentDeliveryProtocol }> {
-  return (invoice?.PaymentDeliveryProtocols || []).reduce<Array<{ index: number, protocol: SupplyOrderPaymentDeliveryProtocol }>>(
-    (rows, protocol, index) => {
-      if (!protocol.Deleted) {
-        rows.push({ index, protocol })
-      }
-
-      return rows
-    },
-    [],
-  )
-}
-
-function getActiveInformationProtocolRows(invoice: SupplyInvoice | null): Array<{ index: number, protocol: SupplyInformationDeliveryProtocol }> {
-  return (invoice?.InformationDeliveryProtocols || []).reduce<Array<{ index: number, protocol: SupplyInformationDeliveryProtocol }>>(
-    (rows, protocol, index) => {
-      if (!protocol.Deleted) {
-        rows.push({ index, protocol })
-      }
-
-      return rows
-    },
-    [],
-  )
-}
-
-function getPaymentProtocolKeyText(protocol: SupplyOrderPaymentDeliveryProtocol): string {
-  return protocol.SupplyOrderPaymentDeliveryProtocolKey?.Key || '-'
-}
-
-function getInformationProtocolKeyText(protocol: SupplyInformationDeliveryProtocol): string {
-  return protocol.SupplyInformationDeliveryProtocolKey?.Key || '-'
-}
-
-function getProtocolRowKey(protocol: EntityFields, index: number): string {
-  return protocol.NetUid || String(protocol.Id || index)
-}
-
-function toSelectOptions<T extends EntityFields>(
-  items: T[],
-  getLabel: (item: T) => string,
-): SelectOption[] {
-  return items.reduce<SelectOption[]>((options, item) => {
-    const value = toSelectValue(item)
-
-    if (value) {
-      options.push({ label: getLabel(item), value })
-    }
-
-    return options
-  }, [])
-}
-
-function findEntityBySelectValue<T extends EntityFields>(items: T[], value: string | null): T | null {
-  if (!value) {
-    return null
-  }
-
-  return items.find((item) => toSelectValue(item) === value) || null
-}
-
-function toSelectValue(entity?: EntityFields | null): string | null {
-  if (entity?.NetUid) {
-    return `net-${entity.NetUid}`
-  }
-
-  if (entity?.Id) {
-    return `id-${entity.Id}`
-  }
-
-  return null
-}
-
 function createPackListMetadataForm(packList: PackingList | null): PackListMetadataForm {
   return {
     comment: packList?.Comment || '',
@@ -3414,22 +2434,6 @@ function findUniquePackListByField(
 
   const matches = packLists.filter((packList) => packList[field] === value)
   return matches.length === 1 ? matches[0] : null
-}
-
-function updatePackListOrderItemQty(
-  item: PackingListPackageOrderItem,
-  qty: number,
-): PackingListPackageOrderItem {
-  const unitPrice = item.UnitPrice ?? item.SupplyInvoiceOrderItem?.UnitPrice
-
-  return {
-    ...item,
-    Qty: roundQuantity(qty),
-    SupplyInvoiceOrderItem: item.SupplyInvoiceOrderItem || null,
-    TotalGrossPrice: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalGrossPrice,
-    TotalNetPrice: typeof unitPrice === 'number' ? unitPrice * qty : item.TotalNetPrice,
-    UnitPrice: unitPrice,
-  }
 }
 
 function toSupplyInvoiceItemsPayload(invoice: SupplyInvoice): SupplyInvoice {
@@ -3689,12 +2693,6 @@ function isSameEntity(left: PackingList, right: PackingList): boolean {
   return left === right
 }
 
-function toNonNegativeNumber(value: number | string): number {
-  const numberValue = typeof value === 'number' ? value : Number(value)
-
-  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
-}
-
 function toNonNegativeAmount(value: number | string): NumberFieldValue {
   const numberValue = typeof value === 'number' ? value : Number(value)
 
@@ -3743,10 +2741,6 @@ function sumPackingListQty(invoice: SupplyInvoice): number {
   )
 }
 
-function getActiveInvoiceDocuments(documents: SupplyInvoiceDeliveryDocument[]): SupplyInvoiceDeliveryDocument[] {
-  return documents.filter((document) => !document.Deleted)
-}
-
 function getDocumentUrl(document: SupplyInvoiceDeliveryDocument): string {
   return document.DocumentUrl || document.Url || ''
 }
@@ -3777,15 +2771,6 @@ function TotalsBadges({ totals }: { totals: SupplyOrderInvoiceTotals }) {
         </Badge>
       ))}
     </Group>
-  )
-}
-
-function TotalCard({ label, value, accent }: { label: string, value: string, accent?: boolean }) {
-  return (
-    <div className={`supply-detail-metric${accent ? ' is-brand' : ''}`}>
-      <span className="supply-detail-metric-label">{label}</span>
-      <span className="supply-detail-metric-value">{value}</span>
-    </div>
   )
 }
 
@@ -3984,22 +2969,6 @@ function toPositiveNumber(value: number | string): NumberFieldValue {
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : ''
 }
 
-function formatDateInput(date: Date): string {
-  if (Number.isNaN(date.getTime())) {
-    return ''
-  }
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-function normalizeDateInput(value: string): string {
-  return value ? `${value}T00:00:00` : ''
-}
-
 function formatDateTimeInput(date: Date): string {
   return formatLocalDateTime(date).slice(0, 16)
 }
@@ -4010,18 +2979,6 @@ function normalizeDateTimeInput(value: string): string {
 
 function getOrderNumber(order: DirectSupplyOrder | null): string {
   return order?.SupplyOrderNumber?.Number ? `№ ${order.SupplyOrderNumber.Number}` : ''
-}
-
-function getEntityName(entity?: { FullName?: string, Name?: string } | null): string {
-  return entity?.FullName || entity?.Name || '-'
-}
-
-function getUserName(user?: User | null): string {
-  if (!user) {
-    return '-'
-  }
-
-  return user.FullName || [user.LastName, user.FirstName, user.MiddleName].filter(Boolean).join(' ') || user.Name || '-'
 }
 
 function formatDate(value?: Date | string | null): string {

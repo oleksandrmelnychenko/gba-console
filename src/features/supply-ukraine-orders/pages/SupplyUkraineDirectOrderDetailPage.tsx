@@ -25,10 +25,9 @@ import {
   IconCheck,
   IconClipboardList,
   IconFileInvoice,
-  IconListDetails,
   IconPackageImport,
   IconPencil,
-  IconRefresh,
+  IconPlus,
   IconRoute,
   IconTrash,
   IconTruck,
@@ -70,7 +69,6 @@ const PERMISSION_CREDIT_NOTES = 'LOGISTIC_WAY_ordersUkraineAllEdit_CreditNotes_P
 const PERMISSION_EDIT_ORDER_AMOUNT = 'LOGISTIC_WAY_ordersUkraineAllEdit_EditSupplyNewAmount_PKEY'
 const PERMISSION_OPEN_DIRECT_INVOICES = 'UkraineAllOrders_SelectAnOption_Products_PKEY'
 const PERMISSION_OPEN_DIRECT_PRODUCT_INCOME = 'UkraineAllOrders_SelectAnOption_PlacementSupplyOrder_PKEY'
-const PERMISSION_OPEN_DIRECT_SPECIFICATIONS = 'UkraineAllOrders_SelectAnOption_ProductSpecificationCodes_PKEY'
 const dateTimeFormatter = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
 const numberFormatter = new Intl.NumberFormat('uk-UA')
 const moneyFormatter = new Intl.NumberFormat('uk-UA', {
@@ -261,7 +259,6 @@ export function SupplyUkraineDirectOrderDetailPage() {
   const canEditAmount = hasPermission(PERMISSION_EDIT_ORDER_AMOUNT)
   const canOpenInvoices = hasPermission(PERMISSION_OPEN_DIRECT_INVOICES) && Boolean(order?.SupplyProFormId)
   const canOpenProductIncome = hasPermission(PERMISSION_OPEN_DIRECT_PRODUCT_INCOME) && hasInvoices
-  const canOpenSpecifications = hasPermission(PERMISSION_OPEN_DIRECT_SPECIFICATIONS) && Boolean(order?.SupplyProFormId)
 
   useEffect(() => {
     let cancelled = false
@@ -624,15 +621,9 @@ export function SupplyUkraineDirectOrderDetailPage() {
               {t('Логістика замовлення')}
               {getOrderNumber(order) && <span className="supply-detail-number">{getOrderNumber(order)}</span>}
             </h1>
-            <p className="supply-detail-subtitle">
-              {t('Постачальник')}: <strong>{getEntityName(order?.Client)}</strong>
-            </p>
           </div>
         </div>
         <div className="supply-detail-header-actions">
-          <Button leftSection={<IconRefresh size={16} />} loading={isLoading} variant="light" onClick={reloadOrder}>
-            {t('Оновити')}
-          </Button>
           {order && !order.IsApproved && canApproveOrder && (
             <Button color={CREATE_ACTION_COLOR} leftSection={<IconCheck size={16} />} loading={isSaving} onClick={approveOrder}>
               {t('Затвердити замовлення')}
@@ -785,20 +776,11 @@ export function SupplyUkraineDirectOrderDetailPage() {
             <Group gap="xs" wrap="wrap">
               {canOpenInvoices && (
                 <Button
-                  leftSection={<IconFileInvoice size={16} />}
+                  leftSection={<IconPlus size={16} />}
                   variant="light"
                   onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/supply-invoices`)}
                 >
-                  {t('Інвойси і пак листи')}
-                </Button>
-              )}
-              {canOpenSpecifications && (
-                <Button
-                  leftSection={<IconListDetails size={16} />}
-                  variant="light"
-                  onClick={() => navigate(`/orders/ukraine/all/edit/${order.NetUid}/specifications`)}
-                >
-                  {t('Специфікації')}
+                  {t('Добавити новий інвойс')}
                 </Button>
               )}
               {canOpenProductIncome && (
