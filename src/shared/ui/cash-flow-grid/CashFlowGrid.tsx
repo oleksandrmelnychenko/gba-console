@@ -99,10 +99,14 @@ export function CashFlowGrid<TItem extends CashFlowGridItem>({
                   </div>
                 ))}
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-                  <span className="cfg-cell-value">{isCredit ? '' : money(item.CurrentValue)}</span>
+                  <span className="cfg-cell-value">
+                    {isCredit ? '' : renderMoneyValue(item.CurrentValue, item.CurrentValueLocal, money)}
+                  </span>
                 </div>
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
-                  <span className="cfg-cell-value">{isCredit ? money(item.CurrentValue) : ''}</span>
+                  <span className="cfg-cell-value">
+                    {isCredit ? renderMoneyValue(item.CurrentValue, item.CurrentValueLocal, money) : ''}
+                  </span>
                 </div>
                 <div className="cfg-cell cfg-align-right" style={valueColumnStyle}>
                   <span className={valueClassName(item.CurrentBalance)}>{money(item.CurrentBalance)}</span>
@@ -197,4 +201,29 @@ function defaultMoney(value?: number): ReactNode {
   }
 
   return defaultMoneyFormatter.format(value)
+}
+
+function renderMoneyValue(
+  value: number | undefined,
+  localValue: number | undefined,
+  money: (value?: number) => ReactNode,
+): ReactNode {
+  if (!shouldShowLocalValue(value, localValue)) {
+    return money(value)
+  }
+
+  return (
+    <span className="cfg-money-stack">
+      <span>{money(value)}</span>
+      <span className="cfg-cell-subvalue">UAH {money(localValue)}</span>
+    </span>
+  )
+}
+
+function shouldShowLocalValue(value: number | undefined, localValue: number | undefined): localValue is number {
+  if (typeof localValue !== 'number' || !Number.isFinite(localValue)) {
+    return false
+  }
+
+  return typeof value !== 'number' || !Number.isFinite(value) || Math.abs(localValue - value) >= 0.005
 }

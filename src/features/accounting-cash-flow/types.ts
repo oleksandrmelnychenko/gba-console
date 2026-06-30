@@ -132,6 +132,7 @@ export type AccountingCashFlowHeadItem = {
   CurrentBalance?: number
   CurrentBalanceEuro?: number
   CurrentValue?: number
+  CurrentValueLocal?: number
   CustomAgencyService?: unknown
   CustomService?: unknown
   FromDate?: string
@@ -156,6 +157,8 @@ export type AccountingCashFlowHeadItem = {
       [key: string]: unknown
     }
     HistoryInvoiceEdit?: unknown[]
+    TotalAmount?: number
+    TotalAmountLocal?: number
     [key: string]: unknown
   }
   SaleReturn?: unknown

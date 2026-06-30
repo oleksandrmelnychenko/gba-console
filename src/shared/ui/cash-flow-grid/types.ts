@@ -10,6 +10,7 @@ export type CashFlowGridItem = {
   Type?: number
   IsCreditValue?: boolean
   CurrentValue?: number
+  CurrentValueLocal?: number
   CurrentBalance?: number
 }
 

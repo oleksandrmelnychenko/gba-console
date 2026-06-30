@@ -938,6 +938,7 @@ function AccountingCashFlowDetailDrawer({
 
 function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) => string): DetailField[] {
   const paymentStatus = getAccountingCashFlowPaymentStatus(item)
+  const localAmount = getVisibleLocalAmount(item)
   const fields: DetailField[] = [
     { label: 'Дата', value: formatDateTime(item.FromDate) },
     { label: 'Документ', value: displayValue(item.Name) },
@@ -948,6 +949,10 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
     { label: 'Сума', value: formatMoney(item.CurrentValue) },
     { label: 'Поточний баланс', value: formatMoney(item.CurrentBalance) },
   ]
+
+  if (localAmount !== undefined) {
+    fields.splice(8, 0, { label: 'Сума, грн', value: `UAH ${formatMoney(localAmount)}` })
+  }
 
   if (paymentStatus) {
     fields.splice(5, 0, {
@@ -961,6 +966,18 @@ function buildHeadItemFields(item: AccountingCashFlowHeadItem, t: (key: string) 
   }
 
   return fields
+}
+
+function getVisibleLocalAmount(item: AccountingCashFlowHeadItem): number | undefined {
+  if (typeof item.CurrentValueLocal !== 'number' || !Number.isFinite(item.CurrentValueLocal)) {
+    return undefined
+  }
+
+  return typeof item.CurrentValue !== 'number' ||
+    !Number.isFinite(item.CurrentValue) ||
+    Math.abs(item.CurrentValueLocal - item.CurrentValue) >= 0.005
+    ? item.CurrentValueLocal
+    : undefined
 }
 
 function DetailValue({ label, value }: { label: string; value: ReactNode }) {
