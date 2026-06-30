@@ -1,4 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
+import { normalizeExportDocument } from '../../../shared/documents/exportDocument'
 import type {
   ProductSpecificationParseConfiguration,
   ProductSpecificationEntity,
@@ -40,16 +41,9 @@ export async function getSpecificationDownloadUrls(packListNetId: string): Promi
     query: { netId: packListNetId },
   })
 
-  if (result && typeof result === 'object') {
-    const record = result as Record<string, unknown>
-
-    return {
-      DocumentURL: typeof record.DocumentURL === 'string' ? record.DocumentURL : undefined,
-      PdfDocumentURL: typeof record.PdfDocumentURL === 'string' ? record.PdfDocumentURL : undefined,
-    }
-  }
-
-  return {}
+  // Use the shared normalizer so the PDF download link surfaces whether the
+  // backend returns it as `PdfDocumentURL` or the `PdfDocument` alias.
+  return normalizeExportDocument(result)
 }
 
 export async function uploadProductSpecificationForInvoice(
