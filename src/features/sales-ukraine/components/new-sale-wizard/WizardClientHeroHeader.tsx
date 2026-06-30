@@ -256,7 +256,7 @@ export function WizardClientHeroHeader({
       <Box className="new-sale-client-hero__side">
         <Box className="new-sale-client-hero__metrics">
           {visibleAgreements.length > 0 ? (
-            <Popover position="bottom-end" shadow="md" width={560} withinPortal>
+            <Popover position="bottom-end" shadow="md" width={500} withinPortal>
               <Popover.Target>
                 <Box aria-label={t('Договори')} className="new-sale-client-metric is-clickable" component="button" type="button">
                   <IconCircleCheck size={13} />

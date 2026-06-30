@@ -1,18 +1,6 @@
-import { Anchor, Box, Button, Group, Loader, Popover, Stack, Text } from '@mantine/core'
+import { Anchor, Box, Button, Group, Loader, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import {
-  IconAlertTriangle,
-  IconBuildingStore,
-  IconCircleCheck,
-  IconFileExcel,
-  IconFileTypePdf,
-  IconMail,
-  IconMapPin,
-  IconPhone,
-  IconUser,
-  IconUserOff,
-  IconUsers,
-} from '@tabler/icons-react'
+import { IconFileExcel, IconFileTypePdf, IconUserOff } from '@tabler/icons-react'
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
@@ -34,11 +22,10 @@ import { SaleEditDrawer } from '../SaleEditDrawer'
 import { bumpWizardDebtRefresh } from './newSaleWizardState'
 import { WizardClientAgreementsStrip } from './WizardClientAgreementsStrip'
 import { WizardClientCarousel } from './WizardClientCarousel'
+import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardClientRegistry } from './WizardClientRegistry'
-import { WizardAgreementItem } from './WizardAgreementItem'
 import {
   buildWizardClientStacks,
-  getWizardClientDebtTotal,
   getWizardAgreementKey,
   WIZARD_CLIENT_CAROUSEL_INITIAL,
   type WizardClientCarouselState,
@@ -1085,121 +1072,20 @@ export function NewSaleClientStep({
 
   const selectedAgreement = agreements.find((item) => getWizardAgreementKey(item) === selectedAgreementKey) ?? null
   const selectedAgreementClientId = selectedAgreement?.ClientId ?? selectedAgreement?.Client?.Id
-  const selectedClientTitle = selectedClient?.FullName || selectedClient?.Name || ''
-  const selectedClientCode = selectedClient?.RegionCode?.Value || selectedClient?.ClientNumber || selectedClient?.USREOU || ''
-  const selectedClientDebtTotal = groupedDebts.reduce((sum, debt) => sum + getWizardClientDebtTotal(debt), 0)
-  const selectedClientContactCandidates: Array<{ icon: ReactNode; value?: string | null }> = [
-    {
-      icon: <IconPhone size={13} />,
-      value: selectedClient?.MobileNumber || selectedClient?.SMSNumber,
-    },
-    {
-      icon: <IconMail size={13} />,
-      value: selectedClient?.EmailAddress,
-    },
-    {
-      icon: <IconMapPin size={13} />,
-      value: selectedClient?.RegionCode?.City,
-    },
-  ]
-  const selectedClientContacts = selectedClientContactCandidates.filter(
-    (item): item is { icon: ReactNode; value: string } => Boolean(item.value),
-  )
-  const selectedClientKind = selectedClient?.IsTradePoint
-    ? t('Торгова точка')
-    : selectedClient?.IsSubClient
-      ? t('Підклієнт')
-      : t('Клієнт')
-  const SelectedClientIcon = selectedClient?.IsTradePoint ? IconBuildingStore : selectedClient?.IsSubClient ? IconUsers : IconUser
-  const selectedClientIsActive = selectedClient?.IsActive !== false
 
   return (
     <>
       <Box className="new-sale-client-step">
         {selectedClient && (
-          <Box className="new-sale-client-hero">
-            {headerClose && <Box className="new-sale-client-hero__close">{headerClose}</Box>}
-            {selectedClientCode && (
-              <Box className="new-sale-client-hero__stamp" aria-hidden="true">
-                <span>{selectedClientCode}</span>
-              </Box>
-            )}
-            <Box className="new-sale-client-hero__identity">
-              <Box className={`new-sale-client-hero__mark ${selectedClientDebtTotal > 0 ? 'has-debt' : ''}`}>
-                <SelectedClientIcon size={22} />
-              </Box>
-              <Box className="new-sale-client-hero__copy">
-                <Text className="new-sale-client-hero__name" title={selectedClientTitle}>
-                  {selectedClientTitle}
-                </Text>
-                <Group className="new-sale-client-hero__chips" gap={6} wrap="wrap">
-                  <span>{selectedClientKind}</span>
-                  <span className={selectedClientIsActive ? 'is-active' : ''}>
-                    {selectedClientIsActive ? t('Активний') : t('Не активний')}
-                  </span>
-                  {selectedClientDebtTotal > 0 && (
-                    <span className="is-danger">
-                      <IconAlertTriangle size={12} />
-                      {t('Є борг')}
-                    </span>
-                  )}
-                </Group>
-                {selectedClientContacts.length > 0 && (
-                  <Group className="new-sale-client-hero__contacts" gap={8} wrap="nowrap">
-                    {selectedClientContacts.map((item, index) => (
-                      <span key={`${item.value}-${index}`} title={item.value}>
-                        {item.icon}
-                        {item.value}
-                      </span>
-                    ))}
-                  </Group>
-                )}
-              </Box>
-            </Box>
-
-            <Box className="new-sale-client-hero__side">
-              <Box className="new-sale-client-hero__metrics">
-                {agreements.length > 0 ? (
-                  <Popover position="bottom-end" shadow="md" width={560} withinPortal>
-                    <Popover.Target>
-                      <Box
-                        aria-label={t('Договори')}
-                        className="new-sale-client-metric is-clickable"
-                        component="button"
-                        type="button"
-                      >
-                        <IconCircleCheck size={13} />
-                        <strong>{agreements.length}</strong>
-                        <span>{t('Договори')}</span>
-                      </Box>
-                    </Popover.Target>
-                    <Popover.Dropdown>
-                      <Text fw={600} mb="xs" size="sm">
-                        {t('Договори')}
-                      </Text>
-                      <Stack gap={6} mah={320} style={{ overflowY: 'auto' }}>
-                        {agreements.map((item, index) => (
-                          <WizardAgreementItem key={String(item.NetUid || item.Id || index)} clientAgreement={item} />
-                        ))}
-                      </Stack>
-                    </Popover.Dropdown>
-                  </Popover>
-                ) : (
-                  <Box className="new-sale-client-metric">
-                    <IconCircleCheck size={13} />
-                    <strong>{agreements.length}</strong>
-                    <span>{t('Договори')}</span>
-                  </Box>
-                )}
-                <Box className="new-sale-client-metric">
-                  <IconFileTypePdf size={13} />
-                  <strong>{registryItems.length}</strong>
-                  <span>{t('Документи')}</span>
-                </Box>
-              </Box>
-              {headerTools && <Box className="new-sale-client-hero__tools">{headerTools}</Box>}
-            </Box>
-          </Box>
+          <WizardClientHeroHeader
+            activeAgreementNetId={selectedAgreementKey}
+            agreements={agreements}
+            client={selectedClient}
+            debts={groupedDebts}
+            headerClose={headerClose}
+            headerTools={headerTools}
+            registryCount={registryItems.length}
+          />
         )}
 
         <Box className="new-sale-client-drum-panel">

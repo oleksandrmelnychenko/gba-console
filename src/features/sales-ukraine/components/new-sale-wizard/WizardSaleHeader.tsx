@@ -246,7 +246,7 @@ function WizardSaleHeaderContent({
       )}
 
       {!hideAgreementsAction && subClientCount > 0 && clientAgreements.length > 0 && (
-        <Popover position="bottom-start" shadow="md" width={560} withinPortal>
+        <Popover position="bottom-start" shadow="md" width={500} withinPortal>
           <Popover.Target>
             <Tooltip label={t('Договори')} position="bottom">
               <ActionIcon aria-label={t('Договори')} color="gray" size="lg" variant="subtle">

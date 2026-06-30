@@ -32,6 +32,7 @@ import {
   type WizardStepIndex,
 } from './wizardKeyboard'
 import { WizardConfirmModal } from './WizardConfirmModal'
+import { WizardClientHeroHeader } from './WizardClientHeroHeader'
 import { WizardDownloadDocumentsModal } from './WizardDownloadDocumentsModal'
 import { WizardSaleHeader } from './WizardSaleHeader'
 import './new-sale-wizard.css'
@@ -521,29 +522,13 @@ function NewSaleWizardContent({
       onKeyDown={handleRootKeyDown}
     >
       {active === 2 && (
-        <Group align="flex-start" gap="xs" wrap="nowrap">
-          <Box style={{ flex: 1, minWidth: 0 }}>
-            <WizardSaleHeader
-              clientNetId={state.clientNetId}
-              reassignDisabled={shellBusy || productsBusy}
-              sale={state.sale}
-              withVatAccounting={withVatAccounting}
-              onReassignOpenChange={setReassignOpen}
-              onSaleReassigned={(movedSale) => {
-                clearWizardSplitOrderItems()
-                clearWizardMergedSale()
-                setState((current) => ({ ...current, sale: movedSale ?? current.sale }))
-                bumpWizardDebtRefresh()
-                setActive(0)
-              }}
-            />
-          </Box>
-          <Tooltip label={t('Закрити')} position="left">
-            <ActionIcon aria-label={t('Закрити')} color="gray" disabled={shellBusy} size="lg" variant="subtle" onClick={requestExit}>
-              <IconX size={20} />
-            </ActionIcon>
-          </Tooltip>
-        </Group>
+        <WizardClientHeroHeader
+          activeAgreementNetId={state.agreementNetId}
+          client={wizardClient}
+          clientNetId={state.clientNetId}
+          headerClose={wizardHeaderClose}
+          headerTools={wizardHeaderTools}
+        />
       )}
 
       <Box style={{ flex: 1, minHeight: 0, overflowY: active === 0 ? 'visible' : 'auto', paddingRight: 4 }}>

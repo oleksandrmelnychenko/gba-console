@@ -154,10 +154,6 @@ export function WizardClientRegistry({
           </Button>
         </Group>
 
-        <Box className="new-sale-register-toolbar__summary">
-          <Text className="new-sale-register-toolbar__title">{t('Реєстр документів')}</Text>
-          <Text className="new-sale-register-toolbar__count">{visibleSales.length}</Text>
-        </Box>
       </Box>
 
       <Box className="new-sale-register-list">
