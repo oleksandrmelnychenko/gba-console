@@ -1,5 +1,5 @@
 import { Box, Group, Text, Tooltip, UnstyledButton } from '@mantine/core'
-import { IconAlertTriangle, IconCircleCheck, IconHelpCircle } from '@tabler/icons-react'
+import { IconHelpCircle } from '@tabler/icons-react'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import type { ClientAgreement } from '../../../clients/types'
 import {
@@ -86,10 +86,7 @@ function WizardAgreementCard({
             </Text>
           </Box>
 
-          <Box className="new-sale-agreement-card__status">
-            {isOverdue ? <IconAlertTriangle size={13} /> : <IconCircleCheck size={13} />}
-            <span>{statusLabel}</span>
-          </Box>
+          <span className="new-sale-agreement-card__status">{statusLabel}</span>
         </Box>
 
         {clientAgreement.OriginalClientName && (
