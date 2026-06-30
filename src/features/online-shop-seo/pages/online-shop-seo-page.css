@@ -2025,12 +2025,3 @@
 .seo-table-role-like-cell .seo-table-muted-cell.is-default {
   color: var(--mantine-color-gray-9);
 }
-
-/* Pages roster now renders through the shared <DataTable>. Preserve the subtle
-   warm tint that previously marked Russian-locale rows in the hand-rolled
-   .seo-roster-row.is-ru variant. */
-.online-shop-seo-card .data-table-row.is-ru > .data-table-cell {
-  background:
-    linear-gradient(90deg, transparent, rgba(255, 245, 235, 0.42) 48%, transparent),
-    #fffdfb;
-}

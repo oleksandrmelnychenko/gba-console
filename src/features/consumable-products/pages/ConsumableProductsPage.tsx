@@ -23,13 +23,12 @@ import {
   IconTrash,
   IconX,
 } from '@tabler/icons-react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { PermissionGate } from '../../auth/components/PermissionGate'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
+import type { DataTableColumn } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { createConsoleTableMarker } from '../../../shared/ui/console-table-utils'
 import {
@@ -59,7 +58,7 @@ const PRODUCT_TABLE_DEFAULT_LAYOUT = {
     right: ['actions'],
   },
   density: 'compact',
-} satisfies DataTableDefaultLayout
+}
 
 type CategoryEditor =
   | { mode: 'create'; category?: undefined }
@@ -72,6 +71,12 @@ type ProductEditor =
 type DeleteTarget =
   | { category: ConsumableProductCategory; kind: 'category' }
   | { category: ConsumableProductCategory; kind: 'product'; product: ConsumableProduct }
+
+type ConsumableProductSortId = 'measureUnit' | 'name' | 'vendorCode'
+type ConsumableProductSortState = {
+  direction: 'asc' | 'desc'
+  id: ConsumableProductSortId
+} | null
 
 export function ConsumableProductsPage() {
   const { t } = useI18n()
@@ -374,7 +379,6 @@ export function ConsumableProductsPage() {
                 <ConsumableCategoryPanel
                   key={getCategoryKey(selectedCategory)}
                   category={selectedCategory}
-                  isLoading={isLoading}
                   onAddProduct={() => setProductEditor({ category: selectedCategory, mode: 'create' })}
                   onDeleteCategory={() => setDeleteTarget({ category: selectedCategory, kind: 'category' })}
                   onDeleteProduct={(product) => setDeleteTarget({ category: selectedCategory, kind: 'product', product })}
@@ -418,7 +422,6 @@ export function ConsumableProductsPage() {
 
 function ConsumableCategoryPanel({
   category,
-  isLoading,
   onAddProduct,
   onDeleteCategory,
   onDeleteProduct,
@@ -426,7 +429,6 @@ function ConsumableCategoryPanel({
   onEditProduct,
 }: {
   category: ConsumableProductCategory
-  isLoading: boolean
   onAddProduct: () => void
   onDeleteCategory: () => void
   onDeleteProduct: (product: ConsumableProduct) => void
@@ -435,7 +437,19 @@ function ConsumableCategoryPanel({
 }) {
   const { t } = useI18n()
   const products = useMemo(() => category.ConsumableProducts || [], [category.ConsumableProducts])
+  const [sortState, setSortState] = useValueState<ConsumableProductSortState>(null)
+  const sortedProducts = useMemo(() => sortConsumableProducts(products, sortState), [products, sortState])
   const columns = useConsumableProductColumns(onEditProduct, onDeleteProduct)
+
+  function toggleSort(id: ConsumableProductSortId) {
+    setSortState((current) => {
+      if (current?.id !== id) {
+        return { direction: 'asc', id }
+      }
+
+      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
+    })
+  }
 
   return (
     <section className="consumable-category-panel">
@@ -470,22 +484,98 @@ function ConsumableCategoryPanel({
       </div>
 
       <div className="consumable-category-panel__table">
-        <DataTable
+        <ConsumableProductsRoster
           columns={columns}
-          data={products}
+          data={sortedProducts}
           defaultLayout={PRODUCT_TABLE_DEFAULT_LAYOUT}
-          density={PRODUCT_TABLE_DEFAULT_LAYOUT.density}
           emptyText={t('Товарів у категорії немає')}
           getRowId={(product, index) => String(product.NetUid || product.Id || index)}
-          isLoading={isLoading}
-          layoutVersion="consumable-products-table-1"
+          layoutVersion="consumable-products-category-products-1"
           maxHeight="calc(100vh - var(--app-shell-header-offset, 108px) - var(--app-shell-footer-offset, 36px) - 220px)"
           minWidth={640}
+          sortState={sortState}
           showLayoutControls={false}
-          tableId="consumable-products"
+          tableId={`consumable-products-${category.NetUid || category.Id || category.Name || 'category'}`}
+          onSort={toggleSort}
         />
       </div>
     </section>
+  )
+}
+
+function ConsumableProductsRoster({
+  columns,
+  data,
+  emptyText,
+  getRowId,
+  maxHeight,
+  minWidth = 720,
+  sortState,
+  onSort,
+}: {
+  columns: DataTableColumn<ConsumableProduct>[]
+  data: ConsumableProduct[]
+  defaultLayout?: unknown
+  emptyText?: ReactNode
+  getRowId?: (product: ConsumableProduct, index: number) => string
+  layoutVersion?: string
+  maxHeight?: number | string
+  minWidth?: number
+  showLayoutControls?: boolean
+  sortState?: ConsumableProductSortState
+  tableId?: string
+  onSort?: (id: ConsumableProductSortId) => void
+}) {
+  const tableStyle = {
+    '--seo-roster-columns': 'minmax(340px, 1fr) minmax(98px, 0.24fr) minmax(98px, 0.22fr) 76px',
+    '--seo-roster-min-width': `${minWidth}px`,
+    maxHeight,
+  } as CSSProperties
+
+  return (
+    <div className="seo-roster-table consumable-products-roster" style={tableStyle}>
+      <div className="seo-roster-head">
+        {columns.map((column) =>
+          isConsumableProductSortId(column.id) ? (
+            <button
+              className={`seo-roster-head-cell consumable-products-roster-sort${sortState?.id === column.id ? ' is-active' : ''}`}
+              key={column.id}
+              type="button"
+              onClick={() => onSort?.(column.id as ConsumableProductSortId)}
+            >
+              {column.header}
+              {sortState?.id === column.id ? (
+                <span className="consumable-products-roster-sort__direction">
+                  {sortState.direction === 'asc' ? '↑' : '↓'}
+                </span>
+              ) : null}
+            </button>
+          ) : (
+            <span className={`seo-roster-head-cell is-${column.id}`} key={column.id}>
+              {column.header}
+            </span>
+          ),
+        )}
+      </div>
+
+      <div className="seo-roster-body">
+        {data.length === 0 ? (
+          <div className="seo-roster-empty">{emptyText}</div>
+        ) : (
+          data.map((product, index) => (
+            <div className="seo-roster-row-frame" key={getRowId?.(product, index) || getProductKey(product)}>
+              <div className="seo-roster-row is-hoverable consumable-product-row">
+                {columns.map((column) => (
+                  <div className={`seo-roster-cell is-${column.id}`} key={column.id}>
+                    {column.cell ? column.cell(product) : displayValue(column.accessor?.(product) as string | number | null)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -502,7 +592,6 @@ function useConsumableProductColumns(
         header: t('Назва'),
         width: 300,
         minWidth: 220,
-        className: 'consumable-products-name-cell',
         accessor: (product) => product.Name,
         cell: (product) => <ConsumableProductNameCell product={product} />,
       },
@@ -804,6 +893,44 @@ function ProductEditorForm({
       </Group>
     </Stack>
   )
+}
+
+function isConsumableProductSortId(id: string): id is ConsumableProductSortId {
+  return id === 'name' || id === 'vendorCode' || id === 'measureUnit'
+}
+
+function sortConsumableProducts(
+  products: ConsumableProduct[],
+  sortState: ConsumableProductSortState,
+): ConsumableProduct[] {
+  if (!sortState) {
+    return products
+  }
+
+  const direction = sortState.direction === 'asc' ? 1 : -1
+
+  return [...products].sort(
+    (firstProduct, secondProduct) =>
+      getConsumableProductSortValue(firstProduct, sortState.id).localeCompare(
+        getConsumableProductSortValue(secondProduct, sortState.id),
+        'uk',
+        {
+          numeric: true,
+          sensitivity: 'base',
+        },
+      ) * direction,
+  )
+}
+
+function getConsumableProductSortValue(product: ConsumableProduct, id: ConsumableProductSortId): string {
+  switch (id) {
+    case 'measureUnit':
+      return product.MeasureUnit?.Name || ''
+    case 'name':
+      return product.Name || ''
+    case 'vendorCode':
+      return product.VendorCode || ''
+  }
 }
 
 function getCategoryEditorKey(editor: CategoryEditor): string {

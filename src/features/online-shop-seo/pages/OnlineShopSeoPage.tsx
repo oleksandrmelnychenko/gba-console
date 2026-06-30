@@ -5,7 +5,6 @@ import {
   Badge,
   Box,
   Button,
-  Card,
   FileInput,
   Group,
   ScrollArea,
@@ -54,8 +53,6 @@ import {
   PageHeaderActions,
 } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { usePageBreadcrumb } from '../../../shared/ui/page-header-actions/pageHeaderActionsContext'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import {
   addEcommerceStorage,
   createSeoContact,
@@ -142,14 +139,6 @@ const SEO_TABS: { value: SeoTab; label: TranslationKey }[] = [
 ]
 
 const SEO_VISIBLE_TABS = SEO_TABS.filter((tab) => !['shop-clients', 'bank-cards', 'warehouses'].includes(tab.value))
-
-const SEO_PAGES_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: ['page', 'url', 'title', 'locale', 'updated', 'actions'],
-  columnPinning: {
-    left: ['page'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 const SEO_SHOP_DATA_SEARCH_TARGET_OPTIONS: Array<{ value: SeoShopDataSearchTarget; label: TranslationKey }> = [
   { value: 'clients', label: 'Пошук по інтернет клієнтах' },
@@ -343,7 +332,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
     setFormError(null)
   }, [setFormError, setRemoveStorageTarget])
 
-  const pageColumns = useMemo<DataTableColumn<SeoPageRow>[]>(
+  const pageColumns = useMemo<SeoRosterColumn<SeoPageRow>[]>(
     () => [
       {
         id: 'page',
@@ -411,15 +400,7 @@ function useOnlineShopSeoPageModel(activeTab: SeoTab, setActiveTab: (tab: SeoTab
         cell: (row) => (
           <SeoTableActionCell>
             <Tooltip label={t('Редагувати')}>
-              <ActionIcon
-                aria-label={t('Редагувати')}
-                color="gray"
-                variant="subtle"
-                onClick={(event) => {
-                  event.stopPropagation()
-                  openPageEditor(row)
-                }}
-              >
+              <ActionIcon aria-label={t('Редагувати')} color="gray" variant="subtle" onClick={() => openPageEditor(row)}>
                 <IconPencil size={18} />
               </ActionIcon>
             </Tooltip>
@@ -1614,26 +1595,21 @@ function renderOnlineShopSeoPage(model: ReturnType<typeof useOnlineShopSeoPageMo
           <Box className="seo-page-panel-body">
             {activeTab === 'pages' && (
               <Box pt="md">
-                <Card className="app-data-card online-shop-seo-card" withBorder radius="md" padding={0}>
-                  <DataTable
-                    columns={pageColumns}
-                    data={pageRows}
-                    defaultLayout={SEO_PAGES_TABLE_DEFAULT_LAYOUT}
-                    density="normal"
-                    emptyText={t('Сторінок не знайдено')}
-                    getRowId={(row, index) => `${row.locale}-${row.page.NetUid || row.page.Id || index}`}
-                    isLoading={isLoading}
-                    layoutVersion="online-shop-seo-pages-1"
-                    loadingText={t('Завантаження сторінок')}
-                    maxHeight="calc(100vh - 340px)"
-                    minWidth={900}
-                    rowClassName={(row) => (row.locale === 'ru' ? 'is-ru' : undefined)}
-                    showDensityToggle={false}
-                    showLayoutControls={false}
-                    tableId="online-shop-seo"
-                    onRowClick={openPageEditor}
-                  />
-                </Card>
+              <Stack gap="md">
+                <SeoRosterTable
+                  columns={pageColumns}
+                  columnsTemplate="minmax(280px, 1.25fr) minmax(180px, 0.74fr) minmax(140px, 0.64fr) 88px 138px 42px"
+                  data={pageRows}
+                  emptyText={t('Сторінок не знайдено')}
+                  getRowClassName={(row) => (row.locale === 'ru' ? 'is-ru' : undefined)}
+                  getRowId={(row, index) => `${row.locale}-${row.page.NetUid || row.page.Id || index}`}
+                  isLoading={isLoading}
+                  loadingText={t('Завантаження сторінок')}
+                  maxHeight="calc(100vh - 340px)"
+                  minWidth={900}
+                  onRowClick={openPageEditor}
+                />
+              </Stack>
               </Box>
             )}
 

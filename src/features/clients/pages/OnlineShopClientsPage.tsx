@@ -1,9 +1,9 @@
 import {
   ActionIcon,
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
   Group,
   Loader,
   ScrollArea,
@@ -18,8 +18,6 @@ import { IconAlertCircle, IconMail, IconMapPin, IconPhone, IconReceipt, IconRest
 import { useEffect, useMemo, useRef } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useI18n } from '../../../shared/i18n/useI18n'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
 import { getRetailClientCart, getRetailClientsPage, searchRetailClientsPage } from '../api/onlineShopClientsApi'
@@ -34,13 +32,6 @@ const amountFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 const ONLINE_SHOP_CLIENT_SEARCH_DEBOUNCE_MS = 350
-const ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: ['client', 'contact', 'city', 'created'],
-  columnPinning: {
-    left: ['client'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 export function OnlineShopClientsPage() {
   const { t } = useI18n()
@@ -65,7 +56,6 @@ export function OnlineShopClientsPage() {
   const offset = (page - 1) * pageSize
   const totalPages = totalClients > 0 ? Math.max(1, Math.ceil(totalClients / pageSize)) : page
   const cartTotal = useMemo(() => cartItems.reduce((total, item) => total + getRetailItemTotal(item), 0), [cartItems])
-  const clientColumns = useOnlineShopClientColumns()
   const hasActiveSearch = Boolean(searchValue.trim())
   const visibleFrom = totalClients === 0 ? 0 : offset + 1
   const visibleTo = totalClients === 0 ? 0 : offset + clients.length
@@ -218,28 +208,37 @@ export function OnlineShopClientsPage() {
         )}
 
         <Box className="online-shop-clients-page__layout">
-          <Card className="app-data-card online-shop-clients-card" withBorder radius="md" padding={0}>
-            <DataTable
-              columns={clientColumns}
-              data={clients}
-              defaultLayout={ONLINE_SHOP_CLIENTS_TABLE_DEFAULT_LAYOUT}
-              density="normal"
-              emptyText={t('Клієнтів інтернет-магазину не знайдено')}
-              getRowId={(client, index) => getRetailClientRowKey(client, index)}
-              isLoading={isTableBusy}
-              layoutVersion="online-shop-clients-1"
-              loadingText={isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
-              maxHeight="calc(100vh - 300px)"
-              minWidth={850}
-              rowClassName={(client) => (isSameRetailClient(client, selectedClient) ? 'is-selected' : undefined)}
-              showDensityToggle={false}
-              showLayoutControls={false}
-              tableId="online-shop-clients"
-              onRowClick={(client) => {
-                void selectClient(client)
-              }}
-            />
-          </Card>
+          <section className="online-shop-clients-roster">
+            <div className="online-shop-clients-roster-head">
+              <span>{t('Клієнт')}</span>
+              <span>{t('Контакти')}</span>
+              <span>{t('Місто')}</span>
+              <span>{t('Створено')}</span>
+            </div>
+
+            <ScrollArea.Autosize mah="calc(100vh - 300px)" type="auto">
+              <div className="online-shop-clients-roster-body">
+                {isTableBusy ? (
+                  <div className="online-shop-clients-empty-state">
+                    {isSearchSettling ? t('Пошук клієнтів') : t('Завантаження клієнтів')}
+                  </div>
+                ) : clients.length > 0 ? (
+                  clients.map((client, index) => (
+                    <OnlineShopClientRow
+                      key={getRetailClientRowKey(client, index)}
+                      client={client}
+                      isSelected={isSameRetailClient(client, selectedClient)}
+                      onSelect={selectClient}
+                    />
+                  ))
+                ) : (
+                  <div className="online-shop-clients-empty-state">
+                    {t('Клієнтів інтернет-магазину не знайдено')}
+                  </div>
+                )}
+              </div>
+            </ScrollArea.Autosize>
+          </section>
 
           <aside className="online-shop-clients-side-panel">
             <section className="online-shop-clients-cart-card">
@@ -323,113 +322,77 @@ export function OnlineShopClientsPage() {
   )
 }
 
-function useOnlineShopClientColumns() {
-  const { t } = useI18n()
-
-  return useMemo<DataTableColumn<RetailClient>[]>(
-    () => [
-      {
-        id: 'client',
-        header: t('Клієнт'),
-        width: 300,
-        minWidth: 240,
-        fill: true,
-        enableSorting: false,
-        accessor: (client) => getRetailClientName(client),
-        cell: (client) => <OnlineShopClientProfileCell client={client} />,
-      },
-      {
-        id: 'contact',
-        header: t('Контакти'),
-        width: 260,
-        minWidth: 220,
-        enableSorting: false,
-        accessor: (client) => getRetailClientPhone(client),
-        cell: (client) => <OnlineShopClientContactCell client={client} />,
-      },
-      {
-        id: 'city',
-        header: t('Місто'),
-        width: 170,
-        minWidth: 140,
-        enableSorting: false,
-        accessor: (client) => getRetailClientCity(client),
-        cell: (client) => <OnlineShopClientCityCell client={client} />,
-      },
-      {
-        id: 'created',
-        header: t('Створено'),
-        width: 120,
-        minWidth: 100,
-        enableSorting: false,
-        accessor: (client) => client.Created,
-        cell: (client) => <OnlineShopClientCreatedCell client={client} />,
-      },
-    ],
-    [t],
-  )
-}
-
-function OnlineShopClientProfileCell({ client }: { client: RetailClient }) {
+function OnlineShopClientRow({
+  client,
+  isSelected,
+  onSelect,
+}: {
+  client: RetailClient
+  isSelected: boolean
+  onSelect: (client: RetailClient) => void
+}) {
   const name = displayValue(getRetailClientName(client))
-
-  return (
-    <div className="online-shop-clients-profile-cell">
-      <div className="online-shop-clients-profile-copy">
-        <Tooltip label={name} openDelay={350} withArrow>
-          <Text className="online-shop-clients-profile-name">{name}</Text>
-        </Tooltip>
-        <Text className="online-shop-clients-profile-subtitle">{getRetailClientSourceLabel(client)}</Text>
-      </div>
-    </div>
-  )
-}
-
-function OnlineShopClientContactCell({ client }: { client: RetailClient }) {
   const phone = displayValue(getRetailClientPhone(client))
   const email = displayValue(getRetailClientEmail(client))
-
-  return (
-    <div className="online-shop-clients-contact-cell">
-      <span>
-        <IconPhone size={13} />
-        <Tooltip label={phone} openDelay={350} withArrow>
-          <Text>{phone}</Text>
-        </Tooltip>
-      </span>
-      <span>
-        <IconMail size={13} />
-        <Tooltip label={email} openDelay={350} withArrow>
-          <Text>{email}</Text>
-        </Tooltip>
-      </span>
-    </div>
-  )
-}
-
-function OnlineShopClientCityCell({ client }: { client: RetailClient }) {
   const city = displayValue(getRetailClientCity(client))
-
-  return (
-    <div className="online-shop-clients-city-cell">
-      <IconMapPin size={14} />
-      <Tooltip label={city} openDelay={350} withArrow>
-        <Text>{city}</Text>
-      </Tooltip>
-    </div>
-  )
-}
-
-function OnlineShopClientCreatedCell({ client }: { client: RetailClient }) {
   const created = formatRetailClientCreated(client.Created)
 
   return (
-    <Tooltip label={created.tooltip} openDelay={350} withArrow>
-      <div className="online-shop-clients-created-cell">
-        <span>{created.date}</span>
-        <small>{created.time}</small>
+    <div
+      className={`online-shop-clients-row${isSelected ? ' is-selected' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => {
+        void onSelect(client)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          void onSelect(client)
+        }
+      }}
+    >
+      <div className="online-shop-clients-profile-cell">
+        <Avatar className="online-shop-clients-avatar" radius="xl" size={34}>
+          {getRetailClientInitials(client)}
+        </Avatar>
+        <div className="online-shop-clients-profile-copy">
+          <Tooltip label={name} openDelay={350} withArrow>
+            <Text className="online-shop-clients-profile-name">{name}</Text>
+          </Tooltip>
+          <Text className="online-shop-clients-profile-subtitle">{getRetailClientSourceLabel(client)}</Text>
+        </div>
       </div>
-    </Tooltip>
+
+      <div className="online-shop-clients-contact-cell">
+        <span>
+          <IconPhone size={13} />
+          <Tooltip label={phone} openDelay={350} withArrow>
+            <Text>{phone}</Text>
+          </Tooltip>
+        </span>
+        <span>
+          <IconMail size={13} />
+          <Tooltip label={email} openDelay={350} withArrow>
+            <Text>{email}</Text>
+          </Tooltip>
+        </span>
+      </div>
+
+      <div className="online-shop-clients-city-cell">
+        <IconMapPin size={14} />
+        <Tooltip label={city} openDelay={350} withArrow>
+          <Text>{city}</Text>
+        </Tooltip>
+      </div>
+
+      <Tooltip label={created.tooltip} openDelay={350} withArrow>
+        <div className="online-shop-clients-created-cell">
+          <span>{created.date}</span>
+          <small>{created.time}</small>
+        </div>
+      </Tooltip>
+    </div>
   )
 }
 
@@ -492,6 +455,15 @@ function getRetailClientEmail(client: RetailClient): string {
 
 function getRetailClientCity(client: RetailClient): string {
   return client.City?.trim() || client.EcommerceRegion?.NameUa?.trim() || client.Client?.RegionCode?.City?.trim() || ''
+}
+
+function getRetailClientInitials(client: RetailClient): string {
+  const nameParts = getRetailClientName(client)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+
+  return nameParts.map((part) => part[0]).join('').toUpperCase() || 'IM'
 }
 
 function getRetailClientSourceLabel(client: RetailClient): string {

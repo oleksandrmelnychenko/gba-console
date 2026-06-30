@@ -18,6 +18,8 @@ import { useDebouncedValue } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import {
   IconAlertCircle,
+  IconChevronDown,
+  IconChevronRight,
   IconDownload,
   IconEye,
   IconFileInvoice,
@@ -41,8 +43,6 @@ import { useI18n } from '../../../shared/i18n/useI18n'
 import { realtimeEvents, useRealtimeEvent } from '../../../shared/realtime/events'
 import { getSupplyUkraineOrderDisplayNumber, normalizeDisplayNumber } from '../../../shared/supplyUkraineOrderNumbers'
 import { AppModal } from '../../../shared/ui/AppModal'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
@@ -98,14 +98,6 @@ const TYPE_OPTIONS: Array<{ label: string, value: SupplyUkraineOrderKind }> = [
   { label: 'Поставки в Україну', value: 'toUkraine' },
   { label: 'Замовлення Україна', value: 'direct' },
 ]
-
-const SUPPLY_ORDERS_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: ['kind', 'order', 'sum', 'qty', 'percent', 'organization', 'responsible', 'placed', 'type'],
-  columnPinning: {
-    left: ['kind', 'order'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 const PERMISSION_CREATE_TO_UKRAINE = 'Supply_Order_To_Ukraine_PKEY'
 const PERMISSION_CREATE_DIRECT = 'Ukraine_Order_PKEY'
@@ -761,7 +753,6 @@ function OrdersListCard({
   onRowClick: (row: SupplyUkraineOrderRow) => void
 }) {
   const { t } = useI18n()
-  const columns = useSupplyUkraineOrderColumns()
 
   return (
     <Card className="app-data-card supply-ukraine-orders-card" withBorder radius="md" padding={0}>
@@ -795,29 +786,11 @@ function OrdersListCard({
       )}
 
       <div className="supply-ukraine-orders-table">
-        <DataTable
-          columns={columns}
-          data={rows}
-          defaultLayout={SUPPLY_ORDERS_TABLE_DEFAULT_LAYOUT}
-          density={SUPPLY_ORDERS_TABLE_DEFAULT_LAYOUT.density}
+        <SupplyUkraineOrdersRoster
           emptyText={t('Замовлень не знайдено')}
-          getRowCanExpand={(row) => row.kind === 'direct' && (row.directOrder?.SupplyInvoices?.length ?? 0) > 0}
-          getRowId={getSupplyOrderRosterRowId}
-          height="100%"
           isLoading={state.isLoading}
-          layoutVersion="supply-ukraine-orders-1"
           loadingText={t('Завантаження замовлень')}
-          minWidth={1276}
-          renderExpandedRow={(row) =>
-            row.directOrder ? (
-              <div className="supply-ukraine-orders-expanded">
-                <SupplyOrderInvoicesExpand order={row.directOrder} />
-              </div>
-            ) : null
-          }
-          showDensityToggle={false}
-          showLayoutControls={false}
-          tableId="supply-ukraine-orders"
+          rows={rows}
           onRowClick={onRowClick}
         />
       </div>
@@ -825,92 +798,156 @@ function OrdersListCard({
   )
 }
 
-function useSupplyUkraineOrderColumns() {
+function SupplyUkraineOrdersRoster({
+  emptyText,
+  isLoading,
+  loadingText,
+  rows,
+  onRowClick,
+}: {
+  emptyText: string
+  isLoading: boolean
+  loadingText: string
+  rows: SupplyUkraineOrderRow[]
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+}) {
+  const { t } = useI18n()
+  const [expandedRowIds, setExpandedRowIds] = useState<ReadonlySet<string>>(() => new Set())
+
+  const toggleExpanded = useCallback((rowId: string) => {
+    setExpandedRowIds((current) => {
+      const next = new Set(current)
+
+      if (next.has(rowId)) {
+        next.delete(rowId)
+      } else {
+        next.add(rowId)
+      }
+
+      return next
+    })
+  }, [])
+
+  return (
+    <div className="supply-orders-roster">
+      <div className="supply-orders-roster-head">
+        <span />
+        <span>{t('Замовлення / постачальник')}</span>
+        <span>{t('Сума')}</span>
+        <span>{t('К-сть')}</span>
+        <span>{t('% дод.')}</span>
+        <span>{t('Організація / договір')}</span>
+        <span>{t('Відповідальний')}</span>
+        <span>{t('Розміщено')}</span>
+        <span>{t('Тип')}</span>
+      </div>
+
+      <div className="supply-orders-roster-body">
+        {isLoading ? (
+          <div className="supply-orders-roster-empty">{loadingText}</div>
+        ) : rows.length === 0 ? (
+          <div className="supply-orders-roster-empty">{emptyText}</div>
+        ) : (
+          rows.map((row, index) => {
+            const rowId = getSupplyOrderRosterRowId(row, index)
+            const canExpand = row.kind === 'direct' && (row.directOrder?.SupplyInvoices?.length ?? 0) > 0
+            const isExpanded = canExpand && expandedRowIds.has(rowId)
+
+            return (
+              <Fragment key={rowId}>
+                <SupplyUkraineOrderRosterRow
+                  canExpand={canExpand}
+                  isExpanded={isExpanded}
+                  row={row}
+                  onRowClick={onRowClick}
+                  onToggleExpanded={() => toggleExpanded(rowId)}
+                />
+                {isExpanded && row.directOrder ? (
+                  <div className="supply-orders-roster-expanded">
+                    <SupplyOrderInvoicesExpand order={row.directOrder} />
+                  </div>
+                ) : null}
+              </Fragment>
+            )
+          })
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SupplyUkraineOrderRosterRow({
+  canExpand,
+  isExpanded,
+  row,
+  onRowClick,
+  onToggleExpanded,
+}: {
+  canExpand: boolean
+  isExpanded: boolean
+  row: SupplyUkraineOrderRow
+  onRowClick: (row: SupplyUkraineOrderRow) => void
+  onToggleExpanded: () => void
+}) {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<SupplyUkraineOrderRow>[]>(
-    () => [
-      {
-        id: 'kind',
-        header: '',
-        width: 52,
-        minWidth: 48,
-        maxWidth: 60,
-        align: 'center',
-        enableHiding: false,
-        cell: (row) => <OrderIndexCell row={row} />,
-      },
-      {
-        id: 'order',
-        header: 'Замовлення / постачальник',
-        width: 360,
-        minWidth: 320,
-        fill: true,
-        cell: (row) => <OrderMainGridCell row={row} />,
-      },
-      {
-        id: 'sum',
-        header: 'Сума',
-        width: 132,
-        minWidth: 112,
-        align: 'right',
-        cell: (row) => <OrderMoneyCell currency={row.currency} value={row.grossPrice} />,
-      },
-      {
-        id: 'qty',
-        header: 'К-сть',
-        width: 118,
-        minWidth: 104,
-        cell: (row) => (
-          <div className="supply-order-metric-cell is-qty">
-            <OrderMetricValue value={formatAmount(row.qty)} />
-          </div>
-        ),
-      },
-      {
-        id: 'percent',
-        header: '% дод.',
-        width: 104,
-        minWidth: 96,
-        align: 'right',
-        cell: (row) => (
-          <div className="supply-order-metric-cell is-percent">
-            <OrderMetricValue value={formatAmount(row.additionalPercent)} />
-          </div>
-        ),
-      },
-      {
-        id: 'organization',
-        header: 'Організація / договір',
-        width: 240,
-        minWidth: 220,
-        cell: (row) => <OrderOrganizationGridCell row={row} />,
-      },
-      {
-        id: 'responsible',
-        header: 'Відповідальний',
-        width: 178,
-        minWidth: 158,
-        cell: (row) => <OrderResponsibleGridCell value={displayValue(row.responsible)} />,
-      },
-      {
-        id: 'placed',
-        header: 'Розміщено',
-        width: 112,
-        minWidth: 104,
-        align: 'center',
-        cell: (row) => <div className="supply-order-status-cell">{placedBadge(row.isPlaced, t)}</div>,
-      },
-      {
-        id: 'type',
-        header: 'Тип',
-        width: 118,
-        minWidth: 110,
-        align: 'center',
-        cell: (row) => <div className="supply-order-status-cell">{getKindBadge(row, t)}</div>,
-      },
-    ],
-    [t],
+  return (
+    <div
+      className={`supply-orders-roster-row is-${row.kind}${isExpanded ? ' is-expanded' : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={(event) => {
+        const target = event.target as HTMLElement
+
+        if (!event.currentTarget.contains(target)) {
+          return
+        }
+
+        if (!target.closest('[data-order-row-stop]')) {
+          onRowClick(row)
+        }
+      }}
+      onKeyDown={(event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) {
+          event.preventDefault()
+          onRowClick(row)
+        }
+      }}
+    >
+      <div className="supply-order-row-controls" data-order-row-stop="true">
+        <OrderIndexCell row={row} />
+        <span className="supply-order-expand-slot">
+          {canExpand ? (
+            <Tooltip label={isExpanded ? t('Згорнути') : t('Розгорнути')}>
+              <ActionIcon
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? t('Згорнути') : t('Розгорнути')}
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={onToggleExpanded}
+              >
+                {isExpanded ? <IconChevronDown size={15} /> : <IconChevronRight size={15} />}
+              </ActionIcon>
+            </Tooltip>
+          ) : (
+            <span className="supply-order-expand-placeholder" aria-hidden />
+          )}
+        </span>
+      </div>
+      <OrderMainGridCell row={row} />
+      <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
+      <div className="supply-order-metric-cell is-qty">
+        <OrderMetricValue label="#" value={formatAmount(row.qty)} />
+      </div>
+      <div className="supply-order-metric-cell is-percent">
+        <OrderMetricValue label="%" value={formatAmount(row.additionalPercent)} />
+      </div>
+      <OrderOrganizationGridCell row={row} />
+      <OrderResponsibleGridCell value={displayValue(row.responsible)} />
+      <div className="supply-order-status-cell">{placedBadge(row.isPlaced, t)}</div>
+      <div className="supply-order-status-cell">{getKindBadge(row, t)}</div>
+    </div>
   )
 }
 
@@ -1030,7 +1067,7 @@ function SupplyOrderInvoiceExpandItem({
         </div>
       </div>
       <OrderDateInline value={row.invoiceDate} />
-      <OrderMetricValue value={formatAmount(row.qty)} />
+      <OrderMetricValue label="#" value={formatAmount(row.qty)} />
       <OrderMoneyCell currency={row.currency} value={row.grossPrice} />
       {placedBadge(row.isPlaced, t)}
     </div>
@@ -1391,8 +1428,10 @@ function OrderActionsModal({
 
 function OrderIndexCell({ row }: { row: SupplyUkraineOrderRow }) {
   return (
-    <span className={`supply-order-control-cell is-${row.kind}`} aria-hidden>
-      {getOrderKindIcon(row, 15)}
+    <span className={`supply-order-control-cell is-${row.kind}`}>
+      <span className="supply-order-control-icon" aria-hidden>
+        {getOrderKindIcon(row, 15)}
+      </span>
     </span>
   )
 }
@@ -1418,9 +1457,10 @@ function OrderMoneyCell({ currency, value }: { currency?: string; value?: number
   )
 }
 
-function OrderMetricValue({ value }: { value: string }) {
+function OrderMetricValue({ label, value }: { label: string; value: string }) {
   return (
     <span className="supply-order-metric-value">
+      <span className="supply-order-metric-label">{label}</span>
       <span className="supply-order-metric-number">{value}</span>
     </span>
   )

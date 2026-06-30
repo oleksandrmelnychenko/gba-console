@@ -1,9 +1,9 @@
 import {
   ActionIcon,
   Alert,
+  Avatar,
   Box,
   Button,
-  Card,
   ScrollArea,
   Select,
   Stack,
@@ -14,12 +14,23 @@ import {
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconBriefcase,
+  IconBuildingWarehouse,
+  IconCalculator,
+  IconCar,
+  IconChartLine,
+  IconCoins,
+  IconCrown,
   IconPencil,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
   IconShieldLock,
+  IconShoppingCart,
+  IconTruckDelivery,
+  IconUserShield,
+  IconUsersGroup,
 } from '@tabler/icons-react'
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -29,11 +40,6 @@ import {
   CREATE_ACTION_COLOR,
   PageHeaderActions,
 } from '../../../shared/ui/page-header-actions/PageHeaderActions'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type {
-  DataTableColumn,
-  DataTableDefaultLayout,
-} from '../../../shared/ui/data-table/types'
 import { getUsers } from '../api/usersApi'
 import type { UserProfile, UserRole } from '../types'
 import {
@@ -53,16 +59,6 @@ type UserStatus =
   | typeof USER_STATUS_ACTIVE
   | typeof USER_STATUS_INACTIVE
   | typeof USER_STATUS_DELETED
-
-const USERS_TABLE_LAYOUT_VERSION = 'users-table-1'
-const USERS_TABLE_MIN_WIDTH = 900
-const USERS_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: ['profile', 'role', 'contacts', 'region', 'status', 'actions'],
-  columnPinning: {
-    left: ['profile'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
 
 type RoleNavigationItem = {
   count: number
@@ -129,7 +125,6 @@ export function UsersPage() {
     },
     [location, navigate],
   )
-  const userColumns = useUserColumns(openUser)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -283,25 +278,19 @@ export function UsersPage() {
               type="button"
               onClick={() => setRoleFilter(null)}
             >
-              <span className="users-role-option-index" aria-hidden="true">
-                —
-              </span>
               <span className="users-role-option-name">{t('Всі користувачі')}</span>
               <span className="users-role-option-count">{users.length}</span>
             </button>
 
             <ScrollArea.Autosize mah="calc(100vh - 330px)" type="auto">
               <div className="users-role-list">
-                {roleNavItems.map((item, index) => (
+                {roleNavItems.map((item) => (
                   <button
                     key={item.value}
                     className={`users-role-option${roleFilter === item.value ? ' is-active' : ''}`}
                     type="button"
                     onClick={() => setRoleFilter(item.value)}
                   >
-                    <span className="users-role-option-index" aria-hidden="true">
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
                     <span className="users-role-option-name">{item.label}</span>
                     <span className="users-role-option-count">{item.count}</span>
                   </button>
@@ -310,154 +299,115 @@ export function UsersPage() {
             </ScrollArea.Autosize>
           </aside>
 
-          <Card
-            className="app-data-card users-card"
-            withBorder
-            radius="md"
-            padding={0}
-          >
-            <DataTable
-              columns={userColumns}
-              data={filteredUsers}
-              defaultLayout={USERS_TABLE_DEFAULT_LAYOUT}
-              density="normal"
-              emptyText={
-                hasActiveFilters
-                  ? t('Користувачів за цими фільтрами не знайдено')
-                  : t('Користувачів не знайдено')
-              }
-              getRowId={(user, index) =>
-                String(user.NetUid || user.Id || index)
-              }
-              isLoading={isBusy}
-              layoutVersion={USERS_TABLE_LAYOUT_VERSION}
-              loadingText={t('Завантаження користувачів')}
-              maxHeight="calc(100vh - 360px)"
-              minWidth={USERS_TABLE_MIN_WIDTH}
-              rowClassName={(user) => {
-                const status = getUserStatus(user)
-                return status === USER_STATUS_ACTIVE
-                  ? undefined
-                  : `users-row-${status}`
-              }}
-              showDensityToggle={false}
-              showLayoutControls={false}
-              tableId="users"
-              onRowClick={openUser}
-            />
-          </Card>
+          <section className="users-roster">
+            <div className="users-roster-table">
+              <div className="users-roster-head">
+                <span>{t('Профіль')}</span>
+                <span>{t('Роль')}</span>
+                <span>{t('Контакти')}</span>
+                <span>{t('Регіон')}</span>
+                <span>{t('Стан')}</span>
+                <span />
+              </div>
+
+              <ScrollArea.Autosize mah="calc(100vh - 372px)" type="auto">
+                <div className="users-roster-body">
+                  {isBusy ? (
+                    <div className="users-empty-state">
+                      {t('Завантаження користувачів')}
+                    </div>
+                  ) : filteredUsers.length > 0 ? (
+                    filteredUsers.map((user, index) => (
+                      <UserRosterRow
+                        key={String(user.NetUid || user.Id || index)}
+                        user={user}
+                        onEdit={openUser}
+                      />
+                    ))
+                  ) : (
+                    <div className="users-empty-state">
+                      {hasActiveFilters
+                        ? t('Користувачів за цими фільтрами не знайдено')
+                        : t('Користувачів не знайдено')}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea.Autosize>
+            </div>
+          </section>
         </div>
       </Box>
     </Stack>
   )
 }
 
-function useUserColumns(
-  onEdit: (user: UserProfile) => void,
-): DataTableColumn<UserProfile>[] {
-  return useMemo<DataTableColumn<UserProfile>[]>(
-    () => [
-      {
-        id: 'profile',
-        header: 'Профіль',
-        width: 260,
-        minWidth: 235,
-        fill: true,
-        accessor: (user) => getUserFullName(user),
-        cell: (user) => (
-          <div className="users-profile-cell">
-            <div className="users-profile-copy">
-              <Text className="users-profile-last-name">
-                {displayValue(user.LastName)}
-              </Text>
-              <Text className="users-profile-first-name">
-                {getUserGivenName(user)}
-              </Text>
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: 'role',
-        header: 'Роль',
-        width: 200,
-        minWidth: 180,
-        accessor: (user) => getUserRoleName(user.UserRole),
-        cell: (user) => (
-          <div className="users-role-cell">
-            <strong>{displayValue(getUserRoleName(user.UserRole))}</strong>
-          </div>
-        ),
-      },
-      {
-        id: 'contacts',
-        header: 'Контакти',
-        width: 240,
-        minWidth: 220,
-        accessor: (user) => user.Email,
-        cell: (user) => (
-          <div className="users-contact-cell">
-            <Text className="users-contact-primary">
-              {displayValue(user.Email)}
-            </Text>
-            <Text className="users-contact-secondary">
-              {displayValue(user.PhoneNumber)}
-            </Text>
-          </div>
-        ),
-      },
-      {
-        id: 'region',
-        header: 'Регіон',
-        width: 132,
-        minWidth: 108,
-        accessor: (user) => getUserRegionName(user.Region),
-        cell: (user) => (
-          <span className="users-region-tag">
-            {getUserRegionName(user.Region)}
-          </span>
-        ),
-      },
-      {
-        id: 'status',
-        header: 'Стан',
-        width: 132,
-        minWidth: 112,
-        accessor: (user) => getUserStatusLabel(user),
-        cell: (user) => <UserStatusTag user={user} />,
-      },
-      {
-        id: 'actions',
-        header: '',
-        width: 56,
-        minWidth: 56,
-        maxWidth: 56,
-        align: 'center',
-        enableHiding: false,
-        enablePinning: false,
-        enableReorder: false,
-        enableResizing: false,
-        enableSorting: false,
-        cell: (user) => (
-          <Tooltip label="Редагувати">
-            <ActionIcon
-              aria-label="Редагувати"
-              className="users-row-action"
-              color="gray"
-              size="sm"
-              variant="subtle"
-              onClick={(event) => {
-                event.stopPropagation()
-                onEdit(user)
-              }}
-            >
-              <IconPencil size={15} />
-            </ActionIcon>
-          </Tooltip>
-        ),
-      },
-    ],
-    [onEdit],
+function UserRosterRow({
+  user,
+  onEdit,
+}: {
+  user: UserProfile
+  onEdit: (user: UserProfile) => void
+}) {
+  return (
+    <div
+      className={`users-roster-row users-row-${getUserStatus(user)}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => onEdit(user)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onEdit(user)
+        }
+      }}
+    >
+      <div className="users-profile-cell">
+        <Avatar className="users-avatar" radius="xl" size={34}>
+          {getUserInitials(user)}
+        </Avatar>
+        <div className="users-profile-copy">
+          <Text className="users-profile-last-name">
+            {displayValue(user.LastName)}
+          </Text>
+          <Text className="users-profile-first-name">
+            {getUserGivenName(user)}
+          </Text>
+        </div>
+      </div>
+
+      <div className="users-role-cell">
+        <span className="users-role-marker" aria-hidden="true">
+          {renderRoleIcon(user.UserRole)}
+        </span>
+        <strong>{displayValue(getUserRoleName(user.UserRole))}</strong>
+      </div>
+
+      <div className="users-contact-cell">
+        <Text className="users-contact-primary">{displayValue(user.Email)}</Text>
+        <Text className="users-contact-secondary">
+          {displayValue(user.PhoneNumber)}
+        </Text>
+      </div>
+
+      <span className="users-region-tag">{getUserRegionName(user.Region)}</span>
+      <UserStatusTag user={user} />
+
+      <Tooltip label="Редагувати">
+        <ActionIcon
+          aria-label="Редагувати"
+          className="users-row-action"
+          color="gray"
+          size="sm"
+          variant="subtle"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(user)
+          }}
+        >
+          <IconPencil size={15} />
+        </ActionIcon>
+      </Tooltip>
+    </div>
   )
 }
 
@@ -524,6 +474,78 @@ function getUserStatusLabel(user: UserProfile) {
   }
 
   return status === USER_STATUS_INACTIVE ? 'Неактивний' : 'Активний'
+}
+
+function renderRoleIcon(role?: UserRole | null) {
+  const roleName = getUserRoleName(role).toLocaleLowerCase('uk')
+
+  if (roleName.includes('gba') || roleName.includes('топ')) {
+    return <IconCrown size={13} />
+  }
+
+  if (roleName.includes('адміністратор') || roleName.includes('admin')) {
+    return <IconUserShield size={13} />
+  }
+
+  if (roleName.includes('керівник')) {
+    return <IconBriefcase size={13} />
+  }
+
+  if (roleName.includes('аналітик') && roleName.includes('закуп')) {
+    return <IconShoppingCart size={13} />
+  }
+
+  if (roleName.includes('аналітик')) {
+    return <IconChartLine size={13} />
+  }
+
+  if (roleName.includes('бухгалтер')) {
+    return <IconCalculator size={13} />
+  }
+
+  if (roleName.includes('фінанс')) {
+    return <IconCoins size={13} />
+  }
+
+  if (
+    roleName.includes('завсклад') ||
+    roleName.includes('кладов') ||
+    roleName.includes('склад')
+  ) {
+    return <IconBuildingWarehouse size={13} />
+  }
+
+  if (roleName.includes('водій')) {
+    return <IconCar size={13} />
+  }
+
+  if (roleName.includes('логіст')) {
+    return <IconTruckDelivery size={13} />
+  }
+
+  if (roleName.includes('client')) {
+    return <IconUsersGroup size={13} />
+  }
+
+  return <IconShieldLock size={13} />
+}
+
+function getUserInitials(user: UserProfile) {
+  if (user.Abbreviation?.trim()) {
+    return user.Abbreviation.trim().slice(0, 2).toLocaleUpperCase('uk')
+  }
+
+  const parts = [user.FirstName, user.LastName, user.FullName]
+    .flatMap((value) => value?.trim().split(/\s+/) || [])
+    .filter(Boolean)
+
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join('')
+      .toLocaleUpperCase('uk') || '?'
+  )
 }
 
 function getUserGivenName(user: UserProfile) {

@@ -207,12 +207,55 @@
   flex: 0 0 auto;
 }
 
-.consumable-category-panel__table {
+.consumable-products-roster {
   margin-top: 10px;
   min-width: 0;
+  overflow: auto;
 }
 
-.consumable-products-name-cell .seo-table-primary-title {
+.consumable-products-roster .seo-roster-head {
+  background: var(--mantine-color-white);
+  padding-left: 12px;
+  padding-right: 26px;
+}
+
+.consumable-products-roster .seo-roster-body {
+  padding-right: 10px;
+}
+
+.consumable-products-roster .seo-roster-row {
+  padding-left: 12px;
+}
+
+.consumable-products-roster-sort {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 5px;
+  padding: 0;
+  text-align: left;
+  text-transform: inherit;
+}
+
+.consumable-products-roster-sort:hover,
+.consumable-products-roster-sort.is-active {
+  color: var(--mantine-color-gray-8);
+}
+
+.consumable-products-roster-sort__direction {
+  color: var(--brand-orange);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.consumable-product-row .seo-table-primary-icon {
+  border-radius: 999px;
+}
+
+.consumable-products-roster .seo-roster-cell.is-name .seo-table-primary-title {
   font-weight: 720;
 }
 

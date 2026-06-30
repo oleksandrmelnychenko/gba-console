@@ -3,10 +3,9 @@ import {
   Alert,
   Anchor,
   Badge,
+  Box,
   Button,
-  Card,
   Divider,
-  Group,
   Loader,
   Select,
   Stack,
@@ -22,6 +21,7 @@ import { notifications } from '@mantine/notifications'
 import { useDebouncedValue } from '@mantine/hooks'
 import {
   IconAlertCircle,
+  IconAddressBook,
   IconBuildingFactory2,
   IconCash,
   IconExternalLink,
@@ -37,11 +37,9 @@ import {
   IconToggleRight,
 } from '@tabler/icons-react'
 import { ExcelIcon } from '../../../shared/ui/ExcelIcon'
-import { DataTable } from '../../../shared/ui/data-table/DataTable'
-import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE, PAGINATOR_PAGE_SIZE_OPTIONS } from '../../../shared/ui/paginator/paginatorPageSize'
-import { type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { SupplierPassport } from '../components/SupplierPassport'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -56,6 +54,7 @@ import {
   switchClientActiveState,
 } from '../api/clientsApi'
 import type { Client, ClientAgreement, ClientFilterItem, ClientPrintDocument } from '../types'
+import '../../../shared/ui/console-table-page.css'
 import './suppliers-page.css'
 
 const pageSizeOptions = PAGINATOR_PAGE_SIZE_OPTIONS
@@ -64,32 +63,7 @@ const SUPPLIER_SEARCH_SQL = 'RegionCode.Value/Client.FullName'
 const SUPPLIER_SEARCH_DEBOUNCE_MS = 350
 const SUPPLIER_TABLE_PAGE_SIZE_STORAGE_KEY = 'gba-data-table:suppliers:page-size'
 const DEFAULT_SUPPLIER_TABLE_PAGE_SIZE = DEFAULT_PAGINATOR_PAGE_SIZE
-const SUPPLIER_TABLE_DEFAULT_LAYOUT = {
-  columnOrder: [
-    'status',
-    'code',
-    'supplier',
-    'usreou',
-    'manufacturer',
-    'agreement',
-    'contact',
-    'volumeEur',
-    'balance',
-    'role',
-  ],
-  columnPinning: {
-    left: ['status', 'code', 'supplier'],
-  },
-  density: 'normal',
-} satisfies DataTableDefaultLayout
-const SUPPLIER_TABLE_CELL_STYLE = {
-  display: 'block',
-  lineHeight: '18px',
-  maxWidth: '100%',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-} as const
+const SHOW_SUPPLIER_ROLE_IN_BALANCE = false
 const SUPPLIERS_FILTER_COMBOBOX_PROPS = {
   classNames: {
     dropdown: 'suppliers-filter-dropdown',
@@ -516,7 +490,6 @@ export function SuppliersPage() {
 
 function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPageModel> }) {
   const { t } = useI18n()
-  const supplierColumns = useSupplierColumns()
   const {
     activeFilter,
     downloadDocument,
@@ -554,14 +527,14 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
   } = model
 
   return (
-    <Stack className="suppliers-page" gap={6}>
+    <Stack className="suppliers-page console-table-page" gap={6}>
       <PageHeaderActions>
         <Button color={CREATE_ACTION_COLOR} size="sm" leftSection={<IconPlus size={16} />} onClick={openNewSupplier}>
           {t('Добавити')}
         </Button>
       </PageHeaderActions>
 
-      <Card className="app-data-card suppliers-card" withBorder radius="md" padding={0}>
+      <div className="console-table-shell suppliers-card">
         <div className="app-filter-bar suppliers-filter-bar">
           <SuppliersFilterToolbar
             activeFilter={activeFilter}
@@ -586,31 +559,20 @@ function SuppliersPageView({ model }: { model: ReturnType<typeof useSuppliersPag
         </div>
 
         {error && (
-          <Alert className="suppliers-page__alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
+          <Alert className="console-table-alert" color="red" icon={<IconAlertCircle size={18} />} variant="light">
             {error}
           </Alert>
         )}
 
-        <div className="suppliers-page__table">
-          <DataTable
-            columns={supplierColumns}
-            data={suppliers}
-            defaultLayout={SUPPLIER_TABLE_DEFAULT_LAYOUT}
-            density={SUPPLIER_TABLE_DEFAULT_LAYOUT.density}
-            showDensityToggle={false}
-            emptyText={t('Постачальників не знайдено')}
-            getRowId={(supplier, index) => String(supplier.NetUid || supplier.Id || index)}
-            height="100%"
+        <div className="suppliers-page__content console-table-body">
+          <SupplierRegistryList
+            isBusy={isTableBusy}
             isLoading={isLoading}
-            layoutVersion="suppliers-table-1"
-            loadingText={t('Завантаження постачальників')}
-            minWidth={1500}
-            showLayoutControls={false}
-            tableId="suppliers"
-            onRowClick={setSelectedSupplier}
+            suppliers={suppliers}
+            onOpen={setSelectedSupplier}
           />
         </div>
-      </Card>
+      </div>
 
       <SupplierDetailDrawer
         supplier={selectedSupplier}
@@ -1005,179 +967,207 @@ function SupplierDocumentModal({
   )
 }
 
-function useSupplierColumns() {
+function SupplierRegistryList({
+  isBusy,
+  isLoading,
+  suppliers,
+  onOpen,
+}: {
+  isBusy: boolean
+  isLoading: boolean
+  suppliers: Client[]
+  onOpen: (supplier: Client) => void
+}) {
   const { t } = useI18n()
 
-  return useMemo<DataTableColumn<Client>[]>(
-    () => [
-      {
-        id: 'status',
-        header: 'Статус',
-        width: 168,
-        minWidth: 132,
-        accessor: (supplier) => (supplier.IsActive === false ? t('Неактивний') : t('Активний')),
-        cell: (supplier) => (
-          <Group gap={6} wrap="nowrap">
-            <Badge color={supplier.IsActive === false ? 'gray' : 'green'} variant="light">
-              {supplier.IsActive === false ? t('Неактивний') : t('Активний')}
-            </Badge>
-            {supplier.IsNotResident ? (
-              <Badge color="orange" variant="light">
-                {t('Нерезидент')}
-              </Badge>
-            ) : null}
-          </Group>
-        ),
-      },
-      {
-        id: 'code',
-        header: 'Код',
-        width: 110,
-        minWidth: 90,
-        accessor: (supplier) => supplier.SupplierCode,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.SupplierCode)} />,
-      },
-      {
-        id: 'supplier',
-        header: 'Постачальник',
-        width: 260,
-        minWidth: 220,
-        fill: true,
-        accessor: getSupplierDisplayName,
-        cell: (supplier) => <SupplierTableValue fw={600} value={getSupplierDisplayName(supplier)} />,
-      },
-      {
-        id: 'usreou',
-        header: 'ЄДРПОУ',
-        width: 128,
-        minWidth: 104,
-        accessor: (supplier) => supplier.USREOU,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.USREOU)} />,
-      },
-      {
-        id: 'manufacturer',
-        header: 'Виробник',
-        width: 176,
-        minWidth: 140,
-        accessor: (supplier) => supplier.Manufacturer,
-        cell: (supplier) => <SupplierTableValue value={displayValue(supplier.Manufacturer)} />,
-      },
-      {
-        id: 'agreement',
-        header: 'Договір',
-        width: 220,
-        minWidth: 170,
-        accessor: (supplier) => getSupplierAgreementName(getPrimarySupplierAgreement(supplier)),
-        cell: (supplier) => {
-          const agreement = getPrimarySupplierAgreement(supplier)
-          const name = getSupplierAgreementName(agreement)?.trim()
-          const currency = getSupplierAgreementCurrency(agreement)?.trim()
-          const isActive = agreement?.Agreement?.IsActive === true
+  if (isLoading) {
+    return <SupplierRegistryState isLoading text={t('Завантаження постачальників')} />
+  }
 
-          if (!name && !currency) {
-            return <Text c="dimmed">{t('Без договору')}</Text>
-          }
+  if (suppliers.length === 0) {
+    return <SupplierRegistryState text={t('Постачальників не знайдено')} />
+  }
 
-          return (
-            <Group gap={6} wrap="nowrap">
-              {currency ? (
-                <Badge color={isActive ? 'teal' : 'gray'} variant="light">
-                  {currency}
-                </Badge>
-              ) : null}
-              <SupplierTableValue value={displayValue(name)} />
-            </Group>
-          )
-        },
-      },
-      {
-        id: 'contact',
-        header: 'Контакти',
-        width: 184,
-        minWidth: 150,
-        accessor: (supplier) => getSupplierPhone(supplier) || supplier.EmailAddress,
-        cell: (supplier) => {
-          const phone = getSupplierPhone(supplier)?.trim()
-          const email = supplier.EmailAddress?.trim()
-
-          if (!phone && !email) {
-            return <Text c="dimmed">-</Text>
-          }
-
-          return (
-            <Text size="sm" style={SUPPLIER_TABLE_CELL_STYLE}>
-              {displayValue(phone)}
-              {email ? (
-                <Text component="span" inherit c="dimmed">
-                  {' · '}
-                  {email}
-                </Text>
-              ) : null}
-            </Text>
-          )
-        },
-      },
-      {
-        id: 'volumeEur',
-        header: 'Обсяг, EUR',
-        width: 124,
-        minWidth: 104,
-        align: 'right',
-        accessor: (supplier) => supplier.PurchaseVolumeEur,
-        cell: (supplier) => <SupplierTableValue value={formatSupplierAmount(supplier.PurchaseVolumeEur)} />,
-      },
-      {
-        id: 'balance',
-        header: 'Баланс',
-        width: 132,
-        minWidth: 110,
-        align: 'right',
-        accessor: (supplier) => supplier.TotalCurrentAmount,
-        cell: (supplier) => {
-          const balance = supplier.TotalCurrentAmount || 0
-
-          return (
-            <Text
-              component="span"
-              fw={600}
-              c={balance < 0 ? 'red.6' : undefined}
-              style={SUPPLIER_TABLE_CELL_STYLE}
-            >
-              {formatSupplierAmount(supplier.TotalCurrentAmount)}
-            </Text>
-          )
-        },
-      },
-      {
-        id: 'role',
-        header: 'Роль',
-        width: 150,
-        minWidth: 120,
-        accessor: (supplier) => supplier.ClientInRole?.ClientTypeRole?.Name,
-        cell: (supplier) => {
-          const name = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
-
-          return name ? (
-            <Badge color={roleBadgeColor(name)} variant="light">
-              {name}
-            </Badge>
-          ) : (
-            <Text c="dimmed">-</Text>
-          )
-        },
-      },
-    ],
-    [t],
+  return (
+    <Box className={`suppliers-registry${isBusy ? ' is-busy' : ''}`} aria-busy={isBusy}>
+      {isBusy && (
+        <div className="suppliers-registry-loading" aria-hidden="true">
+          <Loader color="orange" size="xs" />
+        </div>
+      )}
+      <div className="suppliers-registry-head">
+        <SupplierRegistryHeadLabel label={t('Постачальник')} />
+        <SupplierRegistryHeadLabel label={t('Договір')} />
+        <SupplierRegistryHeadLabel label={t('Контакти')} />
+        <SupplierRegistryHeadLabel align="right" label={t('Обсяг')} />
+        <SupplierRegistryHeadLabel align="right" label={t('Баланс')} />
+      </div>
+      <div className="suppliers-registry-body">
+        {suppliers.map((supplier, index) => (
+          <SupplierRegistryRow
+            key={String(supplier.NetUid || supplier.Id || index)}
+            supplier={supplier}
+            onOpen={onOpen}
+          />
+        ))}
+      </div>
+    </Box>
   )
 }
 
-function SupplierTableValue({ fw, value }: { fw?: number; value: string }) {
+function SupplierRegistryHeadLabel({ align, label }: { align?: 'right'; label: string }) {
+  return <span className={`suppliers-registry-head-label${align === 'right' ? ' is-right' : ''}`}>{label}</span>
+}
+
+function SupplierRegistryState({ isLoading = false, text }: { isLoading?: boolean; text: string }) {
   return (
-    <Tooltip label={value} openDelay={350} withArrow>
-      <Text component="span" fw={fw} style={SUPPLIER_TABLE_CELL_STYLE}>
-        {value}
-      </Text>
+    <div className="suppliers-registry-state">
+      {isLoading && <Loader color="orange" size="sm" />}
+      <Text c="dimmed" fw={650} size="sm">{text}</Text>
+    </div>
+  )
+}
+
+function SupplierRegistryRow({ supplier, onOpen }: { supplier: Client; onOpen: (supplier: Client) => void }) {
+  const isActive = supplier.IsActive !== false
+  const balance = supplier.TotalCurrentAmount || 0
+
+  return (
+    <button
+      className={`suppliers-registry-row${isActive ? '' : ' is-inactive'}${supplier.IsNotResident ? ' is-nonresident' : ''}`}
+      type="button"
+      onClick={() => onOpen(supplier)}
+    >
+      <SupplierProfileCell supplier={supplier} />
+      <SupplierAgreementCell supplier={supplier} />
+      <SupplierContactCell supplier={supplier} />
+      <SupplierAmountCell label="EUR" value={formatSupplierAmount(supplier.PurchaseVolumeEur)} />
+      <SupplierAmountCell
+        tone={balance < 0 ? 'danger' : 'muted'}
+        value={formatSupplierAmount(supplier.TotalCurrentAmount)}
+        footer={SHOW_SUPPLIER_ROLE_IN_BALANCE ? <SupplierRoleCell supplier={supplier} /> : undefined}
+      />
+    </button>
+  )
+}
+
+function SupplierProfileCell({ supplier }: { supplier: Client }) {
+  const { t } = useI18n()
+  const name = getSupplierDisplayName(supplier)
+  const isActive = supplier.IsActive !== false
+  const code = displayValue(supplier.SupplierCode)
+  const iconColor = !isActive ? 'gray' : supplier.IsNotResident ? 'orange' : 'teal'
+
+  return (
+    <div className="suppliers-profile-cell">
+      <ThemeIcon className="suppliers-profile-icon" color={iconColor} radius="xl" size={34} variant="light">
+        <IconBuildingFactory2 size={19} stroke={1.8} />
+      </ThemeIcon>
+      <div className="suppliers-profile-copy">
+        <div className="suppliers-profile-title-row">
+          <Tooltip label={name} openDelay={350} withArrow>
+            <span className="suppliers-profile-name">{name}</span>
+          </Tooltip>
+        </div>
+        <div className="suppliers-profile-meta">
+          <span className={`suppliers-profile-status${isActive ? ' is-active' : ' is-inactive'}`}>
+            {isActive ? t('Активний') : t('Неактивний')}
+          </span>
+          <span className={`suppliers-profile-code${code === '-' ? ' is-empty' : ''}`}>{code}</span>
+          {supplier.IsNotResident && <span className="suppliers-profile-resident">{t('Нерезидент')}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SupplierRoleCell({ supplier }: { supplier: Client }) {
+  const roleName = supplier.ClientInRole?.ClientTypeRole?.Name?.trim()
+
+  if (!roleName) {
+    return null
+  }
+
+  return (
+    <Tooltip label={roleName} openDelay={350} withArrow>
+      <span className={`suppliers-profile-role is-${roleBadgeColor(roleName)}`}>{roleName}</span>
     </Tooltip>
+  )
+}
+
+function SupplierAgreementCell({ supplier }: { supplier: Client }) {
+  const agreement = getPrimarySupplierAgreement(supplier)
+  const name = getSupplierAgreementName(agreement)?.trim()
+  const organization = getSupplierAgreementOrganization(agreement)?.trim()
+  const currency = getSupplierAgreementCurrency(agreement)?.trim()
+  const period = getSupplierAgreementPeriod(agreement)?.trim()
+  const payment = getSupplierAgreementPaymentSummary(agreement)?.trim()
+  const hasAgreementInfo = Boolean(name || organization || currency || period || payment)
+  const title = name || organization || translate('Без договору')
+  const meta = name ? organization || period || payment : period || payment
+  const isActive = agreement?.Agreement?.IsActive === true
+  const tooltipDetails = [name, currency, organization, period, payment].filter(Boolean).join(' / ')
+
+  return (
+    <Tooltip disabled={!tooltipDetails} label={tooltipDetails} openDelay={350} withArrow>
+      <div
+        className={`suppliers-agreement-cell${hasAgreementInfo ? '' : ' is-empty'}${isActive ? ' is-active' : ''}`}
+      >
+        <span className="suppliers-agreement-title-row">
+          {hasAgreementInfo ? <span className="suppliers-agreement-state" aria-hidden /> : null}
+          <span className={`suppliers-agreement-title${hasAgreementInfo ? '' : ' is-empty'}`}>{title}</span>
+        </span>
+        {hasAgreementInfo && (currency || meta) ? (
+          <span className="suppliers-agreement-meta">
+            {currency ? <span className="suppliers-agreement-currency">{currency}</span> : null}
+            {meta ? <span className="suppliers-agreement-meta-text">{meta}</span> : null}
+          </span>
+        ) : null}
+      </div>
+    </Tooltip>
+  )
+}
+
+function SupplierContactCell({ supplier }: { supplier: Client }) {
+  const phone = getSupplierPhone(supplier)?.trim()
+  const email = supplier.EmailAddress?.trim()
+  const tooltip = [phone, email].filter(Boolean).join(' / ')
+  const hasContacts = Boolean(tooltip)
+
+  return (
+    <Tooltip disabled={!hasContacts} label={tooltip} openDelay={350} withArrow>
+      <span className={`suppliers-contact-cell${hasContacts ? '' : ' is-empty'}`}>
+        <span className="suppliers-contact-icon" aria-hidden>
+          <IconAddressBook size={14} stroke={1.8} />
+        </span>
+        {hasContacts ? (
+          <span className="suppliers-contact-copy">
+            {phone ? <span className="suppliers-contact-text">{phone}</span> : null}
+            {email ? <span className="suppliers-contact-text is-secondary">{email}</span> : null}
+          </span>
+        ) : null}
+      </span>
+    </Tooltip>
+  )
+}
+
+function SupplierAmountCell({
+  footer,
+  label,
+  tone,
+  value,
+}: {
+  footer?: ReactNode
+  label?: string
+  tone?: 'danger' | 'muted'
+  value: string
+}) {
+  return (
+    <span className={`suppliers-amount-cell${tone ? ` is-${tone}` : ''}`}>
+      <strong>{value}</strong>
+      {label ? <small>{label}</small> : null}
+      {footer ? <span className="suppliers-amount-footer">{footer}</span> : null}
+    </span>
   )
 }
 
