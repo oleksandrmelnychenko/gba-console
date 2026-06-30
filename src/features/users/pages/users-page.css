@@ -218,27 +218,7 @@
 .users-profile-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
   min-width: 0;
-}
-
-.users-avatar {
-  --avatar-fz: 11px;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-8);
-  flex: 0 0 34px;
-  font-size: 9px;
-  font-weight: 750;
-  height: 34px;
-  padding: 3px;
-  width: 34px;
-}
-
-.users-avatar .mantine-Avatar-placeholder,
-.users-avatar > span {
-  font-size: 11px;
-  line-height: 1;
 }
 
 .users-profile-copy,
@@ -270,26 +250,8 @@
 
 .users-role-cell {
   align-items: center;
-  background: transparent;
-  border-left: 1px dashed var(--mantine-color-gray-3);
   display: flex;
-  gap: 7px;
   justify-content: flex-start;
-  min-height: 34px;
-  padding-left: 12px;
-}
-
-.users-role-marker {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  border-radius: 7px;
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 24px;
-  justify-content: center;
-  width: 24px;
 }
 
 .users-role-cell strong {

@@ -409,9 +409,6 @@ function AccountableExpenseDocumentCell({ row }: { row: AccountableExpenseRow })
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="accountable-expenses-document-cell">
-        <span className="accountable-expenses-document-icon" aria-hidden>
-          <IconFileText size={15} />
-        </span>
         <span className="accountable-expenses-document-copy">
           <span className="accountable-expenses-document-title">{title}</span>
           {meta ? <span className="accountable-expenses-document-meta">{meta}</span> : null}
@@ -449,9 +446,6 @@ function AccountableExpenseProductCell({ row }: { row: AccountableExpenseRow }) 
 function AccountableExpenseQuantityCell({ value }: { value: string }) {
   return (
     <span className="accountable-expenses-quantity-cell">
-      <span className="accountable-expenses-quantity-icon" aria-hidden>
-        #
-      </span>
       <strong>{value}</strong>
     </span>
   )

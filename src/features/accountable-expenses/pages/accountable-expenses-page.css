@@ -129,25 +129,7 @@
 .accountable-expenses-document-cell {
   align-items: center;
   display: flex;
-  gap: 10px;
   min-width: 0;
-}
-
-.accountable-expenses-document-icon,
-.accountable-expenses-quantity-icon {
-  align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
-  color: var(--mantine-color-gray-5);
-  display: inline-flex;
-  justify-content: center;
-}
-
-.accountable-expenses-document-icon {
-  border-radius: 999px;
-  flex: 0 0 34px;
-  height: 34px;
-  width: 34px;
 }
 
 .accountable-expenses-document-copy,
@@ -203,19 +185,8 @@
 .accountable-expenses-quantity-cell {
   align-items: center;
   display: inline-flex;
-  gap: 8px;
   justify-self: end;
   min-width: 0;
-}
-
-.accountable-expenses-quantity-icon {
-  border-radius: 7px;
-  flex: 0 0 25px;
-  font-size: 12px;
-  font-weight: 650;
-  height: 25px;
-  line-height: 1;
-  width: 25px;
 }
 
 .accountable-expenses-quantity-cell strong {
@@ -253,10 +224,8 @@
 }
 
 .accountable-expenses-responsible-cell {
-  border-left: 1px dashed var(--mantine-color-gray-3);
   display: block;
   min-width: 0;
-  padding-left: 12px;
 }
 
 .accountable-expenses-responsible-cell > span {

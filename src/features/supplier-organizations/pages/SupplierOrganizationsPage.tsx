@@ -12,8 +12,6 @@ import {
 } from '@mantine/core'
 import {
   IconAlertCircle,
-  IconBuilding,
-  IconBuildingBank,
   IconCash,
   IconDownload,
   IconDots,
@@ -471,9 +469,6 @@ function SupplierOrganizationNameCell({ organization }: { organization: SupplyOr
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="supplier-organizations-name-cell">
-        <span className="supplier-organizations-name-icon" aria-hidden>
-          <IconBuilding size={16} />
-        </span>
         <span className="supplier-organizations-name-copy">
           <span className="supplier-organizations-name-title">{title}</span>
           <span className="supplier-organizations-name-subtitle">{subtitle}</span>
@@ -517,7 +512,7 @@ function SupplierOrganizationAgreementCell({ organization }: { organization: Sup
 
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
-      <span className="supplier-organizations-two-line-cell is-separated">
+      <span className="supplier-organizations-two-line-cell">
         <span>{organizations}</span>
         <small>{compactStrings([agreements, currencies]).join(' · ') || '—'}</small>
       </span>
@@ -548,9 +543,6 @@ function SupplierOrganizationBankCell({ organization }: { organization: SupplyOr
   return (
     <Tooltip label={tooltip} multiline openDelay={350} withArrow>
       <span className="supplier-organizations-bank-cell">
-        <span className="supplier-organizations-bank-icon" aria-hidden>
-          <IconBuildingBank size={14} />
-        </span>
         <span className="supplier-organizations-two-line-cell">
           <span>{primary}</span>
           <small>{secondary}</small>

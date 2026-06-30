@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Avatar,
   Box,
   Button,
   Card,
@@ -12,7 +11,6 @@ import {
   Stack,
   Text,
   TextInput,
-  ThemeIcon,
   Tooltip,
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -20,17 +18,15 @@ import {
   IconAlertCircle,
   IconArchive,
   IconDeviceFloppy,
-  IconHash,
   IconPencil,
   IconPhoto,
   IconPlus,
   IconRefresh,
   IconRestore,
   IconSearch,
-  IconTruckDelivery,
   IconUpload,
 } from '@tabler/icons-react'
-import { type ReactNode, useEffect, useMemo, useReducer } from 'react'
+import { useEffect, useMemo, useReducer } from 'react'
 import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
@@ -91,7 +87,6 @@ function useTransporterColumns({
         accessor: (transporter) => getTransporterName(transporter),
         cell: (transporter) => (
           <div className="transporters-profile-cell">
-            <TransporterIcon transporter={transporter} />
             <div className="transporters-profile-copy">
               <Tooltip label={getTransporterName(transporter)} openDelay={350} withArrow>
                 <Text className="transporters-profile-name">{getTransporterName(transporter)}</Text>
@@ -111,7 +106,7 @@ function useTransporterColumns({
         accessor: (transporter) => transporter.Priority,
         cell: (transporter) => (
           <div className="transporters-config-cell">
-            <TransporterSetting icon={<IconHash size={14} />} label={translate('Пріоритет')} value={displayValue(transporter.Priority)} />
+            <TransporterSetting label={translate('Пріоритет')} value={displayValue(transporter.Priority)} />
           </div>
         ),
       },
@@ -652,37 +647,16 @@ function TransporterEditorModal({
   )
 }
 
-function TransporterIcon({ transporter }: { transporter: Transporter }) {
-  if (transporter.ImageUrl) {
-    return (
-      <Avatar className="transporters-avatar" radius="md" size={36} src={transporter.ImageUrl}>
-        <IconPhoto size={18} />
-      </Avatar>
-    )
-  }
-
-  return (
-    <ThemeIcon className="transporters-avatar transporters-avatar-fallback" color="gray" radius="md" size={36} variant="light">
-      <IconTruckDelivery size={18} />
-    </ThemeIcon>
-  )
-}
-
 function TransporterSetting({
-  icon,
   label,
   value,
 }: {
-  icon: ReactNode
   label: string
   value: string
 }) {
   return (
     <Tooltip label={`${label}: ${value}`} openDelay={350} withArrow>
       <span className="transporters-setting">
-        <span className="transporters-setting-icon" aria-hidden="true">
-          {icon}
-        </span>
         <span className="transporters-setting-copy">
           <span>{label}</span>
           <strong>{value}</strong>

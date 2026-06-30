@@ -1,7 +1,6 @@
 import {
   ActionIcon,
   Alert,
-  Avatar,
   Box,
   Button,
   Card,
@@ -376,9 +375,6 @@ function OnlineShopClientProfileCell({ client }: { client: RetailClient }) {
 
   return (
     <div className="online-shop-clients-profile-cell">
-      <Avatar className="online-shop-clients-avatar" radius="xl" size={34}>
-        {getRetailClientInitials(client)}
-      </Avatar>
       <div className="online-shop-clients-profile-copy">
         <Tooltip label={name} openDelay={350} withArrow>
           <Text className="online-shop-clients-profile-name">{name}</Text>
@@ -496,15 +492,6 @@ function getRetailClientEmail(client: RetailClient): string {
 
 function getRetailClientCity(client: RetailClient): string {
   return client.City?.trim() || client.EcommerceRegion?.NameUa?.trim() || client.Client?.RegionCode?.City?.trim() || ''
-}
-
-function getRetailClientInitials(client: RetailClient): string {
-  const nameParts = getRetailClientName(client)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-
-  return nameParts.map((part) => part[0]).join('').toUpperCase() || 'IM'
 }
 
 function getRetailClientSourceLabel(client: RetailClient): string {

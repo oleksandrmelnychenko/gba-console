@@ -116,15 +116,6 @@
   color: var(--mantine-color-gray-8);
 }
 
-.console-table-page .data-table-sort-icon {
-  color: var(--brand-orange);
-}
-
-.console-table-page .data-table-sort-icon[data-sorted='false'] {
-  display: inline-flex;
-  opacity: 0.45;
-}
-
 .console-table-page .data-table-cell {
   background:
     linear-gradient(90deg, transparent, rgba(248, 249, 250, 0.68) 48%, transparent),
