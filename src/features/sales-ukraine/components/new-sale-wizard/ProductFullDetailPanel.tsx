@@ -4,7 +4,7 @@ import { formatLocalDate } from '../../../../shared/date/dateTime'
 import { useI18n } from '../../../../shared/i18n/useI18n'
 import { getProductMainImage, getProductShopImageUrl, getRelatedProductRowColor } from '../../../products/utils'
 import type { WizardCalculatedProductPricing, WizardNearestSupplyOrder } from './newSaleWizardApi'
-import { getWizardDisplayQty, type WizardSaleProduct } from './wizardSaleProduct'
+import type { WizardSaleProduct } from './wizardSaleProduct'
 
 const qtyFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 3 })
 const priceFormatter = new Intl.NumberFormat('uk-UA', { maximumFractionDigits: 2, minimumFractionDigits: 2 })
@@ -28,7 +28,6 @@ export function ProductFullDetailPanel({
   chips,
   descriptionDraft,
   isEditingDescription,
-  isVatSale,
   nearestSupplyOrder,
   pricing,
   product,
@@ -36,6 +35,7 @@ export function ProductFullDetailPanel({
   selectedChipIndex,
   selectedRowIndex,
   showRowDetails,
+  displayQty,
   onDescriptionDraftChange,
   onSelectChip,
   onToggleDescription,
@@ -44,7 +44,6 @@ export function ProductFullDetailPanel({
   chips: WizardDetailChip[]
   descriptionDraft: string
   isEditingDescription: boolean
-  isVatSale: boolean
   nearestSupplyOrder?: WizardNearestSupplyOrder | null
   pricing: WizardCalculatedProductPricing | null
   product: WizardSaleProduct
@@ -52,6 +51,7 @@ export function ProductFullDetailPanel({
   selectedChipIndex: number | null
   selectedRowIndex: number | null
   showRowDetails: boolean
+  displayQty?: number
   onDescriptionDraftChange: (value: string) => void
   onSelectChip?: (index: number) => void
   onToggleDescription: () => void
@@ -62,7 +62,7 @@ export function ProductFullDetailPanel({
   // concord-shop image (what the legacy client always uses) so the photo still loads.
   const shopImageUrl = getProductShopImageUrl(product)
   const titleColor = getRelatedProductRowColor(product)
-  const displayQty = getWizardDisplayQty(product, isVatSale)
+  const headerQty = displayQty ?? 0
 
   return (
     <Paper p="sm" radius="md" style={{ borderLeft: '3px solid var(--mantine-color-violet-4)' }} withBorder>
@@ -211,7 +211,7 @@ export function ProductFullDetailPanel({
           </Text>
           <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
             <Text fw={700} size="sm">
-              {qtyFormatter.format(displayQty)}
+              {qtyFormatter.format(headerQty)}
             </Text>
             {product.MeasureUnit?.Name && (
               <Text c="dimmed" size="xs">

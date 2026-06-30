@@ -49,6 +49,12 @@ import { WizardConfirmModal } from './WizardConfirmModal'
 import { WizardProductCarousel } from './WizardProductCarousel'
 import { WizardRelatedProductRows } from './WizardRelatedProductRows'
 import {
+  getWizardAvailabilityChipCount,
+  getWizardAvailabilityRows,
+  getWizardDetailedSellableQty,
+  type WizardAvailabilityKey,
+} from './wizardSaleAvailability'
+import {
   getPreviousProductKeyboardState,
   getWizardKeyboardState,
   isEditableTarget,
@@ -436,11 +442,22 @@ export function NewSaleProductsStep({
     }
   }
 
+  const getDisplayedSellableQty = useCallback(
+    (product: WizardSaleProduct) => {
+      const isDetailedProduct = Boolean(product.NetUid && product.NetUid === activeProduct?.NetUid)
+
+      return isDetailedProduct
+        ? getWizardDetailedSellableQty(product, isVatSale, totalAvailabilities)
+        : getWizardSellableQty(product, isVatSale)
+    },
+    [activeProduct?.NetUid, isVatSale, totalAvailabilities],
+  )
+
   const getProductMeta = useCallback(
     (product: WizardSaleProduct) => {
       const reservation = product.NetUid ? reservations.get(product.NetUid) : undefined
       const pricing = product.NetUid ? productPricing.get(product.NetUid) : undefined
-      const available = getWizardSellableQty(product, isVatSale)
+      const available = getDisplayedSellableQty(product)
       const price =
         pricing?.currentPrice ?? getReservationPrice(pricing?.reservation) ?? getReservationPrice(reservation) ?? product.CurrentPrice
       const reSaleAvailable = isVatSale ? undefined : getWizardProductNumber(product.AvailableQtyUkReSale) ?? undefined
@@ -455,7 +472,7 @@ export function NewSaleProductsStep({
 
       return { available, price, reSaleAvailable, reSaleCurrency, reSalePrice }
     },
-    [productPricing, reservations, isVatSale, useEurToUah],
+    [getDisplayedSellableQty, productPricing, reservations, isVatSale, useEurToUah],
   )
 
   async function addOrderItemToSale(clientAgreementNetId: string, saleNetId: string, item: SalesUkraineOrderItem) {
@@ -1255,18 +1272,20 @@ export function NewSaleProductsStep({
   }
 
   function getMainChips(): WizardDetailChip[] {
-    const totals = totalAvailabilities?.TotalAvailabilities
-
     return MAIN_CHIP_DEFS.map((def) => ({
-      count:
-        def.key === 'StorageUkrNotVat'
-          ? readTotalAvailability(totals, 'StorageUkrNotVat', 2) + readTotalAvailability(totals, 'AvailableQtyUkReSale', 6)
-          : def.key === 'OnWayToUkr'
-            ? readTotalAvailability(totals, 'AvailabilityInvoice', 7)
-            : readTotalAvailability(totals, def.key, def.index),
+      count: getMainChipCount(def.key, def.index),
       key: def.key,
       name: t(def.label),
     }))
+  }
+
+  function getMainChipCount(key: WizardAvailabilityKey, index: number): number {
+    if (key === 'StorageUkrNotVat') {
+      return getWizardAvailabilityChipCount(totalAvailabilities, 'StorageUkrNotVat', index)
+        + getWizardAvailabilityChipCount(totalAvailabilities, 'AvailableQtyUkReSale', 6)
+    }
+
+    return getWizardAvailabilityChipCount(totalAvailabilities, key, index)
   }
 
   function getMainChipRows(chipIndex: number): WizardAvailabilityRow[] {
@@ -1274,22 +1293,20 @@ export function NewSaleProductsStep({
       return []
     }
 
-    switch (MAIN_CHIP_DEFS[chipIndex]?.key) {
-      case 'InAccount':
-        return totalAvailabilities.InAccounts ?? []
-      case 'StorageUkrVat':
-        return totalAvailabilities.InStorageUkrVat ?? []
-      case 'StorageUkrNotVat':
-        return [...(totalAvailabilities.InStorageUkrNotVat ?? []), ...(totalAvailabilities.AvailableQtyUkReSale ?? [])]
-      case 'StoragePl':
-        return totalAvailabilities.InStoragePl ?? []
-      case 'OnWayToPl':
-        return totalAvailabilities.OnWayToPl ?? []
-      case 'OnWayToUkr':
-        return totalAvailabilities.AvailabilityInvoiceModel ?? []
-      default:
-        return []
+    const key = MAIN_CHIP_DEFS[chipIndex]?.key
+
+    if (!key) {
+      return []
     }
+
+    if (key === 'StorageUkrNotVat') {
+      return [
+        ...getWizardAvailabilityRows(totalAvailabilities, 'StorageUkrNotVat'),
+        ...getWizardAvailabilityRows(totalAvailabilities, 'AvailableQtyUkReSale'),
+      ]
+    }
+
+    return getWizardAvailabilityRows(totalAvailabilities, key)
   }
 
   function getDefaultMainDetailChipIndex(): number {
@@ -1954,7 +1971,7 @@ export function NewSaleProductsStep({
           </Text>
         )}
         <Text fw={600} size="xs">
-          {qtyFormatter.format(getWizardSellableQty(product, isVatSale) ?? 0)} {product.MeasureUnit?.Name ?? ''}
+          {qtyFormatter.format(getDisplayedSellableQty(product) ?? 0)} {product.MeasureUnit?.Name ?? ''}
         </Text>
         <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPrice) ?? 0)} EUR</Text>
         <Text size="xs">{amountFormatter.format(getWizardProductNumber(product.CurrentPriceEurToUah) ?? 0)} UAH</Text>
@@ -1970,8 +1987,8 @@ export function NewSaleProductsStep({
         canEditDescription={canEditMainDescription}
         chips={getMainChips()}
         descriptionDraft={descriptionDraft}
+        displayQty={getDisplayedSellableQty(active?.source === 'main' && activeProduct ? activeProduct : mainProduct) ?? 0}
         isEditingDescription={editingDescription && active?.source === 'main'}
-        isVatSale={isVatSale}
         nearestSupplyOrder={nearestOrder}
         pricing={detailPricingFor(mainProduct)}
         product={active?.source === 'main' ? activeProduct ?? mainProduct : mainProduct}
@@ -2097,8 +2114,8 @@ export function NewSaleProductsStep({
                       canEditDescription
                       chips={getReservationChips(focusedAnalogue)}
                       descriptionDraft={descriptionDraft}
+                      displayQty={getDisplayedSellableQty(focusedAnalogue) ?? 0}
                       isEditingDescription={editingDescription && active?.source === 'analogue'}
-                      isVatSale={isVatSale}
                       pricing={detailPricingFor(focusedAnalogue)}
                       product={focusedAnalogue}
                       rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
@@ -2152,8 +2169,8 @@ export function NewSaleProductsStep({
                       canEditDescription
                       chips={getReservationChips(focusedComponent)}
                       descriptionDraft={descriptionDraft}
+                      displayQty={getDisplayedSellableQty(focusedComponent) ?? 0}
                       isEditingDescription={editingDescription && active?.source === 'component'}
-                      isVatSale={isVatSale}
                       pricing={detailPricingFor(focusedComponent)}
                       product={focusedComponent}
                       rows={detail?.chipIndex === 4 && detail.rowsOpen ? getReservationDetailRows() : []}
@@ -2398,22 +2415,6 @@ function rebuildSplitItem(item: WizardSplitOrderItem, qty: number): WizardSplitO
     TotalAmountEurToUah: roundMoney(qty * eurToUahPrice),
     TotalAmountLocal: roundMoney(qty * localPrice),
   }
-}
-
-function readTotalAvailability(totals: Record<string, number> | undefined, key: string, index: number): number {
-  if (!totals) {
-    return 0
-  }
-
-  const byName = totals[key]
-
-  if (typeof byName === 'number') {
-    return byName
-  }
-
-  const byIndex = totals[String(index)]
-
-  return typeof byIndex === 'number' ? byIndex : 0
 }
 
 function resolveSaleNetId(payload: unknown): string | undefined {
