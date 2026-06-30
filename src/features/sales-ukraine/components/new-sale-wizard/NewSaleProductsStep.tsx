@@ -2022,7 +2022,13 @@ export function NewSaleProductsStep({
 
   return (
     <Box ref={containerRef} className="new-sale-products-step">
-      <WizardClientHeroHeader client={client} clientNetId={clientNetId} headerClose={headerClose} headerTools={headerTools} />
+      <WizardClientHeroHeader
+        activeAgreementNetId={agreementNetId}
+        client={client}
+        clientNetId={clientNetId}
+        headerClose={headerClose}
+        headerTools={headerTools}
+      />
       <Group align="stretch" className="new-sale-products-step__body" gap="md" wrap="nowrap">
         {/* LEFT: search controls + vertical product carousel (mirrors the client step layout) */}
         <Box

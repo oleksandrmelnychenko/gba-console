@@ -1160,7 +1160,7 @@ export function NewSaleClientStep({
             <Box className="new-sale-client-hero__side">
               <Box className="new-sale-client-hero__metrics">
                 {agreements.length > 0 ? (
-                  <Popover position="bottom-end" shadow="md" width={420} withinPortal>
+                  <Popover position="bottom-end" shadow="md" width={560} withinPortal>
                     <Popover.Target>
                       <Box
                         aria-label={t('Договори')}

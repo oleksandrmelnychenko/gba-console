@@ -26,6 +26,7 @@ import { getWizardClientDebtTotal } from './wizardClientStepModel'
 import { getWizardHeaderClient } from './wizardSaleHeaderApi'
 
 export function WizardClientHeroHeader({
+  activeAgreementNetId,
   agreements,
   client,
   clientNetId,
@@ -34,6 +35,7 @@ export function WizardClientHeroHeader({
   headerTools,
   registryCount,
 }: {
+  activeAgreementNetId?: string | null
   agreements?: ClientAgreement[]
   client?: Client | null
   clientNetId?: string | null
@@ -254,7 +256,7 @@ export function WizardClientHeroHeader({
       <Box className="new-sale-client-hero__side">
         <Box className="new-sale-client-hero__metrics">
           {visibleAgreements.length > 0 ? (
-            <Popover position="bottom-end" shadow="md" width={420} withinPortal>
+            <Popover position="bottom-end" shadow="md" width={560} withinPortal>
               <Popover.Target>
                 <Box aria-label={t('Договори')} className="new-sale-client-metric is-clickable" component="button" type="button">
                   <IconCircleCheck size={13} />
@@ -262,13 +264,18 @@ export function WizardClientHeroHeader({
                   <span>{t('Договори')}</span>
                 </Box>
               </Popover.Target>
-              <Popover.Dropdown>
-                <Text fw={600} mb="xs" size="sm">
-                  {t('Договори')}
-                </Text>
-                <Stack gap={6} mah={320} style={{ overflowY: 'auto' }}>
+              <Popover.Dropdown className="new-sale-hero-agreements-dropdown">
+                <Group className="new-sale-hero-agreements-dropdown__head" justify="space-between" wrap="nowrap">
+                  <Text className="new-sale-hero-agreements-dropdown__title">{t('Договори')}</Text>
+                  <span>{visibleAgreements.length}</span>
+                </Group>
+                <Stack className="new-sale-hero-agreements-dropdown__list" gap={7}>
                   {visibleAgreements.map((item, index) => (
-                    <WizardAgreementItem key={String(item.NetUid || item.Id || index)} clientAgreement={item} />
+                    <WizardAgreementItem
+                      key={String(item.NetUid || item.Id || index)}
+                      clientAgreement={item}
+                      selected={Boolean(activeAgreementNetId) && getHeroAgreementKey(item) === activeAgreementNetId}
+                    />
                   ))}
                 </Stack>
               </Popover.Dropdown>
@@ -290,4 +297,8 @@ export function WizardClientHeroHeader({
       </Box>
     </Box>
   )
+}
+
+function getHeroAgreementKey(agreement: ClientAgreement): string {
+  return String(agreement.NetUid || agreement.Id || '')
 }
