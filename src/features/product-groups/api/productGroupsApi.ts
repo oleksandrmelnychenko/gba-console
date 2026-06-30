@@ -46,6 +46,12 @@ export async function getRootProductGroups(netId?: string): Promise<ProductGroup
   return normalizeArray<ProductGroup>(result).map(ensureProductGroup)
 }
 
+export async function getAllProductGroups(): Promise<ProductGroup[]> {
+  const result = await apiRequest<unknown>('/products/groups/all')
+
+  return normalizeList<ProductGroup>(result, 'ProductGroups').items.map(ensureProductGroup)
+}
+
 export async function createProductGroup(productGroup: ProductGroup): Promise<ProductGroup | null> {
   const result = await apiRequest<unknown>('/products/groups/new', {
     method: 'POST',

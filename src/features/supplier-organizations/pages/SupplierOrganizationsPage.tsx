@@ -3,6 +3,7 @@ import {
   Alert,
   Anchor,
   Button,
+  Card,
   Group,
   Stack,
   Text,
@@ -14,8 +15,6 @@ import {
   IconBuilding,
   IconBuildingBank,
   IconCash,
-  IconChevronDown,
-  IconChevronUp,
   IconDownload,
   IconDots,
   IconEye,
@@ -34,6 +33,8 @@ import { AppModal } from '../../../shared/ui/AppModal'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import { Paginator } from '../../../shared/ui/paginator/Paginator'
 import { DEFAULT_PAGINATOR_PAGE_SIZE } from '../../../shared/ui/paginator/paginatorPageSize'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { upgradeHttpToHttps } from '../../../shared/url/upgradeHttpToHttps'
 import {
   exportSupplyOrganizations,
@@ -57,26 +58,31 @@ const moneyFormatter = new Intl.NumberFormat('uk-UA', {
   minimumFractionDigits: 2,
 })
 
-type SupplierOrganizationSortId = 'balance' | 'bank' | 'contact' | 'created' | 'identifiers' | 'name' | 'organization'
-
-type SupplierOrganizationSortState = {
-  direction: 'asc' | 'desc'
-  id: SupplierOrganizationSortId
-} | null
+const SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: ['name', 'identifiers', 'organization', 'contact', 'bank', 'balance', 'created', 'actions'],
+  columnPinning: {
+    left: ['name'],
+    right: ['actions'],
+  },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
 
 export function SupplierOrganizationsPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
 
-  function openOrganizationSheet(path: string) {
-    navigate(path, {
-      state: {
-        backgroundLocation: location,
-        returnPath: `${location.pathname}${location.search}`,
-      },
-    })
-  }
+  const openOrganizationSheet = useCallback(
+    (path: string) => {
+      navigate(path, {
+        state: {
+          backgroundLocation: location,
+          returnPath: `${location.pathname}${location.search}`,
+        },
+      })
+    },
+    [location, navigate],
+  )
 
   const [organizations, setOrganizations] = useValueState<SupplyOrganization[]>([])
   const [searchValue, setSearchValue] = useValueState(() => readStoredSearch())
@@ -90,7 +96,6 @@ export function SupplierOrganizationsPage() {
   const [selectedOrganization, setSelectedOrganization] = useValueState<SupplyOrganization | null>(null)
   const [page, setPage] = useValueState(1)
   const [pageSize, setPageSize] = useValueState(SUPPLIER_ORGANIZATIONS_PAGE_SIZE)
-  const [sortState, setSortState] = useValueState<SupplierOrganizationSortState>(null)
   const requestRef = useRef(0)
   const filterError = getDateFilterError(dateFrom, dateTo)
   const dateFilters = useMemo(() => ({ from: dateFrom || undefined, to: dateTo || undefined }), [dateFrom, dateTo])
@@ -207,18 +212,21 @@ export function SupplierOrganizationsPage() {
     setHasMore(false)
   }
 
-  const sortedOrganizations = useMemo(() => sortSupplierOrganizations(organizations, sortState), [organizations, sortState])
   const hasActiveFilters = Boolean(searchValue.trim() || dateFrom || dateTo)
 
-  function toggleSort(id: SupplierOrganizationSortId) {
-    setSortState((current) => {
-      if (current?.id !== id) {
-        return { direction: 'asc', id }
-      }
-
-      return { direction: current.direction === 'asc' ? 'desc' : 'asc', id }
-    })
-  }
+  const openActions = useCallback(
+    (organization: SupplyOrganization) => setSelectedOrganization(organization),
+    [setSelectedOrganization],
+  )
+  const openCashFlow = useCallback(
+    (organization: SupplyOrganization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`),
+    [navigate],
+  )
+  const openEdit = useCallback(
+    (organization: SupplyOrganization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`),
+    [openOrganizationSheet],
+  )
+  const columns = useSupplierOrganizationColumns(openActions, openCashFlow, openEdit)
 
   return (
     <Stack className="supplier-organizations-page console-table-page" gap="md">
@@ -230,7 +238,7 @@ export function SupplierOrganizationsPage() {
         </PageHeaderActions>
       </PermissionGate>
 
-      <div className="console-table-shell">
+      <Card className="app-data-card supplier-organizations-card" withBorder radius="md" padding={0}>
         <div className="app-filter-bar supplier-organizations-command-bar">
           <div className="supplier-organizations-period-filter">
             <span className="supplier-organizations-filter-label">{t('Період')}</span>
@@ -312,18 +320,25 @@ export function SupplierOrganizationsPage() {
         )}
 
         <div className="supplier-organizations-page__table console-table-body">
-          <SupplierOrganizationsList
+          <DataTable
+            columns={columns}
+            data={organizations}
+            defaultLayout={SUPPLIER_ORGANIZATIONS_TABLE_DEFAULT_LAYOUT}
+            density="normal"
+            emptyText={t('Постачальників послуг не знайдено')}
+            getRowId={(organization, index) => String(organization.NetUid || organization.Id || index)}
+            height="100%"
             isLoading={isLoading}
-            organizations={sortedOrganizations}
-            sortState={sortState}
-            onOpenActions={setSelectedOrganization}
-            onOpenCashFlow={(organization) => navigate(`/accounting/supplier-organizations/cash-flow/${organization.NetUid}`)}
-            onOpenEdit={(organization) => openOrganizationSheet(`/accounting/supplier-organizations/edit/${organization.NetUid}`)}
-            onSort={toggleSort}
+            layoutVersion="supplier-organizations-table-1"
+            loadingText={t('Завантаження постачальників послуг')}
+            minWidth={1350}
+            showDensityToggle={false}
+            showLayoutControls={false}
+            tableId="supplier-organizations"
+            onRowClick={openActions}
           />
-
         </div>
-      </div>
+      </Card>
 
       <SupplierOrganizationActionModal
         organization={selectedOrganization}
@@ -343,119 +358,108 @@ export function SupplierOrganizationsPage() {
   )
 }
 
-function SupplierOrganizationsList({
-  isLoading,
-  organizations,
-  sortState,
-  onOpenActions,
-  onOpenCashFlow,
-  onOpenEdit,
-  onSort,
-}: {
-  isLoading: boolean
-  organizations: SupplyOrganization[]
-  sortState: SupplierOrganizationSortState
-  onOpenActions: (organization: SupplyOrganization) => void
-  onOpenCashFlow: (organization: SupplyOrganization) => void
-  onOpenEdit: (organization: SupplyOrganization) => void
-  onSort: (id: SupplierOrganizationSortId) => void
-}) {
-  const { t } = useI18n()
-
-  return (
-    <div className="supplier-organizations-list">
-      <div className="supplier-organizations-list-head">
-        <SupplierOrganizationSortHeader id="name" label={t('Назва')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="identifiers" label={t('Коди')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="organization" label={t('Організація / договори')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="contact" label={t('Контакти')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="bank" label={t('Реквізити')} sortState={sortState} onSort={onSort} />
-        <SupplierOrganizationSortHeader id="balance" label={t('Баланс')} sortState={sortState} align="right" onSort={onSort} />
-        <SupplierOrganizationSortHeader id="created" label={t('Створено')} sortState={sortState} onSort={onSort} />
-        <span aria-hidden />
-      </div>
-
-      <div className="supplier-organizations-list-body">
-        {isLoading ? (
-          <div className="supplier-organizations-list-state">{t('Завантаження постачальників послуг')}</div>
-        ) : organizations.length === 0 ? (
-          <div className="supplier-organizations-list-state">{t('Постачальників послуг не знайдено')}</div>
-        ) : (
-          organizations.map((organization, index) => (
-            <SupplierOrganizationRow
-              key={String(organization.NetUid || organization.Id || index)}
-              organization={organization}
-              onOpenActions={onOpenActions}
-              onOpenCashFlow={onOpenCashFlow}
-              onOpenEdit={onOpenEdit}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  )
-}
-
-function SupplierOrganizationSortHeader({
-  align,
-  id,
-  label,
-  sortState,
-  onSort,
-}: {
-  align?: 'right'
-  id: SupplierOrganizationSortId
-  label: string
-  sortState: SupplierOrganizationSortState
-  onSort: (id: SupplierOrganizationSortId) => void
-}) {
-  const isActive = sortState?.id === id
-
-  return (
-    <button
-      className={`supplier-organizations-sort-header${isActive ? ' is-active' : ''}${align === 'right' ? ' is-right' : ''}`}
-      type="button"
-      onClick={() => onSort(id)}
-    >
-      <span>{label}</span>
-      {isActive && sortState?.direction === 'desc' ? <IconChevronDown size={13} /> : <IconChevronUp size={13} />}
-    </button>
-  )
-}
-
-function SupplierOrganizationRow({
-  organization,
-  onOpenActions,
-  onOpenCashFlow,
-  onOpenEdit,
-}: {
-  organization: SupplyOrganization
-  onOpenActions: (organization: SupplyOrganization) => void
-  onOpenCashFlow: (organization: SupplyOrganization) => void
-  onOpenEdit: (organization: SupplyOrganization) => void
-}) {
-  return (
-    <div
-      className="supplier-organizations-row"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpenActions(organization)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onOpenActions(organization)
-        }
-      }}
-    >
-      <SupplierOrganizationNameCell organization={organization} />
-      <SupplierOrganizationIdentifiersCell organization={organization} />
-      <SupplierOrganizationAgreementCell organization={organization} />
-      <SupplierOrganizationContactCell organization={organization} />
-      <SupplierOrganizationBankCell organization={organization} />
-      <SupplierOrganizationBalanceCell organization={organization} />
-      <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />
-      <SupplierOrganizationActions organization={organization} onOpenActions={onOpenActions} onOpenCashFlow={onOpenCashFlow} onOpenEdit={onOpenEdit} />
-    </div>
+function useSupplierOrganizationColumns(
+  onOpenActions: (organization: SupplyOrganization) => void,
+  onOpenCashFlow: (organization: SupplyOrganization) => void,
+  onOpenEdit: (organization: SupplyOrganization) => void,
+) {
+  return useMemo<DataTableColumn<SupplyOrganization>[]>(
+    () => [
+      {
+        id: 'name',
+        header: 'Назва',
+        width: 280,
+        minWidth: 260,
+        fill: true,
+        accessor: (organization) => organization.Name ?? '',
+        cell: (organization) => <SupplierOrganizationNameCell organization={organization} />,
+      },
+      {
+        id: 'identifiers',
+        header: 'Коди',
+        width: 230,
+        minWidth: 210,
+        accessor: (organization) => compactStrings([organization.TIN, organization.USREOU, organization.SROI]).join(' '),
+        cell: (organization) => <SupplierOrganizationIdentifiersCell organization={organization} />,
+      },
+      {
+        id: 'organization',
+        header: 'Організація / договори',
+        width: 270,
+        minWidth: 250,
+        accessor: (organization) =>
+          compactStrings([
+            getAgreementOrganizations(organization),
+            getAgreementNames(organization),
+            getAgreementCurrencies(organization),
+          ]).join(' '),
+        cell: (organization) => <SupplierOrganizationAgreementCell organization={organization} />,
+      },
+      {
+        id: 'contact',
+        header: 'Контакти',
+        width: 200,
+        minWidth: 180,
+        accessor: (organization) =>
+          compactStrings([
+            organization.ContactPersonName,
+            organization.ContactPersonEmail,
+            organization.EmailAddress,
+            organization.PhoneNumber,
+            organization.ContactPersonPhone,
+          ]).join(' '),
+        cell: (organization) => <SupplierOrganizationContactCell organization={organization} />,
+      },
+      {
+        id: 'bank',
+        header: 'Реквізити',
+        width: 220,
+        minWidth: 200,
+        accessor: (organization) =>
+          compactStrings([organization.Bank, organization.Requisites, organization.BankAccount, organization.BankAccountEUR]).join(' '),
+        cell: (organization) => <SupplierOrganizationBankCell organization={organization} />,
+      },
+      {
+        id: 'balance',
+        header: 'Баланс',
+        width: 120,
+        minWidth: 110,
+        align: 'right',
+        accessor: (organization) => organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY,
+        cell: (organization) => <SupplierOrganizationBalanceCell organization={organization} />,
+      },
+      {
+        id: 'created',
+        header: 'Створено',
+        width: 140,
+        minWidth: 124,
+        accessor: (organization) => organization.Created ?? '',
+        cell: (organization) => (
+          <SupplierOrganizationDateCell organization={organization} value={formatDateTime(organization.Created)} />
+        ),
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 110,
+        minWidth: 110,
+        maxWidth: 110,
+        align: 'right',
+        enableSorting: false,
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        cell: (organization) => (
+          <SupplierOrganizationActions
+            organization={organization}
+            onOpenActions={onOpenActions}
+            onOpenCashFlow={onOpenCashFlow}
+            onOpenEdit={onOpenEdit}
+          />
+        ),
+      },
+    ],
+    [onOpenActions, onOpenCashFlow, onOpenEdit],
   )
 }
 
@@ -698,61 +702,6 @@ function DocumentModal({ document, onClose }: { document: SupplyOrganizationDocu
       </Stack>
     </AppModal>
   )
-}
-
-function sortSupplierOrganizations(
-  organizations: SupplyOrganization[],
-  sortState: SupplierOrganizationSortState,
-): SupplyOrganization[] {
-  if (!sortState) {
-    return organizations
-  }
-
-  const direction = sortState.direction === 'asc' ? 1 : -1
-
-  return organizations.toSorted(
-    (firstOrganization, secondOrganization) =>
-      compareSupplierSortValues(
-        getSupplierOrganizationSortValue(firstOrganization, sortState.id),
-        getSupplierOrganizationSortValue(secondOrganization, sortState.id),
-      ) * direction,
-  )
-}
-
-function getSupplierOrganizationSortValue(organization: SupplyOrganization, id: SupplierOrganizationSortId): number | string {
-  switch (id) {
-    case 'balance':
-      return organization.TotalAgreementsCurrentEuroAmount ?? Number.NEGATIVE_INFINITY
-    case 'bank':
-      return compactStrings([organization.Bank, organization.Requisites, organization.BankAccount, organization.BankAccountEUR]).join(' ')
-    case 'contact':
-      return compactStrings([
-        organization.ContactPersonName,
-        organization.ContactPersonEmail,
-        organization.EmailAddress,
-        organization.PhoneNumber,
-        organization.ContactPersonPhone,
-      ]).join(' ')
-    case 'created':
-      return organization.Created || ''
-    case 'identifiers':
-      return compactStrings([organization.TIN, organization.USREOU, organization.SROI]).join(' ')
-    case 'name':
-      return organization.Name || ''
-    case 'organization':
-      return compactStrings([getAgreementOrganizations(organization), getAgreementNames(organization), getAgreementCurrencies(organization)]).join(' ')
-  }
-}
-
-function compareSupplierSortValues(firstValue: number | string, secondValue: number | string): number {
-  if (typeof firstValue === 'number' && typeof secondValue === 'number') {
-    return firstValue - secondValue
-  }
-
-  return String(firstValue).localeCompare(String(secondValue), 'uk', {
-    numeric: true,
-    sensitivity: 'base',
-  })
 }
 
 function getDateFilterError(dateFrom: string, dateTo: string): string | null {

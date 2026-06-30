@@ -171,7 +171,8 @@ export function NewUkraineSaleReturnPage() {
   const [returnsSortState, setReturnsSortState] = useState<ReturnsSortState>(null)
 
   const { items, isLoading } = listState
-  const sortedItems = useMemo(() => sortReturns(items, returnsSortState), [items, returnsSortState])
+  const filteredItems = useMemo(() => filterReturns(items, searchValue), [items, searchValue])
+  const sortedItems = useMemo(() => sortReturns(filteredItems, returnsSortState), [filteredItems, returnsSortState])
   const offset = (page - 1) * pageSize
   const canMoveForward = items.length === pageSize
   const selectedOrganization = useMemo(
@@ -213,7 +214,6 @@ export function NewUkraineSaleReturnPage() {
           limit: pageSize,
           offset,
           to: toDate,
-          value: searchValue,
         })
 
         if (!cancelled) {
@@ -238,7 +238,7 @@ export function NewUkraineSaleReturnPage() {
     return () => {
       cancelled = true
     }
-  }, [fromDate, offset, pageSize, reloadKey, searchValue, t, toDate])
+  }, [fromDate, offset, pageSize, reloadKey, t, toDate])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -1220,6 +1220,32 @@ function ReturnTwoLineValue({ primary, secondary }: { primary: string; secondary
   )
 }
 
+function filterReturns(rows: SalesReturn[], value: string): SalesReturn[] {
+  const query = value.trim().toLowerCase()
+
+  if (!query) {
+    return rows
+  }
+
+  return rows.filter((saleReturn) => {
+    const haystack = [
+      saleReturn.Number,
+      saleReturn.Client?.FullName,
+      saleReturn.Client?.Name,
+      saleReturn.ClientAgreement?.Agreement?.Name,
+      saleReturn.ClientAgreement?.Agreement?.Organization?.Name,
+      getReturnUserName(saleReturn.CreatedBy),
+      getSaleNumbers(saleReturn),
+      saleReturn.Storage?.Name,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return haystack.includes(query)
+  })
+}
+
 function sortReturns(rows: SalesReturn[], sortState: ReturnsSortState): SalesReturn[] {
   if (!sortState) {
     return rows
@@ -1418,8 +1444,8 @@ function useSaleItemColumns({
       {
         id: 'returnedQty',
         header: t('Повернено'),
-        accessor: (row) => row.item.ReturnedQty,
-        cell: (row) => formatAmount(row.item.ReturnedQty),
+        accessor: (row) => row.item.ReturnItemQty,
+        cell: (row) => formatAmount(row.item.ReturnItemQty),
         align: 'right',
         width: 110,
       },

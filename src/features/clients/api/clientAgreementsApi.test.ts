@@ -1,7 +1,49 @@
-import { describe, expect, it } from 'vitest'
-import { mergeProductGroupDiscounts } from './clientAgreementsApi'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('../../product-groups/api/productGroupsApi', () => ({
+  getAllProductGroups: vi.fn(),
+  getRootProductGroups: vi.fn(),
+  getProductGroups: vi.fn(),
+}))
+
+import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
+import { getAgreementProductGroupDiscounts, mergeProductGroupDiscounts } from './clientAgreementsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import type { ProductGroupDiscount } from '../types'
+
+describe('getAgreementProductGroupDiscounts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('loads the full product-group catalog (all-groups endpoint) and builds discount rows', async () => {
+    vi.mocked(getAllProductGroups).mockResolvedValue([
+      { Id: 1, NetUid: 'g1', Name: 'Group 1', SubProductGroups: [] },
+      { Id: 2, NetUid: 'g2', Name: 'Group 2', SubProductGroups: [] },
+    ])
+
+    const result = await getAgreementProductGroupDiscounts([])
+
+    expect(getAllProductGroups).toHaveBeenCalledTimes(1)
+    expect(getRootProductGroups).not.toHaveBeenCalled()
+    expect(result).toHaveLength(2)
+    expect(result[0]).toMatchObject({ ProductGroupId: 1, DiscountRate: 0 })
+    expect(result[1]).toMatchObject({ ProductGroupId: 2, DiscountRate: 0 })
+  })
+
+  it('uses the root-scoped catalog when a root net id is supplied', async () => {
+    vi.mocked(getRootProductGroups).mockResolvedValue([
+      { Id: 3, NetUid: 'g3', Name: 'Group 3', SubProductGroups: [] },
+    ])
+
+    const result = await getAgreementProductGroupDiscounts([], 'root-net')
+
+    expect(getRootProductGroups).toHaveBeenCalledWith('root-net')
+    expect(getAllProductGroups).not.toHaveBeenCalled()
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ ProductGroupId: 3 })
+  })
+})
 
 describe('mergeProductGroupDiscounts', () => {
   it('creates default discounts for missing product subgroups', () => {

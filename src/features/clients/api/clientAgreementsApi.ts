@@ -1,5 +1,5 @@
 import { apiRequest } from '../../../shared/api/apiClient'
-import { getProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
+import { getAllProductGroups, getRootProductGroups } from '../../product-groups/api/productGroupsApi'
 import type { ProductGroup } from '../../product-groups/types'
 import { updateClient } from './clientFormApi'
 import type {
@@ -120,7 +120,7 @@ export async function getAgreementProductGroupDiscounts(
 ): Promise<ProductGroupDiscount[]> {
   const productGroups = rootNetId
     ? await getRootProductGroups(rootNetId)
-    : (await getProductGroups()).ProductGroups
+    : await getAllProductGroups()
 
   return mergeProductGroupDiscounts(productGroups, productGroupDiscounts)
 }

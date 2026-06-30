@@ -31,7 +31,7 @@ export function SalesDashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <Stack gap="md">
-      <div className="pill-tabs" style={{ width: 'fit-content', margin: '0 auto' }}>
+      <div className="pill-tabs" style={{ width: 'fit-content', margin: '8px auto 0' }}>
         {SALES_DASHBOARD_TABS.map((tab) => {
           const isActive = active === tab.value
           const Icon = tab.icon

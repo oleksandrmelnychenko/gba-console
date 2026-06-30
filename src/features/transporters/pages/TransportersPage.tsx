@@ -4,6 +4,7 @@ import {
   Avatar,
   Box,
   Button,
+  Card,
   FileInput,
   Group,
   ScrollArea,
@@ -34,6 +35,8 @@ import { useValueState } from '../../../shared/hooks/useValueState'
 import { translate } from '../../../shared/i18n/translate'
 import { useI18n } from '../../../shared/i18n/useI18n'
 import { AppModal } from '../../../shared/ui/AppModal'
+import { DataTable } from '../../../shared/ui/data-table/DataTable'
+import type { DataTableColumn, DataTableDefaultLayout } from '../../../shared/ui/data-table/types'
 import { CREATE_ACTION_COLOR, PageHeaderActions } from '../../../shared/ui/page-header-actions/PageHeaderActions'
 import {
   archiveTransporter,
@@ -60,6 +63,118 @@ type TransporterFormValues = {
   ImageUrl: string
   Name: string
   Priority: string
+}
+
+const TRANSPORTERS_TABLE_DEFAULT_LAYOUT = {
+  columnOrder: ['transporter', 'params', 'image', 'status', 'actions'],
+  columnPinning: { left: ['transporter'] },
+  density: 'normal',
+} satisfies DataTableDefaultLayout
+
+function useTransporterColumns({
+  selectedTransporterType,
+  onArchive,
+  onEdit,
+}: {
+  selectedTransporterType: TransporterType | null
+  onArchive: (transporter: Transporter) => void
+  onEdit: (transporter: Transporter) => void
+}) {
+  return useMemo<DataTableColumn<Transporter>[]>(
+    () => [
+      {
+        id: 'transporter',
+        header: 'Перевізник',
+        width: 300,
+        minWidth: 260,
+        fill: true,
+        accessor: (transporter) => getTransporterName(transporter),
+        cell: (transporter) => (
+          <div className="transporters-profile-cell">
+            <TransporterIcon transporter={transporter} />
+            <div className="transporters-profile-copy">
+              <Tooltip label={getTransporterName(transporter)} openDelay={350} withArrow>
+                <Text className="transporters-profile-name">{getTransporterName(transporter)}</Text>
+              </Tooltip>
+              <Text className="transporters-profile-type">
+                {displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)}
+              </Text>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'params',
+        header: 'Параметри',
+        width: 280,
+        minWidth: 240,
+        accessor: (transporter) => transporter.Priority,
+        cell: (transporter) => (
+          <div className="transporters-config-cell">
+            <TransporterSetting icon={<IconHash size={14} />} label={translate('Пріоритет')} value={displayValue(transporter.Priority)} />
+          </div>
+        ),
+      },
+      {
+        id: 'image',
+        header: 'Зображення',
+        width: 132,
+        minWidth: 120,
+        enableSorting: false,
+        cell: (transporter) => <TransporterImagePreview transporter={transporter} />,
+      },
+      {
+        id: 'status',
+        header: 'Статус',
+        width: 120,
+        minWidth: 100,
+        accessor: (transporter) => (transporter.Deleted === true ? translate('Архів') : translate('Активний')),
+        cell: (transporter) => <TransporterStatusTag transporter={transporter} />,
+      },
+      {
+        id: 'actions',
+        header: '',
+        width: 84,
+        minWidth: 84,
+        maxWidth: 84,
+        align: 'right',
+        enableHiding: false,
+        enableReorder: false,
+        enableResizing: false,
+        enableSorting: false,
+        cell: (transporter) => (
+          <div className="transporters-row-actions" onClick={(event) => event.stopPropagation()}>
+            <Tooltip label={translate('Редагувати')}>
+              <ActionIcon
+                aria-label={translate('Редагувати')}
+                className="transporters-row-action"
+                color="gray"
+                size="sm"
+                variant="subtle"
+                onClick={() => onEdit(transporter)}
+              >
+                <IconPencil size={15} />
+              </ActionIcon>
+            </Tooltip>
+            <Tooltip label={getArchiveTooltip(transporter)}>
+              <ActionIcon
+                aria-label={translate('Архівувати')}
+                className="transporters-row-action"
+                color="red"
+                disabled={!canArchiveTransporter(transporter)}
+                size="sm"
+                variant="subtle"
+                onClick={() => onArchive(transporter)}
+              >
+                <IconArchive size={15} />
+              </ActionIcon>
+            </Tooltip>
+          </div>
+        ),
+      },
+    ],
+    [onArchive, onEdit, selectedTransporterType],
+  )
 }
 
 export function TransportersPage() {
@@ -100,6 +215,11 @@ export function TransportersPage() {
     [search, selectedTransporterType, statusFilter, transporters],
   )
   const isBusy = isLoadingTypes || isLoadingTransporters
+  const transporterColumns = useTransporterColumns({
+    selectedTransporterType,
+    onArchive: setArchiveTarget,
+    onEdit: openEditTransporter,
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -381,37 +501,26 @@ export function TransportersPage() {
           </aside>
 
           <section className="transporters-roster">
-          <div className="transporters-list">
-            <div className="transporters-list-head">
-              <span>{t('Перевізник')}</span>
-              <span>{t('Параметри')}</span>
-              <span>{t('Зображення')}</span>
-              <span>{t('Статус')}</span>
-              <span />
-            </div>
-
-            <ScrollArea.Autosize mah="calc(100vh - 288px)" type="auto">
-              <div className="transporters-list-body">
-                {isBusy ? (
-                  <div className="transporters-empty-state">{t('Завантаження перевізників')}</div>
-                ) : !selectedTypeNetId ? (
-                  <div className="transporters-empty-state">{t('Оберіть тип перевізника')}</div>
-                ) : visibleTransporters.length > 0 ? (
-                  visibleTransporters.map((transporter, index) => (
-                    <TransporterListRow
-                      key={String(transporter.NetUid || transporter.Id || index)}
-                      selectedTransporterType={selectedTransporterType}
-                      transporter={transporter}
-                      onArchive={setArchiveTarget}
-                      onEdit={openEditTransporter}
-                    />
-                  ))
-                ) : (
-                  <div className="transporters-empty-state">{t('Перевізників не знайдено')}</div>
-                )}
-              </div>
-            </ScrollArea.Autosize>
-          </div>
+            <Card className="app-data-card transporters-card" withBorder radius="md" padding={0}>
+              <DataTable
+                columns={transporterColumns}
+                data={visibleTransporters}
+                defaultLayout={TRANSPORTERS_TABLE_DEFAULT_LAYOUT}
+                density="normal"
+                emptyText={selectedTypeNetId ? t('Перевізників не знайдено') : t('Оберіть тип перевізника')}
+                getRowId={(transporter, index) => String(transporter.NetUid || transporter.Id || index)}
+                height="100%"
+                isLoading={isBusy}
+                layoutVersion="transporters-table-1"
+                loadingText={t('Завантаження перевізників')}
+                minWidth={910}
+                rowClassName={(transporter) => (transporter.Deleted ? 'transporters-row-archived' : undefined)}
+                showDensityToggle={false}
+                showLayoutControls={false}
+                tableId="transporters"
+                onRowClick={openEditTransporter}
+              />
+            </Card>
           </section>
         </div>
       </Box>
@@ -455,80 +564,6 @@ export function TransportersPage() {
         </Stack>
       </AppModal>
     </Stack>
-  )
-}
-
-function TransporterListRow({
-  selectedTransporterType,
-  transporter,
-  onArchive,
-  onEdit,
-}: {
-  selectedTransporterType: TransporterType | null
-  transporter: Transporter
-  onArchive: (transporter: Transporter) => void
-  onEdit: (transporter: Transporter) => void
-}) {
-  const typeName = displayValue(transporter.TransporterType?.Name || selectedTransporterType?.Name)
-
-  return (
-    <div
-      className={`transporters-list-row${transporter.Deleted ? ' is-archived' : ''}`}
-      role="button"
-      tabIndex={0}
-      onClick={() => onEdit(transporter)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          onEdit(transporter)
-        }
-      }}
-    >
-      <div className="transporters-profile-cell">
-        <TransporterIcon transporter={transporter} />
-        <div className="transporters-profile-copy">
-          <Tooltip label={getTransporterName(transporter)} openDelay={350} withArrow>
-            <Text className="transporters-profile-name">{getTransporterName(transporter)}</Text>
-          </Tooltip>
-          <Text className="transporters-profile-type">{typeName}</Text>
-        </div>
-      </div>
-
-      <div className="transporters-config-cell">
-        <TransporterSetting icon={<IconHash size={14} />} label={translate('Пріоритет')} value={displayValue(transporter.Priority)} />
-      </div>
-
-      <TransporterImagePreview transporter={transporter} />
-      <TransporterStatusTag transporter={transporter} />
-
-      <div className="transporters-row-actions" onClick={(event) => event.stopPropagation()}>
-        <Tooltip label={translate('Редагувати')}>
-          <ActionIcon
-            aria-label={translate('Редагувати')}
-            className="transporters-row-action"
-            color="gray"
-            size="sm"
-            variant="subtle"
-            onClick={() => onEdit(transporter)}
-          >
-            <IconPencil size={15} />
-          </ActionIcon>
-        </Tooltip>
-        <Tooltip label={getArchiveTooltip(transporter)}>
-          <ActionIcon
-            aria-label={translate('Архівувати')}
-            className="transporters-row-action"
-            color="red"
-            disabled={!canArchiveTransporter(transporter)}
-            size="sm"
-            variant="subtle"
-            onClick={() => onArchive(transporter)}
-          >
-            <IconArchive size={15} />
-          </ActionIcon>
-        </Tooltip>
-      </div>
-    </div>
   )
 }
 
