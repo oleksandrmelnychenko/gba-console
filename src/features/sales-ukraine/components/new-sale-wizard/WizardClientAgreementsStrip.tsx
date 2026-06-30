@@ -8,6 +8,11 @@ import {
   getWizardAgreementOverdueDebtTotal,
 } from './wizardClientStepModel'
 
+const agreementAmountFormatter = new Intl.NumberFormat('uk-UA', {
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+})
+
 export function WizardClientAgreementsStrip({
   agreements,
   selectedKey,
@@ -52,6 +57,11 @@ function WizardAgreementCard({
   const agreementName = agreement?.Name || clientAgreement.AgreementName || ''
   const organizationName = agreement?.Organization?.Name || ''
   const currencyCode = agreement?.Currency?.Code || ''
+  const overdueDays = Math.max(daysOwed - overdueLimitDays, 0)
+  const isInactive = agreement?.IsActive === false
+  const hasDaysControl = Boolean(agreement?.IsControlNumberDaysDebt)
+  const hasDaysInfo = hasDaysControl || agreement?.NumberDaysDebt != null || daysOwed > 0
+  const statusLabel = isOverdue ? t('Прострочено') : isInactive ? t('Неактивний') : t('Активний')
 
   return (
     <UnstyledButton
@@ -59,26 +69,30 @@ function WizardAgreementCard({
         'new-sale-agreement-card',
         isSelected ? 'is-selected' : '',
         isOverdue ? 'is-overdue' : '',
+        isInactive ? 'is-inactive' : '',
       ].filter(Boolean).join(' ')}
       onClick={() => onSelect(clientAgreement)}
     >
       <Box className="new-sale-agreement-card__rail" />
       <Box className="new-sale-agreement-card__content">
-        <Box className="new-sale-agreement-card__top">
-          <Text className="new-sale-agreement-card__organization" title={organizationName} truncate>
-            {organizationName || t('Організація не вказана')}
-          </Text>
+        <Box className="new-sale-agreement-card__head">
+          <Box className="new-sale-agreement-card__identity">
+            <Group className="new-sale-agreement-card__title-row" gap={8} wrap="nowrap">
+              <Text className="new-sale-agreement-card__name" title={agreementName} truncate>
+                {agreementName}
+              </Text>
+              {currencyCode && <span className="new-sale-agreement-card__currency">{currencyCode}</span>}
+            </Group>
+            <Text className="new-sale-agreement-card__organization" title={organizationName} truncate>
+              {organizationName || t('Організація не вказана')}
+            </Text>
+          </Box>
+
           <Box className="new-sale-agreement-card__status">
-            {isOverdue ? <IconAlertTriangle size={14} /> : <IconCircleCheck size={14} />}
+            {isOverdue ? <IconAlertTriangle size={13} /> : <IconCircleCheck size={13} />}
+            <span>{statusLabel}</span>
           </Box>
         </Box>
-
-        <Group gap={8} wrap="nowrap">
-          <Text className="new-sale-agreement-card__name" title={agreementName} truncate>
-            {agreementName}
-          </Text>
-          {currencyCode && <span className="new-sale-agreement-card__currency">{currencyCode}</span>}
-        </Group>
 
         {clientAgreement.OriginalClientName && (
           <Tooltip label={clientAgreement.OriginalClientName} multiline maw={320} position="top">
@@ -89,22 +103,29 @@ function WizardAgreementCard({
           </Tooltip>
         )}
 
-        <Group className="new-sale-agreement-card__limits" gap={8} wrap="nowrap">
-          {agreement?.IsControlAmountDebt && (
-            <span className={totalAgreementDebt > 0 || amountLimitExceeded ? 'is-danger' : ''}>
-              {totalAgreementDebt}/{accountBalance}
-            </span>
+        <Box className="new-sale-agreement-card__limits">
+          <Box className={`new-sale-agreement-card__metric ${totalAgreementDebt > 0 || amountLimitExceeded ? 'is-danger' : ''}`}>
+            <span>{t('Борг')}</span>
+            <strong>{formatAgreementAmount(totalAgreementDebt)}</strong>
+          </Box>
+          <Box className={`new-sale-agreement-card__metric ${amountLimitExceeded ? 'is-danger' : ''}`}>
+            <span>{t('Баланс')}</span>
+            <strong>{formatAgreementAmount(accountBalance)}</strong>
+          </Box>
+          {hasDaysInfo && (
+            <Box className={`new-sale-agreement-card__metric ${daysLimitExceeded ? 'is-danger' : ''}`}>
+              <span>{t('Дні')}</span>
+              <strong>
+                {overdueDays} / {overdueLimitDays}
+              </strong>
+            </Box>
           )}
-          {agreement?.IsControlNumberDaysDebt && (
-            <span className={daysLimitExceeded ? 'is-danger' : ''}>
-              {daysOwed > overdueLimitDays ? daysOwed - overdueLimitDays : 0}/{overdueLimitDays}
-            </span>
-          )}
-          {(agreement?.IsControlAmountDebt || agreement?.IsControlNumberDaysDebt) && (
-            <span className={isOverdue ? 'is-danger' : ''}>{t('прострочено')}</span>
-          )}
-        </Group>
+        </Box>
       </Box>
     </UnstyledButton>
   )
+}
+
+function formatAgreementAmount(value: number): string {
+  return agreementAmountFormatter.format(Math.round(value * 100) / 100)
 }
